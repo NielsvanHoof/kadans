@@ -50,6 +50,7 @@ createInertiaApp({
         );
     },
     progress: {
+        // Brand coral — matches --primary in app.css / qompose.nl.
         color: '#ef5734',
     },
 });

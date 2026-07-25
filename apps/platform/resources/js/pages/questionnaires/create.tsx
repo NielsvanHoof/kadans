@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import type { TemplateCategoryOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -108,11 +109,10 @@ export default function CreateTemplate({
                                 <Label htmlFor="description">
                                     {t('Description (optional)')}
                                 </Label>
-                                <textarea
+                                <Textarea
                                     id="description"
                                     name="description"
                                     rows={3}
-                                    className="rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                     placeholder={t('When to use this pack…')}
                                 />
                                 <InputError message={errors.description} />

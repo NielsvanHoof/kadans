@@ -126,7 +126,14 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
             ->where('metrics.overdue', 0)
             ->where('metrics.in_review', 1)
             ->where('metrics.submitted_document_requests', 1)
-            ->where('metrics.outstanding_document_requests', 2));
+            ->where('metrics.outstanding_document_requests', 2)
+            // Weekly trend fields power the dashboard spine comparison bars.
+            ->has('metrics.open_dossiers_this_week')
+            ->has('metrics.open_dossiers_last_week')
+            ->has('metrics.needs_review_this_week')
+            ->has('metrics.needs_review_last_week')
+            ->has('metrics.awaiting_client_this_week')
+            ->has('metrics.awaiting_client_last_week'));
 });
 
 test('users with multiple firms can choose which firm to open', function () {

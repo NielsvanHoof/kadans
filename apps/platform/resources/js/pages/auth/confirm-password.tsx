@@ -3,7 +3,7 @@ import {
     index as confirmOptions,
     store as confirmStore,
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -47,9 +47,16 @@ export default function ConfirmPassword() {
                                 placeholder={t('Password')}
                                 autoComplete="current-password"
                                 autoFocus
+                                {...fieldErrorAriaProps(
+                                    'password-error',
+                                    errors.password,
+                                )}
                             />
 
-                            <InputError message={errors.password} />
+                            <InputError
+                                id="password-error"
+                                message={errors.password}
+                            />
                         </div>
 
                         <div className="flex items-center">

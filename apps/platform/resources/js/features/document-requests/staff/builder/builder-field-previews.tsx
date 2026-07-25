@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
@@ -69,11 +70,11 @@ export function BuilderTextareaPreview({
     return (
         <div className="space-y-2">
             <FieldChrome title={title} instructions={instructions} />
-            <textarea
+            <Textarea
                 disabled
                 rows={4}
                 placeholder={t('Client writes a longer answer here…')}
-                className="w-full rounded-md border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground shadow-xs"
+                className="bg-muted/40 text-muted-foreground"
                 aria-hidden="true"
                 tabIndex={-1}
             />

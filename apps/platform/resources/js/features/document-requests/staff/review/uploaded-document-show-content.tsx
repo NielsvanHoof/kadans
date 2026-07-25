@@ -6,6 +6,9 @@ import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DocumentExtractionView from '@/features/document-requests/staff/review/document-extraction-view';
+import DocumentPreviewPanel, {
+    documentPreviewKind,
+} from '@/features/document-requests/staff/review/document-preview-panel';
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -49,8 +52,27 @@ export default function UploadedDocumentShowContent({
         }
     }, [isProcessing, start, stop]);
 
+    const downloadUrl = canDownload
+        ? UploadedDocumentController.download.url({
+              tenant: currentWorkspace,
+              uploadedDocument: uploadedDocument.id,
+          })
+        : null;
+
+    const previewUrl = canDownload
+        ? UploadedDocumentController.preview.url({
+              tenant: currentWorkspace,
+              uploadedDocument: uploadedDocument.id,
+          })
+        : null;
+
+    const showPreview =
+        previewUrl !== null &&
+        documentPreviewKind(uploadedDocument.original_filename) !==
+            'unsupported';
+
     return (
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <Heading
                     level={1}
@@ -83,16 +105,9 @@ export default function UploadedDocumentShowContent({
                             </Link>
                         </Button>
                     )}
-                    {canDownload && (
+                    {canDownload && downloadUrl && (
                         <Button variant="outline" size="sm" asChild>
-                            <a
-                                href={UploadedDocumentController.download.url({
-                                    tenant: currentWorkspace,
-                                    uploadedDocument: uploadedDocument.id,
-                                })}
-                            >
-                                {t('Download')}
-                            </a>
+                            <a href={downloadUrl}>{t('Download')}</a>
                         </Button>
                     )}
                 </div>
@@ -121,10 +136,25 @@ export default function UploadedDocumentShowContent({
                 </p>
             )}
 
-            <DocumentExtractionView
-                extraction={uploadedDocument.extraction}
-                rawJson={uploadedDocument.raw_json}
-            />
+            <div
+                className={
+                    showPreview
+                        ? 'grid gap-6 lg:grid-cols-2 lg:items-start'
+                        : undefined
+                }
+            >
+                {showPreview && previewUrl ? (
+                    <DocumentPreviewPanel
+                        filename={uploadedDocument.original_filename}
+                        previewUrl={previewUrl}
+                    />
+                ) : null}
+
+                <DocumentExtractionView
+                    extraction={uploadedDocument.extraction}
+                    rawJson={uploadedDocument.raw_json}
+                />
+            </div>
         </div>
     );
 }

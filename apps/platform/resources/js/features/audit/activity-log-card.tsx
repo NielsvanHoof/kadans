@@ -11,6 +11,7 @@ import {
 import type { ActivityLogEntry } from '@/features/audit/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
@@ -28,7 +29,7 @@ export default function ActivityLogCard({
     activities: Paginated<ActivityLogEntry>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const rows = activities.data;
     const total = activities.total;
 
@@ -54,9 +55,9 @@ export default function ActivityLogCard({
                         )}
                     />
                 ) : (
-                    <div className="divide-y rounded-md border">
+                    <ul className="divide-y rounded-md border">
                         {rows.map((activity) => (
-                            <div
+                            <li
                                 key={activity.id}
                                 className="flex flex-col gap-2 px-4 py-3"
                             >
@@ -66,12 +67,19 @@ export default function ActivityLogCard({
                                     </Badge>
                                     {activity.created_at && (
                                         <span className="text-xs text-muted-foreground">
-                                            {new Date(
+                                            {formatDateTime(
                                                 activity.created_at,
-                                            ).toLocaleString()}
+                                                locale,
+                                            )}
                                         </span>
                                     )}
                                 </div>
+
+                                {activity.description ? (
+                                    <p className="text-sm">
+                                        {activity.description}
+                                    </p>
+                                ) : null}
 
                                 <p className="text-sm text-muted-foreground">
                                     {activity.causer_name ?? t('System')}
@@ -109,42 +117,40 @@ export default function ActivityLogCard({
                                     )}
                                 </p>
 
+                                {activity.attribute_changes ? (
+                                    <AttributeChangesList
+                                        changes={activity.attribute_changes}
+                                        t={t}
+                                    />
+                                ) : null}
+
                                 {(activity.properties.ip ||
-                                    activity.properties.route ||
-                                    activity.attribute_changes) && (
+                                    activity.properties.route) && (
                                     <p className="text-xs text-muted-foreground">
                                         {[
                                             activity.properties.ip,
                                             activity.properties.route,
-                                            formatAttributeChanges(
-                                                activity.attribute_changes,
-                                                t,
-                                            ),
                                         ]
                                             .filter(Boolean)
                                             .join(' · ')}
                                     </p>
                                 )}
-                            </div>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 )}
             </CardContent>
         </Card>
     );
 }
 
-/**
- * Short summary of changed attributes for model-driven audit rows.
- */
-function formatAttributeChanges(
-    changes: ActivityLogEntry['attribute_changes'],
-    t: Translate,
-): string | null {
-    if (!changes) {
-        return null;
-    }
-
+function AttributeChangesList({
+    changes,
+    t,
+}: {
+    changes: NonNullable<ActivityLogEntry['attribute_changes']>;
+    t: Translate;
+}) {
     const keys = [
         ...new Set([
             ...Object.keys(changes.attributes),
@@ -156,5 +162,45 @@ function formatAttributeChanges(
         return null;
     }
 
-    return t('Changed: :keys', { keys: keys.join(', ') });
+    return (
+        <dl className="space-y-1 text-xs text-muted-foreground">
+            {keys.map((key) => {
+                const oldValue = formatChangeValue(changes.old[key]);
+                const newValue = formatChangeValue(changes.attributes[key]);
+
+                return (
+                    <div key={key} className="flex flex-wrap gap-1">
+                        <dt className="font-medium text-foreground">{key}:</dt>
+                        <dd>
+                            {oldValue !== null ? (
+                                <>
+                                    <span className="line-through opacity-70">
+                                        {oldValue}
+                                    </span>
+                                    {' → '}
+                                </>
+                            ) : null}
+                            <span>{newValue ?? t('—')}</span>
+                        </dd>
+                    </div>
+                );
+            })}
+        </dl>
+    );
+}
+
+function formatChangeValue(value: unknown): string | null {
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    if (typeof value === 'boolean') {
+        return value ? 'true' : 'false';
+    }
+
+    if (typeof value === 'object') {
+        return JSON.stringify(value);
+    }
+
+    return String(value);
 }

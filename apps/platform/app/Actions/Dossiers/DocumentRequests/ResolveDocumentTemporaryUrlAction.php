@@ -35,20 +35,25 @@ final class ResolveDocumentTemporaryUrlAction
     public function handle(
         UploadedDocument $document,
         DateTimeInterface $expiresAt,
+        string $disposition = 'attachment',
     ): string {
-        // disk() is typed as the Filesystem contract; narrow to the adapter that owns temporaryUrl().
         $disk = $this->filesystems->disk($document->disk);
 
         if (! $disk instanceof FilesystemAdapter) {
             throw new RuntimeException('Disk does not support temporary URLs.');
         }
 
+        if ($disposition !== 'attachment' && $disposition !== 'inline') {
+            throw new RuntimeException('Document URL disposition must be attachment or inline.');
+        }
+
         $url = $disk->temporaryUrl(
             $document->path,
             $expiresAt,
             [
-                // Encourage browsers to download with the original filename.
-                'ResponseContentDisposition' => 'attachment; filename="'.$document->original_filename.'"',
+                // attachment downloads; inline lets iframes/images preview in-browser.
+                'ResponseContentDisposition' => $disposition.'; filename="'.$document->original_filename.'"',
+                'ResponseContentType' => $document->mime_type,
             ],
         );
 

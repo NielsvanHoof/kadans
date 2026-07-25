@@ -1,5 +1,8 @@
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
+import DataTable, { type DataTableColumn } from '@/components/data-table';
 import EmptyState from '@/components/empty-state';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -11,7 +14,10 @@ import ArchiveClientButton from '@/features/clients/manage/archive-client-button
 import type { ClientSummary } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { show as showClient } from '@/routes/workspaces/clients';
+import {
+    create as createClient,
+    show as showClient,
+} from '@/routes/workspaces/clients';
 import type { Paginated } from '@/types/pagination';
 
 /**
@@ -28,6 +34,69 @@ export default function ClientsListCard({
     const { t } = useTranslation();
     const rows = clients.data;
     const total = clients.total;
+    const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
+        new Set(),
+    );
+
+    const columns: DataTableColumn<ClientSummary>[] = [
+        {
+            key: 'name',
+            header: t('Client'),
+            className: 'whitespace-normal',
+            cell: (client) => (
+                <div>
+                    <Link
+                        href={showClient({
+                            tenant: currentWorkspace,
+                            client: client.id,
+                        })}
+                        className="font-medium hover:underline"
+                    >
+                        {client.name}
+                    </Link>
+                    <p className="text-sm text-muted-foreground sm:hidden">
+                        {client.email}
+                    </p>
+                </div>
+            ),
+        },
+        {
+            key: 'email',
+            header: t('Email'),
+            className: 'hidden whitespace-normal sm:table-cell',
+            cell: (client) => (
+                <span className="text-sm text-muted-foreground">
+                    {client.email}
+                </span>
+            ),
+        },
+        {
+            key: 'dossiers',
+            header: t('Dossiers'),
+            cell: (client) => (
+                <span className="text-sm text-muted-foreground">
+                    {client.dossiers_count}{' '}
+                    {client.dossiers_count === 1 ? t('dossier') : t('dossiers')}
+                </span>
+            ),
+        },
+        ...(canManage
+            ? [
+                  {
+                      key: 'actions',
+                      header: t('Actions'),
+                      className: 'text-right',
+                      cell: (client: ClientSummary) => (
+                          <ArchiveClientButton
+                              clientId={client.id}
+                              clientName={client.name}
+                              dossiersCount={client.dossiers_count}
+                          />
+                      ),
+                  } satisfies DataTableColumn<ClientSummary>,
+              ]
+            : []),
+    ];
 
     return (
         <Card>
@@ -40,48 +109,27 @@ export default function ClientsListCard({
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {rows.length === 0 ? (
-                    <EmptyState
-                        title={t('Add your first client to create a dossier.')}
-                    />
-                ) : (
-                    <div className="divide-y rounded-md border">
-                        {rows.map((client) => (
-                            <div
-                                key={client.id}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                            >
-                                <div>
-                                    <Link
-                                        href={showClient({
-                                            tenant: currentWorkspace,
-                                            client: client.id,
-                                        })}
-                                        className="font-medium hover:underline"
-                                    >
-                                        {client.name}
+                <DataTable
+                    columns={columns}
+                    rows={rows}
+                    rowKey={(client) => client.id}
+                    selectedKeys={selectedKeys}
+                    onSelectionChange={setSelectedKeys}
+                    emptyState={
+                        <EmptyState
+                            title={t(
+                                'Add your first client to create a dossier.',
+                            )}
+                            action={
+                                <Button asChild size="sm">
+                                    <Link href={createClient(currentWorkspace)}>
+                                        {t('New client')}
                                     </Link>
-                                    <p className="text-sm text-muted-foreground">
-                                        {client.email}
-                                    </p>
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                    {client.dossiers_count}{' '}
-                                    {client.dossiers_count === 1
-                                        ? t('dossier')
-                                        : t('dossiers')}
-                                </p>
-                                {canManage && (
-                                    <ArchiveClientButton
-                                        clientId={client.id}
-                                        clientName={client.name}
-                                        dossiersCount={client.dossiers_count}
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
+                                </Button>
+                            }
+                        />
+                    }
+                />
             </CardContent>
         </Card>
     );

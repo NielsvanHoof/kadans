@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { KeyRound } from 'lucide-react';
 import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegistrationController';
 import EmptyState from '@/components/empty-state';
-import Heading from '@/components/heading';
+import SettingsSection from '@/components/settings-section';
 import PasskeyItem from '@/features/security/passkeys/passkey-item';
 import PasskeyRegistration from '@/features/security/passkeys/passkey-register';
 import { useTranslation } from '@/hooks/use-translation';
@@ -34,14 +34,10 @@ export default function ManagePasskeys(props: Props) {
     }
 
     return (
-        <div className="space-y-6">
-            <Heading
-                level={2}
-                variant="small"
-                title={t('Passkeys')}
-                description={t('Manage your passkeys for passwordless sign-in')}
-            />
-
+        <SettingsSection
+            title={t('Passkeys')}
+            description={t('Manage your passkeys for passwordless sign-in')}
+        >
             <div className="overflow-hidden rounded-lg border border-border">
                 {passkeys.length > 0 ? (
                     passkeys.map((passkey) => (
@@ -64,6 +60,6 @@ export default function ManagePasskeys(props: Props) {
             </div>
 
             <PasskeyRegistration onSuccess={handleRegisterSuccess} />
-        </div>
+        </SettingsSection>
     );
 }

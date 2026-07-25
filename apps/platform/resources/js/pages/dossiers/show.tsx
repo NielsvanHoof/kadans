@@ -58,7 +58,7 @@ export default function ShowDossier({
                 accessGrantToken={accessGrantToken}
                 accessGrantPortalUrl={accessGrantPortalUrl}
                 canManage={canManage}
-                canEdit={canEdit}
+                canEditDetails={canEdit}
                 canSendReminder={canSendReminder}
                 canReview={canReview}
                 canDownload={canDownload}

@@ -16,7 +16,7 @@ import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 
 /**
- * Dashboard workflow spine — stage-first metrics instead of a flat card grid.
+ * Dashboard workflow spine — stage-first metrics with weekly activity trends.
  */
 export default function DashboardMetricsGrid({
     metrics,
@@ -35,6 +35,9 @@ export default function DashboardMetricsGrid({
             detail: t(':count outstanding requests', {
                 count: metrics.outstanding_document_requests,
             }),
+            thisWeek: metrics.open_dossiers_this_week,
+            lastWeek: metrics.open_dossiers_last_week,
+            chartClass: 'bg-chart-1',
         },
         {
             key: 'invite' as const,
@@ -44,6 +47,9 @@ export default function DashboardMetricsGrid({
                 query: { filter: { queue: 'awaiting_client' } },
             }),
             detail: t('Portal invitations and reminders'),
+            thisWeek: metrics.awaiting_client_this_week,
+            lastWeek: metrics.awaiting_client_last_week,
+            chartClass: 'bg-chart-2',
         },
         {
             key: 'review' as const,
@@ -53,6 +59,9 @@ export default function DashboardMetricsGrid({
                 query: { filter: { queue: 'needs_review' } },
             }),
             detail: t(':count in review', { count: metrics.in_review }),
+            thisWeek: metrics.needs_review_this_week,
+            lastWeek: metrics.needs_review_last_week,
+            chartClass: 'bg-chart-3',
         },
     ];
 
@@ -65,7 +74,7 @@ export default function DashboardMetricsGrid({
         <div className="space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h2 className="text-base font-semibold tracking-tight">
+                    <h2 className="font-display text-lg font-semibold tracking-tight">
                         {t('Dossier workflow')}
                     </h2>
                     <p className="text-sm text-muted-foreground">
@@ -96,6 +105,11 @@ export default function DashboardMetricsGrid({
                     {stages.map((stage, index) => {
                         const isFocus = stage.key === focusKey;
                         const isLast = index === stages.length - 1;
+                        const maxWeek = Math.max(
+                            stage.thisWeek,
+                            stage.lastWeek,
+                            1,
+                        );
 
                         return (
                             <li
@@ -140,6 +154,48 @@ export default function DashboardMetricsGrid({
                                     <p className="mt-1 text-sm text-muted-foreground">
                                         {stage.description}
                                     </p>
+
+                                    {/* Weekly activity comparison — uses chart tokens. */}
+                                    <div className="mt-3 space-y-1.5">
+                                        <p className="font-data text-xs text-muted-foreground tabular-nums">
+                                            {t(
+                                                ':this this week · :last last week',
+                                                {
+                                                    this: stage.thisWeek,
+                                                    last: stage.lastWeek,
+                                                },
+                                            )}
+                                        </p>
+                                        <div
+                                            className="flex h-1.5 gap-1"
+                                            aria-hidden="true"
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'rounded-full',
+                                                    stage.chartClass,
+                                                )}
+                                                style={{
+                                                    width: `${(stage.thisWeek / maxWeek) * 100}%`,
+                                                    minWidth:
+                                                        stage.thisWeek > 0
+                                                            ? '0.25rem'
+                                                            : 0,
+                                                }}
+                                            />
+                                            <span
+                                                className="rounded-full bg-muted-foreground/25"
+                                                style={{
+                                                    width: `${(stage.lastWeek / maxWeek) * 100}%`,
+                                                    minWidth:
+                                                        stage.lastWeek > 0
+                                                            ? '0.25rem'
+                                                            : 0,
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
                                     <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
                                         <ClipboardList
                                             className="size-3.5 shrink-0"
@@ -163,7 +219,6 @@ export default function DashboardMetricsGrid({
                 </ol>
             </nav>
 
-            {/* Compact secondary counters kept off the main spine. */}
             <Card className="py-4">
                 <CardHeader className="px-4 py-0">
                     <CardTitle className="text-sm font-medium">

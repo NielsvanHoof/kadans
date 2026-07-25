@@ -25,18 +25,26 @@ import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Invite a colleague by email and assign an initial workspace role.
+ * Owner is omitted from the select when the actor cannot assign it.
  */
 export default function InviteMemberForm({
     roleOptions,
+    canAssignOwner = false,
 }: {
     roleOptions: RoleOption[];
+    canAssignOwner?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    // Non-owners must not see the owner option in the invite form.
+    const assignableRoleOptions = canAssignOwner
+        ? roleOptions
+        : roleOptions.filter((option) => option.value !== 'owner');
     // Prefer adviser as the default invite role when it is assignable.
     const defaultRole =
-        roleOptions.find((option) => option.value === 'adviser')?.value ??
-        roleOptions[0]?.value ??
+        assignableRoleOptions.find((option) => option.value === 'adviser')
+            ?.value ??
+        assignableRoleOptions[0]?.value ??
         '';
 
     return (
@@ -83,7 +91,7 @@ export default function InviteMemberForm({
                                         <SelectValue placeholder={t('Role')} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
-                                        {roleOptions.map((option) => (
+                                        {assignableRoleOptions.map((option) => (
                                             <SelectItem
                                                 key={option.value}
                                                 value={option.value}

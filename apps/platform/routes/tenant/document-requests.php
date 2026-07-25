@@ -41,6 +41,11 @@ Route::get('uploaded-documents/{uploadedDocument}', [UploadedDocumentController:
         passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
     ))
     ->name('uploaded-documents.show');
+Route::get('uploaded-documents/{uploadedDocument}/preview', [UploadedDocumentController::class, 'preview'])
+    ->middleware(RequirePassword::using(
+        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+    ))
+    ->name('uploaded-documents.preview');
 Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentController::class, 'download'])
     ->middleware(RequirePassword::using(
         passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),

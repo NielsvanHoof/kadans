@@ -2,6 +2,7 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Archive } from 'lucide-react';
 import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryResults from '@/components/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -71,11 +72,13 @@ export default function ArchivedClients({
                 </Alert>
 
                 <IndexQueryToolbar config={indexQuery} />
-                <ArchivedClientsCard
-                    clients={clients}
-                    canRestore={canRestore}
-                />
-                <IndexPagination paginator={clients} />
+                <IndexQueryResults className="space-y-6">
+                    <ArchivedClientsCard
+                        clients={clients}
+                        canRestore={canRestore}
+                    />
+                    <IndexPagination paginator={clients} />
+                </IndexQueryResults>
             </div>
         </>
     );

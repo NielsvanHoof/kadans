@@ -18,12 +18,19 @@ type ConfirmDestroyDialogProps = {
     title: string;
     description: string;
     confirmLabel: string;
-    /** Trigger control (usually a Button). Wrapped with DialogTrigger asChild. */
-    trigger: ReactNode;
+    /**
+     * Trigger control (usually a Button). Wrapped with DialogTrigger asChild.
+     * Omit when driving the dialog with `open` / `onOpenChange` instead.
+     */
+    trigger?: ReactNode;
     /** Wayfinder `Controller.destroy.form(...)` props (without children). */
     form: Omit<FormProps, 'children' | 'options'>;
     options?: FormProps['options'];
     confirmTestId?: string;
+    confirmVariant?: 'destructive' | 'default';
+    /** Controlled open state — use with dropdown menu items that open a dialog. */
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 };
 
 /**
@@ -38,12 +45,15 @@ export default function ConfirmDestroyDialog({
     form,
     options,
     confirmTestId,
+    confirmVariant = 'destructive',
+    open,
+    onOpenChange,
 }: ConfirmDestroyDialogProps) {
     const { t } = useTranslation();
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
             <DialogContent>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{description}</DialogDescription>
@@ -58,7 +68,7 @@ export default function ConfirmDestroyDialog({
                             </DialogClose>
                             <Button
                                 type="submit"
-                                variant="destructive"
+                                variant={confirmVariant}
                                 disabled={processing}
                                 data-test={confirmTestId}
                             >

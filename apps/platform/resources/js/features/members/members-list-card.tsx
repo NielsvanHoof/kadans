@@ -2,6 +2,7 @@ import { Form } from '@inertiajs/react';
 import WorkspaceMemberController from '@/actions/App/Http/Controllers/Tenancy/WorkspaceMemberController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import EmptyState from '@/components/empty-state';
+import IndexList from '@/components/index-list';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -23,16 +24,31 @@ import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Active and suspended workspace members with role and membership actions.
+ *
+ * Guards: never show Remove for the current user; hide owner in role options
+ * when the actor cannot assign it; block demote/remove for the last active owner.
  */
 export default function MembersListCard({
     members,
     roleOptions,
+    canAssignOwner = false,
 }: {
     members: WorkspaceMember[];
     roleOptions: RoleOption[];
+    canAssignOwner?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+
+    // Count active owners so the UI can protect the last one (backend also enforces this).
+    const activeOwnerCount = members.filter(
+        (member) => member.status === 'active' && member.role === 'owner',
+    ).length;
+
+    // Non-owners must not see the owner option when inviting or changing roles.
+    const assignableRoleOptions = canAssignOwner
+        ? roleOptions
+        : roleOptions.filter((option) => option.value !== 'owner');
 
     return (
         <Card>
@@ -48,14 +64,22 @@ export default function MembersListCard({
                 {members.length === 0 ? (
                     <EmptyState title={t('No members yet.')} />
                 ) : (
-                    <div className="divide-y rounded-md border">
+                    <IndexList>
                         {members.map((member) => {
                             const roleFormId = `member-role-${member.id}`;
+                            const isLastActiveOwner =
+                                member.role === 'owner' &&
+                                member.status === 'active' &&
+                                activeOwnerCount <= 1;
+                            // Keep the current role visible even when it is not assignable.
                             const roleMissingFromOptions =
                                 Boolean(member.role) &&
-                                !roleOptions.some(
+                                !assignableRoleOptions.some(
                                     (option) => option.value === member.role,
                                 );
+                            // Never let a user remove themselves; last owner is also protected.
+                            const canRemoveMember =
+                                !member.is_current_user && !isLastActiveOwner;
 
                             return (
                                 <div
@@ -98,7 +122,8 @@ export default function MembersListCard({
                                                     disabled={
                                                         processing ||
                                                         member.status ===
-                                                            'suspended'
+                                                            'suspended' ||
+                                                        isLastActiveOwner
                                                     }
                                                     // Submit as soon as a new role is chosen.
                                                     onValueChange={() => {
@@ -128,7 +153,7 @@ export default function MembersListCard({
                                                         />
                                                     </SelectTrigger>
                                                     <SelectContent className="bg-background">
-                                                        {roleOptions.map(
+                                                        {assignableRoleOptions.map(
                                                             (option) => (
                                                                 <SelectItem
                                                                     key={
@@ -186,7 +211,8 @@ export default function MembersListCard({
                                                                 variant="outline"
                                                                 size="sm"
                                                                 disabled={
-                                                                    processing
+                                                                    processing ||
+                                                                    isLastActiveOwner
                                                                 }
                                                             >
                                                                 {t('Suspend')}
@@ -196,35 +222,39 @@ export default function MembersListCard({
                                                 </Form>
                                             )}
 
-                                        <ConfirmDestroyDialog
-                                            title={t('Remove member?')}
-                                            description={t(
-                                                'Remove :name from this firm. They will lose access immediately.',
-                                                { name: member.name },
-                                            )}
-                                            confirmLabel={t('Remove')}
-                                            form={WorkspaceMemberController.destroy.form(
-                                                {
-                                                    tenant: currentWorkspace,
-                                                    membership: member.id,
-                                                },
-                                            )}
-                                            options={{ preserveScroll: true }}
-                                            trigger={
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                >
-                                                    {t('Remove')}
-                                                </Button>
-                                            }
-                                        />
+                                        {canRemoveMember ? (
+                                            <ConfirmDestroyDialog
+                                                title={t('Remove member?')}
+                                                description={t(
+                                                    'Remove :name from this firm. They will lose access immediately.',
+                                                    { name: member.name },
+                                                )}
+                                                confirmLabel={t('Remove')}
+                                                form={WorkspaceMemberController.destroy.form(
+                                                    {
+                                                        tenant: currentWorkspace,
+                                                        membership: member.id,
+                                                    },
+                                                )}
+                                                options={{
+                                                    preserveScroll: true,
+                                                }}
+                                                trigger={
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
+                                                        {t('Remove')}
+                                                    </Button>
+                                                }
+                                            />
+                                        ) : null}
                                     </div>
                                 </div>
                             );
                         })}
-                    </div>
+                    </IndexList>
                 )}
             </CardContent>
         </Card>

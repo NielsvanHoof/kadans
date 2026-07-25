@@ -1,7 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import BrandHeroPanel from '@/components/brand-hero-panel';
-import SkipToContent from '@/components/skip-to-content';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -16,7 +15,6 @@ export default function AuthSplitLayout({
 
     return (
         <div className="relative grid min-h-svh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
-            <SkipToContent />
             <BrandHeroPanel className="relative hidden h-full p-10 lg:flex dark:border-r">
                 <Link
                     href={dashboard()}
@@ -30,7 +28,7 @@ export default function AuthSplitLayout({
                     <p className="text-sm font-medium tracking-wide text-primary-foreground/80 uppercase">
                         {t('Secure document exchange')}
                     </p>
-                    <h2 className="text-3xl leading-tight font-semibold text-balance">
+                    <h2 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">
                         {t('The smart, secure way to request client documents')}
                     </h2>
                     <p className="text-sm leading-relaxed text-primary-foreground/85">
@@ -52,7 +50,7 @@ export default function AuthSplitLayout({
                             <AppLogoIcon className="size-7 text-primary-foreground sm:size-8" />
                         </div>
                     </Link>
-                    <div
+                    <main
                         id="main-content"
                         tabIndex={-1}
                         className="flex flex-col justify-center space-y-6"
@@ -64,7 +62,7 @@ export default function AuthSplitLayout({
                             </p>
                         </div>
                         {children}
-                    </div>
+                    </main>
                 </div>
             </div>
         </div>

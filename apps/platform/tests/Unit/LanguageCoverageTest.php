@@ -57,6 +57,49 @@ function translationKeysUsedInDirectory(string $directory): array
     return array_values(array_unique($keys));
 }
 
+/**
+ * Extract static t('…') / t("…") keys from frontend TypeScript sources.
+ * Skips dynamic calls like t(variable) or t(definition.label).
+ *
+ * @return list<string>
+ */
+function frontendTranslationKeysUsedInDirectory(string $directory): array
+{
+    $keys = [];
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($directory),
+    );
+
+    foreach ($iterator as $file) {
+        if (! $file->isFile()) {
+            continue;
+        }
+
+        $extension = $file->getExtension();
+
+        if ($extension !== 'ts' && $extension !== 'tsx') {
+            continue;
+        }
+
+        $contents = (string) file_get_contents($file->getPathname());
+
+        // Match t('key') and t("key"), including keys that span multiple lines.
+        if (preg_match_all("/\\bt\\(\\s*(['\"])(.*?)\\1/s", $contents, $matches) !== false) {
+            foreach ($matches[2] as $key) {
+                // Collapse whitespace from multiline string literals.
+                $normalized = preg_replace('/\s+/', ' ', $key);
+
+                if (is_string($normalized) && $normalized !== '') {
+                    $keys[] = mb_trim($normalized);
+                }
+            }
+        }
+    }
+
+    return array_values(array_unique($keys));
+}
+
 it('keeps English and Dutch translation keys fully aligned', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
@@ -88,6 +131,23 @@ it('covers every backend translation key in both locale files', function (): voi
 
     expect($missingInEnglish)
         ->toBeEmpty('Missing backend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
+});
+
+it('covers every frontend translation key in both locale files', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+    $translations = loadTranslationFiles($projectRoot);
+    $englishKeys = array_keys($translations['english']);
+    $dutchKeys = array_keys($translations['dutch']);
+
+    $frontendKeys = frontendTranslationKeysUsedInDirectory($projectRoot.'/resources/js');
+
+    $missingInEnglish = array_values(array_diff($frontendKeys, $englishKeys));
+    $missingInDutch = array_values(array_diff($frontendKeys, $dutchKeys));
+
+    expect($missingInEnglish)
+        ->toBeEmpty('Missing frontend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
+        ->and($missingInDutch)
+        ->toBeEmpty('Missing frontend keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
 });
 
 /**

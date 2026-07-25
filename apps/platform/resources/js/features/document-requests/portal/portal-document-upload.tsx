@@ -21,7 +21,6 @@ export default function PortalDocumentUpload({
             })}
             visitOptions={inlinePortalActionOptions}
             className="mt-3 space-y-2"
-            progressClassName="h-1.5 w-full accent-primary"
         />
     );
 }

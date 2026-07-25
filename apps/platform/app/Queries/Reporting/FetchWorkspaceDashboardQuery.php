@@ -62,6 +62,27 @@ final class FetchWorkspaceDashboardQuery
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<', today());
 
+        $thisWeekStart = now()->subDays(7);
+        $lastWeekStart = now()->subDays(14);
+
+        // Use base query whereIn to avoid Eloquent Builder staticMethod.dynamicCall.
+        $awaitingClientThisWeekQuery = DocumentRequest::query()
+            ->whereBelongsTo($tenant)
+            ->where('created_at', '>=', $thisWeekStart);
+        $awaitingClientThisWeekQuery->getQuery()->whereIn('status', [
+            DocumentRequestStatus::Pending->value,
+            DocumentRequestStatus::Rejected->value,
+        ]);
+
+        $awaitingClientLastWeekQuery = DocumentRequest::query()
+            ->whereBelongsTo($tenant)
+            ->where('created_at', '>=', $lastWeekStart)
+            ->where('created_at', '<', $thisWeekStart);
+        $awaitingClientLastWeekQuery->getQuery()->whereIn('status', [
+            DocumentRequestStatus::Pending->value,
+            DocumentRequestStatus::Rejected->value,
+        ]);
+
         return new DashboardMetricsData(
             clients: Client::query()
                 ->whereBelongsTo($tenant)
@@ -84,6 +105,32 @@ final class FetchWorkspaceDashboardQuery
             outstandingDocumentRequests: $outstandingDocumentRequestsQuery
                 ->toBase()
                 ->count(),
+            openDossiersThisWeek: Dossier::query()
+                ->whereBelongsTo($tenant)
+                ->where('created_at', '>=', $thisWeekStart)
+                ->toBase()
+                ->count(),
+            openDossiersLastWeek: Dossier::query()
+                ->whereBelongsTo($tenant)
+                ->where('created_at', '>=', $lastWeekStart)
+                ->where('created_at', '<', $thisWeekStart)
+                ->toBase()
+                ->count(),
+            needsReviewThisWeek: DocumentRequest::query()
+                ->whereBelongsTo($tenant)
+                ->where('status', DocumentRequestStatus::Submitted)
+                ->where('updated_at', '>=', $thisWeekStart)
+                ->toBase()
+                ->count(),
+            needsReviewLastWeek: DocumentRequest::query()
+                ->whereBelongsTo($tenant)
+                ->where('status', DocumentRequestStatus::Submitted)
+                ->where('updated_at', '>=', $lastWeekStart)
+                ->where('updated_at', '<', $thisWeekStart)
+                ->toBase()
+                ->count(),
+            awaitingClientThisWeek: $awaitingClientThisWeekQuery->toBase()->count(),
+            awaitingClientLastWeek: $awaitingClientLastWeekQuery->toBase()->count(),
         );
     }
 

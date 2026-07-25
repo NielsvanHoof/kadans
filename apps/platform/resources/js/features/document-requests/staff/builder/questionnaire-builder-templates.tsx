@@ -1,5 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -33,10 +34,16 @@ export default function QuestionnaireBuilderTemplates({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    // Controlled so the closed trigger can show only the template name.
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
     if (templates.length === 0) {
         return null;
     }
+
+    const selectedTemplate = templates.find(
+        (template) => template.id.toString() === selectedTemplateId,
+    );
 
     return (
         <Collapsible className="border-t border-border/60 pt-3">
@@ -82,37 +89,48 @@ export default function QuestionnaireBuilderTemplates({
                                 <Select
                                     required
                                     name="questionnaire_template_id"
-                                    defaultValue=""
+                                    value={selectedTemplateId || undefined}
+                                    onValueChange={setSelectedTemplateId}
                                 >
-                                    <SelectTrigger className="w-full min-w-0">
+                                    <SelectTrigger
+                                        id="questionnaire_template_id"
+                                        className="w-full min-w-0 overflow-hidden"
+                                    >
                                         <SelectValue
                                             placeholder={t(
                                                 'Select a template…',
                                             )}
-                                        />
+                                        >
+                                            {selectedTemplate?.name}
+                                        </SelectValue>
                                     </SelectTrigger>
-                                    {/* Match trigger width and align start so long labels
-                                        don't spill past the narrow palette column. */}
+                                    {/* Match trigger width; flip upward in the narrow palette. */}
                                     <SelectContent
                                         align="start"
                                         className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] bg-background"
                                     >
-                                        {templates.map((template) => {
-                                            const label = `${template.name} · ${template.category_label} (${template.items_count})${template.is_system ? ` · ${t('System')}` : ''}`;
-
-                                            return (
-                                                <SelectItem
-                                                    key={template.id}
-                                                    value={template.id.toString()}
-                                                    className="items-start whitespace-normal"
-                                                    title={label}
-                                                >
-                                                    <span className="text-left leading-snug text-pretty">
-                                                        {label}
+                                        {templates.map((template) => (
+                                            <SelectItem
+                                                key={template.id}
+                                                value={template.id.toString()}
+                                                className="items-start"
+                                            >
+                                                <span className="flex min-w-0 flex-col gap-0.5 text-left">
+                                                    <span className="truncate font-medium">
+                                                        {template.name}
                                                     </span>
-                                                </SelectItem>
-                                            );
-                                        })}
+                                                    <span className="truncate text-xs text-muted-foreground">
+                                                        {
+                                                            template.category_label
+                                                        }{' '}
+                                                        ({template.items_count})
+                                                        {template.is_system
+                                                            ? ` · ${t('System')}`
+                                                            : ''}
+                                                    </span>
+                                                </span>
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                                 <InputError
@@ -120,7 +138,7 @@ export default function QuestionnaireBuilderTemplates({
                                 />
                             </div>
                             <Button
-                                disabled={processing}
+                                disabled={processing || !selectedTemplateId}
                                 className="w-full"
                                 size="sm"
                             >

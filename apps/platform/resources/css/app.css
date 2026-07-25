@@ -8,9 +8,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+    /* UI sans — restrained. Display serif carries brand personality. */
     --font-sans:
         'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display:
+        'Source Serif 4', 'Iowan Old Style', 'Palatino Linotype',
+        'Book Antiqua', Palatino, Georgia, serif;
     --font-data:
         'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
         'Liberation Mono', 'Courier New', monospace;
@@ -48,6 +52,11 @@
     --color-success-muted: var(--success-muted);
     --color-success-border: var(--success-border);
 
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-muted: var(--warning-muted);
+    --color-warning-border: var(--warning-border);
+
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
@@ -68,85 +77,104 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * brand coral #ef5734, slate muted #64748b, charcoal text #333, cool gray surfaces.
+ */
 :root {
     color-scheme: light;
+    /* Clean white surfaces (uk-section-default) */
     --background: oklch(1 0 0);
-    --foreground: oklch(0.278 0.033 256.8);
+    --foreground: oklch(0.321 0 0);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.278 0.033 256.8);
+    --card-foreground: oklch(0.321 0 0);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.278 0.033 256.8);
-    --primary: oklch(0.633 0.207 34.4);
+    --popover-foreground: oklch(0.321 0 0);
+    /* Brand coral — #ef5734 */
+    --primary: oklch(0.655 0.194 34.3);
     --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.98 0.012 75.3);
-    --secondary-foreground: oklch(0.278 0.033 256.8);
-    --muted: oklch(0.97 0.006 264.5);
-    --muted-foreground: oklch(0.554 0.046 257.4);
-    --accent: oklch(0.98 0.012 75.3);
-    --accent-foreground: oklch(0.278 0.033 256.8);
-    --destructive: oklch(0.577 0.245 27.325);
+    /* Cool muted wash — #e5e7eb / slate soft */
+    --secondary: oklch(0.968 0.007 247.9);
+    --secondary-foreground: oklch(0.321 0 0);
+    --muted: oklch(0.928 0.006 264.5);
+    --muted-foreground: oklch(0.554 0.041 257.4);
+    /* Soft coral tint — #fde8e4 */
+    --accent: oklch(0.947 0.024 30.5);
+    --accent-foreground: oklch(0.321 0 0);
+    /* Active brand shade — #de3812 */
+    --destructive: oklch(0.593 0.207 33.4);
     --destructive-foreground: oklch(1 0 0);
-    --success: oklch(0.52 0.13 155);
-    --success-foreground: oklch(0.38 0.11 155);
-    --success-muted: oklch(0.52 0.13 155 / 0.08);
-    --success-border: oklch(0.52 0.13 155 / 0.28);
-    --border: oklch(0.928 0.006 264.5);
-    --input: oklch(0.928 0.006 264.5);
-    --ring: oklch(0.633 0.207 34.4);
-    --chart-1: oklch(0.633 0.207 34.4);
-    --chart-2: oklch(0.554 0.046 257.4);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.75rem;
-    --sidebar: oklch(1 0 0);
-    --sidebar-foreground: oklch(0.278 0.033 256.8);
-    --sidebar-primary: oklch(0.633 0.207 34.4);
+    --success: oklch(0.5 0.11 155);
+    --success-foreground: oklch(0.35 0.09 155);
+    --success-muted: oklch(0.5 0.11 155 / 0.08);
+    --success-border: oklch(0.5 0.11 155 / 0.28);
+    --warning: oklch(0.867 0.167 99);
+    --warning-foreground: oklch(0.45 0.1 75);
+    --warning-muted: oklch(0.867 0.167 99 / 0.12);
+    --warning-border: oklch(0.867 0.167 99 / 0.35);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.655 0.194 34.3);
+    /* Chart story: coral → slate → sage → gold → charcoal */
+    --chart-1: oklch(0.655 0.194 34.3);
+    --chart-2: oklch(0.554 0.041 257.4);
+    --chart-3: oklch(0.55 0.1 155);
+    --chart-4: oklch(0.867 0.167 99);
+    --chart-5: oklch(0.252 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.968 0.007 247.9);
+    --sidebar-foreground: oklch(0.321 0 0);
+    --sidebar-primary: oklch(0.655 0.194 34.3);
     --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.98 0.012 75.3);
-    --sidebar-accent-foreground: oklch(0.278 0.033 256.8);
-    --sidebar-border: oklch(0.928 0.006 264.5);
-    --sidebar-ring: oklch(0.633 0.207 34.4);
+    --sidebar-accent: oklch(0.928 0.006 264.5);
+    --sidebar-accent-foreground: oklch(0.321 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.655 0.194 34.3);
 }
 
 .dark {
     color-scheme: dark;
-    --background: oklch(0.18 0.02 260);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.22 0.02 260);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.22 0.02 260);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.68 0.19 34.4);
+    /* Deep charcoal night — matches marketing secondary #222 */
+    --background: oklch(0.2 0.01 260);
+    --foreground: oklch(0.97 0.005 90);
+    --card: oklch(0.24 0.012 260);
+    --card-foreground: oklch(0.97 0.005 90);
+    --popover: oklch(0.24 0.012 260);
+    --popover-foreground: oklch(0.97 0.005 90);
+    /* Same brand coral for dark mode recognition */
+    --primary: oklch(0.655 0.194 34.3);
     --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.28 0.02 260);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.28 0.02 260);
-    --muted-foreground: oklch(0.708 0.03 260);
-    --accent: oklch(0.28 0.02 260);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.985 0 0);
-    --success: oklch(0.72 0.12 155);
-    --success-foreground: oklch(0.86 0.08 155);
-    --success-muted: oklch(0.72 0.12 155 / 0.12);
-    --success-border: oklch(0.72 0.12 155 / 0.35);
-    --border: oklch(0.32 0.02 260);
-    --input: oklch(0.32 0.02 260);
-    --ring: oklch(0.68 0.19 34.4);
-    --chart-1: oklch(0.68 0.19 34.4);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.16 0.02 260);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.68 0.19 34.4);
+    --secondary: oklch(0.3 0.015 260);
+    --secondary-foreground: oklch(0.97 0.005 90);
+    --muted: oklch(0.3 0.015 260);
+    --muted-foreground: oklch(0.72 0.03 257);
+    --accent: oklch(0.32 0.04 34);
+    --accent-foreground: oklch(0.97 0.005 90);
+    --destructive: oklch(0.593 0.207 33.4);
+    --destructive-foreground: oklch(1 0 0);
+    --success: oklch(0.7 0.11 155);
+    --success-foreground: oklch(0.86 0.07 155);
+    --success-muted: oklch(0.7 0.11 155 / 0.12);
+    --success-border: oklch(0.7 0.11 155 / 0.35);
+    --warning: oklch(0.867 0.167 99);
+    --warning-foreground: oklch(0.92 0.08 95);
+    --warning-muted: oklch(0.867 0.167 99 / 0.12);
+    --warning-border: oklch(0.867 0.167 99 / 0.35);
+    --border: oklch(0.35 0.015 260);
+    --input: oklch(0.35 0.015 260);
+    --ring: oklch(0.655 0.194 34.3);
+    --chart-1: oklch(0.655 0.194 34.3);
+    --chart-2: oklch(0.7 0.05 257);
+    --chart-3: oklch(0.7 0.11 155);
+    --chart-4: oklch(0.867 0.167 99);
+    --chart-5: oklch(0.75 0.02 260);
+    --sidebar: oklch(0.18 0.012 260);
+    --sidebar-foreground: oklch(0.97 0.005 90);
+    --sidebar-primary: oklch(0.655 0.194 34.3);
     --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.28 0.02 260);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.32 0.02 260);
-    --sidebar-ring: oklch(0.68 0.19 34.4);
+    --sidebar-accent: oklch(0.3 0.015 260);
+    --sidebar-accent-foreground: oklch(0.97 0.005 90);
+    --sidebar-border: oklch(0.35 0.015 260);
+    --sidebar-ring: oklch(0.655 0.194 34.3);
 }
 
 @layer base {
@@ -156,6 +184,20 @@
 
     body {
         @apply bg-background font-sans text-foreground;
+    }
+
+    /*
+     * #main-content is focused after Inertia navigations for keyboard users.
+     * Suppress the browser focus ring on that large landmark — it reads as a
+     * spurious blue border around the whole page.
+     */
+    #main-content:focus {
+        outline: none;
+    }
+
+    /* Display face for page heroes and marketing moments — used with restraint. */
+    .font-display {
+        font-family: var(--font-display);
     }
 
     /* Utility/data typography for timestamps, counters, and document metadata. */

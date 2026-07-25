@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/questionnaire-item-type-registry';
 import type { BuilderSaveStatus } from '@/features/document-requests/staff/builder/use-questionnaire-builder-actions';
 import type {
@@ -55,6 +56,36 @@ export default function QuestionnaireBuilderSettings({
         setType(documentRequest?.type ?? 'file');
         setError(null);
     }, [documentRequest]);
+
+    const isDirty = useMemo(() => {
+        if (!documentRequest) {
+            return false;
+        }
+
+        const savedTitle = documentRequest.title.trim();
+        const savedInstructions = documentRequest.instructions?.trim() ?? '';
+
+        return (
+            title.trim() !== savedTitle ||
+            instructions.trim() !== savedInstructions
+        );
+    }, [documentRequest, title, instructions]);
+
+    useEffect(() => {
+        if (!isDirty) {
+            return;
+        }
+
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDirty]);
 
     if (!documentRequest) {
         return (
@@ -178,14 +209,13 @@ export default function QuestionnaireBuilderSettings({
                 <Label htmlFor={`builder-instructions-${documentRequest.id}`}>
                     {t('Instructions')}
                 </Label>
-                <textarea
+                <Textarea
                     id={`builder-instructions-${documentRequest.id}`}
                     rows={4}
                     value={instructions}
                     disabled={!canEdit}
                     onChange={(event) => setInstructions(event.target.value)}
                     onBlur={blurSave}
-                    className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
                     placeholder={t('Optional help text shown to the client…')}
                 />
             </div>

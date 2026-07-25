@@ -27,7 +27,7 @@ export default function IndexPagination<T>({
 }) {
     const { t } = useTranslation();
 
-    if (paginator.last_page <= 1) {
+    if (paginator.total === 0) {
         return null;
     }
 
@@ -39,101 +39,124 @@ export default function IndexPagination<T>({
     const pages = visiblePages(paginator.current_page, paginator.last_page);
     const onFirst = paginator.current_page <= 1;
     const onLast = paginator.current_page >= paginator.last_page;
+    const showPageLinks = paginator.last_page > 1 && paginator.path !== '';
+
+    const rangeText =
+        paginator.from !== null && paginator.to !== null
+            ? t('Showing :from–:to of :total', {
+                  from: paginator.from,
+                  to: paginator.to,
+                  total: paginator.total,
+              })
+            : t(':total results', { total: paginator.total });
 
     return (
-        <Pagination className="mt-4">
-            <PaginationContent>
-                <PaginationItem>
-                    {prevUrl && !onFirst ? (
-                        <Link
-                            href={prevUrl}
-                            preserveState
-                            preserveScroll
-                            aria-label={t('Go to previous page')}
-                            className={cn(
-                                buttonVariants({
-                                    variant: 'ghost',
-                                    size: 'default',
-                                }),
-                                'gap-1 px-2.5 sm:pl-2.5',
-                            )}
-                        >
-                            <ChevronLeftIcon />
-                            <span className="hidden sm:block">
-                                {t('Previous')}
-                            </span>
-                        </Link>
-                    ) : (
-                        <span
-                            aria-disabled
-                            className={cn(
-                                buttonVariants({
-                                    variant: 'ghost',
-                                    size: 'default',
-                                }),
-                                'pointer-events-none gap-1 px-2.5 opacity-50 sm:pl-2.5',
-                            )}
-                        >
-                            <ChevronLeftIcon />
-                            <span className="hidden sm:block">
-                                {t('Previous')}
-                            </span>
-                        </span>
-                    )}
-                </PaginationItem>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">{rangeText}</p>
 
-                {pages.map((page) =>
-                    page === 'ellipsis-start' || page === 'ellipsis-end' ? (
-                        <PaginationItem key={page}>
-                            <PaginationEllipsis />
+            {showPageLinks ? (
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            {prevUrl && !onFirst ? (
+                                <Link
+                                    href={prevUrl}
+                                    preserveState
+                                    preserveScroll
+                                    aria-label={t('Go to previous page')}
+                                    className={cn(
+                                        buttonVariants({
+                                            variant: 'ghost',
+                                            size: 'default',
+                                        }),
+                                        'gap-1 px-2.5 sm:pl-2.5',
+                                    )}
+                                >
+                                    <ChevronLeftIcon />
+                                    <span className="hidden sm:block">
+                                        {t('Previous')}
+                                    </span>
+                                </Link>
+                            ) : (
+                                <span
+                                    aria-disabled
+                                    className={cn(
+                                        buttonVariants({
+                                            variant: 'ghost',
+                                            size: 'default',
+                                        }),
+                                        'pointer-events-none gap-1 px-2.5 opacity-50 sm:pl-2.5',
+                                    )}
+                                >
+                                    <ChevronLeftIcon />
+                                    <span className="hidden sm:block">
+                                        {t('Previous')}
+                                    </span>
+                                </span>
+                            )}
                         </PaginationItem>
-                    ) : (
-                        <PaginationItem key={page}>
-                            <PageNumberLink
-                                page={page}
-                                url={urlForPage(pageLinks, page)}
-                                isActive={page === paginator.current_page}
-                            />
-                        </PaginationItem>
-                    ),
-                )}
 
-                <PaginationItem>
-                    {nextUrl && !onLast ? (
-                        <Link
-                            href={nextUrl}
-                            preserveState
-                            preserveScroll
-                            aria-label={t('Go to next page')}
-                            className={cn(
-                                buttonVariants({
-                                    variant: 'ghost',
-                                    size: 'default',
-                                }),
-                                'gap-1 px-2.5 sm:pr-2.5',
+                        {pages.map((page) =>
+                            page === 'ellipsis-start' ||
+                            page === 'ellipsis-end' ? (
+                                <PaginationItem key={page}>
+                                    <PaginationEllipsis />
+                                </PaginationItem>
+                            ) : (
+                                <PaginationItem key={page}>
+                                    <PageNumberLink
+                                        page={page}
+                                        url={urlForPage(pageLinks, page)}
+                                        isActive={
+                                            page === paginator.current_page
+                                        }
+                                    />
+                                </PaginationItem>
+                            ),
+                        )}
+
+                        <PaginationItem>
+                            {nextUrl && !onLast ? (
+                                <Link
+                                    href={nextUrl}
+                                    preserveState
+                                    preserveScroll
+                                    aria-label={t('Go to next page')}
+                                    className={cn(
+                                        buttonVariants({
+                                            variant: 'ghost',
+                                            size: 'default',
+                                        }),
+                                        'gap-1 px-2.5 sm:pr-2.5',
+                                    )}
+                                >
+                                    <span className="hidden sm:block">
+                                        {t('Next')}
+                                    </span>
+                                    <ChevronRightIcon />
+                                </Link>
+                            ) : (
+                                <span
+                                    aria-disabled
+                                    className={cn(
+                                        buttonVariants({
+                                            variant: 'ghost',
+                                            size: 'default',
+                                        }),
+                                        'pointer-events-none gap-1 px-2.5 opacity-50 sm:pr-2.5',
+                                    )}
+                                >
+                                    <span className="hidden sm:block">
+                                        {t('Next')}
+                                    </span>
+                                    <ChevronRightIcon />
+                                </span>
                             )}
-                        >
-                            <span className="hidden sm:block">{t('Next')}</span>
-                            <ChevronRightIcon />
-                        </Link>
-                    ) : (
-                        <span
-                            aria-disabled
-                            className={cn(
-                                buttonVariants({
-                                    variant: 'ghost',
-                                    size: 'default',
-                                }),
-                                'pointer-events-none gap-1 px-2.5 opacity-50 sm:pr-2.5',
-                            )}
-                        >
-                            <span className="hidden sm:block">{t('Next')}</span>
-                            <ChevronRightIcon />
-                        </span>
-                    )}
-                </PaginationItem>
-            </PaginationContent>
-        </Pagination>
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+            ) : null}
+        </div>
     );
 }
 

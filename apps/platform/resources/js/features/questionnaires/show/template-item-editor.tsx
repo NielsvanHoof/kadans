@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
 import QuestionnaireItemTypeSelect from '@/features/document-requests/questionnaire-item-type-select';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
@@ -226,11 +227,10 @@ function ItemFields({
             </div>
             <div className="grid gap-2">
                 <Label>{t('Instructions (optional)')}</Label>
-                <textarea
+                <Textarea
                     name="instructions"
                     rows={2}
                     defaultValue={defaults.instructions ?? ''}
-                    className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 />
                 <InputError message={errors.instructions} />
             </div>

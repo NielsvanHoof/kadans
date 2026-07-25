@@ -5,6 +5,7 @@ import PortalProgressOverview from '@/features/portal/portal-progress-overview';
 import type { PortalDossier } from '@/features/portal/types';
 import { useTranslation } from '@/hooks/use-translation';
 import PortalShell from '@/layouts/portal/portal-shell';
+import { formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Client portal dossier page — magic-link access, no staff layout.
@@ -29,7 +30,7 @@ export default function PortalShow({
 
     const meta = dossier.expires_at
         ? t('Access expires :date', {
-              date: new Date(dossier.expires_at).toLocaleString(locale),
+              date: formatDateTime(dossier.expires_at, locale),
           })
         : undefined;
 
@@ -51,6 +52,14 @@ export default function PortalShow({
                     </StatusMessage>
                 )}
 
+                {dossier.status !== 'completed' ? (
+                    <p className="rounded-xl border border-border/70 bg-card px-4 py-3 text-base text-pretty text-muted-foreground shadow-xs">
+                        {t(
+                            'Your answers are saved as you go. You can close this page and return to your link later.',
+                        )}
+                    </p>
+                ) : null}
+
                 <PortalProgressOverview
                     dossier={dossier}
                     firmName={firm.name}
@@ -64,7 +73,7 @@ export default function PortalShow({
                     }
                 />
 
-                <p className="text-center text-xs text-muted-foreground text-pretty">
+                <p className="text-center text-sm text-pretty text-muted-foreground">
                     {t(
                         'This is a secure upload page for :firm. Do not share this link.',
                         { firm: firm.name },

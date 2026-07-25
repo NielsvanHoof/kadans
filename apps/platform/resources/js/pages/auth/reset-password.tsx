@@ -1,5 +1,5 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,7 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 readOnly
                             />
                             <InputError
+                                id="email-error"
                                 message={errors.email}
                                 className="mt-2"
                             />
@@ -60,8 +61,15 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 autoFocus
                                 placeholder={t('Password')}
                                 passwordrules={passwordRules}
+                                {...fieldErrorAriaProps(
+                                    'password-error',
+                                    errors.password,
+                                )}
                             />
-                            <InputError message={errors.password} />
+                            <InputError
+                                id="password-error"
+                                message={errors.password}
+                            />
                         </div>
 
                         <div className="grid gap-2">
@@ -75,8 +83,13 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 className="mt-1 block w-full"
                                 placeholder={t('Confirm password')}
                                 passwordrules={passwordRules}
+                                {...fieldErrorAriaProps(
+                                    'password_confirmation-error',
+                                    errors.password_confirmation,
+                                )}
                             />
                             <InputError
+                                id="password_confirmation-error"
                                 message={errors.password_confirmation}
                                 className="mt-2"
                             />

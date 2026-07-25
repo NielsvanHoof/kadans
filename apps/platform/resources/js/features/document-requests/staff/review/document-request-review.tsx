@@ -14,7 +14,9 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import type { DocumentRequest } from '@/features/document-requests/types';
+import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
@@ -23,12 +25,11 @@ import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options'
 export default function DocumentRequestReview({
     dossierId,
     documentRequest,
-    canReview,
 }: {
     dossierId: number;
     documentRequest: DocumentRequest;
-    canReview: boolean;
 }) {
+    const { canReview } = useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
 
@@ -148,12 +149,11 @@ export default function DocumentRequestReview({
                                     >
                                         {t('Feedback for the client')}
                                     </Label>
-                                    <textarea
+                                    <Textarea
                                         id={`rejection-${documentRequest.id}`}
                                         name="rejection_reason"
                                         rows={4}
                                         required
-                                        className="rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                         placeholder={t(
                                             'The document is missing page 2. Please upload the complete statement.',
                                         )}

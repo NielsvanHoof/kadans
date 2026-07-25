@@ -1,4 +1,5 @@
 import EmptyState from '@/components/empty-state';
+import IndexList from '@/components/index-list';
 import {
     Card,
     CardContent,
@@ -42,7 +43,7 @@ export default function ArchivedClientsCard({
                         )}
                     />
                 ) : (
-                    <div className="divide-y rounded-md border">
+                    <IndexList>
                         {clients.data.map((client) => (
                             <div
                                 key={client.id}
@@ -70,11 +71,14 @@ export default function ArchivedClientsCard({
                                 </div>
 
                                 {canRestore ? (
-                                    <RestoreClientButton clientId={client.id} />
+                                    <RestoreClientButton
+                                        clientId={client.id}
+                                        clientName={client.name}
+                                    />
                                 ) : null}
                             </div>
                         ))}
-                    </div>
+                    </IndexList>
                 )}
             </CardContent>
         </Card>

@@ -16,14 +16,20 @@ const ALL_VALUE = '__all__';
 
 /**
  * Generic filter + sort toolbar driven by controller-provided indexQuery config.
+ * Stays interactive while results reload — pending UI lives on IndexQueryResults.
  */
 export default function IndexQueryToolbar({
     config,
+    only,
 }: {
     config: IndexQueryConfig;
+    /** Partial-reload keys for filter/sort visits (page-specific). */
+    only?: string[];
 }) {
     const { t } = useTranslation();
-    const { filters, sort, setFilters, setSort } = useIndexQuery();
+    const { filters, sort, setFilters, setSort } = useIndexQuery({
+        only,
+    });
 
     // Local draft for search inputs so typing doesn't fire a visit on every keystroke.
     const [drafts, setDrafts] = useState<Record<string, string>>(() => {

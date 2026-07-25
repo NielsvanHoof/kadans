@@ -1,9 +1,14 @@
 import { router, usePage } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type QueryValue = string | number | undefined | null;
 
 type FilterBag = Record<string, QueryValue>;
+
+type UseIndexQueryOptions = {
+    /** Partial-reload prop keys for filter/sort visits (page-specific). */
+    only?: string[];
+};
 
 /**
  * Thin helper for Spatie query-builder index pages.
@@ -12,8 +17,10 @@ type FilterBag = Record<string, QueryValue>;
  * Visits use router.get so Inertia serializes nested filter bags as filter[q]=…
  * Page params are omitted so filter/sort always restart at page 1.
  */
-export function useIndexQuery() {
+export function useIndexQuery(options: UseIndexQueryOptions = {}) {
+    const { only } = options;
     const page = usePage();
+    const [isPending, setIsPending] = useState(false);
     const filters = useMemo(
         () => normalizeFilters(page.props.filters),
         [page.props.filters],
@@ -22,6 +29,29 @@ export function useIndexQuery() {
 
     // Pathname only — full query state is sent via `data`.
     const path = page.url.split('?')[0] ?? page.url;
+
+    useEffect(() => {
+        function visitPathname(visit: { url: URL }): string {
+            return visit.url.pathname;
+        }
+
+        const removeStart = router.on('start', (event) => {
+            if (visitPathname(event.detail.visit) === path) {
+                setIsPending(true);
+            }
+        });
+
+        const removeFinish = router.on('finish', (event) => {
+            if (visitPathname(event.detail.visit) === path) {
+                setIsPending(false);
+            }
+        });
+
+        return () => {
+            removeStart();
+            removeFinish();
+        };
+    }, [path]);
 
     function visit(nextFilters: FilterBag, nextSort: string | null): void {
         const data: {
@@ -43,6 +73,7 @@ export function useIndexQuery() {
             preserveState: true,
             preserveScroll: true,
             replace: true,
+            ...(only !== undefined && only.length > 0 ? { only } : {}),
         });
     }
 
@@ -59,6 +90,7 @@ export function useIndexQuery() {
         sort,
         setFilters,
         setSort,
+        isPending,
     };
 }
 

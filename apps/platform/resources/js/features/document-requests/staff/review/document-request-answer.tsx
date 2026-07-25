@@ -8,12 +8,9 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type {
-    DocumentRequest,
-    QuestionnaireItemType,
-} from '@/features/document-requests/types';
+import { AnswerTextControl } from '@/features/document-requests/controls/answer-text-control';
+import type { DocumentRequest } from '@/features/document-requests/types';
 import { storesAnswerText } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -85,7 +82,7 @@ function StaffTextAnswerForm({
             {({ errors, processing }) => (
                 <>
                     <Label htmlFor={fieldId}>{t('Client answer')}</Label>
-                    <StaffAnswerTextControl
+                    <AnswerTextControl
                         id={fieldId}
                         type={documentRequest.type}
                         defaultValue={documentRequest.answer_text ?? ''}
@@ -97,70 +94,6 @@ function StaffTextAnswerForm({
                 </>
             )}
         </Form>
-    );
-}
-
-function StaffAnswerTextControl({
-    id,
-    type,
-    defaultValue,
-}: {
-    id: string;
-    type: QuestionnaireItemType;
-    defaultValue: string;
-}) {
-    const controlClassName =
-        'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
-
-    if (type === 'date') {
-        return (
-            <Input
-                id={id}
-                name="answer_text"
-                type="date"
-                required
-                defaultValue={defaultValue}
-                autoComplete="off"
-            />
-        );
-    }
-
-    if (type === 'number') {
-        return (
-            <Input
-                id={id}
-                name="answer_text"
-                type="number"
-                required
-                defaultValue={defaultValue}
-                inputMode="decimal"
-                autoComplete="off"
-            />
-        );
-    }
-
-    if (type === 'textarea') {
-        return (
-            <textarea
-                id={id}
-                name="answer_text"
-                rows={5}
-                required
-                defaultValue={defaultValue}
-                className={controlClassName}
-            />
-        );
-    }
-
-    return (
-        <Input
-            id={id}
-            name="answer_text"
-            type="text"
-            required
-            defaultValue={defaultValue}
-            autoComplete="off"
-        />
     );
 }
 

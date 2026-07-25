@@ -2,6 +2,7 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Archive, Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryResults from '@/components/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
 import DossiersListCard from '@/features/dossiers/list/dossiers-list-card';
@@ -77,9 +78,20 @@ export default function DossierIndex({
                     </div>
                 </div>
 
-                <IndexQueryToolbar config={indexQuery} />
-                <DossiersListCard dossiers={dossiers} />
-                <IndexPagination paginator={dossiers} />
+                <IndexQueryToolbar
+                    config={indexQuery}
+                    only={[
+                        'dossiers',
+                        'filters',
+                        'sort',
+                        'indexQuery',
+                        'flash',
+                    ]}
+                />
+                <IndexQueryResults className="space-y-6">
+                    <DossiersListCard dossiers={dossiers} />
+                    <IndexPagination paginator={dossiers} />
+                </IndexQueryResults>
             </div>
         </>
     );

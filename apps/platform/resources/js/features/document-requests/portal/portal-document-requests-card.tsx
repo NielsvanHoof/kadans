@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
 import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
-import { storesAnswerText } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
@@ -23,17 +22,17 @@ export default function PortalDocumentRequestsCard({
     const { t } = useTranslation();
 
     return (
-        <section className="space-y-3" aria-label={t('Questionnaire')}>
-            <div className="space-y-1">
+        <section className="space-y-4" aria-label={t('Questionnaire')}>
+            <div className="space-y-2">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 className="text-sm font-semibold tracking-tight">
+                    <h2 className="font-display text-xl font-semibold tracking-tight">
                         {t('Your form')}
                     </h2>
-                    <p className="font-data text-xs text-muted-foreground tabular-nums">
+                    <p className="font-data text-sm text-muted-foreground tabular-nums">
                         {t(':count fields', { count: documentRequests.length })}
                     </p>
                 </div>
-                <p className="text-xs text-muted-foreground text-pretty">
+                <p className="text-base text-pretty text-muted-foreground">
                     {t(
                         'Complete each item. Submitted items stay locked while they are reviewed.',
                     )}
@@ -49,7 +48,7 @@ export default function PortalDocumentRequestsCard({
                     )}
                 />
             ) : (
-                <ol className="space-y-3">
+                <ol className="space-y-4">
                     {documentRequests.map((documentRequest, index) => {
                         const isNext =
                             documentRequest.id === nextIncompleteRequestId;
@@ -62,19 +61,19 @@ export default function PortalDocumentRequestsCard({
                                 key={documentRequest.id}
                                 id={`request-${documentRequest.id}`}
                                 className={cn(
-                                    'scroll-mt-6 list-none rounded-xl border bg-card shadow-xs transition-colors duration-150 motion-reduce:transition-none',
+                                    'scroll-mt-6 list-none rounded-2xl border bg-card shadow-xs transition-colors duration-150 motion-reduce:transition-none',
                                     isNext
                                         ? 'border-primary ring-[3px] ring-ring/40'
                                         : 'border-border/70',
                                 )}
                             >
-                                <div className="flex items-start gap-2 px-3 py-2.5 md:px-3.5">
-                                    <span className="mt-0.5 w-5 shrink-0 font-data text-xs text-muted-foreground tabular-nums">
+                                <div className="flex items-start gap-3 px-4 py-3.5 md:px-5">
+                                    <span className="mt-1 w-6 shrink-0 font-data text-sm text-muted-foreground tabular-nums">
                                         {index + 1}
                                     </span>
-                                    <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="min-w-0 flex-1 space-y-1.5">
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <h3 className="min-w-0 flex-1 text-sm font-medium text-pretty">
+                                            <h3 className="min-w-0 flex-1 text-lg font-medium text-pretty">
                                                 {documentRequest.title}
                                             </h3>
                                             <Badge
@@ -88,14 +87,14 @@ export default function PortalDocumentRequestsCard({
                                             />
                                         </div>
                                         {documentRequest.instructions ? (
-                                            <p className="text-xs text-muted-foreground text-pretty">
+                                            <p className="text-base text-pretty text-muted-foreground">
                                                 {documentRequest.instructions}
                                             </p>
                                         ) : null}
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 border-t border-border/60 px-3 py-3 md:px-3.5">
+                                <div className="space-y-4 border-t border-border/60 px-4 py-4 md:px-5">
                                     {documentRequest.status === 'rejected' &&
                                     documentRequest.rejection_reason ? (
                                         <Alert variant="destructive">
@@ -164,7 +163,7 @@ function FieldFooter({
 
     if (documentRequest.status === 'submitted') {
         return (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
                 {t('Submitted and waiting for review.')}
             </p>
         );
@@ -172,7 +171,7 @@ function FieldFooter({
 
     if (documentRequest.status === 'accepted') {
         return (
-            <p className="text-xs text-success-foreground">
+            <p className="text-sm text-success-foreground">
                 {t('Approved by :firm.', { firm: firmName })}
             </p>
         );
@@ -201,46 +200,4 @@ function PortalRequestTypeContent({
             canRespond={canRespond}
         />
     );
-}
-
-/**
- * Read-only answer preview when the client can no longer edit this item.
- */
-export function PortalSubmittedAnswerPreview({
-    documentRequest,
-}: {
-    documentRequest: PortalDocumentRequest;
-}) {
-    const { t } = useTranslation();
-
-    if (storesAnswerText(documentRequest.type)) {
-        if (!documentRequest.answer_text) {
-            return null;
-        }
-
-        return (
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs text-muted-foreground">{t('Your answer')}</p>
-                <p className="mt-0.5 font-medium whitespace-pre-wrap">
-                    {documentRequest.answer_text}
-                </p>
-            </div>
-        );
-    }
-
-    if (
-        documentRequest.type === 'boolean' &&
-        documentRequest.answer_boolean !== null
-    ) {
-        return (
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs text-muted-foreground">{t('Your answer')}</p>
-                <p className="mt-0.5 font-medium">
-                    {documentRequest.answer_boolean ? t('Yes') : t('No')}
-                </p>
-            </div>
-        );
-    }
-
-    return null;
 }

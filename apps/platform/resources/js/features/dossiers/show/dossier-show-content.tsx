@@ -1,33 +1,41 @@
 import { Link } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
+import { ArrowRight, Mail, Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import DossierFollowUpCard from '@/features/dossiers/follow-up/dossier-follow-up-card';
 import {
     DossierPermissionsProvider,
-    useDossierPermissions,
+    useDossierCapabilities,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
-import ArchiveDossierButton from '@/features/dossiers/show/archive-dossier-button';
+import DossierActionsMenu from '@/features/dossiers/show/dossier-actions-menu';
 import DossierWorkflowLinks from '@/features/dossiers/show/dossier-workflow-links';
 import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { Dossier } from '@/features/dossiers/types';
 import ClientAccessCard from '@/features/portal/client-access-card';
 import PortalLinkBanner from '@/features/portal/portal-link-banner';
+import type { Firm } from '@/features/workspaces/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { edit as editDossier } from '@/routes/workspaces/dossiers';
+import {
+    builder as builderDossier,
+    review as reviewDossier,
+} from '@/routes/workspaces/dossiers';
 
 type DossierShowContentProps = {
     dossier: Dossier;
     accessGrantToken?: string | null;
     accessGrantPortalUrl?: string | null;
     canManage: boolean;
-    canEdit: boolean;
+    canEditDetails: boolean;
     canSendReminder: boolean;
     canReview: boolean;
     canDownload: boolean;
 };
+
+type PrimaryAction =
+    | { kind: 'link'; label: string; href: string }
+    | { kind: 'anchor'; label: string; href: string };
 
 /**
  * Staff dossier overview hub — follow-up, invite, and links out to builder/review.
@@ -37,46 +45,107 @@ export default function DossierShowContent({
     accessGrantToken = null,
     accessGrantPortalUrl = null,
     canManage,
-    canEdit,
+    canEditDetails,
     canSendReminder,
     canReview,
     canDownload,
 }: DossierShowContentProps) {
+    const hasFormItems = dossier.document_requests.length > 0;
+
     return (
         <DossierPermissionsProvider
-            value={{ canManage, canReview, canDownload }}
+            canManage={canManage}
+            canReview={canReview}
+            canDownload={canDownload}
+            canEditDetails={canEditDetails}
+            canSendReminder={canSendReminder}
+            dossierStatus={dossier.status}
+            hasFormItems={hasFormItems}
         >
             <DossierShowBody
                 dossier={dossier}
                 accessGrantToken={accessGrantToken}
                 accessGrantPortalUrl={accessGrantPortalUrl}
-                canEdit={canEdit}
-                canSendReminder={canSendReminder}
+                hasFormItems={hasFormItems}
             />
         </DossierPermissionsProvider>
     );
+}
+
+function resolvePrimaryAction(
+    dossier: Dossier,
+    canManage: boolean,
+    canReview: boolean,
+    t: (key: string) => string,
+    routeArgs: { tenant: Firm; dossier: number },
+): PrimaryAction | null {
+    if (!canManage || dossier.status === 'completed') {
+        return null;
+    }
+
+    const hasFormItems = dossier.document_requests.length > 0;
+    const hasReadyForReview = dossier.document_requests.some(
+        (request) => request.status === 'submitted',
+    );
+    const hasValidInvite = dossier.access_grants.some(
+        (grant) => grant.is_valid,
+    );
+
+    if (!hasFormItems) {
+        return {
+            kind: 'link',
+            label: t('Build form'),
+            href: builderDossier(routeArgs).url,
+        };
+    }
+
+    if (hasReadyForReview && canReview) {
+        return {
+            kind: 'link',
+            label: t('Review submissions'),
+            href: reviewDossier(routeArgs).url,
+        };
+    }
+
+    if (!hasValidInvite) {
+        return {
+            kind: 'anchor',
+            label: t('Invite client'),
+            href: '#dossier-invite',
+        };
+    }
+
+    return null;
 }
 
 function DossierShowBody({
     dossier,
     accessGrantToken,
     accessGrantPortalUrl,
-    canEdit,
-    canSendReminder,
+    hasFormItems,
 }: {
     dossier: Dossier;
     accessGrantToken: string | null;
     accessGrantPortalUrl: string | null;
-    canEdit: boolean;
-    canSendReminder: boolean;
+    hasFormItems: boolean;
 }) {
     const { t } = useTranslation();
-    const { canManage } = useDossierPermissions();
+    const { canManage, canReview, canEditDetails, canCreateInvite } =
+        useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
 
-    const canEditStructure = canManage && dossier.status !== 'completed';
-    const hasFormItems = dossier.document_requests.length > 0;
-    const canCreateInvite = canEditStructure && hasFormItems;
+    const routeArgs = {
+        tenant: currentWorkspace,
+        dossier: dossier.id,
+    };
+
+    const primaryAction = resolvePrimaryAction(
+        dossier,
+        canManage,
+        canReview,
+        t,
+        routeArgs,
+    );
 
     return (
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
@@ -85,35 +154,40 @@ function DossierShowBody({
                     level={1}
                     title={dossier.title}
                     description={`${dossier.client.name} · ${dossier.client.email}`}
+                    badge={<DossierStatusBadge status={dossier.status} />}
                 />
                 <div className="flex flex-wrap items-center gap-2">
-                    <DossierStatusBadge status={dossier.status} />
-                    {canEdit ? (
-                        <Button variant="outline" asChild>
-                            <Link
-                                href={editDossier({
-                                    tenant: currentWorkspace,
-                                    dossier: dossier.id,
-                                })}
-                            >
-                                <Pencil aria-hidden="true" />
-                                {t('Edit dossier')}
-                            </Link>
-                        </Button>
+                    {primaryAction ? (
+                        primaryAction.kind === 'link' ? (
+                            <Button asChild>
+                                <Link href={primaryAction.href}>
+                                    {primaryAction.label === t('Build form') ? (
+                                        <Plus aria-hidden />
+                                    ) : (
+                                        <ArrowRight aria-hidden />
+                                    )}
+                                    {primaryAction.label}
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button asChild>
+                                <a href={primaryAction.href}>
+                                    <Mail aria-hidden />
+                                    {primaryAction.label}
+                                </a>
+                            </Button>
+                        )
                     ) : null}
-                    {canManage ? (
-                        <ArchiveDossierButton
-                            dossierId={dossier.id}
-                            dossierTitle={dossier.title}
-                        />
-                    ) : null}
+                    <DossierActionsMenu
+                        dossierId={dossier.id}
+                        dossierTitle={dossier.title}
+                        canEditDetails={canEditDetails}
+                        canManage={canManage}
+                    />
                 </div>
             </div>
 
-            <DossierFollowUpCard
-                dossier={dossier}
-                canSendReminder={canSendReminder}
-            />
+            <DossierFollowUpCard dossier={dossier} />
 
             {accessGrantPortalUrl ? (
                 <PortalLinkBanner

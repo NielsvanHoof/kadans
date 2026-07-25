@@ -3,6 +3,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import ReviewItemsPanel from '@/features/document-requests/staff/review/review-items-panel';
 import { DossierPermissionsProvider } from '@/features/dossiers/permissions/dossier-permissions-context';
 import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card';
@@ -21,6 +23,8 @@ import {
 export default function ReviewDossier({
     dossier,
     can_manage: canManage,
+    can_edit: canEditDetails,
+    can_send_reminder: canSendReminder,
     can_review: canReview,
     can_download: canDownload,
 }: {
@@ -82,7 +86,13 @@ export default function ReviewDossier({
         <>
             <Head title={`${t('Review')} · ${dossier.title}`} />
             <DossierPermissionsProvider
-                value={{ canManage, canReview, canDownload }}
+                canManage={canManage}
+                canReview={canReview}
+                canDownload={canDownload}
+                canEditDetails={canEditDetails}
+                canSendReminder={canSendReminder}
+                dossierStatus={dossier.status}
+                hasFormItems={dossier.document_requests.length > 0}
             >
                 <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -112,10 +122,28 @@ export default function ReviewDossier({
                         <DossierStatusBadge status={dossier.status} />
                     </div>
 
+                    {hasInFlightProcessing && (
+                        <div
+                            className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3"
+                            aria-live="polite"
+                            aria-busy="true"
+                        >
+                            <Spinner className="size-4 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0 flex-1 space-y-2">
+                                <p className="text-sm text-muted-foreground">
+                                    {t(
+                                        'Document analysis is still running. Results will update automatically.',
+                                    )}
+                                </p>
+                                <Skeleton className="h-3 w-full max-w-md" />
+                                <Skeleton className="h-3 w-2/3 max-w-sm" />
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
                         <ReviewItemsPanel
                             dossierId={dossier.id}
-                            dossierStatus={dossier.status}
                             documentRequests={dossier.document_requests}
                         />
                         <DossierWorkflowCard dossier={dossier} />

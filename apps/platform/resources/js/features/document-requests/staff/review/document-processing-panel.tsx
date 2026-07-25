@@ -3,6 +3,7 @@ import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/
 import ErrorState from '@/components/error-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { documentProcessingStatusLabel } from '@/features/document-requests/status/document-processing-status';
 import type {
     DocumentProcessingStatus,
@@ -92,9 +93,13 @@ export default function DocumentProcessingPanel({
 
             {(uploadedDocument.processing_status === 'pending' ||
                 uploadedDocument.processing_status === 'processing') && (
-                <p className="text-muted-foreground">
-                    {t('Analyzing document structure (forms and tables)…')}
-                </p>
+                <div className="space-y-2" aria-live="polite">
+                    <p className="text-muted-foreground">
+                        {t('Analyzing document structure (forms and tables)…')}
+                    </p>
+                    <Skeleton className="h-4 w-full max-w-md" />
+                    <Skeleton className="h-4 w-2/3" />
+                </div>
             )}
         </div>
     );

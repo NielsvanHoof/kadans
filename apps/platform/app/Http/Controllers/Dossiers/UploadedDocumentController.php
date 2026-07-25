@@ -90,16 +90,57 @@ final class UploadedDocumentController extends Controller
             ['original_filename' => $uploadedDocument->original_filename],
         );
 
+        return $this->serveDocument(
+            $uploadedDocument,
+            $resolveDocumentTemporaryUrl,
+            disposition: 'attachment',
+        );
+    }
+
+    /**
+     * Inline file response for in-page PDF/image previews (no download audit).
+     */
+    public function preview(
+        Tenant $tenant,
+        UploadedDocument $uploadedDocument,
+        ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
+    ): RedirectResponse|StreamedResponse {
+        $this->authorize('download', $uploadedDocument);
+
+        return $this->serveDocument(
+            $uploadedDocument,
+            $resolveDocumentTemporaryUrl,
+            disposition: 'inline',
+        );
+    }
+
+    /**
+     * Stream or redirect to the stored file with the given Content-Disposition.
+     */
+    private function serveDocument(
+        UploadedDocument $uploadedDocument,
+        ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
+        string $disposition,
+    ): RedirectResponse|StreamedResponse {
         if ($resolveDocumentTemporaryUrl->supportsTemporaryUrl($uploadedDocument)) {
             $url = $resolveDocumentTemporaryUrl->handle(
                 $uploadedDocument,
                 now()->addMinutes(5),
+                $disposition,
             );
 
             return redirect()->away($url);
         }
 
         // Local/CI disks keep streaming through Laravel (Storage::fake friendly).
+        if ($disposition === 'inline') {
+            return Storage::disk($uploadedDocument->disk)->response(
+                $uploadedDocument->path,
+                $uploadedDocument->original_filename,
+                ['Content-Type' => $uploadedDocument->mime_type],
+            );
+        }
+
         return Storage::disk($uploadedDocument->disk)->download(
             $uploadedDocument->path,
             $uploadedDocument->original_filename,

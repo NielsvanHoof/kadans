@@ -1,4 +1,5 @@
 import EmptyState from '@/components/empty-state';
+import IndexList from '@/components/index-list';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -49,7 +50,7 @@ export default function ArchivedDossiersCard({
                         )}
                     />
                 ) : (
-                    <div className="divide-y rounded-md border">
+                    <IndexList>
                         {dossiers.data.map((dossier) => (
                             <div
                                 key={dossier.id}
@@ -96,7 +97,7 @@ export default function ArchivedDossiersCard({
                                 ) : null}
                             </div>
                         ))}
-                    </div>
+                    </IndexList>
                 )}
             </CardContent>
         </Card>

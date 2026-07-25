@@ -14,7 +14,9 @@ import {
 import type { MediaDocument } from '@/features/media/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+import { fileIconForFilename } from '@/lib/file-icon-for-filename';
 import { formatBytes } from '@/lib/format-bytes';
+import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
@@ -29,7 +31,7 @@ export default function MediaDocumentsCard({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const rows = documents.data;
     const total = documents.total;
 
@@ -53,101 +55,122 @@ export default function MediaDocumentsCard({
                         )}
                     />
                 ) : (
-                    <div className="divide-y rounded-md border">
-                        {rows.map((document) => (
-                            <div
-                                key={document.id}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                            >
-                                <div className="min-w-0 flex-1">
-                                    <p className="font-medium">
-                                        {document.title}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {document.client_name}
-                                        {' · '}
-                                        {document.dossier.title}
-                                        {document.dossier.reference &&
-                                            ` · ${document.dossier.reference}`}
-                                    </p>
-                                    {document.uploaded_document ? (
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            {
-                                                document.uploaded_document
-                                                    .original_filename
-                                            }
-                                            {' · '}
-                                            {formatBytes(
-                                                document.uploaded_document
-                                                    .size_bytes,
-                                            )}
-                                            {' · '}
-                                            {new Date(
-                                                document.uploaded_document
-                                                    .uploaded_at,
-                                            ).toLocaleString()}
-                                        </p>
-                                    ) : (
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            {t('No file uploaded yet')}
-                                        </p>
-                                    )}
-                                </div>
+                    <ul className="divide-y rounded-md border">
+                        {rows.map((document) => {
+                            const filename =
+                                document.uploaded_document?.original_filename ??
+                                '';
+                            const FileIcon = filename
+                                ? fileIconForFilename(filename)
+                                : null;
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="secondary">
-                                        {statusLabel(document.status, t)}
-                                    </Badge>
-
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link
-                                            href={showDossier({
-                                                tenant: currentWorkspace,
-                                                dossier: document.dossier.id,
-                                            })}
-                                        >
-                                            <FolderOpen />
-                                            {t('Dossier')}
-                                        </Link>
-                                    </Button>
-
-                                    {document.uploaded_document &&
-                                        canDownload && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <a
-                                                    href={UploadedDocumentController.download.url(
-                                                        {
-                                                            tenant: currentWorkspace,
-                                                            uploadedDocument:
-                                                                document
-                                                                    .uploaded_document
-                                                                    .id,
-                                                        },
+                            return (
+                                <li
+                                    key={document.id}
+                                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                                >
+                                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                                        {FileIcon ? (
+                                            <FileIcon
+                                                className="mt-0.5 size-5 shrink-0 text-muted-foreground"
+                                                aria-hidden
+                                            />
+                                        ) : null}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-medium">
+                                                {document.title}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {document.client_name}
+                                                {' · '}
+                                                {document.dossier.title}
+                                                {document.dossier.reference &&
+                                                    ` · ${document.dossier.reference}`}
+                                            </p>
+                                            {document.uploaded_document ? (
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    {
+                                                        document
+                                                            .uploaded_document
+                                                            .original_filename
+                                                    }
+                                                    {' · '}
+                                                    {formatBytes(
+                                                        document
+                                                            .uploaded_document
+                                                            .size_bytes,
                                                     )}
+                                                    {' · '}
+                                                    {formatDateTime(
+                                                        document
+                                                            .uploaded_document
+                                                            .uploaded_at,
+                                                        locale,
+                                                    )}
+                                                </p>
+                                            ) : (
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    {t('No file uploaded yet')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Badge variant="secondary">
+                                            {statusLabel(document.status, t)}
+                                        </Badge>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={showDossier({
+                                                    tenant: currentWorkspace,
+                                                    dossier:
+                                                        document.dossier.id,
+                                                })}
+                                            >
+                                                <FolderOpen />
+                                                {t('Dossier')}
+                                            </Link>
+                                        </Button>
+
+                                        {document.uploaded_document &&
+                                            canDownload && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
                                                 >
-                                                    {t('Download')}
-                                                </a>
-                                            </Button>
-                                        )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                                    <a
+                                                        href={UploadedDocumentController.download.url(
+                                                            {
+                                                                tenant: currentWorkspace,
+                                                                uploadedDocument:
+                                                                    document
+                                                                        .uploaded_document
+                                                                        .id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        {t('Download')}
+                                                    </a>
+                                                </Button>
+                                            )}
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
                 )}
             </CardContent>
         </Card>
     );
 }
 
-/**
- * Human-readable labels for document request statuses shown in the media library.
- * Includes changes_requested for forward-compat even though it is not in the
- * current DocumentRequestStatus union.
- */
 function statusLabel(
     status: string,
     t: (key: string, replacements?: Record<string, string | number>) => string,

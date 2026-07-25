@@ -3,7 +3,6 @@ import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppContent } from '@/components/app-shell/app-content';
 import { AppShell } from '@/components/app-shell/app-shell';
-import SkipToContent from '@/components/skip-to-content';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -33,7 +32,6 @@ export default function DossierBuilderLayout({
             variant="header"
             className="h-dvh min-h-0 overflow-hidden pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
         >
-            <SkipToContent />
             {/* Fixed chrome — content below scrolls inside panes, not the page. */}
             <header className="z-20 shrink-0 border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
                 <div className="mx-auto flex h-14 w-full max-w-[100rem] items-center gap-3 px-4 md:px-6">

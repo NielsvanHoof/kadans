@@ -1,12 +1,19 @@
+import { router } from '@inertiajs/react';
+import { Check } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import DocumentRequestReviewController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestReviewController';
 import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
 import DocumentRequestReview from '@/features/document-requests/staff/review/document-request-review';
 import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import type { DocumentRequest } from '@/features/document-requests/types';
-import { useDossierPermissions } from '@/features/dossiers/permissions/dossier-permissions-context';
-import type { DossierStatus } from '@/features/dossiers/types';
+import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 /**
  * Review-stage list: responses, OCR, staff file uploads, and review actions.
@@ -14,17 +21,12 @@ import { useTranslation } from '@/hooks/use-translation';
  */
 export default function ReviewItemsPanel({
     dossierId,
-    dossierStatus,
     documentRequests,
 }: {
     dossierId: number;
-    dossierStatus: DossierStatus;
     documentRequests: DocumentRequest[];
 }) {
     const { t } = useTranslation();
-    const { canManage, canReview } = useDossierPermissions();
-    const reviewAllowed = canReview && dossierStatus !== 'completed';
-    const staffUploadAllowed = canManage && dossierStatus !== 'completed';
 
     const ready = documentRequests.filter(
         (request) => request.status === 'submitted',
@@ -68,9 +70,7 @@ export default function ReviewItemsPanel({
                         emptyLabel={t('No items ready to review.')}
                         items={ready}
                         dossierId={dossierId}
-                        dossierStatus={dossierStatus}
-                        canReview={reviewAllowed}
-                        canUpload={staffUploadAllowed}
+                        bulkApproveEnabled
                     />
                     <ReviewGroup
                         title={t('Waiting on client (:count)', {
@@ -79,9 +79,6 @@ export default function ReviewItemsPanel({
                         emptyLabel={t('Nothing waiting on the client.')}
                         items={waiting}
                         dossierId={dossierId}
-                        dossierStatus={dossierStatus}
-                        canReview={reviewAllowed}
-                        canUpload={staffUploadAllowed}
                     />
                     <ReviewGroup
                         title={t('Approved (:count)', {
@@ -90,9 +87,6 @@ export default function ReviewItemsPanel({
                         emptyLabel={t('No approved items yet.')}
                         items={approved}
                         dossierId={dossierId}
-                        dossierStatus={dossierStatus}
-                        canReview={reviewAllowed}
-                        canUpload={staffUploadAllowed}
                     />
                 </>
             )}
@@ -105,23 +99,126 @@ function ReviewGroup({
     emptyLabel,
     items,
     dossierId,
-    dossierStatus,
-    canReview,
-    canUpload,
+    bulkApproveEnabled = false,
 }: {
     title: string;
     emptyLabel: string;
     items: DocumentRequest[];
     dossierId: number;
-    dossierStatus: DossierStatus;
-    canReview: boolean;
-    canUpload: boolean;
+    bulkApproveEnabled?: boolean;
 }) {
     const { t } = useTranslation();
+    const { canReview } = useDossierCapabilities();
+    const currentWorkspace = useCurrentWorkspace();
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [bulkProcessing, setBulkProcessing] = useState(false);
+    const [focusedId, setFocusedId] = useState<number | null>(null);
+
+    const showBulk = bulkApproveEnabled && canReview && items.length > 0;
+
+    const approveOne = useCallback(
+        (documentRequestId: number): Promise<void> => {
+            const url = DocumentRequestReviewController.store.url({
+                tenant: currentWorkspace,
+                dossier: dossierId,
+                documentRequest: documentRequestId,
+            });
+
+            return new Promise((resolve, reject) => {
+                router.post(
+                    url,
+                    { decision: 'accepted' },
+                    {
+                        ...inlineDossierActionOptions,
+                        preserveScroll: true,
+                        onSuccess: () => resolve(),
+                        onError: () => reject(new Error('Approve failed')),
+                    },
+                );
+            });
+        },
+        [currentWorkspace, dossierId],
+    );
+
+    const approveSelected = useCallback(async () => {
+        if (selectedIds.size === 0) {
+            return;
+        }
+
+        setBulkProcessing(true);
+
+        try {
+            for (const id of selectedIds) {
+                await approveOne(id);
+            }
+            setSelectedIds(new Set());
+        } finally {
+            setBulkProcessing(false);
+        }
+    }, [approveOne, selectedIds]);
+
+    useEffect(() => {
+        if (!showBulk) {
+            return;
+        }
+
+        function handleKeyDown(event: KeyboardEvent): void {
+            const target = event.target as HTMLElement | null;
+            if (
+                target &&
+                (target.tagName === 'INPUT' ||
+                    target.tagName === 'TEXTAREA' ||
+                    target.isContentEditable)
+            ) {
+                return;
+            }
+
+            if (
+                event.key !== 'a' ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.altKey
+            ) {
+                return;
+            }
+
+            const readyItem =
+                items.find((item) => item.id === focusedId) ?? items[0];
+
+            if (!readyItem) {
+                return;
+            }
+
+            event.preventDefault();
+            void approveOne(readyItem.id);
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [approveOne, focusedId, items, showBulk]);
+
+    const allSelected =
+        items.length > 0 && items.every((item) => selectedIds.has(item.id));
 
     return (
         <section className="space-y-2">
-            <h4 className="text-sm font-medium">{title}</h4>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-medium">{title}</h4>
+                {showBulk && selectedIds.size > 0 ? (
+                    <Button
+                        type="button"
+                        size="sm"
+                        disabled={bulkProcessing}
+                        onClick={() => void approveSelected()}
+                    >
+                        <Check aria-hidden />
+                        {t('Approve selected (:count)', {
+                            count: selectedIds.size,
+                        })}
+                    </Button>
+                ) : null}
+            </div>
+
             {items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{emptyLabel}</p>
             ) : (
@@ -131,13 +228,44 @@ function ReviewGroup({
                             documentRequest.type,
                         );
                         const { StaffContent } = definition;
+                        const selectable =
+                            showBulk && documentRequest.status === 'submitted';
 
                         return (
                             <li
                                 key={documentRequest.id}
                                 className="space-y-3 px-4 py-3"
+                                tabIndex={showBulk ? 0 : undefined}
+                                onFocus={() => setFocusedId(documentRequest.id)}
                             >
                                 <div className="flex flex-wrap items-center gap-2">
+                                    {selectable ? (
+                                        <Checkbox
+                                            checked={selectedIds.has(
+                                                documentRequest.id,
+                                            )}
+                                            onCheckedChange={(checked) => {
+                                                setSelectedIds((current) => {
+                                                    const next = new Set(
+                                                        current,
+                                                    );
+                                                    if (checked) {
+                                                        next.add(
+                                                            documentRequest.id,
+                                                        );
+                                                    } else {
+                                                        next.delete(
+                                                            documentRequest.id,
+                                                        );
+                                                    }
+                                                    return next;
+                                                });
+                                            }}
+                                            aria-label={t(
+                                                'Select for bulk approve',
+                                            )}
+                                        />
+                                    ) : null}
                                     <p className="min-w-0 truncate text-sm font-medium">
                                         {documentRequest.title}
                                     </p>
@@ -153,26 +281,46 @@ function ReviewGroup({
                                 </div>
                                 <StaffContent
                                     dossierId={dossierId}
-                                    dossierStatus={dossierStatus}
                                     documentRequest={documentRequest}
-                                    // Renderers use this only for optional
-                                    // staff responses. Field definitions stay
-                                    // read-only in Review.
-                                    canEdit={
-                                        canUpload &&
-                                        documentRequest.status !== 'accepted'
-                                    }
                                 />
                                 <DocumentRequestReview
                                     dossierId={dossierId}
                                     documentRequest={documentRequest}
-                                    canReview={canReview}
                                 />
                             </li>
                         );
                     })}
                 </ul>
             )}
+
+            {showBulk && items.length > 0 ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox
+                        checked={
+                            allSelected
+                                ? true
+                                : selectedIds.size > 0
+                                  ? 'indeterminate'
+                                  : false
+                        }
+                        onCheckedChange={(checked) => {
+                            if (checked) {
+                                setSelectedIds(
+                                    new Set(items.map((item) => item.id)),
+                                );
+                            } else {
+                                setSelectedIds(new Set());
+                            }
+                        }}
+                        aria-label={t('Select all ready items')}
+                    />
+                    <span>
+                        {t('Press :key to approve the focused item', {
+                            key: 'a',
+                        })}
+                    </span>
+                </div>
+            ) : null}
         </section>
     );
 }

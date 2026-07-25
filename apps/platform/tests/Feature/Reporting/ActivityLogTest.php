@@ -181,3 +181,70 @@ test('guests cannot view the activity log', function () {
     $this->get(workspaceRoute('workspaces.activity.index', 'acme-accountants'))
         ->assertRedirect(route('login'));
 });
+
+test('activity log can be filtered by actor and date range', function () {
+    $owner = User::factory()->create(['name' => 'Owner User']);
+    $other = User::factory()->create(['name' => 'Other User']);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    setPermissionsTeamId($tenant->id);
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Payroll 2025',
+    ]);
+
+    Activity::query()->delete();
+
+    app(LogAuditActivityAction::class)->handle(
+        AuditEvent::DossierViewed,
+        $dossier,
+        causer: $owner,
+        includeRequestContext: false,
+    );
+
+    $this->travel(2)->days();
+
+    app(LogAuditActivityAction::class)->handle(
+        AuditEvent::DossierCompleted,
+        $dossier,
+        causer: $other,
+        includeRequestContext: false,
+    );
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(
+            workspaceRoute('workspaces.activity.index', $tenant)
+            .'?'.http_build_query(['filter' => ['causer_id' => (string) $owner->id]]),
+        )
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/activity/index')
+            ->has('activities.data', 1)
+            ->where('activities.data.0.event', AuditEvent::DossierViewed->value)
+            ->where('activities.data.0.causer_name', 'Owner User'));
+
+    $from = now()->subDay()->toDateString();
+    $to = now()->addDay()->toDateString();
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(
+            workspaceRoute('workspaces.activity.index', $tenant)
+            .'?'.http_build_query([
+                'filter' => [
+                    'created_from' => $from,
+                    'created_to' => $to,
+                ],
+            ]),
+        )
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/activity/index')
+            ->has('activities.data', 1)
+            ->where('activities.data.0.event', AuditEvent::DossierCompleted->value));
+});

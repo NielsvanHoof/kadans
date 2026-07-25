@@ -55,6 +55,7 @@ function SelectContent({
   side = "bottom",
   sideOffset = 4,
   align = "center",
+  avoidCollisions = true,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
@@ -70,7 +71,7 @@ function SelectContent({
         position={position}
         side={side}
         sideOffset={sideOffset}
-        avoidCollisions={false}
+        avoidCollisions={avoidCollisions}
         align={align}
         {...props}
       >
@@ -78,8 +79,10 @@ function SelectContent({
         <SelectPrimitive.Viewport
           className={cn(
             "p-1",
+            // min-h (not h) so the list can grow with items instead of
+            // clipping long labels into a one-line scroll strip.
             position === "popper" &&
-              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
+              "min-h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
           )}
         >
           {children}

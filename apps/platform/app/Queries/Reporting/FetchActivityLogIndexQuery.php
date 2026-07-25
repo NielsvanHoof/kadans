@@ -5,17 +5,24 @@ declare(strict_types=1);
 namespace App\Queries\Reporting;
 
 use App\Enums\AuditEvent;
+use App\Enums\TenantMembershipStatus;
 use App\Models\Activity;
 use App\Models\ClientAccessGrant;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
+use App\Models\User;
 use App\Queries\Filters\ScoutSearchFilter;
 use App\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
+use Throwable;
+
+use function is_string;
 
 /**
  * @extends PaginatedIndexQuery<Activity>
@@ -73,6 +80,22 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                         ->values()
                         ->all(),
                 ],
+                [
+                    'key' => 'causer_id',
+                    'type' => 'select',
+                    'label' => __('Actor'),
+                    'options' => $this->actorFilterOptions(),
+                ],
+                [
+                    'key' => 'created_from',
+                    'type' => 'search',
+                    'label' => __('From date'),
+                ],
+                [
+                    'key' => 'created_to',
+                    'type' => 'search',
+                    'label' => __('To date'),
+                ],
             ],
             'sorts' => [
                 ['key' => '-created_at', 'label' => __('Newest first')],
@@ -112,7 +135,34 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
     {
         return [
             AllowedFilter::exact('event'),
+            AllowedFilter::exact('causer_id'),
             ScoutSearchFilter::make(Activity::class, 'description'),
+            AllowedFilter::callback('created_from', function (Builder $query, mixed $value): void {
+                if (! is_string($value) || $value === '') {
+                    return;
+                }
+
+                try {
+                    $date = Carbon::parse($value)->startOfDay();
+                } catch (Throwable) {
+                    return;
+                }
+
+                $query->where('created_at', '>=', $date);
+            }),
+            AllowedFilter::callback('created_to', function (Builder $query, mixed $value): void {
+                if (! is_string($value) || $value === '') {
+                    return;
+                }
+
+                try {
+                    $date = Carbon::parse($value)->endOfDay();
+                } catch (Throwable) {
+                    return;
+                }
+
+                $query->where('created_at', '<=', $date);
+            }),
         ];
     }
 
@@ -146,5 +196,53 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
     {
         /** @var Activity $model */
         return $this->rowMapper->map($model)->toArray();
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function actorFilterOptions(): array
+    {
+        if (! isset($this->tenant)) {
+            return [];
+        }
+
+        /** @var list<array{value: string, label: string}> $options */
+        $options = [];
+
+        $memberships = TenantMembership::query()
+            ->where('tenant_id', $this->tenant->id)
+            ->where('status', TenantMembershipStatus::Active)
+            ->with('user:id,name')
+            ->get();
+
+        foreach ($memberships as $membership) {
+            $user = $membership->user;
+
+            if (! $user instanceof User) {
+                continue;
+            }
+
+            $options[] = [
+                'value' => (string) $user->id,
+                'label' => $user->name,
+            ];
+        }
+
+        // Unique by user id, then sort labels for the filter dropdown.
+        $uniqueByValue = [];
+
+        foreach ($options as $option) {
+            $uniqueByValue[$option['value']] = $option;
+        }
+
+        $options = array_values($uniqueByValue);
+
+        usort(
+            $options,
+            static fn (array $left, array $right): int => strcmp($left['label'], $right['label']),
+        );
+
+        return $options;
     }
 }

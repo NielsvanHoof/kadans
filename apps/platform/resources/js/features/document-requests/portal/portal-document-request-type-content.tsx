@@ -7,6 +7,7 @@ import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { storesAnswerText } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
+import { formatDateTime } from '@/lib/format-date-time';
 
 export type PortalDocumentRequestTypeProps = {
     documentRequest: PortalDocumentRequest;
@@ -37,10 +38,11 @@ export function PortalFileRequestContent({
                             <>
                                 {' '}
                                 ·{' '}
-                                {new Date(
+                                {formatDateTime(
                                     documentRequest.uploaded_document
                                         .uploaded_at,
-                                ).toLocaleString(locale)}
+                                    locale,
+                                )}
                             </>
                         ) : null}
                     </p>
@@ -97,7 +99,9 @@ function PortalSubmittedAnswerPreview({
 
         return (
             <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs text-muted-foreground">{t('Your answer')}</p>
+                <p className="text-xs text-muted-foreground">
+                    {t('Your answer')}
+                </p>
                 <p className="mt-0.5 font-medium whitespace-pre-wrap">
                     {documentRequest.answer_text}
                 </p>
@@ -111,7 +115,9 @@ function PortalSubmittedAnswerPreview({
     ) {
         return (
             <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs text-muted-foreground">{t('Your answer')}</p>
+                <p className="text-xs text-muted-foreground">
+                    {t('Your answer')}
+                </p>
                 <p className="mt-0.5 font-medium">
                     {documentRequest.answer_boolean ? t('Yes') : t('No')}
                 </p>

@@ -4,12 +4,22 @@ import { AppContent } from '@/components/app-shell/app-content';
 import { AppShell } from '@/components/app-shell/app-shell';
 import { AppSidebar } from '@/components/app-shell/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-shell/app-sidebar-header';
-import SkipToContent from '@/components/skip-to-content';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/features/notifications/notification-bell';
+import { useInertiaNavigationEffects } from '@/hooks/use-inertia-navigation-effects';
 import { useTranslation } from '@/hooks/use-translation';
 import { WorkspaceNotifications } from '@/hooks/use-workspace-notifications';
 import type { AppLayoutProps } from '@/types';
+
+/**
+ * Closes the mobile sheet and resets focus on Inertia navigations.
+ * Must render inside SidebarProvider (AppShell).
+ */
+function NavigationEffects(): null {
+    useInertiaNavigationEffects();
+
+    return null;
+}
 
 export default function AppSidebarLayout({
     children,
@@ -19,7 +29,7 @@ export default function AppSidebarLayout({
 
     return (
         <AppShell variant="sidebar">
-            <SkipToContent />
+            <NavigationEffects />
             <WorkspaceNotifications />
             <AppSidebar />
             <AppContent

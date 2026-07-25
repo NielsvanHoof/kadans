@@ -3,12 +3,7 @@
  * Keeping this union explicit makes every type-specific UI exhaustive.
  */
 export type QuestionnaireItemType =
-    | 'file'
-    | 'text'
-    | 'textarea'
-    | 'date'
-    | 'number'
-    | 'boolean';
+    'file' | 'text' | 'textarea' | 'date' | 'number' | 'boolean';
 
 /** Types whose answers are stored in answer_text (mirrors PHP storesAnswerText()). */
 export function storesAnswerText(type: QuestionnaireItemType): boolean {

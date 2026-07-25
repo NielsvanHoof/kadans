@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import EmptyState from '@/components/empty-state';
+import IndexList from '@/components/index-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +17,9 @@ import {
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+import { formatDate } from '@/lib/format-date-time';
 import {
+    create as createDossier,
     index as dossierIndex,
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
@@ -30,7 +33,8 @@ export default function RecentDossiersCard({
     dossiers: DossierSummary[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    // Locale-aware UTC formatting — matches dossier index and avoids SSR/local drift.
+    const { t, locale } = useTranslation();
 
     return (
         <Card>
@@ -53,9 +57,16 @@ export default function RecentDossiersCard({
                         title={t(
                             'Create a dossier to start collecting documents.',
                         )}
+                        action={
+                            <Button asChild size="sm">
+                                <Link href={createDossier(currentWorkspace)}>
+                                    {t('New dossier')}
+                                </Link>
+                            </Button>
+                        }
                     />
                 ) : (
-                    <div className="divide-y rounded-md border">
+                    <IndexList>
                         {dossiers.map((dossier) => (
                             <Link
                                 key={dossier.id}
@@ -79,9 +90,10 @@ export default function RecentDossiersCard({
                                         <p className="mt-1 text-xs text-muted-foreground">
                                             {dossier.due_date
                                                 ? t('Due :date', {
-                                                      date: new Date(
-                                                          `${dossier.due_date}T00:00:00`,
-                                                      ).toLocaleDateString(),
+                                                      date: formatDate(
+                                                          dossier.due_date,
+                                                          locale,
+                                                      ),
                                                   })
                                                 : t('No due date')}
                                             {dossier.responsible_name
@@ -99,7 +111,7 @@ export default function RecentDossiersCard({
                                 </Badge>
                             </Link>
                         ))}
-                    </div>
+                    </IndexList>
                 )}
             </CardContent>
         </Card>

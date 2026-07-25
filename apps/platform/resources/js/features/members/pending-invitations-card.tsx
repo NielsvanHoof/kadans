@@ -1,6 +1,8 @@
 import { Form } from '@inertiajs/react';
 import TenantInvitationController from '@/actions/App/Http/Controllers/Tenancy/TenantInvitationController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
+import EmptyState from '@/components/empty-state';
+import IndexList from '@/components/index-list';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -25,7 +27,22 @@ export default function PendingInvitationsCard({
     const { t, locale } = useTranslation();
 
     if (invitations.length === 0) {
-        return null;
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('Pending invitations')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <EmptyState
+                        variant="compact"
+                        title={t('No pending invitations')}
+                        description={t(
+                            'Invited members will appear here until they accept.',
+                        )}
+                    />
+                </CardContent>
+            </Card>
+        );
     }
 
     return (
@@ -41,7 +58,7 @@ export default function PendingInvitationsCard({
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="divide-y rounded-md border">
+                <IndexList>
                     {invitations.map((invitation) => (
                         <div
                             key={invitation.id}
@@ -107,7 +124,7 @@ export default function PendingInvitationsCard({
                             </div>
                         </div>
                     ))}
-                </div>
+                </IndexList>
             </CardContent>
         </Card>
     );

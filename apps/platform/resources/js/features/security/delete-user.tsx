@@ -1,9 +1,9 @@
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import SettingsSection from '@/components/settings-section';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -22,17 +22,14 @@ export default function DeleteUser() {
     const { t } = useTranslation();
 
     return (
-        <div className="space-y-6">
-            <Heading
-                level={2}
-                variant="small"
-                title={t('Delete account')}
-                description={t('Delete your account and all of its resources')}
-            />
-            <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
+        <SettingsSection
+            title={t('Delete account')}
+            description={t('Delete your account and all of its resources')}
+        >
+            <div className="space-y-4 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+                <div className="relative space-y-0.5 text-destructive">
                     <p className="font-medium">{t('Warning')}</p>
-                    <p className="text-sm">
+                    <p className="text-sm text-destructive/90">
                         {t(
                             'Please proceed with caution, this cannot be undone.',
                         )}
@@ -101,16 +98,12 @@ export default function DeleteUser() {
                                         </DialogClose>
 
                                         <Button
+                                            type="submit"
                                             variant="destructive"
                                             disabled={processing}
-                                            asChild
+                                            data-test="confirm-delete-user-button"
                                         >
-                                            <button
-                                                type="submit"
-                                                data-test="confirm-delete-user-button"
-                                            >
-                                                {t('Delete account')}
-                                            </button>
+                                            {t('Delete account')}
                                         </Button>
                                     </DialogFooter>
                                 </>
@@ -119,6 +112,6 @@ export default function DeleteUser() {
                     </DialogContent>
                 </Dialog>
             </div>
-        </div>
+        </SettingsSection>
     );
 }

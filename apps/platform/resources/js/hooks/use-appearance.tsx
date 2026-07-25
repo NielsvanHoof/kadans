@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { setClientCookie } from '@/lib/set-client-cookie';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
@@ -18,17 +19,6 @@ const prefersDark = (): boolean => {
     }
 
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
-};
-
-const setCookie = (name: string, value: string, days = 365): void => {
-    if (typeof document === 'undefined') {
-        return;
-    }
-
-    const maxAge = days * 24 * 60 * 60;
-    // Required for SSR theme hydration; Cookie Store API is not universally supported.
-    // biome-ignore lint/suspicious/noDocumentCookie: appearance cookie must sync with Laravel middleware
-    document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
 };
 
 const getStoredAppearance = (): Appearance => {
@@ -83,7 +73,7 @@ export function initializeTheme(): void {
 
     if (!localStorage.getItem('appearance')) {
         localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
+        setClientCookie('appearance', 'system');
     }
 
     currentAppearance = getStoredAppearance();
@@ -111,7 +101,7 @@ export function useAppearance(): UseAppearanceReturn {
         localStorage.setItem('appearance', mode);
 
         // Store in cookie for SSR...
-        setCookie('appearance', mode);
+        setClientCookie('appearance', mode);
 
         applyTheme(mode);
         notify();

@@ -19,6 +19,7 @@ export default function WorkspaceMembersIndex({
     members,
     invitations,
     role_options: roleOptions,
+    can_assign_owner: canAssignOwner = false,
 }: {
     members: WorkspaceMember[];
     invitations: WorkspaceInvitation[];
@@ -50,9 +51,16 @@ export default function WorkspaceMembersIndex({
                     )}
                 />
 
-                <InviteMemberForm roleOptions={roleOptions} />
+                <InviteMemberForm
+                    roleOptions={roleOptions}
+                    canAssignOwner={canAssignOwner}
+                />
                 <PendingInvitationsCard invitations={invitations} />
-                <MembersListCard members={members} roleOptions={roleOptions} />
+                <MembersListCard
+                    members={members}
+                    roleOptions={roleOptions}
+                    canAssignOwner={canAssignOwner}
+                />
             </div>
         </>
     );

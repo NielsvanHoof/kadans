@@ -2,6 +2,8 @@ import {
     closestCenter,
     DndContext,
     type DragEndEvent,
+    type DraggableAttributes,
+    type DraggableSyntheticListeners,
     KeyboardSensor,
     PointerSensor,
     useSensor,
@@ -32,6 +34,42 @@ type SortableListProps<T extends { id: number }> = {
         controls: { DragHandle: () => ReactNode },
     ) => ReactNode;
 };
+
+type DragHandleControlProps = {
+    label: string;
+    attributes?: DraggableAttributes;
+    // Public dnd-kit export (SyntheticListenerMap is internal-only).
+    listeners?: DraggableSyntheticListeners;
+    static?: boolean;
+};
+
+/** Module-level grip so SortableRow does not define a new component each render. */
+function SortableDragHandle({
+    label,
+    attributes,
+    listeners,
+    static: isStatic = false,
+}: DragHandleControlProps) {
+    return (
+        <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className={cn(
+                'touch-none',
+                isStatic
+                    ? 'pointer-events-none cursor-grab'
+                    : 'cursor-grab active:cursor-grabbing',
+            )}
+            aria-label={label}
+            tabIndex={isStatic ? -1 : undefined}
+            {...attributes}
+            {...listeners}
+        >
+            <GripVertical />
+        </Button>
+    );
+}
 
 /**
  * Vertical drag-and-drop list. Posts order via onReorder after a drop.
@@ -108,6 +146,8 @@ export default function SortableList<T extends { id: number }>({
         }
     };
 
+    const dragLabel = t('Drag to reorder');
+
     // Static list until the client mounts (and when reordering is disabled).
     if (!enabled || !isClient || isPersisting) {
         return (
@@ -117,8 +157,9 @@ export default function SortableList<T extends { id: number }>({
                         {renderItem(item, {
                             DragHandle: () =>
                                 enabled ? (
-                                    <StaticDragHandle
-                                        label={t('Drag to reorder')}
+                                    <SortableDragHandle
+                                        label={dragLabel}
+                                        static
                                     />
                                 ) : null,
                         })}
@@ -143,7 +184,7 @@ export default function SortableList<T extends { id: number }>({
                         <SortableRow
                             key={item.id}
                             id={item.id}
-                            label={t('Drag to reorder')}
+                            label={dragLabel}
                         >
                             {(DragHandle) => renderItem(item, { DragHandle })}
                         </SortableRow>
@@ -151,22 +192,6 @@ export default function SortableList<T extends { id: number }>({
                 </div>
             </SortableContext>
         </DndContext>
-    );
-}
-
-/** Grip shown during SSR / pre-hydration — same look, no dnd-kit attrs. */
-function StaticDragHandle({ label }: { label: string }) {
-    return (
-        <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="pointer-events-none cursor-grab touch-none"
-            aria-label={label}
-            tabIndex={-1}
-        >
-            <GripVertical />
-        </Button>
     );
 }
 
@@ -198,17 +223,11 @@ function SortableRow({
     };
 
     const DragHandle = () => (
-        <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="cursor-grab touch-none active:cursor-grabbing"
-            aria-label={label}
-            {...attributes}
-            {...listeners}
-        >
-            <GripVertical />
-        </Button>
+        <SortableDragHandle
+            label={label}
+            attributes={attributes}
+            listeners={listeners}
+        />
     );
 
     return (

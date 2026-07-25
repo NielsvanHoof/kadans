@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { useEffect, useRef, useState } from 'react';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     InputOTP,
@@ -22,7 +22,6 @@ export default function TwoFactorVerificationStep({
     onClose: () => void;
     onBack: () => void;
 }) {
-    const { t } = useTranslation();
     const [code, setCode] = useState<string>('');
     const pinInputContainerRef = useRef<HTMLDivElement>(null);
 
@@ -42,64 +41,100 @@ export default function TwoFactorVerificationStep({
             {({
                 processing,
                 errors,
+                submit,
             }: {
                 processing: boolean;
                 errors?: { confirmTwoFactorAuthentication?: { code?: string } };
+                submit: () => void;
             }) => (
-                <>
-                    <div
-                        ref={pinInputContainerRef}
-                        className="relative w-full space-y-3"
-                    >
-                        <div className="flex w-full flex-col items-center space-y-3 py-2">
-                            <InputOTP
-                                id="otp"
-                                name="code"
-                                maxLength={OTP_MAX_LENGTH}
-                                onChange={setCode}
-                                disabled={processing}
-                                pattern={REGEXP_ONLY_DIGITS}
-                                autoFocus
-                            >
-                                <InputOTPGroup>
-                                    {OTP_SLOTS.map((slot) => (
-                                        <InputOTPSlot
-                                            key={slot.id}
-                                            index={slot.index}
-                                        />
-                                    ))}
-                                </InputOTPGroup>
-                            </InputOTP>
-                            <InputError
-                                message={
-                                    errors?.confirmTwoFactorAuthentication?.code
-                                }
-                            />
-                        </div>
-
-                        <div className="flex w-full space-x-5">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={onBack}
-                                disabled={processing}
-                            >
-                                {t('Back')}
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="flex-1"
-                                disabled={
-                                    processing || code.length < OTP_MAX_LENGTH
-                                }
-                            >
-                                {t('Confirm')}
-                            </Button>
-                        </div>
-                    </div>
-                </>
+                <VerificationFields
+                    submit={submit}
+                    pinInputContainerRef={pinInputContainerRef}
+                    code={code}
+                    setCode={setCode}
+                    processing={processing}
+                    errors={errors}
+                    onBack={onBack}
+                />
             )}
         </Form>
+    );
+}
+
+function VerificationFields({
+    submit,
+    pinInputContainerRef,
+    code,
+    setCode,
+    processing,
+    errors,
+    onBack,
+}: {
+    // Inertia Form expose submit() on the slot props (ref is FormComponentRef, not HTMLFormElement).
+    submit: () => void;
+    pinInputContainerRef: React.RefObject<HTMLDivElement | null>;
+    code: string;
+    setCode: (value: string) => void;
+    processing: boolean;
+    errors?: { confirmTwoFactorAuthentication?: { code?: string } };
+    onBack: () => void;
+}) {
+    const { t } = useTranslation();
+
+    useEffect(() => {
+        if (!processing && code.length === OTP_MAX_LENGTH) {
+            submit();
+        }
+    }, [code, submit, processing]);
+
+    return (
+        <div ref={pinInputContainerRef} className="relative w-full space-y-3">
+            <div className="flex w-full flex-col items-center space-y-3 py-2">
+                <InputOTP
+                    id="otp"
+                    name="code"
+                    maxLength={OTP_MAX_LENGTH}
+                    value={code}
+                    onChange={setCode}
+                    disabled={processing}
+                    pattern={REGEXP_ONLY_DIGITS}
+                    autoFocus
+                    aria-label={t('Authentication code')}
+                    {...fieldErrorAriaProps(
+                        'otp-error',
+                        errors?.confirmTwoFactorAuthentication?.code,
+                    )}
+                >
+                    <InputOTPGroup>
+                        {OTP_SLOTS.map((slot) => (
+                            <InputOTPSlot key={slot.id} index={slot.index} />
+                        ))}
+                    </InputOTPGroup>
+                </InputOTP>
+                <InputError
+                    id="otp-error"
+                    message={errors?.confirmTwoFactorAuthentication?.code}
+                />
+            </div>
+
+            <div className="flex w-full space-x-5">
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={onBack}
+                    disabled={processing}
+                >
+                    {t('Back')}
+                </Button>
+                <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={processing || code.length < OTP_MAX_LENGTH}
+                >
+                    {t('Confirm')}
+                </Button>
+            </div>
+        </div>
     );
 }

@@ -1,6 +1,9 @@
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
+import DataTable, { type DataTableColumn } from '@/components/data-table';
 import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -15,7 +18,8 @@ import {
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { show } from '@/routes/workspaces/dossiers';
+import { formatDate } from '@/lib/format-date-time';
+import { create, show } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
 /**
@@ -27,9 +31,63 @@ export default function DossiersListCard({
     dossiers: Paginated<DossierSummary>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const rows = dossiers.data;
     const total = dossiers.total;
+    const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
+        new Set(),
+    );
+
+    const columns: DataTableColumn<DossierSummary>[] = [
+        {
+            key: 'title',
+            header: t('Title'),
+            className: 'whitespace-normal',
+            cell: (dossier) => (
+                <Link
+                    href={show({
+                        tenant: currentWorkspace,
+                        dossier: dossier.id,
+                    })}
+                    className="font-medium hover:underline"
+                >
+                    {dossier.title}
+                </Link>
+            ),
+        },
+        {
+            key: 'client',
+            header: t('Client'),
+            className: 'hidden whitespace-normal sm:table-cell',
+            cell: (dossier) => (
+                <div className="text-sm text-muted-foreground">
+                    {dossier.client_name}
+                    {dossier.reference ? ` · ${dossier.reference}` : null}
+                </div>
+            ),
+        },
+        {
+            key: 'due_date',
+            header: t('Due'),
+            className: 'hidden md:table-cell',
+            cell: (dossier) => (
+                <span className="text-sm text-muted-foreground">
+                    {dossier.due_date
+                        ? formatDate(dossier.due_date, locale)
+                        : t('No due date')}
+                </span>
+            ),
+        },
+        {
+            key: 'status',
+            header: t('Status'),
+            cell: (dossier) => (
+                <Badge variant={dossierStatusBadgeVariant(dossier.status)}>
+                    {dossierStatusLabel(dossier.status, t)}
+                </Badge>
+            ),
+        },
+    ];
 
     return (
         <Card>
@@ -42,59 +100,27 @@ export default function DossiersListCard({
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {rows.length === 0 ? (
-                    <EmptyState
-                        title={t(
-                            'Create a dossier to start collecting documents.',
-                        )}
-                    />
-                ) : (
-                    <div className="divide-y rounded-md border">
-                        {rows.map((dossier) => (
-                            <Link
-                                key={dossier.id}
-                                href={show({
-                                    tenant: currentWorkspace,
-                                    dossier: dossier.id,
-                                })}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
-                            >
-                                <div>
-                                    <p className="font-medium">
-                                        {dossier.title}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {dossier.client_name}
-                                        {dossier.reference &&
-                                            ` · ${dossier.reference}`}
-                                    </p>
-                                    {(dossier.due_date ||
-                                        dossier.responsible_name) && (
-                                        <p className="mt-1 text-xs text-muted-foreground">
-                                            {dossier.due_date
-                                                ? t('Due :date', {
-                                                      date: new Date(
-                                                          `${dossier.due_date}T00:00:00`,
-                                                      ).toLocaleDateString(),
-                                                  })
-                                                : t('No due date')}
-                                            {dossier.responsible_name
-                                                ? ` · ${dossier.responsible_name}`
-                                                : null}
-                                        </p>
-                                    )}
-                                </div>
-                                <Badge
-                                    variant={dossierStatusBadgeVariant(
-                                        dossier.status,
-                                    )}
-                                >
-                                    {dossierStatusLabel(dossier.status, t)}
-                                </Badge>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+                <DataTable
+                    columns={columns}
+                    rows={rows}
+                    rowKey={(dossier) => dossier.id}
+                    selectedKeys={selectedKeys}
+                    onSelectionChange={setSelectedKeys}
+                    emptyState={
+                        <EmptyState
+                            title={t(
+                                'Create a dossier to start collecting documents.',
+                            )}
+                            action={
+                                <Button asChild size="sm">
+                                    <Link href={create(currentWorkspace)}>
+                                        {t('New dossier')}
+                                    </Link>
+                                </Button>
+                            }
+                        />
+                    }
+                />
             </CardContent>
         </Card>
     );

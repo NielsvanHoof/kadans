@@ -1,6 +1,7 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryResults from '@/components/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import MediaDocumentsCard from '@/features/media/media-documents-card';
 import type { MediaDocument } from '@/features/media/types';
@@ -51,11 +52,13 @@ export default function MediaLibraryIndex({
                 />
 
                 <IndexQueryToolbar config={indexQuery} />
-                <MediaDocumentsCard
-                    documents={documents}
-                    canDownload={canDownload}
-                />
-                <IndexPagination paginator={documents} />
+                <IndexQueryResults className="space-y-6">
+                    <MediaDocumentsCard
+                        documents={documents}
+                        canDownload={canDownload}
+                    />
+                    <IndexPagination paginator={documents} />
+                </IndexQueryResults>
             </div>
         </>
     );

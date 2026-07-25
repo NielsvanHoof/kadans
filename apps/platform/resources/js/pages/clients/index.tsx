@@ -2,6 +2,7 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Archive, Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryResults from '@/components/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
 import ClientsListCard from '@/features/clients/list/clients-list-card';
@@ -79,9 +80,14 @@ export default function ClientIndex({
                     </div>
                 </div>
 
-                <IndexQueryToolbar config={indexQuery} />
-                <ClientsListCard clients={clients} canManage={canManage} />
-                <IndexPagination paginator={clients} />
+                <IndexQueryToolbar
+                    config={indexQuery}
+                    only={['clients', 'filters', 'sort', 'indexQuery', 'flash']}
+                />
+                <IndexQueryResults className="space-y-6">
+                    <ClientsListCard clients={clients} canManage={canManage} />
+                    <IndexPagination paginator={clients} />
+                </IndexQueryResults>
             </div>
         </>
     );

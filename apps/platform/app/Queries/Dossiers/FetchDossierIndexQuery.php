@@ -100,7 +100,6 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
      */
     protected function subject(): Builder
     {
-        // Prefer Model::select() so phpstan-strict-rules does not flag instance->select().
         return Dossier::select([
             'id',
             'client_id',

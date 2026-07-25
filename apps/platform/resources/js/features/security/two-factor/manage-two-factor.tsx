@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import Heading from '@/components/heading';
+import SettingsSection from '@/components/settings-section';
 import { Button } from '@/components/ui/button';
 import TwoFactorRecoveryCodes from '@/features/security/two-factor/two-factor-recovery-codes';
 import TwoFactorSetupModal from '@/features/security/two-factor/two-factor-setup-modal';
@@ -47,15 +47,10 @@ export default function ManageTwoFactor(props: Props) {
     }
 
     return (
-        <div className="space-y-6">
-            <Heading
-                level={2}
-                variant="small"
-                title={t('Two-factor authentication')}
-                description={t(
-                    'Manage your two-factor authentication settings',
-                )}
-            />
+        <SettingsSection
+            title={t('Two-factor authentication')}
+            description={t('Manage your two-factor authentication settings')}
+        >
             {twoFactorEnabled ? (
                 <div className="flex flex-col items-start justify-start space-y-4">
                     <p className="text-sm text-muted-foreground">
@@ -125,6 +120,6 @@ export default function ManageTwoFactor(props: Props) {
                 fetchSetupData={fetchSetupData}
                 errors={errors}
             />
-        </div>
+        </SettingsSection>
     );
 }

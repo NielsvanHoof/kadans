@@ -2,6 +2,7 @@ import { Check, Copy } from 'lucide-react';
 import { useCopyToClipboard } from 'usehooks-ts';
 import AlertError from '@/components/alert-error';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useTranslation } from '@/hooks/use-translation';
@@ -25,6 +26,7 @@ export default function TwoFactorSetupStep({
     const { t } = useTranslation();
     const { resolvedAppearance } = useAppearance();
     const [copiedText, copy] = useCopyToClipboard();
+    const manualSetupKeyId = 'manual-setup-key';
     const IconComponent = copiedText === manualSetupKey ? Check : Copy;
     const qrCodeImageSrc = qrCodeSvg
         ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrCodeSvg)}`
@@ -74,6 +76,9 @@ export default function TwoFactorSetupStep({
                     </div>
 
                     <div className="flex w-full space-x-2">
+                        <Label htmlFor={manualSetupKeyId} className="sr-only">
+                            {t('Setup key')}
+                        </Label>
                         <div className="flex w-full items-stretch overflow-hidden rounded-xl border border-border">
                             {!manualSetupKey ? (
                                 <div className="flex h-full w-full items-center justify-center bg-muted p-3">
@@ -82,6 +87,7 @@ export default function TwoFactorSetupStep({
                             ) : (
                                 <>
                                     <input
+                                        id={manualSetupKeyId}
                                         type="text"
                                         readOnly
                                         value={manualSetupKey}
@@ -90,6 +96,11 @@ export default function TwoFactorSetupStep({
                                     <button
                                         type="button"
                                         onClick={() => copy(manualSetupKey)}
+                                        aria-label={
+                                            copiedText === manualSetupKey
+                                                ? t('Copied')
+                                                : t('Copy setup key')
+                                        }
                                         className="border-l border-border px-3 hover:bg-muted"
                                     >
                                         <IconComponent className="w-4" />

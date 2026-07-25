@@ -1,7 +1,7 @@
-import { Form, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { RotateCcw } from 'lucide-react';
 import DossierController from '@/actions/App/Http/Controllers/Dossiers/DossierController';
-import InputError from '@/components/input-error';
+import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import { Button } from '@/components/ui/button';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -41,21 +41,23 @@ export default function RestoreDossierButton({
     }
 
     return (
-        <Form
-            {...DossierController.restore.form({
+        <ConfirmDestroyDialog
+            title={t('Restore this dossier?')}
+            description={t(
+                'The dossier will appear in lists again and can be opened by your team.',
+            )}
+            confirmLabel={t('Restore dossier')}
+            confirmVariant="default"
+            form={DossierController.restore.form({
                 tenant: currentWorkspace,
                 dossier: dossierId,
             })}
-        >
-            {({ errors, processing }) => (
-                <div className="flex flex-col items-end gap-1">
-                    <Button type="submit" size="sm" disabled={processing}>
-                        <RotateCcw aria-hidden="true" />
-                        {t('Restore dossier')}
-                    </Button>
-                    <InputError message={errors.dossier} />
-                </div>
-            )}
-        </Form>
+            trigger={
+                <Button type="button" size="sm">
+                    <RotateCcw aria-hidden="true" />
+                    {t('Restore dossier')}
+                </Button>
+            }
+        />
     );
 }

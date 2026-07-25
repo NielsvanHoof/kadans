@@ -9,27 +9,30 @@ import DocumentProcessingPanel from '@/features/document-requests/staff/review/d
 import DocumentRequestAnswer from '@/features/document-requests/staff/review/document-request-answer';
 import DocumentRequestUpload from '@/features/document-requests/staff/review/document-request-upload';
 import type { DocumentRequest } from '@/features/document-requests/types';
-import { useDossierPermissions } from '@/features/dossiers/permissions/dossier-permissions-context';
+import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';
 
 export type StaffDocumentRequestTypeProps = {
     dossierId: number;
-    dossierStatus: DossierStatus;
     documentRequest: DocumentRequest;
-    canEdit: boolean;
 };
+
+function useStaffFallbackAllowed(documentRequest: DocumentRequest): boolean {
+    const { canStaffUploadFallback } = useDossierCapabilities();
+
+    return canStaffUploadFallback && documentRequest.status !== 'accepted';
+}
 
 /**
  * File requests: OCR/review first; staff upload is a collapsed fallback.
  */
 export function StaffFileRequestContent({
     dossierId,
-    dossierStatus,
     documentRequest,
-    canEdit,
 }: StaffDocumentRequestTypeProps) {
-    const { canDownload } = useDossierPermissions();
+    const { canDownload, dossierStatus } = useDossierCapabilities();
+    const staffFallbackAllowed = useStaffFallbackAllowed(documentRequest);
     const hasUpload = documentRequest.uploaded_document !== null;
 
     return (
@@ -45,13 +48,13 @@ export function StaffFileRequestContent({
                 <WaitingForClientUpload dossierStatus={dossierStatus} />
             )}
 
-            {canEdit && (
+            {staffFallbackAllowed ? (
                 <StaffUploadOnBehalfFallback
                     dossierId={dossierId}
                     documentRequest={documentRequest}
                     hasUpload={hasUpload}
                 />
-            )}
+            ) : null}
         </>
     );
 }
@@ -126,8 +129,9 @@ function StaffUploadOnBehalfFallback({
 export function StaffTextRequestContent({
     dossierId,
     documentRequest,
-    canEdit,
 }: StaffDocumentRequestTypeProps) {
+    const staffFallbackAllowed = useStaffFallbackAllowed(documentRequest);
+
     return (
         <>
             {documentRequest.answer_text ? (
@@ -138,7 +142,7 @@ export function StaffTextRequestContent({
                     </p>
                 </AnswerPreview>
             ) : null}
-            {canEdit ? (
+            {staffFallbackAllowed ? (
                 <DocumentRequestAnswer
                     dossierId={dossierId}
                     documentRequest={documentRequest}
@@ -154,9 +158,9 @@ export function StaffTextRequestContent({
 export function StaffBooleanRequestContent({
     dossierId,
     documentRequest,
-    canEdit,
 }: StaffDocumentRequestTypeProps) {
     const { t } = useTranslation();
+    const staffFallbackAllowed = useStaffFallbackAllowed(documentRequest);
 
     return (
         <>
@@ -167,7 +171,7 @@ export function StaffBooleanRequestContent({
                     </p>
                 </AnswerPreview>
             ) : null}
-            {canEdit ? (
+            {staffFallbackAllowed ? (
                 <DocumentRequestAnswer
                     dossierId={dossierId}
                     documentRequest={documentRequest}

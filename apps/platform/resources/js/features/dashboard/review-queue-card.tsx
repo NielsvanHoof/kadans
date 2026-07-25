@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight, CircleAlert, Clock3, ScanSearch } from 'lucide-react';
+import EmptyState from '@/components/empty-state';
 import {
     Card,
     CardContent,
@@ -40,7 +41,7 @@ export default function ReviewQueueCard({
             description: t('Dossiers with information still outstanding'),
             count: metrics.awaiting_client,
             icon: Clock3,
-            tone: 'text-amber-700 bg-amber-500/10 dark:text-amber-300',
+            tone: 'text-warning-foreground bg-warning-muted',
         },
         {
             key: 'overdue',
@@ -52,6 +53,8 @@ export default function ReviewQueueCard({
         },
     ] as const;
 
+    const isEmpty = queues.every((queue) => queue.count === 0);
+
     return (
         <Card>
             <CardHeader>
@@ -61,38 +64,51 @@ export default function ReviewQueueCard({
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-2">
-                {queues.map((queue) => (
-                    <Link
-                        key={queue.key}
-                        href={dossierIndex(currentWorkspace, {
-                            query: { filter: { queue: queue.key } },
-                        })}
-                        className="group flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                    >
-                        <span
-                            className={`flex size-9 shrink-0 items-center justify-center rounded-md ${queue.tone}`}
+                {isEmpty ? (
+                    <EmptyState
+                        variant="compact"
+                        title={t('All caught up')}
+                        description={t(
+                            'No dossiers need review, client follow-up, or overdue attention right now.',
+                        )}
+                    />
+                ) : (
+                    queues.map((queue) => (
+                        <Link
+                            key={queue.key}
+                            href={dossierIndex(currentWorkspace, {
+                                query: { filter: { queue: queue.key } },
+                            })}
+                            className="group flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         >
-                            <queue.icon className="size-4" aria-hidden="true" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                            <span className="flex items-baseline justify-between gap-3">
-                                <span className="font-medium">
-                                    {queue.label}
+                            <span
+                                className={`flex size-9 shrink-0 items-center justify-center rounded-md ${queue.tone}`}
+                            >
+                                <queue.icon
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="flex items-baseline justify-between gap-3">
+                                    <span className="font-medium">
+                                        {queue.label}
+                                    </span>
+                                    <span className="text-xl font-semibold tabular-nums">
+                                        {queue.count}
+                                    </span>
                                 </span>
-                                <span className="text-xl font-semibold tabular-nums">
-                                    {queue.count}
+                                <span className="block text-xs text-muted-foreground">
+                                    {queue.description}
                                 </span>
                             </span>
-                            <span className="block text-xs text-muted-foreground">
-                                {queue.description}
-                            </span>
-                        </span>
-                        <ArrowUpRight
-                            className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                            aria-hidden="true"
-                        />
-                    </Link>
-                ))}
+                            <ArrowUpRight
+                                className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                aria-hidden="true"
+                            />
+                        </Link>
+                    ))
+                )}
             </CardContent>
         </Card>
     );

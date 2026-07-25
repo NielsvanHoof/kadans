@@ -14,6 +14,14 @@ enum QuestionnaireItemType: string
     case Boolean = 'boolean';
 
     /**
+     * @return list<string>
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
+
+    /**
      * Whether answers for this type are stored in answer_text.
      */
     public function storesAnswerText(): bool
@@ -22,13 +30,5 @@ enum QuestionnaireItemType: string
             self::Text, self::Textarea, self::Date, self::Number => true,
             self::File, self::Boolean => false,
         };
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
     }
 }

@@ -153,7 +153,6 @@ final class DossierController extends Controller
         Request $request,
         Dossier $dossier,
         FetchDossierShowQuery $getDossierShowData,
-        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
     ): Response {
         $this->authorize('view', $dossier);
 
@@ -163,7 +162,7 @@ final class DossierController extends Controller
                 $request,
                 $dossier,
                 $getDossierShowData,
-                $fetchQuestionnaireTemplateOptions,
+                includeTemplates: false,
             ),
         );
     }
@@ -258,9 +257,10 @@ final class DossierController extends Controller
         Request $request,
         Dossier $dossier,
         FetchDossierShowQuery $getDossierShowData,
-        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
+        ?FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions = null,
+        bool $includeTemplates = true,
     ): array {
-        return [
+        $props = [
             'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
             'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
             'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
@@ -268,12 +268,17 @@ final class DossierController extends Controller
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
             'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
             'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
-            'templates' => fn (): array => array_map(
-                static fn (QuestionnaireTemplateOptionData $template): array => $template->toArray(),
-                $fetchQuestionnaireTemplateOptions->handle(),
-            ),
             'dossier' => fn (): array => $getDossierShowData->handle($dossier)->toArray(),
         ];
+
+        if ($includeTemplates && $fetchQuestionnaireTemplateOptions instanceof FetchQuestionnaireTemplateOptionsQuery) {
+            $props['templates'] = fn (): array => array_map(
+                static fn (QuestionnaireTemplateOptionData $template): array => $template->toArray(),
+                $fetchQuestionnaireTemplateOptions->handle(),
+            );
+        }
+
+        return $props;
     }
 
     private function isDossierPartialReload(Request $request, string $component): bool

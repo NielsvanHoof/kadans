@@ -1,5 +1,12 @@
 import { Form } from '@inertiajs/react';
-import { Eye, EyeOff, LockKeyhole, RefreshCw } from 'lucide-react';
+import {
+    Copy,
+    Download,
+    Eye,
+    EyeOff,
+    LockKeyhole,
+    RefreshCw,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AlertError from '@/components/alert-error';
 import { Button } from '@/components/ui/button';
@@ -65,6 +72,30 @@ export default function TwoFactorRecoveryCodes({
 
     const RecoveryCodeIconComponent = codesAreVisible ? EyeOff : Eye;
 
+    const copyAllCodes = useCallback(async () => {
+        if (recoveryCodesList.length === 0) {
+            return;
+        }
+
+        await navigator.clipboard.writeText(recoveryCodesList.join('\n'));
+    }, [recoveryCodesList]);
+
+    const downloadCodes = useCallback(() => {
+        if (recoveryCodesList.length === 0) {
+            return;
+        }
+
+        const blob = new Blob([recoveryCodesList.join('\n')], {
+            type: 'text/plain;charset=utf-8',
+        });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'recovery-codes.txt';
+        anchor.click();
+        URL.revokeObjectURL(url);
+    }, [recoveryCodesList]);
+
     return (
         <Card>
             <CardHeader>
@@ -116,7 +147,7 @@ export default function TwoFactorRecoveryCodes({
                 </div>
                 <div
                     id="recovery-codes-section"
-                    className={`relative overflow-hidden transition-all duration-300 ${codesAreVisible ? 'h-auto opacity-100' : 'h-0 opacity-0'}`}
+                    className={`relative overflow-hidden transition-[height,opacity] duration-300 ${codesAreVisible ? 'h-auto opacity-100' : 'h-0 opacity-0'}`}
                     aria-hidden={!codesAreVisible}
                 >
                     <div className="mt-3 space-y-3">
@@ -155,6 +186,27 @@ export default function TwoFactorRecoveryCodes({
                                         </li>
                                     )}
                                 </ul>
+
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => void copyAllCodes()}
+                                    >
+                                        <Copy aria-hidden />
+                                        {t('Copy all')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={downloadCodes}
+                                    >
+                                        <Download aria-hidden />
+                                        {t('Download .txt')}
+                                    </Button>
+                                </div>
 
                                 <div className="text-xs text-muted-foreground select-none">
                                     <p id="regenerate-warning">

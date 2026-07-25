@@ -26,7 +26,24 @@ test('owners can view the members page', function () {
             ->component('workspaces/members/index')
             ->has('members', 1)
             ->has('invitations', 0)
-            ->has('role_options'));
+            ->has('role_options')
+            // Owners can assign the owner role; the frontend wires this prop.
+            ->where('can_assign_owner', true)
+            // The sole owner is marked as the current user so Remove stays hidden.
+            ->where('members.0.is_current_user', true)
+            ->where('members.0.role', Role::Owner->value));
+});
+
+test('administrators see can_assign_owner as false on the members page', function () {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $admin = workspaceMember($tenant, Role::Administrator);
+
+    $this->actingAs($admin)
+        ->get(workspaceRoute('workspaces.members.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/members/index')
+            ->where('can_assign_owner', false));
 });
 
 test('read-only members cannot manage workspace members', function () {

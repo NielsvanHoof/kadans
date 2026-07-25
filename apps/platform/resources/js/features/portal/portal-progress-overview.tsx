@@ -62,7 +62,7 @@ export default function PortalProgressOverview({
                                           count: progress.remaining,
                                       })}
                             </h2>
-                            <p className="text-sm text-muted-foreground text-pretty">
+                            <p className="text-sm text-pretty text-muted-foreground">
                                 {isComplete
                                     ? t(
                                           ':firm will review your information. You can return here if changes are requested.',

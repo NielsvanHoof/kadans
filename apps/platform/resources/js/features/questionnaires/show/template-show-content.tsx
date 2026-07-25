@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import TemplateItemEditor from '@/features/questionnaires/show/template-item-editor';
 import type {
     TemplateCategoryOption,
@@ -171,14 +172,13 @@ export default function TemplateShowContent({
                                         <Label htmlFor="description">
                                             {t('Description')}
                                         </Label>
-                                        <textarea
+                                        <Textarea
                                             id="description"
                                             name="description"
                                             rows={3}
                                             defaultValue={
                                                 template.description ?? ''
                                             }
-                                            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                         />
                                         <InputError
                                             message={errors.description}

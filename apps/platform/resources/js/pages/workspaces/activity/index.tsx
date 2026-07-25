@@ -1,6 +1,7 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryResults from '@/components/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import ActivityLogCard from '@/features/audit/activity-log-card';
 import type { ActivityLogEntry } from '@/features/audit/types';
@@ -47,8 +48,10 @@ export default function ActivityLogIndex({
                 />
 
                 <IndexQueryToolbar config={indexQuery} />
-                <ActivityLogCard activities={activities} />
-                <IndexPagination paginator={activities} />
+                <IndexQueryResults className="space-y-6">
+                    <ActivityLogCard activities={activities} />
+                    <IndexPagination paginator={activities} />
+                </IndexQueryResults>
             </div>
         </>
     );

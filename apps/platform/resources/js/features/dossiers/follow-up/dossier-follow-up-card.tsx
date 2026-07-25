@@ -9,18 +9,14 @@ import DossierReminderController from '@/actions/App/Http/Controllers/Dossiers/D
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatDateTime } from '@/lib/format-date-time';
 
-export default function DossierFollowUpCard({
-    dossier,
-    canSendReminder,
-}: {
-    dossier: Dossier;
-    canSendReminder: boolean;
-}) {
+export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
+    const { canSendReminder } = useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
 
