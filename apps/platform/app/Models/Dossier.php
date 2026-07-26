@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Laravel\Scout\Builder as ScoutBuilder;
 use Laravel\Scout\Searchable;
@@ -63,12 +64,19 @@ final class Dossier extends Model
     /**
      * Join clients so Scout's database engine can LIKE on clients.name.
      * Collection engine (tests) ignores this and uses toSearchableArray values.
+     *
+     * @param  ScoutBuilder<Dossier>  $_builder
+     * @return EloquentBuilder<Dossier>
      */
     public function newScoutQuery(ScoutBuilder $_builder): EloquentBuilder
     {
-        return self::query()
+        $query = self::query();
+
+        $query->getQuery()
             ->select($this->qualifyColumn('*'))
             ->leftJoin('clients', 'clients.id', '=', $this->qualifyColumn('client_id'));
+
+        return $query;
     }
 
     /**
@@ -161,7 +169,9 @@ final class Dossier extends Model
         if (! $this->exists) {
             return '';
         }
+        $clientQuery = Client::query()->whereKey($this->client_id);
+        $clientQuery->withoutGlobalScope(SoftDeletingScope::class);
 
-        return (string) ($this->client()->withTrashed()->value('name') ?? '');
+        return (string) ($clientQuery->toBase()->value('name') ?? '');
     }
 }

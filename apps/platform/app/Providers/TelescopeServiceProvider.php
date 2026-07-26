@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
+use function in_array;
 
 final class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
 {
@@ -58,10 +59,20 @@ final class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      */
     protected function gate(): void
     {
-        Gate::define('viewTelescope', function (User $user) {
-            return in_array($user->email, [
-                //
-            ]);
+        Gate::define('viewTelescope', function (User $user): bool {
+            return in_array($user->email, $this->telescopeAllowedEmails(), true);
         });
+    }
+
+    /**
+     * Emails allowed to view Telescope outside local environments.
+     *
+     * @return list<string>
+     */
+    private function telescopeAllowedEmails(): array
+    {
+        return [
+            //
+        ];
     }
 }

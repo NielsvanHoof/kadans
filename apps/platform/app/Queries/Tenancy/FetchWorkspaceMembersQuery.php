@@ -73,12 +73,15 @@ final class FetchWorkspaceMembersQuery
      */
     private function userIds(Collection $memberships): array
     {
-        return $memberships
+        /** @var list<int> $userIds */
+        $userIds = $memberships
             ->pluck('user_id')
             ->map(static fn (mixed $id): int => (int) $id)
             ->unique()
             ->values()
             ->all();
+
+        return $userIds;
     }
 
     /**
