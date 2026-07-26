@@ -6,12 +6,11 @@ namespace App\Queries\Clients;
 
 use App\Data\Clients\ArchivedClientRowData;
 use App\Models\Client;
+use App\Queries\Filters\ScoutSearchFilter;
 use App\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
 /**
@@ -68,19 +67,7 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
     protected function allowedFilters(): array
     {
         return [
-            AllowedFilter::callback('q', function (Builder $query, mixed $value): void {
-                if (! is_string($value) || mb_trim($value) === '') {
-                    return;
-                }
-
-                $search = '%'.mb_trim($value).'%';
-
-                $query->getQuery()->where(function (QueryBuilder $query) use ($search): void {
-                    $query
-                        ->whereLike('name', $search)
-                        ->orWhereLike('email', $search);
-                });
-            }),
+            ScoutSearchFilter::make(Client::class, onlyTrashed: true),
         ];
     }
 

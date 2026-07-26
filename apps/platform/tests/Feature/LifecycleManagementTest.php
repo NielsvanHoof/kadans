@@ -199,6 +199,14 @@ test('archived indexes separate retained records from active work', function () 
             ->component('dossiers/archived')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.client_archived', true));
+
+    // Scout also matches archived dossiers by related client name.
+    $this->get(workspaceRoute('workspaces.dossiers.archived', $tenant).'?filter[q]=Jane')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dossiers/archived')
+            ->has('dossiers.data', 1)
+            ->where('dossiers.data.0.client_name', 'Archived Jane'));
 });
 
 test('restoring a client leaves its dossiers archived and records the action', function () {

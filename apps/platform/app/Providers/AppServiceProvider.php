@@ -54,6 +54,11 @@ final class AppServiceProvider extends ServiceProvider
     {
         $this->registerOcrBindings();
         $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
+
+        if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
+        }
     }
 
     /**

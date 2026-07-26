@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,6 +13,8 @@ import { useTranslation } from '@/hooks/use-translation';
 import type { IndexQueryConfig } from '@/types/pagination';
 
 const ALL_VALUE = '__all__';
+
+const SEARCH_DEBOUNCE_MS = 500;
 
 /**
  * Generic filter + sort toolbar driven by controller-provided indexQuery config.
@@ -31,6 +33,10 @@ export default function IndexQueryToolbar({
         only,
     });
 
+    // True while a search field is focused — blocks URL→draft sync that would
+    // clobber characters the user has already typed.
+    const searchFocusedRef = useRef(false);
+
     // Local draft for search inputs so typing doesn't fire a visit on every keystroke.
     const [drafts, setDrafts] = useState<Record<string, string>>(() => {
         const initial: Record<string, string> = {};
@@ -42,8 +48,13 @@ export default function IndexQueryToolbar({
         return initial;
     });
 
-    // Keep drafts in sync when the URL changes (back/forward, clear).
+    // Keep drafts in sync when the URL changes (back/forward, clear) — but never
+    // while the user is actively typing into a search field.
     useEffect(() => {
+        if (searchFocusedRef.current) {
+            return;
+        }
+
         setDrafts((prev) => {
             const next = { ...prev };
             let changed = false;
@@ -63,7 +74,8 @@ export default function IndexQueryToolbar({
         });
     }, [filters, config.filters]);
 
-    // Always read latest filters/config when the debounced callback runs.
+    // useEffectEvent keeps a stable identity so useDebounceCallback does not
+    // recreate (and orphan) a new lodash debounce timer on every keystroke.
     const applySearchDrafts = useEffectEvent(
         (nextDrafts: Record<string, string>) => {
             const nextFilters: Record<string, string> = { ...filters };
@@ -92,10 +104,8 @@ export default function IndexQueryToolbar({
     );
 
     const debouncedApplySearchDrafts = useDebounceCallback(
-        (nextDrafts: Record<string, string>) => {
-            applySearchDrafts(nextDrafts);
-        },
-        300,
+        applySearchDrafts,
+        SEARCH_DEBOUNCE_MS,
     );
 
     function handleSearchChange(key: string, value: string): void {
@@ -104,6 +114,16 @@ export default function IndexQueryToolbar({
             debouncedApplySearchDrafts(nextDrafts);
             return nextDrafts;
         });
+    }
+
+    function handleSearchFocus(): void {
+        searchFocusedRef.current = true;
+    }
+
+    function handleSearchBlur(): void {
+        searchFocusedRef.current = false;
+        // Apply the latest draft immediately when leaving the field.
+        debouncedApplySearchDrafts.flush();
     }
 
     function handleSelectChange(key: string, value: string): void {
@@ -138,6 +158,8 @@ export default function IndexQueryToolbar({
                                 type="search"
                                 value={drafts[filter.key] ?? ''}
                                 placeholder={t(filter.label)}
+                                onFocus={handleSearchFocus}
+                                onBlur={handleSearchBlur}
                                 onChange={(event) =>
                                     handleSearchChange(
                                         filter.key,

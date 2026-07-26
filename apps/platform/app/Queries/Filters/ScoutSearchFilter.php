@@ -24,18 +24,21 @@ final class ScoutSearchFilter
     /**
      * @param  class-string<Model>  $modelClass
      */
-    public static function make(string $modelClass, string $name = 'q'): AllowedFilter
-    {
+    public static function make(
+        string $modelClass,
+        string $name = 'q',
+        bool $onlyTrashed = false,
+    ): AllowedFilter {
         return AllowedFilter::callback(
             $name,
-            function (Builder $query, mixed $value) use ($modelClass): void {
+            function (Builder $query, mixed $value) use ($modelClass, $onlyTrashed): void {
                 if (! is_string($value) || mb_trim($value) === '') {
                     return;
                 }
 
                 // Scout returns matching primary keys; apply them to the current builder
                 // so Spatie filters/sorts/pagination keep working on the same query.
-                $ids = self::searchKeys($modelClass, $value);
+                $ids = self::searchKeys($modelClass, mb_trim($value), $onlyTrashed);
 
                 // whereKey([]) yields an empty result set (no matching primary keys).
                 $query->whereKey($ids);
@@ -47,7 +50,7 @@ final class ScoutSearchFilter
      * @param  class-string<Model>  $modelClass
      * @return list<int|string>
      */
-    private static function searchKeys(string $modelClass, string $value): array
+    private static function searchKeys(string $modelClass, string $value, bool $onlyTrashed): array
     {
         $search = [$modelClass, 'search'];
 
@@ -59,6 +62,10 @@ final class ScoutSearchFilter
 
         if (! $scoutBuilder instanceof ScoutBuilder) {
             throw new InvalidArgumentException("{$modelClass}::search() must return a Scout builder.");
+        }
+
+        if ($onlyTrashed) {
+            $scoutBuilder->onlyTrashed();
         }
 
         $keys = [];

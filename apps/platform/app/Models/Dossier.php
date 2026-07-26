@@ -9,12 +9,14 @@ use App\Concerns\LogsTenantAuditableActivity;
 use App\Enums\DossierStatus;
 use Database\Factories\DossierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Laravel\Scout\Builder as ScoutBuilder;
 use Laravel\Scout\Searchable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -59,9 +61,23 @@ final class Dossier extends Model
     ];
 
     /**
+     * Join clients so Scout's database engine can LIKE on clients.name.
+     * Collection engine (tests) ignores this and uses toSearchableArray values.
+     */
+    public function newScoutQuery(ScoutBuilder $_builder): EloquentBuilder
+    {
+        return self::query()
+            ->select($this->qualifyColumn('*'))
+            ->leftJoin('clients', 'clients.id', '=', $this->qualifyColumn('client_id'));
+    }
+
+    /**
      * Columns Scout's database engine searches with LIKE.
      *
-     * @return array{id: int, title: string, reference: string}
+     * `clients.name` is a qualified column (dot kept as-is by qualifyColumn) so
+     * archive/live search can match the related client without a denormalized field.
+     *
+     * @return array{id: int, title: string, reference: string, 'clients.name': string}
      */
     public function toSearchableArray(): array
     {
@@ -69,6 +85,9 @@ final class Dossier extends Model
             'id' => $this->id,
             'title' => $this->title,
             'reference' => $this->reference ?? '',
+            // Empty on the fresh model Scout uses for column discovery (avoids N+1).
+            // Loaded for collection-engine hits when the model exists in the DB.
+            'clients.name' => $this->clientNameForSearch(),
         ];
     }
 
@@ -126,5 +145,23 @@ final class Dossier extends Model
             'last_client_message_sent_at' => 'datetime',
             'last_client_opened_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Resolve client name for Scout without querying during column discovery.
+     */
+    private function clientNameForSearch(): string
+    {
+        if ($this->relationLoaded('client')) {
+            $client = $this->client;
+
+            return $client instanceof Client ? $client->name : '';
+        }
+
+        if (! $this->exists) {
+            return '';
+        }
+
+        return (string) ($this->client()->withTrashed()->value('name') ?? '');
     }
 }

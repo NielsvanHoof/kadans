@@ -27,12 +27,97 @@ final class WorkspaceMemberRoles
         setPermissionsTeamId($tenant->id);
 
         try {
+            // Cached roles belong to whatever team was active when they loaded.
+            // Clear them when the team changes so we never return a stale role.
+            if ($previousTeamId !== $tenant->id) {
+                $user->unsetRelation('roles');
+            }
+
             $roleName = $user->getRoleNames()->first();
 
             return is_string($roleName) ? Role::tryFrom($roleName) : null;
         } finally {
             setPermissionsTeamId($previousTeamId);
         }
+    }
+
+    /**
+     * Resolve tenant-scoped role names for many users in one query.
+     *
+     * Avoids the N+1 from calling roleFor()/getRoleNames() per member.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, string> user id => role name
+     */
+    public function roleNamesByUserId(Tenant $tenant, array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
+        $rolesTable = (string) config('permission.table_names.roles');
+        $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
+        $modelKey = (string) config('permission.column_names.model_morph_key');
+
+        /** @var array<int, string> $roleNames */
+        $roleNames = [];
+
+        $rows = DB::table($modelHasRolesTable)
+            ->join($rolesTable, "{$rolesTable}.id", '=', "{$modelHasRolesTable}.role_id")
+            ->where("{$modelHasRolesTable}.model_type", User::class)
+            ->where("{$modelHasRolesTable}.{$teamForeignKey}", $tenant->id)
+            ->where(function ($query) use ($rolesTable, $teamForeignKey, $tenant): void {
+                // Match Spatie's teams scope: global roles or this tenant's roles.
+                $query->whereNull("{$rolesTable}.{$teamForeignKey}")
+                    ->orWhere("{$rolesTable}.{$teamForeignKey}", $tenant->id);
+            })
+            ->whereIn("{$modelHasRolesTable}.{$modelKey}", $userIds)
+            ->get([
+                "{$modelHasRolesTable}.{$modelKey} as user_id",
+                "{$rolesTable}.name as role_name",
+            ]);
+
+        foreach ($rows as $row) {
+            $roleNames[(int) $row->user_id] = (string) $row->role_name;
+        }
+
+        return $roleNames;
+    }
+
+    /**
+     * Batch-resolve roles for a set of users, reusing any roles already loaded
+     * on $viewer (e.g. after authorize()/can()) so we do not re-query that user.
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, string> user id => role name
+     */
+    public function roleNamesForUsers(Tenant $tenant, array $userIds, User $viewer): array
+    {
+        /** @var array<int, string> $roleNamesByUserId */
+        $roleNamesByUserId = [];
+
+        if (
+            in_array($viewer->id, $userIds, true)
+            && $viewer->relationLoaded('roles')
+        ) {
+            $viewerRoleName = $viewer->getRoleNames()->first();
+
+            if (is_string($viewerRoleName)) {
+                $roleNamesByUserId[$viewer->id] = $viewerRoleName;
+            }
+        }
+
+        /** @var list<int> $missingUserIds */
+        $missingUserIds = [];
+
+        foreach ($userIds as $userId) {
+            if (! array_key_exists($userId, $roleNamesByUserId)) {
+                $missingUserIds[] = $userId;
+            }
+        }
+
+        return $roleNamesByUserId + $this->roleNamesByUserId($tenant, $missingUserIds);
     }
 
     public function activeOwnerCount(Tenant $tenant): int

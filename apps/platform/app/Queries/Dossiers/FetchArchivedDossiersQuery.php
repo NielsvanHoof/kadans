@@ -7,13 +7,12 @@ namespace App\Queries\Dossiers;
 use App\Data\Dossiers\ArchivedDossierRowData;
 use App\Models\Client;
 use App\Models\Dossier;
+use App\Queries\Filters\ScoutSearchFilter;
 use App\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RuntimeException;
-use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
 /**
@@ -73,24 +72,7 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
     protected function allowedFilters(): array
     {
         return [
-            AllowedFilter::callback('q', function (Builder $query, mixed $value): void {
-                if (! is_string($value) || mb_trim($value) === '') {
-                    return;
-                }
-
-                $search = '%'.mb_trim($value).'%';
-                $clientIds = Client::withTrashed();
-                $clientIds->getQuery()
-                    ->select('id')
-                    ->whereLike('name', $search);
-
-                $query->getQuery()->where(function (QueryBuilder $query) use ($search, $clientIds): void {
-                    $query
-                        ->whereLike('title', $search)
-                        ->orWhereLike('reference', $search)
-                        ->orWhereIn('client_id', $clientIds->getQuery());
-                });
-            }),
+            ScoutSearchFilter::make(Dossier::class, onlyTrashed: true),
         ];
     }
 

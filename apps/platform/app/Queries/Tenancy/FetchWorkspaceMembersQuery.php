@@ -17,14 +17,41 @@ use App\Models\User;
 use App\Support\Tenancy\WorkspaceMemberRoles;
 use Illuminate\Database\Eloquent\Collection;
 
+use function is_string;
+
+/**
+ * Assembles the workspace members Inertia page payload.
+ *
+ * Kept as one page query (like FetchWorkspaceDashboardQuery): private methods
+ * own each section; role resolution stays on WorkspaceMemberRoles.
+ */
 final class FetchWorkspaceMembersQuery
 {
     public function __construct(private readonly WorkspaceMemberRoles $memberRoles) {}
 
     public function handle(Tenant $tenant, User $viewer): WorkspaceMembersPageData
     {
-        $viewerIsOwner = $this->memberRoles->roleFor($viewer, $tenant) === Role::Owner;
+        $memberships = $this->memberships($tenant);
+        $roleNamesByUserId = $this->memberRoles->roleNamesForUsers(
+            $tenant,
+            $this->userIds($memberships),
+            $viewer,
+        );
+        $viewerIsOwner = ($roleNamesByUserId[$viewer->id] ?? null) === Role::Owner->value;
 
+        return new WorkspaceMembersPageData(
+            members: $this->members($memberships, $viewer, $roleNamesByUserId),
+            invitations: $this->pendingInvitations($tenant),
+            roleOptions: $this->assignableRoleOptions($viewerIsOwner),
+            canAssignOwner: $viewerIsOwner,
+        );
+    }
+
+    /**
+     * @return Collection<int, TenantMembership>
+     */
+    private function memberships(Tenant $tenant): Collection
+    {
         $membershipsQuery = TenantMembership::query()
             ->with('user')
             ->where('tenant_id', $tenant->id);
@@ -37,9 +64,33 @@ final class FetchWorkspaceMembersQuery
             ])
             ->orderBy('joined_at');
 
-        /** @var Collection<int, TenantMembership> $memberships */
-        $memberships = $membershipsQuery->get();
+        return $membershipsQuery->get();
+    }
 
+    /**
+     * @param  Collection<int, TenantMembership>  $memberships
+     * @return list<int>
+     */
+    private function userIds(Collection $memberships): array
+    {
+        return $memberships
+            ->pluck('user_id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, TenantMembership>  $memberships
+     * @param  array<int, string>  $roleNamesByUserId
+     * @return list<WorkspaceMemberData>
+     */
+    private function members(
+        Collection $memberships,
+        User $viewer,
+        array $roleNamesByUserId,
+    ): array {
         /** @var list<WorkspaceMemberData> $members */
         $members = [];
 
@@ -50,7 +101,8 @@ final class FetchWorkspaceMembersQuery
                 continue;
             }
 
-            $role = $this->memberRoles->roleFor($user, $tenant);
+            $roleName = $roleNamesByUserId[$user->id] ?? null;
+            $role = is_string($roleName) ? Role::tryFrom($roleName) : null;
 
             $members[] = new WorkspaceMemberData(
                 id: $membership->id,
@@ -66,19 +118,24 @@ final class FetchWorkspaceMembersQuery
             );
         }
 
+        return $members;
+    }
+
+    /**
+     * @return list<WorkspaceInvitationData>
+     */
+    private function pendingInvitations(Tenant $tenant): array
+    {
         $invitationsQuery = TenantInvitation::query()
             ->where('tenant_id', $tenant->id);
 
         TenantInvitation::constrainToPending($invitationsQuery);
         $invitationsQuery->getQuery()->orderByDesc('created_at');
 
-        /** @var Collection<int, TenantInvitation> $invitationModels */
-        $invitationModels = $invitationsQuery->get();
-
         /** @var list<WorkspaceInvitationData> $invitations */
         $invitations = [];
 
-        foreach ($invitationModels as $invitation) {
+        foreach ($invitationsQuery->get() as $invitation) {
             $invitations[] = new WorkspaceInvitationData(
                 id: $invitation->id,
                 email: $invitation->email,
@@ -89,6 +146,14 @@ final class FetchWorkspaceMembersQuery
             );
         }
 
+        return $invitations;
+    }
+
+    /**
+     * @return list<WorkspaceRoleOptionData>
+     */
+    private function assignableRoleOptions(bool $viewerIsOwner): array
+    {
         /** @var list<WorkspaceRoleOptionData> $roleOptions */
         $roleOptions = [];
 
@@ -103,11 +168,6 @@ final class FetchWorkspaceMembersQuery
             );
         }
 
-        return new WorkspaceMembersPageData(
-            members: $members,
-            invitations: $invitations,
-            roleOptions: $roleOptions,
-            canAssignOwner: $viewerIsOwner,
-        );
+        return $roleOptions;
     }
 }

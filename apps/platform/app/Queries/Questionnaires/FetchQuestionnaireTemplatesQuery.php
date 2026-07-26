@@ -31,7 +31,6 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
         $tenant = Tenant::current();
         $tenantId = $tenant instanceof Tenant ? $tenant->getKey() : null;
 
-        // Fresh QueryBuilder per bucket so filters/sorts apply independently with distinct page names.
         /** @var LengthAwarePaginator<int, array{id: int, name: string, description: string|null, category: string, category_label: string, items_count: int, is_system: bool}> $systemTemplates */
         $systemTemplates = $this->paginate(
             subject: QuestionnaireTemplate::queryVisibleToCurrentTenant()

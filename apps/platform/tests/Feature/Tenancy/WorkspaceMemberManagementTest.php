@@ -10,7 +10,9 @@ use App\Models\TenantInvitation;
 use App\Models\TenantMembership;
 use App\Models\User;
 use App\Notifications\Tenancy\WorkspaceMemberInviteNotification;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -32,6 +34,32 @@ test('owners can view the members page', function () {
             // The sole owner is marked as the current user so Remove stays hidden.
             ->where('members.0.is_current_user', true)
             ->where('members.0.role', Role::Owner->value));
+});
+
+test('members page does not re-query roles already loaded by authorization', function () {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    workspaceMember($tenant, Role::Adviser);
+    workspaceMember($tenant, Role::Reviewer);
+
+    $rolePivotQueries = [];
+
+    DB::listen(function (QueryExecuted $query) use (&$rolePivotQueries): void {
+        // Spatie loads user roles through model_has_roles; count only those.
+        if (str_contains($query->sql, 'model_has_roles')) {
+            $rolePivotQueries[] = $query->sql;
+        }
+    });
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.members.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/members/index')
+            ->has('members', 3));
+
+    // One query from Gate/hasRole on the viewer, plus one batch for the other
+    // members — not one getRoleNames() per membership row.
+    expect($rolePivotQueries)->toHaveCount(2);
 });
 
 test('administrators see can_assign_owner as false on the members page', function () {
