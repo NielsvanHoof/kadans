@@ -9,7 +9,6 @@ use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\UploadedDocument;
 use App\Services\Ocr\OcrOrchestrator;
-use Exception;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -153,7 +152,8 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 
     /**
      * Atomically move pending/failed/processing → processing.
-     * Returns null when another worker already completed the document.
+     * Returns null when the document cannot be claimed (stale path, already
+     * completed, or an external OCR job already in flight).
      */
     private function claimForProcessing(
         UploadedDocument $document,
@@ -165,10 +165,12 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 
             $locked = $query->firstOrFail();
 
+            // Stale job for a replaced upload revision — skip without failing the queue.
             if ($locked->path !== $expectedPath) {
-                throw new Exception("Document path mismatch: {$locked->path} !== {$expectedPath}");
+                return null;
             }
 
+            // Another worker finished, or an external OCR job is already in flight.
             if (
                 $locked->processing_status === DocumentProcessingStatus::Completed
                 || (
@@ -176,7 +178,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
                     && $locked->textract_job_id !== null
                 )
             ) {
-                throw new Exception("Document already processing: {$locked->processing_status}");
+                return null;
             }
 
             $locked->forceFill([
