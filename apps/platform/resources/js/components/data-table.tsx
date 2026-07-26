@@ -9,6 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 export type DataTableColumn<T> = {
@@ -54,6 +55,7 @@ export default function DataTable<T>({
     className,
     emptyState = null,
 }: DataTableProps<T>) {
+    const { t } = useTranslation();
     const selectionEnabled =
         selectedKeys !== undefined && onSelectionChange !== undefined;
 
@@ -120,7 +122,7 @@ export default function DataTable<T>({
                                                   : false
                                         }
                                         onCheckedChange={toggleAll}
-                                        aria-label="Select all rows"
+                                        aria-label={t('Select all rows')}
                                     />
                                 </TableHead>
                             ) : null}
@@ -174,7 +176,7 @@ export default function DataTable<T>({
                                                 onCheckedChange={() =>
                                                     toggleRow(row)
                                                 }
-                                                aria-label="Select row"
+                                                aria-label={t('Select row')}
                                             />
                                         </TableCell>
                                     ) : null}

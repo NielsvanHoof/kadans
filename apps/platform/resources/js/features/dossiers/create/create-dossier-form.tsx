@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import DossierFollowUpFields from '@/features/dossiers/follow-up/dossier-follow-up-fields';
 import type {
     DossierClientOption,
@@ -118,6 +119,7 @@ export default function CreateDossierForm({
 
                     <div className="flex items-center gap-3">
                         <Button disabled={processing}>
+                            {processing && <Spinner />}
                             {t('Create dossier')}
                         </Button>
                         <Button variant="ghost" asChild>

@@ -59,7 +59,7 @@ export default function ClientIndex({
                         )}
                     />
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="ghost" asChild>
                             <Link href={archivedClients(currentWorkspace)}>
                                 <Archive aria-hidden="true" />

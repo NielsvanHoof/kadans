@@ -26,7 +26,7 @@ import type { AccessGrant } from '@/features/portal/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
  * Lists access grants and creates a new 7-day portal link (optionally emailed).
@@ -159,6 +159,7 @@ export default function ClientAccessCard({
 function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const [processing, setProcessing] = useState(false);
 
     return (
         <Dialog>
@@ -178,22 +179,31 @@ function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
                 </DialogHeader>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>
-                        <Button type="button" variant="secondary">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={processing}
+                        >
                             {t('Cancel')}
                         </Button>
                     </DialogClose>
                     <Button
                         type="button"
                         variant="destructive"
-                        onClick={() =>
+                        disabled={processing}
+                        onClick={() => {
+                            setProcessing(true);
                             router.delete(
                                 ClientAccessGrantController.destroy.url({
                                     tenant: currentWorkspace,
                                     grant: grantId,
                                 }),
-                                inlineDossierActionOptions,
-                            )
-                        }
+                                {
+                                    ...inlineActionOptions,
+                                    onFinish: () => setProcessing(false),
+                                },
+                            );
+                        }}
                     >
                         {t('Revoke access')}
                     </Button>

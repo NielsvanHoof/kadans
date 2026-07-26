@@ -6,6 +6,7 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import DossierBuilderLayout from '@/layouts/dossiers/dossier-builder-layout';
+import OnboardingLayout from '@/layouts/onboarding-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 // Reverb WebSocket client — keys come from VITE_REVERB_* (.env).
@@ -34,6 +35,9 @@ createInertiaApp({
             case name.startsWith('auth/'):
             case name.startsWith('invitations/'):
                 return AuthLayout;
+            case name.startsWith('onboarding/'):
+                // First-run firm setup — brand shell without the staff sidebar.
+                return OnboardingLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
             default:

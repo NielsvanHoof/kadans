@@ -12,8 +12,6 @@ import { cn } from '@/lib/utils';
 export const DEFAULT_FILE_ACCEPT =
     '.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx';
 
-export const DEFAULT_FILE_ACCEPT_HINT = 'PDF, JPG, PNG, Word, Excel';
-
 export const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 type FileDropzoneProps = {
@@ -42,7 +40,7 @@ export default function FileDropzone({
     file,
     onFileChange,
     accept = DEFAULT_FILE_ACCEPT,
-    acceptHint = DEFAULT_FILE_ACCEPT_HINT,
+    acceptHint,
     maxBytes = DEFAULT_MAX_FILE_BYTES,
     error,
     disabled = false,
@@ -50,6 +48,7 @@ export default function FileDropzone({
     className,
 }: FileDropzoneProps) {
     const { t } = useTranslation();
+    const resolvedAcceptHint = acceptHint ?? t('PDF, JPG, PNG, Word, Excel');
     const hintId = useId();
     const inputRef = useRef<HTMLInputElement>(null);
     const [dragActive, setDragActive] = useState(false);
@@ -189,7 +188,7 @@ export default function FileDropzone({
                             id={hintId}
                             className="text-xs text-muted-foreground"
                         >
-                            {acceptHint} ·{' '}
+                            {resolvedAcceptHint} ·{' '}
                             {t('max :size', { size: formatBytes(maxBytes) })}
                         </span>
                     </>

@@ -5,9 +5,13 @@ declare(strict_types=1);
 use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\QuestionnaireTemplateCategory;
+use App\Models\Client;
+use App\Models\Dossier;
 use App\Models\User;
+use App\Notifications\Portal\ClientPortalInviteNotification;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -181,4 +185,51 @@ test('client dashboard and questionnaire translation keys are shared with inerti
             ->where('translations.Yes / no', 'Ja / nee')
             ->where('translations.Draft', 'Concept')
             ->where('translations.In review', 'In beoordeling'));
+});
+
+test('user preferred locale falls back to the app locale when unset', function () {
+    $user = User::factory()->create(['locale' => null]);
+
+    expect($user->preferredLocale())->toBe((string) config('app.locale'));
+
+    $user->forceFill(['locale' => 'nl'])->save();
+
+    expect($user->fresh()->preferredLocale())->toBe('nl');
+});
+
+test('portal invite notification is queued with the staff users locale', function () {
+    Notification::fake();
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $owner = User::factory()->create(['locale' => 'nl']);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create([
+        'tenant_id' => $tenant->id,
+        'email' => 'locale-client@example.com',
+    ]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'expires_in_days' => 7,
+            'send_invite' => true,
+        ])
+        ->assertRedirect();
+
+    Notification::assertSentOnDemand(
+        ClientPortalInviteNotification::class,
+        function (ClientPortalInviteNotification $notification): bool {
+            expect($notification->locale)->toBe('nl');
+
+            return true;
+        },
+    );
 });

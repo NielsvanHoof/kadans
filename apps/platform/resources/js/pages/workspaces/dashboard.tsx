@@ -1,4 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import DashboardMetricsGrid from '@/features/dashboard/dashboard-metrics-grid';
 import RecentDossiersCard from '@/features/dashboard/recent-dossiers-card';
@@ -39,21 +40,21 @@ export default function WorkspaceDashboard({
 
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0">
                         <p className="text-sm font-medium text-muted-foreground">
                             {currentWorkspace.name}
                         </p>
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            {t('Dossier overview')}
-                        </h1>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            {t(
+                        <Heading
+                            level={1}
+                            className="mb-0"
+                            title={t('Dossier overview')}
+                            description={t(
                                 'Keep track of client requests and review work.',
                             )}
-                        </p>
+                        />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" asChild>
                             <Link href={createClient(currentWorkspace)}>
                                 {t('New client')}

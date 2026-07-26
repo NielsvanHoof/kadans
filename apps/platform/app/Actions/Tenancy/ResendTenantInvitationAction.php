@@ -6,11 +6,14 @@ namespace App\Actions\Tenancy;
 
 use App\Models\Tenant;
 use App\Models\TenantInvitation;
+use App\Models\User;
 use App\Notifications\Tenancy\WorkspaceMemberInviteNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+
+use function is_string;
 
 final class ResendTenantInvitationAction
 {
@@ -50,14 +53,21 @@ final class ResendTenantInvitationAction
 
         $acceptUrl = URL::route('invitations.show', ['token' => $plainTextToken]);
 
+        $inviteeLocale = User::query()->where('email', $invitation->email)->value('locale');
+        $locale = is_string($inviteeLocale) && $inviteeLocale !== ''
+            ? $inviteeLocale
+            : app()->getLocale();
+
         Notification::route('mail', $invitation->email)
-            ->notify(new WorkspaceMemberInviteNotification(
-                invitationId: $invitation->id,
-                firmName: $tenant->name,
-                role: $invitation->role,
-                acceptUrl: $acceptUrl,
-                expiresAt: $expiresAt,
-            ));
+            ->notify(
+                (new WorkspaceMemberInviteNotification(
+                    invitationId: $invitation->id,
+                    firmName: $tenant->name,
+                    role: $invitation->role,
+                    acceptUrl: $acceptUrl,
+                    expiresAt: $expiresAt,
+                ))->locale($locale),
+            );
 
         return [
             'invitation' => $invitation->fresh() ?? $invitation,

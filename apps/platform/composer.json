@@ -1,11 +1,11 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "qompose/platform",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Qompose platform application.",
     "keywords": [
         "laravel",
-        "framework"
+        "qompose"
     ],
     "license": "MIT",
     "require": {

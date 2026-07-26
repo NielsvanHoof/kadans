@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import DossierFollowUpFields from '@/features/dossiers/follow-up/dossier-follow-up-fields';
 import type {
     EditableDossierWithResponsibility,
@@ -84,6 +85,7 @@ export default function EditDossierForm({
 
                     <div className="flex items-center gap-3">
                         <Button disabled={processing}>
+                            {processing && <Spinner />}
                             {t('Save changes')}
                         </Button>
                         <Button variant="ghost" asChild>

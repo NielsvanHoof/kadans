@@ -792,5 +792,15 @@
     "—": "—",
     "Actor": "Actor",
     "From date": "Vanaf datum",
-    "To date": "Tot datum"
+    "To date": "Tot datum",
+    "Something went wrong.": "Er is iets misgegaan.",
+    "Something went wrong": "Er is iets misgegaan",
+    "Select all rows": "Alle rijen selecteren",
+    "Select row": "Rij selecteren",
+    "PDF, JPG, PNG, Word, Excel": "PDF, JPG, PNG, Word, Excel",
+    "Suspend member?": "Lid schorsen?",
+    "Suspend :name? They will lose access until reactivated.": ":name schorsen? Deze persoon verliest toegang tot heractivering.",
+    "Change role?": "Rol wijzigen?",
+    "Change the role of :name to :role? Their permissions will update immediately.": "De rol van :name wijzigen naar :role? De rechten worden meteen bijgewerkt.",
+    "Change role": "Rol wijzigen"
 }

@@ -20,7 +20,7 @@ import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 export default function DocumentRequestReview({
     dossierId,
@@ -99,7 +99,7 @@ export default function DocumentRequestReview({
 
             <Form
                 {...DocumentRequestReviewController.store.form(routeParameters)}
-                options={inlineDossierActionOptions}
+                options={inlineActionOptions}
             >
                 {({ processing }) => (
                     <>
@@ -133,7 +133,7 @@ export default function DocumentRequestReview({
                         {...DocumentRequestReviewController.store.form(
                             routeParameters,
                         )}
-                        options={inlineDossierActionOptions}
+                        options={inlineActionOptions}
                         className="space-y-4"
                     >
                         {({ errors, processing }) => (

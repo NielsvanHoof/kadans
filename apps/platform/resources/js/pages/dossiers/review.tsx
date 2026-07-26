@@ -115,6 +115,7 @@ export default function ReviewDossier({
                             </Button>
                             <Heading
                                 level={1}
+                                className="mb-0"
                                 title={t('Review')}
                                 description={`${dossier.title} · ${dossier.client.name}`}
                             />

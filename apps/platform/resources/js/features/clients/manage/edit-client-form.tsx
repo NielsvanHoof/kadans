@@ -4,6 +4,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import type { ClientDetails } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -54,6 +55,7 @@ export default function EditClientForm({
 
                     <div className="flex items-center gap-3">
                         <Button disabled={processing}>
+                            {processing && <Spinner />}
                             {t('Save changes')}
                         </Button>
                         <Button variant="ghost" asChild>

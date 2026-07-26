@@ -38,13 +38,15 @@ final class SendClientChangesRequestedNotificationAction
             : (string) config('app.name');
 
         Notification::route('mail', $client->email)
-            ->notify(new ClientChangesRequestedNotification(
-                documentRequestId: $documentRequest->id,
-                dossierId: $dossier->id,
-                clientName: $client->name,
-                dossierTitle: $dossier->title,
-                documentRequestTitle: $documentRequest->title,
-                firmName: $firmName,
-            ));
+            ->notify(
+                (new ClientChangesRequestedNotification(
+                    documentRequestId: $documentRequest->id,
+                    dossierId: $dossier->id,
+                    clientName: $client->name,
+                    dossierTitle: $dossier->title,
+                    documentRequestTitle: $documentRequest->title,
+                    firmName: $firmName,
+                ))->locale(app()->getLocale()),
+            );
     }
 }

@@ -13,7 +13,7 @@ import type { DocumentRequest } from '@/features/document-requests/types';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
  * Review-stage list: responses, OCR, staff file uploads, and review actions.
@@ -129,7 +129,7 @@ function ReviewGroup({
                     url,
                     { decision: 'accepted' },
                     {
-                        ...inlineDossierActionOptions,
+                        ...inlineActionOptions,
                         preserveScroll: true,
                         onSuccess: () => resolve(),
                         onError: () => reject(new Error('Approve failed')),
@@ -220,7 +220,7 @@ function ReviewGroup({
             </div>
 
             {items.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+                <EmptyState variant="compact" title={emptyLabel} />
             ) : (
                 <ul className="divide-y overflow-hidden rounded-xl border border-border/70">
                     {items.map((documentRequest) => {

@@ -10,7 +10,7 @@ import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 import { cn } from '@/lib/utils';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
@@ -112,7 +112,7 @@ export default function QuestionnaireBuilderItem({
                             dossier: dossierId,
                             documentRequest: documentRequest.id,
                         })}
-                        options={inlineDossierActionOptions}
+                        options={inlineActionOptions}
                         trigger={
                             <Button
                                 type="button"

@@ -82,15 +82,19 @@ final class SendDossierReminderAction
                 'token' => $result['plain_text_token'],
             ]);
 
+            $locale = $grantCreator->preferredLocale();
+
             Notification::route('mail', $client->email)
-                ->notify(new ClientPortalReminderNotification(
-                    grantId: $result['grant']->id,
-                    dossier: $lockedDossier,
-                    portalUrl: $portalUrl,
-                    expiresAt: $result['grant']->expires_at,
-                    firmName: $firmName,
-                    source: $source,
-                ));
+                ->notify(
+                    (new ClientPortalReminderNotification(
+                        grantId: $result['grant']->id,
+                        dossier: $lockedDossier,
+                        portalUrl: $portalUrl,
+                        expiresAt: $result['grant']->expires_at,
+                        firmName: $firmName,
+                        source: $source,
+                    ))->locale($locale),
+                );
 
             $nextReminderAt = $lockedDossier->reminder_interval_days === null
                 ? null

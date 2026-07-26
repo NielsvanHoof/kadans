@@ -1,4 +1,5 @@
 import { Form } from '@inertiajs/react';
+import { useState } from 'react';
 import WorkspaceMemberController from '@/actions/App/Http/Controllers/Tenancy/WorkspaceMemberController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import EmptyState from '@/components/empty-state';
@@ -11,6 +12,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     Select,
     SelectContent,
@@ -66,7 +76,6 @@ export default function MembersListCard({
                 ) : (
                     <IndexList>
                         {members.map((member) => {
-                            const roleFormId = `member-role-${member.id}`;
                             const isLastActiveOwner =
                                 member.role === 'owner' &&
                                 member.status === 'active' &&
@@ -102,93 +111,30 @@ export default function MembersListCard({
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Form
-                                            id={roleFormId}
-                                            {...WorkspaceMemberController.update.form(
-                                                {
-                                                    tenant: currentWorkspace,
-                                                    membership: member.id,
-                                                },
-                                            )}
-                                            options={{ preserveScroll: true }}
-                                            className="flex items-center gap-2"
-                                        >
-                                            {({ processing }) => (
-                                                <Select
-                                                    name="role"
-                                                    defaultValue={
-                                                        member.role ?? undefined
-                                                    }
-                                                    disabled={
-                                                        processing ||
-                                                        member.status ===
-                                                            'suspended' ||
-                                                        isLastActiveOwner
-                                                    }
-                                                    // Submit as soon as a new role is chosen.
-                                                    onValueChange={() => {
-                                                        queueMicrotask(() => {
-                                                            const form =
-                                                                document.getElementById(
-                                                                    roleFormId,
-                                                                );
-
-                                                            if (
-                                                                form instanceof
-                                                                HTMLFormElement
-                                                            ) {
-                                                                form.requestSubmit();
-                                                            }
-                                                        });
-                                                    }}
-                                                >
-                                                    <SelectTrigger
-                                                        aria-label={t('Role')}
-                                                        className="min-w-40"
-                                                    >
-                                                        <SelectValue
-                                                            placeholder={t(
-                                                                'Role',
-                                                            )}
-                                                        />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="bg-background">
-                                                        {assignableRoleOptions.map(
-                                                            (option) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        option.value
-                                                                    }
-                                                                    value={
-                                                                        option.value
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        option.label
-                                                                    }
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                        {roleMissingFromOptions &&
-                                                            member.role && (
-                                                                <SelectItem
-                                                                    value={
-                                                                        member.role
-                                                                    }
-                                                                >
-                                                                    {member.role_label ??
-                                                                        member.role}
-                                                                </SelectItem>
-                                                            )}
-                                                    </SelectContent>
-                                                </Select>
-                                            )}
-                                        </Form>
+                                        <MemberRoleSelect
+                                            member={member}
+                                            assignableRoleOptions={
+                                                assignableRoleOptions
+                                            }
+                                            roleMissingFromOptions={
+                                                roleMissingFromOptions
+                                            }
+                                            isLastActiveOwner={
+                                                isLastActiveOwner
+                                            }
+                                        />
 
                                         {member.status === 'active' &&
                                             !member.is_current_user && (
-                                                <Form
-                                                    {...WorkspaceMemberController.update.form(
+                                                <ConfirmDestroyDialog
+                                                    title={t('Suspend member?')}
+                                                    description={t(
+                                                        'Suspend :name? They will lose access until reactivated.',
+                                                        { name: member.name },
+                                                    )}
+                                                    confirmLabel={t('Suspend')}
+                                                    confirmVariant="default"
+                                                    form={WorkspaceMemberController.update.form(
                                                         {
                                                             tenant: currentWorkspace,
                                                             membership:
@@ -198,28 +144,25 @@ export default function MembersListCard({
                                                     options={{
                                                         preserveScroll: true,
                                                     }}
+                                                    trigger={
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            disabled={
+                                                                isLastActiveOwner
+                                                            }
+                                                        >
+                                                            {t('Suspend')}
+                                                        </Button>
+                                                    }
                                                 >
-                                                    {({ processing }) => (
-                                                        <>
-                                                            <input
-                                                                type="hidden"
-                                                                name="status"
-                                                                value="suspended"
-                                                            />
-                                                            <Button
-                                                                type="submit"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                disabled={
-                                                                    processing ||
-                                                                    isLastActiveOwner
-                                                                }
-                                                            >
-                                                                {t('Suspend')}
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                </Form>
+                                                    <input
+                                                        type="hidden"
+                                                        name="status"
+                                                        value="suspended"
+                                                    />
+                                                </ConfirmDestroyDialog>
                                             )}
 
                                         {canRemoveMember ? (
@@ -258,5 +201,121 @@ export default function MembersListCard({
                 )}
             </CardContent>
         </Card>
+    );
+}
+
+/**
+ * Role select that confirms before submitting a change.
+ */
+function MemberRoleSelect({
+    member,
+    assignableRoleOptions,
+    roleMissingFromOptions,
+    isLastActiveOwner,
+}: {
+    member: WorkspaceMember;
+    assignableRoleOptions: RoleOption[];
+    roleMissingFromOptions: boolean;
+    isLastActiveOwner: boolean;
+}) {
+    const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
+    const [pendingRole, setPendingRole] = useState<string | null>(null);
+
+    const pendingRoleLabel =
+        assignableRoleOptions.find((option) => option.value === pendingRole)
+            ?.label ??
+        pendingRole ??
+        '';
+
+    return (
+        <>
+            <Select
+                value={member.role ?? undefined}
+                disabled={member.status === 'suspended' || isLastActiveOwner}
+                // Ask for confirmation before posting the role change.
+                onValueChange={(value) => {
+                    if (value === member.role) {
+                        return;
+                    }
+
+                    setPendingRole(value);
+                }}
+            >
+                <SelectTrigger aria-label={t('Role')} className="min-w-40">
+                    <SelectValue placeholder={t('Role')} />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                    {assignableRoleOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                    {roleMissingFromOptions && member.role && (
+                        <SelectItem value={member.role}>
+                            {member.role_label ?? member.role}
+                        </SelectItem>
+                    )}
+                </SelectContent>
+            </Select>
+
+            <Dialog
+                open={pendingRole !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingRole(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('Change role?')}</DialogTitle>
+                        <DialogDescription>
+                            {t(
+                                'Change the role of :name to :role? Their permissions will update immediately.',
+                                {
+                                    name: member.name,
+                                    role: pendingRoleLabel,
+                                },
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Form
+                        {...WorkspaceMemberController.update.form({
+                            tenant: currentWorkspace,
+                            membership: member.id,
+                        })}
+                        options={{ preserveScroll: true }}
+                        onSuccess={() => setPendingRole(null)}
+                    >
+                        {({ processing }) => (
+                            <>
+                                <input
+                                    type="hidden"
+                                    name="role"
+                                    value={pendingRole ?? ''}
+                                />
+                                <DialogFooter className="gap-2">
+                                    <DialogClose asChild>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                        >
+                                            {t('Cancel')}
+                                        </Button>
+                                    </DialogClose>
+                                    <Button
+                                        type="submit"
+                                        disabled={processing || !pendingRole}
+                                    >
+                                        {t('Change role')}
+                                    </Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                    </Form>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

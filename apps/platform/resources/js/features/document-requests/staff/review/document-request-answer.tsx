@@ -14,7 +14,7 @@ import type { DocumentRequest } from '@/features/document-requests/types';
 import { storesAnswerText } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
  * Optional staff fallback for answers received by email, phone, or in person.
@@ -76,7 +76,7 @@ function StaffTextAnswerForm({
             {...DocumentRequestReviewController.answer.form(
                 useAnswerRouteParameters(dossierId, documentRequest.id),
             )}
-            options={inlineDossierActionOptions}
+            options={inlineActionOptions}
             className="space-y-2"
         >
             {({ errors, processing }) => (
@@ -120,7 +120,7 @@ function StaffBooleanAnswerForm({
                         {...DocumentRequestReviewController.answer.form(
                             routeParameters,
                         )}
-                        options={inlineDossierActionOptions}
+                        options={inlineActionOptions}
                     >
                         {({ processing }) => (
                             <>

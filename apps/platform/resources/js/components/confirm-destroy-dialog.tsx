@@ -26,6 +26,8 @@ type ConfirmDestroyDialogProps = {
     /** Wayfinder `Controller.destroy.form(...)` props (without children). */
     form: Omit<FormProps, 'children' | 'options'>;
     options?: FormProps['options'];
+    /** Extra fields rendered inside the form (e.g. hidden inputs). */
+    children?: ReactNode;
     confirmTestId?: string;
     confirmVariant?: 'destructive' | 'default';
     /** Controlled open state — use with dropdown menu items that open a dialog. */
@@ -44,6 +46,7 @@ export default function ConfirmDestroyDialog({
     trigger,
     form,
     options,
+    children,
     confirmTestId,
     confirmVariant = 'destructive',
     open,
@@ -60,21 +63,24 @@ export default function ConfirmDestroyDialog({
 
                 <Form {...form} options={options}>
                     {({ processing }) => (
-                        <DialogFooter className="gap-2">
-                            <DialogClose asChild>
-                                <Button type="button" variant="secondary">
-                                    {t('Cancel')}
+                        <>
+                            {children}
+                            <DialogFooter className="gap-2">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="secondary">
+                                        {t('Cancel')}
+                                    </Button>
+                                </DialogClose>
+                                <Button
+                                    type="submit"
+                                    variant={confirmVariant}
+                                    disabled={processing}
+                                    data-test={confirmTestId}
+                                >
+                                    {confirmLabel}
                                 </Button>
-                            </DialogClose>
-                            <Button
-                                type="submit"
-                                variant={confirmVariant}
-                                disabled={processing}
-                                data-test={confirmTestId}
-                            >
-                                {confirmLabel}
-                            </Button>
-                        </DialogFooter>
+                            </DialogFooter>
+                        </>
                     )}
                 </Form>
             </DialogContent>

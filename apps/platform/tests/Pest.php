@@ -130,7 +130,7 @@ pest()->presets()->custom('qompose', function () {
                 'register',
                 'builder',
                 'review',
-                'preview'
+                'preview',
             ]),
 
         expect('App\Models\Activity')

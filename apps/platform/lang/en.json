@@ -792,5 +792,15 @@
     "—": "—",
     "Actor": "Actor",
     "From date": "From date",
-    "To date": "To date"
+    "To date": "To date",
+    "Something went wrong.": "Something went wrong.",
+    "Something went wrong": "Something went wrong",
+    "Select all rows": "Select all rows",
+    "Select row": "Select row",
+    "PDF, JPG, PNG, Word, Excel": "PDF, JPG, PNG, Word, Excel",
+    "Suspend member?": "Suspend member?",
+    "Suspend :name? They will lose access until reactivated.": "Suspend :name? They will lose access until reactivated.",
+    "Change role?": "Change role?",
+    "Change the role of :name to :role? Their permissions will update immediately.": "Change the role of :name to :role? Their permissions will update immediately.",
+    "Change role": "Change role"
 }

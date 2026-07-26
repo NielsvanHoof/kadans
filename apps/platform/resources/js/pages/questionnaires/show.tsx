@@ -5,6 +5,7 @@ import type {
     TemplateDetail,
 } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     show as showTemplate,
     index as templateIndex,
@@ -24,12 +25,13 @@ export default function ShowTemplate({
     can_manage: boolean;
     can_copy: boolean;
 }) {
+    const { t } = useTranslation();
     const currentWorkspace = useCurrentWorkspace();
 
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Templates',
+                title: t('Templates'),
                 href: templateIndex(currentWorkspace),
             },
             {

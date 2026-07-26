@@ -1,5 +1,6 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Archive, FolderOpen, Mail, Pencil } from 'lucide-react';
+import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,9 +60,11 @@ export default function ShowClient({
                             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                 {t('Client record')}
                             </p>
-                            <h1 className="truncate text-2xl font-semibold tracking-tight">
-                                {client.name}
-                            </h1>
+                            <Heading
+                                level={1}
+                                className="mb-0"
+                                title={client.name}
+                            />
                             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                                 <Mail className="size-4" aria-hidden="true" />
                                 {client.email}

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { AnswerTextControl } from '@/features/document-requests/controls/answer-text-control';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { inlinePortalActionOptions } from '@/lib/inline-portal-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 import { cn } from '@/lib/utils';
 
 /**
@@ -29,7 +29,7 @@ export function PortalTextDocumentAnswer({
             {...ClientPortalAnswerController.store.form({
                 documentRequest: documentRequest.id,
             })}
-            options={inlinePortalActionOptions}
+            options={inlineActionOptions}
             className="space-y-3"
         >
             {({ errors, processing }) => (
@@ -111,7 +111,7 @@ function BooleanAnswerButton({
             {...ClientPortalAnswerController.store.form({
                 documentRequest: documentRequestId,
             })}
-            options={inlinePortalActionOptions}
+            options={inlineActionOptions}
             className="contents"
         >
             {({ processing }) => (

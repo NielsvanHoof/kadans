@@ -1,7 +1,7 @@
 import ClientPortalUploadController from '@/actions/App/Http/Controllers/Portal/ClientPortalUploadController';
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
-import { inlinePortalActionOptions } from '@/lib/inline-portal-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
  * Client-portal file upload for a single document request.
@@ -19,7 +19,7 @@ export default function PortalDocumentUpload({
             actionUrl={ClientPortalUploadController.store.url({
                 documentRequest: documentRequest.id,
             })}
-            visitOptions={inlinePortalActionOptions}
+            visitOptions={inlineActionOptions}
             className="mt-3 space-y-2"
         />
     );

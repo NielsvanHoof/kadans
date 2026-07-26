@@ -391,6 +391,7 @@ test('staff can email a portal invite when creating an access grant', function (
             expect($notification)->toBeInstanceOf(ShouldBeEncrypted::class)
                 ->and($notification->afterCommit)->toBeTrue()
                 ->and($notification->grantId)->toBe($grant->id)
+                ->and($notification->locale)->toBe(app()->getLocale())
                 ->and($queuedJob->afterCommit)->toBeTrue()
                 ->and($queuedJob->shouldBeEncrypted)->toBeTrue();
 

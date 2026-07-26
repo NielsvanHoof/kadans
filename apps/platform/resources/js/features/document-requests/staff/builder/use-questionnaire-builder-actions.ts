@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 export type BuilderSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -39,7 +39,7 @@ export function useQuestionnaireBuilderActions(dossierId: number) {
                                 : {}),
                         },
                         {
-                            ...inlineDossierActionOptions,
+                            ...inlineActionOptions,
                             onError: () => {
                                 failed = true;
                                 resolve();
@@ -110,7 +110,7 @@ export function useQuestionnaireBuilderActions(dossierId: number) {
                             instructions: input.instructions,
                         },
                         {
-                            ...inlineDossierActionOptions,
+                            ...inlineActionOptions,
                             onError: () => {
                                 failed = true;
                                 resolve();

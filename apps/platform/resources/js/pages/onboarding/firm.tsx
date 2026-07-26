@@ -11,10 +11,7 @@ export default function FirmOnboarding() {
     return (
         <>
             <Head title={t('Set up your firm')} />
-
-            <div className="mx-auto flex min-h-screen w-full max-w-xl items-center p-4 md:p-8">
-                <FirmOnboardingCard />
-            </div>
+            <FirmOnboardingCard />
         </>
     );
 }

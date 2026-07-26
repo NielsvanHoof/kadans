@@ -6,6 +6,7 @@ import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import type { Props as ManagePasskeysProps } from '@/features/security/passkeys/manage-passkeys';
 import ManagePasskeys from '@/features/security/passkeys/manage-passkeys';
 import type { Props as ManageTwoFactorProps } from '@/features/security/two-factor/manage-two-factor';
@@ -131,6 +132,7 @@ export default function Security(props: Props) {
                                     disabled={processing}
                                     data-test="update-password-button"
                                 >
+                                    {processing && <Spinner />}
                                     {t('Save')}
                                 </Button>
                             </div>

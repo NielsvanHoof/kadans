@@ -2,7 +2,7 @@ import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
  * Staff fallback file upload (email / walk-in).
@@ -26,7 +26,7 @@ export default function DocumentRequestUpload({
                 dossier: dossierId,
                 documentRequest: documentRequest.id,
             })}
-            visitOptions={inlineDossierActionOptions}
+            visitOptions={inlineActionOptions}
         />
     );
 }

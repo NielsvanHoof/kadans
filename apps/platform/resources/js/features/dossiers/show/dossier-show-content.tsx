@@ -152,6 +152,7 @@ function DossierShowBody({
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <Heading
                     level={1}
+                    className="mb-0"
                     title={dossier.title}
                     description={`${dossier.client.name} · ${dossier.client.email}`}
                     badge={<DossierStatusBadge status={dossier.status} />}

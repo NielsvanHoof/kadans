@@ -3,6 +3,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import type { RouteFormDefinition } from '@/wayfinder';
 
@@ -37,7 +38,10 @@ export default function CreateFirmForm({
                         <InputError message={errors.name} />
                     </div>
 
-                    <Button disabled={processing}>{submitLabel}</Button>
+                    <Button disabled={processing}>
+                        {processing && <Spinner />}
+                        {submitLabel}
+                    </Button>
                 </>
             )}
         </Form>

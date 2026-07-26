@@ -24,7 +24,7 @@ import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 export default function DossierWorkflowCard({ dossier }: { dossier: Dossier }) {
     const { t } = useTranslation();
@@ -119,7 +119,7 @@ function CompleteDossierDialog({
                         tenant: currentWorkspace,
                         dossier: dossierId,
                     })}
-                    options={inlineDossierActionOptions}
+                    options={inlineActionOptions}
                 >
                     {({ errors, processing }) => (
                         <>

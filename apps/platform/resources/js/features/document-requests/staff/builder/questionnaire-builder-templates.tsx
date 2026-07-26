@@ -20,7 +20,7 @@ import {
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
+import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
  * Append a reusable questionnaire pack onto the current dossier form.
@@ -77,7 +77,7 @@ export default function QuestionnaireBuilderTemplates({
                         tenant: currentWorkspace,
                         dossier: dossierId,
                     })}
-                    options={inlineDossierActionOptions}
+                    options={inlineActionOptions}
                     className="space-y-3"
                 >
                     {({ errors, processing }) => (

@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+use function is_string;
+
 final class InviteTenantMemberAction
 {
     public function __construct(
@@ -73,14 +75,21 @@ final class InviteTenantMemberAction
 
             $acceptUrl = URL::route('invitations.show', ['token' => $plainTextToken]);
 
+            $inviteeLocale = User::query()->where('email', $email)->value('locale');
+            $locale = is_string($inviteeLocale) && $inviteeLocale !== ''
+                ? $inviteeLocale
+                : app()->getLocale();
+
             Notification::route('mail', $email)
-                ->notify(new WorkspaceMemberInviteNotification(
-                    invitationId: $invitation->id,
-                    firmName: $tenant->name,
-                    role: $role,
-                    acceptUrl: $acceptUrl,
-                    expiresAt: $expiresAt,
-                ));
+                ->notify(
+                    (new WorkspaceMemberInviteNotification(
+                        invitationId: $invitation->id,
+                        firmName: $tenant->name,
+                        role: $role,
+                        acceptUrl: $acceptUrl,
+                        expiresAt: $expiresAt,
+                    ))->locale($locale),
+                );
 
             $this->logAuditActivity->handle(
                 AuditEvent::MemberInvited,
