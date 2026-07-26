@@ -17,11 +17,14 @@ export default function QuestionnaireBuilderPalette({
     dossierId,
     templates,
     canEdit,
+    insertAfterTitle,
     onAdd,
 }: {
     dossierId: number;
     templates: ApplyTemplateOption[];
     canEdit: boolean;
+    /** Label of the selected field — Add inserts after it. */
+    insertAfterTitle?: string | null;
     onAdd: (type: QuestionnaireItemType) => void;
 }) {
     const { t } = useTranslation();
@@ -48,6 +51,17 @@ export default function QuestionnaireBuilderPalette({
                     <p className="text-xs text-muted-foreground">
                         {t('Drag onto the form or use Add.')}
                     </p>
+                    {insertAfterTitle ? (
+                        <p className="text-xs text-pretty text-muted-foreground">
+                            {t('New fields insert after “:title”.', {
+                                title: insertAfterTitle,
+                            })}
+                        </p>
+                    ) : (
+                        <p className="text-xs text-muted-foreground">
+                            {t('New fields are added at the end of the form.')}
+                        </p>
+                    )}
                 </div>
 
                 <div className="relative">
@@ -135,7 +149,7 @@ function PaletteItem({
                 <button
                     type="button"
                     className={cn(
-                        'flex min-w-0 flex-1 touch-manipulation touch-none items-center gap-2 rounded-md px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        'flex min-w-0 flex-1 touch-none items-center gap-2 rounded-md px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
                         !disabled && 'cursor-grab active:cursor-grabbing',
                     )}
                     aria-label={t('Drag :component', { component: label })}

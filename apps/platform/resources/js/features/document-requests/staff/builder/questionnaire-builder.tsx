@@ -5,10 +5,12 @@ import {
 } from '@dnd-kit/sortable';
 import { useMemo } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import DesktopRequiredGate from '@/features/document-requests/staff/builder/desktop-required-gate';
 import QuestionnaireBuilderCanvas from '@/features/document-requests/staff/builder/questionnaire-builder-canvas';
 import {
     BuilderPane,
-    BuilderSheet,
+    CanvasItemOverlay,
     PaletteOverlay,
 } from '@/features/document-requests/staff/builder/questionnaire-builder-chrome';
 import QuestionnaireBuilderPalette from '@/features/document-requests/staff/builder/questionnaire-builder-palette';
@@ -28,6 +30,7 @@ const DESKTOP_QUERY = '(min-width: 1280px)';
 
 /**
  * Form builder composition root: palette, canvas, and settings with shared DnD.
+ * Desktop-only — narrower viewports see an honest gate instead of broken sheets.
  */
 export default function QuestionnaireBuilder({
     dossierId,
@@ -35,15 +38,21 @@ export default function QuestionnaireBuilder({
     documentRequests,
     templates,
     canEdit,
+    backHref,
 }: {
     dossierId: number;
     dossierStatus: DossierStatus;
     documentRequests: DocumentRequest[];
     templates: ApplyTemplateOption[];
     canEdit: boolean;
+    backHref: string;
 }) {
     const { t } = useTranslation();
-    const isDesktop = useMediaQuery(DESKTOP_QUERY);
+    // Prefer desktop on first paint so wide screens do not flash the gate.
+    const isDesktop = useMediaQuery(DESKTOP_QUERY, {
+        defaultValue: true,
+        initializeWithValue: true,
+    });
     const state = useQuestionnaireBuilderState({
         dossierId,
         documentRequests,
@@ -65,15 +74,24 @@ export default function QuestionnaireBuilder({
             onReorder: state.handleReorder,
         });
 
+    const activeCanvasItem =
+        activeDrag?.kind === 'canvas'
+            ? (state.items.find((item) => item.id === activeDrag.id) ?? null)
+            : null;
+
+    if (!isDesktop) {
+        return <DesktopRequiredGate backHref={backHref} />;
+    }
+
+    const canEditStructure =
+        canEdit && dossierStatus !== 'completed' && !state.isInsertPending;
+
     const palette = (
         <QuestionnaireBuilderPalette
             dossierId={dossierId}
             templates={templates}
-            canEdit={
-                canEdit &&
-                dossierStatus !== 'completed' &&
-                !state.isInsertPending
-            }
+            canEdit={canEditStructure}
+            insertAfterTitle={state.selected?.title ?? null}
             onAdd={(type) => {
                 state.addAt(type);
             }}
@@ -96,7 +114,6 @@ export default function QuestionnaireBuilder({
                 {state.announcement}
             </div>
 
-            {/* One DnD context wraps palette + canvas so sheet drags still work. */}
             <DndContext
                 sensors={sensors}
                 collisionDetection={builderCollisionDetection}
@@ -105,55 +122,43 @@ export default function QuestionnaireBuilder({
                     void handleDragEnd(event);
                 }}
             >
-                <div className="flex min-h-0 flex-1 flex-col gap-3">
-                    {!isDesktop ? (
-                        <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                            <BuilderSheet
-                                open={state.paletteOpen}
-                                onOpenChange={state.setPaletteOpen}
-                                label={t('Components')}
-                            >
-                                {palette}
-                            </BuilderSheet>
-                            <BuilderSheet
-                                open={state.settingsOpen}
-                                onOpenChange={state.setSettingsOpen}
-                                label={t('Field settings')}
-                            >
-                                {settings}
-                            </BuilderSheet>
-                        </div>
-                    ) : null}
+                {/* grid-rows-1 so columns fill the flex-1 height (auto rows stay content-sized). */}
+                <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)_20rem] grid-rows-1 items-stretch gap-4">
+                    <BuilderPane>{palette}</BuilderPane>
 
-                    {/* grid-rows-1 so columns fill the flex-1 height (auto rows stay content-sized). */}
-                    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[16rem_minmax(0,1fr)_20rem] xl:grid-rows-1 xl:items-stretch">
-                        {isDesktop ? (
-                            <BuilderPane>{palette}</BuilderPane>
-                        ) : null}
+                    <SortableContext
+                        items={sortableIds}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <QuestionnaireBuilderCanvas
+                            dossierId={dossierId}
+                            items={state.items}
+                            selectedId={state.selectedId}
+                            canEdit={canEditStructure}
+                            pendingInsert={state.pendingInsert}
+                            onSelect={state.setSelectedId}
+                            onAdd={(type) => {
+                                state.addAt(type);
+                            }}
+                        />
+                    </SortableContext>
 
-                        <SortableContext
-                            items={sortableIds}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            <QuestionnaireBuilderCanvas
-                                dossierId={dossierId}
-                                items={state.items}
-                                selectedId={state.selectedId}
-                                canEdit={canEdit && !state.isInsertPending}
-                                insertingAt={state.insertingAt}
-                                onSelect={state.setSelectedId}
-                            />
-                        </SortableContext>
-
-                        {isDesktop ? (
-                            <BuilderPane>{settings}</BuilderPane>
-                        ) : null}
-                    </div>
+                    <BuilderPane>{settings}</BuilderPane>
                 </div>
 
                 <DragOverlay>
                     {activeDrag?.kind === 'palette' ? (
                         <PaletteOverlay type={activeDrag.type} />
+                    ) : null}
+                    {activeCanvasItem ? (
+                        <CanvasItemOverlay
+                            title={activeCanvasItem.title}
+                            typeLabel={t(
+                                getQuestionnaireItemTypeDefinition(
+                                    activeCanvasItem.type,
+                                ).label,
+                            )}
+                        />
                     ) : null}
                 </DragOverlay>
             </DndContext>

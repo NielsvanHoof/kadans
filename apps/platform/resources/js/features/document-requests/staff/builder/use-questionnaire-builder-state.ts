@@ -10,6 +10,13 @@ import type {
 } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 
+/** In-flight create shown as a ghost row on the canvas. */
+export type PendingInsert = {
+    index: number;
+    type: QuestionnaireItemType;
+    title: string;
+};
+
 /**
  * Local builder state: selection, autosave status, and create/reorder/update helpers.
  */
@@ -32,10 +39,10 @@ export function useQuestionnaireBuilderState({
     );
     const [saveStatus, setSaveStatus] = useState<BuilderSaveStatus>('idle');
     const [announcement, setAnnouncement] = useState('');
-    const [paletteOpen, setPaletteOpen] = useState(false);
-    const [settingsOpen, setSettingsOpen] = useState(false);
-    // Canvas index for the insert spinner; pending flag comes from useTransition.
-    const [insertingAt, setInsertingAt] = useState<number | null>(null);
+    // Ghost row while create is in flight; pending flag comes from useTransition.
+    const [pendingInsert, setPendingInsert] = useState<PendingInsert | null>(
+        null,
+    );
     const [isInsertPending, startInsertTransition] = useTransition();
 
     // Survives across the Inertia refresh so we can select the new field by position.
@@ -73,16 +80,20 @@ export function useQuestionnaireBuilderState({
         }
 
         const definition = getQuestionnaireItemTypeDefinition(type);
-        const insertAt = position ?? items.length;
+        // Default: insert after the selected field so Add stays near the user's focus.
+        const selectedIndex =
+            selectedId === null
+                ? -1
+                : items.findIndex((item) => item.id === selectedId);
+        const insertAt =
+            position ?? (selectedIndex >= 0 ? selectedIndex + 1 : items.length);
         const title = t(definition.defaultTitle);
 
-        // Urgent: park the spinner at the drop index before the transition starts.
+        // Park the ghost row at the drop index before the transition starts.
         pendingInsertAtRef.current = insertAt;
-        setInsertingAt(insertAt);
+        setPendingInsert({ index: insertAt, type, title });
         setSaveStatus('saving');
         setAnnouncement(t('Adding component…'));
-        setPaletteOpen(false);
-        setSettingsOpen(true);
 
         // Transition owns the async create — isInsertPending stays true until it settles.
         startInsertTransition(async () => {
@@ -94,7 +105,7 @@ export function useQuestionnaireBuilderState({
 
             if (!ok) {
                 pendingInsertAtRef.current = null;
-                setInsertingAt(null);
+                setPendingInsert(null);
                 setSaveStatus('error');
                 setAnnouncement(t('Could not add the component. Try again.'));
 
@@ -103,7 +114,7 @@ export function useQuestionnaireBuilderState({
 
             // Inertia usually refreshed during the await; the effect already selected the real id.
             pendingInsertAtRef.current = null;
-            setInsertingAt(null);
+            setPendingInsert(null);
             setSaveStatus('saved');
             setAnnouncement(t('Component added.'));
         });
@@ -146,24 +157,15 @@ export function useQuestionnaireBuilderState({
         return ok;
     };
 
-    const selectField = (id: number) => {
-        setSelectedId(id);
-        setSettingsOpen(true);
-    };
-
     return {
         items,
         setItems,
         selectedId,
-        setSelectedId: selectField,
+        setSelectedId,
         selected,
         saveStatus,
         announcement,
-        paletteOpen,
-        setPaletteOpen,
-        settingsOpen,
-        setSettingsOpen,
-        insertingAt,
+        pendingInsert,
         isInsertPending,
         addAt,
         handleReorder,

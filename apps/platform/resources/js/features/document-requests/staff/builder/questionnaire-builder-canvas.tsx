@@ -1,9 +1,15 @@
 import { useDroppable } from '@dnd-kit/core';
 import { Fragment } from 'react';
 import EmptyState from '@/components/empty-state';
+import { Button } from '@/components/ui/button';
+import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/questionnaire-item-type-registry';
 import { BuilderInsertPlaceholder } from '@/features/document-requests/staff/builder/questionnaire-builder-chrome';
 import QuestionnaireBuilderItem from '@/features/document-requests/staff/builder/questionnaire-builder-item';
-import type { DocumentRequest } from '@/features/document-requests/types';
+import type { PendingInsert } from '@/features/document-requests/staff/builder/use-questionnaire-builder-state';
+import type {
+    DocumentRequest,
+    QuestionnaireItemType,
+} from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
@@ -18,23 +24,26 @@ export default function QuestionnaireBuilderCanvas({
     items,
     selectedId,
     canEdit,
-    insertingAt = null,
+    pendingInsert = null,
     onSelect,
+    onAdd,
 }: {
     dossierId: number;
     items: DocumentRequest[];
     selectedId: number | null;
     canEdit: boolean;
-    /** Index of the in-flight create spinner, or null when idle. */
-    insertingAt?: number | null;
+    /** Ghost row for an in-flight create, or null when idle. */
+    pendingInsert?: PendingInsert | null;
     onSelect: (id: number) => void;
+    onAdd: (type: QuestionnaireItemType) => void;
 }) {
     const { t } = useTranslation();
     const { setNodeRef, isOver } = useDroppable({
         id: BUILDER_CANVAS_DROPPABLE_ID,
     });
+    const quickAddTypes = getQuestionnaireItemTypeDefinitions(t).slice(0, 4);
 
-    const isEmpty = items.length === 0 && insertingAt === null;
+    const isEmpty = items.length === 0 && pendingInsert === null;
 
     return (
         <section
@@ -72,16 +81,44 @@ export default function QuestionnaireBuilderCanvas({
                         variant="panel"
                         title={t('Drop a component to start the form')}
                         description={t(
-                            'Add a file upload, text, date, number, or yes/no question.',
+                            'Drag from the Components panel, or add one below to get started.',
                         )}
+                        action={
+                            canEdit ? (
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {quickAddTypes.map((definition) => {
+                                        const Icon = definition.icon;
+
+                                        return (
+                                            <Button
+                                                key={definition.value}
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    onAdd(definition.value)
+                                                }
+                                            >
+                                                <Icon aria-hidden="true" />
+                                                {definition.label}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                            ) : undefined
+                        }
                     />
                 ) : (
                     <ol className="space-y-2">
                         {items.map((item, index) => (
                             <Fragment key={item.id}>
-                                {/* Spinner sits at the drop index ahead of existing fields. */}
-                                {insertingAt === index ? (
-                                    <BuilderInsertPlaceholder index={index} />
+                                {/* Ghost sits at the drop index ahead of existing fields. */}
+                                {pendingInsert?.index === index ? (
+                                    <BuilderInsertPlaceholder
+                                        index={pendingInsert.index}
+                                        type={pendingInsert.type}
+                                        title={pendingInsert.title}
+                                    />
                                 ) : null}
                                 <QuestionnaireBuilderItem
                                     dossierId={dossierId}
@@ -93,8 +130,12 @@ export default function QuestionnaireBuilderCanvas({
                                 />
                             </Fragment>
                         ))}
-                        {insertingAt === items.length ? (
-                            <BuilderInsertPlaceholder index={items.length} />
+                        {pendingInsert?.index === items.length ? (
+                            <BuilderInsertPlaceholder
+                                index={pendingInsert.index}
+                                type={pendingInsert.type}
+                                title={pendingInsert.title}
+                            />
                         ) : null}
                     </ol>
                 )}

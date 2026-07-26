@@ -45,11 +45,17 @@ export default function QuestionnaireBuilderItem({
         transform,
         transition,
         isDragging,
+        isOver,
+        active,
     } = useSortable({
         id: documentRequest.id,
         disabled: !canEdit,
         data: { source: 'canvas', id: documentRequest.id },
     });
+
+    // Line above this row when another field (or palette item) will insert here.
+    const showDropIndicator =
+        isOver && active !== null && active.id !== documentRequest.id;
 
     return (
         <li
@@ -59,20 +65,28 @@ export default function QuestionnaireBuilderItem({
                 transition: prefersReducedMotion ? undefined : transition,
             }}
             className={cn(
-                'list-none rounded-xl border bg-card shadow-xs transition-colors duration-150 motion-reduce:transition-none',
+                'relative animate-in list-none rounded-xl border bg-card shadow-xs duration-200 fade-in motion-reduce:animate-none',
+                'transition-colors duration-150 motion-reduce:transition-none',
                 selected
                     ? 'border-primary ring-[3px] ring-ring/40'
                     : 'border-border/70 hover:border-border',
-                isDragging && 'relative z-10 opacity-80 shadow-md',
+                isDragging && 'relative z-10 opacity-40 shadow-md',
             )}
         >
+            {showDropIndicator ? (
+                <div
+                    className="pointer-events-none absolute -top-1.5 right-2 left-2 z-20 h-0.5 rounded-full bg-primary shadow-[0_0_0_2px_color-mix(in_oklab,var(--primary)_25%,transparent)]"
+                    aria-hidden="true"
+                />
+            ) : null}
+
             <div className="flex items-center gap-1.5 px-2 py-1.5">
                 {canEdit ? (
                     <Button
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="size-8 shrink-0 cursor-grab touch-manipulation touch-none active:cursor-grabbing"
+                        className="size-8 shrink-0 cursor-grab touch-none active:cursor-grabbing"
                         aria-label={t('Drag to reorder')}
                         {...attributes}
                         {...listeners}

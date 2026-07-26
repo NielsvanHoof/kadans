@@ -25,12 +25,13 @@ export default function BuilderDossier({
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
     const canEditStructure = canManage && dossier.status !== 'completed';
+    const backHref = showDossier({
+        tenant: currentWorkspace,
+        dossier: dossier.id,
+    }).url;
 
     setLayoutProps({
-        backHref: showDossier({
-            tenant: currentWorkspace,
-            dossier: dossier.id,
-        }).url,
+        backHref,
         title: dossier.title,
         status: dossier.status,
     });
@@ -46,6 +47,7 @@ export default function BuilderDossier({
                     documentRequests={dossier.document_requests}
                     templates={templates}
                     canEdit={canEditStructure}
+                    backHref={backHref}
                 />
             </div>
         </>

@@ -101,6 +101,9 @@ export default function QuestionnaireBuilderSettings({
         );
     }
 
+    const selectedDefinition =
+        definitions.find((definition) => definition.value === type) ?? null;
+
     const persist = async (next: SettingsSaveInput) => {
         if (!canEdit) {
             return;
@@ -129,11 +132,13 @@ export default function QuestionnaireBuilderSettings({
     const saveLabel =
         saveStatus === 'saving'
             ? t('Saving…')
-            : saveStatus === 'saved'
-              ? t('Saved')
-              : saveStatus === 'error'
-                ? t('Could not save. Check the fields and try again.')
-                : null;
+            : isDirty
+              ? t('Unsaved changes')
+              : saveStatus === 'saved'
+                ? t('Saved')
+                : saveStatus === 'error'
+                  ? t('Could not save. Check the fields and try again.')
+                  : null;
 
     const blurSave = () => void persist({ type, title, instructions });
 
@@ -189,6 +194,11 @@ export default function QuestionnaireBuilderSettings({
                         ))}
                     </SelectContent>
                 </Select>
+                {selectedDefinition ? (
+                    <p className="text-xs text-pretty text-muted-foreground">
+                        {selectedDefinition.description}
+                    </p>
+                ) : null}
             </div>
 
             <div className="grid gap-2">
