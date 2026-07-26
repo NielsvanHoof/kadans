@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Clients;
 
+use App\Actions\Clients\BulkDeleteClientsAction;
+use App\Actions\Clients\BulkRestoreClientsAction;
 use App\Actions\Clients\CreateClientAction;
 use App\Actions\Clients\DeleteClientAction;
 use App\Actions\Clients\RestoreClientAction;
 use App\Actions\Clients\UpdateClientAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Clients\BulkArchiveClientsRequest;
+use App\Http\Requests\Clients\BulkRestoreClientsRequest;
 use App\Http\Requests\Clients\StoreClientRequest;
 use App\Http\Requests\Clients\UpdateClientRequest;
 use App\Models\Client;
@@ -167,6 +171,66 @@ final class ClientController extends Controller
         return to_route(
             'workspaces.clients.show',
             $this->workspaceRouteParameters(['client' => $client]),
+        );
+    }
+
+    public function bulkArchive(
+        Tenant $tenant,
+        BulkArchiveClientsRequest $request,
+        BulkDeleteClientsAction $bulkDeleteClients,
+    ): RedirectResponse {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(HttpResponse::HTTP_FORBIDDEN);
+        }
+
+        $clientsQuery = Client::query()->with('tenant');
+        $clientsQuery->getQuery()->whereIn('id', $request->clientIds());
+        $clients = $clientsQuery->get();
+
+        $count = $bulkDeleteClients->handle($clients, $user);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $count === 1
+                ? __('1 client archived.')
+                : __(':count clients archived.', ['count' => $count]),
+        ]);
+
+        return to_route(
+            'workspaces.clients.index',
+            $this->workspaceRouteParameters(),
+        );
+    }
+
+    public function bulkRestore(
+        Tenant $tenant,
+        BulkRestoreClientsRequest $request,
+        BulkRestoreClientsAction $bulkRestoreClients,
+    ): RedirectResponse {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(HttpResponse::HTTP_FORBIDDEN);
+        }
+
+        $clientsQuery = Client::onlyTrashed()->with('tenant');
+        $clientsQuery->getQuery()->whereIn('id', $request->clientIds());
+        $clients = $clientsQuery->get();
+
+        $count = $bulkRestoreClients->handle($clients, $user);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $count === 1
+                ? __('1 client restored. Archived dossiers remain in the dossier archive.')
+                : __(':count clients restored. Archived dossiers remain in the dossier archive.', ['count' => $count]),
+        ]);
+
+        return to_route(
+            'workspaces.clients.archived',
+            $this->workspaceRouteParameters(),
         );
     }
 }

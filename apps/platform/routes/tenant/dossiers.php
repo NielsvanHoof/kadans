@@ -12,6 +12,11 @@ Route::get('dossiers', [DossierController::class, 'index'])->name('dossiers.inde
 Route::get('dossiers/archived', [DossierController::class, 'archived'])->name('dossiers.archived');
 Route::get('dossiers/create', [DossierController::class, 'create'])->name('dossiers.create');
 Route::post('dossiers', [DossierController::class, 'store'])->name('dossiers.store');
+// Bulk routes before {dossier} so "bulk-archive" is not treated as an id.
+Route::post('dossiers/bulk-archive', [DossierController::class, 'bulkArchive'])
+    ->name('dossiers.bulk-archive');
+Route::post('dossiers/bulk-restore', [DossierController::class, 'bulkRestore'])
+    ->name('dossiers.bulk-restore');
 Route::get('dossiers/{dossier}', [DossierController::class, 'show'])->name('dossiers.show');
 Route::get('dossiers/{dossier}/builder', [DossierController::class, 'builder'])
     ->name('dossiers.builder');

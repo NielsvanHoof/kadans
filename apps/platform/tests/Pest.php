@@ -125,6 +125,8 @@ pest()->presets()->custom('qompose', function () {
                 'download',
                 'archived',
                 'restore',
+                'bulkArchive',
+                'bulkRestore',
                 'resend',
                 'accept',
                 'register',

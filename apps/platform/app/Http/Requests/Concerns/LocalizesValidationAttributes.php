@@ -35,6 +35,7 @@ trait LocalizesValidationAttributes
             'answer_boolean' => __('Yes / no'),
             'document_request_ids' => __('Document requests'),
             'item_ids' => __('Questionnaire items'),
+            'ids' => __('Selected items'),
             'questionnaire_template_id' => __('Template'),
             'expires_in_days' => __('Link validity (days)'),
             'send_invite' => __('Send email invite'),

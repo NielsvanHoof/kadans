@@ -9,6 +9,11 @@ Route::get('clients', [ClientController::class, 'index'])->name('clients.index')
 Route::get('clients/archived', [ClientController::class, 'archived'])->name('clients.archived');
 Route::get('clients/create', [ClientController::class, 'create'])->name('clients.create');
 Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
+// Bulk routes before {client} so "bulk-archive" is not treated as an id.
+Route::post('clients/bulk-archive', [ClientController::class, 'bulkArchive'])
+    ->name('clients.bulk-archive');
+Route::post('clients/bulk-restore', [ClientController::class, 'bulkRestore'])
+    ->name('clients.bulk-restore');
 Route::get('clients/{client}', [ClientController::class, 'show'])->name('clients.show');
 Route::get('clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
 Route::patch('clients/{client}', [ClientController::class, 'update'])->name('clients.update');

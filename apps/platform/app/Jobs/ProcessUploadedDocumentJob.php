@@ -9,6 +9,7 @@ use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\UploadedDocument;
 use App\Services\Ocr\OcrOrchestrator;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -30,8 +31,6 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 
     /**
      * The upload revision this job is allowed to process.
-     *
-     * Null keeps jobs queued before this field was introduced deploy-safe.
      */
     public ?string $expectedPath = null;
 
@@ -54,22 +53,17 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 
     public function uniqueId(): string
     {
-        return $this->uploadedDocumentId.':'.hash('sha256', $this->expectedPath ?? 'legacy');
+        return "{$this->uploadedDocumentId}:".hash('sha256', $this->expectedPath ?? 'legacy');
     }
 
     public function handle(
         OcrOrchestrator $ocrOrchestrator,
         LogAuditActivityAction $logAuditActivity,
     ): void {
-        $document = UploadedDocument::query()->find($this->uploadedDocumentId);
-
-        if (! $document instanceof UploadedDocument) {
-            return;
-        }
+        $document = UploadedDocument::query()->findOrFail($this->uploadedDocumentId);
 
         $expectedPath = $this->expectedPath ?? $document->path;
 
-        // Idempotency: a completed extraction must never re-run.
         if ($document->processing_status === DocumentProcessingStatus::Completed) {
             Log::info('OCR: skipped ProcessUploadedDocumentJob — already completed.', [
                 'uploaded_document_id' => $document->id,
@@ -169,14 +163,10 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             $query = UploadedDocument::query()->whereKey($document->getKey());
             $query->getQuery()->lockForUpdate();
 
-            $locked = $query->first();
-
-            if (! $locked instanceof UploadedDocument) {
-                return null;
-            }
+            $locked = $query->firstOrFail();
 
             if ($locked->path !== $expectedPath) {
-                return null;
+                throw new Exception("Document path mismatch: {$locked->path} !== {$expectedPath}");
             }
 
             if (
@@ -186,7 +176,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
                     && $locked->textract_job_id !== null
                 )
             ) {
-                return null;
+                throw new Exception("Document already processing: {$locked->processing_status}");
             }
 
             $locked->forceFill([

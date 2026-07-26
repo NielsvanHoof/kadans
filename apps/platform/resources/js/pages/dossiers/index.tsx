@@ -23,9 +23,11 @@ import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 export default function DossierIndex({
     dossiers,
     indexQuery,
+    can_manage: canManage = false,
 }: {
     dossiers: Paginated<DossierSummary>;
     indexQuery: IndexQueryConfig;
+    can_manage?: boolean;
     /** Current Spatie filter bag — consumed by useIndexQuery via usePage(). */
     filters?: Record<string, string>;
     sort?: string | null;
@@ -89,7 +91,10 @@ export default function DossierIndex({
                     ]}
                 />
                 <IndexQueryResults className="space-y-6">
-                    <DossiersListCard dossiers={dossiers} />
+                    <DossiersListCard
+                        dossiers={dossiers}
+                        canManage={canManage}
+                    />
                     <IndexPagination paginator={dossiers} />
                 </IndexQueryResults>
             </div>

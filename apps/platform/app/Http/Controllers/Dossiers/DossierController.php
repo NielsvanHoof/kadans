@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Dossiers;
 
 use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Dossiers\BulkDeleteDossiersAction;
+use App\Actions\Dossiers\BulkRestoreDossiersAction;
 use App\Actions\Dossiers\CreateDossierAction;
 use App\Actions\Dossiers\DeleteDossierAction;
 use App\Actions\Dossiers\RestoreDossierAction;
@@ -14,6 +16,8 @@ use App\Data\Shared\PersonOptionData;
 use App\Enums\AuditEvent;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dossiers\BulkArchiveDossiersRequest;
+use App\Http\Requests\Dossiers\BulkRestoreDossiersRequest;
 use App\Http\Requests\Dossiers\StoreDossierRequest;
 use App\Http\Requests\Dossiers\UpdateDossierRequest;
 use App\Models\Dossier;
@@ -37,13 +41,14 @@ use function is_string;
 
 final class DossierController extends Controller
 {
-    public function index(Tenant $tenant, FetchDossierIndexQuery $fetchDossierIndex): Response
+    public function index(Tenant $tenant, FetchDossierIndexQuery $fetchDossierIndex, Request $request): Response
     {
         $this->authorize('viewAny', Dossier::class);
 
         return Inertia::render('dossiers/index', [
             'dossiers' => $fetchDossierIndex->handle(),
             ...$fetchDossierIndex->indexQueryProps(),
+            'can_manage' => $request->user()?->can('create', Dossier::class) ?? false,
         ]);
     }
 
@@ -245,6 +250,66 @@ final class DossierController extends Controller
         return to_route(
             'workspaces.dossiers.show',
             $this->workspaceRouteParameters(['dossier' => $dossier]),
+        );
+    }
+
+    public function bulkArchive(
+        Tenant $tenant,
+        BulkArchiveDossiersRequest $request,
+        BulkDeleteDossiersAction $bulkDeleteDossiers,
+    ): RedirectResponse {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(HttpResponse::HTTP_FORBIDDEN);
+        }
+
+        $dossiersQuery = Dossier::query()->with('tenant');
+        $dossiersQuery->getQuery()->whereIn('id', $request->dossierIds());
+        $dossiers = $dossiersQuery->get();
+
+        $count = $bulkDeleteDossiers->handle($dossiers, $user);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $count === 1
+                ? __('1 dossier archived.')
+                : __(':count dossiers archived.', ['count' => $count]),
+        ]);
+
+        return to_route(
+            'workspaces.dossiers.index',
+            $this->workspaceRouteParameters(),
+        );
+    }
+
+    public function bulkRestore(
+        Tenant $tenant,
+        BulkRestoreDossiersRequest $request,
+        BulkRestoreDossiersAction $bulkRestoreDossiers,
+    ): RedirectResponse {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(HttpResponse::HTTP_FORBIDDEN);
+        }
+
+        $dossiersQuery = Dossier::onlyTrashed()->with('tenant');
+        $dossiersQuery->getQuery()->whereIn('id', $request->dossierIds());
+        $dossiers = $dossiersQuery->get();
+
+        $count = $bulkRestoreDossiers->handle($dossiers, $user);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $count === 1
+                ? __('1 dossier restored. Create a new portal link before inviting the client again.')
+                : __(':count dossiers restored. Create a new portal link before inviting the client again.', ['count' => $count]),
+        ]);
+
+        return to_route(
+            'workspaces.dossiers.archived',
+            $this->workspaceRouteParameters(),
         );
     }
 

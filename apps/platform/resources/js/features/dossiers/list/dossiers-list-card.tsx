@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
+import DataTableBulkToolbar from '@/components/data-table-bulk-toolbar';
 import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import BulkArchiveDossiersButton from '@/features/dossiers/list/bulk-archive-dossiers-button';
 import {
     dossierStatusBadgeVariant,
     dossierStatusLabel,
@@ -27,8 +29,10 @@ import type { Paginated } from '@/types/pagination';
  */
 export default function DossiersListCard({
     dossiers,
+    canManage = false,
 }: {
     dossiers: Paginated<DossierSummary>;
+    canManage?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
@@ -37,6 +41,10 @@ export default function DossiersListCard({
     const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
         new Set(),
     );
+
+    const selectedIds = rows
+        .filter((dossier) => selectedKeys.has(dossier.id))
+        .map((dossier) => dossier.id);
 
     const columns: DataTableColumn<DossierSummary>[] = [
         {
@@ -104,8 +112,23 @@ export default function DossiersListCard({
                     columns={columns}
                     rows={rows}
                     rowKey={(dossier) => dossier.id}
-                    selectedKeys={selectedKeys}
-                    onSelectionChange={setSelectedKeys}
+                    selectedKeys={canManage ? selectedKeys : undefined}
+                    onSelectionChange={canManage ? setSelectedKeys : undefined}
+                    toolbar={
+                        canManage ? (
+                            <DataTableBulkToolbar
+                                selectedCount={selectedIds.length}
+                                actions={
+                                    <BulkArchiveDossiersButton
+                                        selectedIds={selectedIds}
+                                        onSuccess={() =>
+                                            setSelectedKeys(new Set())
+                                        }
+                                    />
+                                }
+                            />
+                        ) : undefined
+                    }
                     emptyState={
                         <EmptyState
                             title={t(

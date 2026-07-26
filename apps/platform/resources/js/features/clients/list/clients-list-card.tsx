@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
+import DataTableBulkToolbar from '@/components/data-table-bulk-toolbar';
 import EmptyState from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +11,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import BulkArchiveClientsButton from '@/features/clients/list/bulk-archive-clients-button';
 import ArchiveClientButton from '@/features/clients/manage/archive-client-button';
 import type { ClientSummary } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -37,6 +39,14 @@ export default function ClientsListCard({
     const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
         new Set(),
     );
+
+    // Resolve selected rows for the bulk archive confirmation copy.
+    const selectedIds = rows
+        .filter((client) => selectedKeys.has(client.id))
+        .map((client) => client.id);
+    const totalDossiersCount = rows
+        .filter((client) => selectedKeys.has(client.id))
+        .reduce((sum, client) => sum + client.dossiers_count, 0);
 
     const columns: DataTableColumn<ClientSummary>[] = [
         {
@@ -113,8 +123,24 @@ export default function ClientsListCard({
                     columns={columns}
                     rows={rows}
                     rowKey={(client) => client.id}
-                    selectedKeys={selectedKeys}
-                    onSelectionChange={setSelectedKeys}
+                    selectedKeys={canManage ? selectedKeys : undefined}
+                    onSelectionChange={canManage ? setSelectedKeys : undefined}
+                    toolbar={
+                        canManage ? (
+                            <DataTableBulkToolbar
+                                selectedCount={selectedIds.length}
+                                actions={
+                                    <BulkArchiveClientsButton
+                                        selectedIds={selectedIds}
+                                        totalDossiersCount={totalDossiersCount}
+                                        onSuccess={() =>
+                                            setSelectedKeys(new Set())
+                                        }
+                                    />
+                                }
+                            />
+                        ) : undefined
+                    }
                     emptyState={
                         <EmptyState
                             title={t(

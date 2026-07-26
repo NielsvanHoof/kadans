@@ -43,3 +43,5 @@ Schedule::command('retention:purge-legal')
 Schedule::command('activitylog:clean')
     ->weeklyOn(0, '03:00')
     ->withoutOverlapping();
+
+Schedule::command('telescope:prune')->daily();
