@@ -21,6 +21,7 @@ Route::middleware([
 ])->group(function () {
     require __DIR__.'/web/reporting.php';
     require __DIR__.'/web/tenancy.php';
+    require __DIR__.'/web/platform.php';
 });
 
 require __DIR__.'/settings.php';

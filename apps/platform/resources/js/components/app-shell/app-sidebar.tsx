@@ -4,6 +4,7 @@ import {
     FolderGit2,
     Images,
     LayoutGrid,
+    LifeBuoy,
     ScrollText,
     UserPlus,
     Users,
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
+import { index as platformSupportIndex } from '@/routes/platform/support';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { index as activityIndex } from '@/routes/workspaces/activity';
 import { index as clientIndex } from '@/routes/workspaces/clients';
@@ -33,12 +35,16 @@ import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { current_firm: currentFirm, can_manage_members: canManageMembers } =
-        usePage().props;
+    const {
+        current_firm: currentFirm,
+        can_manage_members: canManageMembers,
+        auth,
+    } = usePage().props;
     const { t } = useTranslation();
     const dashboardRoute = currentFirm
         ? workspaceDashboard(currentFirm)
         : dashboard();
+    const isPlatformSupport = auth.user?.is_platform_support === true;
 
     const mainNavItems: NavItem[] = [
         {
@@ -46,6 +52,15 @@ export function AppSidebar() {
             href: dashboardRoute,
             icon: LayoutGrid,
         },
+        ...(isPlatformSupport
+            ? [
+                  {
+                      title: t('Platform support'),
+                      href: platformSupportIndex(),
+                      icon: LifeBuoy,
+                  },
+              ]
+            : []),
         ...(currentFirm
             ? [
                   {

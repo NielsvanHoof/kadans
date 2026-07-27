@@ -15,7 +15,7 @@ final class ClientPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->can(Permission::ManageClients->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ManageClients);
     }
 
     public function view(User $user, Client $client): bool
@@ -29,7 +29,7 @@ final class ClientPolicy
 
     public function create(User $user): bool
     {
-        return $user->can(Permission::ManageClients->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ManageClients);
     }
 
     public function update(User $user, Client $client): bool

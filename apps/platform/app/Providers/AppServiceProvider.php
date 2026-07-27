@@ -8,15 +8,18 @@ use App\Contracts\Ocr\DescribesDocumentOverview;
 use App\Contracts\Ocr\StartsDocumentOcr;
 use App\Contracts\Production\ChecksReadiness;
 use App\Enums\OcrDriver;
+use App\Enums\Permission;
 use App\Models\Activity;
 use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
+use App\Models\Tenant;
 use App\Models\TenantInvitation;
 use App\Models\TenantMembership;
 use App\Models\UploadedDocument;
+use App\Models\User;
 use App\Policies\Audit\ActivityPolicy;
 use App\Policies\Clients\ClientPolicy;
 use App\Policies\Dossiers\DocumentRequestPolicy;
@@ -31,6 +34,7 @@ use App\Services\Ocr\Drivers\OcrDriverFactory;
 use App\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
 use App\Services\Production\InfrastructureReadinessCheck;
 use App\Services\Production\ProductionConfigurationValidator;
+use App\Support\Platform\SupportSession;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
@@ -70,6 +74,7 @@ final class AppServiceProvider extends ServiceProvider
         $ocrConfigurationValidator->validate();
         $productionConfigurationValidator->validate();
         $this->configurePolicies();
+        $this->configureSupportPermissionGate();
         $this->configureDefaults();
         $this->configureDevCommands();
     }
@@ -98,6 +103,40 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict();
 
         Model::preventLazyLoading(! app()->isProduction());
+    }
+
+    /**
+     * Grant read-only abilities to platform support users in an active firm session.
+     * Hard-denies mutate abilities while a support session is active.
+     * Only intercepts Spatie permission strings — policy methods (viewAny, etc.) continue normally.
+     */
+    private function configureSupportPermissionGate(): void
+    {
+        Gate::before(function (mixed $user, string $ability): ?bool {
+            if (! $user instanceof User || ! $user->isPlatformSupport()) {
+                return null;
+            }
+
+            // Policy abilities like "viewAny" must not be short-circuited here.
+            if (! in_array($ability, Permission::values(), true)) {
+                return null;
+            }
+
+            $tenant = Tenant::current();
+
+            if (! $tenant instanceof Tenant) {
+                return null;
+            }
+
+            $supportSession = app(SupportSession::class);
+
+            // Support session takes priority over firm membership (read-only overlay).
+            if (! $supportSession->isActiveFor($tenant)) {
+                return null;
+            }
+
+            return $supportSession->allowsPermission($ability);
+        });
     }
 
     /**

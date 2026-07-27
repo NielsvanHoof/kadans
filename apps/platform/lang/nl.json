@@ -839,5 +839,20 @@
     "Suspend :name? They will lose access until reactivated.": ":name schorsen? Deze persoon verliest toegang tot heractivering.",
     "Change role?": "Rol wijzigen?",
     "Change the role of :name to :role? Their permissions will update immediately.": "De rol van :name wijzigen naar :role? De rechten worden meteen bijgewerkt.",
-    "Change role": "Rol wijzigen"
+    "Change role": "Rol wijzigen",
+    "Support session started": "Supportsessie gestart",
+    "Support session ended": "Supportsessie beëindigd",
+    "Support session expired": "Supportsessie verlopen",
+    "Support": "Support",
+    "Reason": "Reden",
+    "Support mode": "Supportmodus",
+    "Exit support": "Support verlaten",
+    "Platform support": "Platform support",
+    "Enter a firm in read-only mode to investigate issues. Access is time-boxed and audited.": "Ga een kantoor binnen in alleen-lezen modus om problemen te onderzoeken. Toegang is tijdsgebonden en wordt geaudit.",
+    "Search firms": "Kantoren zoeken",
+    "Name or slug": "Naam of slug",
+    "E.g. Investigating ticket #123": "Bijv. Onderzoek ticket #123",
+    "Required for audit. Describe why you need access.": "Verplicht voor de audit. Beschrijf waarom je toegang nodig hebt.",
+    "No firms found.": "Geen kantoren gevonden.",
+    "Enter firm": "Kantoor openen"
 }

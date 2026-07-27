@@ -12,6 +12,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Queries\Notifications\FetchWorkspaceNotificationsForUserQuery;
 use App\Queries\Tenancy\FetchWorkspaceNavigationForUserQuery;
+use App\Support\Platform\SupportSession;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -33,6 +34,7 @@ final class HandleInertiaRequests extends Middleware
         private readonly FetchWorkspaceNavigationForUserQuery $getWorkspaceNavigationForUser,
         private readonly FetchWorkspaceNotificationsForUserQuery $getWorkspaceNotificationsForUser,
         private readonly LoadFrontendTranslationsAction $loadFrontendTranslations,
+        private readonly SupportSession $supportSession,
     ) {}
 
     /**
@@ -98,9 +100,36 @@ final class HandleInertiaRequests extends Middleware
                         'name' => $user->name,
                         'email' => $user->email,
                         'locale' => $user->getAttributes()['locale'] ?? null,
+                        'is_platform_support' => $user->isPlatformSupport(),
                     ]
                     : null,
             ],
+            'support_session' => function () use ($user): ?array {
+                if (! $user instanceof User || ! $user->isPlatformSupport()) {
+                    return null;
+                }
+
+                $session = $this->supportSession->active();
+
+                if ($session === null) {
+                    return null;
+                }
+
+                $tenant = Tenant::query()->find($session->tenantId);
+
+                if (! $tenant instanceof Tenant) {
+                    return null;
+                }
+
+                return [
+                    'tenant' => [
+                        'name' => $tenant->name,
+                        'slug' => $tenant->slug,
+                    ],
+                    'reason' => $session->reason,
+                    'expires_at' => $session->expiresAt->toIso8601String(),
+                ];
+            },
             'workspaces' => $user instanceof User
                 ? Inertia::once(
                     function () use ($user): array {
@@ -128,8 +157,7 @@ final class HandleInertiaRequests extends Middleware
 
                 return $user instanceof User
                     && $tenant instanceof Tenant
-                    && $user->belongsToTenant($tenant)
-                    && $user->can(Permission::ManageMembers->value);
+                    && $user->hasTenantPermission(Permission::ManageMembers, $tenant);
             },
             // Staff bell inbox — deferred so non-bell pages stay cheap.
             'notifications' => (function () use ($user) {

@@ -81,8 +81,8 @@ final class DossierController extends Controller
         return Inertia::render('dossiers/archived', [
             'dossiers' => $fetchArchivedDossiers->handle(),
             ...$fetchArchivedDossiers->indexQueryProps(),
-            'can_restore' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
-            'can_restore_clients' => $request->user()?->can(Permission::ManageClients->value) ?? false,
+            'can_restore' => $request->user()?->hasTenantPermission(Permission::CreateDossiers) ?? false,
+            'can_restore_clients' => $request->user()?->hasTenantPermission(Permission::ManageClients) ?? false,
         ]);
     }
 
@@ -328,11 +328,11 @@ final class DossierController extends Controller
         $props = [
             'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
             'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
-            'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
+            'can_manage' => $request->user()?->hasTenantPermission(Permission::CreateDossiers) ?? false,
             'can_edit' => $request->user()?->can('update', $dossier) ?? false,
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
-            'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
-            'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
+            'can_review' => $request->user()?->hasTenantPermission(Permission::ReviewDocuments) ?? false,
+            'can_download' => $request->user()?->hasTenantPermission(Permission::DownloadDocuments) ?? false,
             'dossier' => fn (): array => $getDossierShowData->handle($dossier)->toArray(),
         ];
 

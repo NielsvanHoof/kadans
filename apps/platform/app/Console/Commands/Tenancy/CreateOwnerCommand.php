@@ -160,7 +160,7 @@ final class CreateOwnerCommand extends Command
             $role = Role::tryFrom($roleOption);
 
             if ($role === null) {
-                error('Invalid role: '.$roleOption.'. Available: '.implode(', ', Role::values()));
+                error("Invalid role: $roleOption. Available: ".implode(', ', Role::values()));
 
                 return null;
             }

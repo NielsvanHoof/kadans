@@ -26,7 +26,7 @@ final class MediaLibraryController extends Controller
         $this->authorize('viewAny', DocumentRequest::class);
 
         $user = $request->user();
-        $canDownload = $user !== null && $user->can(Permission::DownloadDocuments->value);
+        $canDownload = $user !== null && $user->hasTenantPermission(Permission::DownloadDocuments);
 
         return Inertia::render('workspaces/media/index', [
             'can_download' => $canDownload,

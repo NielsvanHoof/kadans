@@ -8,28 +8,31 @@ use App\Enums\Permission;
 use App\Models\QuestionnaireTemplate;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Policies\Concerns\AuthorizesTenantPermission;
 
 final class QuestionnaireTemplatePolicy
 {
+    use AuthorizesTenantPermission;
+
     public function viewAny(User $user): bool
     {
-        return $user->can(Permission::ViewDossiers->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ViewDossiers);
     }
 
     public function view(User $user, QuestionnaireTemplate $questionnaireTemplate): bool
     {
-        return $user->can(Permission::ViewDossiers->value)
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ViewDossiers)
             && $this->isVisibleToUser($user, $questionnaireTemplate);
     }
 
     public function create(User $user): bool
     {
-        return $user->can(Permission::ManageTemplates->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ManageTemplates);
     }
 
     public function update(User $user, QuestionnaireTemplate $questionnaireTemplate): bool
     {
-        return $user->can(Permission::ManageTemplates->value)
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ManageTemplates)
             && ! $questionnaireTemplate->isSystem()
             && $this->ownsTenantTemplate($user, $questionnaireTemplate);
     }
@@ -44,7 +47,7 @@ final class QuestionnaireTemplatePolicy
      */
     public function copy(User $user, QuestionnaireTemplate $questionnaireTemplate): bool
     {
-        return $user->can(Permission::ManageTemplates->value)
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ManageTemplates)
             && $this->isVisibleToUser($user, $questionnaireTemplate);
     }
 
@@ -53,7 +56,7 @@ final class QuestionnaireTemplatePolicy
      */
     public function apply(User $user, QuestionnaireTemplate $questionnaireTemplate): bool
     {
-        return $user->can(Permission::CreateDossiers->value)
+        return $this->userHasPermissionInCurrentTenant($user, Permission::CreateDossiers)
             && $this->isVisibleToUser($user, $questionnaireTemplate);
     }
 
@@ -65,7 +68,7 @@ final class QuestionnaireTemplatePolicy
 
         $tenant = $template->tenant;
 
-        return $tenant instanceof Tenant && $user->belongsToTenant($tenant);
+        return $tenant instanceof Tenant && $user->canAccessTenant($tenant);
     }
 
     private function ownsTenantTemplate(User $user, QuestionnaireTemplate $template): bool
@@ -74,6 +77,6 @@ final class QuestionnaireTemplatePolicy
 
         return $tenant instanceof Tenant
             && $template->tenant_id === $tenant->getKey()
-            && $user->belongsToTenant($tenant);
+            && $user->canAccessTenant($tenant);
     }
 }

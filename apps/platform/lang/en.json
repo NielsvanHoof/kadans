@@ -839,5 +839,20 @@
     "Suspend :name? They will lose access until reactivated.": "Suspend :name? They will lose access until reactivated.",
     "Change role?": "Change role?",
     "Change the role of :name to :role? Their permissions will update immediately.": "Change the role of :name to :role? Their permissions will update immediately.",
-    "Change role": "Change role"
+    "Change role": "Change role",
+    "Support session started": "Support session started",
+    "Support session ended": "Support session ended",
+    "Support session expired": "Support session expired",
+    "Support": "Support",
+    "Reason": "Reason",
+    "Support mode": "Support mode",
+    "Exit support": "Exit support",
+    "Platform support": "Platform support",
+    "Enter a firm in read-only mode to investigate issues. Access is time-boxed and audited.": "Enter a firm in read-only mode to investigate issues. Access is time-boxed and audited.",
+    "Search firms": "Search firms",
+    "Name or slug": "Name or slug",
+    "E.g. Investigating ticket #123": "E.g. Investigating ticket #123",
+    "Required for audit. Describe why you need access.": "Required for audit. Describe why you need access.",
+    "No firms found.": "No firms found.",
+    "Enter firm": "Enter firm"
 }

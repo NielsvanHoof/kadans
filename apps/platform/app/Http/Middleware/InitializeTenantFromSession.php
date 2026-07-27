@@ -45,15 +45,22 @@ final class InitializeTenantFromSession
             return $next($request);
         }
 
-        $tenant = Tenant::query()
-            ->whereKey($tenantId)
-            ->whereHas('memberships', fn ($query) => $query
-                ->where('user_id', $user->id)
-                ->where('status', TenantMembershipStatus::Active))
-            ->first();
+        $tenant = Tenant::query()->whereKey($tenantId)->first();
 
         if (! $tenant instanceof Tenant) {
             $request->session()->forget('active_tenant_id');
+
+            return $next($request);
+        }
+
+        $user->loadMissing('tenantMemberships');
+
+        // Allow session tenant when member OR active support session for that firm.
+        if (! $user->canAccessTenant($tenant)) {
+            // Drop stale active_tenant_id if support session expired / was cleared.
+            if (! $user->belongsToTenant($tenant)) {
+                $request->session()->forget('active_tenant_id');
+            }
 
             return $next($request);
         }

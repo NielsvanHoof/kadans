@@ -17,7 +17,7 @@ final class ActiveTenantController extends Controller
     {
         $user = $request->user();
 
-        if (! $user instanceof User || ! $user->belongsToTenant($tenant)) {
+        if (! $user instanceof User || ! $user->canAccessTenant($tenant)) {
             abort(Response::HTTP_FORBIDDEN);
         }
 

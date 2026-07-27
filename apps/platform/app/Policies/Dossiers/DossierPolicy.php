@@ -16,7 +16,7 @@ final class DossierPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->can(Permission::ViewDossiers->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ViewDossiers);
     }
 
     public function view(User $user, Dossier $dossier): bool
@@ -30,7 +30,7 @@ final class DossierPolicy
 
     public function create(User $user): bool
     {
-        return $user->can(Permission::CreateDossiers->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::CreateDossiers);
     }
 
     public function update(User $user, Dossier $dossier): bool

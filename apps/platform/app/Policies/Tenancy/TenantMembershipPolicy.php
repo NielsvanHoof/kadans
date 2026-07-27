@@ -21,7 +21,7 @@ final class TenantMembershipPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->can(Permission::ManageMembers->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ManageMembers);
     }
 
     public function update(User $user, TenantMembership $membership): bool

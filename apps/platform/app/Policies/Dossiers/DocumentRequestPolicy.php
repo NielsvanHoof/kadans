@@ -20,12 +20,12 @@ final class DocumentRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can(Permission::ViewDossiers->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::ViewDossiers);
     }
 
     public function create(User $user): bool
     {
-        return $user->can(Permission::CreateDossiers->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::CreateDossiers);
     }
 
     public function view(User $user, DocumentRequest $documentRequest): bool

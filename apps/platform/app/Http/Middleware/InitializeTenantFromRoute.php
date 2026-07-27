@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Enums\TenantMembershipStatus;
 use App\Models\Tenant;
 use App\Models\User;
 use Closure;
@@ -31,16 +30,20 @@ final class InitializeTenantFromRoute
             ? $tenantParameter->slug
             : (is_string($tenantParameter) ? $tenantParameter : null);
 
-        $tenant = $tenantSlug === null
-            ? null
-            : Tenant::query()
-                ->where('slug', $tenantSlug)
-                ->whereHas('memberships', fn ($query) => $query
-                    ->where('user_id', $user->id)
-                    ->where('status', TenantMembershipStatus::Active))
-                ->first();
+        if ($tenantSlug === null) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        $tenant = Tenant::query()->where('slug', $tenantSlug)->first();
 
         if (! $tenant instanceof Tenant) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        $user->loadMissing('tenantMemberships');
+
+        // Membership or active platform support session for this firm.
+        if (! $user->canAccessTenant($tenant)) {
             abort(Response::HTTP_NOT_FOUND);
         }
 

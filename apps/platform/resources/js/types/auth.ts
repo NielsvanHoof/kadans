@@ -4,6 +4,8 @@ export type User = {
     email: string;
     locale?: string | null;
     avatar?: string;
+    /** Global platform support flag (cross-firm read-only sessions). */
+    is_platform_support?: boolean;
 };
 
 export type Auth = {

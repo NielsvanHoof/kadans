@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\Permission;
+use App\Enums\PlatformRole;
+use App\Support\Platform\SupportSession;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -19,11 +22,14 @@ use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
+use function array_key_exists;
+
 /**
  * @property int $id
  * @property string $name
  * @property string $email
  * @property string|null $locale
+ * @property PlatformRole|null $platform_role
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -68,6 +74,72 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
     }
 
     /**
+     * Whether this user is platform support staff (engineers, ops, etc.).
+     */
+    public function isPlatformSupport(): bool
+    {
+        // Avoid MissingAttributeException under Model::shouldBeStrict() when
+        // the attribute was never hydrated onto this instance.
+        if (! array_key_exists('platform_role', $this->getAttributes())) {
+            return false;
+        }
+
+        return $this->platform_role === PlatformRole::Support;
+    }
+
+    /**
+     * Whether this user has any platform-level access.
+     */
+    public function hasPlatformAccess(): bool
+    {
+        if (! array_key_exists('platform_role', $this->getAttributes())) {
+            return false;
+        }
+
+        return $this->platform_role instanceof PlatformRole;
+    }
+
+    /**
+     * Firm membership or an active read-only support session for this tenant.
+     */
+    public function canAccessTenant(Tenant $tenant): bool
+    {
+        if ($this->belongsToTenant($tenant)) {
+            return true;
+        }
+
+        return $this->isPlatformSupport()
+            && app(SupportSession::class)->isActiveFor($tenant);
+    }
+
+    /**
+     * Whether this user may exercise a permission in a tenant.
+     *
+     * Active support sessions always use the read-only allow-list (even when
+     * the user is also a firm member). Otherwise Spatie team roles apply.
+     */
+    public function hasTenantPermission(Permission $permission, ?Tenant $tenant = null): bool
+    {
+        $tenant ??= Tenant::current();
+
+        if (! $tenant instanceof Tenant || ! $this->canAccessTenant($tenant)) {
+            return false;
+        }
+
+        $supportSession = app(SupportSession::class);
+
+        if ($this->isPlatformSupport() && $supportSession->isActiveFor($tenant)) {
+            return $supportSession->allowsPermission($permission);
+        }
+
+        if ($this->belongsToTenant($tenant)) {
+            return $this->can($permission->value);
+        }
+
+        return false;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -78,6 +150,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'platform_role' => PlatformRole::class,
         ];
     }
 }

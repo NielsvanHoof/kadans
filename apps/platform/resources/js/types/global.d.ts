@@ -7,6 +7,12 @@ type AvailableLocale = {
     label: string;
 };
 
+type SupportSessionShared = {
+    tenant: Firm;
+    reason: string;
+    expires_at: string;
+};
+
 declare module 'react' {
     interface InputHTMLAttributes<T> {
         passwordrules?: string;
@@ -24,6 +30,7 @@ declare module '@inertiajs/core' {
             workspaces: Firm[];
             current_firm: Firm | null;
             can_manage_members: boolean;
+            support_session: SupportSessionShared | null;
             notifications: WorkspaceNotificationsSummary | null | undefined;
             sidebarOpen: boolean;
             [key: string]: unknown;

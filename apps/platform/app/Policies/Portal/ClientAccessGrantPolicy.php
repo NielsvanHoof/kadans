@@ -15,7 +15,7 @@ final class ClientAccessGrantPolicy
 
     public function create(User $user): bool
     {
-        return $user->can(Permission::CreateDossiers->value);
+        return $this->userHasPermissionInCurrentTenant($user, Permission::CreateDossiers);
     }
 
     public function revoke(User $user, ClientAccessGrant $grant): bool

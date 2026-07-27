@@ -46,6 +46,9 @@ enum AuditEvent: string
     case QuestionnaireTemplateDeleted = 'questionnaire_template.deleted';
     case QuestionnaireTemplateItemDeleted = 'questionnaire_template_item.deleted';
     case UserDeleted = 'user.deleted';
+    case SupportSessionStarted = 'support.session_started';
+    case SupportSessionEnded = 'support.session_ended';
+    case SupportSessionExpired = 'support.session_expired';
 
     public function label(): string
     {
@@ -90,6 +93,9 @@ enum AuditEvent: string
             self::QuestionnaireTemplateDeleted => __('Questionnaire template deleted'),
             self::QuestionnaireTemplateItemDeleted => __('Questionnaire template item deleted'),
             self::UserDeleted => __('User account deleted'),
+            self::SupportSessionStarted => __('Support session started'),
+            self::SupportSessionEnded => __('Support session ended'),
+            self::SupportSessionExpired => __('Support session expired'),
         };
     }
 }
