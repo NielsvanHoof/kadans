@@ -26,6 +26,9 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            case name === 'error':
+                // Standalone HTTP errors — works for guests and signed-in users.
+                return null;
             case name.startsWith('portal/'):
                 // Guest magic-link portal — no staff chrome.
                 return null;

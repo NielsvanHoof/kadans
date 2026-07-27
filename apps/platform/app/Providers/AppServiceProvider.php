@@ -34,19 +34,30 @@ use App\Services\Ocr\Drivers\OcrDriverFactory;
 use App\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
 use App\Services\Production\InfrastructureReadinessCheck;
 use App\Services\Production\ProductionConfigurationValidator;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\HardenClientPortalResponse;
 use App\Support\Platform\SupportSession;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Debug\ExceptionHandler as ExceptionHandlerContract;
+use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\ExceptionResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
+use function in_array;
 use function is_string;
 
 final class AppServiceProvider extends ServiceProvider
@@ -77,6 +88,53 @@ final class AppServiceProvider extends ServiceProvider
         $this->configureSupportPermissionGate();
         $this->configureDefaults();
         $this->configureDevCommands();
+        $this->configureExceptionResponses();
+    }
+
+    /**
+     * Render Inertia error pages for common HTTP statuses, and keep portal
+     * response hardening. Laravel only allows one finalizeResponseCallback.
+     */
+    private function configureExceptionResponses(): void
+    {
+        $handler = app(ExceptionHandlerContract::class);
+
+        if (! $handler instanceof ExceptionHandler) {
+            return;
+        }
+
+        $handler->respondUsing(function (Response $response, Throwable $exception, Request $request): Response {
+            $status = $response->getStatusCode();
+
+            // Keep Laravel's debug pages for 500/503 while developing.
+            $statuses = app()->hasDebugModeEnabled()
+                ? [403, 404]
+                : [403, 404, 500, 503];
+
+            // Leave JSON (and non-Inertia API-style) error payloads alone.
+            if (
+                ! $request->expectsJson()
+                && in_array($status, $statuses, true)
+            ) {
+                $response = (new ExceptionResponse(
+                    $exception,
+                    $request,
+                    $response,
+                    app(Router::class),
+                    app(KernelContract::class),
+                ))
+                    ->render('error', ['status' => $status])
+                    ->withSharedData()
+                    ->usingMiddleware(HandleInertiaRequests::class)
+                    ->toResponse($request);
+            }
+
+            if ($request->is('portal/*')) {
+                return HardenClientPortalResponse::applyHeaders($response);
+            }
+
+            return $response;
+        });
     }
 
     /**

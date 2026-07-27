@@ -132,13 +132,15 @@ final class HandleInertiaRequests extends Middleware
             },
             'workspaces' => $user instanceof User
                 ? Inertia::once(
-                    function () use ($user): array {
-                        return array_map(
-                            static fn (WorkspaceNavItemData $item): array => $item->toArray(),
-                            $this->getWorkspaceNavigationForUser->handle($user),
-                        );
-                    },
-                )->fresh($request->session()->pull('inertia.refresh.workspaces', false))
+                    fn () => array_map(
+                        static fn (WorkspaceNavItemData $item): array => $item->toArray(),
+                        $this->getWorkspaceNavigationForUser->handle($user),
+                    ),
+                )->fresh(
+                    $request->hasSession()
+                        ? $request->session()->pull('inertia.refresh.workspaces', false)
+                        : false,
+                )
                 : [],
             'current_firm' => function (): ?array {
                 $tenant = Tenant::current();
