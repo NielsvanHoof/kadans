@@ -1,4 +1,5 @@
 import { Form } from '@inertiajs/react';
+import { lazy, Suspense } from 'react';
 import ClientPortalAnswerController from '@/actions/App/Http/Controllers/Portal/ClientPortalAnswerController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,8 @@ import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { inlineActionOptions } from '@/lib/inline-action-options';
 import { cn } from '@/lib/utils';
+
+const DatePicker = lazy(() => import('@/components/date-picker'));
 
 /**
  * Portal form for answer_text types (text, textarea, date, number).
@@ -39,12 +42,34 @@ export function PortalTextDocumentAnswer({
                         <Label htmlFor={fieldId} className="sr-only">
                             {t('Your answer')}
                         </Label>
-                        <AnswerTextControl
-                            id={fieldId}
-                            type={documentRequest.type}
-                            defaultValue={documentRequest.answer_text ?? ''}
-                            placeholder={placeholder}
-                        />
+                        {documentRequest.type === 'date' ? (
+                            <Suspense
+                                fallback={
+                                    <div
+                                        className="h-11 rounded-md border border-input bg-muted/30"
+                                        aria-hidden="true"
+                                    />
+                                }
+                            >
+                                <DatePicker
+                                    id={fieldId}
+                                    name="answer_text"
+                                    defaultValue={
+                                        documentRequest.answer_text ?? ''
+                                    }
+                                    invalid={Boolean(errors.answer_text)}
+                                    required
+                                    triggerClassName="h-11"
+                                />
+                            </Suspense>
+                        ) : (
+                            <AnswerTextControl
+                                id={fieldId}
+                                type={documentRequest.type}
+                                defaultValue={documentRequest.answer_text ?? ''}
+                                placeholder={placeholder}
+                            />
+                        )}
                         <InputError message={errors.answer_text} />
                     </div>
                     <Button

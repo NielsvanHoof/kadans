@@ -5,7 +5,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useMemo } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
-import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import DesktopRequiredGate from '@/features/document-requests/staff/builder/desktop-required-gate';
 import QuestionnaireBuilderCanvas from '@/features/document-requests/staff/builder/questionnaire-builder-canvas';
 import {

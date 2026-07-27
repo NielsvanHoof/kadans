@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import QuestionnaireItemTypeSelect from '@/features/document-requests/questionnaire-item-type-select';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import type { TemplateItem } from '@/features/questionnaires/types';

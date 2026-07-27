@@ -16,6 +16,8 @@ type DatePickerProps = {
     name: string;
     defaultValue?: string;
     invalid?: boolean;
+    required?: boolean;
+    triggerClassName?: string;
 };
 
 export default function DatePicker({
@@ -23,6 +25,8 @@ export default function DatePicker({
     name,
     defaultValue = '',
     invalid = false,
+    required = false,
+    triggerClassName,
 }: DatePickerProps) {
     const { locale, t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
@@ -50,11 +54,14 @@ export default function DatePicker({
                     <Button
                         id={id}
                         type="button"
+                        role="combobox"
                         variant="outline"
                         aria-invalid={invalid}
+                        aria-required={required}
                         className={cn(
                             'min-w-0 flex-1 justify-start text-left font-normal',
                             !selectedDate && 'text-muted-foreground',
+                            triggerClassName,
                         )}
                     >
                         <CalendarIcon aria-hidden="true" />

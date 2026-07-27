@@ -10,7 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
 import type { BuilderSaveStatus } from '@/features/document-requests/staff/builder/use-questionnaire-builder-actions';
 import type {
     DocumentRequest,

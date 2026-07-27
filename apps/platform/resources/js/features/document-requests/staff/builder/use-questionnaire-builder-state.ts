@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import {
     type BuilderSaveStatus,
     useQuestionnaireBuilderActions,

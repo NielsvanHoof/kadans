@@ -2,9 +2,10 @@ import { useDroppable } from '@dnd-kit/core';
 import { Fragment } from 'react';
 import EmptyState from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
 import { BuilderInsertPlaceholder } from '@/features/document-requests/staff/builder/questionnaire-builder-chrome';
 import QuestionnaireBuilderItem from '@/features/document-requests/staff/builder/questionnaire-builder-item';
+import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/staff/builder/questionnaire-item-type-renderers';
 import type { PendingInsert } from '@/features/document-requests/staff/builder/use-questionnaire-builder-state';
 import type {
     DocumentRequest,
@@ -87,7 +88,10 @@ export default function QuestionnaireBuilderCanvas({
                             canEdit ? (
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {quickAddTypes.map((definition) => {
-                                        const Icon = definition.icon;
+                                        const { icon: Icon } =
+                                            getQuestionnaireItemTypeBuilderRenderer(
+                                                definition.value,
+                                            );
 
                                         return (
                                             <Button

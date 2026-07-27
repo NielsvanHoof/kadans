@@ -1,9 +1,10 @@
 import EmptyState from '@/components/empty-state';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { getQuestionnaireItemTypePortalContent } from '@/features/portal/document-requests/questionnaire-item-type-renderers';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
@@ -190,7 +191,7 @@ function PortalRequestTypeContent({
     documentRequest: PortalDocumentRequest;
     canRespond: boolean;
 }) {
-    const { PortalContent } = getQuestionnaireItemTypeDefinition(
+    const PortalContent = getQuestionnaireItemTypePortalContent(
         documentRequest.type,
     );
 

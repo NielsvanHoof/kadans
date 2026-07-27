@@ -323,7 +323,7 @@ test('owner can reorder every firm template item', function () {
         ->all())->toBe($reorderedIds);
 });
 
-test('guest can submit text and boolean answers through the portal', function () {
+test('guest can submit text, date, and boolean answers through the portal', function () {
     $owner = User::factory()->create();
     $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
@@ -347,6 +347,13 @@ test('guest can submit text and boolean answers through the portal', function ()
         'dossier_id' => $dossier->id,
         'type' => QuestionnaireItemType::Boolean,
         'title' => 'UBO confirmed',
+        'status' => DocumentRequestStatus::Pending,
+    ]);
+    $dateRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'type' => QuestionnaireItemType::Date,
+        'title' => 'Incorporation date',
         'status' => DocumentRequestStatus::Pending,
     ]);
     DocumentRequest::factory()->create([
@@ -373,7 +380,7 @@ test('guest can submit text and boolean answers through the portal', function ()
                 ->pluck('type')
                 ->sort()
                 ->values()
-                ->all() === ['boolean', 'file', 'text']));
+                ->all() === ['boolean', 'date', 'file', 'text']));
 
     $this->post(route('portal.document-requests.answer', [
         'documentRequest' => $textRequest->id,
@@ -387,6 +394,12 @@ test('guest can submit text and boolean answers through the portal', function ()
         'answer_boolean' => true,
     ])->assertRedirect(route('portal.show'));
 
+    $this->post(route('portal.document-requests.answer', [
+        'documentRequest' => $dateRequest->id,
+    ]), [
+        'answer_text' => '2026-07-27',
+    ])->assertRedirect(route('portal.show'));
+
     $tenant->makeCurrent();
 
     expect($textRequest->fresh())
@@ -395,6 +408,9 @@ test('guest can submit text and boolean answers through the portal', function ()
         ->and($booleanRequest->fresh())
         ->status->toBe(DocumentRequestStatus::Submitted)
         ->answer_boolean->toBeTrue()
+        ->and($dateRequest->fresh())
+        ->status->toBe(DocumentRequestStatus::Submitted)
+        ->answer_text->toBe('2026-07-27')
         ->and($dossier->fresh()->status)->toBe(DossierStatus::InReview)
         ->and($grant->fresh()->last_used_at)->not->toBeNull();
 });

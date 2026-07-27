@@ -3,8 +3,9 @@ import { type LucideIcon, Plus, Search } from 'lucide-react';
 import { type ComponentType, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
 import QuestionnaireBuilderTemplates from '@/features/document-requests/staff/builder/questionnaire-builder-templates';
+import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/staff/builder/questionnaire-item-type-renderers';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -87,18 +88,25 @@ export default function QuestionnaireBuilderPalette({
                 </p>
             ) : (
                 <ul className="space-y-1.5">
-                    {filtered.map((definition) => (
-                        <li key={definition.value}>
-                            <PaletteItem
-                                type={definition.value}
-                                label={definition.label}
-                                description={definition.description}
-                                icon={definition.icon}
-                                disabled={!canEdit}
-                                onAdd={() => onAdd(definition.value)}
-                            />
-                        </li>
-                    ))}
+                    {filtered.map((definition) => {
+                        const { icon } =
+                            getQuestionnaireItemTypeBuilderRenderer(
+                                definition.value,
+                            );
+
+                        return (
+                            <li key={definition.value}>
+                                <PaletteItem
+                                    type={definition.value}
+                                    label={definition.label}
+                                    description={definition.description}
+                                    icon={icon}
+                                    disabled={!canEdit}
+                                    onAdd={() => onAdd(definition.value)}
+                                />
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
 

@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import StatusMessage from '@/components/status-message';
-import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
+import PortalDocumentRequestsCard from '@/features/portal/document-requests/portal-document-requests-card';
 import PortalProgressOverview from '@/features/portal/portal-progress-overview';
 import type { PortalDossier } from '@/features/portal/types';
 import { useTranslation } from '@/hooks/use-translation';

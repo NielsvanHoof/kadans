@@ -6,8 +6,9 @@ import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import DocumentRequestReview from '@/features/document-requests/staff/review/document-request-review';
+import { getQuestionnaireItemTypeStaffContent } from '@/features/document-requests/staff/review/questionnaire-item-type-renderers';
 import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
@@ -227,7 +228,10 @@ function ReviewGroup({
                         const definition = getQuestionnaireItemTypeDefinition(
                             documentRequest.type,
                         );
-                        const { StaffContent } = definition;
+                        const StaffContent =
+                            getQuestionnaireItemTypeStaffContent(
+                                documentRequest.type,
+                            );
                         const selectable =
                             showBulk && documentRequest.status === 'submitted';
 

@@ -17,6 +17,7 @@ test('tenancy create-owner provisions a verified owner and firm', function () {
         'email' => 'ada@example.com',
         '--firm' => 'Ada Accountants',
         '--password' => 'password',
+        '--role' => Role::Owner->value,
     ])->assertSuccessful();
 
     $user = User::query()->where('email', 'ada@example.com')->firstOrFail();
@@ -44,7 +45,30 @@ test('tenancy create-owner rejects duplicate emails', function () {
         'email' => 'ada@example.com',
         '--firm' => 'Ada Accountants',
         '--password' => 'password',
+        '--role' => Role::Owner->value,
     ])->assertFailed();
 
     expect(Tenant::query()->count())->toBe(0);
+});
+
+test('tenancy create-owner prompts for details and allows optional inputs', function () {
+    $roleOptions = collect(Role::cases())
+        ->mapWithKeys(fn (Role $role): array => [$role->value => $role->label()])
+        ->all();
+
+    $this->artisan('tenancy:create-owner')
+        ->expectsQuestion('Name', 'Grace Hopper')
+        ->expectsQuestion('Email', 'grace@example.com')
+        ->expectsChoice('Role', Role::Owner->value, $roleOptions)
+        ->expectsQuestion('Firm', "Grace Hopper's firm")
+        ->expectsQuestion('Password', '')
+        ->assertSuccessful();
+
+    $user = User::query()->where('email', 'grace@example.com')->firstOrFail();
+    $tenant = Tenant::query()->where('slug', 'grace-hoppers-firm')->firstOrFail();
+
+    expect($user->name)->toBe('Grace Hopper')
+        ->and($user->email_verified_at)->not->toBeNull()
+        ->and($user->password)->not->toBe('')
+        ->and($tenant->name)->toBe("Grace Hopper's firm");
 });

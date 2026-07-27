@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
+import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/staff/builder/questionnaire-item-type-renderers';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -54,7 +55,7 @@ export function BuilderInsertPlaceholder({
 export function PaletteOverlay({ type }: { type: QuestionnaireItemType }) {
     const { t } = useTranslation();
     const definition = getQuestionnaireItemTypeDefinition(type);
-    const Icon = definition.icon;
+    const { icon: Icon } = getQuestionnaireItemTypeBuilderRenderer(type);
 
     return (
         <div className="flex items-center gap-2 rounded-xl border border-primary bg-card px-3 py-2 shadow-lg ring-2 ring-primary/25">

@@ -6,7 +6,8 @@ import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/D
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
+import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/staff/builder/questionnaire-item-type-renderers';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -37,7 +38,9 @@ export default function QuestionnaireBuilderItem({
     const currentWorkspace = useCurrentWorkspace();
     const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
     const definition = getQuestionnaireItemTypeDefinition(documentRequest.type);
-    const { BuilderPreview } = definition;
+    const { Preview: BuilderPreview } = getQuestionnaireItemTypeBuilderRenderer(
+        documentRequest.type,
+    );
     const {
         attributes,
         listeners,

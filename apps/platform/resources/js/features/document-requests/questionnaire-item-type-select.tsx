@@ -7,7 +7,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/questionnaire-item-type-registry';
+import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 
