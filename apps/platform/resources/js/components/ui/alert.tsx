@@ -9,8 +9,10 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: "bg-background text-foreground",
+        // Soft tint + destructive text (same idea as success / rejected badges).
+        // Do not use text-destructive-foreground here — that token is white for solid buttons.
         destructive:
-          "text-destructive-foreground [&>svg]:text-current *:data-[slot=alert-description]:text-destructive-foreground/80",
+          "border-destructive/30 bg-destructive/5 text-destructive [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/80",
         success:
           "border-success-border bg-success-muted text-success-foreground [&>svg]:text-current *:data-[slot=alert-description]:text-success-foreground/85",
       },
