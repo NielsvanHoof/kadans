@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\HardenClientPortalResponse;
 use App\Http\Middleware\InitializeTenantFromRoute;
 use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Http\Middleware\SetLocale;
+use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Routing\Router;
+use Inertia\ExceptionResponse;
 use Sentry\Laravel\Integration;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -68,7 +73,41 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        // Portal no-store headers and Inertia error pages are registered together in
-        // AppServiceProvider — Laravel only keeps one finalizeResponseCallback.
+        // Register once here: Laravel keeps a single finalizeResponseCallback.
+        // Resolving the handler from the container fails under Collision (dev),
+        // which wraps the contract and does not expose respondUsing().
+        $exceptions->respond(function (Response $response, Throwable $exception, Request $request): Response {
+            $status = $response->getStatusCode();
+
+            // Keep Laravel's debug pages for 500/503 while developing.
+            $statuses = app()->hasDebugModeEnabled()
+                ? [403, 404]
+                : [403, 404, 500, 503];
+
+            // Leave JSON (and non-Inertia API-style) error payloads alone.
+            if (
+                ! $request->expectsJson()
+                && in_array($status, $statuses, true)
+            ) {
+                $response = (new ExceptionResponse(
+                    $exception,
+                    $request,
+                    $response,
+                    app(Router::class),
+                    app(KernelContract::class),
+                ))
+                    ->render('error', ['status' => $status])
+                    ->withSharedData()
+                    ->usingMiddleware(HandleInertiaRequests::class)
+                    ->toResponse($request);
+            }
+
+            if ($request->is('portal/*')) {
+                return HardenClientPortalResponse::applyHeaders($response);
+            }
+
+            return $response;
+        });
+
         Integration::handles($exceptions);
     })->create();

@@ -39,14 +39,15 @@ final class FetchPlatformSupportTenantsQuery
         // Cap via the base query to avoid Larastan staticMethod.dynamicCall.
         $builder->getQuery()->limit(self::Limit);
 
-        return $builder
+        // array_values() guarantees a list for the PHPDoc return type.
+        return array_values($builder
             ->get()
             ->map(static fn (Tenant $tenant): array => [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
             ])
-            ->all();
+            ->all());
     }
 
     /**

@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ShieldAlert, ShieldOff, TriangleAlert, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { ShieldAlert, ShieldOff, TriangleAlert, Wrench } from 'lucide-react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
@@ -30,9 +30,7 @@ export default function ErrorPage({ status }: Props) {
     const copyByStatus: Record<ErrorStatus, ErrorCopy> = {
         403: {
             title: t('Forbidden'),
-            description: t(
-                'Sorry, you are not allowed to access this page.',
-            ),
+            description: t('Sorry, you are not allowed to access this page.'),
             icon: ShieldOff,
         },
         404: {
@@ -44,9 +42,7 @@ export default function ErrorPage({ status }: Props) {
         },
         500: {
             title: t('Server error'),
-            description: t(
-                'Whoops, something went wrong on our servers.',
-            ),
+            description: t('Whoops, something went wrong on our servers.'),
             icon: TriangleAlert,
         },
         503: {

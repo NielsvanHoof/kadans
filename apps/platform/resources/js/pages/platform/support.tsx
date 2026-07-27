@@ -58,9 +58,7 @@ export default function PlatformSupport({
                         router.get(
                             supportIndex.url({
                                 query: {
-                                    filter: search
-                                        ? { q: search }
-                                        : undefined,
+                                    filter: search ? { q: search } : undefined,
                                 },
                             }),
                             {},
@@ -92,9 +90,7 @@ export default function PlatformSupport({
                         required
                     />
                     <p className="text-sm text-muted-foreground">
-                        {t(
-                            'Required for audit. Describe why you need access.',
-                        )}
+                        {t('Required for audit. Describe why you need access.')}
                     </p>
                 </div>
 
