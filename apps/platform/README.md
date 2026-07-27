@@ -4,9 +4,9 @@ Multi-tenant platform for accounting and advisory firms to collect documents and
 
 ## Stack
 
-- **Backend:** Laravel 13 (PHP 8.5), Fortify (auth, 2FA, passkeys), Spatie Multitenancy + Permission, activity log
+- **Backend:** Laravel 13 (PHP 8.5), Octane + FrankenPHP, Fortify (auth, 2FA, passkeys), Spatie Multitenancy + Permission, activity log
 - **Frontend:** Inertia v3 + React 19, Tailwind CSS 4, shadcn/ui, Wayfinder (typed routes)
-- **Tooling:** Laravel Sail (Docker), Pest 4, Pint, Larastan, Biome + Prettier, Vite 8
+- **Tooling:** Laravel Sail, Pest 4, Pint, Larastan, Biome + Prettier, Vite 8
 
 ## Getting started
 
@@ -14,8 +14,8 @@ Everything runs through Sail:
 
 ```bash
 composer run setup          # install deps, .env, key, migrate, build assets
-vendor/bin/sail up -d       # start Docker services
-vendor/bin/sail composer run dev   # app + queue + Vite dev server
+vendor/bin/sail up -d       # start services and the Octane application server
+vendor/bin/sail composer run dev   # queue + logs + Reverb + Vite
 ```
 
 Useful commands:
@@ -27,6 +27,9 @@ vendor/bin/sail npm run lint:check       # Biome (lint + import boundaries)
 vendor/bin/sail npm run format:check     # Prettier
 vendor/bin/sail bin pint --dirty         # PHP formatting
 ```
+
+Octane reloads its workers automatically when backend files change. After changing
+`compose.yaml`, rebuild the local image with `vendor/bin/sail build --no-cache`.
 
 ## Domain overview
 

@@ -105,6 +105,8 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function configureDevCommands(): void
     {
+        DevCommands::except('server');
+
         if (config('broadcasting.default') !== 'reverb') {
             return;
         }

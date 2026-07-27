@@ -31,3 +31,7 @@ yarn-error.log
 /.vscode
 /.zed
 /skills-lock.json
+
+**/caddy
+frankenphp
+frankenphp-worker.php

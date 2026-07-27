@@ -1,33 +1,8 @@
 FROM node:24-bookworm-slim AS node
 
-FROM php:8.5-fpm-bookworm AS php-extension-build
+FROM dunglas/frankenphp:php8.5-bookworm AS php-base
 
-RUN apt-get update \
-    && apt-get install --yes --no-install-recommends \
-        libicu-dev \
-        libpq-dev \
-        libzip-dev \
-    && docker-php-ext-install -j1 bcmath intl pcntl pdo_pgsql zip \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/pear
-
-FROM php:8.5-fpm-bookworm AS php-base
-
-RUN apt-get update \
-    && apt-get install --yes --no-install-recommends \
-        curl \
-        libicu72 \
-        libpq5 \
-        libzip4 \
-        nginx \
-        supervisor \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=php-extension-build /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
-COPY --from=php-extension-build /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+RUN install-php-extensions bcmath intl pcntl pdo_pgsql redis zip
 
 FROM php-base AS build
 
@@ -79,14 +54,15 @@ WORKDIR /var/www/html
 
 COPY --from=build --chown=www-data:www-data /var/www/html /var/www/html
 
-COPY docker/production/nginx.conf /etc/nginx/nginx.conf
 COPY docker/production/php.ini /usr/local/etc/php/conf.d/production.ini
-COPY docker/production/supervisor.conf /etc/supervisor/conf.d/qompose.conf
 COPY docker/production/entrypoint.sh /usr/local/bin/qompose-entrypoint
+
+ENV XDG_CONFIG_HOME=/tmp/caddy/config
+ENV XDG_DATA_HOME=/tmp/caddy/data
 
 USER www-data
 
 EXPOSE 8080
 
 ENTRYPOINT ["qompose-entrypoint"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/qompose.conf"]
+CMD ["php", "artisan", "octane:start", "--server=frankenphp", "--host=0.0.0.0", "--port=8080", "--admin-port=2019", "--caddyfile=/var/www/html/docker/production/Caddyfile"]

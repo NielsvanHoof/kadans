@@ -9,6 +9,9 @@
 .agents
 coverage
 infra
+frankenphp
+public/frankenphp-worker.php
+**/caddy
 node_modules
 storage/logs/*
 storage/framework/cache/data/*
