@@ -7,6 +7,7 @@ namespace App\Actions\Retention;
 use App\Models\Activity;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
+use App\Models\DossierExport;
 use App\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Model;
 
@@ -44,6 +45,18 @@ final class PurgeSubjectActivityLogAction
             $deletedCount += Activity::query()
                 ->where('subject_type', UploadedDocument::class)
                 ->where('subject_id', $uploadedDocumentId)
+                ->delete();
+        }
+
+        $exportIds = DossierExport::query()
+            ->where('dossier_id', $dossier->id)
+            ->toBase()
+            ->pluck('id');
+
+        foreach ($exportIds as $exportId) {
+            $deletedCount += Activity::query()
+                ->where('subject_type', DossierExport::class)
+                ->where('subject_id', $exportId)
                 ->delete();
         }
 

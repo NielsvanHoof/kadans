@@ -6,6 +6,7 @@ namespace App\Queries\Dossiers;
 
 use App\Data\Dossiers\DossierAccessGrantData;
 use App\Data\Dossiers\DossierClientSummaryData;
+use App\Data\Dossiers\DossierExportData;
 use App\Data\Dossiers\DossierReviewSummaryData;
 use App\Data\Dossiers\DossierShowData;
 use App\Data\Dossiers\StaffDocumentRequestData;
@@ -20,7 +21,7 @@ use RuntimeException;
 
 final class FetchDossierShowQuery
 {
-    public function handle(Dossier $dossier): DossierShowData
+    public function handle(Dossier $dossier, bool $canDownload = false): DossierShowData
     {
         $dossier->load([
             'client:id,name,email',
@@ -29,6 +30,7 @@ final class FetchDossierShowQuery
                 ->with(['uploadedDocument', 'reviewedBy:id,name'])
                 ->oldest('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
+            'exports' => fn ($query) => $query->latest(),
         ]);
 
         $client = $this->resolveClient($dossier);
@@ -90,6 +92,11 @@ final class FetchDossierShowQuery
 
         $responsibleUser = $dossier->responsibleUser;
 
+        /** @var list<DossierExportData> $exports */
+        $exports = $dossier->exports
+            ->map(fn ($export): DossierExportData => DossierExportData::fromModel($export, $canDownload))
+            ->all();
+
         return new DossierShowData(
             id: $dossier->id,
             title: $dossier->title,
@@ -124,6 +131,7 @@ final class FetchDossierShowQuery
             ),
             documentRequests: $documentRequestRows,
             accessGrants: $accessGrants,
+            exports: $exports,
         );
     }
 

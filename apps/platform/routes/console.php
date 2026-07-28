@@ -35,6 +35,10 @@ Schedule::command('retention:prune-notifications')
     ->at('02:00')
     ->withoutOverlapping();
 
+Schedule::command('retention:prune-dossier-exports')
+    ->hourly()
+    ->withoutOverlapping();
+
 Schedule::command('retention:purge-legal')
     ->daily()
     ->at('02:30')

@@ -14,6 +14,7 @@ final readonly class DossierShowData
     /**
      * @param  list<StaffDocumentRequestData>  $documentRequests
      * @param  list<DossierAccessGrantData>  $accessGrants
+     * @param  list<DossierExportData>  $exports
      */
     public function __construct(
         public int $id,
@@ -32,6 +33,7 @@ final readonly class DossierShowData
         public DossierClientSummaryData $client,
         public array $documentRequests,
         public array $accessGrants,
+        public array $exports,
     ) {}
 
     /**
@@ -84,6 +86,14 @@ final readonly class DossierShowData
      *         revoked_at: string|null,
      *         last_used_at: string|null,
      *         is_valid: bool
+     *     }>,
+     *     exports: list<array{
+     *         id: int,
+     *         status: string,
+     *         created_at: string,
+     *         expires_at: string|null,
+     *         download_url: string|null,
+     *         error: string|null
      *     }>
      * }
      */
@@ -111,6 +121,10 @@ final readonly class DossierShowData
             'access_grants' => array_map(
                 static fn (DossierAccessGrantData $grant): array => $grant->toArray(),
                 $this->accessGrants,
+            ),
+            'exports' => array_map(
+                static fn (DossierExportData $export): array => $export->toArray(),
+                $this->exports,
             ),
         ];
     }

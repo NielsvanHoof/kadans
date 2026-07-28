@@ -333,7 +333,10 @@ final class DossierController extends Controller
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
             'can_review' => $request->user()?->hasTenantPermission(Permission::ReviewDocuments) ?? false,
             'can_download' => $request->user()?->hasTenantPermission(Permission::DownloadDocuments) ?? false,
-            'dossier' => fn (): array => $getDossierShowData->handle($dossier)->toArray(),
+            'dossier' => fn (): array => $getDossierShowData->handle(
+                $dossier,
+                $request->user()?->can('export', $dossier) ?? false,
+            )->toArray(),
         ];
 
         if ($includeTemplates && $fetchQuestionnaireTemplateOptions instanceof FetchQuestionnaireTemplateOptionsQuery) {

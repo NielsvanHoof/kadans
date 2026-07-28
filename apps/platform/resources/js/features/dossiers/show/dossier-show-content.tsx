@@ -8,6 +8,7 @@ import {
     useDossierCapabilities,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
 import DossierActionsMenu from '@/features/dossiers/show/dossier-actions-menu';
+import DossierExportCard from '@/features/dossiers/show/dossier-export-card';
 import DossierWorkflowLinks from '@/features/dossiers/show/dossier-workflow-links';
 import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
@@ -130,8 +131,13 @@ function DossierShowBody({
     hasFormItems: boolean;
 }) {
     const { t } = useTranslation();
-    const { canManage, canReview, canEditDetails, canCreateInvite } =
-        useDossierCapabilities();
+    const {
+        canManage,
+        canReview,
+        canDownload,
+        canEditDetails,
+        canCreateInvite,
+    } = useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
 
     const routeArgs = {
@@ -198,6 +204,8 @@ function DossierShowBody({
             ) : null}
 
             <DossierWorkflowLinks dossier={dossier} />
+
+            {canDownload ? <DossierExportCard dossier={dossier} /> : null}
 
             <section
                 id="dossier-invite"

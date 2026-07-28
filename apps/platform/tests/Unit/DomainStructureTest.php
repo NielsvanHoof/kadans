@@ -157,13 +157,13 @@ test('shared frontend patterns use the intended shadcn compositions', function (
     );
 
     expect($confirmDialog)
-        ->toContain("@/components/ui/alert-dialog")
-        ->not->toContain("@/components/ui/dialog")
-        ->and($emptyState)->toContain("@/components/ui/empty")
+        ->toContain('@/components/ui/alert-dialog')
+        ->not->toContain('@/components/ui/dialog')
+        ->and($emptyState)->toContain('@/components/ui/empty')
         ->and($notificationBell)
-        ->toContain("@/components/ui/popover")
-        ->not->toContain("@/components/ui/dropdown-menu")
-        ->and($passwordInput)->toContain("@/components/ui/input-group")
+        ->toContain('@/components/ui/popover')
+        ->not->toContain('@/components/ui/dropdown-menu')
+        ->and($passwordInput)->toContain('@/components/ui/input-group')
         ->and($inputError)->toContain('FieldError');
 
     $frontendFiles = new RecursiveIteratorIterator(
@@ -180,7 +180,7 @@ test('shared frontend patterns use the intended shadcn compositions', function (
 
         $contents = (string) file_get_contents($frontendFile->getPathname());
         $path = $frontendFile->getPathname();
-        $selectContentCount = substr_count($contents, '<SelectContent');
+        $selectContentCount = mb_substr_count($contents, '<SelectContent');
 
         if ($selectContentCount > 0) {
             expect(

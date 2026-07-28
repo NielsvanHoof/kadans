@@ -16,6 +16,10 @@ enum AuditEvent: string
     case DossierCompleted = 'dossier.completed';
     case DocumentViewed = 'document.viewed';
     case DocumentDownloaded = 'document.downloaded';
+    case DossierExportRequested = 'dossier.export_requested';
+    case DossierExportCompleted = 'dossier.export_completed';
+    case DossierExportFailed = 'dossier.export_failed';
+    case DossierExportDownloaded = 'dossier.export_downloaded';
     case DocumentProcessingStarted = 'document.processing_started';
     case DocumentProcessingCompleted = 'document.processing_completed';
     case DocumentProcessingFailed = 'document.processing_failed';
@@ -63,6 +67,10 @@ enum AuditEvent: string
             self::DossierCompleted => __('Dossier completed'),
             self::DocumentViewed => __('Document viewed'),
             self::DocumentDownloaded => __('Document downloaded'),
+            self::DossierExportRequested => __('Dossier export requested'),
+            self::DossierExportCompleted => __('Dossier export completed'),
+            self::DossierExportFailed => __('Dossier export failed'),
+            self::DossierExportDownloaded => __('Dossier export downloaded'),
             self::DocumentProcessingStarted => __('Document processing started'),
             self::DocumentProcessingCompleted => __('Document processing completed'),
             self::DocumentProcessingFailed => __('Document processing failed'),

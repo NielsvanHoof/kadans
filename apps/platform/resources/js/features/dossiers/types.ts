@@ -31,6 +31,16 @@ export type Dossier = {
     };
     document_requests: DocumentRequest[];
     access_grants: AccessGrant[];
+    exports: DossierExport[];
+};
+
+export type DossierExport = {
+    id: number;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    created_at: string;
+    expires_at: string | null;
+    download_url: string | null;
+    error: string | null;
 };
 
 /** Compact dossier row for index / dashboard lists. */

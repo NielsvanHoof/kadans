@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Http\Controllers\Dossiers\DocumentRequestController;
 use App\Http\Controllers\Dossiers\DossierCompletionController;
 use App\Http\Controllers\Dossiers\DossierController;
+use App\Http\Controllers\Dossiers\DossierExportController;
 use App\Http\Controllers\Dossiers\DossierReminderController;
+use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dossiers', [DossierController::class, 'index'])->name('dossiers.index');
@@ -34,3 +36,16 @@ Route::post('dossiers/{dossier}/complete', [DossierCompletionController::class, 
     ->name('dossiers.complete');
 Route::post('dossiers/{dossier}/apply-template', [DocumentRequestController::class, 'applyTemplate'])
     ->name('dossiers.apply-template');
+
+Route::scopeBindings()->group(function (): void {
+    Route::post('dossiers/{dossier}/exports', [DossierExportController::class, 'store'])
+        ->name('dossiers.exports.store');
+    Route::get('dossiers/{dossier}/exports/{export}/download', [DossierExportController::class, 'download'])
+        ->middleware([
+            'signed',
+            RequirePassword::using(
+                passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+            ),
+        ])
+        ->name('dossiers.exports.download');
+});

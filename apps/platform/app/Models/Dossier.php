@@ -141,6 +141,14 @@ final class Dossier extends Model
     }
 
     /**
+     * @return HasMany<DossierExport, $this>
+     */
+    public function exports(): HasMany
+    {
+        return $this->hasMany(DossierExport::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

@@ -1,0 +1,232 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Dossiers\GenerateDossierExportAction;
+use App\Enums\AuditEvent;
+use App\Enums\DossierExportStatus;
+use App\Enums\Role;
+use App\Jobs\Dossiers\GenerateDossierExportJob;
+use App\Models\Activity;
+use App\Models\Client;
+use App\Models\DocumentRequest;
+use App\Models\Dossier;
+use App\Models\DossierExport;
+use App\Models\UploadedDocument;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $this->seed(Database\Seeders\RolesAndPermissionsSeeder::class);
+    Storage::fake('local');
+    config(['exports.disk' => 'local']);
+});
+
+test('a permitted staff member can queue a dossier export and it is audited', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = dossierForTenant($tenant->id);
+    Queue::fake();
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.exports.store', $tenant, [
+            'dossier' => $dossier,
+        ]))
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, [
+            'dossier' => $dossier,
+        ]));
+
+    $export = DossierExport::query()->sole();
+
+    expect($export->status)->toBe(DossierExportStatus::Pending)
+        ->and($export->requested_by)->toBe($owner->id)
+        ->and(Activity::query()
+            ->where('event', AuditEvent::DossierExportRequested->value)
+            ->where('subject_id', $export->id)
+            ->exists())->toBeTrue();
+
+    Queue::assertPushed(GenerateDossierExportJob::class, fn (GenerateDossierExportJob $job): bool => $job->exportId === $export->id);
+});
+
+test('the export job creates a ZIP manifest and copies uploaded documents', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = dossierForTenant($tenant->id);
+    $request = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'Payslip',
+    ]);
+    $document = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $request->id,
+        'path' => 'uploads/payslip.pdf',
+        'original_filename' => 'Payslip January.pdf',
+        'size_bytes' => 17,
+    ]);
+    Storage::disk('local')->put($document->path, 'uploaded-document');
+
+    $export = DossierExport::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'requested_by' => $owner->id,
+    ]);
+
+    app(GenerateDossierExportAction::class)->handle($export->id);
+    $export->refresh();
+
+    expect($export->status)->toBe(DossierExportStatus::Completed)
+        ->and($export->expires_at?->isFuture())->toBeTrue()
+        ->and(Storage::disk('local')->exists($export->path))->toBeTrue();
+
+    $archivePath = tempnam(sys_get_temp_dir(), 'dossier-export-test-');
+    expect($archivePath)->not->toBeFalse();
+    file_put_contents($archivePath, Storage::disk('local')->get($export->path));
+
+    $archive = new ZipArchive();
+    expect($archive->open($archivePath))->toBeTrue()
+        ->and($archive->getFromName('documents/001-payslip-january.pdf'))->toBe('uploaded-document');
+
+    $manifest = json_decode((string) $archive->getFromName('manifest.json'), true, flags: JSON_THROW_ON_ERROR);
+    $archive->close();
+    unlink($archivePath);
+
+    expect($manifest['dossier']['id'])->toBe($dossier->id)
+        ->and($manifest['documents'][0]['archive_path'])->toBe('documents/001-payslip-january.pdf')
+        ->and(Activity::query()
+            ->where('event', AuditEvent::DossierExportCompleted->value)
+            ->where('subject_id', $export->id)
+            ->exists())->toBeTrue();
+});
+
+test('reviewers cannot request or download dossier exports', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reviewer = workspaceMember($tenant, Role::Reviewer);
+    $dossier = dossierForTenant($tenant->id);
+    $export = DossierExport::factory()->completed('dossier-exports/reviewer.zip')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    Storage::disk('local')->put($export->path, 'archive');
+
+    $this->actingAs($reviewer)
+        ->withSession([
+            'active_tenant_id' => $tenant->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
+        ->post(workspaceRoute('workspaces.dossiers.exports.store', $tenant, ['dossier' => $dossier]))
+        ->assertForbidden();
+
+    $url = URL::temporarySignedRoute(
+        'workspaces.dossiers.exports.download',
+        now()->addMinutes(5),
+        ['tenant' => $tenant, 'dossier' => $dossier, 'export' => $export],
+    );
+
+    $this->get($url)->assertForbidden();
+});
+
+test('a signed export download is tenant-scoped, password-protected, and audited', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = dossierForTenant($tenant->id, 'Confidential dossier');
+    $export = DossierExport::factory()->completed('dossier-exports/confidential.zip')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    Storage::disk('local')->put($export->path, 'archive');
+
+    $url = URL::temporarySignedRoute(
+        'workspaces.dossiers.exports.download',
+        $export->expires_at,
+        ['tenant' => $tenant, 'dossier' => $dossier, 'export' => $export],
+    );
+
+    $this->actingAs($owner)
+        ->withSession([
+            'active_tenant_id' => $tenant->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
+        ->get($url)
+        ->assertOk()
+        ->assertHeader('content-disposition', 'attachment; filename=confidential-dossier-export.zip')
+        ->assertHeader('content-type', 'application/zip');
+
+    expect(Activity::query()
+        ->where('event', AuditEvent::DossierExportDownloaded->value)
+        ->where('subject_id', $export->id)
+        ->exists())->toBeTrue();
+
+    $otherWorkspace = provisionWorkspace('Other Accountants');
+    $this->actingAs($otherWorkspace['owner'])
+        ->withSession(['active_tenant_id' => $otherWorkspace['tenant']->id])
+        ->get($url)
+        ->assertNotFound();
+});
+
+test('expired export archives are deleted by retention pruning', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = dossierForTenant($tenant->id);
+    $export = DossierExport::factory()->completed('dossier-exports/expired.zip')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'expires_at' => now()->subMinute(),
+    ]);
+    Storage::disk('local')->put($export->path, 'archive');
+    app(LogAuditActivityAction::class)->handle(
+        AuditEvent::DossierExportCompleted,
+        $export,
+        [],
+        $owner,
+        false,
+    );
+
+    $this->artisan('retention:prune-dossier-exports')->assertSuccessful();
+
+    expect(DossierExport::query()->find($export->id))->toBeNull()
+        ->and(Storage::disk('local')->exists('dossier-exports/expired.zip'))->toBeFalse();
+});
+
+test('legal retention removes dossier exports and their audit records', function (): void {
+    config(['retention.archived_days' => 30]);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = dossierForTenant($tenant->id);
+    $export = DossierExport::factory()->completed('dossier-exports/legal.zip')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    Storage::disk('local')->put($export->path, 'archive');
+    app(LogAuditActivityAction::class)->handle(
+        AuditEvent::DossierExportCompleted,
+        $export,
+        [],
+        $owner,
+        false,
+    );
+
+    $dossier->delete();
+    Dossier::withTrashed()->whereKey($dossier->id)->update(['deleted_at' => now()->subDays(31)]);
+
+    $this->artisan('retention:purge-legal')->assertSuccessful();
+
+    expect(DossierExport::query()->find($export->id))->toBeNull()
+        ->and(Storage::disk('local')->exists('dossier-exports/legal.zip'))->toBeFalse()
+        ->and(Activity::query()
+            ->where('subject_type', DossierExport::class)
+            ->where('subject_id', $export->id)
+            ->exists())->toBeFalse();
+});
+
+function dossierForTenant(int $tenantId, string $title = 'Test dossier'): Dossier
+{
+    $client = Client::factory()->create(['tenant_id' => $tenantId]);
+
+    return Dossier::factory()->create([
+        'tenant_id' => $tenantId,
+        'client_id' => $client->id,
+        'title' => $title,
+    ]);
+}

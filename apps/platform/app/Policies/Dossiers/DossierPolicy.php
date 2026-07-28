@@ -60,4 +60,13 @@ final class DossierPolicy
         return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::CreateDossiers)
             && $dossier->status !== DossierStatus::Completed;
     }
+
+    public function export(User $user, Dossier $dossier): bool
+    {
+        return $this->userHasPermissionInTenant(
+            $user,
+            $dossier->tenant,
+            Permission::DownloadDocuments,
+        );
+    }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Retention;
 
 use App\Models\Dossier;
+use App\Models\DossierExport;
 use App\Models\UploadedDocument;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -13,6 +14,7 @@ final class PurgeExpiredDossierAction
 {
     public function __construct(
         private readonly DeleteStoredDocumentFilesAction $deleteStoredDocumentFiles,
+        private readonly DeleteStoredDossierExportFilesAction $deleteStoredDossierExportFiles,
         private readonly PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
     ) {}
 
@@ -34,9 +36,11 @@ final class PurgeExpiredDossierAction
         $uploadedDocumentsQuery = UploadedDocument::query();
         $uploadedDocumentsQuery->getQuery()->whereIn('document_request_id', $documentRequestIds);
         $uploadedDocuments = $uploadedDocumentsQuery->get();
+        $dossierExports = DossierExport::query()->where('dossier_id', $dossier->id)->get();
 
         try {
             $this->deleteStoredDocumentFiles->handle($uploadedDocuments);
+            $this->deleteStoredDossierExportFiles->handle($dossierExports);
         } catch (Throwable) {
             return [
                 'purged' => false,
@@ -45,7 +49,7 @@ final class PurgeExpiredDossierAction
             ];
         }
 
-        return DB::transaction(function () use ($dossier, $uploadedDocuments): array {
+        return DB::transaction(function () use ($dossier, $uploadedDocuments, $dossierExports): array {
             $activityRowsDeleted = $this->purgeSubjectActivityLog->handle($dossier);
 
             $dossier->disableLogging();
@@ -54,7 +58,9 @@ final class PurgeExpiredDossierAction
             return [
                 'purged' => true,
                 'activity_rows_deleted' => $activityRowsDeleted,
-                'files_deleted' => $uploadedDocuments->count(),
+                'files_deleted' => $uploadedDocuments->count() + $dossierExports->filter(
+                    static fn (DossierExport $export): bool => $export->path !== null,
+                )->count(),
             ];
         });
     }
