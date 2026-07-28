@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Enums\DocumentRequestStatus;
-use App\Enums\DossierStatus;
-use App\Enums\QuestionnaireItemType;
-use App\Enums\SubmissionContext;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\Tenant;
-use App\Models\User;
-use App\Transitions\DocumentRequestTransitions;
-use App\Transitions\DossierTransitions;
+use App\Accounts\Models\User;
+use App\ClientPortal\Enums\SubmissionContext;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DossierTransitions;
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Tenancy\Models\Tenant;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;

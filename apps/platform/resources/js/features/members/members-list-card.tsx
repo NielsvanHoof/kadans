@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { useState } from 'react';
-import WorkspaceMemberController from '@/actions/App/Http/Controllers/Tenancy/WorkspaceMemberController';
+import WorkspaceMemberController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceMemberController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import EmptyState from '@/components/empty-state';
 import IndexList from '@/components/index-list';

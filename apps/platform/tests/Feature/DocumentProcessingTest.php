@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Actions\Dossiers\DocumentRequests\UploadDocumentForRequestAction;
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\DocumentProcessingStatus;
-use App\Enums\DocumentRequestStatus;
-use App\Jobs\ProcessUploadedDocumentJob;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\Pipeline;
-use App\Models\UploadedDocument;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Clients\Models\Client;
+use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Actions\DocumentRequests\UploadDocumentForRequestAction;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -53,7 +53,7 @@ test('uploading a document dispatches the mock OCR processing job', function () 
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending);
     expect(Pipeline::query()
-        ->where('pipelineable_type', UploadedDocument::class)
+        ->where('pipelineable_type', (new UploadedDocument)->getMorphClass())
         ->where('pipelineable_id', $uploaded->id)
         ->sole()->type->value)->toBe('ocr_document');
 

@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import ProfileController from '@/actions/App/Accounts/Http/Controllers/ProfileController';
 import Heading from '@/components/heading';
 import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import StatusMessage from '@/components/status-message';

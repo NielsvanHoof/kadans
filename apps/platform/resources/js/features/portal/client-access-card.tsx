@@ -1,6 +1,6 @@
 import { Form, router } from '@inertiajs/react';
 import { useState } from 'react';
-import ClientAccessGrantController from '@/actions/App/Http/Controllers/Portal/ClientAccessGrantController';
+import ClientAccessGrantController from '@/actions/App/ClientPortal/Http/Controllers/ClientAccessGrantController';
 import EmptyState from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import {

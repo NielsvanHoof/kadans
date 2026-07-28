@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Models\Client;
-use App\Models\ClientAccessGrant;
-use App\Models\Dossier;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\Dossier;
+use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -13,6 +14,13 @@ beforeEach(function (): void {
     config([
         'retention.portal_grants_days' => 90,
     ]);
+});
+
+test('model prune discovers prunable models across domain modules', function (): void {
+    $this->artisan('model:prune', ['--pretend' => true])
+        ->expectsOutputToContain(ClientAccessGrant::class)
+        ->expectsOutputToContain(TenantInvitation::class)
+        ->assertSuccessful();
 });
 
 test('expired and revoked portal grants are prunable after the retention period', function (): void {

@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Console\Commands\Dossiers\SendScheduledDossierRemindersCommand;
-use App\Console\Commands\Pipelines\MonitorPipelinesCommand;
-use App\Models\ClientAccessGrant;
+use App\DocumentProcessing\Console\Commands\Pipelines\MonitorPipelinesCommand;
+use App\Dossiers\Console\Commands\SendScheduledDossierRemindersCommand;
 use Illuminate\Support\Facades\Schedule;
 use Spatie\Health\Commands\DispatchQueueCheckJobsCommand;
 use Spatie\Health\Commands\RunHealthChecksCommand;
@@ -31,9 +30,7 @@ Schedule::command('queue:prune-batches', [
     '--hours' => config('retention.job_batches_hours'),
 ])->daily()->at('02:00')->withoutOverlapping();
 
-Schedule::command('model:prune', [
-    '--model' => [ClientAccessGrant::class],
-])->daily()->at('02:00')->withoutOverlapping();
+Schedule::command('model:prune')->daily()->at('02:00')->withoutOverlapping();
 
 Schedule::command('retention:prune-notifications')
     ->daily()

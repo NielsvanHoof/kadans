@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Actions\Dossiers\DocumentRequests\ResolveDocumentTemporaryUrlAction;
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\AuditEvent;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\UploadedDocument;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\Clients\Models\Client;
+use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;

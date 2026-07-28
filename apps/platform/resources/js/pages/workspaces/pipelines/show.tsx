@@ -104,32 +104,30 @@ export default function PipelineShow({
                     ) : null}
                 </div>
 
-                {pipeline.subject ? (
-                    <Card className="border-l-4 border-l-primary">
-                        <CardHeader className="pb-3">
-                            <CardDescription>{t('Subject')}</CardDescription>
-                            <CardTitle className="text-lg">
-                                {pipeline.subject.href ? (
-                                    <Link
-                                        href={pipeline.subject.href}
-                                        className="hover:underline"
-                                    >
-                                        {pipeline.subject.label ??
-                                            `${pipeline.subject.type} #${pipeline.subject.id}`}
-                                    </Link>
-                                ) : (
-                                    (pipeline.subject.label ??
-                                    `${pipeline.subject.type} #${pipeline.subject.id}`)
-                                )}
-                            </CardTitle>
-                            {pipeline.subject.context ? (
-                                <CardDescription>
-                                    {pipeline.subject.context}
-                                </CardDescription>
-                            ) : null}
-                        </CardHeader>
-                    </Card>
-                ) : null}
+                <Card className="border-l-4 border-l-primary">
+                    <CardHeader className="pb-3">
+                        <CardDescription>{t('Subject')}</CardDescription>
+                        <CardTitle className="text-lg">
+                            {pipeline.subject.href ? (
+                                <Link
+                                    href={pipeline.subject.href}
+                                    className="hover:underline"
+                                >
+                                    {pipeline.subject.label ??
+                                        `${pipeline.subject.type} #${pipeline.subject.id}`}
+                                </Link>
+                            ) : (
+                                (pipeline.subject.label ??
+                                `${pipeline.subject.type} #${pipeline.subject.id}`)
+                            )}
+                        </CardTitle>
+                        {pipeline.subject.context ? (
+                            <CardDescription>
+                                {pipeline.subject.context}
+                            </CardDescription>
+                        ) : null}
+                    </CardHeader>
+                </Card>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Card>

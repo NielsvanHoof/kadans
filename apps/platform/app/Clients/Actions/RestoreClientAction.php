@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Clients\Actions;
+
+use App\Accounts\Models\User;
+use App\Audit\Actions\LogAuditActivityAction;
+use App\Audit\Enums\AuditEvent;
+use App\Clients\Models\Client;
+use Illuminate\Support\Facades\DB;
+
+final class RestoreClientAction
+{
+    public function __construct(private readonly LogAuditActivityAction $logAuditActivity) {}
+
+    public function handle(Client $client, User $restoredBy): void
+    {
+        DB::transaction(function () use ($client, $restoredBy): void {
+            $clientQuery = Client::withTrashed()->whereKey($client->getKey());
+            $clientQuery->getQuery()->lockForUpdate();
+            $lockedClient = $clientQuery->firstOrFail();
+
+            if (! $lockedClient->trashed()) {
+                return;
+            }
+
+            $lockedClient->disableLogging();
+            $lockedClient->forceFill(['deleted_at' => null])->saveOrFail();
+
+            $this->logAuditActivity->handle(
+                AuditEvent::ClientRestored,
+                $lockedClient,
+                [
+                    'name' => $lockedClient->name,
+                    'email' => $lockedClient->email,
+                ],
+                $restoredBy,
+            );
+        });
+    }
+}

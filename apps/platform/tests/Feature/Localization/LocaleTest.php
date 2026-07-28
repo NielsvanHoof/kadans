@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\AuditEvent;
-use App\Enums\QuestionnaireTemplateCategory;
-use App\Models\Client;
-use App\Models\Dossier;
-use App\Models\User;
-use App\Notifications\Portal\ClientPortalInviteNotification;
+use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\ClientPortal\Notifications\ClientPortalInviteNotification;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\Dossier;
+use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;

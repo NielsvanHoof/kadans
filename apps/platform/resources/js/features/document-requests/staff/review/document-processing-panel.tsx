@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import ErrorState from '@/components/error-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

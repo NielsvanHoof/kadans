@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Portal\ClientAccessGrantController;
+use App\ClientPortal\Http\Controllers\ClientAccessGrantController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('dossiers/{dossier}/access-grants', [ClientAccessGrantController::class, 'store'])

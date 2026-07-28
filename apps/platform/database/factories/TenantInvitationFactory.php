@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\Role;
-use App\Models\Tenant;
-use App\Models\TenantInvitation;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 

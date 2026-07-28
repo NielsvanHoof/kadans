@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
-use App\Notifications\Portal\ClientQuestionnaireCompletedNotification;
+use App\Accounts\Models\User;
+use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -24,8 +24,8 @@ test('old database notifications are pruned while recent notifications remain', 
     DB::table('notifications')->insert([
         [
             'id' => $oldNotificationId,
-            'type' => ClientQuestionnaireCompletedNotification::class,
-            'notifiable_type' => User::class,
+            'type' => ClientQuestionnaireCompletedNotification::DatabaseType,
+            'notifiable_type' => $user->getMorphClass(),
             'notifiable_id' => $user->id,
             'data' => json_encode(['message' => 'Old notification']),
             'read_at' => now()->subDays(100),
@@ -34,8 +34,8 @@ test('old database notifications are pruned while recent notifications remain', 
         ],
         [
             'id' => $recentNotificationId,
-            'type' => ClientQuestionnaireCompletedNotification::class,
-            'notifiable_type' => User::class,
+            'type' => ClientQuestionnaireCompletedNotification::DatabaseType,
+            'notifiable_type' => $user->getMorphClass(),
             'notifiable_id' => $user->id,
             'data' => json_encode(['message' => 'Recent notification']),
             'read_at' => null,

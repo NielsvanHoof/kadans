@@ -1,6 +1,6 @@
 import { Link, usePoll } from '@inertiajs/react';
 import { useEffect } from 'react';
-import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import ErrorState from '@/components/error-state';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';

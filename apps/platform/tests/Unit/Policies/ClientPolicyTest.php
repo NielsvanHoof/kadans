@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
-use App\Models\Client;
-use App\Models\User;
-use App\Policies\Clients\ClientPolicy;
+use App\Accounts\Models\User;
+use App\Clients\Models\Client;
+use App\Clients\Policies\ClientPolicy;
+use App\Tenancy\Enums\Role;
 
 test('owner can viewAny, view, create, update, restore, and delete clients', function () {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

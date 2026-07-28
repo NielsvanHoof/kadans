@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\DocumentProcessingStatus;
-use App\Models\DocumentRequest;
-use App\Models\UploadedDocument;
+use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

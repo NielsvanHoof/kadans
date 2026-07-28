@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogTenantActivityAction;
-use App\Models\Activity;
+use App\Audit\Actions\LogTenantActivityAction;
+use App\Audit\Models\Activity;
 use Spatie\Activitylog\Actions\CleanActivityLogAction;
 
 return [

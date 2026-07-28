@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\DocumentRequestStatus;
-use App\Enums\QuestionnaireItemType;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\Tenant;
+use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

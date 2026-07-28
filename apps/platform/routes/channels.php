@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\Tenant;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Broadcast;
 
 /*

@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import TenantInvitationController from '@/actions/App/Http/Controllers/Tenancy/TenantInvitationController';
+import TenantInvitationController from '@/actions/App/Tenancy/Http/Controllers/TenantInvitationController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import EmptyState from '@/components/empty-state';
 import IndexList from '@/components/index-list';

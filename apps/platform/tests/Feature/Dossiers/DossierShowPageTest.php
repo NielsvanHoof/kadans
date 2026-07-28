@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\DocumentRequestStatus;
-use App\Enums\DossierStatus;
-use App\Enums\Role;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;

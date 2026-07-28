@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivityAction;
-use App\Actions\Dossiers\GenerateDossierExportAction;
-use App\Actions\Pipelines\CreatePipelineAction;
-use App\Enums\AuditEvent;
-use App\Enums\DossierExportStatus;
-use App\Enums\PipelineType;
-use App\Enums\Role;
-use App\Jobs\Dossiers\GenerateDossierExportJob;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\DossierExport;
-use App\Models\Pipeline;
-use App\Models\UploadedDocument;
+use App\Audit\Actions\LogAuditActivityAction;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\Clients\Models\Client;
+use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
+use App\DocumentProcessing\Enums\PipelineType;
+use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Actions\GenerateDossierExportAction;
+use App\Dossiers\Enums\DossierExportStatus;
+use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -225,7 +225,7 @@ test('legal retention removes dossier exports and their audit records', function
         ->and(Pipeline::query()->find($pipeline->id))->toBeNull()
         ->and(Storage::disk('local')->exists('dossier-exports/legal.zip'))->toBeFalse()
         ->and(Activity::query()
-            ->where('subject_type', DossierExport::class)
+            ->where('subject_type', (new DossierExport)->getMorphClass())
             ->where('subject_id', $export->id)
             ->exists())->toBeFalse();
 });

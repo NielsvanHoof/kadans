@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { lazy, Suspense } from 'react';
-import ClientPortalAnswerController from '@/actions/App/Http/Controllers/Portal/ClientPortalAnswerController';
+import ClientPortalAnswerController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalAnswerController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {

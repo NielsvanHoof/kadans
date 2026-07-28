@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Questionnaires\QuestionnaireTemplateController;
-use App\Http\Controllers\Questionnaires\QuestionnaireTemplateItemController;
+use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
+use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
 use Illuminate\Support\Facades\Route;
 
 /*

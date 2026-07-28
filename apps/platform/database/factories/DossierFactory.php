@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\DossierStatus;
-use App\Models\Client;
-use App\Models\Dossier;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\Dossier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivityAction;
-use App\Enums\DocumentProcessingStatus;
-use App\Jobs\ProcessUploadedDocumentJob;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\Tenant;
-use App\Models\UploadedDocument;
-use App\Services\Ocr\Drivers\TextractDocumentOcr;
-use App\Services\Ocr\OcrOrchestrator;
+use App\Audit\Actions\LogAuditActivityAction;
+use App\Clients\Models\Client;
+use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\DocumentProcessing\Services\Ocr\Drivers\TextractDocumentOcr;
+use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Textract\TextractClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;

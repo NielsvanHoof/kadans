@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\Permission;
-use App\Enums\Role;
-use App\Enums\TenantMembershipStatus;
-use App\Models\Client;
-use App\Models\Dossier;
-use App\Models\TenantMembership;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\Dossier;
+use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\Permission;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -177,9 +177,9 @@ test('tenant routes are registered with the expected middleware', function () {
 
     expect($route)->not->toBeNull();
     expect($route->middleware())->toContain('auth');
-    expect($route->middleware())->toContain(App\Http\Middleware\InitializeTenantFromRoute::class);
-    expect($route->middleware())->toContain(App\Http\Middleware\EnsureValidTenantMembership::class);
-    expect($route->middleware())->toContain(App\Http\Middleware\SetPermissionTeamContext::class);
+    expect($route->middleware())->toContain(App\Tenancy\Http\Middleware\InitializeTenantFromRoute::class);
+    expect($route->middleware())->toContain(App\Tenancy\Http\Middleware\EnsureValidTenantMembership::class);
+    expect($route->middleware())->toContain(App\Tenancy\Http\Middleware\SetPermissionTeamContext::class);
     expect($route->middleware())->not->toContain(Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession::class);
     expect($route->uri())->toBe('workspaces/{tenant}/dossiers');
 });

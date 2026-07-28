@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\QuestionnaireTemplateCategory;
-use App\Models\QuestionnaireTemplate;
-use App\Models\Tenant;
+use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
+use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

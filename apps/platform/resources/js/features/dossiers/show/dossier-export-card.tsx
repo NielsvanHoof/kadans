@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { Archive, Download, LoaderCircle } from 'lucide-react';
-import DossierExportController from '@/actions/App/Http/Controllers/Dossiers/DossierExportController';
+import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/DossierExportController';
 import { Button } from '@/components/ui/button';
 import {
     Card,

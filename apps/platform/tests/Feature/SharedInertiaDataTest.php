@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Platform\Http\Middleware\HandleInertiaRequests;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
-use App\Policies\Audit\ActivityPolicy;
+use App\Audit\Policies\ActivityPolicy;
+use App\Tenancy\Enums\Role;
 
 test('owner can view the activity log', function () {
     ['owner' => $owner] = provisionWorkspace();

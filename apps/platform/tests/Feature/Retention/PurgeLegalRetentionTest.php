@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivityAction;
-use App\Enums\AuditEvent;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\UploadedDocument;
+use App\Audit\Actions\LogAuditActivityAction;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 
@@ -64,15 +65,19 @@ test('expired archived dossier is permanently purged with files and activity log
         ->whereKey($dossier->id)
         ->update(['deleted_at' => $purgedAt]);
 
+    Tenant::forgetCurrent();
+
     $this->artisan('retention:purge-legal')
         ->assertSuccessful();
+
+    $tenant->makeCurrent();
 
     expect(Dossier::withTrashed()->find($dossier->id))->toBeNull()
         ->and(DocumentRequest::query()->find($documentRequest->id))->toBeNull()
         ->and(UploadedDocument::query()->find($uploadedDocument->id))->toBeNull()
         ->and(Storage::disk('local')->exists($uploadedDocument->path))->toBeFalse()
-        ->and(Activity::query()->where('subject_type', Dossier::class)->where('subject_id', $dossier->id)->exists())->toBeFalse()
-        ->and(Activity::query()->where('subject_type', DocumentRequest::class)->where('subject_id', $documentRequest->id)->exists())->toBeFalse();
+        ->and(Activity::query()->where('subject_type', (new Dossier)->getMorphClass())->where('subject_id', $dossier->id)->exists())->toBeFalse()
+        ->and(Activity::query()->where('subject_type', (new DocumentRequest)->getMorphClass())->where('subject_id', $documentRequest->id)->exists())->toBeFalse();
 });
 
 test('archived dossier younger than retention cutoff is not purged', function (): void {
@@ -129,7 +134,7 @@ test('expired archived client is purged only after dossiers are hard deleted', f
 
     expect(Dossier::withTrashed()->find($dossier->id))->toBeNull()
         ->and(Client::withTrashed()->find($client->id))->toBeNull()
-        ->and(Activity::query()->where('subject_type', Client::class)->where('subject_id', $client->id)->exists())->toBeFalse();
+        ->and(Activity::query()->where('subject_type', (new Client)->getMorphClass())->where('subject_id', $client->id)->exists())->toBeFalse();
 });
 
 test('archived client is not purged while dossiers still exist', function (): void {

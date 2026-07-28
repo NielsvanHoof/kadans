@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Services\Production\ProductionConfigurationValidator;
+use App\Platform\Services\Production\ProductionConfigurationValidator;
 
 beforeEach(function (): void {
     $this->app['env'] = 'production';

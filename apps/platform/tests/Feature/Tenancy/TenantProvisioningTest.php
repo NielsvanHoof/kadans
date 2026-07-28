@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\Role as RoleEnum;
-use App\Models\Tenant;
-use App\Models\TenantMembership;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\Role as RoleEnum;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;

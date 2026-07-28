@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Contracts\Production\ChecksReadiness;
-use App\Models\Tenant;
+use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Console\Scheduling\Schedule;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
 use Spatie\Health\Checks\Checks\QueueCheck;

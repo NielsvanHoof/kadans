@@ -21,8 +21,7 @@ return new class extends Migration
             $table->string('current_stage')->nullable();
             $table->string('provider')->nullable();
             $table->string('provider_job_id')->nullable();
-            $table->string('pipelineable_type')->nullable();
-            $table->unsignedBigInteger('pipelineable_id')->nullable();
+            $table->morphs('pipelineable');
             $table->foreignId('initiated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->unsignedInteger('attempt_number')->default(1);
             $table->string('error_code')->nullable();
@@ -38,7 +37,6 @@ return new class extends Migration
             $table->unique(['tenant_id', 'id']);
             $table->index(['tenant_id', 'status', 'created_at']);
             $table->index(['tenant_id', 'type', 'status']);
-            $table->index(['pipelineable_type', 'pipelineable_id']);
             $table->index(['provider', 'provider_job_id']);
         });
     }

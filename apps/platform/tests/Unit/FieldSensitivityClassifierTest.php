@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\ExtractionFieldSensitivity;
-use App\Services\Ocr\Normalization\FieldSensitivityClassifier;
+use App\DocumentProcessing\Enums\ExtractionFieldSensitivity;
+use App\DocumentProcessing\Services\Ocr\Normalization\FieldSensitivityClassifier;
 use Tests\TestCase;
 
 uses(TestCase::class);

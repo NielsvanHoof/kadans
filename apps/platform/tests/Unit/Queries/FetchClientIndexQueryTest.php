@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Models\Client;
-use App\Models\Dossier;
-use App\Queries\Clients\FetchClientIndexQuery;
+use App\Clients\Models\Client;
+use App\Clients\Queries\FetchClientIndexQuery;
+use App\Dossiers\Models\Dossier;
 use Illuminate\Http\Request;
 
 test('fetch client index maps rows and exposes toolbar metadata', function () {

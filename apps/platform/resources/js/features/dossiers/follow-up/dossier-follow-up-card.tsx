@@ -5,7 +5,7 @@ import {
     MousePointerClick,
     Send,
 } from 'lucide-react';
-import DossierReminderController from '@/actions/App/Http/Controllers/Dossiers/DossierReminderController';
+import DossierReminderController from '@/actions/App/Dossiers/Http/Controllers/DossierReminderController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

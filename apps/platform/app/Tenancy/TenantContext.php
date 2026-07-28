@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenancy;
 
-use App\Models\Tenant;
+use App\Tenancy\Models\Tenant;
 
 /**
  * Single entry point for running code under a tenant in async and console paths.

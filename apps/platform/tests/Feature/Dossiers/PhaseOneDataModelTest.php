@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\DocumentRequestStatus;
-use App\Enums\DossierStatus;
-use App\Models\Client;
-use App\Models\ClientAccessGrant;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\UploadedDocument;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

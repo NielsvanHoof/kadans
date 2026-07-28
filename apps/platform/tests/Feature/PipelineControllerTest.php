@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-use App\Actions\Pipelines\CreatePipelineAction;
-use App\Actions\Pipelines\PipelineStateAction;
-use App\Enums\PipelineStepOperation;
-use App\Enums\PipelineType;
-use App\Enums\Role;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\Pipeline;
-use App\Models\UploadedDocument;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Audit\Models\Activity;
+use App\Clients\Models\Client;
+use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
+use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
+use App\DocumentProcessing\Enums\PipelineStepOperation;
+use App\DocumentProcessing\Enums\PipelineType;
+use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 

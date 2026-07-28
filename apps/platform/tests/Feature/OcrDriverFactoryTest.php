@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Contracts\Ocr\StartsDocumentOcr;
-use App\Services\Ocr\Drivers\MockOcrExtractor;
-use App\Services\Ocr\Drivers\TextractDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Services\Ocr\Drivers\MockOcrExtractor;
+use App\DocumentProcessing\Services\Ocr\Drivers\TextractDocumentOcr;
 
 test('configured OCR drivers resolve through the factory', function (string $driver, string $expectedClass) {
     config(['ocr.driver' => $driver]);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Reporting\DashboardController;
+use App\Reporting\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 // Global firm-picker dashboard — also the app home for authenticated users.

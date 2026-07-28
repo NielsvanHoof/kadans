@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\PipelineStatus;
-use App\Enums\PipelineType;
-use App\Models\Pipeline;
-use App\Models\Tenant;
+use App\DocumentProcessing\Enums\PipelineStatus;
+use App\DocumentProcessing\Enums\PipelineType;
+use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * @extends Factory<Pipeline>
@@ -25,14 +27,13 @@ final class PipelineFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
             'type' => PipelineType::OcrDocument,
             'status' => PipelineStatus::Pending,
             'current_stage' => null,
             'provider' => null,
             'provider_job_id' => null,
-            'pipelineable_type' => null,
-            'pipelineable_id' => null,
+            'pipelineable_type' => (new UploadedDocument)->getMorphClass(),
+            'pipelineable_id' => UploadedDocument::factory(),
             'initiated_by' => null,
             'attempt_number' => 1,
             'error_code' => null,
@@ -44,6 +45,30 @@ final class PipelineFactory extends Factory
             'completed_at' => null,
             'failed_at' => null,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Pipeline $pipeline): void {
+            if ($pipeline->tenant_id !== null) {
+                return;
+            }
+
+            $modelClass = Relation::getMorphedModel($pipeline->pipelineable_type);
+
+            if ($modelClass === null || ! is_a($modelClass, Model::class, true)) {
+                return;
+            }
+
+            $subject = (new $modelClass)
+                ->newQueryWithoutScopes()
+                ->find($pipeline->pipelineable_id);
+            $tenantId = $subject?->getAttribute('tenant_id');
+
+            if (is_numeric($tenantId)) {
+                $pipeline->tenant_id = (int) $tenantId;
+            }
+        });
     }
 
     public function dossierExport(): static

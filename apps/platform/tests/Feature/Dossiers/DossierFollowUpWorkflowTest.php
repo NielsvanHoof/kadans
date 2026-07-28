@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-use App\Actions\Portal\CreateClientAccessGrantAction;
-use App\Enums\AuditEvent;
-use App\Enums\DocumentRequestStatus;
-use App\Enums\DossierReminderSource;
-use App\Enums\DossierStatus;
-use App\Enums\Role;
-use App\Http\Middleware\ResolveClientPortalGrant;
-use App\Listeners\LogClientPortalReminderSent;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\ClientAccessGrant;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\User;
-use App\Notifications\Portal\ClientPortalReminderNotification;
+use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
+use App\ClientPortal\Listeners\LogClientPortalReminderSent;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Notifications\ClientPortalReminderNotification;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Enums\DossierReminderSource;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;

@@ -4,44 +4,49 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Contracts\Ocr\DescribesDocumentOverview;
-use App\Contracts\Ocr\StartsDocumentOcr;
-use App\Contracts\Production\ChecksReadiness;
-use App\Enums\OcrDriver;
-use App\Enums\Permission;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\ClientAccessGrant;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\QuestionnaireTemplate;
-use App\Models\Pipeline;
-use App\Models\Tenant;
-use App\Models\TenantInvitation;
-use App\Models\TenantMembership;
-use App\Models\UploadedDocument;
-use App\Models\User;
-use App\Policies\Audit\ActivityPolicy;
-use App\Policies\Clients\ClientPolicy;
-use App\Policies\Dossiers\DocumentRequestPolicy;
-use App\Policies\Dossiers\DossierPolicy;
-use App\Policies\Dossiers\UploadedDocumentPolicy;
-use App\Policies\Portal\ClientAccessGrantPolicy;
-use App\Policies\Questionnaires\QuestionnaireTemplatePolicy;
-use App\Policies\Reporting\PipelinePolicy;
-use App\Policies\Tenancy\TenantInvitationPolicy;
-use App\Policies\Tenancy\TenantMembershipPolicy;
-use App\Services\Ocr\Configuration\OcrConfigurationValidator;
-use App\Services\Ocr\Drivers\OcrDriverFactory;
-use App\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
-use App\Services\Production\InfrastructureReadinessCheck;
-use App\Services\Production\ProductionConfigurationValidator;
-use App\Support\Platform\SupportSession;
+use App\Accounts\Models\User;
+use App\Audit\Models\Activity;
+use App\Audit\Policies\ActivityPolicy;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Policies\ClientAccessGrantPolicy;
+use App\Clients\Models\Client;
+use App\Clients\Policies\ClientPolicy;
+use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
+use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Enums\OcrDriver;
+use App\DocumentProcessing\Models\Pipeline;
+use App\DocumentProcessing\Models\PipelineStep;
+use App\DocumentProcessing\Policies\PipelinePolicy;
+use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
+use App\DocumentProcessing\Services\Ocr\Drivers\OcrDriverFactory;
+use App\DocumentProcessing\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Policies\DocumentRequestPolicy;
+use App\Dossiers\Policies\DossierPolicy;
+use App\Dossiers\Policies\UploadedDocumentPolicy;
+use App\Platform\Console\PruneModelsCommand;
+use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Platform\Services\Production\InfrastructureReadinessCheck;
+use App\Platform\Services\Production\ProductionConfigurationValidator;
+use App\Platform\Support\SupportSession;
+use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Questionnaires\Models\QuestionnaireTemplateItem;
+use App\Questionnaires\Policies\QuestionnaireTemplatePolicy;
+use App\Tenancy\Enums\Permission;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantInvitation;
+use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Policies\TenantInvitationPolicy;
+use App\Tenancy\Policies\TenantMembershipPolicy;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +64,9 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->commands([
+            PruneModelsCommand::class,
+        ]);
         $this->registerOcrBindings();
         $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
 
@@ -74,6 +82,7 @@ final class AppServiceProvider extends ServiceProvider
         OcrConfigurationValidator $ocrConfigurationValidator,
         ProductionConfigurationValidator $productionConfigurationValidator,
     ): void {
+        $this->configureMorphMap();
         $ocrConfigurationValidator->validate();
         $productionConfigurationValidator->validate();
         $this->configurePolicies();
@@ -106,6 +115,30 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict();
 
         Model::preventLazyLoading(! app()->isProduction());
+    }
+
+    /**
+     * Keep persisted polymorphic types independent from PHP namespaces.
+     */
+    private function configureMorphMap(): void
+    {
+        Relation::enforceMorphMap([
+            'activity' => Activity::class,
+            'client' => Client::class,
+            'client_access_grant' => ClientAccessGrant::class,
+            'document_request' => DocumentRequest::class,
+            'dossier' => Dossier::class,
+            'dossier_export' => DossierExport::class,
+            'pipeline' => Pipeline::class,
+            'pipeline_step' => PipelineStep::class,
+            'questionnaire_template' => QuestionnaireTemplate::class,
+            'questionnaire_template_item' => QuestionnaireTemplateItem::class,
+            'tenant' => Tenant::class,
+            'tenant_invitation' => TenantInvitation::class,
+            'tenant_membership' => TenantMembership::class,
+            'uploaded_document' => UploadedDocument::class,
+            'user' => User::class,
+        ], merge: false);
     }
 
     /**

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Actions\Portal\CreateClientAccessGrantAction;
-use App\Enums\AuditEvent;
-use App\Enums\DossierStatus;
-use App\Enums\Role;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\Dossier;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\Dossier;
+use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -105,7 +105,7 @@ test('owner can update client details and the change is audited', function () {
         ->email->toBe('jane.updated@example.com');
 
     $activity = Activity::query()
-        ->where('subject_type', Client::class)
+        ->where('subject_type', (new Client)->getMorphClass())
         ->where('subject_id', $client->id)
         ->where('event', 'updated')
         ->latest('id')

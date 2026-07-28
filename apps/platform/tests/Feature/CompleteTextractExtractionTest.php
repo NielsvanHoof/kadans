@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Actions\Ocr\CompleteTextractExtractionAction;
-use App\Actions\Ocr\FailTextractExtractionAction;
-use App\Contracts\Ocr\DescribesDocumentOverview;
-use App\Enums\AuditEvent;
-use App\Enums\DocumentProcessingStatus;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\Tenant;
-use App\Models\UploadedDocument;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\Clients\Models\Client;
+use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
+use App\DocumentProcessing\Actions\Ocr\FailTextractExtractionAction;
+use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
+use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Textract\TextractClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;

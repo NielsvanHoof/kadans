@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Queries\Dossiers\FetchDossierIndexQuery;
+use App\Dossiers\Queries\FetchDossierIndexQuery;
 
 test('dossier index toolbar metadata includes workflow filters and due date sorts', function () {
     $toolbar = app(FetchDossierIndexQuery::class)->toolbarMetadata();

@@ -1,4 +1,4 @@
-import ClientPortalUploadController from '@/actions/App/Http/Controllers/Portal/ClientPortalUploadController';
+import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadController';
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { inlineActionOptions } from '@/lib/inline-action-options';

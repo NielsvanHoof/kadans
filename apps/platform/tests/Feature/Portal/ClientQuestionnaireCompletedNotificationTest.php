@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-use App\Actions\Portal\CreateClientAccessGrantAction;
-use App\Actions\Portal\NotifyWorkspaceIfQuestionnaireCompleteAction;
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\AuditEvent;
-use App\Enums\DocumentRequestStatus;
-use App\Enums\QuestionnaireItemType;
-use App\Enums\TenantMembershipStatus;
-use App\Events\Portal\ClientQuestionnaireCompleted;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\TenantMembership;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\NotifyWorkspaceIfQuestionnaireCompleteAction;
+use App\ClientPortal\Events\ClientQuestionnaireCompleted;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

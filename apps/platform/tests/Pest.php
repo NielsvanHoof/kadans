@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\Role;
-use App\Enums\TenantMembershipStatus;
-use App\Models\Tenant;
-use App\Models\TenantMembership;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -37,74 +37,74 @@ pest()->presets()->custom('qompose', function () {
         expect('App')
             ->toUseStrictTypes(),
 
-        expect('App\Actions')
+        expect('App\*\Actions')
             ->classes()
             ->toBeFinal(),
 
         // Domain actions end in Action; Fortify Accounts contracts keep framework names.
-        expect('App\Actions')
+        expect('App\*\Actions')
             ->classes()
             ->toHaveSuffix('Action')
             ->ignoring([
-                'App\Actions\Accounts',
+                'App\Accounts\Actions',
             ]),
 
-        expect('App\Actions')
+        expect('App\*\Actions')
             ->classes()
             ->toHaveMethod('handle')
             ->ignoring([
-                'App\Actions\Accounts',
-                'App\Actions\Audit\LogTenantActivityAction',
+                'App\Accounts\Actions',
+                'App\Audit\Actions\LogTenantActivityAction',
             ]),
 
-        expect('App\Actions')
+        expect('App\*\Actions')
             ->classes()
             ->not->toHaveMethod('__invoke')
             ->ignoring([
-                'App\Actions\Accounts',
-                'App\Actions\Audit\LogTenantActivityAction',
+                'App\Accounts\Actions',
+                'App\Audit\Actions\LogTenantActivityAction',
             ]),
 
         // Read models end in Query; Spatie filters and row mappers are not Queries.
-        expect('App\Queries')
+        expect('App\*\Queries')
             ->classes()
             ->toHaveSuffix('Query')
             ->ignoring([
-                'App\Queries\Filters',
-                'App\Queries\Reporting\ActivityLogRowMapper',
+                'App\Shared\Queries\Filters',
+                'App\Reporting\Queries\ActivityLogRowMapper',
             ]),
 
-        expect('App\Queries')
+        expect('App\*\Queries')
             ->classes()
             ->toHaveMethod('handle')
             ->ignoring([
-                'App\Queries\PaginatedIndexQuery',
-                'App\Queries\Filters',
-                'App\Queries\Reporting\ActivityLogRowMapper',
+                'App\Shared\Queries\PaginatedIndexQuery',
+                'App\Shared\Queries\Filters',
+                'App\Reporting\Queries\ActivityLogRowMapper',
             ]),
 
-        expect('App\Queries')
+        expect('App\*\Queries')
             ->classes()
             ->not->toHaveMethod('__invoke')
             ->ignoring([
-                'App\Queries\PaginatedIndexQuery',
-                'App\Queries\Filters',
-                'App\Queries\Reporting\ActivityLogRowMapper',
+                'App\Shared\Queries\PaginatedIndexQuery',
+                'App\Shared\Queries\Filters',
+                'App\Reporting\Queries\ActivityLogRowMapper',
             ]),
 
-        expect('App\Queries')
+        expect('App\*\Queries')
             ->classes()
             ->toBeFinal()
             ->ignoring([
-                'App\Queries\PaginatedIndexQuery',
+                'App\Shared\Queries\PaginatedIndexQuery',
             ]),
 
-        expect('App\Http\Controllers\Controller')
+        expect('App\Shared\Http\Controllers\Controller')
             ->toBeAbstract(),
 
-        expect('App\Http\Controllers')
+        expect('App\*\Http\Controllers')
             ->classes()
-            ->toExtend('App\Http\Controllers\Controller')
+            ->toExtend('App\Shared\Http\Controllers\Controller')
             ->toHaveSuffix('Controller')
             ->not->toHavePublicMethodsBesides([
                 '__construct',
@@ -133,10 +133,26 @@ pest()->presets()->custom('qompose', function () {
                 'builder',
                 'review',
                 'preview',
-            ]),
+            ])
+            ->ignoring('App\Shared\Http\Controllers\Controller'),
 
-        expect('App\Models\Activity')
+        expect('App\Audit\Models\Activity')
             ->toExtend('Spatie\Activitylog\Models\Activity'),
+
+        expect('App\Shared')
+            ->not->toUse([
+                'App\Accounts',
+                'App\Audit',
+                'App\ClientPortal',
+                'App\Clients',
+                'App\Dossiers',
+                'App\DocumentProcessing',
+                'App\WorkspaceNotifications',
+                'App\Platform',
+                'App\Questionnaires',
+                'App\Reporting',
+                'App\Tenancy',
+            ]),
     ];
 });
 

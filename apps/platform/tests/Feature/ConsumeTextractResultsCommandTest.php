@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Contracts\Ocr\DescribesDocumentOverview;
-use App\Enums\DocumentProcessingStatus;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\Tenant;
-use App\Models\UploadedDocument;
+use App\Clients\Models\Client;
+use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
+use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;

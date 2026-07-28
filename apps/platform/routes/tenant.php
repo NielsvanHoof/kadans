@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\EnsureValidTenantMembership;
-use App\Http\Middleware\InitializeTenantFromRoute;
-use App\Http\Middleware\SetPermissionTeamContext;
+use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
+use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
+use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 

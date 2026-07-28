@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
+use App\DocumentProcessing\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Result;
 use Tests\TestCase;

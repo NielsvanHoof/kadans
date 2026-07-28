@@ -6,44 +6,64 @@ test('backend business code is organized by domain', function () {
     $root = dirname(__DIR__, 2);
 
     foreach ([
-        'app/Actions/Clients',
-        'app/Actions/Dossiers',
-        'app/Actions/Dossiers/Builder',
-        'app/Actions/Dossiers/DocumentRequests',
-        'app/Actions/Portal',
-        'app/Actions/Platform',
-        'app/Actions/Questionnaires',
-        'app/Actions/Tenancy',
-        'app/Http/Controllers/Clients',
-        'app/Http/Controllers/Dossiers',
-        'app/Http/Controllers/Portal',
-        'app/Http/Controllers/Platform',
-        'app/Http/Controllers/Questionnaires',
-        'app/Http/Requests/Clients',
-        'app/Http/Requests/Dossiers',
-        'app/Http/Requests/Dossiers/Builder',
-        'app/Http/Requests/Dossiers/DocumentRequests',
-        'app/Http/Requests/Portal',
-        'app/Http/Requests/Platform',
-        'app/Http/Requests/Questionnaires',
-        'app/Queries/Clients',
-        'app/Queries/Dossiers',
-        'app/Queries/Portal',
-        'app/Queries/Platform',
-        'app/Queries/Questionnaires',
-        'app/Queries/Reporting',
-        'app/Queries/Tenancy',
-    ] as $directory) {
-        expect(is_dir($root.'/'.$directory))->toBeTrue();
+        'Accounts',
+        'Audit',
+        'ClientPortal',
+        'Clients',
+        'Dossiers',
+        'DocumentProcessing',
+        'Platform',
+        'Questionnaires',
+        'Reporting',
+        'Shared',
+        'Tenancy',
+        'WorkspaceNotifications',
+    ] as $module) {
+        expect(is_dir($root.'/app/'.$module), $module)->toBeTrue();
     }
 
     foreach ([
-        'app/Actions/Workspace',
-        'app/Http/Controllers/Workspace',
-        'app/Http/Requests/Workspace',
-        'app/Queries/Workspace',
+        'Actions',
+        'Concerns',
+        'Contracts',
+        'Data',
+        'Enums',
+        'Events',
+        'Http',
+        'Jobs',
+        'Listeners',
+        'Models',
+        'Policies',
+        'Queries',
+        'Services',
+        'Support',
+        'Transitions',
     ] as $legacyDirectory) {
-        expect(glob($root.'/'.$legacyDirectory.'/*.php') ?: [])->toBeEmpty();
+        expect(is_dir($root.'/app/'.$legacyDirectory), $legacyDirectory)->toBeFalse();
+    }
+});
+
+test('backend namespaces mirror module paths', function () {
+    $root = dirname(__DIR__, 2);
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root.'/app', FilesystemIterator::SKIP_DOTS),
+    );
+
+    foreach ($files as $file) {
+        if (! $file->isFile() || $file->getExtension() !== 'php') {
+            continue;
+        }
+
+        $relativeDirectory = str_replace(
+            [$root.'/app', '/'],
+            ['', '\\'],
+            $file->getPath(),
+        );
+        $expectedNamespace = 'App'.$relativeDirectory;
+        $contents = (string) file_get_contents($file->getPathname());
+
+        expect($contents, $file->getPathname())
+            ->toContain('namespace '.$expectedNamespace.';');
     }
 });
 
@@ -120,13 +140,17 @@ test('frontend business code is organized by feature domain', function () {
 test('controllers do not resolve dependencies through service locators', function () {
     $controllers = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator(
-            dirname(__DIR__, 2).'/app/Http/Controllers',
+            dirname(__DIR__, 2).'/app',
             FilesystemIterator::SKIP_DOTS,
         ),
     );
 
     foreach ($controllers as $controller) {
-        if (! $controller->isFile() || $controller->getExtension() !== 'php') {
+        if (
+            ! $controller->isFile()
+            || $controller->getExtension() !== 'php'
+            || ! str_contains($controller->getPathname(), '/Http/Controllers/')
+        ) {
             continue;
         }
 

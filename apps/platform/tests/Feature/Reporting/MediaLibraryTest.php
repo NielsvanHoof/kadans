@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\DocumentRequestStatus;
-use App\Enums\Role;
-use App\Enums\TenantMembershipStatus;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\TenantMembership;
-use App\Models\UploadedDocument;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;

@@ -61,12 +61,10 @@ export default function PipelinesListCard({
                     <span className="text-foreground">
                         {pipeline.subject_type}
                     </span>
-                    {pipeline.subject_id ? (
-                        <span className="font-mono text-muted-foreground">
-                            {' '}
-                            #{pipeline.subject_id}
-                        </span>
-                    ) : null}
+                    <span className="font-mono text-muted-foreground">
+                        {' '}
+                        #{pipeline.subject_id}
+                    </span>
                 </div>
             ),
         },

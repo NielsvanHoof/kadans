@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Reporting\ActivityLogController;
-use App\Http\Controllers\Reporting\DashboardController;
-use App\Http\Controllers\Reporting\MediaLibraryController;
-use App\Http\Controllers\Reporting\PipelineController;
+use App\Reporting\Http\Controllers\ActivityLogController;
+use App\Reporting\Http\Controllers\DashboardController;
+use App\Reporting\Http\Controllers\MediaLibraryController;
+use App\Reporting\Http\Controllers\PipelineController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard');

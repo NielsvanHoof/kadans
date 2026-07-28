@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivityAction;
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\AuditEvent;
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\Dossier;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Audit\Actions\LogAuditActivityAction;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\Dossier;
+use App\Platform\Http\Middleware\HandleInertiaRequests;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Support\Header;

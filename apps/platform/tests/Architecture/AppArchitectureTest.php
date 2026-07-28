@@ -13,11 +13,18 @@ declare(strict_types=1);
 */
 
 arch()->preset()->laravel()->ignoring([
-    'App\Http\Controllers',
-    'App\Models\Activity',
-    // Shared FormRequest traits live here; the Laravel preset expects every
-    // App\Http\Requests type to define rules(), which traits do not.
-    'App\Http\Requests\Concerns',
+    'App\Accounts',
+    'App\Audit',
+    'App\ClientPortal',
+    'App\Clients',
+    'App\Dossiers',
+    'App\DocumentProcessing',
+    'App\Platform',
+    'App\Questionnaires',
+    'App\Reporting',
+    'App\Shared',
+    'App\Tenancy',
+    'App\WorkspaceNotifications',
 ]);
 
 /*

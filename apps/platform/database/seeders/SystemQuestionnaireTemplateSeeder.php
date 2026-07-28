@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\QuestionnaireItemType;
-use App\Enums\QuestionnaireTemplateCategory;
-use App\Models\QuestionnaireTemplate;
-use App\Models\QuestionnaireTemplateItem;
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
+use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use Illuminate\Database\Seeder;
 
 final class SystemQuestionnaireTemplateSeeder extends Seeder

@@ -1,4 +1,4 @@
-import ClientController from '@/actions/App/Http/Controllers/Clients/ClientController';
+import ClientController from '@/actions/App/Clients/Http/Controllers/ClientController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import { Button } from '@/components/ui/button';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

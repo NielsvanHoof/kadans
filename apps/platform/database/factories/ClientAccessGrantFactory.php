@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\ClientAccessGrant;
-use App\Models\Dossier;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\Dossiers\Models\Dossier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 

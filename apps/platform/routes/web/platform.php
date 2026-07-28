@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Platform\SupportSessionController;
-use App\Http\Middleware\EnsurePlatformSupport;
+use App\Platform\Http\Controllers\SupportSessionController;
+use App\Platform\Http\Middleware\EnsurePlatformSupport;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware([EnsurePlatformSupport::class])

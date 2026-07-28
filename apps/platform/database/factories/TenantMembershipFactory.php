@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\TenantMembershipStatus;
-use App\Models\Tenant;
-use App\Models\TenantMembership;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantMembership;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

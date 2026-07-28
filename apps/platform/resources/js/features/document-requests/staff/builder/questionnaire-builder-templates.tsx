@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
+import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {

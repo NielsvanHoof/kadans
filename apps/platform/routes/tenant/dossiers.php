@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Dossiers\DocumentRequestController;
-use App\Http\Controllers\Dossiers\DossierCompletionController;
-use App\Http\Controllers\Dossiers\DossierController;
-use App\Http\Controllers\Dossiers\DossierExportController;
-use App\Http\Controllers\Dossiers\DossierReminderController;
+use App\Dossiers\Http\Controllers\DocumentRequestController;
+use App\Dossiers\Http\Controllers\DossierCompletionController;
+use App\Dossiers\Http\Controllers\DossierController;
+use App\Dossiers\Http\Controllers\DossierExportController;
+use App\Dossiers\Http\Controllers\DossierReminderController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\InitializeTenantFromSession;
-use App\Http\Middleware\SetPermissionTeamContext;
+use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
+use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
 
 /*

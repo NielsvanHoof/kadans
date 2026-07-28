@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Enums\AuditEvent;
-use App\Enums\Role;
-use App\Enums\TenantMembershipStatus;
-use App\Models\Activity;
-use App\Models\TenantInvitation;
-use App\Models\TenantMembership;
-use App\Models\User;
-use App\Notifications\Tenancy\WorkspaceMemberInviteNotification;
+use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\TenantInvitation;
+use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;

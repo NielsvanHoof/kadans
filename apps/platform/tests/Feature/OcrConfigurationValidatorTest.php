@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Services\Ocr\Configuration\OcrConfigurationValidator;
+use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 
 beforeEach(function () {
     config([

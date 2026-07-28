@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
-use App\Models\QuestionnaireTemplate;
-use App\Policies\Questionnaires\QuestionnaireTemplatePolicy;
+use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Questionnaires\Policies\QuestionnaireTemplatePolicy;
+use App\Tenancy\Enums\Role;
 
 test('owner can manage firm templates and copy system templates', function () {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import LocaleController from '@/actions/App/Http/Controllers/Settings/LocaleController';
+import LocaleController from '@/actions/App/Accounts/Http/Controllers/LocaleController';
 import SegmentedControl from '@/components/segmented-control';
 import { useTranslation } from '@/hooks/use-translation';
 import { setClientCookie } from '@/lib/set-client-cookie';

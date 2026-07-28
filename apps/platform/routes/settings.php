@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Settings\LocaleController;
-use App\Http\Controllers\Settings\ProfileController;
-use App\Http\Controllers\Settings\SecurityController;
-use App\Http\Middleware\InitializeTenantFromSession;
-use App\Http\Middleware\SetPermissionTeamContext;
+use App\Accounts\Http\Controllers\LocaleController;
+use App\Accounts\Http\Controllers\ProfileController;
+use App\Accounts\Http\Controllers\SecurityController;
+use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
+use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 

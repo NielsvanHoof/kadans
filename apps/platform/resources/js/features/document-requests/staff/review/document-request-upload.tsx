@@ -1,4 +1,4 @@
-import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

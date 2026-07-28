@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
-use App\Models\Client;
-use App\Models\Dossier;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\Dossier;
+use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

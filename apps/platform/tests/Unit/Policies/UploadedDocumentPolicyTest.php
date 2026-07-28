@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\UploadedDocument;
-use App\Policies\Dossiers\UploadedDocumentPolicy;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Policies\UploadedDocumentPolicy;
+use App\Tenancy\Enums\Role;
 
 test('owner can view and download uploaded documents', function () {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
-use App\Notifications\Tenancy\WorkspaceMemberInviteNotification;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 
 /**
  * Rendered Markdown mail should pick up the published Qompose theme

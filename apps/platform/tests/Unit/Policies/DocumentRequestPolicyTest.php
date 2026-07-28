@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Enums\DossierStatus;
-use App\Enums\Role;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Policies\Dossiers\DocumentRequestPolicy;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Policies\DocumentRequestPolicy;
+use App\Tenancy\Enums\Role;
 
 /**
  * @return array{policy: DocumentRequestPolicy, owner: mixed, tenant: mixed, documentRequest: DocumentRequest, dossier: Dossier}

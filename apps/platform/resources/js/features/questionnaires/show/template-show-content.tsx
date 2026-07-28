@@ -1,5 +1,5 @@
 import { Form, Link } from '@inertiajs/react';
-import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
+import QuestionnaireTemplateController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';

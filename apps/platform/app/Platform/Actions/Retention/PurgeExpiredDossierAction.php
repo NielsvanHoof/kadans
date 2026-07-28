@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Platform\Actions\Retention;
+
+use App\DocumentProcessing\Actions\Pipelines\DeletePipelinesForSubjectsAction;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Models\UploadedDocument;
+use Illuminate\Support\Facades\DB;
+use Throwable;
+
+final class PurgeExpiredDossierAction
+{
+    public function __construct(
+        private readonly DeleteStoredDocumentFilesAction $deleteStoredDocumentFiles,
+        private readonly DeleteStoredDossierExportFilesAction $deleteStoredDossierExportFiles,
+        private readonly DeletePipelinesForSubjectsAction $deletePipelinesForSubjects,
+        private readonly PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
+    ) {}
+
+    /**
+     * @return array{purged: bool, activity_rows_deleted: int, files_deleted: int}
+     */
+    public function handle(Dossier $dossier): array
+    {
+        if (! $dossier->trashed()) {
+            return [
+                'purged' => false,
+                'activity_rows_deleted' => 0,
+                'files_deleted' => 0,
+            ];
+        }
+
+        $documentRequestIds = $dossier->documentRequests()->toBase()->pluck('id');
+
+        $uploadedDocumentsQuery = UploadedDocument::query();
+        $uploadedDocumentsQuery->getQuery()->whereIn('document_request_id', $documentRequestIds);
+        $uploadedDocuments = $uploadedDocumentsQuery->get();
+        $dossierExports = DossierExport::query()->where('dossier_id', $dossier->id)->get();
+
+        try {
+            $this->deleteStoredDocumentFiles->handle($uploadedDocuments);
+            $this->deleteStoredDossierExportFiles->handle($dossierExports);
+        } catch (Throwable) {
+            return [
+                'purged' => false,
+                'activity_rows_deleted' => 0,
+                'files_deleted' => 0,
+            ];
+        }
+
+        return DB::transaction(function () use ($dossier, $uploadedDocuments, $dossierExports): array {
+            $activityRowsDeleted = $this->purgeSubjectActivityLog->handle($dossier);
+            $this->deletePipelinesForSubjects->handle([
+                ...$uploadedDocuments->all(),
+                ...$dossierExports->all(),
+            ]);
+
+            $dossier->disableLogging();
+            $dossier->forceDelete();
+
+            return [
+                'purged' => true,
+                'activity_rows_deleted' => $activityRowsDeleted,
+                'files_deleted' => $uploadedDocuments->count() + $dossierExports->filter(
+                    static fn (DossierExport $export): bool => $export->path !== null,
+                )->count(),
+            ];
+        });
+    }
+}

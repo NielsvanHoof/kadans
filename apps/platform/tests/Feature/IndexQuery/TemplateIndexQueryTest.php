@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\QuestionnaireTemplateCategory;
-use App\Models\QuestionnaireTemplate;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
+use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

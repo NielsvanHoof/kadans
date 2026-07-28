@@ -13,7 +13,7 @@ export type PipelineIndexRow = {
     last_activity_at: string | null;
     created_at: string;
     subject_type: string;
-    subject_id: number | null;
+    subject_id: number;
 };
 
 export type PipelineSubject = {
@@ -52,5 +52,5 @@ export type PipelineDetail = {
     completed_at: string | null;
     failed_at: string | null;
     steps: PipelineStepDetail[];
-    subject: PipelineSubject | null;
+    subject: PipelineSubject;
 };

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
-use App\Enums\TenantMembershipStatus;
-use App\Models\TenantMembership;
-use App\Policies\Tenancy\TenantMembershipPolicy;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Policies\TenantMembershipPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

@@ -2,22 +2,43 @@
 
 declare(strict_types=1);
 
-use App\Actions\Pipelines\CreatePipelineAction;
-use App\Actions\Pipelines\PipelineStateAction;
-use App\Enums\PipelineStatus;
-use App\Enums\PipelineStepOperation;
-use App\Enums\PipelineStepStatus;
-use App\Enums\PipelineType;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\Pipeline;
-use App\Models\UploadedDocument;
-use App\Transitions\PipelineTransitions;
+use App\Clients\Models\Client;
+use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
+use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
+use App\DocumentProcessing\Enums\PipelineStatus;
+use App\DocumentProcessing\Enums\PipelineStepOperation;
+use App\DocumentProcessing\Enums\PipelineStepStatus;
+use App\DocumentProcessing\Enums\PipelineType;
+use App\DocumentProcessing\Models\Pipeline;
+use App\DocumentProcessing\Transitions\PipelineTransitions;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
+
+test('a pipeline requires a polymorphic subject', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    expect(fn () => Pipeline::factory()->create([
+        'tenant_id' => $tenant->id,
+        'pipelineable_type' => null,
+        'pipelineable_id' => null,
+    ]))->toThrow(QueryException::class);
+});
+
+test('the pipeline factory creates a tenant-consistent subject', function (): void {
+    $pipeline = Pipeline::factory()->create();
+    $subject = UploadedDocument::query()
+        ->withoutGlobalScopes()
+        ->findOrFail($pipeline->pipelineable_id);
+
+    expect($pipeline->pipelineable_type)->toBe($subject->getMorphClass())
+        ->and($pipeline->tenant_id)->toBe($subject->tenant_id);
+});
 
 test('a pipeline creates ordered steps for its polymorphic subject', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();

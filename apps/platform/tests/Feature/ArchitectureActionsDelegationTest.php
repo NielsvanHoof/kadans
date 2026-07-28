@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-use App\Actions\Clients\UpdateClientAction;
-use App\Actions\Dossiers\Builder\UpdateDocumentRequestAction;
-use App\Actions\Portal\RecordClientPortalAccessAction;
-use App\Actions\Questionnaires\DeleteQuestionnaireTemplateAction;
-use App\Actions\Questionnaires\DeleteQuestionnaireTemplateItemAction;
-use App\Actions\Questionnaires\UpdateQuestionnaireTemplateAction;
-use App\Actions\Questionnaires\UpdateQuestionnaireTemplateItemAction;
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\AuditEvent;
-use App\Enums\QuestionnaireItemType;
-use App\Enums\QuestionnaireTemplateCategory;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\ClientAccessGrant;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\QuestionnaireTemplate;
-use App\Models\QuestionnaireTemplateItem;
-use App\Models\User;
-use App\Queries\Dossiers\TenantHasAnyDossiersQuery;
+use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\ClientPortal\Actions\RecordClientPortalAccessAction;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\Clients\Actions\UpdateClientAction;
+use App\Clients\Models\Client;
+use App\Dossiers\Actions\Builder\UpdateDocumentRequestAction;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Queries\TenantHasAnyDossiersQuery;
+use App\Questionnaires\Actions\DeleteQuestionnaireTemplateAction;
+use App\Questionnaires\Actions\DeleteQuestionnaireTemplateItemAction;
+use App\Questionnaires\Actions\UpdateQuestionnaireTemplateAction;
+use App\Questionnaires\Actions\UpdateQuestionnaireTemplateItemAction;
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
+use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Questionnaires\Models\QuestionnaireTemplateItem;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

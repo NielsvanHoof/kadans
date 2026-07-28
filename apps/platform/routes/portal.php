@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Portal\ClientPortalAnswerController;
-use App\Http\Controllers\Portal\ClientPortalController;
-use App\Http\Controllers\Portal\ClientPortalSessionController;
-use App\Http\Controllers\Portal\ClientPortalUploadController;
-use App\Http\Middleware\HardenClientPortalResponse;
-use App\Http\Middleware\ResolveClientPortalGrant;
+use App\ClientPortal\Http\Controllers\ClientPortalAnswerController;
+use App\ClientPortal\Http\Controllers\ClientPortalController;
+use App\ClientPortal\Http\Controllers\ClientPortalSessionController;
+use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
+use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
+use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use Illuminate\Support\Facades\Route;
 
 /* Guest client portal — magic links are exchanged for restricted sessions. */

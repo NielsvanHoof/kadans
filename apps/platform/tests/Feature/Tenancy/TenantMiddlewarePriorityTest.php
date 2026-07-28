@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\InitializeTenantFromRoute;
-use App\Http\Middleware\InitializeTenantFromSession;
-use App\Http\Middleware\ResolveClientPortalGrant;
+use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
+use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
+use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 

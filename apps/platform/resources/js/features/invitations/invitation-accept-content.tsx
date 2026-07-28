@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import AcceptTenantInvitationController from '@/actions/App/Http/Controllers/Tenancy/AcceptTenantInvitationController';
+import AcceptTenantInvitationController from '@/actions/App/Tenancy/Http/Controllers/AcceptTenantInvitationController';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import StatusMessage from '@/components/status-message';

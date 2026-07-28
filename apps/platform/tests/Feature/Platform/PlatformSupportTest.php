@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\AuditEvent;
-use App\Enums\Permission;
-use App\Models\Activity;
-use App\Models\Client;
-use App\Models\Dossier;
-use App\Models\TenantMembership;
-use App\Models\User;
-use App\Support\Platform\SupportSession;
+use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\Dossier;
+use App\Platform\Support\SupportSession;
+use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\Permission;
+use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -225,7 +225,7 @@ test('support session stays read-only even when the user is also a firm member',
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
         'user_id' => $support->id,
-        'status' => App\Enums\TenantMembershipStatus::Active,
+        'status' => App\Tenancy\Enums\TenantMembershipStatus::Active,
         'joined_at' => now(),
     ]);
 

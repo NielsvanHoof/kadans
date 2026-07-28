@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Clients\ClientController;
+use App\Clients\Http\Controllers\ClientController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('clients', [ClientController::class, 'index'])->name('clients.index');

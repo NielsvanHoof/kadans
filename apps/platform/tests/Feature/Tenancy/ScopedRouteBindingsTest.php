@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenantAction;
-use App\Enums\QuestionnaireItemType;
-use App\Models\Client;
-use App\Models\DocumentRequest;
-use App\Models\Dossier;
-use App\Models\QuestionnaireTemplate;
-use App\Models\QuestionnaireTemplateItem;
-use App\Models\User;
+use App\Accounts\Models\User;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Questionnaires\Models\QuestionnaireTemplateItem;
+use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Notifications\WorkspaceNotificationController;
+use App\WorkspaceNotifications\Http\Controllers\WorkspaceNotificationController;
 use Illuminate\Support\Facades\Route;
 
 // Mark all unread first so `{notification}` does not capture "read-all".

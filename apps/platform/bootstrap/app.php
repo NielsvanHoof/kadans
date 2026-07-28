@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\HandleAppearance;
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Middleware\HardenClientPortalResponse;
-use App\Http\Middleware\InitializeTenantFromRoute;
-use App\Http\Middleware\InitializeTenantFromSession;
-use App\Http\Middleware\ResolveClientPortalGrant;
-use App\Http\Middleware\SetLocale;
+use App\Accounts\Http\Middleware\SetLocale;
+use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
+use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
+use App\Platform\Http\Middleware\HandleInertiaRequests;
+use App\Shared\Http\Middleware\HandleAppearance;
+use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
+use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -33,6 +33,15 @@ return Application::configure(basePath: dirname(__DIR__))
             require __DIR__.'/../routes/portal.php';
         },
     )
+    ->withCommands([
+        __DIR__.'/../app/Dossiers/Console/Commands',
+        __DIR__.'/../app/DocumentProcessing/Console/Commands',
+        __DIR__.'/../app/Platform/Console/Commands',
+        __DIR__.'/../app/Tenancy/Console/Commands',
+    ])
+    ->withEvents(discover: [
+        __DIR__.'/../app/*/Listeners',
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustHosts(
             at: fn (): array => (array) config('production.allowed_hosts', []),

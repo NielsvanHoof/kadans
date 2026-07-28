@@ -1,7 +1,7 @@
 import { Form, useHttp } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useCallback } from 'react';
-import QuestionnaireTemplateItemController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateItemController';
+import QuestionnaireTemplateItemController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateItemController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import EmptyState from '@/components/empty-state';
 import InputError from '@/components/input-error';
