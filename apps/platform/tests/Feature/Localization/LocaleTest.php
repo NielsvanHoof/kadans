@@ -65,8 +65,21 @@ test('authenticated users can update their preferred language', function () {
     $user = User::factory()->create(['locale' => 'en']);
 
     $this->actingAs($user)
+        ->from(route('language.edit'))
         ->patch(route('language.update'), ['locale' => 'nl'])
         ->assertRedirect(route('language.edit'))
+        ->assertPlainCookie('locale', 'nl');
+
+    expect($user->fresh()->locale)->toBe('nl');
+});
+
+test('locale update from another page redirects back instead of language settings', function () {
+    $user = User::factory()->create(['locale' => 'en']);
+
+    $this->actingAs($user)
+        ->from(route('profile.edit'))
+        ->patch(route('language.update'), ['locale' => 'nl'])
+        ->assertRedirect(route('profile.edit'))
         ->assertPlainCookie('locale', 'nl');
 
     expect($user->fresh()->locale)->toBe('nl');

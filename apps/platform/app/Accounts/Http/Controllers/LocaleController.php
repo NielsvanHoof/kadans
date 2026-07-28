@@ -32,7 +32,7 @@ final class LocaleController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Language updated.')]);
 
-        return to_route('language.edit')
+        return back(fallback: route('language.edit'))
             ->cookie('locale', $locale, 60 * 24 * 365);
     }
 }

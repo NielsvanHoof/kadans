@@ -7,6 +7,8 @@ import { AppSidebarHeader } from '@/components/app-shell/app-sidebar-header';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/features/notifications/notification-bell';
 import SupportSessionBanner from '@/features/platform/support-session-banner';
+import AppearanceMenu from '@/features/settings/appearance-menu';
+import LocaleMenu from '@/features/settings/locale-menu';
 import { useInertiaNavigationEffects } from '@/hooks/use-inertia-navigation-effects';
 import { useTranslation } from '@/hooks/use-translation';
 import { WorkspaceNotifications } from '@/hooks/use-workspace-notifications';
@@ -43,22 +45,27 @@ export default function AppSidebarLayout({
                 <AppSidebarHeader
                     breadcrumbs={breadcrumbs}
                     actions={
-                        <Deferred
-                            data="notifications"
-                            fallback={
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="relative size-9"
-                                    disabled
-                                    aria-label={t('Notifications')}
-                                >
-                                    <Bell className="size-5 opacity-50" />
-                                </Button>
-                            }
-                        >
-                            <NotificationBell />
-                        </Deferred>
+                        <>
+                            {/* Theme + language sit beside the inbox bell. */}
+                            <AppearanceMenu />
+                            <LocaleMenu />
+                            <Deferred
+                                data="notifications"
+                                fallback={
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="relative size-9"
+                                        disabled
+                                        aria-label={t('Notifications')}
+                                    >
+                                        <Bell className="size-5 opacity-50" />
+                                    </Button>
+                                }
+                            >
+                                <NotificationBell />
+                            </Deferred>
+                        </>
                     }
                 />
                 {children}
