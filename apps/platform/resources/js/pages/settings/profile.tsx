@@ -1,11 +1,11 @@
 import { Form, Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import StatusMessage from '@/components/status-message';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import DeleteUser from '@/features/security/delete-user';
 import { useTranslation } from '@/hooks/use-translation';
@@ -62,54 +62,61 @@ export default function Profile({
                     options={{
                         preserveScroll: true,
                     }}
-                    className="space-y-6"
                 >
                     {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">{t('Name')}</Label>
+                        <FieldGroup className="gap-6">
+                            <Field data-invalid={Boolean(errors.name)}>
+                                <FieldLabel htmlFor="name">
+                                    {t('Name')}
+                                </FieldLabel>
 
                                 <Input
                                     id="name"
-                                    className="mt-1 block w-full"
                                     defaultValue={user.name}
                                     name="name"
                                     required
                                     autoComplete="name"
                                     placeholder={t('Full name')}
+                                    {...fieldErrorAriaProps(
+                                        'name-error',
+                                        errors.name,
+                                    )}
                                 />
 
                                 <InputError
-                                    className="mt-2"
+                                    id="name-error"
                                     message={errors.name}
                                 />
-                            </div>
+                            </Field>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
+                            <Field data-invalid={Boolean(errors.email)}>
+                                <FieldLabel htmlFor="email">
                                     {t('Email address')}
-                                </Label>
+                                </FieldLabel>
 
                                 <Input
                                     id="email"
                                     type="email"
-                                    className="mt-1 block w-full"
                                     defaultValue={user.email}
                                     name="email"
                                     required
                                     autoComplete="username"
                                     placeholder={t('Email address')}
+                                    {...fieldErrorAriaProps(
+                                        'email-error',
+                                        errors.email,
+                                    )}
                                 />
 
                                 <InputError
-                                    className="mt-2"
+                                    id="email-error"
                                     message={errors.email}
                                 />
-                            </div>
+                            </Field>
 
                             {mustVerifyEmail && !emailVerified && (
-                                <div>
-                                    <p className="-mt-4 text-sm text-muted-foreground">
+                                <Field>
+                                    <p className="text-sm text-muted-foreground">
                                         {t('Your email address is unverified.')}{' '}
                                         <Link
                                             href={send()}
@@ -129,10 +136,10 @@ export default function Profile({
                                             )}
                                         </StatusMessage>
                                     )}
-                                </div>
+                                </Field>
                             )}
 
-                            <div className="flex items-center gap-4">
+                            <Field orientation="horizontal">
                                 <Button
                                     disabled={processing}
                                     data-test="update-profile-button"
@@ -140,8 +147,8 @@ export default function Profile({
                                     {processing && <Spinner />}
                                     {t('Save')}
                                 </Button>
-                            </div>
-                        </>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
             </div>

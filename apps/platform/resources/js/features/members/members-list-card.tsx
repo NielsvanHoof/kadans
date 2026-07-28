@@ -21,9 +21,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldLabel } from '@/components/ui/field';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -221,6 +223,7 @@ function MemberRoleSelect({
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
     const [pendingRole, setPendingRole] = useState<string | null>(null);
+    const roleSelectId = `member-role-${member.id}`;
 
     const pendingRoleLabel =
         assignableRoleOptions.find((option) => option.value === pendingRole)
@@ -230,34 +233,56 @@ function MemberRoleSelect({
 
     return (
         <>
-            <Select
-                value={member.role ?? undefined}
-                disabled={member.status === 'suspended' || isLastActiveOwner}
-                // Ask for confirmation before posting the role change.
-                onValueChange={(value) => {
-                    if (value === member.role) {
-                        return;
-                    }
-
-                    setPendingRole(value);
-                }}
+            <Field
+                orientation="horizontal"
+                className="w-auto"
+                data-disabled={
+                    member.status === 'suspended' || isLastActiveOwner
+                }
             >
-                <SelectTrigger aria-label={t('Role')} className="min-w-40">
-                    <SelectValue placeholder={t('Role')} />
-                </SelectTrigger>
-                <SelectContent className="bg-background">
-                    {assignableRoleOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                        </SelectItem>
-                    ))}
-                    {roleMissingFromOptions && member.role && (
-                        <SelectItem value={member.role}>
-                            {member.role_label ?? member.role}
-                        </SelectItem>
-                    )}
-                </SelectContent>
-            </Select>
+                <FieldLabel htmlFor={roleSelectId} className="sr-only">
+                    {t('Role for :name', { name: member.name })}
+                </FieldLabel>
+                <Select
+                    value={member.role ?? undefined}
+                    disabled={
+                        member.status === 'suspended' || isLastActiveOwner
+                    }
+                    // Ask for confirmation before posting the role change.
+                    onValueChange={(value) => {
+                        if (value === member.role) {
+                            return;
+                        }
+
+                        setPendingRole(value);
+                    }}
+                >
+                    <SelectTrigger
+                        id={roleSelectId}
+                        aria-label={t('Role')}
+                        className="min-w-40"
+                    >
+                        <SelectValue placeholder={t('Role')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background">
+                        <SelectGroup>
+                            {assignableRoleOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                            {roleMissingFromOptions && member.role && (
+                                <SelectItem value={member.role}>
+                                    {member.role_label ?? member.role}
+                                </SelectItem>
+                            )}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+            </Field>
 
             <Dialog
                 open={pendingRole !== null}

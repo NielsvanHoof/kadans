@@ -12,11 +12,12 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -127,51 +128,71 @@ export default function TemplateShowContent({
                                 tenant: currentWorkspace,
                                 template: template.id,
                             })}
-                            className="space-y-4"
                         >
                             {({ errors, processing }) => (
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="name">
+                                <FieldGroup className="gap-4">
+                                    <Field data-invalid={Boolean(errors.name)}>
+                                        <FieldLabel htmlFor="name">
                                             {t('Name')}
-                                        </Label>
+                                        </FieldLabel>
                                         <Input
                                             id="name"
                                             name="name"
                                             required
                                             defaultValue={template.name}
+                                            aria-invalid={Boolean(errors.name)}
                                         />
                                         <InputError message={errors.name} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="category">
+                                    </Field>
+                                    <Field
+                                        data-invalid={Boolean(errors.category)}
+                                    >
+                                        <FieldLabel htmlFor="category">
                                             {t('Category')}
-                                        </Label>
+                                        </FieldLabel>
                                         <Select
                                             required
                                             defaultValue={template.category}
                                             name="category"
                                         >
-                                            <SelectTrigger className="w-full">
+                                            <SelectTrigger
+                                                id="category"
+                                                className="w-full"
+                                                aria-invalid={Boolean(
+                                                    errors.category,
+                                                )}
+                                            >
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="bg-background">
-                                                {categories.map((category) => (
-                                                    <SelectItem
-                                                        key={category.value}
-                                                        value={category.value}
-                                                    >
-                                                        {category.label}
-                                                    </SelectItem>
-                                                ))}
+                                                <SelectGroup>
+                                                    {categories.map(
+                                                        (category) => (
+                                                            <SelectItem
+                                                                key={
+                                                                    category.value
+                                                                }
+                                                                value={
+                                                                    category.value
+                                                                }
+                                                            >
+                                                                {category.label}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
                                         <InputError message={errors.category} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="description">
+                                    </Field>
+                                    <Field
+                                        data-invalid={Boolean(
+                                            errors.description,
+                                        )}
+                                    >
+                                        <FieldLabel htmlFor="description">
                                             {t('Description')}
-                                        </Label>
+                                        </FieldLabel>
                                         <Textarea
                                             id="description"
                                             name="description"
@@ -179,15 +200,20 @@ export default function TemplateShowContent({
                                             defaultValue={
                                                 template.description ?? ''
                                             }
+                                            aria-invalid={Boolean(
+                                                errors.description,
+                                            )}
                                         />
                                         <InputError
                                             message={errors.description}
                                         />
-                                    </div>
-                                    <Button disabled={processing}>
-                                        {t('Save details')}
-                                    </Button>
-                                </>
+                                    </Field>
+                                    <Field orientation="horizontal">
+                                        <Button disabled={processing}>
+                                            {t('Save details')}
+                                        </Button>
+                                    </Field>
+                                </FieldGroup>
                             )}
                         </Form>
                     </CardContent>

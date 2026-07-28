@@ -1,5 +1,5 @@
+import { Field, FieldDescription, FieldTitle } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -18,7 +18,7 @@ export function BuilderFilePreview({
     const { t } = useTranslation();
 
     return (
-        <div className="space-y-2">
+        <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
             <div className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-4 text-center text-sm text-muted-foreground">
                 {t('Client uploads a file here')}
@@ -30,7 +30,7 @@ export function BuilderFilePreview({
                 className="pointer-events-none"
                 tabIndex={-1}
             />
-        </div>
+        </Field>
     );
 }
 
@@ -44,7 +44,7 @@ export function BuilderTextPreview({
     const { t } = useTranslation();
 
     return (
-        <div className="space-y-2">
+        <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
             <Input
                 type="text"
@@ -54,7 +54,7 @@ export function BuilderTextPreview({
                 aria-hidden="true"
                 tabIndex={-1}
             />
-        </div>
+        </Field>
     );
 }
 
@@ -68,7 +68,7 @@ export function BuilderTextareaPreview({
     const { t } = useTranslation();
 
     return (
-        <div className="space-y-2">
+        <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
             <Textarea
                 disabled
@@ -78,7 +78,7 @@ export function BuilderTextareaPreview({
                 aria-hidden="true"
                 tabIndex={-1}
             />
-        </div>
+        </Field>
     );
 }
 
@@ -92,7 +92,7 @@ export function BuilderDatePreview({
     const { t } = useTranslation();
 
     return (
-        <div className="space-y-2">
+        <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
             <Input
                 type="date"
@@ -101,7 +101,7 @@ export function BuilderDatePreview({
                 aria-label={t('Client picks a date here')}
                 tabIndex={-1}
             />
-        </div>
+        </Field>
     );
 }
 
@@ -115,7 +115,7 @@ export function BuilderNumberPreview({
     const { t } = useTranslation();
 
     return (
-        <div className="space-y-2">
+        <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
             <Input
                 type="number"
@@ -125,7 +125,7 @@ export function BuilderNumberPreview({
                 aria-hidden="true"
                 tabIndex={-1}
             />
-        </div>
+        </Field>
     );
 }
 
@@ -139,7 +139,7 @@ export function BuilderBooleanPreview({
     const { t } = useTranslation();
 
     return (
-        <div className="space-y-2">
+        <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
             <div className="flex gap-2" aria-hidden="true">
                 <span className="rounded-md border border-input bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground">
@@ -149,7 +149,7 @@ export function BuilderBooleanPreview({
                     {t('No')}
                 </span>
             </div>
-        </div>
+        </Field>
     );
 }
 
@@ -161,12 +161,12 @@ function FieldChrome({
     instructions?: string | null;
 }) {
     return (
-        <div className="min-w-0 space-y-1">
-            <Label className="text-sm font-medium text-pretty">{title}</Label>
+        <div className="flex min-w-0 flex-col gap-1">
+            <FieldTitle className="text-pretty">{title}</FieldTitle>
             {instructions ? (
-                <p className="text-xs text-pretty text-muted-foreground">
+                <FieldDescription className="text-xs text-pretty">
                     {instructions}
-                </p>
+                </FieldDescription>
             ) : null}
         </div>
     );

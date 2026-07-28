@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
@@ -60,25 +61,29 @@ export default function DossierActionsMenu({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-44">
                     {canEditDetails ? (
-                        <DropdownMenuItem asChild>
-                            <Link href={editDossier(routeArgs)}>
-                                <Pencil aria-hidden="true" />
-                                {t('Edit dossier')}
-                            </Link>
-                        </DropdownMenuItem>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild>
+                                <Link href={editDossier(routeArgs)}>
+                                    <Pencil aria-hidden="true" />
+                                    {t('Edit dossier')}
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                     ) : null}
                     {canEditDetails && canManage ? (
                         <DropdownMenuSeparator />
                     ) : null}
                     {canManage ? (
-                        <DropdownMenuItem
-                            variant="destructive"
-                            data-test="archive-dossier-button"
-                            onSelect={() => setArchiveOpen(true)}
-                        >
-                            <Archive aria-hidden="true" />
-                            {t('Archive dossier')}
-                        </DropdownMenuItem>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem
+                                variant="destructive"
+                                data-test="archive-dossier-button"
+                                onSelect={() => setArchiveOpen(true)}
+                            >
+                                <Archive aria-hidden="true" />
+                                {t('Archive dossier')}
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                     ) : null}
                 </DropdownMenuContent>
             </DropdownMenu>

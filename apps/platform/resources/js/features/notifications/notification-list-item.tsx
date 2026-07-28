@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { Item } from '@/components/ui/item';
 import type { WorkspaceNotification } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -50,37 +51,42 @@ export default function NotificationListItem({
     };
 
     return (
-        <button
-            type="button"
-            onClick={openNotification}
+        <Item
+            asChild
+            size="sm"
             className={cn(
-                'flex w-full flex-col gap-1 px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent',
+                'w-full flex-col items-stretch gap-1 rounded-none px-3 py-2.5 text-left hover:bg-accent',
                 isUnread && 'bg-accent/40',
             )}
         >
-            <div className="flex items-start gap-2">
-                {isUnread ? (
-                    <span
-                        aria-hidden
-                        className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary"
-                    />
-                ) : (
-                    <span aria-hidden className="mt-1.5 size-1.5 shrink-0" />
-                )}
-                <span
-                    className={cn(
-                        'min-w-0 flex-1 leading-snug',
-                        isUnread ? 'font-medium' : 'text-muted-foreground',
+            <button type="button" onClick={openNotification}>
+                <div className="flex items-start gap-2">
+                    {isUnread ? (
+                        <span
+                            aria-hidden
+                            className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary"
+                        />
+                    ) : (
+                        <span
+                            aria-hidden
+                            className="mt-1.5 size-1.5 shrink-0"
+                        />
                     )}
-                >
-                    {message}
-                </span>
-            </div>
-            {notification.created_at && (
-                <span className="pl-3.5 font-data text-xs text-muted-foreground">
-                    {formatDateTime(notification.created_at, locale)}
-                </span>
-            )}
-        </button>
+                    <span
+                        className={cn(
+                            'min-w-0 flex-1 leading-snug',
+                            isUnread ? 'font-medium' : 'text-muted-foreground',
+                        )}
+                    >
+                        {message}
+                    </span>
+                </div>
+                {notification.created_at && (
+                    <span className="pl-3.5 font-data text-xs text-muted-foreground">
+                        {formatDateTime(notification.created_at, locale)}
+                    </span>
+                )}
+            </button>
+        </Item>
     );
 }

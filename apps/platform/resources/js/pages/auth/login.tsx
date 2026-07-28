@@ -7,8 +7,8 @@ import TextLink from '@/components/text-link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import PasskeyVerify from '@/features/security/passkeys/passkey-verify';
 import { useTranslation } from '@/hooks/use-translation';
@@ -66,11 +66,15 @@ export default function Login({ status, canResetPassword }: Props) {
                                 </Alert>
                             ) : null}
 
-                            <div className="grid gap-6">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">
+                            <FieldGroup className="gap-6">
+                                <Field
+                                    data-invalid={Boolean(
+                                        errors.email && !throttleMessage,
+                                    )}
+                                >
+                                    <FieldLabel htmlFor="email">
                                         {t('Email address')}
-                                    </Label>
+                                    </FieldLabel>
                                     <Input
                                         id="email"
                                         type="email"
@@ -93,13 +97,13 @@ export default function Login({ status, canResetPassword }: Props) {
                                             message={errors.email}
                                         />
                                     ) : null}
-                                </div>
+                                </Field>
 
-                                <div className="grid gap-2">
+                                <Field data-invalid={Boolean(errors.password)}>
                                     <div className="flex items-center">
-                                        <Label htmlFor="password">
+                                        <FieldLabel htmlFor="password">
                                             {t('Password')}
-                                        </Label>
+                                        </FieldLabel>
                                         {canResetPassword && (
                                             <TextLink
                                                 href={request()}
@@ -126,30 +130,35 @@ export default function Login({ status, canResetPassword }: Props) {
                                         id="password-error"
                                         message={errors.password}
                                     />
-                                </div>
+                                </Field>
 
-                                <div className="flex items-center space-x-3">
+                                <Field
+                                    orientation="horizontal"
+                                    className="gap-3"
+                                >
                                     <Checkbox
                                         id="remember"
                                         name="remember"
                                         tabIndex={0}
                                     />
-                                    <Label htmlFor="remember">
+                                    <FieldLabel htmlFor="remember">
                                         {t('Remember me')}
-                                    </Label>
-                                </div>
+                                    </FieldLabel>
+                                </Field>
 
-                                <Button
-                                    type="submit"
-                                    className="mt-4 w-full"
-                                    tabIndex={0}
-                                    disabled={processing}
-                                    data-test="login-button"
-                                >
-                                    {processing && <Spinner />}
-                                    {t('Log in')}
-                                </Button>
-                            </div>
+                                <Field>
+                                    <Button
+                                        type="submit"
+                                        className="mt-4 w-full"
+                                        tabIndex={0}
+                                        disabled={processing}
+                                        data-test="login-button"
+                                    >
+                                        {processing && <Spinner />}
+                                        {t('Log in')}
+                                    </Button>
+                                </Field>
+                            </FieldGroup>
                         </>
                     );
                 }}

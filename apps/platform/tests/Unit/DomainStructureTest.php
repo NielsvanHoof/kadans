@@ -136,3 +136,80 @@ test('controllers do not resolve dependencies through service locators', functio
             ->and(preg_match('/\b(?:app|resolve)\s*\(/', (string) $contents))->toBe(0);
     }
 });
+
+test('shared frontend patterns use the intended shadcn compositions', function () {
+    $root = dirname(__DIR__, 2);
+
+    $confirmDialog = (string) file_get_contents(
+        $root.'/resources/js/components/confirm-destroy-dialog.tsx',
+    );
+    $emptyState = (string) file_get_contents(
+        $root.'/resources/js/components/empty-state.tsx',
+    );
+    $notificationBell = (string) file_get_contents(
+        $root.'/resources/js/features/notifications/notification-bell.tsx',
+    );
+    $passwordInput = (string) file_get_contents(
+        $root.'/resources/js/components/password-input.tsx',
+    );
+    $inputError = (string) file_get_contents(
+        $root.'/resources/js/components/input-error.tsx',
+    );
+
+    expect($confirmDialog)
+        ->toContain("@/components/ui/alert-dialog")
+        ->not->toContain("@/components/ui/dialog")
+        ->and($emptyState)->toContain("@/components/ui/empty")
+        ->and($notificationBell)
+        ->toContain("@/components/ui/popover")
+        ->not->toContain("@/components/ui/dropdown-menu")
+        ->and($passwordInput)->toContain("@/components/ui/input-group")
+        ->and($inputError)->toContain('FieldError');
+
+    $frontendFiles = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator(
+            $root.'/resources/js',
+            FilesystemIterator::SKIP_DOTS,
+        ),
+    );
+
+    foreach ($frontendFiles as $frontendFile) {
+        if (! $frontendFile->isFile() || $frontendFile->getExtension() !== 'tsx') {
+            continue;
+        }
+
+        $contents = (string) file_get_contents($frontendFile->getPathname());
+        $path = $frontendFile->getPathname();
+        $selectContentCount = substr_count($contents, '<SelectContent');
+
+        if ($selectContentCount > 0) {
+            expect(
+                preg_match_all(
+                    '/<SelectContent\b[^>]*>\s*<SelectGroup\b/s',
+                    $contents,
+                ),
+                $path,
+            )->toBe($selectContentCount);
+        }
+
+        if (str_contains($contents, '@/components/ui/label')) {
+            expect($path)->toEndWith('/resources/js/components/ui/field.tsx');
+        }
+
+        if (str_contains($contents, '<InputError')) {
+            expect($contents, $path)->toContain('@/components/ui/field');
+        }
+
+        $containsForm = preg_match('/<(?:Form|form)\b/', $contents) === 1;
+        $containsFormControl = preg_match(
+            '/<(?:Input|Select|Textarea|Checkbox|PasswordInput|InputOTP|FileDropzone|AnswerTextControl)\b/',
+            $contents,
+        ) === 1;
+
+        if ($containsForm && $containsFormControl) {
+            expect($contents, $path)
+                ->toContain('@/components/ui/field')
+                ->toContain('<Field');
+        }
+    }
+});

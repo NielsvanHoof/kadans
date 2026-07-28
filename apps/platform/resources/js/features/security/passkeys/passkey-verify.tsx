@@ -5,6 +5,7 @@ import { KeyRound } from 'lucide-react';
 import InputError from '@/components/input-error';
 import OrDivider from '@/components/or-divider';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -43,23 +44,30 @@ export default function PasskeyVerify({
 
     return (
         <>
-            <div className="grid gap-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={verify}
-                    disabled={isLoading}
-                >
-                    {isLoading ? <Spinner /> : <KeyRound className="h-4 w-4" />}
-                    {isLoading
-                        ? (loadingLabel ?? t('Authenticating…'))
-                        : (label ?? t('Sign in with a passkey'))}
-                </Button>
-                {error && (
-                    <InputError message={error} className="text-center" />
-                )}
-            </div>
+            <FieldGroup className="gap-2">
+                <Field data-invalid={Boolean(error)}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={verify}
+                        disabled={isLoading}
+                        aria-invalid={Boolean(error)}
+                    >
+                        {isLoading ? (
+                            <Spinner />
+                        ) : (
+                            <KeyRound className="size-4" />
+                        )}
+                        {isLoading
+                            ? (loadingLabel ?? t('Authenticating…'))
+                            : (label ?? t('Sign in with a passkey'))}
+                    </Button>
+                    {error && (
+                        <InputError message={error} className="text-center" />
+                    )}
+                </Field>
+            </FieldGroup>
 
             <OrDivider
                 className="my-6"

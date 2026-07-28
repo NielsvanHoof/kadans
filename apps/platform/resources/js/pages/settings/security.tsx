@@ -2,10 +2,10 @@ import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import type { Props as ManagePasskeysProps } from '@/features/security/passkeys/manage-passkeys';
 import ManagePasskeys from '@/features/security/passkeys/manage-passkeys';
@@ -69,65 +69,86 @@ export default function Security(props: Props) {
                             currentPasswordInput.current?.focus();
                         }
                     }}
-                    className="space-y-6"
                 >
                     {({ errors, processing }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="current_password">
+                        <FieldGroup className="gap-6">
+                            <Field
+                                data-invalid={Boolean(errors.current_password)}
+                            >
+                                <FieldLabel htmlFor="current_password">
                                     {t('Current password')}
-                                </Label>
+                                </FieldLabel>
 
                                 <PasswordInput
                                     id="current_password"
                                     ref={currentPasswordInput}
                                     name="current_password"
-                                    className="mt-1 block w-full"
                                     autoComplete="current-password"
                                     placeholder={t('Current password')}
+                                    {...fieldErrorAriaProps(
+                                        'current-password-error',
+                                        errors.current_password,
+                                    )}
                                 />
 
-                                <InputError message={errors.current_password} />
-                            </div>
+                                <InputError
+                                    id="current-password-error"
+                                    message={errors.current_password}
+                                />
+                            </Field>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">
+                            <Field data-invalid={Boolean(errors.password)}>
+                                <FieldLabel htmlFor="password">
                                     {t('New password')}
-                                </Label>
+                                </FieldLabel>
 
                                 <PasswordInput
                                     id="password"
                                     ref={passwordInput}
                                     name="password"
-                                    className="mt-1 block w-full"
                                     autoComplete="new-password"
                                     placeholder={t('New password')}
                                     passwordrules={props.passwordRules}
+                                    {...fieldErrorAriaProps(
+                                        'password-error',
+                                        errors.password,
+                                    )}
                                 />
 
-                                <InputError message={errors.password} />
-                            </div>
+                                <InputError
+                                    id="password-error"
+                                    message={errors.password}
+                                />
+                            </Field>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
+                            <Field
+                                data-invalid={Boolean(
+                                    errors.password_confirmation,
+                                )}
+                            >
+                                <FieldLabel htmlFor="password_confirmation">
                                     {t('Confirm password')}
-                                </Label>
+                                </FieldLabel>
 
                                 <PasswordInput
                                     id="password_confirmation"
                                     name="password_confirmation"
-                                    className="mt-1 block w-full"
                                     autoComplete="new-password"
                                     placeholder={t('Confirm password')}
                                     passwordrules={props.passwordRules}
+                                    {...fieldErrorAriaProps(
+                                        'password-confirmation-error',
+                                        errors.password_confirmation,
+                                    )}
                                 />
 
                                 <InputError
+                                    id="password-confirmation-error"
                                     message={errors.password_confirmation}
                                 />
-                            </div>
+                            </Field>
 
-                            <div className="flex items-center gap-4">
+                            <Field orientation="horizontal">
                                 <Button
                                     disabled={processing}
                                     data-test="update-password-button"
@@ -135,8 +156,8 @@ export default function Security(props: Props) {
                                     {processing && <Spinner />}
                                     {t('Save')}
                                 </Button>
-                            </div>
-                        </>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
             </div>

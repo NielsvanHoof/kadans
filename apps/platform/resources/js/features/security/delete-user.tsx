@@ -14,7 +14,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { useTranslation } from '@/hooks/use-translation';
 
 export default function DeleteUser() {
@@ -62,17 +62,18 @@ export default function DeleteUser() {
                             }}
                             onError={() => passwordInput.current?.focus()}
                             resetOnSuccess
-                            className="space-y-6"
                         >
                             {({ resetAndClearErrors, processing, errors }) => (
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label
+                                <FieldGroup className="gap-6">
+                                    <Field
+                                        data-invalid={Boolean(errors.password)}
+                                    >
+                                        <FieldLabel
                                             htmlFor="password"
                                             className="sr-only"
                                         >
                                             {t('Password')}
-                                        </Label>
+                                        </FieldLabel>
 
                                         <PasswordInput
                                             id="password"
@@ -80,33 +81,38 @@ export default function DeleteUser() {
                                             ref={passwordInput}
                                             placeholder={t('Password')}
                                             autoComplete="current-password"
+                                            aria-invalid={Boolean(
+                                                errors.password,
+                                            )}
                                         />
 
                                         <InputError message={errors.password} />
-                                    </div>
+                                    </Field>
 
-                                    <DialogFooter className="gap-2">
-                                        <DialogClose asChild>
+                                    <Field>
+                                        <DialogFooter className="gap-2">
+                                            <DialogClose asChild>
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={() =>
+                                                        resetAndClearErrors()
+                                                    }
+                                                >
+                                                    {t('Cancel')}
+                                                </Button>
+                                            </DialogClose>
+
                                             <Button
-                                                variant="secondary"
-                                                onClick={() =>
-                                                    resetAndClearErrors()
-                                                }
+                                                type="submit"
+                                                variant="destructive"
+                                                disabled={processing}
+                                                data-test="confirm-delete-user-button"
                                             >
-                                                {t('Cancel')}
+                                                {t('Delete account')}
                                             </Button>
-                                        </DialogClose>
-
-                                        <Button
-                                            type="submit"
-                                            variant="destructive"
-                                            disabled={processing}
-                                            data-test="confirm-delete-user-button"
-                                        >
-                                            {t('Delete account')}
-                                        </Button>
-                                    </DialogFooter>
-                                </>
+                                        </DialogFooter>
+                                    </Field>
+                                </FieldGroup>
                             )}
                         </Form>
                     </DialogContent>

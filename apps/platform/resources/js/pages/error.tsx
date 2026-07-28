@@ -68,7 +68,7 @@ export default function ErrorPage({ status }: Props) {
                     className="flex w-full max-w-md flex-col items-center text-center"
                 >
                     <Link
-                        href={isAuthenticated ? dashboard() : login()}
+                        href={isAuthenticated ? login() : dashboard()}
                         aria-label={name}
                         className="mb-10 flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground"
                     >
@@ -94,10 +94,10 @@ export default function ErrorPage({ status }: Props) {
                     </p>
 
                     <Button asChild className="mt-8">
-                        <Link href={isAuthenticated ? dashboard() : login()}>
+                        <Link href={isAuthenticated ? login() : dashboard()}>
                             {isAuthenticated
-                                ? t('Back to dashboard')
-                                : t('Log in')}
+                                ? t('Go to login')
+                                : t('Go to dashboard')}
                         </Link>
                     </Button>
                 </main>

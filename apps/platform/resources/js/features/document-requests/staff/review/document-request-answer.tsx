@@ -8,7 +8,13 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Label } from '@/components/ui/label';
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/components/ui/field';
 import { AnswerTextControl } from '@/features/document-requests/controls/answer-text-control';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { storesAnswerText } from '@/features/document-requests/types';
@@ -77,21 +83,29 @@ function StaffTextAnswerForm({
                 useAnswerRouteParameters(dossierId, documentRequest.id),
             )}
             options={inlineActionOptions}
-            className="space-y-2"
         >
             {({ errors, processing }) => (
-                <>
-                    <Label htmlFor={fieldId}>{t('Client answer')}</Label>
-                    <AnswerTextControl
-                        id={fieldId}
-                        type={documentRequest.type}
-                        defaultValue={documentRequest.answer_text ?? ''}
-                    />
-                    <InputError message={errors.answer_text} />
-                    <Button type="submit" size="sm" disabled={processing}>
-                        {processing ? t('Saving…') : t('Save client answer')}
-                    </Button>
-                </>
+                <FieldGroup className="gap-2">
+                    <Field data-invalid={Boolean(errors.answer_text)}>
+                        <FieldLabel htmlFor={fieldId}>
+                            {t('Client answer')}
+                        </FieldLabel>
+                        <AnswerTextControl
+                            id={fieldId}
+                            type={documentRequest.type}
+                            defaultValue={documentRequest.answer_text ?? ''}
+                            aria-invalid={Boolean(errors.answer_text)}
+                        />
+                        <InputError message={errors.answer_text} />
+                    </Field>
+                    <Field orientation="horizontal">
+                        <Button type="submit" size="sm" disabled={processing}>
+                            {processing
+                                ? t('Saving…')
+                                : t('Save client answer')}
+                        </Button>
+                    </Field>
+                </FieldGroup>
             )}
         </Form>
     );
@@ -111,8 +125,10 @@ function StaffBooleanAnswerForm({
     );
 
     return (
-        <div className="space-y-2">
-            <Label>{t('Client answer')}</Label>
+        <FieldSet className="gap-2">
+            <FieldLegend variant="label" className="mb-0">
+                {t('Client answer')}
+            </FieldLegend>
             <div className="flex flex-wrap gap-2">
                 {[true, false].map((value) => (
                     <Form
@@ -146,7 +162,7 @@ function StaffBooleanAnswerForm({
                     </Form>
                 ))}
             </div>
-        </div>
+        </FieldSet>
     );
 }
 

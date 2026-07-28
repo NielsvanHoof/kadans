@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import InputError from '@/components/input-error';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -144,7 +150,7 @@ export default function QuestionnaireBuilderSettings({
 
     return (
         <aside
-            className="space-y-4 rounded-2xl border border-border/70 bg-card p-4"
+            className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card p-4"
             aria-label={t('Field settings')}
         >
             <div className="flex items-start justify-between gap-2">
@@ -164,73 +170,87 @@ export default function QuestionnaireBuilderSettings({
                 </p>
             </div>
 
-            <div className="grid gap-2">
-                <Label htmlFor={`builder-type-${documentRequest.id}`}>
-                    {t('Type')}
-                </Label>
-                <Select
-                    value={type}
-                    disabled={!canEdit}
-                    onValueChange={(value) => {
-                        const nextType = value as QuestionnaireItemType;
-                        setType(nextType);
-                        void persist({ type: nextType, title, instructions });
-                    }}
-                >
-                    <SelectTrigger
-                        id={`builder-type-${documentRequest.id}`}
-                        className="w-full"
+            <FieldGroup className="gap-4">
+                <Field data-disabled={!canEdit}>
+                    <FieldLabel htmlFor={`builder-type-${documentRequest.id}`}>
+                        {t('Type')}
+                    </FieldLabel>
+                    <Select
+                        value={type}
+                        disabled={!canEdit}
+                        onValueChange={(value) => {
+                            const nextType = value as QuestionnaireItemType;
+                            setType(nextType);
+                            void persist({
+                                type: nextType,
+                                title,
+                                instructions,
+                            });
+                        }}
                     >
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background">
-                        {definitions.map((definition) => (
-                            <SelectItem
-                                key={definition.value}
-                                value={definition.value}
-                            >
-                                {definition.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                {selectedDefinition ? (
-                    <p className="text-xs text-pretty text-muted-foreground">
-                        {selectedDefinition.description}
-                    </p>
-                ) : null}
-            </div>
+                        <SelectTrigger
+                            id={`builder-type-${documentRequest.id}`}
+                            className="w-full"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                            <SelectGroup>
+                                {definitions.map((definition) => (
+                                    <SelectItem
+                                        key={definition.value}
+                                        value={definition.value}
+                                    >
+                                        {definition.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    {selectedDefinition ? (
+                        <FieldDescription className="text-xs text-pretty">
+                            {selectedDefinition.description}
+                        </FieldDescription>
+                    ) : null}
+                </Field>
 
-            <div className="grid gap-2">
-                <Label htmlFor={`builder-title-${documentRequest.id}`}>
-                    {t('Label')}
-                </Label>
-                <Input
-                    id={`builder-title-${documentRequest.id}`}
-                    value={title}
-                    disabled={!canEdit}
-                    autoComplete="off"
-                    onChange={(event) => setTitle(event.target.value)}
-                    onBlur={blurSave}
-                />
-            </div>
+                <Field data-disabled={!canEdit} data-invalid={Boolean(error)}>
+                    <FieldLabel htmlFor={`builder-title-${documentRequest.id}`}>
+                        {t('Label')}
+                    </FieldLabel>
+                    <Input
+                        id={`builder-title-${documentRequest.id}`}
+                        value={title}
+                        disabled={!canEdit}
+                        autoComplete="off"
+                        onChange={(event) => setTitle(event.target.value)}
+                        onBlur={blurSave}
+                        aria-invalid={Boolean(error)}
+                    />
+                    <InputError message={error ?? undefined} />
+                </Field>
 
-            <div className="grid gap-2">
-                <Label htmlFor={`builder-instructions-${documentRequest.id}`}>
-                    {t('Instructions')}
-                </Label>
-                <Textarea
-                    id={`builder-instructions-${documentRequest.id}`}
-                    rows={4}
-                    value={instructions}
-                    disabled={!canEdit}
-                    onChange={(event) => setInstructions(event.target.value)}
-                    onBlur={blurSave}
-                    placeholder={t('Optional help text shown to the client…')}
-                />
-            </div>
-
-            <InputError message={error ?? undefined} />
+                <Field data-disabled={!canEdit}>
+                    <FieldLabel
+                        htmlFor={`builder-instructions-${documentRequest.id}`}
+                    >
+                        {t('Instructions')}
+                    </FieldLabel>
+                    <Textarea
+                        id={`builder-instructions-${documentRequest.id}`}
+                        rows={4}
+                        value={instructions}
+                        disabled={!canEdit}
+                        onChange={(event) =>
+                            setInstructions(event.target.value)
+                        }
+                        onBlur={blurSave}
+                        placeholder={t(
+                            'Optional help text shown to the client…',
+                        )}
+                    />
+                </Field>
+            </FieldGroup>
         </aside>
     );
 }

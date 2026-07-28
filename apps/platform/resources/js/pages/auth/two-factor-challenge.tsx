@@ -3,13 +3,13 @@ import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { useEffect, useMemo, useState } from 'react';
 import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
     InputOTP,
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
-import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 import { OTP_MAX_LENGTH, OTP_SLOTS } from '@/hooks/use-two-factor-auth';
 import { store } from '@/routes/two-factor/login';
@@ -30,7 +30,6 @@ function ChallengeFormBody({
     return (
         <Form
             {...store.form()}
-            className="space-y-4"
             resetOnError
             resetOnSuccess={!showRecoveryInput}
         >
@@ -86,10 +85,12 @@ function ChallengeFields({
     }, [code, submit, processing, showRecoveryInput]);
 
     return (
-        <>
+        <FieldGroup className="gap-4">
             {showRecoveryInput ? (
-                <div className="grid gap-2">
-                    <Label htmlFor="recovery_code">{t('Recovery code')}</Label>
+                <Field data-invalid={Boolean(errors.recovery_code)}>
+                    <FieldLabel htmlFor="recovery_code">
+                        {t('Recovery code')}
+                    </FieldLabel>
                     <Input
                         id="recovery_code"
                         name="recovery_code"
@@ -107,12 +108,15 @@ function ChallengeFields({
                         id="recovery_code-error"
                         message={errors.recovery_code}
                     />
-                </div>
+                </Field>
             ) : (
-                <div className="flex flex-col items-center justify-center space-y-3 text-center">
-                    <Label htmlFor="two-factor-code" className="sr-only">
+                <Field
+                    className="items-center text-center"
+                    data-invalid={Boolean(errors.code)}
+                >
+                    <FieldLabel htmlFor="two-factor-code" className="sr-only">
                         {t('Authentication code')}
-                    </Label>
+                    </FieldLabel>
                     <div className="flex w-full items-center justify-center">
                         <InputOTP
                             id="two-factor-code"
@@ -137,24 +141,28 @@ function ChallengeFields({
                         </InputOTP>
                     </div>
                     <InputError id="code-error" message={errors.code} />
-                </div>
+                </Field>
             )}
 
-            <Button type="submit" className="w-full" disabled={processing}>
-                {t('Continue')}
-            </Button>
+            <Field>
+                <Button type="submit" className="w-full" disabled={processing}>
+                    {t('Continue')}
+                </Button>
+            </Field>
 
-            <div className="text-center text-sm text-muted-foreground">
-                <span>{t('or you can')} </span>
-                <button
-                    type="button"
-                    className="cursor-pointer text-foreground underline decoration-border underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
-                    onClick={() => toggleRecoveryMode(clearErrors)}
-                >
-                    {authConfigContent.toggleText}
-                </button>
-            </div>
-        </>
+            <Field>
+                <div className="text-center text-sm text-muted-foreground">
+                    <span>{t('or you can')} </span>
+                    <button
+                        type="button"
+                        className="cursor-pointer text-foreground underline decoration-border underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
+                        onClick={() => toggleRecoveryMode(clearErrors)}
+                    >
+                        {authConfigContent.toggleText}
+                    </button>
+                </div>
+            </Field>
+        </FieldGroup>
     );
 }
 

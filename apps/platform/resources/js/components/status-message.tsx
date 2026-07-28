@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type StatusMessageProps = {
     children: ReactNode;
@@ -16,15 +16,10 @@ export default function StatusMessage({
     variant = 'success',
 }: StatusMessageProps) {
     return (
-        <div
-            role="status"
-            className={cn(
-                variant === 'success' &&
-                    'rounded-md border border-success-border bg-success-muted px-4 py-3 text-sm font-medium text-success-foreground',
-                className,
-            )}
-        >
-            {children}
-        </div>
+        <Alert role="status" variant={variant} className={className}>
+            <AlertDescription className="font-medium">
+                {children}
+            </AlertDescription>
+        </Alert>
     );
 }

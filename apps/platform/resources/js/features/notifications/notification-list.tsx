@@ -1,4 +1,5 @@
 import EmptyState from '@/components/empty-state';
+import { ItemGroup } from '@/components/ui/item';
 import NotificationListItem from '@/features/notifications/notification-list-item';
 import type { WorkspaceNotification } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
@@ -23,7 +24,7 @@ export default function NotificationList({
     }
 
     return (
-        <div className="max-h-80 overflow-y-auto">
+        <ItemGroup className="max-h-80 overflow-y-auto">
             {items.map((notification) => (
                 <NotificationListItem
                     key={notification.id}
@@ -31,6 +32,6 @@ export default function NotificationList({
                     workspace={workspace}
                 />
             ))}
-        </div>
+        </ItemGroup>
     );
 }

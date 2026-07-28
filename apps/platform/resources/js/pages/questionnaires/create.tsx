@@ -3,11 +3,12 @@ import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Ques
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -63,67 +64,78 @@ export default function CreateTemplate({
                     {...QuestionnaireTemplateController.store.form(
                         currentWorkspace,
                     )}
-                    className="mt-6 space-y-6"
                 >
                     {({ errors, processing }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">{t('Name')}</Label>
+                        <FieldGroup className="mt-6 gap-6">
+                            <Field data-invalid={Boolean(errors.name)}>
+                                <FieldLabel htmlFor="name">
+                                    {t('Name')}
+                                </FieldLabel>
                                 <Input
                                     id="name"
                                     name="name"
                                     required
                                     placeholder={t('KYC light')}
+                                    aria-invalid={Boolean(errors.name)}
                                 />
                                 <InputError message={errors.name} />
-                            </div>
+                            </Field>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="category">
+                            <Field data-invalid={Boolean(errors.category)}>
+                                <FieldLabel htmlFor="category">
                                     {t('Category')}
-                                </Label>
+                                </FieldLabel>
                                 <Select
                                     required
                                     defaultValue="custom"
                                     name="category"
                                 >
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger
+                                        id="category"
+                                        className="w-full"
+                                        aria-invalid={Boolean(errors.category)}
+                                    >
                                         <SelectValue
                                             placeholder={t('Select a category')}
                                         />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
-                                        {categories.map((category) => (
-                                            <SelectItem
-                                                key={category.value}
-                                                value={category.value}
-                                            >
-                                                {category.label}
-                                            </SelectItem>
-                                        ))}
+                                        <SelectGroup>
+                                            {categories.map((category) => (
+                                                <SelectItem
+                                                    key={category.value}
+                                                    value={category.value}
+                                                >
+                                                    {category.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                                 <InputError message={errors.category} />
-                            </div>
+                            </Field>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="description">
+                            <Field data-invalid={Boolean(errors.description)}>
+                                <FieldLabel htmlFor="description">
                                     {t('Description (optional)')}
-                                </Label>
+                                </FieldLabel>
                                 <Textarea
                                     id="description"
                                     name="description"
                                     rows={3}
                                     placeholder={t('When to use this pack…')}
+                                    aria-invalid={Boolean(errors.description)}
                                 />
                                 <InputError message={errors.description} />
-                            </div>
+                            </Field>
 
-                            <Button disabled={processing}>
-                                {processing && <Spinner />}
-                                {t('Create template')}
-                            </Button>
-                        </>
+                            <Field orientation="horizontal">
+                                <Button disabled={processing}>
+                                    {processing && <Spinner />}
+                                    {t('Create template')}
+                                </Button>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
             </div>

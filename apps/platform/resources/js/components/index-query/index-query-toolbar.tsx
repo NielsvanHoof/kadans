@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -189,17 +190,19 @@ export default function IndexQueryToolbar({
                                 <SelectValue placeholder={t(filter.label)} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value={ALL_VALUE}>
-                                    {t('All')}
-                                </SelectItem>
-                                {(filter.options ?? []).map((option) => (
-                                    <SelectItem
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {t(option.label)}
+                                <SelectGroup>
+                                    <SelectItem value={ALL_VALUE}>
+                                        {t('All')}
                                     </SelectItem>
-                                ))}
+                                    {(filter.options ?? []).map((option) => (
+                                        <SelectItem
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {t(option.label)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
@@ -219,11 +222,16 @@ export default function IndexQueryToolbar({
                             <SelectValue placeholder={t('Sort')} />
                         </SelectTrigger>
                         <SelectContent>
-                            {config.sorts.map((option) => (
-                                <SelectItem key={option.key} value={option.key}>
-                                    {t(option.label)}
-                                </SelectItem>
-                            ))}
+                            <SelectGroup>
+                                {config.sorts.map((option) => (
+                                    <SelectItem
+                                        key={option.key}
+                                        value={option.key}
+                                    >
+                                        {t(option.label)}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
                         </SelectContent>
                     </Select>
                 </div>

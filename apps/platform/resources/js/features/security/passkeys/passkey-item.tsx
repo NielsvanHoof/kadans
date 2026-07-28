@@ -1,15 +1,18 @@
 import { KeyRound, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { type MouseEvent, useState } from 'react';
 import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Passkey } from '@/types/auth';
 
@@ -22,7 +25,8 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
     const [isDeleting, setIsDeleting] = useState(false);
     const { t } = useTranslation();
 
-    const handleDelete = () => {
+    const handleDelete = (event: MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
         setIsDeleting(true);
         onDelete(passkey.id, () => setIsDeleting(false));
     };
@@ -39,9 +43,12 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                             {passkey.name}
                         </p>
                         {passkey.authenticator && (
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-medium tracking-wide text-muted-foreground uppercase ring-1 ring-border ring-inset">
+                            <Badge
+                                variant="secondary"
+                                className="tracking-wide text-muted-foreground uppercase"
+                            >
                                 {passkey.authenticator}
-                            </span>
+                            </Badge>
                         )}
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -62,8 +69,8 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                 </div>
             </div>
 
-            <Dialog>
-                <DialogTrigger asChild>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -72,29 +79,33 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">{t('Remove')}</span>
                     </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogTitle>{t('Remove passkey')}</DialogTitle>
-                    <DialogDescription>
-                        {t(
-                            'Are you sure you want to remove the “:name” passkey? You will no longer be able to use it to sign in.',
-                            { name: passkey.name },
-                        )}
-                    </DialogDescription>
-                    <DialogFooter className="gap-2">
-                        <DialogClose asChild>
-                            <Button variant="secondary">{t('Cancel')}</Button>
-                        </DialogClose>
-                        <Button
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('Remove passkey')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t(
+                                'Are you sure you want to remove the “:name” passkey? You will no longer be able to use it to sign in.',
+                                { name: passkey.name },
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant="secondary">
+                            {t('Cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
                             variant="destructive"
                             onClick={handleDelete}
                             disabled={isDeleting}
                         >
                             {isDeleting ? t('Removing…') : t('Remove passkey')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

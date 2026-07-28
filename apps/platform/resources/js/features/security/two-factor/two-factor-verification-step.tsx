@@ -3,6 +3,7 @@ import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { useEffect, useRef, useState } from 'react';
 import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup } from '@/components/ui/field';
 import {
     InputOTP,
     InputOTPGroup,
@@ -88,36 +89,47 @@ function VerificationFields({
     }, [code, submit, processing]);
 
     return (
-        <div ref={pinInputContainerRef} className="relative w-full space-y-3">
-            <div className="flex w-full flex-col items-center space-y-3 py-2">
-                <InputOTP
-                    id="otp"
-                    name="code"
-                    maxLength={OTP_MAX_LENGTH}
-                    value={code}
-                    onChange={setCode}
-                    disabled={processing}
-                    pattern={REGEXP_ONLY_DIGITS}
-                    autoFocus
-                    aria-label={t('Authentication code')}
-                    {...fieldErrorAriaProps(
-                        'otp-error',
-                        errors?.confirmTwoFactorAuthentication?.code,
-                    )}
-                >
-                    <InputOTPGroup>
-                        {OTP_SLOTS.map((slot) => (
-                            <InputOTPSlot key={slot.id} index={slot.index} />
-                        ))}
-                    </InputOTPGroup>
-                </InputOTP>
+        <FieldGroup ref={pinInputContainerRef} className="relative gap-3">
+            <Field
+                className="items-center py-2"
+                data-invalid={Boolean(
+                    errors?.confirmTwoFactorAuthentication?.code,
+                )}
+            >
+                <div className="flex justify-center">
+                    <InputOTP
+                        id="otp"
+                        name="code"
+                        maxLength={OTP_MAX_LENGTH}
+                        value={code}
+                        onChange={setCode}
+                        disabled={processing}
+                        pattern={REGEXP_ONLY_DIGITS}
+                        autoFocus
+                        aria-label={t('Authentication code')}
+                        {...fieldErrorAriaProps(
+                            'otp-error',
+                            errors?.confirmTwoFactorAuthentication?.code,
+                        )}
+                    >
+                        <InputOTPGroup>
+                            {OTP_SLOTS.map((slot) => (
+                                <InputOTPSlot
+                                    key={slot.id}
+                                    index={slot.index}
+                                />
+                            ))}
+                        </InputOTPGroup>
+                    </InputOTP>
+                </div>
                 <InputError
                     id="otp-error"
                     message={errors?.confirmTwoFactorAuthentication?.code}
+                    className="text-center"
                 />
-            </div>
+            </Field>
 
-            <div className="flex w-full space-x-5">
+            <Field orientation="horizontal" className="gap-5">
                 <Button
                     type="button"
                     variant="outline"
@@ -134,7 +146,7 @@ function VerificationFields({
                 >
                     {t('Confirm')}
                 </Button>
-            </div>
-        </div>
+            </Field>
+        </FieldGroup>
     );
 }

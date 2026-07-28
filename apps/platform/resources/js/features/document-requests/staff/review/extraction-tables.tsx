@@ -1,5 +1,13 @@
 import EmptyState from '@/components/empty-state';
 import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
     keyedCells,
     keyedRows,
     keyedStrings,
@@ -39,28 +47,27 @@ export default function ExtractionTables({
                                         {table.title}
                                     </h3>
                                 )}
-                                <div className="overflow-x-auto rounded-md border">
-                                    <table className="w-full min-w-md border-collapse text-left text-sm">
+                                <div className="rounded-md border">
+                                    <Table className="min-w-md text-left">
                                         {headers.length > 0 && (
-                                            <thead>
-                                                <tr className="border-b bg-muted/40">
+                                            <TableHeader>
+                                                <TableRow className="bg-muted/40 hover:bg-muted/40">
                                                     {headers.map(
                                                         ({
                                                             value: header,
                                                             key,
                                                         }) => (
-                                                            <th
+                                                            <TableHead
                                                                 key={`${tableId}|h|${key}`}
-                                                                className="px-3 py-2 font-medium"
                                                             >
                                                                 {header}
-                                                            </th>
+                                                            </TableHead>
                                                         ),
                                                     )}
-                                                </tr>
-                                            </thead>
+                                                </TableRow>
+                                            </TableHeader>
                                         )}
-                                        <tbody>
+                                        <TableBody>
                                             {rows.map(
                                                 ({ row, key: rowKey }) => {
                                                     const rowId = `${tableId}|r|${rowKey}`;
@@ -68,29 +75,26 @@ export default function ExtractionTables({
                                                         keyedCells(row);
 
                                                     return (
-                                                        <tr
-                                                            key={rowId}
-                                                            className="border-b last:border-b-0"
-                                                        >
+                                                        <TableRow key={rowId}>
                                                             {cells.map(
                                                                 ({
                                                                     cell,
                                                                     key,
                                                                 }) => (
-                                                                    <td
+                                                                    <TableCell
                                                                         key={`${rowId}|${key}`}
-                                                                        className="px-3 py-2 align-top whitespace-pre-wrap"
+                                                                        className="align-top whitespace-pre-wrap"
                                                                     >
                                                                         {cell}
-                                                                    </td>
+                                                                    </TableCell>
                                                                 ),
                                                             )}
-                                                        </tr>
+                                                        </TableRow>
                                                     );
                                                 },
                                             )}
-                                        </tbody>
-                                    </table>
+                                        </TableBody>
+                                    </Table>
                                 </div>
                             </div>
                         );

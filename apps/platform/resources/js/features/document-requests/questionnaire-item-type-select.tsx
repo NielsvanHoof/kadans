@@ -1,8 +1,9 @@
 import InputError from '@/components/input-error';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel } from '@/components/ui/field';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -27,21 +28,27 @@ export default function QuestionnaireItemTypeSelect({
     const typeDefinitions = getQuestionnaireItemTypeDefinitions(t);
 
     return (
-        <div className="grid gap-2">
-            <Label htmlFor={id}>{t('Type')}</Label>
+        <Field data-invalid={Boolean(error)}>
+            <FieldLabel htmlFor={id}>{t('Type')}</FieldLabel>
             <Select required defaultValue={defaultValue} name="type">
-                <SelectTrigger id={id} className="w-full">
+                <SelectTrigger
+                    id={id}
+                    className="w-full"
+                    aria-invalid={Boolean(error)}
+                >
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background">
-                    {typeDefinitions.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                        </SelectItem>
-                    ))}
+                    <SelectGroup>
+                        {typeDefinitions.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                            </SelectItem>
+                        ))}
+                    </SelectGroup>
                 </SelectContent>
             </Select>
             <InputError message={error} />
-        </div>
+        </Field>
     );
 }

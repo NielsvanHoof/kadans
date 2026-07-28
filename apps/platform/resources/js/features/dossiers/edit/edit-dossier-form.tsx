@@ -3,8 +3,8 @@ import DossierController from '@/actions/App/Http/Controllers/Dossiers/DossierCo
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import DossierFollowUpFields from '@/features/dossiers/follow-up/dossier-follow-up-fields';
 import type {
@@ -31,10 +31,9 @@ export default function EditDossierForm({
                 tenant: currentWorkspace,
                 dossier: dossier.id,
             })}
-            className="mt-6 space-y-6"
         >
             {({ errors, processing }) => (
-                <>
+                <div className="mt-6 flex flex-col gap-6">
                     <Alert>
                         <AlertTitle>{t('Client')}</AlertTitle>
                         <AlertDescription>
@@ -50,56 +49,64 @@ export default function EditDossierForm({
                         </AlertDescription>
                     </Alert>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="title">{t('Dossier name')}</Label>
-                        <Input
-                            id="title"
-                            name="title"
-                            required
-                            defaultValue={dossier.title}
+                    <FieldGroup className="gap-6">
+                        <Field data-invalid={Boolean(errors.title)}>
+                            <FieldLabel htmlFor="title">
+                                {t('Dossier name')}
+                            </FieldLabel>
+                            <Input
+                                id="title"
+                                name="title"
+                                required
+                                defaultValue={dossier.title}
+                                aria-invalid={Boolean(errors.title)}
+                            />
+                            <InputError message={errors.title} />
+                        </Field>
+
+                        <Field data-invalid={Boolean(errors.reference)}>
+                            <FieldLabel htmlFor="reference">
+                                {t('Reference (optional)')}
+                            </FieldLabel>
+                            <Input
+                                id="reference"
+                                name="reference"
+                                defaultValue={dossier.reference ?? ''}
+                                aria-invalid={Boolean(errors.reference)}
+                            />
+                            <InputError message={errors.reference} />
+                        </Field>
+
+                        <DossierFollowUpFields
+                            responsibleStaff={responsibleStaff}
+                            defaultDueDate={dossier.due_date ?? ''}
+                            defaultResponsibleUserId={
+                                dossier.responsible_user_id
+                            }
+                            defaultReminderIntervalDays={
+                                dossier.reminder_interval_days
+                            }
+                            errors={errors}
                         />
-                        <InputError message={errors.title} />
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="reference">
-                            {t('Reference (optional)')}
-                        </Label>
-                        <Input
-                            id="reference"
-                            name="reference"
-                            defaultValue={dossier.reference ?? ''}
-                        />
-                        <InputError message={errors.reference} />
-                    </div>
-
-                    <DossierFollowUpFields
-                        responsibleStaff={responsibleStaff}
-                        defaultDueDate={dossier.due_date ?? ''}
-                        defaultResponsibleUserId={dossier.responsible_user_id}
-                        defaultReminderIntervalDays={
-                            dossier.reminder_interval_days
-                        }
-                        errors={errors}
-                    />
-
-                    <div className="flex items-center gap-3">
-                        <Button disabled={processing}>
-                            {processing && <Spinner />}
-                            {t('Save changes')}
-                        </Button>
-                        <Button variant="ghost" asChild>
-                            <Link
-                                href={showDossier({
-                                    tenant: currentWorkspace,
-                                    dossier: dossier.id,
-                                })}
-                            >
-                                {t('Cancel')}
-                            </Link>
-                        </Button>
-                    </div>
-                </>
+                        <Field orientation="horizontal" className="gap-3">
+                            <Button disabled={processing}>
+                                {processing && <Spinner />}
+                                {t('Save changes')}
+                            </Button>
+                            <Button variant="ghost" asChild>
+                                <Link
+                                    href={showDossier({
+                                        tenant: currentWorkspace,
+                                        dossier: dossier.id,
+                                    })}
+                                >
+                                    {t('Cancel')}
+                                </Link>
+                            </Button>
+                        </Field>
+                    </FieldGroup>
+                </div>
             )}
         </Form>
     );

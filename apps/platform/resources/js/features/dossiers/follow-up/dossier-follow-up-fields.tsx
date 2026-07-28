@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import DatePicker from '@/components/date-picker';
 import InputError from '@/components/input-error';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -46,14 +54,17 @@ export default function DossierFollowUpFields({
     );
 
     return (
-        <fieldset className="space-y-4 rounded-lg border bg-muted/20 p-4">
-            <legend className="px-1 text-sm font-semibold">
+        <FieldSet className="gap-4 rounded-lg border bg-muted/20 p-4">
+            <FieldLegend variant="label" className="mb-0 px-1">
                 {t('Follow-up planning')}
-            </legend>
+            </FieldLegend>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid min-w-0 gap-2">
-                    <Label htmlFor="due_date">{t('Due date')}</Label>
+            <FieldGroup className="gap-4 sm:grid sm:grid-cols-2">
+                <Field
+                    className="min-w-0"
+                    data-invalid={Boolean(errors.due_date)}
+                >
+                    <FieldLabel htmlFor="due_date">{t('Due date')}</FieldLabel>
                     <DatePicker
                         id="due_date"
                         name="due_date"
@@ -61,12 +72,15 @@ export default function DossierFollowUpFields({
                         invalid={Boolean(errors.due_date)}
                     />
                     <InputError message={errors.due_date} />
-                </div>
+                </Field>
 
-                <div className="grid min-w-0 gap-2">
-                    <Label htmlFor="responsible_user_id">
+                <Field
+                    className="min-w-0"
+                    data-invalid={Boolean(errors.responsible_user_id)}
+                >
+                    <FieldLabel htmlFor="responsible_user_id">
                         {t('Responsible staff member')}
-                    </Label>
+                    </FieldLabel>
                     <Select
                         value={responsibleUserId}
                         onValueChange={setResponsibleUserId}
@@ -81,23 +95,25 @@ export default function DossierFollowUpFields({
                             </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="space-y-1 bg-background p-1">
-                            <SelectItem value={UNASSIGNED_VALUE}>
-                                {t('Unassigned')}
-                            </SelectItem>
-                            {responsibleStaff.map((staffMember) => (
-                                <SelectItem
-                                    key={staffMember.id}
-                                    value={staffMember.id.toString()}
-                                    className="flex flex-col items-start"
-                                >
-                                    <span className="font-medium">
-                                        {staffMember.name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {staffMember.email}
-                                    </span>
+                            <SelectGroup>
+                                <SelectItem value={UNASSIGNED_VALUE}>
+                                    {t('Unassigned')}
                                 </SelectItem>
-                            ))}
+                                {responsibleStaff.map((staffMember) => (
+                                    <SelectItem
+                                        key={staffMember.id}
+                                        value={staffMember.id.toString()}
+                                        className="flex flex-col items-start"
+                                    >
+                                        <span className="font-medium">
+                                            {staffMember.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {staffMember.email}
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
                         </SelectContent>
                     </Select>
                     {/* Keeps the submitted field name/format identical to the old native select. */}
@@ -111,13 +127,16 @@ export default function DossierFollowUpFields({
                         }
                     />
                     <InputError message={errors.responsible_user_id} />
-                </div>
-            </div>
+                </Field>
+            </FieldGroup>
 
-            <div className="grid gap-2 sm:max-w-xs">
-                <Label htmlFor="reminder_interval_days">
+            <Field
+                className="sm:max-w-xs"
+                data-invalid={Boolean(errors.reminder_interval_days)}
+            >
+                <FieldLabel htmlFor="reminder_interval_days">
                     {t('Automatic reminder cadence')}
-                </Label>
+                </FieldLabel>
                 <div className="flex items-center gap-2">
                     <Input
                         id="reminder_interval_days"
@@ -126,18 +145,19 @@ export default function DossierFollowUpFields({
                         min="1"
                         max="30"
                         defaultValue={defaultReminderIntervalDays ?? ''}
+                        aria-invalid={Boolean(errors.reminder_interval_days)}
                     />
                     <span className="text-sm text-muted-foreground">
                         {t('days')}
                     </span>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <FieldDescription>
                     {t(
                         'Leave empty to disable scheduled reminders. The cadence starts after the first client email.',
                     )}
-                </p>
+                </FieldDescription>
                 <InputError message={errors.reminder_interval_days} />
-            </div>
-        </fieldset>
+            </Field>
+        </FieldSet>
     );
 }

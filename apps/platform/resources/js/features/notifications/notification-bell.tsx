@@ -3,12 +3,13 @@ import { Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    Popover,
+    PopoverContent,
+    PopoverHeader,
+    PopoverTitle,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import NotificationList from '@/features/notifications/notification-list';
 import { useTranslation } from '@/hooks/use-translation';
 import { readAll as readAllNotifications } from '@/routes/workspaces/notifications';
@@ -43,8 +44,8 @@ export default function NotificationBell() {
     };
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+        <Popover>
+            <PopoverTrigger asChild>
                 <Button
                     variant="ghost"
                     size="icon"
@@ -67,15 +68,13 @@ export default function NotificationBell() {
                         </Badge>
                     )}
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
+            </PopoverTrigger>
+            <PopoverContent
                 align="end"
                 className="w-[min(20rem,calc(100vw-2rem))] p-0"
             >
-                <div className="flex items-center justify-between gap-2 px-3 py-2">
-                    <DropdownMenuLabel className="p-0">
-                        {t('Notifications')}
-                    </DropdownMenuLabel>
+                <PopoverHeader className="flex-row items-center justify-between gap-2 px-3 py-2">
+                    <PopoverTitle>{t('Notifications')}</PopoverTitle>
                     <Button
                         type="button"
                         variant="ghost"
@@ -86,13 +85,13 @@ export default function NotificationBell() {
                     >
                         {t('Mark all read')}
                     </Button>
-                </div>
-                <DropdownMenuSeparator className="m-0" />
+                </PopoverHeader>
+                <Separator />
                 <NotificationList
                     items={notifications.items}
                     workspace={currentFirm}
                 />
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </PopoverContent>
+        </Popover>
     );
 }

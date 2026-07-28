@@ -3,6 +3,7 @@ import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -46,33 +47,41 @@ export function WorkspaceSwitcher() {
                         align="end"
                         side="top"
                     >
-                        <DropdownMenuLabel>{t('Your firms')}</DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>
+                                {t('Your firms')}
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {workspaces.map((firm) => (
+                                <DropdownMenuItem
+                                    key={firm.slug}
+                                    onSelect={() => {
+                                        if (firm.slug !== currentFirm.slug) {
+                                            router.visit(
+                                                workspaceDashboard.url(firm),
+                                            );
+                                        }
+                                    }}
+                                >
+                                    <Building2 />
+                                    <span className="truncate">
+                                        {firm.name}
+                                    </span>
+                                    {firm.slug === currentFirm.slug && (
+                                        <Check className="ml-auto" />
+                                    )}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        {workspaces.map((firm) => (
+                        <DropdownMenuGroup>
                             <DropdownMenuItem
-                                key={firm.slug}
-                                onSelect={() => {
-                                    if (firm.slug !== currentFirm.slug) {
-                                        router.visit(
-                                            workspaceDashboard.url(firm),
-                                        );
-                                    }
-                                }}
+                                onSelect={() => router.visit(createFirm.url())}
                             >
-                                <Building2 />
-                                <span className="truncate">{firm.name}</span>
-                                {firm.slug === currentFirm.slug && (
-                                    <Check className="ml-auto" />
-                                )}
+                                <Plus />
+                                <span>{t('Create new firm')}</span>
                             </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onSelect={() => router.visit(createFirm.url())}
-                        >
-                            <Plus />
-                            <span>{t('Create new firm')}</span>
-                        </DropdownMenuItem>
+                        </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>

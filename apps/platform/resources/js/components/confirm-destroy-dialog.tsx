@@ -1,15 +1,16 @@
 import { Form } from '@inertiajs/react';
 import type { ComponentProps, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 
 type FormProps = ComponentProps<typeof Form>;
@@ -19,7 +20,7 @@ type ConfirmDestroyDialogProps = {
     description: string;
     confirmLabel: string;
     /**
-     * Trigger control (usually a Button). Wrapped with DialogTrigger asChild.
+     * Trigger control (usually a Button). Wrapped with AlertDialogTrigger asChild.
      * Omit when driving the dialog with `open` / `onOpenChange` instead.
      */
     trigger?: ReactNode;
@@ -36,8 +37,7 @@ type ConfirmDestroyDialogProps = {
 };
 
 /**
- * Shared confirmation dialog for destructive Inertia Form actions.
- * Mirrors the archive-dossier / delete-user Dialog pattern.
+ * Shared confirmation alert for destructive Inertia Form actions.
  */
 export default function ConfirmDestroyDialog({
     title,
@@ -55,35 +55,39 @@ export default function ConfirmDestroyDialog({
     const { t } = useTranslation();
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-            <DialogContent>
-                <DialogTitle>{title}</DialogTitle>
-                <DialogDescription>{description}</DialogDescription>
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            {trigger ? (
+                <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+            ) : null}
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {description}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
 
                 <Form {...form} options={options}>
                     {({ processing }) => (
                         <>
                             {children}
-                            <DialogFooter className="gap-2">
-                                <DialogClose asChild>
-                                    <Button type="button" variant="secondary">
-                                        {t('Cancel')}
-                                    </Button>
-                                </DialogClose>
-                                <Button
+                            <AlertDialogFooter>
+                                <AlertDialogCancel variant="secondary">
+                                    {t('Cancel')}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
                                     type="submit"
                                     variant={confirmVariant}
                                     disabled={processing}
                                     data-test={confirmTestId}
                                 >
                                     {confirmLabel}
-                                </Button>
-                            </DialogFooter>
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
                         </>
                     )}
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

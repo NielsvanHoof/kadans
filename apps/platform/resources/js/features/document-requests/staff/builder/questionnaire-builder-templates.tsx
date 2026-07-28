@@ -9,10 +9,11 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Label } from '@/components/ui/label';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -78,14 +79,18 @@ export default function QuestionnaireBuilderTemplates({
                         dossier: dossierId,
                     })}
                     options={inlineActionOptions}
-                    className="space-y-3"
                 >
                     {({ errors, processing }) => (
-                        <>
-                            <div className="grid min-w-0 gap-2">
-                                <Label htmlFor="questionnaire_template_id">
+                        <FieldGroup className="gap-3">
+                            <Field
+                                className="min-w-0"
+                                data-invalid={Boolean(
+                                    errors.questionnaire_template_id,
+                                )}
+                            >
+                                <FieldLabel htmlFor="questionnaire_template_id">
                                     {t('Template')}
-                                </Label>
+                                </FieldLabel>
                                 <Select
                                     required
                                     name="questionnaire_template_id"
@@ -95,6 +100,9 @@ export default function QuestionnaireBuilderTemplates({
                                     <SelectTrigger
                                         id="questionnaire_template_id"
                                         className="w-full min-w-0 overflow-hidden"
+                                        aria-invalid={Boolean(
+                                            errors.questionnaire_template_id,
+                                        )}
                                     >
                                         <SelectValue
                                             placeholder={t(
@@ -109,42 +117,50 @@ export default function QuestionnaireBuilderTemplates({
                                         align="start"
                                         className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] bg-background"
                                     >
-                                        {templates.map((template) => (
-                                            <SelectItem
-                                                key={template.id}
-                                                value={template.id.toString()}
-                                                className="items-start"
-                                            >
-                                                <span className="flex min-w-0 flex-col gap-0.5 text-left">
-                                                    <span className="truncate font-medium">
-                                                        {template.name}
+                                        <SelectGroup>
+                                            {templates.map((template) => (
+                                                <SelectItem
+                                                    key={template.id}
+                                                    value={template.id.toString()}
+                                                    className="items-start"
+                                                >
+                                                    <span className="flex min-w-0 flex-col gap-0.5 text-left">
+                                                        <span className="truncate font-medium">
+                                                            {template.name}
+                                                        </span>
+                                                        <span className="truncate text-xs text-muted-foreground">
+                                                            {
+                                                                template.category_label
+                                                            }{' '}
+                                                            (
+                                                            {
+                                                                template.items_count
+                                                            }
+                                                            )
+                                                            {template.is_system
+                                                                ? ` · ${t('System')}`
+                                                                : ''}
+                                                        </span>
                                                     </span>
-                                                    <span className="truncate text-xs text-muted-foreground">
-                                                        {
-                                                            template.category_label
-                                                        }{' '}
-                                                        ({template.items_count})
-                                                        {template.is_system
-                                                            ? ` · ${t('System')}`
-                                                            : ''}
-                                                    </span>
-                                                </span>
-                                            </SelectItem>
-                                        ))}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                                 <InputError
                                     message={errors.questionnaire_template_id}
                                 />
-                            </div>
-                            <Button
-                                disabled={processing || !selectedTemplateId}
-                                className="w-full"
-                                size="sm"
-                            >
-                                {t('Apply template')}
-                            </Button>
-                        </>
+                            </Field>
+                            <Field>
+                                <Button
+                                    disabled={processing || !selectedTemplateId}
+                                    className="w-full"
+                                    size="sm"
+                                >
+                                    {t('Apply template')}
+                                </Button>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
             </CollapsibleContent>

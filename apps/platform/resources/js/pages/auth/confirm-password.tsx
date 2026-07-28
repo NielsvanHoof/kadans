@@ -6,7 +6,7 @@ import {
 import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import PasskeyVerify from '@/features/security/passkeys/passkey-verify';
 import { useTranslation } from '@/hooks/use-translation';
@@ -38,9 +38,11 @@ export default function ConfirmPassword() {
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
-                    <div className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">{t('Password')}</Label>
+                    <FieldGroup className="gap-6">
+                        <Field data-invalid={Boolean(errors.password)}>
+                            <FieldLabel htmlFor="password">
+                                {t('Password')}
+                            </FieldLabel>
                             <PasswordInput
                                 id="password"
                                 name="password"
@@ -57,9 +59,9 @@ export default function ConfirmPassword() {
                                 id="password-error"
                                 message={errors.password}
                             />
-                        </div>
+                        </Field>
 
-                        <div className="flex items-center">
+                        <Field>
                             <Button
                                 className="w-full"
                                 disabled={processing}
@@ -68,8 +70,8 @@ export default function ConfirmPassword() {
                                 {processing && <Spinner />}
                                 {t('Confirm password')}
                             </Button>
-                        </div>
-                    </div>
+                        </Field>
+                    </FieldGroup>
                 )}
             </Form>
         </>

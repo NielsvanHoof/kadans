@@ -97,13 +97,13 @@
             "@php artisan config:clear --ansi",
             "@lint:check",
             "@types:check",
-            "@php artisan test"
+            "@php artisan test --parallel"
         ],
         "test:coverage": [
             "Composer\\Config::disableProcessTimeout",
             "@putenv XDEBUG_MODE=coverage",
             "@php artisan config:clear --ansi",
-            "@php artisan test --coverage --coverage-html=coverage --min=79"
+            "@php artisan test --parallel --coverage --coverage-html=coverage --min=79"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

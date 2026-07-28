@@ -1,5 +1,5 @@
-import { type HTMLAttributes, useId } from 'react';
-import { cn } from '@/lib/utils';
+import { type ComponentProps, useId } from 'react';
+import { FieldError } from '@/components/ui/field';
 
 /**
  * Validation error text. Announced to assistive tech when it appears.
@@ -9,9 +9,8 @@ import { cn } from '@/lib/utils';
 export default function InputError({
     message,
     id,
-    className = '',
     ...props
-}: HTMLAttributes<HTMLParagraphElement> & { message?: string }) {
+}: ComponentProps<typeof FieldError> & { message?: string }) {
     const generatedId = useId();
     const errorId = id ?? generatedId;
 
@@ -20,15 +19,9 @@ export default function InputError({
     }
 
     return (
-        <p
-            id={errorId}
-            role="alert"
-            aria-live="polite"
-            {...props}
-            className={cn('text-sm text-destructive', className)}
-        >
+        <FieldError id={errorId} aria-live="polite" {...props}>
             {message}
-        </p>
+        </FieldError>
     );
 }
 

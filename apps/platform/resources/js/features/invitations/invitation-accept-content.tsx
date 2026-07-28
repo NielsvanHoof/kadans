@@ -5,8 +5,8 @@ import PasswordInput from '@/components/password-input';
 import StatusMessage from '@/components/status-message';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import type { InvitationShowProps } from '@/features/invitations/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -89,7 +89,6 @@ export default function InvitationAcceptContent({
                                 'password_confirmation',
                             ]}
                             disableWhileProcessing
-                            className="flex flex-col gap-6"
                         >
                             {({ processing, errors }) => (
                                 <>
@@ -99,11 +98,13 @@ export default function InvitationAcceptContent({
                                         value={invitation.email}
                                     />
 
-                                    <div className="grid gap-6">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="name">
+                                    <FieldGroup className="gap-6">
+                                        <Field
+                                            data-invalid={Boolean(errors.name)}
+                                        >
+                                            <FieldLabel htmlFor="name">
                                                 {t('Name')}
-                                            </Label>
+                                            </FieldLabel>
                                             <Input
                                                 id="name"
                                                 type="text"
@@ -112,14 +113,17 @@ export default function InvitationAcceptContent({
                                                 autoComplete="name"
                                                 name="name"
                                                 placeholder={t('Full name')}
+                                                aria-invalid={Boolean(
+                                                    errors.name,
+                                                )}
                                             />
                                             <InputError message={errors.name} />
-                                        </div>
+                                        </Field>
 
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="email">
+                                        <Field data-disabled>
+                                            <FieldLabel htmlFor="email">
                                                 {t('Email address')}
-                                            </Label>
+                                            </FieldLabel>
                                             <Input
                                                 id="email"
                                                 type="email"
@@ -127,12 +131,16 @@ export default function InvitationAcceptContent({
                                                 disabled
                                                 readOnly
                                             />
-                                        </div>
+                                        </Field>
 
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="password">
+                                        <Field
+                                            data-invalid={Boolean(
+                                                errors.password,
+                                            )}
+                                        >
+                                            <FieldLabel htmlFor="password">
                                                 {t('Password')}
-                                            </Label>
+                                            </FieldLabel>
                                             <PasswordInput
                                                 id="password"
                                                 required
@@ -140,16 +148,23 @@ export default function InvitationAcceptContent({
                                                 name="password"
                                                 placeholder={t('Password')}
                                                 passwordrules={passwordRules}
+                                                aria-invalid={Boolean(
+                                                    errors.password,
+                                                )}
                                             />
                                             <InputError
                                                 message={errors.password}
                                             />
-                                        </div>
+                                        </Field>
 
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="password_confirmation">
+                                        <Field
+                                            data-invalid={Boolean(
+                                                errors.password_confirmation,
+                                            )}
+                                        >
+                                            <FieldLabel htmlFor="password_confirmation">
                                                 {t('Confirm password')}
-                                            </Label>
+                                            </FieldLabel>
                                             <PasswordInput
                                                 id="password_confirmation"
                                                 required
@@ -159,23 +174,28 @@ export default function InvitationAcceptContent({
                                                     'Confirm password',
                                                 )}
                                                 passwordrules={passwordRules}
+                                                aria-invalid={Boolean(
+                                                    errors.password_confirmation,
+                                                )}
                                             />
                                             <InputError
                                                 message={
                                                     errors.password_confirmation
                                                 }
                                             />
-                                        </div>
+                                        </Field>
 
-                                        <Button
-                                            type="submit"
-                                            className="w-full"
-                                            disabled={processing}
-                                        >
-                                            {processing && <Spinner />}
-                                            {t('Create account and join')}
-                                        </Button>
-                                    </div>
+                                        <Field>
+                                            <Button
+                                                type="submit"
+                                                className="w-full"
+                                                disabled={processing}
+                                            >
+                                                {processing && <Spinner />}
+                                                {t('Create account and join')}
+                                            </Button>
+                                        </Field>
+                                    </FieldGroup>
                                 </>
                             )}
                         </Form>

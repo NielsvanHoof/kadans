@@ -1,8 +1,8 @@
 import { Form } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import type { RouteFormDefinition } from '@/wayfinder';
@@ -22,11 +22,11 @@ export default function CreateFirmForm({
     const { t } = useTranslation();
 
     return (
-        <Form {...action} className="space-y-4">
+        <Form {...action}>
             {({ errors, processing }) => (
-                <>
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">{t('Firm name')}</Label>
+                <FieldGroup className="gap-4">
+                    <Field data-invalid={Boolean(errors.name)}>
+                        <FieldLabel htmlFor="name">{t('Firm name')}</FieldLabel>
                         <Input
                             id="name"
                             name="name"
@@ -34,15 +34,18 @@ export default function CreateFirmForm({
                             autoComplete="organization"
                             placeholder={t('Acme Accountants')}
                             autoFocus
+                            aria-invalid={Boolean(errors.name)}
                         />
                         <InputError message={errors.name} />
-                    </div>
+                    </Field>
 
-                    <Button disabled={processing}>
-                        {processing && <Spinner />}
-                        {submitLabel}
-                    </Button>
-                </>
+                    <Field>
+                        <Button disabled={processing}>
+                            {processing && <Spinner />}
+                            {submitLabel}
+                        </Button>
+                    </Field>
+                </FieldGroup>
             )}
         </Form>
     );

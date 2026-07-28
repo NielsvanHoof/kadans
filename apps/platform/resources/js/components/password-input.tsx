@@ -1,7 +1,12 @@
 import { Eye, EyeOff } from 'lucide-react';
 import type { ComponentProps, Ref } from 'react';
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
@@ -14,28 +19,28 @@ export default function PasswordInput({
     const { t } = useTranslation();
 
     return (
-        <div className="relative">
-            <Input
+        <InputGroup className={cn(className, 'flex')}>
+            <InputGroupInput
                 type={showPassword ? 'text' : 'password'}
-                className={cn('pr-10', className)}
                 ref={ref}
                 {...props}
             />
-            <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-3 text-muted-foreground hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:outline-none"
-                aria-label={
-                    showPassword ? t('Hide password') : t('Show password')
-                }
-                aria-pressed={showPassword}
-            >
-                {showPassword ? (
-                    <EyeOff className="size-4" aria-hidden="true" />
-                ) : (
-                    <Eye className="size-4" aria-hidden="true" />
-                )}
-            </button>
-        </div>
+            <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                    size="icon-xs"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={
+                        showPassword ? t('Hide password') : t('Show password')
+                    }
+                    aria-pressed={showPassword}
+                >
+                    {showPassword ? (
+                        <EyeOff aria-hidden="true" />
+                    ) : (
+                        <Eye aria-hidden="true" />
+                    )}
+                </InputGroupButton>
+            </InputGroupAddon>
+        </InputGroup>
     );
 }

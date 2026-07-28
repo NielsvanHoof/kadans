@@ -3,11 +3,12 @@ import DossierController from '@/actions/App/Http/Controllers/Dossiers/DossierCo
 import EmptyState from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -55,69 +56,78 @@ export default function CreateDossierForm({
     }
 
     return (
-        <Form
-            {...DossierController.store.form(currentWorkspace)}
-            className="mt-6 space-y-6"
-        >
+        <Form {...DossierController.store.form(currentWorkspace)}>
             {({ errors, processing }) => (
-                <>
-                    <div className="grid gap-2">
-                        <Label htmlFor="client_id">{t('Client')}</Label>
+                <FieldGroup className="mt-6 gap-6">
+                    <Field data-invalid={Boolean(errors.client_id)}>
+                        <FieldLabel htmlFor="client_id">
+                            {t('Client')}
+                        </FieldLabel>
                         <Select required defaultValue="" name="client_id">
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger
+                                id="client_id"
+                                className="w-full"
+                                aria-invalid={Boolean(errors.client_id)}
+                            >
                                 <SelectValue
                                     placeholder={t('Select a client')}
                                 />
                             </SelectTrigger>
                             <SelectContent className="space-y-1 bg-background p-1">
-                                {clients.map((client) => (
-                                    <SelectItem
-                                        key={client.id}
-                                        value={client.id.toString()}
-                                        className="flex flex-col"
-                                    >
-                                        <span className="font-medium">
-                                            {client.name}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {client.email}
-                                        </span>
-                                    </SelectItem>
-                                ))}
+                                <SelectGroup>
+                                    {clients.map((client) => (
+                                        <SelectItem
+                                            key={client.id}
+                                            value={client.id.toString()}
+                                            className="flex flex-col"
+                                        >
+                                            <span className="font-medium">
+                                                {client.name}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {client.email}
+                                            </span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                         <InputError message={errors.client_id} />
-                    </div>
+                    </Field>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="title">{t('Dossier name')}</Label>
+                    <Field data-invalid={Boolean(errors.title)}>
+                        <FieldLabel htmlFor="title">
+                            {t('Dossier name')}
+                        </FieldLabel>
                         <Input
                             id="title"
                             name="title"
                             required
                             placeholder={t('2025 payroll documents')}
+                            aria-invalid={Boolean(errors.title)}
                         />
                         <InputError message={errors.title} />
-                    </div>
+                    </Field>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="reference">
+                    <Field data-invalid={Boolean(errors.reference)}>
+                        <FieldLabel htmlFor="reference">
                             {t('Reference (optional)')}
-                        </Label>
+                        </FieldLabel>
                         <Input
                             id="reference"
                             name="reference"
                             placeholder={t('PAY-2025-001')}
+                            aria-invalid={Boolean(errors.reference)}
                         />
                         <InputError message={errors.reference} />
-                    </div>
+                    </Field>
 
                     <DossierFollowUpFields
                         responsibleStaff={responsibleStaff}
                         errors={errors}
                     />
 
-                    <div className="flex items-center gap-3">
+                    <Field orientation="horizontal" className="gap-3">
                         <Button disabled={processing}>
                             {processing && <Spinner />}
                             {t('Create dossier')}
@@ -127,8 +137,8 @@ export default function CreateDossierForm({
                                 {t('Cancel')}
                             </Link>
                         </Button>
-                    </div>
-                </>
+                    </Field>
+                </FieldGroup>
             )}
         </Form>
     );

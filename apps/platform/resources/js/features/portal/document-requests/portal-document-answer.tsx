@@ -3,7 +3,13 @@ import { lazy, Suspense } from 'react';
 import ClientPortalAnswerController from '@/actions/App/Http/Controllers/Portal/ClientPortalAnswerController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/components/ui/field';
 import { AnswerTextControl } from '@/features/document-requests/controls/answer-text-control';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -33,15 +39,14 @@ export function PortalTextDocumentAnswer({
                 documentRequest: documentRequest.id,
             })}
             options={inlineActionOptions}
-            className="space-y-3"
         >
             {({ errors, processing }) => (
-                <>
-                    <div className="grid gap-2">
+                <FieldGroup className="gap-3">
+                    <Field data-invalid={Boolean(errors.answer_text)}>
                         {/* Visually quiet — the field title above already names the question. */}
-                        <Label htmlFor={fieldId} className="sr-only">
+                        <FieldLabel htmlFor={fieldId} className="sr-only">
                             {t('Your answer')}
-                        </Label>
+                        </FieldLabel>
                         {documentRequest.type === 'date' ? (
                             <Suspense
                                 fallback={
@@ -68,22 +73,25 @@ export function PortalTextDocumentAnswer({
                                 type={documentRequest.type}
                                 defaultValue={documentRequest.answer_text ?? ''}
                                 placeholder={placeholder}
+                                aria-invalid={Boolean(errors.answer_text)}
                             />
                         )}
                         <InputError message={errors.answer_text} />
-                    </div>
-                    <Button
-                        type="submit"
-                        disabled={processing}
-                        className="w-full sm:w-auto"
-                    >
-                        {processing
-                            ? t('Saving…')
-                            : documentRequest.answer_text
-                              ? t('Update answer')
-                              : t('Submit answer')}
-                    </Button>
-                </>
+                    </Field>
+                    <Field orientation="horizontal">
+                        <Button
+                            type="submit"
+                            disabled={processing}
+                            className="w-full sm:w-auto"
+                        >
+                            {processing
+                                ? t('Saving…')
+                                : documentRequest.answer_text
+                                  ? t('Update answer')
+                                  : t('Submit answer')}
+                        </Button>
+                    </Field>
+                </FieldGroup>
             )}
         </Form>
     );
@@ -100,8 +108,8 @@ export function PortalBooleanDocumentAnswer({
     const { t } = useTranslation();
 
     return (
-        <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="sr-only">{t('Your answer')}</legend>
+        <FieldSet className="min-w-0 gap-2">
+            <FieldLegend className="sr-only">{t('Your answer')}</FieldLegend>
             <div className="grid grid-cols-2 gap-2">
                 <BooleanAnswerButton
                     documentRequestId={documentRequest.id}
@@ -116,7 +124,7 @@ export function PortalBooleanDocumentAnswer({
                     active={documentRequest.answer_boolean === false}
                 />
             </div>
-        </fieldset>
+        </FieldSet>
     );
 }
 

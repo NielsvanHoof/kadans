@@ -1,5 +1,13 @@
 import { Inbox, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
 
 type EmptyStateVariant = 'inline' | 'compact' | 'panel';
@@ -28,56 +36,70 @@ export default function EmptyState({
 }: EmptyStateProps) {
     if (variant === 'compact') {
         return (
-            <div
+            <Empty
                 className={cn(
-                    'px-3 py-8 text-center text-sm text-muted-foreground',
+                    'flex-none gap-4 rounded-none px-3 py-8 md:p-8',
                     className,
                 )}
             >
-                <p className="font-medium text-foreground">{title}</p>
-                {description && <p className="mt-1">{description}</p>}
-                {action && <div className="mt-4">{action}</div>}
-            </div>
+                <EmptyHeader className="gap-1">
+                    <EmptyTitle className="text-sm">{title}</EmptyTitle>
+                    {description && (
+                        <EmptyDescription>{description}</EmptyDescription>
+                    )}
+                </EmptyHeader>
+                {action && <EmptyContent>{action}</EmptyContent>}
+            </Empty>
         );
     }
 
     if (variant === 'panel') {
         return (
-            <div
+            <Empty
                 className={cn(
-                    'p-8 text-center',
+                    'flex-none gap-4 p-8 md:p-8',
                     bordered && 'rounded-lg border',
                     className,
                 )}
             >
-                <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted">
+                <EmptyMedia variant="icon" className="mb-0 size-14 rounded-2xl">
                     <Icon
                         className="size-7 text-muted-foreground"
                         aria-hidden
                     />
-                </div>
-                <p className="font-medium">{title}</p>
-                {description && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        {description}
-                    </p>
-                )}
-                {action && <div className="mt-4">{action}</div>}
-            </div>
+                </EmptyMedia>
+                <EmptyHeader className="gap-1">
+                    <EmptyTitle className="text-base">{title}</EmptyTitle>
+                    {description && (
+                        <EmptyDescription>{description}</EmptyDescription>
+                    )}
+                </EmptyHeader>
+                {action && <EmptyContent>{action}</EmptyContent>}
+            </Empty>
         );
     }
 
     return (
-        <div
+        <Empty
             className={cn(
-                'text-sm text-muted-foreground',
-                bordered && 'rounded-md border px-4 py-3',
+                'flex-none items-start justify-start gap-4 rounded-none p-0 text-left md:p-0',
+                bordered && 'rounded-md border px-4 py-3 md:px-4 md:py-3',
                 className,
             )}
         >
-            <p>{title}</p>
-            {description && <p className="mt-1">{description}</p>}
-            {action && <div className="mt-4">{action}</div>}
-        </div>
+            <EmptyHeader className="max-w-none items-start gap-1 text-left">
+                <EmptyTitle className="text-sm font-normal text-muted-foreground">
+                    {title}
+                </EmptyTitle>
+                {description && (
+                    <EmptyDescription className="text-left">
+                        {description}
+                    </EmptyDescription>
+                )}
+            </EmptyHeader>
+            {action && (
+                <EmptyContent className="items-start">{action}</EmptyContent>
+            )}
+        </Empty>
     );
 }

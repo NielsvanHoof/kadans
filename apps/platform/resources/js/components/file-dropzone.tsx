@@ -3,7 +3,8 @@ import type { DragEvent } from 'react';
 import { useCallback, useId, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { cn } from '@/lib/utils';
@@ -112,8 +113,12 @@ export default function FileDropzone({
     const displayError = error ?? localError;
 
     return (
-        <div className={cn('space-y-2', className)}>
-            <Label htmlFor={inputId}>{label}</Label>
+        <Field
+            className={className}
+            data-disabled={disabled}
+            data-invalid={Boolean(displayError)}
+        >
+            <FieldLabel htmlFor={inputId}>{label}</FieldLabel>
 
             <input
                 ref={inputRef}
@@ -122,6 +127,7 @@ export default function FileDropzone({
                 accept={accept}
                 disabled={disabled}
                 className="sr-only"
+                aria-invalid={Boolean(displayError)}
                 onChange={(event) =>
                     validateAndSet(event.target.files?.[0] ?? null)
                 }
@@ -196,28 +202,30 @@ export default function FileDropzone({
             </button>
 
             {file ? (
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={disabled}
-                    onClick={clearSelection}
-                >
-                    <X aria-hidden />
-                    {t('Clear')}
-                </Button>
+                <div className="flex">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={disabled}
+                        onClick={clearSelection}
+                    >
+                        <X aria-hidden />
+                        {t('Clear')}
+                    </Button>
+                </div>
             ) : null}
 
             {progressPercent !== null && progressPercent !== undefined ? (
-                <progress
+                <Progress
                     value={progressPercent}
                     max={100}
                     aria-label={t('Upload progress')}
-                    className="h-1.5 w-full"
+                    className="w-full"
                 />
             ) : null}
 
             <InputError message={displayError ?? undefined} />
-        </div>
+        </Field>
     );
 }

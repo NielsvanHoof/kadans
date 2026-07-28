@@ -1,3 +1,4 @@
+import { Separator } from '@/components/ui/separator';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
@@ -21,12 +22,10 @@ export default function OrDivider({
                 className,
             )}
         >
-            <div
-                className="absolute inset-0 flex items-center"
+            <Separator
+                className="absolute inset-x-0 top-1/2"
                 aria-hidden="true"
-            >
-                <div className="w-full border-t border-border" />
-            </div>
+            />
             <span className="relative bg-background px-2 text-xs text-muted-foreground uppercase">
                 {label ?? t('or')}
             </span>

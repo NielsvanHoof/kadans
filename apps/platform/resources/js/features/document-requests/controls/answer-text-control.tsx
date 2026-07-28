@@ -13,6 +13,7 @@ export function AnswerTextControl({
     placeholder,
     className,
     required = true,
+    'aria-invalid': ariaInvalid,
 }: {
     id: string;
     type: QuestionnaireItemType;
@@ -20,6 +21,7 @@ export function AnswerTextControl({
     placeholder?: string;
     className?: string;
     required?: boolean;
+    'aria-invalid'?: boolean;
 }) {
     if (type === 'date') {
         return (
@@ -31,6 +33,7 @@ export function AnswerTextControl({
                 defaultValue={defaultValue}
                 autoComplete="off"
                 className={className ?? 'h-11'}
+                aria-invalid={ariaInvalid}
             />
         );
     }
@@ -47,6 +50,7 @@ export function AnswerTextControl({
                 autoComplete="off"
                 placeholder={placeholder}
                 className={className ?? 'h-11'}
+                aria-invalid={ariaInvalid}
             />
         );
     }
@@ -61,6 +65,7 @@ export function AnswerTextControl({
                 defaultValue={defaultValue}
                 placeholder={placeholder}
                 className={className}
+                aria-invalid={ariaInvalid}
             />
         );
     }
@@ -75,6 +80,7 @@ export function AnswerTextControl({
             autoComplete="off"
             placeholder={placeholder}
             className={className ?? 'h-11'}
+            aria-invalid={ariaInvalid}
         />
     );
 }

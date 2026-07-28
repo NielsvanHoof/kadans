@@ -2,8 +2,8 @@ import { Form, Link } from '@inertiajs/react';
 import ClientController from '@/actions/App/Http/Controllers/Clients/ClientController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -17,26 +17,26 @@ export default function CreateClientForm() {
     const { t } = useTranslation();
 
     return (
-        <Form
-            {...ClientController.store.form(currentWorkspace)}
-            className="mt-6 space-y-6"
-        >
+        <Form {...ClientController.store.form(currentWorkspace)}>
             {({ errors, processing }) => (
-                <>
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">{t('Name')}</Label>
+                <FieldGroup className="mt-6 gap-6">
+                    <Field data-invalid={Boolean(errors.name)}>
+                        <FieldLabel htmlFor="name">{t('Name')}</FieldLabel>
                         <Input
                             id="name"
                             name="name"
                             required
                             autoComplete="name"
                             placeholder={t('Jane Client')}
+                            aria-invalid={Boolean(errors.name)}
                         />
                         <InputError message={errors.name} />
-                    </div>
+                    </Field>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">{t('Email address')}</Label>
+                    <Field data-invalid={Boolean(errors.email)}>
+                        <FieldLabel htmlFor="email">
+                            {t('Email address')}
+                        </FieldLabel>
                         <Input
                             id="email"
                             name="email"
@@ -44,11 +44,12 @@ export default function CreateClientForm() {
                             required
                             autoComplete="email"
                             placeholder={t('jane@example.com')}
+                            aria-invalid={Boolean(errors.email)}
                         />
                         <InputError message={errors.email} />
-                    </div>
+                    </Field>
 
-                    <div className="flex items-center gap-3">
+                    <Field orientation="horizontal" className="gap-3">
                         <Button disabled={processing}>
                             {processing && <Spinner />}
                             {t('Create client')}
@@ -58,8 +59,8 @@ export default function CreateClientForm() {
                                 {t('Cancel')}
                             </Link>
                         </Button>
-                    </div>
-                </>
+                    </Field>
+                </FieldGroup>
             )}
         </Form>
     );

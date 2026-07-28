@@ -21,7 +21,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import type { AccessGrant } from '@/features/portal/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -109,7 +109,6 @@ export default function ClientAccessCard({
                             tenant: currentWorkspace,
                             dossier: dossierId,
                         })}
-                        className="space-y-3"
                     >
                         {({ processing }) => (
                             <>
@@ -124,29 +123,38 @@ export default function ClientAccessCard({
                                     name="send_invite"
                                     value={sendInvite ? '1' : '0'}
                                 />
-                                <div className="flex items-center gap-2">
-                                    <Checkbox
-                                        id="send_invite"
-                                        checked={sendInvite}
-                                        onCheckedChange={(checked) =>
-                                            setSendInvite(checked === true)
-                                        }
-                                    />
-                                    <Label htmlFor="send_invite">
-                                        {t('Email invite to :email', {
-                                            email: clientEmail,
-                                        })}
-                                    </Label>
-                                </div>
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                    variant="secondary"
-                                >
-                                    {sendInvite
-                                        ? t('Create link & email client')
-                                        : t('Create 7-day portal link')}
-                                </Button>
+                                <FieldGroup className="gap-3">
+                                    <Field
+                                        orientation="horizontal"
+                                        className="gap-2"
+                                    >
+                                        <Checkbox
+                                            id="send_invite"
+                                            checked={sendInvite}
+                                            onCheckedChange={(checked) =>
+                                                setSendInvite(checked === true)
+                                            }
+                                        />
+                                        <FieldLabel htmlFor="send_invite">
+                                            {t('Email invite to :email', {
+                                                email: clientEmail,
+                                            })}
+                                        </FieldLabel>
+                                    </Field>
+                                    <Field orientation="horizontal">
+                                        <Button
+                                            type="submit"
+                                            disabled={processing}
+                                            variant="secondary"
+                                        >
+                                            {sendInvite
+                                                ? t(
+                                                      'Create link & email client',
+                                                  )
+                                                : t('Create 7-day portal link')}
+                                        </Button>
+                                    </Field>
+                                </FieldGroup>
                             </>
                         )}
                     </Form>

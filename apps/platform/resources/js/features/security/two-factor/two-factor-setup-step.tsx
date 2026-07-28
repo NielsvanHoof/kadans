@@ -2,7 +2,14 @@ import { Check, Copy } from 'lucide-react';
 import { useCopyToClipboard } from 'usehooks-ts';
 import AlertError from '@/components/alert-error';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel } from '@/components/ui/field';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
+import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useTranslation } from '@/hooks/use-translation';
@@ -62,53 +69,57 @@ export default function TwoFactorSetupStep({
                         </div>
                     </div>
 
-                    <div className="flex w-full space-x-5">
+                    <div className="flex w-full gap-5">
                         <Button className="w-full" onClick={onNextStep}>
                             {buttonText}
                         </Button>
                     </div>
 
                     <div className="relative flex w-full items-center justify-center">
-                        <div className="absolute inset-0 top-1/2 h-px w-full bg-border" />
+                        <Separator className="absolute inset-x-0 top-1/2" />
                         <span className="relative bg-card px-2 py-1">
                             {t('or, enter the code manually')}
                         </span>
                     </div>
 
-                    <div className="flex w-full space-x-2">
-                        <Label htmlFor={manualSetupKeyId} className="sr-only">
+                    <Field>
+                        <FieldLabel
+                            htmlFor={manualSetupKeyId}
+                            className="sr-only"
+                        >
                             {t('Setup key')}
-                        </Label>
-                        <div className="flex w-full items-stretch overflow-hidden rounded-xl border border-border">
+                        </FieldLabel>
+                        <InputGroup className="h-auto min-h-9">
                             {!manualSetupKey ? (
                                 <div className="flex h-full w-full items-center justify-center bg-muted p-3">
                                     <Spinner />
                                 </div>
                             ) : (
                                 <>
-                                    <input
+                                    <InputGroupInput
                                         id={manualSetupKeyId}
                                         type="text"
                                         readOnly
                                         value={manualSetupKey}
-                                        className="h-full w-full bg-background p-3 text-foreground outline-none"
+                                        className="h-auto py-3 font-data"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => copy(manualSetupKey)}
-                                        aria-label={
-                                            copiedText === manualSetupKey
-                                                ? t('Copied')
-                                                : t('Copy setup key')
-                                        }
-                                        className="border-l border-border px-3 hover:bg-muted"
-                                    >
-                                        <IconComponent className="w-4" />
-                                    </button>
+                                    <InputGroupAddon align="inline-end">
+                                        <InputGroupButton
+                                            size="icon-sm"
+                                            onClick={() => copy(manualSetupKey)}
+                                            aria-label={
+                                                copiedText === manualSetupKey
+                                                    ? t('Copied')
+                                                    : t('Copy setup key')
+                                            }
+                                        >
+                                            <IconComponent />
+                                        </InputGroupButton>
+                                    </InputGroupAddon>
                                 </>
                             )}
-                        </div>
-                    </div>
+                        </InputGroup>
+                    </Field>
                 </>
             )}
         </>

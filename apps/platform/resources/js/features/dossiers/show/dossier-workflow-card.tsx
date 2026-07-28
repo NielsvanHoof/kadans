@@ -20,6 +20,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Field, FieldGroup } from '@/components/ui/field';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -122,19 +123,26 @@ function CompleteDossierDialog({
                     options={inlineActionOptions}
                 >
                     {({ errors, processing }) => (
-                        <>
-                            <InputError message={errors.dossier} />
-                            <DialogFooter className="gap-2">
-                                <DialogClose asChild>
-                                    <Button type="button" variant="secondary">
-                                        {t('Cancel')}
+                        <FieldGroup className="gap-4">
+                            <Field data-invalid={Boolean(errors.dossier)}>
+                                <InputError message={errors.dossier} />
+                            </Field>
+                            <Field>
+                                <DialogFooter className="gap-2">
+                                    <DialogClose asChild>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                        >
+                                            {t('Cancel')}
+                                        </Button>
+                                    </DialogClose>
+                                    <Button type="submit" disabled={processing}>
+                                        {t('Complete dossier')}
                                     </Button>
-                                </DialogClose>
-                                <Button type="submit" disabled={processing}>
-                                    {t('Complete dossier')}
-                                </Button>
-                            </DialogFooter>
-                        </>
+                                </DialogFooter>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
             </DialogContent>

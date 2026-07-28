@@ -8,8 +8,13 @@ import InputError from '@/components/input-error';
 import SortableList from '@/components/sortable/sortable-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldTitle,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import QuestionnaireItemTypeSelect from '@/features/document-requests/questionnaire-item-type-select';
@@ -129,23 +134,24 @@ export default function TemplateItemEditor({
                                             item: item.id,
                                         },
                                     )}
-                                    className="grid gap-3"
                                 >
                                     {({ errors, processing }) => (
-                                        <>
+                                        <FieldGroup className="gap-3">
                                             <ItemFields
+                                                idPrefix={`item-${item.id}`}
                                                 defaults={item}
                                                 errors={errors}
                                             />
-                                            <Button
-                                                type="submit"
-                                                size="sm"
-                                                disabled={processing}
-                                                className="w-fit"
-                                            >
-                                                {t('Save item')}
-                                            </Button>
-                                        </>
+                                            <Field orientation="horizontal">
+                                                <Button
+                                                    type="submit"
+                                                    size="sm"
+                                                    disabled={processing}
+                                                >
+                                                    {t('Save item')}
+                                                </Button>
+                                            </Field>
+                                        </FieldGroup>
                                     )}
                                 </Form>
                             ) : (
@@ -170,14 +176,15 @@ export default function TemplateItemEditor({
                         template: templateId,
                     })}
                     resetOnSuccess
-                    className="space-y-3 rounded-md border p-4"
+                    className="rounded-md border p-4"
                 >
                     {({ errors, processing }) => (
-                        <>
-                            <p className="text-sm font-medium">
-                                {t('Add item')}
-                            </p>
+                        <FieldGroup className="gap-3">
+                            <Field>
+                                <FieldTitle>{t('Add item')}</FieldTitle>
+                            </Field>
                             <ItemFields
+                                idPrefix="new-item"
                                 defaults={{
                                     type: 'file',
                                     title: '',
@@ -185,10 +192,12 @@ export default function TemplateItemEditor({
                                 }}
                                 errors={errors}
                             />
-                            <Button type="submit" disabled={processing}>
-                                {t('Add item')}
-                            </Button>
-                        </>
+                            <Field orientation="horizontal">
+                                <Button type="submit" disabled={processing}>
+                                    {t('Add item')}
+                                </Button>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
             )}
@@ -197,9 +206,11 @@ export default function TemplateItemEditor({
 }
 
 function ItemFields({
+    idPrefix,
     defaults,
     errors,
 }: {
+    idPrefix: string;
     defaults: {
         type: QuestionnaireItemType;
         title: string;
@@ -212,28 +223,37 @@ function ItemFields({
     return (
         <>
             <QuestionnaireItemTypeSelect
+                id={`${idPrefix}-type`}
                 defaultValue={defaults.type}
                 error={errors.type}
             />
-            <div className="grid gap-2">
-                <Label>{t('Title')}</Label>
+            <Field data-invalid={Boolean(errors.title)}>
+                <FieldLabel htmlFor={`${idPrefix}-title`}>
+                    {t('Title')}
+                </FieldLabel>
                 <Input
+                    id={`${idPrefix}-title`}
                     name="title"
                     required
                     defaultValue={defaults.title}
                     placeholder={t('Copy of identity document')}
+                    aria-invalid={Boolean(errors.title)}
                 />
                 <InputError message={errors.title} />
-            </div>
-            <div className="grid gap-2">
-                <Label>{t('Instructions (optional)')}</Label>
+            </Field>
+            <Field data-invalid={Boolean(errors.instructions)}>
+                <FieldLabel htmlFor={`${idPrefix}-instructions`}>
+                    {t('Instructions (optional)')}
+                </FieldLabel>
                 <Textarea
+                    id={`${idPrefix}-instructions`}
                     name="instructions"
                     rows={2}
                     defaultValue={defaults.instructions ?? ''}
+                    aria-invalid={Boolean(errors.instructions)}
                 />
                 <InputError message={errors.instructions} />
-            </div>
+            </Field>
         </>
     );
 }

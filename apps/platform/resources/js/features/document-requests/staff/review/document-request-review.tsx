@@ -13,7 +13,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
@@ -134,7 +134,6 @@ export default function DocumentRequestReview({
                             routeParameters,
                         )}
                         options={inlineActionOptions}
-                        className="space-y-4"
                     >
                         {({ errors, processing }) => (
                             <>
@@ -143,34 +142,45 @@ export default function DocumentRequestReview({
                                     name="decision"
                                     value="rejected"
                                 />
-                                <div className="grid gap-2">
-                                    <Label
-                                        htmlFor={`rejection-${documentRequest.id}`}
-                                    >
-                                        {t('Feedback for the client')}
-                                    </Label>
-                                    <Textarea
-                                        id={`rejection-${documentRequest.id}`}
-                                        name="rejection_reason"
-                                        rows={4}
-                                        required
-                                        placeholder={t(
-                                            'The document is missing page 2. Please upload the complete statement.',
+                                <FieldGroup className="gap-4">
+                                    <Field
+                                        data-invalid={Boolean(
+                                            errors.rejection_reason,
                                         )}
-                                    />
-                                    <InputError
-                                        message={errors.rejection_reason}
-                                    />
-                                </div>
-                                <DialogFooter>
-                                    <Button
-                                        type="submit"
-                                        variant="destructive"
-                                        disabled={processing}
                                     >
-                                        {t('Request changes')}
-                                    </Button>
-                                </DialogFooter>
+                                        <FieldLabel
+                                            htmlFor={`rejection-${documentRequest.id}`}
+                                        >
+                                            {t('Feedback for the client')}
+                                        </FieldLabel>
+                                        <Textarea
+                                            id={`rejection-${documentRequest.id}`}
+                                            name="rejection_reason"
+                                            rows={4}
+                                            required
+                                            placeholder={t(
+                                                'The document is missing page 2. Please upload the complete statement.',
+                                            )}
+                                            aria-invalid={Boolean(
+                                                errors.rejection_reason,
+                                            )}
+                                        />
+                                        <InputError
+                                            message={errors.rejection_reason}
+                                        />
+                                    </Field>
+                                    <Field>
+                                        <DialogFooter>
+                                            <Button
+                                                type="submit"
+                                                variant="destructive"
+                                                disabled={processing}
+                                            >
+                                                {t('Request changes')}
+                                            </Button>
+                                        </DialogFooter>
+                                    </Field>
+                                </FieldGroup>
                             </>
                         )}
                     </Form>

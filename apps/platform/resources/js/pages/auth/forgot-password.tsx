@@ -3,8 +3,8 @@ import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import StatusMessage from '@/components/status-message';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { login } from '@/routes';
@@ -31,11 +31,11 @@ export default function ForgotPassword({ status }: { status?: string }) {
             <div className="space-y-6">
                 <Form {...email.form()}>
                     {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
+                        <FieldGroup className="gap-6">
+                            <Field data-invalid={Boolean(errors.email)}>
+                                <FieldLabel htmlFor="email">
                                     {t('Email address')}
-                                </Label>
+                                </FieldLabel>
                                 <Input
                                     id="email"
                                     type="email"
@@ -54,9 +54,9 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     id="email-error"
                                     message={errors.email}
                                 />
-                            </div>
+                            </Field>
 
-                            <div className="my-6 flex items-center justify-start">
+                            <Field>
                                 <Button
                                     className="w-full"
                                     disabled={processing}
@@ -65,12 +65,12 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     {processing && <Spinner />}
                                     {t('Email password reset link')}
                                 </Button>
-                            </div>
-                        </>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
 
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
+                <div className="flex justify-center gap-1 text-center text-sm text-muted-foreground">
                     <span>{t('Or, return to')}</span>{' '}
                     <TextLink href={login()}>{t('log in')}</TextLink>
                 </div>

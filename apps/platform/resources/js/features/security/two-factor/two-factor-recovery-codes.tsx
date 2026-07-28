@@ -17,6 +17,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { regenerateRecoveryCodes } from '@/routes/two-factor';
 
@@ -176,9 +177,9 @@ export default function TwoFactorRecoveryCodes({
                                         >
                                             {RECOVERY_CODE_SKELETONS.map(
                                                 (skeletonId) => (
-                                                    <div
+                                                    <Skeleton
                                                         key={skeletonId}
-                                                        className="h-4 animate-pulse rounded bg-muted-foreground/20"
+                                                        className="h-4"
                                                         aria-hidden="true"
                                                     />
                                                 ),

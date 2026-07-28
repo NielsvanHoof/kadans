@@ -3,8 +3,13 @@ import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 import { store, index as supportIndex } from '@/routes/platform/support';
 
@@ -52,7 +57,6 @@ export default function PlatformSupport({
                 />
 
                 <form
-                    className="flex flex-col gap-2 sm:flex-row sm:items-end"
                     onSubmit={(event) => {
                         event.preventDefault();
                         router.get(
@@ -66,22 +70,30 @@ export default function PlatformSupport({
                         );
                     }}
                 >
-                    <div className="flex-1 space-y-2">
-                        <Label htmlFor="search">{t('Search firms')}</Label>
-                        <Input
-                            id="search"
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder={t('Name or slug')}
-                        />
-                    </div>
-                    <Button type="submit" variant="outline">
-                        {t('Search')}
-                    </Button>
+                    <FieldGroup className="gap-2 sm:flex-row sm:items-end">
+                        <Field className="flex-1">
+                            <FieldLabel htmlFor="search">
+                                {t('Search firms')}
+                            </FieldLabel>
+                            <Input
+                                id="search"
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                placeholder={t('Name or slug')}
+                            />
+                        </Field>
+                        <Field orientation="horizontal" className="sm:w-auto">
+                            <Button type="submit" variant="outline">
+                                {t('Search')}
+                            </Button>
+                        </Field>
+                    </FieldGroup>
                 </form>
 
-                <div className="space-y-2">
-                    <Label htmlFor="reason">{t('Reason')}</Label>
+                <Field>
+                    <FieldLabel htmlFor="reason">{t('Reason')}</FieldLabel>
                     <Input
                         id="reason"
                         value={reason}
@@ -89,10 +101,10 @@ export default function PlatformSupport({
                         placeholder={t('E.g. Investigating ticket #123')}
                         required
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <FieldDescription>
                         {t('Required for audit. Describe why you need access.')}
-                    </p>
-                </div>
+                    </FieldDescription>
+                </Field>
 
                 <ul className="divide-y rounded-lg border">
                     {tenants.length === 0 ? (

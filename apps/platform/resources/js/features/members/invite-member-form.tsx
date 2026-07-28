@@ -9,11 +9,12 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -60,15 +61,14 @@ export default function InviteMemberForm({
             <CardContent>
                 <Form
                     {...WorkspaceMemberController.store.form(currentWorkspace)}
-                    className="grid gap-4 sm:grid-cols-[1fr_12rem_auto] sm:items-end"
                     resetOnSuccess
                 >
                     {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
+                        <FieldGroup className="gap-4 sm:grid sm:grid-cols-[1fr_12rem_auto] sm:items-end">
+                            <Field data-invalid={Boolean(errors.email)}>
+                                <FieldLabel htmlFor="email">
                                     {t('Email address')}
-                                </Label>
+                                </FieldLabel>
                                 <Input
                                     id="email"
                                     type="email"
@@ -76,39 +76,52 @@ export default function InviteMemberForm({
                                     required
                                     autoComplete="email"
                                     placeholder={t('email@example.com')}
+                                    aria-invalid={Boolean(errors.email)}
                                 />
                                 <InputError message={errors.email} />
-                            </div>
+                            </Field>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="role">{t('Role')}</Label>
+                            <Field data-invalid={Boolean(errors.role)}>
+                                <FieldLabel htmlFor="role">
+                                    {t('Role')}
+                                </FieldLabel>
                                 <Select
                                     required
                                     name="role"
                                     defaultValue={defaultRole}
                                 >
-                                    <SelectTrigger id="role" className="w-full">
+                                    <SelectTrigger
+                                        id="role"
+                                        className="w-full"
+                                        aria-invalid={Boolean(errors.role)}
+                                    >
                                         <SelectValue placeholder={t('Role')} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
-                                        {assignableRoleOptions.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
+                                        <SelectGroup>
+                                            {assignableRoleOptions.map(
+                                                (option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                                 <InputError message={errors.role} />
-                            </div>
+                            </Field>
 
-                            <Button type="submit" disabled={processing}>
-                                {processing && <Spinner />}
-                                {t('Send invite')}
-                            </Button>
-                        </>
+                            <Field>
+                                <Button type="submit" disabled={processing}>
+                                    {processing && <Spinner />}
+                                    {t('Send invite')}
+                                </Button>
+                            </Field>
+                        </FieldGroup>
                     )}
                 </Form>
             </CardContent>

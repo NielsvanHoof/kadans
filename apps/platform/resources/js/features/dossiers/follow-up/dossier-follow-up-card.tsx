@@ -9,6 +9,7 @@ import DossierReminderController from '@/actions/App/Http/Controllers/Dossiers/D
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Field, FieldGroup } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
@@ -89,17 +90,26 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                             })}
                         >
                             {({ errors, processing }) => (
-                                <div className="grid gap-1">
-                                    <Button disabled={processing}>
-                                        {processing ? (
-                                            <Spinner />
-                                        ) : (
-                                            <Send aria-hidden="true" />
-                                        )}
-                                        {t('Send reminder')}
-                                    </Button>
-                                    <InputError message={errors.dossier} />
-                                </div>
+                                <FieldGroup className="gap-1">
+                                    <Field
+                                        data-invalid={Boolean(errors.dossier)}
+                                    >
+                                        <Button
+                                            disabled={processing}
+                                            aria-invalid={Boolean(
+                                                errors.dossier,
+                                            )}
+                                        >
+                                            {processing ? (
+                                                <Spinner />
+                                            ) : (
+                                                <Send aria-hidden="true" />
+                                            )}
+                                            {t('Send reminder')}
+                                        </Button>
+                                        <InputError message={errors.dossier} />
+                                    </Field>
+                                </FieldGroup>
                             )}
                         </Form>
                     ) : (
