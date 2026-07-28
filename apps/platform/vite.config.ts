@@ -16,11 +16,6 @@ export default defineConfig({
                     weights: [400, 500, 600],
                     optimizedFallbacks: false,
                 }),
-                // Display serif — page heroes and portal titles (ledger/document voice).
-                bunny('Source Serif 4', {
-                    weights: [600, 700],
-                    optimizedFallbacks: false,
-                }),
                 // Data/meta face for timestamps, counters, and dense document metadata.
                 bunny('IBM Plex Mono', {
                     weights: [400, 500],

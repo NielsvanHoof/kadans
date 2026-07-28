@@ -8,13 +8,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* UI sans — restrained. Display serif carries brand personality. */
+    /* UI sans for body and headings — hierarchy comes from size/weight. */
     --font-sans:
         'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-display:
-        'Source Serif 4', 'Iowan Old Style', 'Palatino Linotype',
-        'Book Antiqua', Palatino, Georgia, serif;
+        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-data:
         'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
         'Liberation Mono', 'Courier New', monospace;
@@ -195,7 +195,7 @@
         outline: none;
     }
 
-    /* Display face for page heroes and marketing moments — used with restraint. */
+    /* Heading face — same stack as body; size/weight provide hierarchy. */
     .font-display {
         font-family: var(--font-display);
     }
