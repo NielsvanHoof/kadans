@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Actions\Dossiers;
 
 use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Pipelines\PipelineStateAction;
 use App\Enums\AuditEvent;
 use App\Enums\DossierExportStatus;
+use App\Enums\PipelineStepOperation;
 use App\Models\DossierExport;
+use App\Models\Pipeline;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,17 +20,23 @@ use ZipArchive;
 
 final class GenerateDossierExportAction
 {
-    public function __construct(private readonly LogAuditActivityAction $logAuditActivity) {}
+    public function __construct(
+        private readonly LogAuditActivityAction $logAuditActivity,
+        private readonly PipelineStateAction $pipelineState,
+    ) {}
 
-    public function handle(int $exportId): void
+    public function handle(int $pipelineId): void
     {
-        $export = DossierExport::query()
-            ->with([
-                'dossier.client',
-                'dossier.documentRequests.uploadedDocument',
-                'dossier.documentRequests.reviewedBy',
-            ])
-            ->findOrFail($exportId);
+        $pipeline = Pipeline::query()->with([
+            'pipelineable.dossier.client',
+            'pipelineable.dossier.documentRequests.uploadedDocument',
+            'pipelineable.dossier.documentRequests.reviewedBy',
+        ])->findOrFail($pipelineId);
+        $export = $pipeline->pipelineable;
+
+        if (! $export instanceof DossierExport) {
+            throw new RuntimeException('Dossier export pipeline subject is invalid.');
+        }
 
         if ($export->status === DossierExportStatus::Completed) {
             return;
@@ -62,7 +71,10 @@ final class GenerateDossierExportAction
         );
 
         try {
+            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'build_archive');
             $this->buildArchive($temporaryPath, $export);
+            $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'build_archive');
+            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'store_archive');
 
             $stream = fopen($temporaryPath, 'rb');
 
@@ -97,6 +109,8 @@ final class GenerateDossierExportAction
                 ],
                 includeRequestContext: false,
             );
+
+            $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'store_archive');
         } catch (Throwable $exception) {
             if (Storage::disk($disk)->exists($archivePath)) {
                 Storage::disk($disk)->delete($archivePath);

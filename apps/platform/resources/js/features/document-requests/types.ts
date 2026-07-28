@@ -1,3 +1,5 @@
+import type { Pipeline } from '@/features/dossiers/types';
+
 /**
  * Frontend mirror of the backend QuestionnaireItemType enum.
  * Keeping this union explicit makes every type-specific UI exhaustive.
@@ -29,6 +31,7 @@ export type UploadedDocument = {
     uploaded_at: string;
     processing_status: DocumentProcessingStatus;
     processing_error: string | null;
+    pipeline: Pipeline | null;
 };
 
 /** Parsed Bedrock-structured OCR payload on the extraction page. */

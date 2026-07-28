@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Ocr;
 
+use App\Actions\Pipelines\PipelineStateAction;
 use App\Enums\DocumentProcessingStatus;
+use App\Enums\PipelineStepOperation;
+use App\Models\Pipeline;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
 use App\Tenancy\TenantContext;
@@ -20,6 +23,7 @@ final class FailTextractExtractionAction
 {
     public function __construct(
         private readonly MarkTextractExtractionFailedAction $markTextractExtractionFailed,
+        private readonly PipelineStateAction $pipelineState,
         private readonly TenantContext $tenantContext,
     ) {}
 
@@ -51,6 +55,13 @@ final class FailTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $exception, $jobId): bool {
+            $pipelineId = $document->pipelines()
+                ->toBase()
+                ->where('provider_job_id', $jobId)
+                ->orderByDesc('id')
+                ->value('id');
+            $pipeline = is_numeric($pipelineId) ? Pipeline::query()->find((int) $pipelineId) : null;
+
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
                 DocumentProcessingStatus::Failed,
@@ -70,6 +81,16 @@ final class FailTextractExtractionAction
                 $error,
                 'RESULT_PROCESSING_FAILED',
             );
+
+            if ($pipeline !== null) {
+                $this->pipelineState->handle(
+                    $pipeline,
+                    PipelineStepOperation::Fail,
+                    $pipeline->current_stage,
+                    errorCode: 'result_processing_failed',
+                    errorMessage: $error,
+                );
+            }
 
             return true;
         });

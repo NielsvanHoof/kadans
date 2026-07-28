@@ -11,11 +11,13 @@ use App\Data\Dossiers\DossierReviewSummaryData;
 use App\Data\Dossiers\DossierShowData;
 use App\Data\Dossiers\StaffDocumentRequestData;
 use App\Data\Dossiers\StaffUploadedDocumentData;
+use App\Data\Pipelines\PipelineData;
 use App\Data\Shared\PersonOptionData;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
 use App\Models\Client;
 use App\Models\Dossier;
+use App\Models\Pipeline;
 use App\Models\User;
 use RuntimeException;
 
@@ -28,9 +30,10 @@ final class FetchDossierShowQuery
             'responsibleUser:id,name,email',
             'documentRequests' => fn ($query) => $query
                 ->with(['uploadedDocument', 'reviewedBy:id,name'])
+                ->with('uploadedDocument.pipelines.steps')
                 ->oldest('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
-            'exports' => fn ($query) => $query->latest(),
+            'exports' => fn ($query) => $query->with('pipeline.steps')->latest(),
         ]);
 
         $client = $this->resolveClient($dossier);
@@ -52,6 +55,11 @@ final class FetchDossierShowQuery
         foreach ($dossier->documentRequests as $documentRequest) {
             $uploaded = $documentRequest->uploadedDocument;
             $reviewer = $documentRequest->reviewedBy;
+            $latestPipeline = null;
+
+            if ($uploaded instanceof \App\Models\UploadedDocument && $uploaded->relationLoaded('pipelines')) {
+                $latestPipeline = $uploaded->pipelines->sortByDesc('id')->first();
+            }
 
             $documentRequestRows[] = new StaffDocumentRequestData(
                 id: $documentRequest->id,
@@ -73,6 +81,9 @@ final class FetchDossierShowQuery
                     uploadedAt: $uploaded->uploaded_at->toIso8601String(),
                     processingStatus: $uploaded->processing_status->value,
                     processingError: $uploaded->processing_error,
+                    pipeline: $latestPipeline instanceof Pipeline
+                        ? PipelineData::fromModel($latestPipeline)
+                        : null,
                 ),
             );
         }

@@ -93,7 +93,8 @@ final readonly class DossierShowData
      *         created_at: string,
      *         expires_at: string|null,
      *         download_url: string|null,
-     *         error: string|null
+     *         error: string|null,
+     *         pipeline: array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, steps: list<array{key: string, status: string, attempts: int, started_at: string|null, last_activity_at: string|null, completed_at: string|null, error_code: string|null, error_message: string|null}>}|null
      *     }>
      * }
      */

@@ -5,31 +5,46 @@ declare(strict_types=1);
 namespace App\Actions\Dossiers;
 
 use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Pipelines\CreatePipelineAction;
 use App\Enums\AuditEvent;
+use App\Enums\PipelineType;
 use App\Models\Dossier;
 use App\Models\DossierExport;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 final class CreateDossierExportAction
 {
-    public function __construct(private readonly LogAuditActivityAction $logAuditActivity) {}
+    public function __construct(
+        private readonly LogAuditActivityAction $logAuditActivity,
+        private readonly CreatePipelineAction $createPipeline,
+    ) {}
 
     public function handle(Dossier $dossier, User $requestedBy): DossierExport
     {
-        $export = $dossier->exports()->create([
-            'requested_by' => $requestedBy->id,
-        ]);
+        return DB::transaction(function () use ($dossier, $requestedBy): DossierExport {
+            $export = $dossier->exports()->create([
+                'requested_by' => $requestedBy->id,
+            ]);
 
-        $this->logAuditActivity->handle(
-            AuditEvent::DossierExportRequested,
-            $export,
-            [
-                'dossier_id' => $dossier->id,
-                'title' => $dossier->title,
-            ],
-            $requestedBy,
-        );
+            $this->createPipeline->handle(
+                $export,
+                PipelineType::DossierExport,
+                $requestedBy,
+                ['dossier_id' => $dossier->id],
+            );
 
-        return $export;
+            $this->logAuditActivity->handle(
+                AuditEvent::DossierExportRequested,
+                $export,
+                [
+                    'dossier_id' => $dossier->id,
+                    'title' => $dossier->title,
+                ],
+                $requestedBy,
+            );
+
+            return $export->load('pipeline');
+        });
     }
 }

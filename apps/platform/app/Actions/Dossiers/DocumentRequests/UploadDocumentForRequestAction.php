@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Dossiers\DocumentRequests;
 
+use App\Actions\Pipelines\CreatePipelineAction;
 use App\Enums\DocumentProcessingStatus;
+use App\Enums\PipelineType;
 use App\Enums\QuestionnaireItemType;
 use App\Enums\SubmissionContext;
 use App\Jobs\ProcessUploadedDocumentJob;
@@ -29,6 +31,7 @@ final class UploadDocumentForRequestAction
     public function __construct(
         private readonly FilesystemManager $filesystems,
         private readonly DocumentRequestTransitions $documentRequestTransitions,
+        private readonly CreatePipelineAction $createPipeline,
     ) {}
 
     /**
@@ -68,6 +71,7 @@ final class UploadDocumentForRequestAction
 
         /** @var array{disk: string, path: string}|null $replacedFile */
         $replacedFile = null;
+        $pipeline = null;
 
         try {
             $uploadedDocument = DB::transaction(function () use (
@@ -78,6 +82,7 @@ final class UploadDocumentForRequestAction
                 $sizeBytes,
                 $afterPersist,
                 $context,
+                &$pipeline,
                 &$replacedFile,
             ): UploadedDocument {
                 $documentRequestQuery = DocumentRequest::query()
@@ -127,6 +132,15 @@ final class UploadDocumentForRequestAction
                     $afterPersist($uploadedDocument, $lockedDocumentRequest);
                 }
 
+                $pipeline = $this->createPipeline->handle(
+                    $uploadedDocument,
+                    PipelineType::OcrDocument,
+                    metadata: [
+                        'source' => $context->value,
+                        'original_filename' => $uploadedDocument->original_filename,
+                    ],
+                );
+
                 return $uploadedDocument;
             });
         } catch (Throwable $exception) {
@@ -147,7 +161,11 @@ final class UploadDocumentForRequestAction
             );
         }
 
-        ProcessUploadedDocumentJob::dispatch($uploadedDocument->id, $uploadedDocument->path);
+        if ($pipeline === null) {
+            throw new RuntimeException('Failed to create the document processing pipeline.');
+        }
+
+        ProcessUploadedDocumentJob::dispatch($uploadedDocument->id, $uploadedDocument->path, $pipeline->id);
 
         return $uploadedDocument;
     }

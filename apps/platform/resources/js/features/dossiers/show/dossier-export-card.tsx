@@ -10,6 +10,10 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { Dossier } from '@/features/dossiers/types';
+import {
+    pipelineStepLabel,
+    pipelineStepStatusLabel,
+} from '@/features/pipelines/status/pipeline-status';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
@@ -58,47 +62,77 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
                         {dossier.exports.map((exportItem) => (
                             <div
                                 key={exportItem.id}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm"
+                                className="px-4 py-3 text-sm"
                             >
-                                <div>
-                                    <p className="font-medium">
-                                        {t(
-                                            exportItem.status === 'completed'
-                                                ? 'Ready'
-                                                : exportItem.status === 'failed'
-                                                  ? 'Failed'
-                                                  : 'Preparing',
-                                        )}
-                                    </p>
-                                    <p className="text-muted-foreground">
-                                        {t('Requested :datetime', {
-                                            datetime: formatDateTime(
-                                                exportItem.created_at,
-                                                locale,
-                                            ),
-                                        })}
-                                        {exportItem.expires_at
-                                            ? ` · ${t('Expires :datetime', {
-                                                  datetime: formatDateTime(
-                                                      exportItem.expires_at,
-                                                      locale,
-                                                  ),
-                                              })}`
-                                            : null}
-                                    </p>
-                                    {exportItem.error ? (
-                                        <p className="text-destructive">
-                                            {exportItem.error}
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p className="font-medium">
+                                            {t(
+                                                exportItem.status ===
+                                                    'completed'
+                                                    ? 'Ready'
+                                                    : exportItem.status ===
+                                                        'failed'
+                                                      ? 'Failed'
+                                                      : 'Preparing',
+                                            )}
                                         </p>
+                                        <p className="text-muted-foreground">
+                                            {t('Requested :datetime', {
+                                                datetime: formatDateTime(
+                                                    exportItem.created_at,
+                                                    locale,
+                                                ),
+                                            })}
+                                            {exportItem.expires_at
+                                                ? ` · ${t('Expires :datetime', {
+                                                      datetime: formatDateTime(
+                                                          exportItem.expires_at,
+                                                          locale,
+                                                      ),
+                                                  })}`
+                                                : null}
+                                        </p>
+                                        {exportItem.error ? (
+                                            <p className="text-destructive">
+                                                {exportItem.error}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                    {exportItem.download_url ? (
+                                        <Button
+                                            asChild
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <a href={exportItem.download_url}>
+                                                <Download aria-hidden="true" />
+                                                {t('Download')}
+                                            </a>
+                                        </Button>
                                     ) : null}
                                 </div>
-                                {exportItem.download_url ? (
-                                    <Button asChild variant="outline" size="sm">
-                                        <a href={exportItem.download_url}>
-                                            <Download aria-hidden="true" />
-                                            {t('Download')}
-                                        </a>
-                                    </Button>
+                                {exportItem.pipeline ? (
+                                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                        {exportItem.pipeline.steps.map(
+                                            (step) => (
+                                                <span
+                                                    key={step.key}
+                                                    className="rounded-full border px-2 py-1"
+                                                >
+                                                    {pipelineStepLabel(
+                                                        step.key,
+                                                        t,
+                                                    )}
+                                                    :{' '}
+                                                    {pipelineStepStatusLabel(
+                                                        step.status,
+                                                        t,
+                                                    )}
+                                                </span>
+                                            ),
+                                        )}
+                                    </div>
                                 ) : null}
                             </div>
                         ))}

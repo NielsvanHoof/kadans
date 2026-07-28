@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Console\Commands\Dossiers\SendScheduledDossierRemindersCommand;
+use App\Console\Commands\Pipelines\MonitorPipelinesCommand;
 use App\Models\ClientAccessGrant;
 use Illuminate\Support\Facades\Schedule;
 use Spatie\Health\Commands\DispatchQueueCheckJobsCommand;
@@ -16,6 +17,10 @@ Schedule::command(RunHealthChecksCommand::class)->everyMinute()->withoutOverlapp
 Schedule::command(SendScheduledDossierRemindersCommand::class)
     ->hourly()
     ->onOneServer()
+    ->withoutOverlapping();
+
+Schedule::command(MonitorPipelinesCommand::class)
+    ->everyFiveMinutes()
     ->withoutOverlapping();
 
 Schedule::command('queue:prune-failed', [

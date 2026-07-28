@@ -1,4 +1,8 @@
 import type { DocumentRequest } from '@/features/document-requests/types';
+import type {
+    PipelineStatus,
+    PipelineStepStatus,
+} from '@/features/pipelines/types';
 import type { AccessGrant } from '../portal/types';
 
 export type DossierStatus =
@@ -41,6 +45,28 @@ export type DossierExport = {
     expires_at: string | null;
     download_url: string | null;
     error: string | null;
+    pipeline: Pipeline | null;
+};
+
+export type Pipeline = {
+    id: number;
+    type: string;
+    status: PipelineStatus;
+    current_stage: string | null;
+    attempt_number: number;
+    last_activity_at: string | null;
+    steps: PipelineStep[];
+};
+
+export type PipelineStep = {
+    key: string;
+    status: PipelineStepStatus;
+    attempts: number;
+    started_at: string | null;
+    last_activity_at: string | null;
+    completed_at: string | null;
+    error_code: string | null;
+    error_message: string | null;
 };
 
 /** Compact dossier row for index / dashboard lists. */

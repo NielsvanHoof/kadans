@@ -5,6 +5,7 @@ import {
     Images,
     LayoutGrid,
     LifeBuoy,
+    ListChecks,
     ScrollText,
     UserPlus,
     Users,
@@ -31,6 +32,7 @@ import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
 import { index as membersIndex } from '@/routes/workspaces/members';
+import { index as pipelineIndex } from '@/routes/workspaces/pipelines';
 import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
@@ -38,6 +40,7 @@ export function AppSidebar() {
     const {
         current_firm: currentFirm,
         can_manage_members: canManageMembers,
+        can_view_pipelines: canViewPipelines,
         auth,
     } = usePage().props;
     const { t } = useTranslation();
@@ -97,6 +100,15 @@ export function AppSidebar() {
                       href: activityIndex(currentFirm),
                       icon: ScrollText,
                   },
+                  ...(canViewPipelines
+                      ? [
+                            {
+                                title: t('Pipelines'),
+                                href: pipelineIndex(currentFirm),
+                                icon: ListChecks,
+                            },
+                        ]
+                      : []),
               ]
             : []),
     ];

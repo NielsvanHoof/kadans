@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Retention;
 
+use App\Actions\Pipelines\DeletePipelinesForSubjectsAction;
 use App\Models\Dossier;
 use App\Models\DossierExport;
 use App\Models\UploadedDocument;
@@ -15,6 +16,7 @@ final class PurgeExpiredDossierAction
     public function __construct(
         private readonly DeleteStoredDocumentFilesAction $deleteStoredDocumentFiles,
         private readonly DeleteStoredDossierExportFilesAction $deleteStoredDossierExportFiles,
+        private readonly DeletePipelinesForSubjectsAction $deletePipelinesForSubjects,
         private readonly PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
     ) {}
 
@@ -51,6 +53,10 @@ final class PurgeExpiredDossierAction
 
         return DB::transaction(function () use ($dossier, $uploadedDocuments, $dossierExports): array {
             $activityRowsDeleted = $this->purgeSubjectActivityLog->handle($dossier);
+            $this->deletePipelinesForSubjects->handle([
+                ...$uploadedDocuments->all(),
+                ...$dossierExports->all(),
+            ]);
 
             $dossier->disableLogging();
             $dossier->forceDelete();

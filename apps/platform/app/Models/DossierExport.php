@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -61,6 +62,14 @@ final class DossierExport extends Model
     public function requestedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    /**
+     * @return MorphOne<Pipeline, $this>
+     */
+    public function pipeline(): MorphOne
+    {
+        return $this->morphOne(Pipeline::class, 'pipelineable');
     }
 
     public function isDownloadable(): bool

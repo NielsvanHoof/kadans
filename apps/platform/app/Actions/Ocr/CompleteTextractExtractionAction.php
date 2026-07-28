@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Actions\Ocr;
 
 use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Pipelines\PipelineStateAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
+use App\Enums\PipelineStepOperation;
+use App\Models\Pipeline;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
 use App\Services\Ocr\TextractExtractionPipeline;
@@ -26,6 +29,7 @@ final class CompleteTextractExtractionAction
         private readonly TextractExtractionPipeline $extractionPipeline,
         private readonly MarkTextractExtractionFailedAction $markTextractExtractionFailed,
         private readonly LogAuditActivityAction $logAuditActivity,
+        private readonly PipelineStateAction $pipelineState,
         private readonly TenantContext $tenantContext,
     ) {}
 
@@ -91,6 +95,13 @@ final class CompleteTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
+            $pipelineId = $document->pipelines()
+                ->toBase()
+                ->where('provider_job_id', $jobId)
+                ->orderByDesc('id')
+                ->value('id');
+            $pipeline = is_numeric($pipelineId) ? Pipeline::query()->find((int) $pipelineId) : null;
+
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
                 DocumentProcessingStatus::Failed,
@@ -113,6 +124,11 @@ final class CompleteTextractExtractionAction
             ]);
 
             if ($status === 'SUCCEEDED') {
+                if ($pipeline !== null) {
+                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
+                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
+                }
+
                 $startedAt = hrtime(true);
                 $extractedJson = $this->extractionPipeline->run($jobId, $document);
                 $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
@@ -141,6 +157,10 @@ final class CompleteTextractExtractionAction
                 }
 
                 $document->refresh();
+
+                if ($pipeline !== null) {
+                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+                }
 
                 $this->logAuditActivity->handle(
                     AuditEvent::DocumentProcessingCompleted,
@@ -171,6 +191,16 @@ final class CompleteTextractExtractionAction
                     : "Textract job reported {$status}.";
 
                 $this->markTextractExtractionFailed->handle($document, $jobId, $error, $status);
+
+                if ($pipeline !== null) {
+                    $this->pipelineState->handle(
+                        $pipeline,
+                        PipelineStepOperation::Fail,
+                        'provider_processing',
+                        errorCode: 'textract_'.$status,
+                        errorMessage: $error,
+                    );
+                }
 
                 return true;
             }

@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Pipelines\PipelineStateAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
+use App\Enums\OcrProcessingOutcome;
+use App\Enums\PipelineStepOperation;
+use App\Models\Pipeline;
 use App\Models\UploadedDocument;
 use App\Services\Ocr\OcrOrchestrator;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -45,19 +49,23 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
      */
     public array $backoff = [10, 30, 60];
 
-    public function __construct(public int $uploadedDocumentId, ?string $expectedPath = null)
-    {
+    public function __construct(
+        public int $uploadedDocumentId,
+        ?string $expectedPath = null,
+        public ?int $pipelineId = null,
+    ) {
         $this->expectedPath = $expectedPath;
     }
 
     public function uniqueId(): string
     {
-        return "{$this->uploadedDocumentId}:".hash('sha256', $this->expectedPath ?? 'legacy');
+        return "{$this->uploadedDocumentId}:{$this->pipelineId}:".hash('sha256', $this->expectedPath ?? 'legacy');
     }
 
     public function handle(
         OcrOrchestrator $ocrOrchestrator,
         LogAuditActivityAction $logAuditActivity,
+        ?PipelineStateAction $pipelineState = null,
     ): void {
         $document = UploadedDocument::query()->findOrFail($this->uploadedDocumentId);
 
@@ -91,7 +99,17 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         ]);
 
         try {
-            $ocrOrchestrator->startProcessing($claimed);
+            $pipeline = $this->resolvePipeline();
+
+            if ($pipeline instanceof Pipeline && $pipelineState instanceof PipelineStateAction) {
+                $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'submit');
+            }
+
+            $outcome = $ocrOrchestrator->startProcessing($claimed);
+
+            if ($pipeline instanceof Pipeline && $pipelineState instanceof PipelineStateAction) {
+                $this->recordOutcome($pipeline, $outcome, $claimed, $pipelineState);
+            }
         } catch (Throwable $exception) {
             // Let the queue retry until tries are exhausted.
             if ($this->attempts() < $this->tries) {
@@ -148,6 +166,62 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 
             throw $exception;
         }
+    }
+
+    public function failed(
+        Throwable $exception,
+        ?PipelineStateAction $pipelineState = null,
+    ): void {
+        $pipeline = $this->resolvePipeline();
+
+        if (
+            ! $pipeline instanceof Pipeline
+            || ! $pipelineState instanceof PipelineStateAction
+            || $pipeline->status->isTerminal()
+        ) {
+            return;
+        }
+
+        $pipelineState->handle(
+            $pipeline,
+            PipelineStepOperation::Fail,
+            $pipeline->current_stage,
+            $exception,
+            errorCode: 'ocr_job_failed',
+        );
+    }
+
+    private function resolvePipeline(): ?Pipeline
+    {
+        if ($this->pipelineId === null) {
+            return null;
+        }
+
+        return Pipeline::query()->find($this->pipelineId);
+    }
+
+    private function recordOutcome(
+        Pipeline $pipeline,
+        OcrProcessingOutcome $outcome,
+        UploadedDocument $document,
+        PipelineStateAction $pipelineState,
+    ): void {
+        $pipeline->forceFill([
+            'provider' => (string) config('ocr.driver'),
+            'provider_job_id' => $document->textract_job_id,
+        ])->saveQuietly();
+
+        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
+
+        if ($outcome === OcrProcessingOutcome::Deferred) {
+            $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'provider_processing');
+
+            return;
+        }
+
+        $pipelineState->handle($pipeline, PipelineStepOperation::Skip, 'provider_processing');
+        $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
+        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
     }
 
     /**

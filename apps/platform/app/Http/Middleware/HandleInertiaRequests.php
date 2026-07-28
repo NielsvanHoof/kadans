@@ -161,6 +161,13 @@ final class HandleInertiaRequests extends Middleware
                     && $tenant instanceof Tenant
                     && $user->hasTenantPermission(Permission::ManageMembers, $tenant);
             },
+            'can_view_pipelines' => function () use ($user): bool {
+                $tenant = Tenant::current();
+
+                return $user instanceof User
+                    && $tenant instanceof Tenant
+                    && $user->hasTenantPermission(Permission::ViewAuditLog, $tenant);
+            },
             // Staff bell inbox — deferred so non-bell pages stay cheap.
             'notifications' => (function () use ($user) {
                 $tenant = Tenant::current();

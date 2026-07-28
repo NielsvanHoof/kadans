@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\Dossiers\GenerateDossierExportJob;
 use App\Models\Dossier;
 use App\Models\DossierExport;
+use App\Models\Pipeline;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -35,7 +36,13 @@ final class DossierExportController extends Controller
         }
 
         $export = $createDossierExport->handle($dossier, $user);
-        GenerateDossierExportJob::dispatch($export->id)->afterCommit();
+        $pipeline = $export->pipeline;
+
+        if (! $pipeline instanceof Pipeline) {
+            abort(HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        GenerateDossierExportJob::dispatch($pipeline->id)->afterCommit();
 
         Inertia::flash('toast', [
             'type' => 'success',

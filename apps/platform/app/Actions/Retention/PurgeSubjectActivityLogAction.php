@@ -8,6 +8,7 @@ use App\Models\Activity;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\DossierExport;
+use App\Models\Pipeline;
 use App\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Model;
 
@@ -57,6 +58,35 @@ final class PurgeSubjectActivityLogAction
             $deletedCount += Activity::query()
                 ->where('subject_type', DossierExport::class)
                 ->where('subject_id', $exportId)
+                ->delete();
+        }
+
+        $pipelineQuery = Pipeline::query();
+        $pipelineIds = $pipelineQuery->getQuery()
+            ->where(function ($query) use ($dossier, $uploadedDocumentIds, $exportIds): void {
+                $query
+                    ->where(function ($query) use ($dossier): void {
+                        $query->where('pipelineable_type', Dossier::class)
+                            ->where('pipelineable_id', $dossier->id);
+                    })
+                    ->orWhere(function ($query) use ($uploadedDocumentIds, $exportIds): void {
+                        $query
+                            ->where(function ($query) use ($uploadedDocumentIds): void {
+                                $query->where('pipelineable_type', UploadedDocument::class)
+                                    ->whereIn('pipelineable_id', $uploadedDocumentIds);
+                            })
+                            ->orWhere(function ($query) use ($exportIds): void {
+                                $query->where('pipelineable_type', DossierExport::class)
+                                    ->whereIn('pipelineable_id', $exportIds);
+                            });
+                    });
+            })
+            ->pluck('id');
+
+        foreach ($pipelineIds as $pipelineId) {
+            $deletedCount += Activity::query()
+                ->where('subject_type', Pipeline::class)
+                ->where('subject_id', $pipelineId)
                 ->delete();
         }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Queries\Dossiers;
 
 use App\Contracts\Ocr\DocumentExtraction;
+use App\Data\Pipelines\PipelineData;
 use App\Models\UploadedDocument;
 use JsonException;
 
@@ -31,6 +32,7 @@ final class FetchUploadedDocumentShowQuery
      *         uploaded_at: string,
      *         processing_status: string,
      *         processing_error: string|null,
+     *         pipeline: array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, steps: list<array{key: string, status: string, attempts: int, started_at: string|null, last_activity_at: string|null, completed_at: string|null, error_code: string|null, error_message: string|null}>}|null,
      *         extraction: DocumentExtractionPayload|null,
      *         raw_json: string|null
      *     },
@@ -44,6 +46,7 @@ final class FetchUploadedDocumentShowQuery
         $uploadedDocument->load([
             'documentRequest:id,dossier_id,title,tenant_id',
             'documentRequest.dossier:id,title,tenant_id',
+            'pipelines.steps',
         ]);
 
         $documentRequest = $uploadedDocument->documentRequest;
@@ -57,6 +60,7 @@ final class FetchUploadedDocumentShowQuery
                 'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
                 'processing_status' => $uploadedDocument->processing_status->value,
                 'processing_error' => $uploadedDocument->processing_error,
+                'pipeline' => $this->latestPipeline($uploadedDocument),
                 'extraction' => $this->parseExtraction($uploadedDocument->extracted_text),
                 'raw_json' => $uploadedDocument->extracted_text,
             ],
@@ -70,6 +74,16 @@ final class FetchUploadedDocumentShowQuery
             ],
             'can_download' => request()->user()?->can('download', $uploadedDocument) ?? false,
         ];
+    }
+
+    /**
+     * @return array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, steps: list<array{key: string, status: string, attempts: int, started_at: string|null, last_activity_at: string|null, completed_at: string|null, error_code: string|null, error_message: string|null}>}|null
+     */
+    private function latestPipeline(UploadedDocument $uploadedDocument): ?array
+    {
+        $pipeline = $uploadedDocument->pipelines->sortByDesc('id')->first();
+
+        return $pipeline === null ? null : PipelineData::fromModel($pipeline)->toArray();
     }
 
     /**

@@ -10,6 +10,8 @@ use App\Jobs\ProcessUploadedDocumentJob;
 use App\Models\Client;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
+use App\Models\Pipeline;
+use App\Models\UploadedDocument;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,6 +52,10 @@ test('uploading a document dispatches the mock OCR processing job', function () 
     );
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending);
+    expect(Pipeline::query()
+        ->where('pipelineable_type', UploadedDocument::class)
+        ->where('pipelineable_id', $uploaded->id)
+        ->sole()->type->value)->toBe('ocr_document');
 
     Queue::assertPushed(ProcessUploadedDocumentJob::class, function (ProcessUploadedDocumentJob $job) use ($uploaded): bool {
         return $job->uploadedDocumentId === $uploaded->id;

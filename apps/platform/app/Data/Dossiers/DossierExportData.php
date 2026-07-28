@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\Dossiers;
 
+use App\Data\Pipelines\PipelineData;
 use App\Enums\DossierExportStatus;
 use App\Models\DossierExport;
 use App\Models\Tenant;
@@ -19,6 +20,7 @@ final readonly class DossierExportData
         public ?string $expiresAt,
         public ?string $downloadUrl,
         public ?string $error,
+        public ?PipelineData $pipeline,
     ) {}
 
     public static function fromModel(DossierExport $export, bool $canDownload): self
@@ -55,11 +57,14 @@ final readonly class DossierExportData
             expiresAt: $expiresAt?->format(DATE_ATOM),
             downloadUrl: $downloadUrl,
             error: $export->error,
+            pipeline: $export->relationLoaded('pipeline') && $export->pipeline !== null
+                ? PipelineData::fromModel($export->pipeline)
+                : null,
         );
     }
 
     /**
-     * @return array{id: int, status: string, created_at: string, expires_at: string|null, download_url: string|null, error: string|null}
+     * @return array{id: int, status: string, created_at: string, expires_at: string|null, download_url: string|null, error: string|null, pipeline: array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, steps: list<array{key: string, status: string, attempts: int, started_at: string|null, last_activity_at: string|null, completed_at: string|null, error_code: string|null, error_message: string|null}>}|null}
      */
     public function toArray(): array
     {
@@ -70,6 +75,7 @@ final readonly class DossierExportData
             'expires_at' => $this->expiresAt,
             'download_url' => $this->downloadUrl,
             'error' => $this->error,
+            'pipeline' => $this->pipeline?->toArray(),
         ];
     }
 }
