@@ -101,6 +101,7 @@ export default function QuestionnaireBuilder({
     const settings = (
         <QuestionnaireBuilderSettings
             documentRequest={state.selected}
+            siblings={state.items}
             canEdit={canEdit && !state.isInsertPending}
             saveStatus={state.saveStatus}
             onSave={state.handleSave}

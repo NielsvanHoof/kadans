@@ -24,17 +24,22 @@ final class SubmitPortalAnswerAction
         private readonly NotifyWorkspaceIfQuestionnaireCompleteAction $notifyWorkspaceIfQuestionnaireComplete,
     ) {}
 
+    /**
+     * @param  list<string>|null  $answerOptionIds
+     */
     public function handle(
         DocumentRequest $documentRequest,
         ClientAccessGrant $grant,
         ?string $answerText = null,
         ?bool $answerBoolean = null,
+        ?array $answerOptionIds = null,
     ): DocumentRequest {
         return DB::transaction(function () use (
             $documentRequest,
             $grant,
             $answerText,
             $answerBoolean,
+            $answerOptionIds,
         ): DocumentRequest {
             $documentRequestQuery = DocumentRequest::query()->whereKey($documentRequest->getKey());
             $documentRequestQuery->getQuery()->lockForUpdate();
@@ -59,6 +64,7 @@ final class SubmitPortalAnswerAction
                 $lockedDocumentRequest,
                 $answerText,
                 $answerBoolean,
+                $answerOptionIds,
                 SubmissionContext::Portal,
             );
 

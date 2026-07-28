@@ -12,6 +12,17 @@ enum QuestionnaireItemType: string
     case Date = 'date';
     case Number = 'number';
     case Boolean = 'boolean';
+    case Choice = 'choice';
+    case MultiSelect = 'multi_select';
+
+    /**
+     * Yes/no answers have no stored option rows, so visibility rules match them
+     * against these two fixed identifiers instead. Mirrored in
+     * resources/js/features/document-requests/types.ts.
+     */
+    public const string BooleanYesOptionId = 'true';
+
+    public const string BooleanNoOptionId = 'false';
 
     /**
      * @return list<string>
@@ -28,7 +39,28 @@ enum QuestionnaireItemType: string
     {
         return match ($this) {
             self::Text, self::Textarea, self::Date, self::Number => true,
-            self::File, self::Boolean => false,
+            self::File, self::Boolean, self::Choice, self::MultiSelect => false,
+        };
+    }
+
+    /** Whether answers for this type are stored as selected option identifiers. */
+    public function storesAnswerOptionIds(): bool
+    {
+        return match ($this) {
+            self::Choice, self::MultiSelect => true,
+            self::File, self::Text, self::Textarea, self::Date, self::Number, self::Boolean => false,
+        };
+    }
+
+    /**
+     * Whether an answer to this type can drive another field's visibility rule.
+     * Only types with a fixed, comparable set of answers qualify.
+     */
+    public function canDriveVisibility(): bool
+    {
+        return match ($this) {
+            self::Boolean, self::Choice, self::MultiSelect => true,
+            self::File, self::Text, self::Textarea, self::Date, self::Number => false,
         };
     }
 }

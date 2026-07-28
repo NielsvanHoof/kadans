@@ -153,6 +153,70 @@ export function BuilderBooleanPreview({
     );
 }
 
+export function BuilderChoicePreview({
+    title,
+    instructions,
+    configuration,
+}: {
+    title: string;
+    instructions?: string | null;
+    configuration?: { options?: { id: string; label: string }[] } | null;
+}) {
+    const { t } = useTranslation();
+    const options = configuration?.options ?? [
+        { id: '1', label: t('Option 1') },
+        { id: '2', label: t('Option 2') },
+    ];
+
+    return (
+        <Field data-disabled>
+            <FieldChrome title={title} instructions={instructions} />
+            <div className="space-y-2" aria-hidden="true">
+                {options.map((option) => (
+                    <div key={option.id} className="flex items-center gap-2">
+                        <span className="size-4 rounded-full border border-input bg-muted/40" />
+                        <span className="text-sm text-muted-foreground">
+                            {option.label}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </Field>
+    );
+}
+
+export function BuilderMultiSelectPreview({
+    title,
+    instructions,
+    configuration,
+}: {
+    title: string;
+    instructions?: string | null;
+    configuration?: { options?: { id: string; label: string }[] } | null;
+}) {
+    const { t } = useTranslation();
+    const options = configuration?.options ?? [
+        { id: '1', label: t('Option 1') },
+        { id: '2', label: t('Option 2') },
+    ];
+
+    return (
+        <Field data-disabled>
+            <FieldChrome title={title} instructions={instructions} />
+            <div className="space-y-2" aria-hidden="true">
+                {options.map((option) => (
+                    <div key={option.id} className="flex items-center gap-2">
+                        <span className="size-4 rounded-[4px] border border-input bg-muted/40" />
+                        <span className="text-sm text-muted-foreground">
+                            {option.label}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </Field>
+    );
+}
+
 function FieldChrome({
     title,
     instructions,

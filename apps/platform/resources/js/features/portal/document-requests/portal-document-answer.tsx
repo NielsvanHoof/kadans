@@ -170,3 +170,125 @@ function BooleanAnswerButton({
         </Form>
     );
 }
+
+/**
+ * Single choice — selecting an option saves immediately and refreshes the form.
+ */
+export function PortalChoiceDocumentAnswer({
+    documentRequest,
+}: {
+    documentRequest: PortalDocumentRequest;
+}) {
+    const { t } = useTranslation();
+    const options = documentRequest.configuration?.options ?? [];
+
+    return (
+        <FieldSet className="min-w-0 gap-2">
+            <FieldLegend className="sr-only">{t('Your answer')}</FieldLegend>
+            <div className="grid gap-2">
+                {options.map((option) => (
+                    <Form
+                        key={option.id}
+                        {...ClientPortalAnswerController.store.form({
+                            documentRequest: documentRequest.id,
+                        })}
+                        options={inlineActionOptions}
+                    >
+                        {({ processing }) => (
+                            <>
+                                <input
+                                    type="hidden"
+                                    name="answer_option_ids[]"
+                                    value={option.id}
+                                />
+                                <Button
+                                    type="submit"
+                                    disabled={processing}
+                                    variant={
+                                        documentRequest
+                                            .answer_option_ids?.[0] ===
+                                        option.id
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    className={cn(
+                                        'h-11 w-full touch-manipulation justify-start',
+                                        documentRequest
+                                            .answer_option_ids?.[0] ===
+                                            option.id &&
+                                            'ring-[3px] ring-ring/40',
+                                    )}
+                                >
+                                    {option.label}
+                                </Button>
+                            </>
+                        )}
+                    </Form>
+                ))}
+            </div>
+        </FieldSet>
+    );
+}
+
+/**
+ * Multi-select — client picks one or more options, then submits.
+ */
+export function PortalMultiSelectDocumentAnswer({
+    documentRequest,
+}: {
+    documentRequest: PortalDocumentRequest;
+}) {
+    const { t } = useTranslation();
+    const options = documentRequest.configuration?.options ?? [];
+    const selected = new Set(documentRequest.answer_option_ids ?? []);
+
+    return (
+        <Form
+            {...ClientPortalAnswerController.store.form({
+                documentRequest: documentRequest.id,
+            })}
+            options={inlineActionOptions}
+        >
+            {({ errors, processing }) => (
+                <FieldGroup className="gap-3">
+                    <FieldSet className="min-w-0 gap-2">
+                        <FieldLegend className="sr-only">
+                            {t('Your answer')}
+                        </FieldLegend>
+                        <div className="space-y-2">
+                            {options.map((option) => (
+                                <label
+                                    key={option.id}
+                                    className="flex cursor-pointer items-center gap-3 rounded-md border border-border/70 px-3 py-2.5 text-sm has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        name="answer_option_ids[]"
+                                        value={option.id}
+                                        defaultChecked={selected.has(option.id)}
+                                        className="size-4 rounded-[4px] border border-input"
+                                    />
+                                    <span>{option.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                        <InputError message={errors.answer_option_ids} />
+                    </FieldSet>
+                    <Field orientation="horizontal">
+                        <Button
+                            type="submit"
+                            disabled={processing}
+                            className="w-full sm:w-auto"
+                        >
+                            {processing
+                                ? t('Saving…')
+                                : selected.size > 0
+                                  ? t('Update answer')
+                                  : t('Submit answer')}
+                        </Button>
+                    </Field>
+                </FieldGroup>
+            )}
+        </Form>
+    );
+}

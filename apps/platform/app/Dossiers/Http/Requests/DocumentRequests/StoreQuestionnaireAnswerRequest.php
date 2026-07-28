@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\DocumentRequests;
 
+use App\Dossiers\Actions\DocumentRequests\ResolveQuestionnaireAnswerRulesAction;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
@@ -14,6 +15,12 @@ use Illuminate\Foundation\Http\FormRequest;
 final class StoreQuestionnaireAnswerRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+
+    public function __construct(
+        private readonly ResolveQuestionnaireAnswerRulesAction $resolveAnswerRules,
+    ) {
+        parent::__construct();
+    }
 
     public function authorize(): bool
     {
@@ -29,34 +36,16 @@ final class StoreQuestionnaireAnswerRequest extends FormRequest
             && $documentRequest->type !== QuestionnaireItemType::File;
     }
 
-    /** @return array<string, list<ValidationRule|string>> */
+    /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
         $documentRequest = $this->route('documentRequest');
 
-        if ($documentRequest instanceof DocumentRequest
-            && $documentRequest->type === QuestionnaireItemType::Boolean) {
-            return [
-                'answer_boolean' => ['required', 'boolean'],
-            ];
+        // Route binding guarantees the model, so there is nothing to validate otherwise.
+        if (! $documentRequest instanceof DocumentRequest) {
+            return [];
         }
 
-        if ($documentRequest instanceof DocumentRequest
-            && $documentRequest->type === QuestionnaireItemType::Date) {
-            return [
-                'answer_text' => ['required', 'date_format:Y-m-d'],
-            ];
-        }
-
-        if ($documentRequest instanceof DocumentRequest
-            && $documentRequest->type === QuestionnaireItemType::Number) {
-            return [
-                'answer_text' => ['required', 'numeric'],
-            ];
-        }
-
-        return [
-            'answer_text' => ['required', 'string', 'max:5000'],
-        ];
+        return $this->resolveAnswerRules->handle($documentRequest);
     }
 }

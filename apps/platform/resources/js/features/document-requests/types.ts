@@ -5,7 +5,25 @@ import type { Pipeline } from '@/features/dossiers/types';
  * Keeping this union explicit makes every type-specific UI exhaustive.
  */
 export type QuestionnaireItemType =
-    'file' | 'text' | 'textarea' | 'date' | 'number' | 'boolean';
+    | 'file'
+    | 'text'
+    | 'textarea'
+    | 'date'
+    | 'number'
+    | 'boolean'
+    | 'choice'
+    | 'multi_select';
+
+export type QuestionnaireOption = { id: string; label: string };
+
+export type QuestionnaireItemConfiguration = {
+    is_required: boolean;
+    options?: QuestionnaireOption[];
+    visibility?: {
+        source_field_key: string;
+        option_ids: string[];
+    };
+};
 
 /** Types whose answers are stored in answer_text (mirrors PHP storesAnswerText()). */
 export function storesAnswerText(type: QuestionnaireItemType): boolean {
@@ -16,6 +34,27 @@ export function storesAnswerText(type: QuestionnaireItemType): boolean {
         type === 'number'
     );
 }
+
+/** Types whose answers are stored as selected option ids. */
+export function storesAnswerOptionIds(type: QuestionnaireItemType): boolean {
+    return type === 'choice' || type === 'multi_select';
+}
+
+/**
+ * Types whose answer can drive another field's visibility rule
+ * (mirrors PHP QuestionnaireItemType::canDriveVisibility()).
+ */
+export function canDriveVisibility(type: QuestionnaireItemType): boolean {
+    return type === 'boolean' || storesAnswerOptionIds(type);
+}
+
+/**
+ * Yes/no fields have no stored options, so visibility rules match them against
+ * these fixed ids. Mirrors QuestionnaireItemType::BooleanYesOptionId / BooleanNoOptionId.
+ */
+export const BOOLEAN_YES_OPTION_ID = 'true';
+
+export const BOOLEAN_NO_OPTION_ID = 'false';
 export type DocumentRequestStatus =
     'pending' | 'submitted' | 'accepted' | 'rejected';
 
@@ -73,18 +112,41 @@ export type DocumentExtraction = {
 export type DocumentRequest = {
     id: number;
     type: QuestionnaireItemType;
+    field_key: string;
     title: string;
     instructions: string | null;
+    configuration: QuestionnaireItemConfiguration | null;
     status: DocumentRequestStatus;
     answer_text: string | null;
     answer_boolean: boolean | null;
+    answer_option_ids: string[] | null;
     answered_at: string | null;
     reviewed_at: string | null;
     reviewed_by_name: string | null;
     rejection_reason: string | null;
     sort_order: number;
+    /** False when a visibility rule currently hides this field from the client. */
+    is_visible: boolean;
+    /** False when the field does not count toward progress, review, or completion. */
+    is_applicable: boolean;
     uploaded_document: UploadedDocument | null;
 };
+
+/**
+ * Whether `field` sits before `other` on the canvas.
+ * Mirrors DocumentRequest::isOrderedBefore() so the builder offers exactly the
+ * visibility sources the backend will accept.
+ */
+export function isOrderedBefore(
+    field: Pick<DocumentRequest, 'id' | 'sort_order'>,
+    other: Pick<DocumentRequest, 'id' | 'sort_order'>,
+): boolean {
+    if (field.sort_order !== other.sort_order) {
+        return field.sort_order < other.sort_order;
+    }
+
+    return field.id < other.id;
+}
 
 /** Uploaded file as shown on the client portal (no download id). */
 export type PortalUploadedDocument = {
@@ -97,11 +159,14 @@ export type PortalUploadedDocument = {
 export type PortalDocumentRequest = {
     id: number;
     type: QuestionnaireItemType;
+    field_key: string;
     title: string;
     instructions: string | null;
+    configuration: QuestionnaireItemConfiguration | null;
     status: DocumentRequestStatus;
     answer_text: string | null;
     answer_boolean: boolean | null;
+    answer_option_ids: string[] | null;
     rejection_reason: string | null;
     can_respond: boolean;
     uploaded_document: PortalUploadedDocument | null;

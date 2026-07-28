@@ -1,8 +1,10 @@
 import type { ComponentType } from 'react';
 import {
     StaffBooleanRequestContent,
+    StaffChoiceRequestContent,
     type StaffDocumentRequestTypeProps,
     StaffFileRequestContent,
+    StaffMultiSelectRequestContent,
     StaffTextRequestContent,
 } from '@/features/document-requests/staff/review/document-request-type-content';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
@@ -17,6 +19,8 @@ const staffDocumentRequestTypeContents = {
     date: StaffTextRequestContent,
     number: StaffTextRequestContent,
     boolean: StaffBooleanRequestContent,
+    choice: StaffChoiceRequestContent,
+    multi_select: StaffMultiSelectRequestContent,
 } satisfies Record<QuestionnaireItemType, StaffDocumentRequestTypeContent>;
 
 export function getQuestionnaireItemTypeStaffContent(

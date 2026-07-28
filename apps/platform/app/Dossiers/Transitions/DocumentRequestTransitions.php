@@ -15,6 +15,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
+use function count;
 use function in_array;
 
 /**
@@ -54,11 +55,15 @@ final class DocumentRequestTransitions
         ], true);
     }
 
+    /**
+     * @param  list<string>|null  $answerOptionIds
+     */
     public function submitAnswer(
         DocumentRequest $documentRequest,
         SubmissionContext $context,
         ?string $answerText = null,
         ?bool $answerBoolean = null,
+        ?array $answerOptionIds = null,
     ): void {
         if ($documentRequest->type === QuestionnaireItemType::File) {
             throw new InvalidArgumentException('File items must be answered via upload.');
@@ -74,6 +79,20 @@ final class DocumentRequestTransitions
             $documentRequest->update([
                 'answer_text' => mb_trim($answerText),
                 'answer_boolean' => null,
+                'answer_option_ids' => null,
+                ...$this->submittedState(),
+            ]);
+
+            return;
+        }
+
+        if ($documentRequest->type->storesAnswerOptionIds()) {
+            $this->ensureValidOptionAnswer($documentRequest, $answerOptionIds);
+
+            $documentRequest->update([
+                'answer_option_ids' => $answerOptionIds,
+                'answer_text' => null,
+                'answer_boolean' => null,
                 ...$this->submittedState(),
             ]);
 
@@ -87,6 +106,7 @@ final class DocumentRequestTransitions
         $documentRequest->update([
             'answer_boolean' => $answerBoolean,
             'answer_text' => null,
+            'answer_option_ids' => null,
             ...$this->submittedState(),
         ]);
     }
@@ -153,6 +173,30 @@ final class DocumentRequestTransitions
                 ? 'This item cannot be submitted from the client portal in its current state.'
                 : 'An approved item cannot be submitted again.',
         ]);
+    }
+
+    /** @param list<string>|null $answerOptionIds */
+    private function ensureValidOptionAnswer(
+        DocumentRequest $documentRequest,
+        ?array $answerOptionIds,
+    ): void {
+        if ($answerOptionIds === null || $answerOptionIds === []) {
+            throw new InvalidArgumentException('At least one option must be selected.');
+        }
+
+        if ($documentRequest->type === QuestionnaireItemType::Choice
+            && count($answerOptionIds) !== 1) {
+            throw new InvalidArgumentException('Choose exactly one option.');
+        }
+
+        $availableOptionIds = array_column(
+            $documentRequest->configuration['options'] ?? [],
+            'id',
+        );
+
+        if (array_diff($answerOptionIds, $availableOptionIds) !== []) {
+            throw new InvalidArgumentException('The selected option is not available.');
+        }
     }
 
     private function ensureCanBeReviewed(DocumentRequest $documentRequest): void

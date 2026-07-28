@@ -196,6 +196,10 @@ test('client dashboard and questionnaire translation keys are shared with inerti
             ->where('translations.Awaiting client', 'Wacht op klant')
             ->where('translations.File upload', 'Bestandsupload')
             ->where('translations.Yes / no', 'Ja / nee')
+            ->where('translations.Single choice', 'Enkele keuze')
+            ->where('translations.Multiple choice', 'Meerkeuze')
+            ->where('translations.Always show', 'Altijd tonen')
+            ->where('translations.Show this field when…', 'Toon dit veld wanneer…')
             ->where('translations.Draft', 'Concept')
             ->where('translations.In review', 'In beoordeling'));
 });

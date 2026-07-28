@@ -152,6 +152,7 @@ export default function QuestionnaireBuilderItem({
                     <BuilderPreview
                         title={documentRequest.title}
                         instructions={documentRequest.instructions}
+                        configuration={documentRequest.configuration}
                     />
                 </div>
             ) : null}

@@ -7,6 +7,7 @@ namespace App\Dossiers\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -19,6 +20,7 @@ final class CompleteDossierAction
     public function __construct(
         private readonly LogAuditActivityAction $logAuditActivity,
         private readonly DossierTransitions $dossierTransitions,
+        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
     ) {}
 
     public function handle(Dossier $dossier, User $completedBy): Dossier
@@ -30,12 +32,17 @@ final class CompleteDossierAction
 
             $documentRequestQuery = DocumentRequest::query()
                 ->whereBelongsTo($lockedDossier)
+                ->oldest('sort_order')
                 ->oldest('id');
             $documentRequestQuery->getQuery()->lockForUpdate();
 
-            $documentRequests = $documentRequestQuery->get(['id', 'status']);
-            $requestCount = $documentRequests->count();
-            $hasUnacceptedRequest = $documentRequests->contains(
+            // Need configuration + answers so visibility / optional rules can resolve.
+            $documentRequests = $documentRequestQuery->get();
+            $applicableDocumentRequests = $this->resolveApplicableDocumentRequests->handle(
+                $documentRequests,
+            );
+            $requestCount = $applicableDocumentRequests->count();
+            $hasUnacceptedRequest = $applicableDocumentRequests->contains(
                 fn (DocumentRequest $documentRequest): bool => $documentRequest->status
                     !== DocumentRequestStatus::Accepted,
             );

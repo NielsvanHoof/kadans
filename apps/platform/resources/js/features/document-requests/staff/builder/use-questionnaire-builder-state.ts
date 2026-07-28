@@ -6,6 +6,7 @@ import {
 } from '@/features/document-requests/staff/builder/use-questionnaire-builder-actions';
 import type {
     DocumentRequest,
+    QuestionnaireItemConfiguration,
     QuestionnaireItemType,
 } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -140,6 +141,7 @@ export function useQuestionnaireBuilderState({
         type: QuestionnaireItemType;
         title: string;
         instructions: string | null;
+        configuration: QuestionnaireItemConfiguration;
     }): Promise<boolean> => {
         if (!selected) {
             return false;

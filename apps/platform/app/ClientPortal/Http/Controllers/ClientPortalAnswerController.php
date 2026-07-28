@@ -38,6 +38,9 @@ final class ClientPortalAnswerController extends Controller
             array_key_exists('answer_boolean', $validated)
                 ? (bool) $validated['answer_boolean']
                 : null,
+            isset($validated['answer_option_ids'])
+                ? array_values($validated['answer_option_ids'])
+                : null,
         );
 
         Inertia::flash('toast', [

@@ -50,6 +50,18 @@ const questionnaireItemTypeDefinitionsByType = {
         description: 'Ask a yes or no confirmation.',
         defaultTitle: 'New yes / no question',
     },
+    choice: {
+        value: 'choice',
+        label: 'Single choice',
+        description: 'Let the client choose one option.',
+        defaultTitle: 'New single choice question',
+    },
+    multi_select: {
+        value: 'multi_select',
+        label: 'Multiple choice',
+        description: 'Let the client choose one or more options.',
+        defaultTitle: 'New multiple choice question',
+    },
 } satisfies Record<QuestionnaireItemType, QuestionnaireItemTypeDefinition>;
 
 /**

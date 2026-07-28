@@ -8,6 +8,8 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
+use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\DB;
 
 use function array_key_exists;
@@ -16,6 +18,7 @@ final class CreateDocumentRequestAction
 {
     public function __construct(
         private readonly LogAuditActivityAction $logAuditActivity,
+        private readonly NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
     ) {}
 
     /**
@@ -34,6 +37,15 @@ final class CreateDocumentRequestAction
                 ? $attributes['position']
                 : null;
             unset($attributes['position']);
+
+            $type = QuestionnaireItemType::from((string) $attributes['type']);
+
+            $attributes['configuration'] = $this->normalizeConfiguration->handle(
+                $type,
+                is_array($attributes['configuration'] ?? null)
+                    ? $attributes['configuration']
+                    : [],
+            );
 
             $itemCount = $lockedDossier->documentRequests()->toBase()->count();
 

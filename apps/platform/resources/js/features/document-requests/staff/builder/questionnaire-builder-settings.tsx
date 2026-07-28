@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
 import InputError from '@/components/input-error';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Field,
     FieldDescription,
@@ -17,136 +17,56 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
+import {
+    buildDefaultOptions,
+    FieldOptionsEditor,
+} from '@/features/document-requests/staff/builder/field-options-editor';
+import {
+    FieldVisibilityEditor,
+    selectVisibilitySourceFields,
+} from '@/features/document-requests/staff/builder/field-visibility-editor';
+import type { FieldSettingsSaveInput } from '@/features/document-requests/staff/builder/use-field-settings-form';
+import { useFieldSettingsForm } from '@/features/document-requests/staff/builder/use-field-settings-form';
 import type { BuilderSaveStatus } from '@/features/document-requests/staff/builder/use-questionnaire-builder-actions';
 import type {
     DocumentRequest,
     QuestionnaireItemType,
 } from '@/features/document-requests/types';
+import { storesAnswerOptionIds } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
-
-type SettingsSaveInput = {
-    type: QuestionnaireItemType;
-    title: string;
-    instructions: string | null;
-};
 
 /**
  * Autosaving field settings for the selected canvas component.
- * Type saves immediately. Title and instructions save on blur.
+ * Type saves immediately. Title, instructions, and configuration save on blur / change.
+ *
+ * All draft state and validation live in useFieldSettingsForm, so this component
+ * only decides what to show.
  */
 export default function QuestionnaireBuilderSettings({
     documentRequest,
+    siblings,
     canEdit,
     saveStatus,
     onSave,
 }: {
     documentRequest: DocumentRequest | null;
+    /** Earlier + later fields — used to pick visibility sources. */
+    siblings: DocumentRequest[];
     canEdit: boolean;
     saveStatus: BuilderSaveStatus;
-    onSave: (input: SettingsSaveInput) => Promise<boolean>;
+    onSave: (input: FieldSettingsSaveInput) => Promise<boolean>;
 }) {
     const { t } = useTranslation();
-    const definitions = getQuestionnaireItemTypeDefinitions(t);
-    const [title, setTitle] = useState(documentRequest?.title ?? '');
-    const [instructions, setInstructions] = useState(
-        documentRequest?.instructions ?? '',
-    );
-    const [type, setType] = useState<QuestionnaireItemType>(
-        documentRequest?.type ?? 'file',
-    );
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        setTitle(documentRequest?.title ?? '');
-        setInstructions(documentRequest?.instructions ?? '');
-        setType(documentRequest?.type ?? 'file');
-        setError(null);
-    }, [documentRequest]);
-
-    const isDirty = useMemo(() => {
-        if (!documentRequest) {
-            return false;
-        }
-
-        const savedTitle = documentRequest.title.trim();
-        const savedInstructions = documentRequest.instructions?.trim() ?? '';
-
-        return (
-            title.trim() !== savedTitle ||
-            instructions.trim() !== savedInstructions
-        );
-    }, [documentRequest, title, instructions]);
-
-    useEffect(() => {
-        if (!isDirty) {
-            return;
-        }
-
-        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-            event.preventDefault();
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, [isDirty]);
+    const form = useFieldSettingsForm(documentRequest, onSave, canEdit);
 
     if (!documentRequest) {
-        return (
-            <aside
-                className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4"
-                aria-label={t('Field settings')}
-            >
-                <h3 className="text-sm font-semibold">{t('Field settings')}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                    {t('Select a field on the canvas to edit its settings.')}
-                </p>
-            </aside>
-        );
+        return <EmptySettingsPanel />;
     }
 
+    const definitions = getQuestionnaireItemTypeDefinitions(t);
     const selectedDefinition =
-        definitions.find((definition) => definition.value === type) ?? null;
-
-    const persist = async (next: SettingsSaveInput) => {
-        if (!canEdit) {
-            return;
-        }
-
-        const trimmedTitle = next.title.trim();
-
-        if (trimmedTitle === '') {
-            setError(t('Enter a field label.'));
-
-            return;
-        }
-
-        setError(null);
-        const ok = await onSave({
-            ...next,
-            title: trimmedTitle,
-            instructions: next.instructions?.trim() || null,
-        });
-
-        if (!ok) {
-            setError(t('Could not save. Check the fields and try again.'));
-        }
-    };
-
-    const saveLabel =
-        saveStatus === 'saving'
-            ? t('Saving…')
-            : isDirty
-              ? t('Unsaved changes')
-              : saveStatus === 'saved'
-                ? t('Saved')
-                : saveStatus === 'error'
-                  ? t('Could not save. Check the fields and try again.')
-                  : null;
-
-    const blurSave = () => void persist({ type, title, instructions });
+        definitions.find((definition) => definition.value === form.type) ??
+        null;
 
     return (
         <aside
@@ -166,7 +86,7 @@ export default function QuestionnaireBuilderSettings({
                     className="font-data text-xs text-muted-foreground"
                     aria-live="polite"
                 >
-                    {saveLabel}
+                    {describeSaveState(saveStatus, form.isDirty, t)}
                 </p>
             </div>
 
@@ -176,17 +96,14 @@ export default function QuestionnaireBuilderSettings({
                         {t('Type')}
                     </FieldLabel>
                     <Select
-                        value={type}
+                        value={form.type}
                         disabled={!canEdit}
-                        onValueChange={(value) => {
-                            const nextType = value as QuestionnaireItemType;
-                            setType(nextType);
-                            void persist({
-                                type: nextType,
-                                title,
-                                instructions,
-                            });
-                        }}
+                        onValueChange={(value) =>
+                            form.changeType(
+                                value as QuestionnaireItemType,
+                                buildDefaultOptions(t),
+                            )
+                        }
                     >
                         <SelectTrigger
                             id={`builder-type-${documentRequest.id}`}
@@ -214,20 +131,23 @@ export default function QuestionnaireBuilderSettings({
                     ) : null}
                 </Field>
 
-                <Field data-disabled={!canEdit} data-invalid={Boolean(error)}>
+                <Field
+                    data-disabled={!canEdit}
+                    data-invalid={Boolean(form.error)}
+                >
                     <FieldLabel htmlFor={`builder-title-${documentRequest.id}`}>
                         {t('Label')}
                     </FieldLabel>
                     <Input
                         id={`builder-title-${documentRequest.id}`}
-                        value={title}
+                        value={form.title}
                         disabled={!canEdit}
                         autoComplete="off"
-                        onChange={(event) => setTitle(event.target.value)}
-                        onBlur={blurSave}
-                        aria-invalid={Boolean(error)}
+                        onChange={(event) => form.setTitle(event.target.value)}
+                        onBlur={form.saveDraft}
+                        aria-invalid={Boolean(form.error)}
                     />
-                    <InputError message={error ?? undefined} />
+                    <InputError message={form.error ?? undefined} />
                 </Field>
 
                 <Field data-disabled={!canEdit}>
@@ -239,18 +159,124 @@ export default function QuestionnaireBuilderSettings({
                     <Textarea
                         id={`builder-instructions-${documentRequest.id}`}
                         rows={4}
-                        value={instructions}
+                        value={form.instructions}
                         disabled={!canEdit}
                         onChange={(event) =>
-                            setInstructions(event.target.value)
+                            form.setInstructions(event.target.value)
                         }
-                        onBlur={blurSave}
+                        onBlur={form.saveDraft}
                         placeholder={t(
                             'Optional help text shown to the client…',
                         )}
                     />
                 </Field>
+
+                <Field
+                    orientation="horizontal"
+                    data-disabled={!canEdit}
+                    className="items-center"
+                >
+                    <Checkbox
+                        id={`builder-required-${documentRequest.id}`}
+                        checked={form.configuration.is_required !== false}
+                        disabled={!canEdit}
+                        onCheckedChange={(checked) =>
+                            form.updateConfiguration(
+                                {
+                                    ...form.configuration,
+                                    is_required: checked !== false,
+                                },
+                                true,
+                            )
+                        }
+                    />
+                    <FieldLabel
+                        htmlFor={`builder-required-${documentRequest.id}`}
+                        className="font-normal"
+                    >
+                        {t('Required')}
+                    </FieldLabel>
+                </Field>
+
+                {storesAnswerOptionIds(form.type) ? (
+                    <FieldOptionsEditor
+                        options={
+                            form.configuration.options ?? buildDefaultOptions(t)
+                        }
+                        canEdit={canEdit}
+                        onChange={(options) =>
+                            form.updateConfiguration({
+                                ...form.configuration,
+                                options,
+                            })
+                        }
+                        onSaveDraft={form.saveDraft}
+                    />
+                ) : null}
+
+                <FieldVisibilityEditor
+                    documentRequestId={documentRequest.id}
+                    sourceFields={selectVisibilitySourceFields(
+                        documentRequest,
+                        siblings,
+                    )}
+                    visibility={form.configuration.visibility}
+                    canEdit={canEdit}
+                    onChange={(visibility) => {
+                        const { visibility: _removed, ...rest } =
+                            form.configuration;
+
+                        form.updateConfiguration(
+                            visibility ? { ...rest, visibility } : rest,
+                            true,
+                        );
+                    }}
+                />
             </FieldGroup>
         </aside>
     );
+}
+
+function EmptySettingsPanel() {
+    const { t } = useTranslation();
+
+    return (
+        <aside
+            className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4"
+            aria-label={t('Field settings')}
+        >
+            <h3 className="text-sm font-semibold">{t('Field settings')}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+                {t('Select a field on the canvas to edit its settings.')}
+            </p>
+        </aside>
+    );
+}
+
+/**
+ * Autosave status shown beside the heading. An unsaved draft outranks the last
+ * result, so a pending edit is never reported as saved.
+ */
+function describeSaveState(
+    saveStatus: BuilderSaveStatus,
+    isDirty: boolean,
+    t: (key: string) => string,
+): string | null {
+    if (saveStatus === 'saving') {
+        return t('Saving…');
+    }
+
+    if (isDirty) {
+        return t('Unsaved changes');
+    }
+
+    if (saveStatus === 'saved') {
+        return t('Saved');
+    }
+
+    if (saveStatus === 'error') {
+        return t('Could not save. Check the fields and try again.');
+    }
+
+    return null;
 }

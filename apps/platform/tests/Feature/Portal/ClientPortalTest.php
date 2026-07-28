@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -242,6 +243,71 @@ test('portal cannot answer while a text item awaits review', function () {
     ])->assertForbidden();
 
     expect($documentRequest->fresh()->answer_text)->toBeNull();
+});
+
+test('a saved choice answer reveals the matching conditional field on the portal', function () {
+    $context = createPortalDossierWithGrant();
+
+    $context['tenant']->makeCurrent();
+    $sourceFieldKey = (string) Str::ulid();
+    $dependentFieldKey = (string) Str::ulid();
+    $yesOptionId = (string) Str::uuid();
+    $noOptionId = (string) Str::uuid();
+
+    $choiceRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'dossier_id' => $context['dossier']->id,
+        'type' => QuestionnaireItemType::Choice,
+        'title' => 'Do you have employees?',
+        'field_key' => $sourceFieldKey,
+        'sort_order' => 0,
+        'configuration' => [
+            'options' => [
+                ['id' => $yesOptionId, 'label' => 'Yes'],
+                ['id' => $noOptionId, 'label' => 'No'],
+            ],
+            'is_required' => true,
+        ],
+    ]);
+    $dependentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'dossier_id' => $context['dossier']->id,
+        'type' => QuestionnaireItemType::Text,
+        'title' => 'How many employees do you have?',
+        'field_key' => $dependentFieldKey,
+        'sort_order' => 1,
+        'configuration' => [
+            'is_required' => true,
+            'visibility' => [
+                'source_field_key' => $sourceFieldKey,
+                'option_ids' => [$yesOptionId],
+            ],
+        ],
+    ]);
+
+    $this->get(route('portal.exchange', $context['plainTextToken']));
+
+    $this->get(route('portal.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('dossier.document_requests', 1)
+            ->where('dossier.document_requests.0.id', $choiceRequest->id));
+
+    $this->post(route('portal.document-requests.answer', [
+        'documentRequest' => $choiceRequest,
+    ]), [
+        'answer_option_ids' => [$yesOptionId],
+    ])->assertRedirect(route('portal.show'));
+
+    expect($choiceRequest->fresh())
+        ->status->toBe(DocumentRequestStatus::Submitted)
+        ->answer_option_ids->toBe([$yesOptionId]);
+
+    $this->get(route('portal.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('dossier.document_requests', 2)
+            ->where('dossier.document_requests.1.id', $dependentRequest->id));
 });
 
 test('portal upload cannot target a document request from another dossier', function () {

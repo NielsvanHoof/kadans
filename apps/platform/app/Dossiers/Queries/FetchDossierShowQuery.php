@@ -8,6 +8,8 @@ use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Data\PipelineData;
 use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
+use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Data\DossierAccessGrantData;
 use App\Dossiers\Data\DossierClientSummaryData;
 use App\Dossiers\Data\DossierExportData;
@@ -21,8 +23,15 @@ use App\Dossiers\Models\Dossier;
 use App\Shared\Data\PersonOptionData;
 use RuntimeException;
 
+use function in_array;
+
 final class FetchDossierShowQuery
 {
+    public function __construct(
+        private readonly DetermineDocumentRequestVisibilityAction $determineVisibility,
+        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+    ) {}
+
     public function handle(Dossier $dossier, bool $canDownload = false): DossierShowData
     {
         $dossier->load([
@@ -38,11 +47,18 @@ final class FetchDossierShowQuery
 
         $client = $this->resolveClient($dossier);
         $documentRequests = $dossier->documentRequests;
-        $totalRequestCount = $documentRequests->count();
-        $acceptedRequestCount = $documentRequests
+        // Progress / completion only count applicable (visible + required-or-answered) fields.
+        $applicableDocumentRequests = $this->resolveApplicableDocumentRequests->handle(
+            $documentRequests,
+        );
+        $applicableIds = $applicableDocumentRequests
+            ->map(fn ($documentRequest): int => $documentRequest->id)
+            ->all();
+        $totalRequestCount = $applicableDocumentRequests->count();
+        $acceptedRequestCount = $applicableDocumentRequests
             ->where('status', DocumentRequestStatus::Accepted)
             ->count();
-        $outstandingClientItemCount = $documentRequests
+        $outstandingClientItemCount = $applicableDocumentRequests
             ->whereIn('status', [
                 DocumentRequestStatus::Pending,
                 DocumentRequestStatus::Rejected,
@@ -64,16 +80,24 @@ final class FetchDossierShowQuery
             $documentRequestRows[] = new StaffDocumentRequestData(
                 id: $documentRequest->id,
                 type: $documentRequest->type->value,
+                fieldKey: $documentRequest->field_key,
                 title: $documentRequest->title,
                 instructions: $documentRequest->instructions,
+                configuration: $documentRequest->configuration,
                 status: $documentRequest->status->value,
                 answerText: $documentRequest->answer_text,
                 answerBoolean: $documentRequest->answer_boolean,
+                answerOptionIds: $documentRequest->answer_option_ids,
                 answeredAt: $documentRequest->answered_at?->toIso8601String(),
                 reviewedAt: $documentRequest->reviewed_at?->toIso8601String(),
                 reviewedByName: $reviewer instanceof User ? $reviewer->name : null,
                 rejectionReason: $documentRequest->rejection_reason,
                 sortOrder: $documentRequest->sort_order,
+                isVisible: $this->determineVisibility->handle(
+                    $documentRequest,
+                    $documentRequests,
+                ),
+                isApplicable: in_array($documentRequest->id, $applicableIds, true),
                 uploadedDocument: $uploaded === null ? null : new StaffUploadedDocumentData(
                     id: $uploaded->id,
                     originalFilename: $uploaded->original_filename,
@@ -131,10 +155,10 @@ final class FetchDossierShowQuery
                 && $acceptedRequestCount === $totalRequestCount,
             reviewSummary: new DossierReviewSummaryData(
                 total: $totalRequestCount,
-                pending: $documentRequests->where('status', DocumentRequestStatus::Pending)->count(),
-                submitted: $documentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
+                pending: $applicableDocumentRequests->where('status', DocumentRequestStatus::Pending)->count(),
+                submitted: $applicableDocumentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
                 accepted: $acceptedRequestCount,
-                rejected: $documentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
+                rejected: $applicableDocumentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
             ),
             client: new DossierClientSummaryData(
                 name: $client->name,

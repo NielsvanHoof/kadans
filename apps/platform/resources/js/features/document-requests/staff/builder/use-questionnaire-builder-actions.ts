@@ -1,7 +1,10 @@
 import { router, useHttp } from '@inertiajs/react';
 import { useCallback } from 'react';
 import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController';
-import type { QuestionnaireItemType } from '@/features/document-requests/types';
+import type {
+    QuestionnaireItemConfiguration,
+    QuestionnaireItemType,
+} from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { inlineActionOptions } from '@/lib/inline-action-options';
 
@@ -92,6 +95,7 @@ export function useQuestionnaireBuilderActions(dossierId: number) {
                 type: QuestionnaireItemType;
                 title: string;
                 instructions: string | null;
+                configuration?: QuestionnaireItemConfiguration;
             },
         ): Promise<boolean> => {
             let failed = false;
@@ -108,6 +112,9 @@ export function useQuestionnaireBuilderActions(dossierId: number) {
                             type: input.type,
                             title: input.title,
                             instructions: input.instructions,
+                            ...(input.configuration !== undefined
+                                ? { configuration: input.configuration }
+                                : {}),
                         },
                         {
                             ...inlineActionOptions,

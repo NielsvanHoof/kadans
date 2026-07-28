@@ -15,12 +15,15 @@ final class SubmitQuestionnaireAnswerAction
     ) {}
 
     /**
-     * Store a text or boolean answer and mark the request as submitted.
+     * Store a text, boolean, or option answer and mark the request as submitted.
+     *
+     * @param  list<string>|null  $answerOptionIds
      */
     public function handle(
         DocumentRequest $documentRequest,
         ?string $answerText = null,
         ?bool $answerBoolean = null,
+        ?array $answerOptionIds = null,
         SubmissionContext $context = SubmissionContext::Staff,
     ): DocumentRequest {
         $this->documentRequestTransitions->submitAnswer(
@@ -28,6 +31,7 @@ final class SubmitQuestionnaireAnswerAction
             $context,
             $answerText,
             $answerBoolean,
+            $answerOptionIds,
         );
 
         return $documentRequest->fresh() ?? $documentRequest;

@@ -2,6 +2,8 @@ import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { storesAnswerText } from '@/features/document-requests/types';
 import {
     PortalBooleanDocumentAnswer,
+    PortalChoiceDocumentAnswer,
+    PortalMultiSelectDocumentAnswer,
     PortalTextDocumentAnswer,
 } from '@/features/portal/document-requests/portal-document-answer';
 import PortalDocumentUpload from '@/features/portal/document-requests/portal-document-upload';
@@ -84,6 +86,32 @@ export function PortalBooleanRequestContent({
     return <PortalSubmittedAnswerPreview documentRequest={documentRequest} />;
 }
 
+export function PortalChoiceRequestContent({
+    documentRequest,
+    canRespond,
+}: PortalDocumentRequestTypeProps) {
+    if (canRespond) {
+        return <PortalChoiceDocumentAnswer documentRequest={documentRequest} />;
+    }
+
+    return <PortalSubmittedAnswerPreview documentRequest={documentRequest} />;
+}
+
+export function PortalMultiSelectRequestContent({
+    documentRequest,
+    canRespond,
+}: PortalDocumentRequestTypeProps) {
+    if (canRespond) {
+        return (
+            <PortalMultiSelectDocumentAnswer
+                documentRequest={documentRequest}
+            />
+        );
+    }
+
+    return <PortalSubmittedAnswerPreview documentRequest={documentRequest} />;
+}
+
 /** Read-only answer when the client can no longer edit this item. */
 function PortalSubmittedAnswerPreview({
     documentRequest,
@@ -120,6 +148,33 @@ function PortalSubmittedAnswerPreview({
                 </p>
                 <p className="mt-0.5 font-medium">
                     {documentRequest.answer_boolean ? t('Yes') : t('No')}
+                </p>
+            </div>
+        );
+    }
+
+    if (
+        (documentRequest.type === 'choice' ||
+            documentRequest.type === 'multi_select') &&
+        documentRequest.answer_option_ids?.length
+    ) {
+        const labels = (documentRequest.configuration?.options ?? [])
+            .filter((option) =>
+                documentRequest.answer_option_ids?.includes(option.id),
+            )
+            .map((option) => option.label);
+
+        if (labels.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
+                <p className="text-xs text-muted-foreground">
+                    {t('Your answer')}
+                </p>
+                <p className="mt-0.5 font-medium whitespace-pre-wrap">
+                    {labels.join(', ')}
                 </p>
             </div>
         );

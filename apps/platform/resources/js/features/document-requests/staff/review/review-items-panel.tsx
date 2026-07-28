@@ -30,14 +30,19 @@ export default function ReviewItemsPanel({
     const { t } = useTranslation();
 
     const ready = documentRequests.filter(
-        (request) => request.status === 'submitted',
+        (request) => request.is_applicable && request.status === 'submitted',
     );
     const waiting = documentRequests.filter(
         (request) =>
-            request.status === 'pending' || request.status === 'rejected',
+            request.is_applicable &&
+            (request.status === 'pending' || request.status === 'rejected'),
     );
     const approved = documentRequests.filter(
-        (request) => request.status === 'accepted',
+        (request) => request.is_applicable && request.status === 'accepted',
+    );
+    // Hidden / unanswered optional fields stay visible to staff for audit.
+    const notApplicable = documentRequests.filter(
+        (request) => !request.is_applicable,
     );
 
     return (
@@ -89,6 +94,17 @@ export default function ReviewItemsPanel({
                         items={approved}
                         dossierId={dossierId}
                     />
+                    {notApplicable.length > 0 ? (
+                        <ReviewGroup
+                            title={t('Not applicable (:count)', {
+                                count: notApplicable.length,
+                            })}
+                            emptyLabel={t('No hidden fields.')}
+                            items={notApplicable}
+                            dossierId={dossierId}
+                            notApplicable
+                        />
+                    ) : null}
                 </>
             )}
         </section>
@@ -101,12 +117,15 @@ function ReviewGroup({
     items,
     dossierId,
     bulkApproveEnabled = false,
+    notApplicable = false,
 }: {
     title: string;
     emptyLabel: string;
     items: DocumentRequest[];
     dossierId: number;
     bulkApproveEnabled?: boolean;
+    /** Hidden fields kept for audit — no review actions. */
+    notApplicable?: boolean;
 }) {
     const { t } = useTranslation();
     const { canReview } = useDossierCapabilities();
@@ -115,7 +134,8 @@ function ReviewGroup({
     const [bulkProcessing, setBulkProcessing] = useState(false);
     const [focusedId, setFocusedId] = useState<number | null>(null);
 
-    const showBulk = bulkApproveEnabled && canReview && items.length > 0;
+    const showBulk =
+        !notApplicable && bulkApproveEnabled && canReview && items.length > 0;
 
     const approveOne = useCallback(
         (documentRequestId: number): Promise<void> => {
@@ -276,21 +296,41 @@ function ReviewGroup({
                                     <Badge variant="outline">
                                         {t(definition.label)}
                                     </Badge>
-                                    <Badge variant="secondary">
-                                        {documentRequestStatusLabel(
-                                            documentRequest.status,
-                                            t,
-                                        )}
-                                    </Badge>
+                                    {notApplicable ? (
+                                        <Badge variant="secondary">
+                                            {documentRequest.is_visible
+                                                ? t('Optional')
+                                                : t('Not applicable')}
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="secondary">
+                                            {documentRequestStatusLabel(
+                                                documentRequest.status,
+                                                t,
+                                            )}
+                                        </Badge>
+                                    )}
                                 </div>
                                 <StaffContent
                                     dossierId={dossierId}
                                     documentRequest={documentRequest}
                                 />
-                                <DocumentRequestReview
-                                    dossierId={dossierId}
-                                    documentRequest={documentRequest}
-                                />
+                                {notApplicable ? (
+                                    <p className="text-xs text-muted-foreground">
+                                        {documentRequest.is_visible
+                                            ? t(
+                                                  'Optional and unanswered — does not block progress.',
+                                              )
+                                            : t(
+                                                  'Hidden by a visibility rule. Any past answer is kept for audit.',
+                                              )}
+                                    </p>
+                                ) : (
+                                    <DocumentRequestReview
+                                        dossierId={dossierId}
+                                        documentRequest={documentRequest}
+                                    />
+                                )}
                             </li>
                         );
                     })}

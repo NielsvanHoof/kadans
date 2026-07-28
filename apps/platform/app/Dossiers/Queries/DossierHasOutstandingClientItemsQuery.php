@@ -4,25 +4,41 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Queries;
 
+use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 
 /**
  * True when the dossier still has questionnaire items awaiting client input.
+ *
+ * Hidden and unanswered optional fields are excluded.
  */
 final class DossierHasOutstandingClientItemsQuery
 {
+    public function __construct(
+        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+    ) {}
+
     public function handle(Dossier $dossier): bool
     {
-        $query = DocumentRequest::query()->whereBelongsTo($dossier);
+        $documentRequests = DocumentRequest::query()
+            ->whereBelongsTo($dossier)
+            ->oldest('sort_order')
+            ->oldest('id')
+            ->get();
 
-        // Use the base query builder for whereIn to satisfy Larastan.
-        $query->getQuery()->whereIn('status', [
-            DocumentRequestStatus::Pending->value,
-            DocumentRequestStatus::Rejected->value,
-        ]);
-
-        return $query->toBase()->exists();
+        return $this->resolveApplicableDocumentRequests
+            ->handle($documentRequests)
+            ->contains(
+                fn (DocumentRequest $documentRequest): bool => in_array(
+                    $documentRequest->status,
+                    [
+                        DocumentRequestStatus::Pending,
+                        DocumentRequestStatus::Rejected,
+                    ],
+                    true,
+                ),
+            );
     }
 }

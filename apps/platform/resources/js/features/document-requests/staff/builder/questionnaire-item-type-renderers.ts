@@ -2,25 +2,33 @@ import {
     AlignLeft,
     Calendar,
     CheckSquare,
+    CircleDot,
     FileUp,
     Hash,
+    ListChecks,
     type LucideIcon,
     Type,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import {
     BuilderBooleanPreview,
+    BuilderChoicePreview,
     BuilderDatePreview,
     BuilderFilePreview,
+    BuilderMultiSelectPreview,
     BuilderNumberPreview,
     BuilderTextareaPreview,
     BuilderTextPreview,
 } from '@/features/document-requests/staff/builder/builder-field-previews';
-import type { QuestionnaireItemType } from '@/features/document-requests/types';
+import type {
+    QuestionnaireItemConfiguration,
+    QuestionnaireItemType,
+} from '@/features/document-requests/types';
 
 export type BuilderFieldPreviewProps = {
     title: string;
     instructions?: string | null;
+    configuration?: QuestionnaireItemConfiguration | null;
 };
 
 type QuestionnaireItemTypeBuilderRenderer = {
@@ -52,6 +60,14 @@ const questionnaireItemTypeBuilderRenderers = {
     boolean: {
         icon: CheckSquare,
         Preview: BuilderBooleanPreview,
+    },
+    choice: {
+        icon: CircleDot,
+        Preview: BuilderChoicePreview,
+    },
+    multi_select: {
+        icon: ListChecks,
+        Preview: BuilderMultiSelectPreview,
     },
 } satisfies Record<QuestionnaireItemType, QuestionnaireItemTypeBuilderRenderer>;
 

@@ -2,8 +2,10 @@ import type { ComponentType } from 'react';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import {
     PortalBooleanRequestContent,
+    PortalChoiceRequestContent,
     type PortalDocumentRequestTypeProps,
     PortalFileRequestContent,
+    PortalMultiSelectRequestContent,
     PortalTextRequestContent,
 } from '@/features/portal/document-requests/portal-document-request-type-content';
 
@@ -17,6 +19,8 @@ const portalDocumentRequestTypeContents = {
     date: PortalTextRequestContent,
     number: PortalTextRequestContent,
     boolean: PortalBooleanRequestContent,
+    choice: PortalChoiceRequestContent,
+    multi_select: PortalMultiSelectRequestContent,
 } satisfies Record<QuestionnaireItemType, PortalDocumentRequestTypeContent>;
 
 export function getQuestionnaireItemTypePortalContent(

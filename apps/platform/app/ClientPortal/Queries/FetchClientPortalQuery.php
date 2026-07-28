@@ -14,6 +14,8 @@ use App\ClientPortal\Data\PortalUploadedDocumentData;
 use App\ClientPortal\Enums\SubmissionContext;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
+use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
+use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -26,6 +28,8 @@ use function in_array;
 final class FetchClientPortalQuery
 {
     public function __construct(
+        private readonly DetermineDocumentRequestVisibilityAction $determineVisibility,
+        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
         private readonly DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
@@ -44,15 +48,25 @@ final class FetchClientPortalQuery
 
         $tenant = $this->resolveTenant($dossier);
         $client = $this->resolveClient($dossier);
-        $totalItemCount = $dossier->documentRequests->count();
-        $remainingItems = $dossier->documentRequests->filter(
+        // Portal only lists currently visible fields; progress uses applicable ones.
+        $visibleDocumentRequests = $dossier->documentRequests->filter(
+            fn (DocumentRequest $documentRequest): bool => $this->determineVisibility->handle(
+                $documentRequest,
+                $dossier->documentRequests,
+            ),
+        );
+        $applicableDocumentRequests = $this->resolveApplicableDocumentRequests->handle(
+            $dossier->documentRequests,
+        );
+        $totalItemCount = $applicableDocumentRequests->count();
+        $remainingItems = $applicableDocumentRequests->filter(
             fn (DocumentRequest $documentRequest): bool => in_array(
                 $documentRequest->status->value,
                 ['pending', 'rejected'],
                 true,
             ),
         );
-        $approvedItemCount = $dossier->documentRequests
+        $approvedItemCount = $applicableDocumentRequests
             ->where('status', DocumentRequestStatus::Accepted)
             ->count();
         $nextIncompleteItem = $remainingItems->first();
@@ -60,17 +74,20 @@ final class FetchClientPortalQuery
         /** @var list<PortalDocumentRequestData> $documentRequests */
         $documentRequests = [];
 
-        foreach ($dossier->documentRequests as $documentRequest) {
+        foreach ($visibleDocumentRequests as $documentRequest) {
             $uploadedDocument = $documentRequest->uploadedDocument;
 
             $documentRequests[] = new PortalDocumentRequestData(
                 id: $documentRequest->id,
                 type: $documentRequest->type->value,
+                fieldKey: $documentRequest->field_key,
                 title: $documentRequest->title,
                 instructions: $documentRequest->instructions,
                 status: $documentRequest->status->value,
                 answerText: $documentRequest->answer_text,
                 answerBoolean: $documentRequest->answer_boolean,
+                answerOptionIds: $documentRequest->answer_option_ids,
+                configuration: $documentRequest->configuration,
                 rejectionReason: $documentRequest->rejection_reason,
                 canRespond: $this->documentRequestTransitions->canSubmit(
                     $documentRequest,

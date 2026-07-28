@@ -14,6 +14,7 @@ use Database\Factories\DossierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -135,6 +136,25 @@ final class Dossier extends Model
     public function documentRequests(): HasMany
     {
         return $this->hasMany(DocumentRequest::class);
+    }
+
+    /**
+     * Document requests in canvas order.
+     *
+     * This is the order clients answer them in, and the order visibility rules
+     * treat as "earlier", so both are read from one place. The id tiebreak matches
+     * DocumentRequest::isOrderedBefore().
+     *
+     * @return EloquentCollection<int, DocumentRequest>
+     */
+    public function documentRequestsInCanvasOrder(): EloquentCollection
+    {
+        $query = DocumentRequest::query();
+        $query->getQuery()->where('dossier_id', $this->getKey());
+        $query->getQuery()->orderBy('sort_order');
+        $query->getQuery()->orderBy('id');
+
+        return $query->get();
     }
 
     /**

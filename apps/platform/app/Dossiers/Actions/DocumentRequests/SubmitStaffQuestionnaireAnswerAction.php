@@ -23,15 +23,20 @@ final class SubmitStaffQuestionnaireAnswerAction
         private readonly LogAuditActivityAction $logAuditActivity,
     ) {}
 
+    /**
+     * @param  list<string>|null  $answerOptionIds
+     */
     public function handle(
         DocumentRequest $documentRequest,
         ?string $answerText = null,
         ?bool $answerBoolean = null,
+        ?array $answerOptionIds = null,
     ): DocumentRequest {
         return DB::transaction(function () use (
             $documentRequest,
             $answerText,
             $answerBoolean,
+            $answerOptionIds,
         ): DocumentRequest {
             $documentRequestQuery = DocumentRequest::query()
                 ->whereKey($documentRequest->getKey());
@@ -47,6 +52,7 @@ final class SubmitStaffQuestionnaireAnswerAction
                 $lockedDocumentRequest,
                 $answerText,
                 $answerBoolean,
+                $answerOptionIds,
                 SubmissionContext::Staff,
             );
 

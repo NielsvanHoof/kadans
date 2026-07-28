@@ -181,6 +181,66 @@ export function StaffBooleanRequestContent({
     );
 }
 
+/**
+ * Single-choice answers show the selected option label.
+ */
+export function StaffChoiceRequestContent({
+    dossierId,
+    documentRequest,
+}: StaffDocumentRequestTypeProps) {
+    return (
+        <StaffOptionAnswerContent
+            dossierId={dossierId}
+            documentRequest={documentRequest}
+        />
+    );
+}
+
+/**
+ * Multi-select answers show every selected option label.
+ */
+export function StaffMultiSelectRequestContent({
+    dossierId,
+    documentRequest,
+}: StaffDocumentRequestTypeProps) {
+    return (
+        <StaffOptionAnswerContent
+            dossierId={dossierId}
+            documentRequest={documentRequest}
+        />
+    );
+}
+
+function StaffOptionAnswerContent({
+    dossierId,
+    documentRequest,
+}: StaffDocumentRequestTypeProps) {
+    const staffFallbackAllowed = useStaffFallbackAllowed(documentRequest);
+    const labels = (documentRequest.configuration?.options ?? [])
+        .filter((option) =>
+            documentRequest.answer_option_ids?.includes(option.id),
+        )
+        .map((option) => option.label);
+
+    return (
+        <>
+            {labels.length > 0 ? (
+                <AnswerPreview>
+                    <p className="font-medium whitespace-pre-wrap">
+                        {labels.join(', ')}
+                    </p>
+                </AnswerPreview>
+            ) : null}
+            {staffFallbackAllowed ? (
+                <DocumentRequestAnswer
+                    dossierId={dossierId}
+                    documentRequest={documentRequest}
+                />
+            ) : null}
+        </>
+    );
+}
+
 function AnswerPreview({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
 
