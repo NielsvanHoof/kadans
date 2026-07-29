@@ -94,10 +94,10 @@ export default function ErrorPage({ status }: Props) {
                     </p>
 
                     <Button asChild className="mt-8">
-                        <Link href={isAuthenticated ? login() : dashboard()}>
+                        <Link href={isAuthenticated ? dashboard() : login()}>
                             {isAuthenticated
-                                ? t('Go to login')
-                                : t('Go to dashboard')}
+                                ? t('Go to dashboard')
+                                : t('Go to login')}
                         </Link>
                     </Button>
                 </main>
