@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Audit\Policies;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Enums\Permission;
+use App\Audit\Enums\AuditPermission;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
 
 final class ActivityPolicy
@@ -17,6 +17,6 @@ final class ActivityPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $this->userHasPermissionInCurrentTenant($user, Permission::ViewAuditLog);
+        return $this->userHasPermissionInCurrentTenant($user, AuditPermission::View);
     }
 }

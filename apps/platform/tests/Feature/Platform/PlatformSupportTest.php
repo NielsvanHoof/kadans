@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
+use App\Audit\Enums\AuditPermission;
 use App\Audit\Models\Activity;
+use App\Clients\Enums\ClientPermission;
 use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestPermission;
+use App\Dossiers\Enums\DossierPermission;
+use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Support\SupportSession;
+use App\Questionnaires\Enums\QuestionnaireTemplatePermission;
 use App\Tenancy\Actions\ProvisionTenantAction;
-use App\Tenancy\Enums\Permission;
+use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -103,10 +109,10 @@ test('support session is read-only and cannot manage members', function () {
         ->assertForbidden();
 
     actingInWorkspace($tenant);
-    expect($support->fresh()->can(Permission::ManageMembers->value))->toBeFalse()
-        ->and($support->fresh()->can(Permission::CreateDossiers->value))->toBeFalse()
-        ->and($support->fresh()->can(Permission::ViewDossiers->value))->toBeTrue()
-        ->and($support->fresh()->can(Permission::ViewAuditLog->value))->toBeTrue();
+    expect($support->fresh()->can(WorkspacePermission::ViewMembers->value))->toBeFalse()
+        ->and($support->fresh()->can(DossierPermission::Create->value))->toBeFalse()
+        ->and($support->fresh()->can(DossierPermission::View->value))->toBeTrue()
+        ->and($support->fresh()->can(AuditPermission::View->value))->toBeTrue();
 });
 
 test('expired support sessions are rejected', function () {
@@ -194,14 +200,15 @@ test('support session grants download and audit view but denies client managemen
     actingInWorkspace($tenant);
     $support = $support->fresh();
 
-    expect($support->hasTenantPermission(Permission::ViewDossiers, $tenant))->toBeTrue()
-        ->and($support->hasTenantPermission(Permission::DownloadDocuments, $tenant))->toBeTrue()
-        ->and($support->hasTenantPermission(Permission::ViewAuditLog, $tenant))->toBeTrue()
-        ->and($support->hasTenantPermission(Permission::ManageClients, $tenant))->toBeFalse()
-        ->and($support->hasTenantPermission(Permission::CreateDossiers, $tenant))->toBeFalse()
-        ->and($support->hasTenantPermission(Permission::ReviewDocuments, $tenant))->toBeFalse()
-        ->and($support->hasTenantPermission(Permission::ManageMembers, $tenant))->toBeFalse()
-        ->and($support->hasTenantPermission(Permission::ManageTemplates, $tenant))->toBeFalse();
+    expect($support->hasTenantPermission(DossierPermission::View, $tenant))->toBeTrue()
+        ->and($support->hasTenantPermission(UploadedDocumentPermission::Download, $tenant))->toBeTrue()
+        ->and($support->hasTenantPermission(AuditPermission::View, $tenant))->toBeTrue()
+        ->and($support->hasTenantPermission(ClientPermission::View, $tenant))->toBeFalse()
+        ->and($support->hasTenantPermission(DossierPermission::Create, $tenant))->toBeFalse()
+        ->and($support->hasTenantPermission(DossierPermission::Export, $tenant))->toBeFalse()
+        ->and($support->hasTenantPermission(DocumentRequestPermission::Review, $tenant))->toBeFalse()
+        ->and($support->hasTenantPermission(WorkspacePermission::ViewMembers, $tenant))->toBeFalse()
+        ->and($support->hasTenantPermission(QuestionnaireTemplatePermission::Update, $tenant))->toBeFalse();
 
     $this->actingAs($support)
         ->get(workspaceRoute('workspaces.activity.index', $tenant))

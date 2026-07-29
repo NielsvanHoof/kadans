@@ -197,6 +197,8 @@ test('adviser can apply a template and edit dossier items', function () {
     expect($requests)->toHaveCount(1 + $system->items()->count())
         ->and($requests->first()->title)->toBe('Existing ad-hoc request')
         ->and($requests->pluck('type')->contains(QuestionnaireItemType::Boolean))->toBeTrue()
+        ->and($requests->skip(1)->pluck('field_key')->filter()->unique()->count())
+        ->toBe($system->items()->count())
         ->and(Activity::query()
             ->where('event', AuditEvent::DocumentRequestCreated->value)
             ->count())->toBe($system->items()->count());
@@ -224,6 +226,74 @@ test('adviser can apply a template and edit dossier items', function () {
             ->where('event', AuditEvent::DocumentRequestDeleted->value)
             ->where('subject_id', $firstTemplateItem->id)
             ->exists())->toBeTrue();
+});
+
+test('applying a template assigns unique field keys when template items have null keys', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    // Mimic DatabaseSeeder's WithoutModelEvents: items land without field_key.
+    $template = QuestionnaireTemplate::factory()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Broken seed pack',
+        'category' => QuestionnaireTemplateCategory::Kyc,
+    ]);
+
+    QuestionnaireTemplateItem::withoutEvents(function () use ($template): void {
+        foreach (['Source question', 'Dependent question'] as $index => $title) {
+            QuestionnaireTemplateItem::query()->create([
+                'questionnaire_template_id' => $template->id,
+                'type' => $index === 0
+                    ? QuestionnaireItemType::Boolean
+                    : QuestionnaireItemType::Text,
+                'field_key' => null,
+                'title' => $title,
+                'instructions' => null,
+                'sort_order' => $index,
+            ]);
+        }
+    });
+
+    expect($template->items()->whereNull('field_key')->count())->toBe(2);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.apply-template', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'questionnaire_template_id' => $template->id,
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
+
+    $tenant->makeCurrent();
+    $fieldKeys = DocumentRequest::query()
+        ->where('dossier_id', $dossier->id)
+        ->pluck('field_key');
+
+    expect($fieldKeys)->toHaveCount(2)
+        ->and($fieldKeys->contains(null))->toBeFalse()
+        ->and($fieldKeys->unique()->count())->toBe(2);
+});
+
+test('system questionnaire seeder assigns unique field keys without model events', function () {
+    // DatabaseSeeder uses WithoutModelEvents; reproduce that so the creating
+    // hook cannot silently paper over a missing field_key in the seeder.
+    QuestionnaireTemplateItem::withoutEvents(function (): void {
+        $this->seed(SystemQuestionnaireTemplateSeeder::class);
+    });
+
+    $keys = QuestionnaireTemplateItem::query()->pluck('field_key');
+
+    expect($keys)->not->toBeEmpty()
+        ->and($keys->contains(null))->toBeFalse()
+        ->and($keys->unique()->count())->toBe($keys->count());
 });
 
 test('firm templates are isolated between tenants', function () {

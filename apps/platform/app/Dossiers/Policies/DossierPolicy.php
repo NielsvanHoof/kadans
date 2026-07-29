@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Dossiers\Policies;
 
 use App\Accounts\Models\User;
+use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Enums\Permission;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
 
 final class DossierPolicy
@@ -16,7 +16,7 @@ final class DossierPolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->userHasPermissionInCurrentTenant($user, Permission::ViewDossiers);
+        return $this->userHasPermissionInCurrentTenant($user, DossierPermission::View);
     }
 
     public function view(User $user, Dossier $dossier): bool
@@ -24,40 +24,56 @@ final class DossierPolicy
         return $this->userHasPermissionInTenant(
             $user,
             $dossier->tenant,
-            Permission::ViewDossiers,
+            DossierPermission::View,
         );
     }
 
     public function create(User $user): bool
     {
-        return $this->userHasPermissionInCurrentTenant($user, Permission::CreateDossiers);
+        return $this->userHasPermissionInCurrentTenant($user, DossierPermission::Create);
     }
 
     public function update(User $user, Dossier $dossier): bool
     {
-        return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::CreateDossiers)
+        return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::Update)
             && $dossier->status !== DossierStatus::Completed;
     }
 
     public function complete(User $user, Dossier $dossier): bool
     {
-        return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::ReviewDocuments)
+        return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::Complete)
             && $dossier->status !== DossierStatus::Completed;
     }
 
     public function delete(User $user, Dossier $dossier): bool
     {
-        return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::CreateDossiers);
+        return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::Delete);
+    }
+
+    /**
+     * Class-level gate for bulk archiving, where there is no single dossier yet.
+     */
+    public function deleteAny(User $user): bool
+    {
+        return $this->userHasPermissionInCurrentTenant($user, DossierPermission::Delete);
     }
 
     public function restore(User $user, Dossier $dossier): bool
     {
-        return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::CreateDossiers);
+        return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::Restore);
+    }
+
+    /**
+     * Class-level gate for the recycle bin and bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $this->userHasPermissionInCurrentTenant($user, DossierPermission::Restore);
     }
 
     public function sendReminder(User $user, Dossier $dossier): bool
     {
-        return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::CreateDossiers)
+        return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::SendReminder)
             && $dossier->status !== DossierStatus::Completed;
     }
 
@@ -66,7 +82,7 @@ final class DossierPolicy
         return $this->userHasPermissionInTenant(
             $user,
             $dossier->tenant,
-            Permission::DownloadDocuments,
+            DossierPermission::Export,
         );
     }
 }

@@ -18,7 +18,7 @@ final class BulkRestoreClientsRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Client::class) ?? false;
+        return $this->user()?->can('restoreAny', Client::class) ?? false;
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

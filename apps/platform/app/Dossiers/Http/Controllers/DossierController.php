@@ -7,6 +7,7 @@ namespace App\Dossiers\Http\Controllers;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\Clients\Models\Client;
 use App\Dossiers\Actions\BulkDeleteDossiersAction;
 use App\Dossiers\Actions\BulkRestoreDossiersAction;
 use App\Dossiers\Actions\CreateDossierAction;
@@ -14,10 +15,13 @@ use App\Dossiers\Actions\DeleteDossierAction;
 use App\Dossiers\Actions\RestoreDossierAction;
 use App\Dossiers\Actions\UpdateDossierAction;
 use App\Dossiers\Data\QuestionnaireTemplateOptionData;
+use App\Dossiers\Enums\DocumentRequestPermission;
+use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Http\Requests\BulkArchiveDossiersRequest;
 use App\Dossiers\Http\Requests\BulkRestoreDossiersRequest;
 use App\Dossiers\Http\Requests\StoreDossierRequest;
 use App\Dossiers\Http\Requests\UpdateDossierRequest;
+use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\FetchArchivedDossiersQuery;
 use App\Dossiers\Queries\FetchDossierCreateQuery;
@@ -27,7 +31,6 @@ use App\Dossiers\Queries\FetchDossierShowQuery;
 use App\Questionnaires\Queries\FetchQuestionnaireTemplateOptionsQuery;
 use App\Shared\Data\PersonOptionData;
 use App\Shared\Http\Controllers\Controller;
-use App\Tenancy\Enums\Permission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Queries\FetchResponsibleStaffOptionsQuery;
 use Illuminate\Http\RedirectResponse;
@@ -81,8 +84,8 @@ final class DossierController extends Controller
         return Inertia::render('dossiers/archived', [
             'dossiers' => $fetchArchivedDossiers->handle(),
             ...$fetchArchivedDossiers->indexQueryProps(),
-            'can_restore' => $request->user()?->hasTenantPermission(Permission::CreateDossiers) ?? false,
-            'can_restore_clients' => $request->user()?->hasTenantPermission(Permission::ManageClients) ?? false,
+            'can_restore' => $request->user()?->can('restoreAny', Dossier::class) ?? false,
+            'can_restore_clients' => $request->user()?->can('restoreAny', Client::class) ?? false,
         ]);
     }
 
@@ -328,11 +331,11 @@ final class DossierController extends Controller
         $props = [
             'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
             'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
-            'can_manage' => $request->user()?->hasTenantPermission(Permission::CreateDossiers) ?? false,
+            'can_manage' => $request->user()?->can('create', DocumentRequest::class) ?? false,
             'can_edit' => $request->user()?->can('update', $dossier) ?? false,
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
-            'can_review' => $request->user()?->hasTenantPermission(Permission::ReviewDocuments) ?? false,
-            'can_download' => $request->user()?->hasTenantPermission(Permission::DownloadDocuments) ?? false,
+            'can_review' => $request->user()?->hasTenantPermission(DocumentRequestPermission::Review) ?? false,
+            'can_download' => $request->user()?->hasTenantPermission(UploadedDocumentPermission::Download) ?? false,
             'dossier' => fn (): array => $getDossierShowData->handle(
                 $dossier,
                 $request->user()?->can('export', $dossier) ?? false,

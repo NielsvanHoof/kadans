@@ -5,7 +5,13 @@ declare(strict_types=1);
 namespace App\Platform\Support;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Enums\Permission;
+use App\Audit\Enums\AuditPermission;
+use App\DocumentProcessing\Enums\PipelinePermission;
+use App\Dossiers\Enums\DocumentRequestPermission;
+use App\Dossiers\Enums\DossierPermission;
+use App\Dossiers\Enums\UploadedDocumentPermission;
+use App\Questionnaires\Enums\QuestionnaireTemplatePermission;
+use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Session\Session;
 use InvalidArgumentException;
@@ -29,14 +35,21 @@ final class SupportSession
     /**
      * Permissions granted while in an active support session (read-only).
      *
-     * @return list<Permission>
+     * Every entry must be non-mutating: this list is the hard ceiling on what
+     * platform support can do inside a customer's firm.
+     *
+     * @return list<TenantPermission>
      */
     public static function readOnlyPermissions(): array
     {
         return [
-            Permission::ViewDossiers,
-            Permission::DownloadDocuments,
-            Permission::ViewAuditLog,
+            DossierPermission::View,
+            DocumentRequestPermission::View,
+            UploadedDocumentPermission::View,
+            UploadedDocumentPermission::Download,
+            QuestionnaireTemplatePermission::View,
+            PipelinePermission::View,
+            AuditPermission::View,
         ];
     }
 
@@ -46,7 +59,7 @@ final class SupportSession
     public static function readOnlyPermissionValues(): array
     {
         return array_map(
-            static fn (Permission $permission): string => $permission->value,
+            static fn (TenantPermission $permission): string => $permission->value,
             self::readOnlyPermissions(),
         );
     }
@@ -140,9 +153,9 @@ final class SupportSession
         return $active instanceof SupportSessionData && $active->isFor($tenant);
     }
 
-    public function allowsPermission(Permission|string $permission): bool
+    public function allowsPermission(TenantPermission|string $permission): bool
     {
-        $value = $permission instanceof Permission ? $permission->value : $permission;
+        $value = $permission instanceof TenantPermission ? $permission->value : $permission;
 
         return in_array($value, self::readOnlyPermissionValues(), true);
     }

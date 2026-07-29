@@ -48,35 +48,10 @@ enum Role: string
     }
 
     /**
-     * @return list<Permission>
+     * Owners implicitly hold every registered permission.
      */
-    public function permissions(): array
+    public function grantsAllPermissions(): bool
     {
-        return match ($this) {
-            self::Owner => Permission::cases(),
-            self::Administrator => [
-                Permission::ManageClients,
-                Permission::CreateDossiers,
-                Permission::ViewDossiers,
-                Permission::ManageTemplates,
-                Permission::ManageMembers,
-                Permission::ReviewDocuments,
-                Permission::DownloadDocuments,
-                Permission::ViewAuditLog,
-            ],
-            self::Adviser => [
-                Permission::ViewDossiers,
-                Permission::CreateDossiers,
-                Permission::ReviewDocuments,
-                Permission::DownloadDocuments,
-            ],
-            self::Reviewer => [
-                Permission::ViewDossiers,
-                Permission::ReviewDocuments,
-            ],
-            self::ReadOnly => [
-                Permission::ViewDossiers,
-            ],
-        };
+        return $this === self::Owner;
     }
 }

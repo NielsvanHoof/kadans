@@ -49,20 +49,31 @@ final class ApplyQuestionnaireTemplateToDossierAction
 
             $created = collect();
 
-            // Copied fields get fresh keys, so conditions must be rewritten to
-            // point at the copies rather than back at the template items.
-            $fieldKeys = $template->items
-                ->mapWithKeys(fn ($item): array => [$item->field_key => (string) Str::ulid()])
+            // One fresh ULID per template item, keyed by item id. Mapping by
+            // field_key collapses when keys are null/duplicate (e.g. seeders
+            // that run under WithoutModelEvents), which then violates the
+            // unique index on document_requests.field_key.
+            $fieldKeysByItemId = $template->items
+                ->mapWithKeys(fn ($item): array => [$item->getKey() => (string) Str::ulid()])
+                ->all();
+
+            // Visibility rules still reference template field keys, so rewrite
+            // those to the new per-item keys when the template key is present.
+            $fieldKeysForVisibility = $template->items
+                ->filter(fn ($item): bool => $item->field_key !== '')
+                ->mapWithKeys(fn ($item): array => [
+                    $item->field_key => $fieldKeysByItemId[$item->getKey()],
+                ])
                 ->all();
 
             foreach ($template->items as $item) {
                 $configuration = $this->remapVisibility(
                     $item->configuration ?? [],
-                    $fieldKeys,
+                    $fieldKeysForVisibility,
                 );
                 $documentRequest = $lockedDossier->documentRequests()->create([
                     'type' => $item->type,
-                    'field_key' => $fieldKeys[$item->field_key] ?? null,
+                    'field_key' => $fieldKeysByItemId[$item->getKey()],
                     'title' => $item->title,
                     'instructions' => $item->instructions,
                     'configuration' => $configuration,
@@ -85,7 +96,7 @@ final class ApplyQuestionnaireTemplateToDossierAction
 
     /**
      * @param  array<string, mixed>  $configuration
-     * @param  array<array-key, string>  $fieldKeys  Template field key => new field key
+     * @param  array<string, string>  $fieldKeys  Template field key => new field key
      * @return array<string, mixed>
      */
     private function remapVisibility(array $configuration, array $fieldKeys): array

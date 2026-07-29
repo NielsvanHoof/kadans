@@ -35,12 +35,12 @@ use App\Platform\Support\SupportSession;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use App\Questionnaires\Policies\QuestionnaireTemplatePolicy;
-use App\Tenancy\Enums\Permission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Policies\TenantInvitationPolicy;
 use App\Tenancy\Policies\TenantMembershipPolicy;
+use App\Tenancy\Support\PermissionRegistry;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
@@ -54,7 +54,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
-use function in_array;
 use function is_string;
 
 final class AppServiceProvider extends ServiceProvider
@@ -67,6 +66,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->commands([
             PruneModelsCommand::class,
         ]);
+        $this->registerPermissionRegistry();
         $this->registerOcrBindings();
         $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
 
@@ -142,6 +142,20 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * The registry is derived purely from config, so a singleton holds no
+     * request state and stays safe across Octane requests.
+     */
+    private function registerPermissionRegistry(): void
+    {
+        $this->app->singleton(
+            PermissionRegistry::class,
+            static fn (): PermissionRegistry => new PermissionRegistry(
+                config()->array('tenant-permissions.enums'),
+            ),
+        );
+    }
+
+    /**
      * Grant read-only abilities to platform support users in an active firm session.
      * Hard-denies mutate abilities while a support session is active.
      * Only intercepts Spatie permission strings — policy methods (viewAny, etc.) continue normally.
@@ -154,7 +168,7 @@ final class AppServiceProvider extends ServiceProvider
             }
 
             // Policy abilities like "viewAny" must not be short-circuited here.
-            if (! in_array($ability, Permission::values(), true)) {
+            if (! app(PermissionRegistry::class)->isRegistered($ability)) {
                 return null;
             }
 

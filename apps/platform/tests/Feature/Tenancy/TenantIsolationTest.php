@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
+use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Actions\ProvisionTenantAction;
-use App\Tenancy\Enums\Permission;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
@@ -169,7 +169,7 @@ test('read only members cannot create dossiers', function () {
     $reader->unsetRelation('roles');
     $reader->assignRole(Role::ReadOnly->value);
 
-    expect($reader->can(Permission::CreateDossiers->value))->toBeFalse();
+    expect($reader->can(DossierPermission::Create->value))->toBeFalse();
 });
 
 test('tenant routes are registered with the expected middleware', function () {

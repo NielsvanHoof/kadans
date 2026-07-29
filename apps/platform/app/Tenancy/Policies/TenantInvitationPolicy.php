@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Policies;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Enums\Permission;
+use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
@@ -16,7 +16,7 @@ final class TenantInvitationPolicy
 
     public function create(User $user): bool
     {
-        return $this->userHasPermissionInCurrentTenant($user, Permission::ManageMembers);
+        return $this->userHasPermissionInCurrentTenant($user, WorkspacePermission::InviteMembers);
     }
 
     public function resend(User $user, TenantInvitation $invitation): bool
@@ -41,7 +41,7 @@ final class TenantInvitationPolicy
         return $this->userHasPermissionInTenant(
             $user,
             $tenant,
-            Permission::ManageMembers,
+            WorkspacePermission::InviteMembers,
         );
     }
 }

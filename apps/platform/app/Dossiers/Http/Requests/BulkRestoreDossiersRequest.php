@@ -20,7 +20,7 @@ final class BulkRestoreDossiersRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Dossier::class) ?? false;
+        return $this->user()?->can('restoreAny', Dossier::class) ?? false;
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

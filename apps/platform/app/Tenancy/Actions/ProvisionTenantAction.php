@@ -12,7 +12,6 @@ use App\Tenancy\Models\TenantMembership;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role as RoleModel;
 use Throwable;
 
 use function getPermissionsTeamId;
@@ -20,6 +19,8 @@ use function setPermissionsTeamId;
 
 final class ProvisionTenantAction
 {
+    public function __construct(private readonly SyncTenantRolesAction $syncTenantRoles) {}
+
     public function handle(
         string $name,
         User $owner,
@@ -99,22 +100,14 @@ final class ProvisionTenantAction
         return Str::limit($baseSlug, 255 - mb_strlen($suffixValue), '').$suffixValue;
     }
 
+    /**
+     * Delegates to the shared sync path so a freshly provisioned firm and an
+     * existing one always end up with identical role definitions.
+     */
     private function seedRolesForTenant(Tenant $tenant): void
     {
+        $this->syncTenantRoles->syncTenant($tenant);
+
         setPermissionsTeamId($tenant->id);
-
-        foreach (RoleEnum::cases() as $roleEnum) {
-            $role = RoleModel::query()->create([
-                'name' => $roleEnum->value,
-                'guard_name' => 'web',
-                'tenant_id' => $tenant->id,
-            ]);
-
-            $role->givePermissionTo(
-                collect($roleEnum->permissions())
-                    ->map(fn ($permission) => $permission->value)
-                    ->all(),
-            );
-        }
     }
 }

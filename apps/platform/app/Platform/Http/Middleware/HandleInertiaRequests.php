@@ -7,9 +7,10 @@ namespace App\Platform\Http\Middleware;
 use App\Accounts\Actions\Localization\LoadFrontendTranslationsAction;
 use App\Accounts\Enums\Locale;
 use App\Accounts\Models\User;
+use App\DocumentProcessing\Enums\PipelinePermission;
 use App\Platform\Support\SupportSession;
 use App\Tenancy\Data\WorkspaceNavItemData;
-use App\Tenancy\Enums\Permission;
+use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Queries\FetchWorkspaceNavigationForUserQuery;
 use App\WorkspaceNotifications\Queries\FetchWorkspaceNotificationsForUserQuery;
@@ -159,14 +160,14 @@ final class HandleInertiaRequests extends Middleware
 
                 return $user instanceof User
                     && $tenant instanceof Tenant
-                    && $user->hasTenantPermission(Permission::ManageMembers, $tenant);
+                    && $user->hasTenantPermission(WorkspacePermission::ViewMembers, $tenant);
             },
             'can_view_pipelines' => function () use ($user): bool {
                 $tenant = Tenant::current();
 
                 return $user instanceof User
                     && $tenant instanceof Tenant
-                    && $user->hasTenantPermission(Permission::ViewAuditLog, $tenant);
+                    && $user->hasTenantPermission(PipelinePermission::View, $tenant);
             },
             // Staff bell inbox — deferred so non-bell pages stay cheap.
             'notifications' => (function () use ($user) {

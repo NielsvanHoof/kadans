@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\ClientPortal\Policies;
 
 use App\Accounts\Models\User;
+use App\ClientPortal\Enums\ClientAccessGrantPermission;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\Tenancy\Enums\Permission;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
 
 final class ClientAccessGrantPolicy
@@ -15,7 +15,7 @@ final class ClientAccessGrantPolicy
 
     public function create(User $user): bool
     {
-        return $this->userHasPermissionInCurrentTenant($user, Permission::CreateDossiers);
+        return $this->userHasPermissionInCurrentTenant($user, ClientAccessGrantPermission::Grant);
     }
 
     public function revoke(User $user, ClientAccessGrant $grant): bool
@@ -23,7 +23,7 @@ final class ClientAccessGrantPolicy
         return $this->userHasPermissionInTenant(
             $user,
             $grant->tenant,
-            Permission::CreateDossiers,
+            ClientAccessGrantPermission::Revoke,
         );
     }
 }

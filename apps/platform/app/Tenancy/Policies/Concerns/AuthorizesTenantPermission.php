@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Policies\Concerns;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Enums\Permission;
+use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
 
 trait AuthorizesTenantPermission
@@ -17,7 +17,7 @@ trait AuthorizesTenantPermission
     protected function userHasPermissionInTenant(
         User $user,
         ?Tenant $tenant,
-        Permission $permission,
+        TenantPermission $permission,
     ): bool {
         return $user->hasTenantPermission($permission, $tenant);
     }
@@ -25,7 +25,7 @@ trait AuthorizesTenantPermission
     /**
      * Permission check against the current tenant (for viewAny / create gates).
      */
-    protected function userHasPermissionInCurrentTenant(User $user, Permission $permission): bool
+    protected function userHasPermissionInCurrentTenant(User $user, TenantPermission $permission): bool
     {
         return $user->hasTenantPermission($permission, Tenant::current());
     }

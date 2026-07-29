@@ -58,7 +58,7 @@ final class ClientController extends Controller
         return Inertia::render('clients/archived', [
             'clients' => $fetchArchivedClients->handle(),
             ...$fetchArchivedClients->indexQueryProps(),
-            'can_restore' => $request->user()?->can('create', Client::class) ?? false,
+            'can_restore' => $request->user()?->can('restoreAny', Client::class) ?? false,
         ]);
     }
 

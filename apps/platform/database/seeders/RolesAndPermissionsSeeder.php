@@ -4,22 +4,17 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Tenancy\Enums\Permission as PermissionEnum;
+use App\Tenancy\Actions\SyncTenantRolesAction;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\PermissionRegistrar;
 
 final class RolesAndPermissionsSeeder extends Seeder
 {
+    /**
+     * Creates the global permission rows and reconciles the roles of any firms
+     * that already exist.
+     */
     public function run(): void
     {
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
-
-        foreach (PermissionEnum::cases() as $permission) {
-            Permission::query()->firstOrCreate([
-                'name' => $permission->value,
-                'guard_name' => 'web',
-            ]);
-        }
+        app(SyncTenantRolesAction::class)->handle();
     }
 }

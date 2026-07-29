@@ -18,7 +18,7 @@ final class BulkArchiveClientsRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Client::class) ?? false;
+        return $this->user()?->can('deleteAny', Client::class) ?? false;
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

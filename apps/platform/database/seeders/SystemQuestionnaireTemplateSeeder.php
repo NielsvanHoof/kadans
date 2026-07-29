@@ -9,6 +9,7 @@ use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 final class SystemQuestionnaireTemplateSeeder extends Seeder
 {
@@ -33,9 +34,12 @@ final class SystemQuestionnaireTemplateSeeder extends Seeder
             $template->items()->delete();
 
             foreach ($items as $index => $item) {
+                // Set field_key explicitly: DatabaseSeeder uses WithoutModelEvents,
+                // so the model's creating hook that normally assigns a ULID never runs.
                 QuestionnaireTemplateItem::query()->create([
                     'questionnaire_template_id' => $template->id,
                     'type' => $item['type'],
+                    'field_key' => (string) Str::ulid(),
                     'title' => $item['title'],
                     'instructions' => $item['instructions'],
                     'sort_order' => $index,

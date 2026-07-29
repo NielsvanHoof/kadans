@@ -6,7 +6,7 @@ namespace App\Accounts\Models;
 
 use App\Accounts\Enums\PlatformRole;
 use App\Platform\Support\SupportSession;
-use App\Tenancy\Enums\Permission;
+use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Database\Factories\UserFactory;
@@ -122,7 +122,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
      * Active support sessions always use the read-only allow-list (even when
      * the user is also a firm member). Otherwise Spatie team roles apply.
      */
-    public function hasTenantPermission(Permission $permission, ?Tenant $tenant = null): bool
+    public function hasTenantPermission(TenantPermission $permission, ?Tenant $tenant = null): bool
     {
         $tenant ??= Tenant::current();
 
