@@ -15,6 +15,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
+use function is_string;
+
 final class InviteTenantMemberRequest extends FormRequest
 {
     use LocalizesValidationAttributes;

@@ -905,6 +905,7 @@
     "Delete pipeline run?": "Delete pipeline run?",
     "This removes the execution record and its step history. It does not delete the underlying dossier or document.": "This removes the execution record and its step history. It does not delete the underlying dossier or document.",
     "Delete pipeline": "Delete pipeline",
+    "Download payload": "Download payload",
     "No active step": "No active step",
     "Attempts": "Attempts",
     "Started": "Started",

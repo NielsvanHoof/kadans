@@ -6,6 +6,8 @@ namespace App\DocumentProcessing\Services\Ocr\Normalization;
 
 use App\DocumentProcessing\Contracts\Ocr\DocumentExtraction;
 
+use function count;
+use function in_array;
 use function is_array;
 use function is_float;
 use function is_int;

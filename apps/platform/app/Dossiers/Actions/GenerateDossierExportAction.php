@@ -18,6 +18,8 @@ use RuntimeException;
 use Throwable;
 use ZipArchive;
 
+use function sprintf;
+
 final class GenerateDossierExportAction
 {
     public function __construct(

@@ -19,6 +19,7 @@ use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
 use function in_array;
+use function is_string;
 
 /**
  * @extends PaginatedIndexQuery<Dossier>

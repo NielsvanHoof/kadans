@@ -9,14 +9,13 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\CreateDossierExportAction;
+use App\Dossiers\Actions\DownloadDossierExportAction;
 use App\Dossiers\Jobs\GenerateDossierExportJob;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -60,6 +59,7 @@ final class DossierExportController extends Controller
         Dossier $dossier,
         DossierExport $export,
         LogAuditActivityAction $logAuditActivity,
+        DownloadDossierExportAction $downloadDossierExport,
     ): StreamedResponse {
         $this->authorize('export', $dossier);
 
@@ -71,17 +71,6 @@ final class DossierExportController extends Controller
             ['dossier_id' => $dossier->id],
         );
 
-        $disk = $export->disk;
-        $path = $export->path;
-
-        if ($disk === null || $path === null) {
-            abort(HttpResponse::HTTP_NOT_FOUND);
-        }
-
-        return Storage::disk($disk)->download(
-            $path,
-            (Str::slug($dossier->title) !== '' ? Str::slug($dossier->title) : 'dossier').'-export.zip',
-            ['Content-Type' => 'application/zip'],
-        );
+        return $downloadDossierExport->handle($export->setRelation('dossier', $dossier));
     }
 }

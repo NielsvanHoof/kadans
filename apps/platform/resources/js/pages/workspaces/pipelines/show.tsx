@@ -1,5 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Trash2 } from 'lucide-react';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -24,15 +24,18 @@ import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 import {
     destroy as destroyPipeline,
+    download as downloadPipeline,
     index as pipelineIndex,
 } from '@/routes/workspaces/pipelines';
 
 export default function PipelineShow({
     pipeline,
     can_delete: canDelete = false,
+    can_download: canDownload = false,
 }: {
     pipeline: PipelineDetail;
     can_delete?: boolean;
+    can_download?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
@@ -83,25 +86,41 @@ export default function PipelineShow({
                         />
                     </div>
 
-                    {canDelete ? (
-                        <ConfirmDestroyDialog
-                            title={t('Delete pipeline run?')}
-                            description={t(
-                                'This removes the execution record and its step history. It does not delete the underlying dossier or document.',
-                            )}
-                            confirmLabel={t('Delete pipeline')}
-                            form={destroyPipeline.form({
-                                tenant: currentWorkspace,
-                                pipeline: pipeline.id,
-                            })}
-                            trigger={
-                                <Button variant="destructive" type="button">
-                                    <Trash2 aria-hidden="true" />
-                                    {t('Delete')}
-                                </Button>
-                            }
-                        />
-                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {canDownload ? (
+                            <Button asChild variant="outline" type="button">
+                                <a
+                                    href={downloadPipeline.url({
+                                        tenant: currentWorkspace,
+                                        pipeline: pipeline.id,
+                                    })}
+                                >
+                                    <Download aria-hidden="true" />
+                                    {t('Download payload')}
+                                </a>
+                            </Button>
+                        ) : null}
+
+                        {canDelete ? (
+                            <ConfirmDestroyDialog
+                                title={t('Delete pipeline run?')}
+                                description={t(
+                                    'This removes the execution record and its step history. It does not delete the underlying dossier or document.',
+                                )}
+                                confirmLabel={t('Delete pipeline')}
+                                form={destroyPipeline.form({
+                                    tenant: currentWorkspace,
+                                    pipeline: pipeline.id,
+                                })}
+                                trigger={
+                                    <Button variant="destructive" type="button">
+                                        <Trash2 aria-hidden="true" />
+                                        {t('Delete')}
+                                    </Button>
+                                }
+                            />
+                        ) : null}
+                    </div>
                 </div>
 
                 <Card className="border-l-4 border-l-primary">

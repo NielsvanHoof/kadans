@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Reporting\Http\Controllers;
 
 use App\Accounts\Models\User;
+use App\Audit\Actions\LogAuditActivityAction;
+use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Actions\Pipelines\DeletePipelineAction;
 use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Actions\DownloadDossierExportAction;
+use App\Dossiers\Models\DossierExport;
 use App\Reporting\Queries\FetchPipelineIndexQuery;
 use App\Reporting\Queries\FetchPipelineShowQuery;
 use App\Shared\Http\Controllers\Controller;
@@ -16,6 +20,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class PipelineController extends Controller
 {
@@ -44,8 +49,40 @@ final class PipelineController extends Controller
             [
                 ...$fetchPipelineShow->handle($pipeline),
                 'can_delete' => $request->user()?->can('delete', $pipeline) ?? false,
+                'can_download' => $request->user()?->can('download', $pipeline) ?? false,
             ],
         );
+    }
+
+    /**
+     * Streams the pipeline payload. Only export pipelines carry a downloadable
+     * archive; the policy denies every other pipeline type.
+     */
+    public function download(
+        Tenant $tenant,
+        Pipeline $pipeline,
+        LogAuditActivityAction $logAuditActivity,
+        DownloadDossierExportAction $downloadDossierExport,
+    ): StreamedResponse {
+        $this->authorize('download', $pipeline);
+
+        $pipeline->loadMissing('pipelineable');
+        $export = $pipeline->pipelineable;
+
+        if (! $export instanceof DossierExport) {
+            abort(HttpResponse::HTTP_NOT_FOUND);
+        }
+
+        $logAuditActivity->handle(
+            AuditEvent::DossierExportDownloaded,
+            $export,
+            [
+                'dossier_id' => $export->dossier_id,
+                'pipeline_id' => $pipeline->id,
+            ],
+        );
+
+        return $downloadDossierExport->handle($export);
     }
 
     public function destroy(

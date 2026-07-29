@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use LogicException;
 
+use function in_array;
 use function is_array;
 use function is_string;
 use function parse_url;

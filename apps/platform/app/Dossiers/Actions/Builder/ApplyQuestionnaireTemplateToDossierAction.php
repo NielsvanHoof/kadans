@@ -14,6 +14,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+use function array_key_exists;
+use function is_string;
+
 final class ApplyQuestionnaireTemplateToDossierAction
 {
     public function __construct(

@@ -9,6 +9,8 @@ use App\Dossiers\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Validator;
 
+use function is_string;
+
 /**
  * Shared validation for a questionnaire item's `configuration` payload.
  *

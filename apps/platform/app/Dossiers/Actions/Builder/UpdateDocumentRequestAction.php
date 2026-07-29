@@ -8,6 +8,8 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 
+use function is_array;
+
 /**
  * Update a questionnaire item's editable attributes on the form builder.
  */

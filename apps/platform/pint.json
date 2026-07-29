@@ -21,6 +21,13 @@
         },
         "mb_str_functions": true,
         "modernize_types_casting": true,
+        "native_function_invocation": {
+            "include": [
+                "@compiler_optimized"
+            ],
+            "scope": "namespaced",
+            "strict": true
+        },
         "new_with_parentheses": false,
         "no_superfluous_elseif": true,
         "no_useless_else": true,

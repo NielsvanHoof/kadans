@@ -10,6 +10,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+use function is_int;
+
 /**
  * Resolves a short-lived portal session and makes the grant's tenant current
  * before route model binding runs (see bootstrap/app.php priority list).

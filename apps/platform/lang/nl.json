@@ -905,6 +905,7 @@
     "Delete pipeline run?": "Pipeline-uitvoering verwijderen?",
     "This removes the execution record and its step history. It does not delete the underlying dossier or document.": "Dit verwijdert de uitvoering en de stapgeschiedenis. Het onderliggende dossier of document wordt niet verwijderd.",
     "Delete pipeline": "Pipeline verwijderen",
+    "Download payload": "Payload downloaden",
     "No active step": "Geen actieve stap",
     "Attempts": "Pogingen",
     "Started": "Gestart",

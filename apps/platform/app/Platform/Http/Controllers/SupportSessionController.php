@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use function is_array;
+
 /**
  * Internal firm picker for platform support staff.
  */

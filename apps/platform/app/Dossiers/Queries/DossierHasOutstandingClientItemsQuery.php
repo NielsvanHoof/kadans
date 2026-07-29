@@ -9,6 +9,8 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 
+use function in_array;
+
 /**
  * True when the dossier still has questionnaire items awaiting client input.
  *

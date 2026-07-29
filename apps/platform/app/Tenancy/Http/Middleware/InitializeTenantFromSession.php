@@ -12,6 +12,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+use function is_int;
+
 final class InitializeTenantFromSession
 {
     /**

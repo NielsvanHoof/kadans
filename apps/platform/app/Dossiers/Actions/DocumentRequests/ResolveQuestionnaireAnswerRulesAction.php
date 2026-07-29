@@ -9,6 +9,9 @@ use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
+use function is_array;
+use function is_string;
+
 /**
  * Resolves the validation rules for one questionnaire answer.
  *

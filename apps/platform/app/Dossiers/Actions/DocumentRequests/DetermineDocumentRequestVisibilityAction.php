@@ -8,6 +8,9 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Collection;
 
+use function is_array;
+use function is_string;
+
 /**
  * Resolves one field's simple, earlier-answer visibility condition.
  */

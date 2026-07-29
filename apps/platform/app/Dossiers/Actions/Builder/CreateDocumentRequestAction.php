@@ -13,6 +13,7 @@ use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\DB;
 
 use function array_key_exists;
+use function is_array;
 
 final class CreateDocumentRequestAction
 {

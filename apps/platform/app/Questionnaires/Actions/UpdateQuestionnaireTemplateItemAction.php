@@ -7,6 +7,8 @@ namespace App\Questionnaires\Actions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 
+use function is_array;
+
 /**
  * Persist updated questionnaire template item attributes.
  */

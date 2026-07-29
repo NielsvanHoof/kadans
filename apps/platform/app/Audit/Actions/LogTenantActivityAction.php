@@ -9,6 +9,8 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Actions\LogActivityAction;
 
+use function is_int;
+
 final class LogTenantActivityAction extends LogActivityAction
 {
     protected function beforeActivityLogged(Model $activity): void
