@@ -44,9 +44,7 @@ final class StoreClientRequest extends FormRequest
     {
         $tenant = Tenant::current();
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Cannot validate a client without an active tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot validate a client without an active tenant.');
 
         return $tenant->id;
     }

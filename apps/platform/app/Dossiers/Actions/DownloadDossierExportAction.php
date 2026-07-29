@@ -20,9 +20,7 @@ final class DownloadDossierExportAction
         $disk = $export->disk;
         $path = $export->path;
 
-        if (! $export->isDownloadable() || $disk === null || $path === null) {
-            abort(HttpResponse::HTTP_NOT_FOUND);
-        }
+        abort_if(! $export->isDownloadable() || $disk === null || $path === null, HttpResponse::HTTP_NOT_FOUND);
 
         return Storage::disk($disk)->download(
             $path,

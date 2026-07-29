@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Models;
 
-use Override;
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
@@ -20,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
+use Override;
 
 /**
  * Questionnaire item on a dossier (file upload, text, or yes/no).

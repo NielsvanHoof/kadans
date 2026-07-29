@@ -2,10 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
-use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
-use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
-use Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession;
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierPermission;
@@ -13,12 +9,16 @@ use App\Dossiers\Models\Dossier;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
+use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
+use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession;
 
 pest()
     ->use(RefreshDatabase::class);

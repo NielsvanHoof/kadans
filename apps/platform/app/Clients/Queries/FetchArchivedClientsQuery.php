@@ -89,12 +89,12 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var Client $model */
-        return (new ArchivedClientRowData(
+        return new ArchivedClientRowData(
             id: $model->id,
             name: $model->name,
             email: $model->email,
             dossiersCount: $model->dossiers_count,
             archivedAt: $model->deleted_at?->toIso8601String() ?? '',
-        ))->toArray();
+        )->toArray();
     }
 }

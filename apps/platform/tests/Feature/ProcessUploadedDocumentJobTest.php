@@ -43,14 +43,14 @@ test('processing job extracts mock text and marks the document completed', funct
         ->and($uploaded->processing_error)->toBeNull()
         ->and($uploaded->processing_finished_at)->not->toBeNull()
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingStarted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingStarted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeTrue()
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingCompleted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingCompleted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeTrue();
 });
 
@@ -72,9 +72,9 @@ test('processing job is idempotent when the document is already completed', func
     expect($uploaded->extracted_text)->toBe('Already extracted')
         ->and($uploaded->processing_status)->toBe(DocumentProcessingStatus::Completed)
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingStarted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingStarted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeFalse();
 });
 
@@ -99,9 +99,9 @@ test('processing job does not restart an active external OCR job', function (): 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Processing)
         ->and($uploaded->textract_job_id)->toBe('active-textract-job')
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingStarted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingStarted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeFalse();
 });
 
@@ -144,10 +144,10 @@ test('processing audit events stay tenant-scoped', function (): void {
         ->where('subject_id', $uploadedA->id)
         ->count())->toBe(0)
         ->and(Activity::query()
-        ->forTenant($tenantA)
-        ->where('event', AuditEvent::DocumentProcessingCompleted->value)
-        ->where('subject_id', $uploadedA->id)
-        ->count())
+            ->forTenant($tenantA)
+            ->where('event', AuditEvent::DocumentProcessingCompleted->value)
+            ->where('subject_id', $uploadedA->id)
+            ->count())
         ->toBe(1);
 });
 

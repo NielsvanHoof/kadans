@@ -146,7 +146,7 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var QuestionnaireTemplate $model */
-        return (new QuestionnaireTemplateRowData(
+        return new QuestionnaireTemplateRowData(
             id: $model->id,
             name: $model->name,
             description: $model->description,
@@ -154,6 +154,6 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
             categoryLabel: $model->category->label(),
             itemsCount: $model->items_count,
             isSystem: $model->isSystem(),
-        ))->toArray();
+        )->toArray();
     }
 }

@@ -11,13 +11,13 @@ use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-final class PurgeExpiredDossierAction
+final readonly class PurgeExpiredDossierAction
 {
     public function __construct(
-        private readonly DeleteStoredDocumentFilesAction $deleteStoredDocumentFiles,
-        private readonly DeleteStoredDossierExportFilesAction $deleteStoredDossierExportFiles,
-        private readonly DeletePipelinesForSubjectsAction $deletePipelinesForSubjects,
-        private readonly PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
+        private DeleteStoredDocumentFilesAction $deleteStoredDocumentFiles,
+        private DeleteStoredDossierExportFilesAction $deleteStoredDossierExportFiles,
+        private DeletePipelinesForSubjectsAction $deletePipelinesForSubjects,
+        private PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
     ) {}
 
     /**

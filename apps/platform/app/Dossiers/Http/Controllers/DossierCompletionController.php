@@ -24,9 +24,7 @@ final class DossierCompletionController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
 
         $completeDossier->handle($dossier, $user);
 

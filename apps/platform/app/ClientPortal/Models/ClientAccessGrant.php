@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Override;
 
 /**
  * @property int $id
@@ -99,7 +100,7 @@ final class ClientAccessGrant extends Model
      * @return Builder<ClientAccessGrant>
      */
     #[Scope]
-    public function valid(Builder $query): Builder
+    protected function valid(Builder $query): Builder
     {
         return $query
             ->where('revoked_at', null)
@@ -109,6 +110,7 @@ final class ClientAccessGrant extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

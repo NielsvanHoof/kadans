@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Override;
 use Spatie\Permission\Traits\HasRoles;
 
 use function array_key_exists;
@@ -113,7 +114,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
         }
 
         return $this->isPlatformSupport()
-            && app(SupportSession::class)->isActiveFor($tenant);
+            && resolve(SupportSession::class)->isActiveFor($tenant);
     }
 
     /**
@@ -130,7 +131,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
             return false;
         }
 
-        $supportSession = app(SupportSession::class);
+        $supportSession = resolve(SupportSession::class);
 
         if ($this->isPlatformSupport() && $supportSession->isActiveFor($tenant)) {
             return $supportSession->allowsPermission($permission);
@@ -148,6 +149,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
      *
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

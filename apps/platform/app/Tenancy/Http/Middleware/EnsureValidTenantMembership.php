@@ -8,16 +8,17 @@ use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Platform\Actions\EndSupportSessionAction;
 use App\Platform\Support\SupportSession;
+use App\Platform\Support\SupportSessionData;
 use App\Tenancy\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-final class EnsureValidTenantMembership
+final readonly class EnsureValidTenantMembership
 {
     public function __construct(
-        private readonly SupportSession $supportSession,
-        private readonly EndSupportSessionAction $endSupportSession,
+        private SupportSession $supportSession,
+        private EndSupportSessionAction $endSupportSession,
     ) {}
 
     /**
@@ -28,18 +29,14 @@ final class EnsureValidTenantMembership
         $user = $request->user();
         $tenant = Tenant::current();
 
-        if (! $user instanceof User || ! $tenant instanceof Tenant) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_if(! $user instanceof User || ! $tenant instanceof Tenant, Response::HTTP_FORBIDDEN);
 
         // Clear and audit expired support sessions before access checks.
         $this->clearExpiredSupportSession($user);
 
         $user->loadMissing('tenantMemberships.tenant');
 
-        if (! $user->canAccessTenant($tenant)) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_unless($user->canAccessTenant($tenant), Response::HTTP_FORBIDDEN);
 
         // Only bump last_accessed_at for real memberships — not support sessions.
         if ($user->belongsToTenant($tenant)) {
@@ -59,7 +56,7 @@ final class EnsureValidTenantMembership
     {
         $peek = $this->supportSession->peek();
 
-        if ($peek === null || ! $peek->hasExpired()) {
+        if (! $peek instanceof SupportSessionData || ! $peek->hasExpired()) {
             return;
         }
 

@@ -35,9 +35,7 @@ final readonly class DossierExportData
         ) {
             $tenant = $export->tenant;
 
-            if (! $tenant instanceof Tenant) {
-                throw new RuntimeException('Dossier export tenant is missing.');
-            }
+            throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Dossier export tenant is missing.');
 
             $downloadUrl = URL::temporarySignedRoute(
                 'workspaces.dossiers.exports.download',

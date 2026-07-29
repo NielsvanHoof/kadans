@@ -14,6 +14,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
+use Override;
 
 use function is_string;
 
@@ -49,6 +50,7 @@ final class UpdateTenantMemberRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[Override]
     public function attributes(): array
     {
         return [
@@ -94,7 +96,7 @@ final class UpdateTenantMemberRequest extends FormRequest
                 return;
             }
 
-            $memberRoles = app(WorkspaceMemberRoles::class);
+            $memberRoles = resolve(WorkspaceMemberRoles::class);
             $tenant = $memberRoles->requireTenant($membership);
             $member = $membership->user;
 

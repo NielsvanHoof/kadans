@@ -45,11 +45,11 @@ test('a dossier advances without regressing from later open stages', function ()
     $this->dossierTransitions->complete($this->dossier);
 
     expect($this->dossier->status)->toBe(DossierStatus::Completed)
-        ->and(fn() => $this->dossierTransitions->markAwaitingClient($this->dossier))
+        ->and(fn () => $this->dossierTransitions->markAwaitingClient($this->dossier))
         ->toThrow(ValidationException::class, 'A completed dossier cannot receive a new portal invitation.')
-        ->and(fn() => $this->dossierTransitions->markInReview($this->dossier))
+        ->and(fn () => $this->dossierTransitions->markInReview($this->dossier))
         ->toThrow(ValidationException::class, 'A completed dossier cannot return to review.')
-        ->and(fn() => $this->dossierTransitions->complete($this->dossier))
+        ->and(fn () => $this->dossierTransitions->complete($this->dossier))
         ->toThrow(ValidationException::class, 'This dossier is already completed.');
 });
 
@@ -142,10 +142,10 @@ test('a submitted upload can be replaced by staff but not from the portal', func
         ->and($documentRequest->answered_at)->toBeInstanceOf(CarbonInterface::class)
         ->and($this->documentRequestTransitions->canSubmit($documentRequest, SubmissionContext::Portal, $this->dossier))
         ->toBeFalse()
-        ->and(fn() => $this->documentRequestTransitions->submitUpload(
-        $documentRequest,
-        SubmissionContext::Portal,
-    ))
+        ->and(fn () => $this->documentRequestTransitions->submitUpload(
+            $documentRequest,
+            SubmissionContext::Portal,
+        ))
         ->toThrow(ValidationException::class, 'This item cannot be submitted from the client portal in its current state.');
 
     $this->documentRequestTransitions->accept($documentRequest, $reviewer);

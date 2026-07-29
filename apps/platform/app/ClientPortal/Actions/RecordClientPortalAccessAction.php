@@ -14,10 +14,10 @@ use Illuminate\Support\Facades\DB;
  * Record that a client opened the portal.
  * Touches the grant, stamps the dossier, and writes an audit event.
  */
-final class RecordClientPortalAccessAction
+final readonly class RecordClientPortalAccessAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(ClientAccessGrant $grant): void

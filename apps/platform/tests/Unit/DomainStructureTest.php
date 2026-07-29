@@ -162,8 +162,9 @@ test('controllers do not resolve dependencies through service locators', functio
         }
         $contents = file_get_contents($controller->getPathname());
 
-        expect($contents)->toBeTrue()
-            ->and(preg_match('/\b(?:app|resolve)\s*\(/', (string) $contents))->toBe(0);
+        // file_get_contents() returns string|false — assert readable, then no container lookups.
+        expect($contents)->toBeString()
+            ->and(preg_match('/\b(?:app|resolve)\s*\(/', $contents))->toBe(0);
     }
 });
 

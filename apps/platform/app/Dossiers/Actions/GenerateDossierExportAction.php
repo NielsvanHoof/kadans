@@ -20,11 +20,11 @@ use ZipArchive;
 
 use function sprintf;
 
-final class GenerateDossierExportAction
+final readonly class GenerateDossierExportAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly PipelineStateAction $pipelineState,
+        private LogAuditActivityAction $logAuditActivity,
+        private PipelineStateAction $pipelineState,
     ) {}
 
     public function handle(int $pipelineId): void
@@ -36,9 +36,7 @@ final class GenerateDossierExportAction
         ])->findOrFail($pipelineId);
         $export = $pipeline->pipelineable;
 
-        if (! $export instanceof DossierExport) {
-            throw new RuntimeException('Dossier export pipeline subject is invalid.');
-        }
+        throw_unless($export instanceof DossierExport, RuntimeException::class, 'Dossier export pipeline subject is invalid.');
 
         if ($export->status === DossierExportStatus::Completed) {
             return;
@@ -80,16 +78,12 @@ final class GenerateDossierExportAction
 
             $stream = fopen($temporaryPath, 'rb');
 
-            if ($stream === false) {
-                throw new RuntimeException('Unable to store the dossier export archive.');
-            }
+            throw_if($stream === false, RuntimeException::class, 'Unable to store the dossier export archive.');
 
             $stored = Storage::disk($disk)->put($archivePath, $stream);
             fclose($stream);
 
-            if ($stored === false) {
-                throw new RuntimeException('Unable to store the dossier export archive.');
-            }
+            throw_if($stored === false, RuntimeException::class, 'Unable to store the dossier export archive.');
 
             $completedAt = now();
             $expiresAt = $completedAt->copy()->addMinutes((int) config('exports.expires_in_minutes'));
@@ -128,16 +122,12 @@ final class GenerateDossierExportAction
     {
         $dossier = $export->dossier;
 
-        if ($dossier === null || $dossier->client === null) {
-            throw new RuntimeException('Unable to export a dossier without its client.');
-        }
+        throw_if($dossier === null || $dossier->client === null, RuntimeException::class, 'Unable to export a dossier without its client.');
 
         $client = $dossier->client;
         $archive = new ZipArchive();
 
-        if ($archive->open($temporaryPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new RuntimeException('Unable to open the dossier export archive.');
-        }
+        throw_if($archive->open($temporaryPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true, RuntimeException::class, 'Unable to open the dossier export archive.');
 
         $documents = [];
         $documentNumber = 0;
@@ -201,9 +191,7 @@ final class GenerateDossierExportAction
             'documents' => $documents,
         ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
 
-        if (! $archive->addFromString('manifest.json', $manifest) || ! $archive->close()) {
-            throw new RuntimeException('Unable to finalize the dossier export archive.');
-        }
+        throw_if(! $archive->addFromString('manifest.json', $manifest) || ! $archive->close(), RuntimeException::class, 'Unable to finalize the dossier export archive.');
     }
 
     private function archiveFilename(int $number, string $originalFilename): string

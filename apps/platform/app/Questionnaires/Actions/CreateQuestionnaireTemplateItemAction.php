@@ -11,10 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 use function is_array;
 
-final class CreateQuestionnaireTemplateItemAction
+final readonly class CreateQuestionnaireTemplateItemAction
 {
     public function __construct(
-        private readonly NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
+        private NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
     ) {}
 
     /**

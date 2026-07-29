@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Jobs;
 
-use Illuminate\Queue\Attributes\Backoff;
-use Illuminate\Queue\Attributes\Tries;
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
 use App\DocumentProcessing\Models\Pipeline;
@@ -15,6 +13,8 @@ use App\Dossiers\Models\DossierExport;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 

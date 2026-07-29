@@ -47,11 +47,11 @@ final readonly class PipelineStateAction
                 ? null
                 : $this->lockStep($lockedPipeline, $stepKey);
 
-            if ($operation === PipelineStepOperation::Fail && !$step instanceof PipelineStep) {
+            if ($operation === PipelineStepOperation::Fail && ! $step instanceof PipelineStep) {
                 return $this->transitions->failPipeline($lockedPipeline, $message, $errorCode);
             }
 
-            if ($operation === PipelineStepOperation::Stuck && !$step instanceof PipelineStep) {
+            if ($operation === PipelineStepOperation::Stuck && ! $step instanceof PipelineStep) {
                 return $this->transitions->stuckPipeline($lockedPipeline, $message, $errorCode);
             }
 

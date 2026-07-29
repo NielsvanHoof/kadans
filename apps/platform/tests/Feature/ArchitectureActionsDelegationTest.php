@@ -25,15 +25,16 @@ use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('update client action persists profile attributes', function () {
+test('update client action persists profile attributes', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create([
@@ -42,7 +43,7 @@ test('update client action persists profile attributes', function () {
         'email' => 'jane@example.com',
     ]);
 
-    app(UpdateClientAction::class)->handle($client, [
+    resolve(UpdateClientAction::class)->handle($client, [
         'name' => 'Jane Updated',
         'email' => 'jane.updated@example.com',
     ]);
@@ -52,12 +53,12 @@ test('update client action persists profile attributes', function () {
         ->email->toBe('jane.updated@example.com');
 });
 
-test('tenant has any dossiers query reports emptiness for a fresh workspace', function () {
+test('tenant has any dossiers query reports emptiness for a fresh workspace', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
-    expect(app(TenantHasAnyDossiersQuery::class)->handle())->toBeFalse();
+    expect(resolve(TenantHasAnyDossiersQuery::class)->handle())->toBeFalse();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     Dossier::factory()->create([
@@ -65,12 +66,12 @@ test('tenant has any dossiers query reports emptiness for a fresh workspace', fu
         'client_id' => $client->id,
     ]);
 
-    expect(app(TenantHasAnyDossiersQuery::class)->handle())->toBeTrue();
+    expect(resolve(TenantHasAnyDossiersQuery::class)->handle())->toBeTrue();
 });
 
-test('record client portal access stamps grant dossier and audit', function () {
+test('record client portal access stamps grant dossier and audit', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -86,7 +87,7 @@ test('record client portal access stamps grant dossier and audit', function () {
         'last_used_at' => null,
     ]);
 
-    app(RecordClientPortalAccessAction::class)->handle($grant);
+    resolve(RecordClientPortalAccessAction::class)->handle($grant);
 
     expect($grant->fresh()->last_used_at)->not->toBeNull()
         ->and($dossier->fresh()->last_client_opened_at)->not->toBeNull()
@@ -96,9 +97,9 @@ test('record client portal access stamps grant dossier and audit', function () {
             ->exists())->toBeTrue();
 });
 
-test('update document request action persists builder attributes', function () {
+test('update document request action persists builder attributes', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -112,7 +113,7 @@ test('update document request action persists builder attributes', function () {
         'title' => 'Old title',
     ]);
 
-    app(UpdateDocumentRequestAction::class)->handle($documentRequest, [
+    resolve(UpdateDocumentRequestAction::class)->handle($documentRequest, [
         'type' => QuestionnaireItemType::Text->value,
         'title' => 'New title',
         'instructions' => 'Please answer',
@@ -124,9 +125,9 @@ test('update document request action persists builder attributes', function () {
         ->type->toBe(QuestionnaireItemType::Text);
 });
 
-test('questionnaire template update and delete actions persist and audit', function () {
+test('questionnaire template update and delete actions persist and audit', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $template = QuestionnaireTemplate::factory()->create([
@@ -135,7 +136,7 @@ test('questionnaire template update and delete actions persist and audit', funct
         'category' => QuestionnaireTemplateCategory::Custom,
     ]);
 
-    app(UpdateQuestionnaireTemplateAction::class)->handle($template, [
+    resolve(UpdateQuestionnaireTemplateAction::class)->handle($template, [
         'name' => 'Renamed pack',
         'description' => 'Updated',
         'category' => QuestionnaireTemplateCategory::Kyc->value,
@@ -143,7 +144,7 @@ test('questionnaire template update and delete actions persist and audit', funct
 
     expect($template->fresh()->name)->toBe('Renamed pack');
 
-    app(DeleteQuestionnaireTemplateAction::class)->handle($template);
+    resolve(DeleteQuestionnaireTemplateAction::class)->handle($template);
 
     expect(QuestionnaireTemplate::query()->whereKey($template->id)->exists())->toBeFalse()
         ->and(Activity::query()
@@ -152,9 +153,9 @@ test('questionnaire template update and delete actions persist and audit', funct
             ->exists())->toBeTrue();
 });
 
-test('questionnaire template item update and delete actions persist and audit', function () {
+test('questionnaire template item update and delete actions persist and audit', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $template = QuestionnaireTemplate::factory()->create([
@@ -166,7 +167,7 @@ test('questionnaire template item update and delete actions persist and audit', 
         'title' => 'Old item',
     ]);
 
-    app(UpdateQuestionnaireTemplateItemAction::class)->handle($item, [
+    resolve(UpdateQuestionnaireTemplateItemAction::class)->handle($item, [
         'type' => QuestionnaireItemType::Text->value,
         'title' => 'Updated item',
         'instructions' => null,
@@ -174,7 +175,7 @@ test('questionnaire template item update and delete actions persist and audit', 
 
     expect($item->fresh()->title)->toBe('Updated item');
 
-    app(DeleteQuestionnaireTemplateItemAction::class)->handle($template, $item);
+    resolve(DeleteQuestionnaireTemplateItemAction::class)->handle($template, $item);
 
     expect(QuestionnaireTemplateItem::query()->whereKey($item->id)->exists())->toBeFalse()
         ->and(Activity::query()

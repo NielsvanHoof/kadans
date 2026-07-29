@@ -9,6 +9,7 @@ use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
@@ -26,12 +27,12 @@ use function is_int;
 use function is_string;
 use function sprintf;
 
-final class UploadDocumentForRequestAction
+final readonly class UploadDocumentForRequestAction
 {
     public function __construct(
-        private readonly FilesystemManager $filesystems,
-        private readonly DocumentRequestTransitions $documentRequestTransitions,
-        private readonly CreatePipelineAction $createPipeline,
+        private FilesystemManager $filesystems,
+        private DocumentRequestTransitions $documentRequestTransitions,
+        private CreatePipelineAction $createPipeline,
     ) {}
 
     /**
@@ -46,9 +47,7 @@ final class UploadDocumentForRequestAction
         ?Closure $afterPersist = null,
         SubmissionContext $context = SubmissionContext::Staff,
     ): UploadedDocument {
-        if ($documentRequest->type !== QuestionnaireItemType::File) {
-            throw new InvalidArgumentException('Only file items accept uploads.');
-        }
+        throw_if($documentRequest->type !== QuestionnaireItemType::File, InvalidArgumentException::class, 'Only file items accept uploads.');
 
         $disk = (string) config('filesystems.default', 'local');
         $directory = sprintf(
@@ -63,9 +62,7 @@ final class UploadDocumentForRequestAction
             ->disk($disk)
             ->putFileAs($directory, $file, $filename);
 
-        if (! is_string($path) || $path === '') {
-            throw new RuntimeException('Failed to store the uploaded document.');
-        }
+        throw_if(! is_string($path) || $path === '', RuntimeException::class, 'Failed to store the uploaded document.');
 
         $sizeBytes = $file->getSize();
 
@@ -161,11 +158,9 @@ final class UploadDocumentForRequestAction
             );
         }
 
-        if ($pipeline === null) {
-            throw new RuntimeException('Failed to create the document processing pipeline.');
-        }
+        throw_if(! $pipeline instanceof Pipeline, RuntimeException::class, 'Failed to create the document processing pipeline.');
 
-        ProcessUploadedDocumentJob::dispatch($uploadedDocument->id, $uploadedDocument->path, $pipeline->id);
+        dispatch(new ProcessUploadedDocumentJob($uploadedDocument->id, $uploadedDocument->path, $pipeline->id));
 
         return $uploadedDocument;
     }
@@ -183,8 +178,6 @@ final class UploadDocumentForRequestAction
             return;
         }
 
-        if (! $deleted) {
-            report(new RuntimeException($message));
-        }
+        report_unless($deleted, new RuntimeException($message));
     }
 }

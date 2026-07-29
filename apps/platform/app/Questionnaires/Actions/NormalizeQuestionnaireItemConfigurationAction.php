@@ -56,8 +56,10 @@ final class NormalizeQuestionnaireItemConfigurationAction
 
             $id = $option['id'] ?? null;
             $label = $option['label'] ?? null;
-
-            if (! is_string($id) || ! is_string($label)) {
+            if (! is_string($id)) {
+                continue;
+            }
+            if (! is_string($label)) {
                 continue;
             }
 

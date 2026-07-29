@@ -54,6 +54,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Telescope\TelescopeServiceProvider;
+use Override;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 use function in_array;
@@ -65,6 +67,7 @@ final class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
+    #[Override]
     public function register(): void
     {
         $this->commands([
@@ -75,8 +78,8 @@ final class AppServiceProvider extends ServiceProvider
         $this->configureDebugbarStorageOpen();
         $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
 
-        if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
-            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+        if ($this->app->environment('local') && class_exists(TelescopeServiceProvider::class)) {
+            $this->app->register(TelescopeServiceProvider::class);
         }
     }
 
@@ -99,7 +102,7 @@ final class AppServiceProvider extends ServiceProvider
     /**
      * Configure default behaviors for production-ready applications.
      */
-    protected function configureDefaults(): void
+    private function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
 
@@ -209,7 +212,7 @@ final class AppServiceProvider extends ServiceProvider
             }
 
             // Policy abilities like "viewAny" must not be short-circuited here.
-            if (! app(PermissionRegistry::class)->isRegistered($ability)) {
+            if (! resolve(PermissionRegistry::class)->isRegistered($ability)) {
                 return null;
             }
 
@@ -219,7 +222,7 @@ final class AppServiceProvider extends ServiceProvider
                 return null;
             }
 
-            $supportSession = app(SupportSession::class);
+            $supportSession = resolve(SupportSession::class);
 
             // Support session takes priority over firm membership (read-only overlay).
             if (! $supportSession->isActiveFor($tenant)) {
@@ -249,18 +252,12 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function registerOcrBindings(): void
     {
-        $this->app->singleton(TextractClient::class, function (): TextractClient {
-            return new TextractClient($this->awsClientConfig('ocr.textract.region'));
-        });
+        $this->app->singleton(TextractClient::class, fn (): TextractClient => new TextractClient($this->awsClientConfig('ocr.textract.region')));
 
-        $this->app->singleton(SqsClient::class, function (): SqsClient {
-            return new SqsClient($this->awsClientConfig('ocr.textract.region'));
-        });
+        $this->app->singleton(SqsClient::class, fn (): SqsClient => new SqsClient($this->awsClientConfig('ocr.textract.region')));
 
         // Bedrock may use a different region than Textract (inference profiles).
-        $this->app->singleton(BedrockRuntimeClient::class, function (): BedrockRuntimeClient {
-            return new BedrockRuntimeClient($this->awsClientConfig('ocr.bedrock.region'));
-        });
+        $this->app->singleton(BedrockRuntimeClient::class, fn (): BedrockRuntimeClient => new BedrockRuntimeClient($this->awsClientConfig('ocr.bedrock.region')));
 
         $this->app->bind(DescribesDocumentOverview::class, BedrockDocumentOverviewNormalizer::class);
 

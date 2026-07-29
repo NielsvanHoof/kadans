@@ -131,9 +131,7 @@ final class ClientController extends Controller
 
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $deleteClient->handle($client, $user);
 
@@ -157,9 +155,7 @@ final class ClientController extends Controller
 
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $restoreClient->handle($client, $user);
 
@@ -181,9 +177,7 @@ final class ClientController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $clientsQuery = Client::query()->with('tenant');
         $clientsQuery->getQuery()->whereIn('id', $request->clientIds());
@@ -211,9 +205,7 @@ final class ClientController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $clientsQuery = Client::onlyTrashed()->with('tenant');
         $clientsQuery->getQuery()->whereIn('id', $request->clientIds());

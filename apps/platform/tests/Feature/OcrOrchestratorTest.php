@@ -34,14 +34,14 @@ test('ocr orchestrator returns immediate outcome for synchronous drivers', funct
         ->and($uploaded->processing_status)->toBe(DocumentProcessingStatus::Completed)
         ->and($uploaded->extracted_text)->toContain('fields')
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingStarted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingStarted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeTrue()
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingCompleted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingCompleted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeTrue();
 });
 
@@ -59,14 +59,14 @@ test('ocr orchestrator returns deferred outcome when the driver leaves processin
 
     expect($outcome)->toBe(OcrProcessingOutcome::Deferred)
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingStarted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingStarted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeTrue()
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingCompleted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingCompleted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeFalse();
 });
 

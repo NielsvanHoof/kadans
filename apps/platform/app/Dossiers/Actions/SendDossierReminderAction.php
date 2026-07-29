@@ -21,12 +21,12 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
-final class SendDossierReminderAction
+final readonly class SendDossierReminderAction
 {
     public function __construct(
-        private readonly CreateClientAccessGrantAction $createClientAccessGrant,
-        private readonly DossierHasOutstandingClientItemsQuery $dossierHasOutstandingClientItems,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private CreateClientAccessGrantAction $createClientAccessGrant,
+        private DossierHasOutstandingClientItemsQuery $dossierHasOutstandingClientItems,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(
@@ -65,9 +65,7 @@ final class SendDossierReminderAction
             $lockedDossier->loadMissing(['client', 'tenant']);
             $client = $lockedDossier->client;
 
-            if (! $client instanceof Client) {
-                throw new RuntimeException('Dossier client is missing.');
-            }
+            throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
             $result = $this->createClientAccessGrant->handle(
                 $lockedDossier,
@@ -86,14 +84,14 @@ final class SendDossierReminderAction
 
             Notification::route('mail', $client->email)
                 ->notify(
-                    (new ClientPortalReminderNotification(
+                    new ClientPortalReminderNotification(
                         grantId: $result['grant']->id,
                         dossier: $lockedDossier,
                         portalUrl: $portalUrl,
                         expiresAt: $result['grant']->expires_at,
                         firmName: $firmName,
                         source: $source,
-                    ))->locale($locale),
+                    )->locale($locale),
                 );
 
             $nextReminderAt = $lockedDossier->reminder_interval_days === null

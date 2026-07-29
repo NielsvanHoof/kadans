@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Pest\Mixins\Expectation;
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
@@ -111,7 +110,7 @@ test('guest exchanges a valid access token for a restricted portal session', fun
             ->where('dossier.client.name', $context['client']->name)
             ->missing('token')
             ->has('dossier.document_requests', 1)
-            ->tap(fn (Assert $page): Expectation => expect($page->toArray())
+            ->tap(fn (Assert $page) => expect($page->toArray())
                 ->toHaveKey('encryptHistory', true)));
 
     expect($context['grant']->fresh()->last_used_at)->not->toBeNull();

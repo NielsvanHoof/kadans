@@ -40,7 +40,7 @@ test('textract start persists job id and leaves document processing', function (
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldReceive('startDocumentAnalysis')
         ->once()
-        ->with(Mockery::on(fn(array $args): bool => ($args['DocumentLocation']['S3Object']['Bucket'] ?? null) === 'test-documents'
+        ->with(Mockery::on(fn (array $args): bool => ($args['DocumentLocation']['S3Object']['Bucket'] ?? null) === 'test-documents'
             && ($args['DocumentLocation']['S3Object']['Name'] ?? null) === $uploaded->path
             && ($args['FeatureTypes'] ?? null) === ['FORMS', 'TABLES']
             && ($args['NotificationChannel']['SNSTopicArn'] ?? null) === 'arn:aws:sns:eu-west-1:123:textract'

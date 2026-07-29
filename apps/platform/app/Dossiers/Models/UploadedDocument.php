@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Models;
 
-use Override;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Models\Pipeline;
@@ -17,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use Override;
 
 /**
  * @property int $id

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
+use Override;
 
 /**
  * A tenant-scoped execution record for a long-running application process.
@@ -69,6 +70,7 @@ final class Pipeline extends Model
     /** @use HasFactory<PipelineFactory> */
     use BelongsToTenant, HasFactory;
 
+    #[Override]
     protected $attributes = [
         'status' => 'pending',
         'attempt_number' => 1,
@@ -101,6 +103,7 @@ final class Pipeline extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

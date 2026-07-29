@@ -213,9 +213,7 @@ final class DossierController extends Controller
 
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $deleteDossier->handle($dossier, $user);
 
@@ -239,9 +237,7 @@ final class DossierController extends Controller
 
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $restoreDossier->handle($dossier, $user);
 
@@ -263,9 +259,7 @@ final class DossierController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $dossiersQuery = Dossier::query()->with('tenant');
         $dossiersQuery->getQuery()->whereIn('id', $request->dossierIds());
@@ -293,9 +287,7 @@ final class DossierController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $dossiersQuery = Dossier::onlyTrashed()->with('tenant');
         $dossiersQuery->getQuery()->whereIn('id', $request->dossierIds());

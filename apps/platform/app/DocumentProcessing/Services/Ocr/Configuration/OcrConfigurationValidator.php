@@ -13,17 +13,18 @@ use LogicException;
 
 use function filter_var;
 use function in_array;
+use function is_array;
 use function is_int;
 use function is_string;
 use function mb_trim;
 use function preg_match;
 use function sprintf;
 
-final class OcrConfigurationValidator
+final readonly class OcrConfigurationValidator
 {
     public function __construct(
-        private readonly Application $application,
-        private readonly Repository $config,
+        private Application $application,
+        private Repository $config,
     ) {}
 
     public function validate(): void
@@ -43,9 +44,7 @@ final class OcrConfigurationValidator
             ? OcrDriver::tryFrom($configuredDriver)
             : null;
 
-        if ($driver !== OcrDriver::Textract) {
-            throw new LogicException('Production OCR requires OCR_DRIVER=textract.');
-        }
+        throw_if($driver !== OcrDriver::Textract, LogicException::class, 'Production OCR requires OCR_DRIVER=textract.');
 
         $invalidKeys = $this->invalidTextractConfigurationKeys();
 
@@ -66,9 +65,10 @@ final class OcrConfigurationValidator
             return false;
         }
 
+        // Composer sets argv on $_SERVER; Request::server() is a stale snapshot.
         $argv = $_SERVER['argv'] ?? [];
 
-        return in_array('package:discover', $argv, true);
+        return is_array($argv) && in_array('package:discover', $argv, true);
     }
 
     /**

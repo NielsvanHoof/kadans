@@ -8,12 +8,14 @@ use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<UploadedDocument>
  */
 final class UploadedDocumentFactory extends Factory
 {
+    #[Override]
     protected $model = UploadedDocument::class;
 
     /**
@@ -81,6 +83,7 @@ final class UploadedDocumentFactory extends Factory
         ]);
     }
 
+    #[Override]
     public function configure(): static
     {
         return $this->afterMaking(function (UploadedDocument $uploadedDocument): void {

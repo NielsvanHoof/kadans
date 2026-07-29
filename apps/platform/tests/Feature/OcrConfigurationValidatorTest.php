@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\Request;
 use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 
 beforeEach(function (): void {
@@ -44,7 +43,7 @@ test('validation is skipped during package discovery even in production', functi
     $this->app->instance('env', 'production');
     config(['ocr.driver' => 'mock']);
 
-    $originalArgv = Request::server('argv') ?? null;
+    $originalArgv = $_SERVER['argv'] ?? null;
     $_SERVER['argv'] = ['artisan', 'package:discover', '--ansi'];
 
     try {

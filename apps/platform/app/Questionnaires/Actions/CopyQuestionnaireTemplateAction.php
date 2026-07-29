@@ -19,9 +19,7 @@ final class CopyQuestionnaireTemplateAction
     {
         $tenant = Tenant::current();
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Cannot copy a template without an active tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot copy a template without an active tenant.');
 
         return DB::transaction(function () use ($source, $tenant): QuestionnaireTemplate {
             $source->loadMissing('items');

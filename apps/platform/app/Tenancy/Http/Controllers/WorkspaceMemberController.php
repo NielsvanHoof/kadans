@@ -10,6 +10,7 @@ use App\Tenancy\Actions\InviteTenantMemberAction;
 use App\Tenancy\Actions\RemoveTenantMemberAction;
 use App\Tenancy\Actions\SuspendTenantMemberAction;
 use App\Tenancy\Actions\UpdateTenantMemberRoleAction;
+use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Http\Requests\InviteTenantMemberRequest;
 use App\Tenancy\Http\Requests\UpdateTenantMemberRequest;
@@ -32,9 +33,7 @@ final class WorkspaceMemberController extends Controller
 
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(403);
-        }
+        abort_unless($user instanceof User, 403);
 
         return Inertia::render(
             'workspaces/members/index',
@@ -49,9 +48,7 @@ final class WorkspaceMemberController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(403);
-        }
+        abort_unless($user instanceof User, 403);
 
         $inviteTenantMember->handle(
             $tenant,
@@ -79,14 +76,12 @@ final class WorkspaceMemberController extends Controller
 
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(403);
-        }
+        abort_unless($user instanceof User, 403);
 
         $role = $request->role();
         $status = $request->status();
 
-        if ($role instanceof \App\Tenancy\Enums\Role) {
+        if ($role instanceof Role) {
             $updateTenantMemberRole->handle($membership, $user, $role);
         }
 
@@ -114,9 +109,7 @@ final class WorkspaceMemberController extends Controller
 
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(403);
-        }
+        abort_unless($user instanceof User, 403);
 
         $removeTenantMember->handle($membership, $user);
 
@@ -130,8 +123,6 @@ final class WorkspaceMemberController extends Controller
 
     private function ensureMembershipBelongsToTenant(TenantMembership $membership, Tenant $tenant): void
     {
-        if ($membership->tenant_id !== $tenant->id) {
-            abort(404);
-        }
+        abort_if($membership->tenant_id !== $tenant->id, 404);
     }
 }

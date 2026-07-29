@@ -10,9 +10,9 @@ use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\DossierExport;
 use Throwable;
 
-final class MarkDossierExportFailedAction
+final readonly class MarkDossierExportFailedAction
 {
-    public function __construct(private readonly LogAuditActivityAction $logAuditActivity) {}
+    public function __construct(private LogAuditActivityAction $logAuditActivity) {}
 
     public function handle(DossierExport $export, Throwable $exception): void
     {

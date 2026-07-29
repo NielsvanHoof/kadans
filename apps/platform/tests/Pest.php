@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Audit\Actions\LogTenantActivityAction;
-use App\Reporting\Queries\ActivityLogRowMapper;
-use App\Shared\Queries\PaginatedIndexQuery;
-use App\Shared\Http\Controllers\Controller;
-use App\Audit\Models\Activity;
 use App\Accounts\Models\User;
+use App\Audit\Actions\LogTenantActivityAction;
+use App\Audit\Models\Activity;
+use App\Reporting\Queries\ActivityLogRowMapper;
+use App\Shared\Http\Controllers\Controller;
+use App\Shared\Queries\PaginatedIndexQuery;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
@@ -37,7 +37,7 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Unit/Policies', 'Unit/Queries');
 
-pest()->presets()->custom('qompose', fn() => [
+pest()->presets()->custom('qompose', fn (): array => [
     expect('App')
         ->toUseStrictTypes(),
 
@@ -141,7 +141,7 @@ pest()->presets()->custom('qompose', fn() => [
         ->ignoring(Controller::class),
 
     expect(Activity::class)
-        ->toExtend(\Spatie\Activitylog\Models\Activity::class),
+        ->toExtend(Spatie\Activitylog\Models\Activity::class),
 
     expect('App\Shared')
         ->not->toUse([
@@ -170,7 +170,7 @@ pest()->presets()->custom('qompose', fn() => [
 |
 */
 
-expect()->extend('toBeOne', fn() => $this->toBe(1));
+expect()->extend('toBeOne', fn () => $this->toBe(1));
 
 /*
 |--------------------------------------------------------------------------

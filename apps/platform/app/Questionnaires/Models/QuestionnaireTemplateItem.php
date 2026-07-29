@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
+use Override;
 
 /**
  * One question/document line inside a reusable template.
@@ -44,6 +45,7 @@ final class QuestionnaireTemplateItem extends Model
     /**
      * @var array<string, mixed>
      */
+    #[Override]
     protected $attributes = [
         'type' => 'file',
         'sort_order' => 0,
@@ -57,6 +59,7 @@ final class QuestionnaireTemplateItem extends Model
         return $this->belongsTo(QuestionnaireTemplate::class, 'questionnaire_template_id');
     }
 
+    #[Override]
     protected static function booted(): void
     {
         self::creating(function (self $item): void {
@@ -68,7 +71,7 @@ final class QuestionnaireTemplateItem extends Model
 
             // Give every new item a normalized configuration, so nothing has to
             // guess defaults later when reading is_required or options.
-            $item->configuration = app(
+            $item->configuration = resolve(
                 NormalizeQuestionnaireItemConfigurationAction::class,
             )->handle($item->type, []);
         });
@@ -77,6 +80,7 @@ final class QuestionnaireTemplateItem extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

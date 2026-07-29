@@ -11,10 +11,10 @@ use App\Questionnaires\Models\QuestionnaireTemplate;
 /**
  * Soft-delete a questionnaire template and write the matching audit event.
  */
-final class DeleteQuestionnaireTemplateAction
+final readonly class DeleteQuestionnaireTemplateAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(QuestionnaireTemplate $template): void

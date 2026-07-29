@@ -7,6 +7,7 @@ namespace App\Platform\Http\Requests;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Override;
 
 final class StartSupportSessionRequest extends FormRequest
 {
@@ -28,6 +29,7 @@ final class StartSupportSessionRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[Override]
     public function attributes(): array
     {
         return [

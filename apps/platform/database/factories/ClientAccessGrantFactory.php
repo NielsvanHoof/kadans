@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Override;
 use App\Accounts\Models\User;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Override;
 
 /**
  * @extends Factory<ClientAccessGrant>

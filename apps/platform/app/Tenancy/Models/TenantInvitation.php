@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Override;
 
 /**
  * Pending staff invite into a workspace. Looked up by hashed token before a
@@ -116,6 +117,7 @@ final class TenantInvitation extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

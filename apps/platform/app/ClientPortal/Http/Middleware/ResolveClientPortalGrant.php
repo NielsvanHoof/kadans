@@ -56,9 +56,7 @@ final class ResolveClientPortalGrant
 
         $tenant = Tenant::query()->find($grant->tenant_id);
 
-        if (! $tenant instanceof Tenant) {
-            abort(Response::HTTP_NOT_FOUND);
-        }
+        abort_unless($tenant instanceof Tenant, Response::HTTP_NOT_FOUND);
 
         // Tenant must be current so BelongsToTenant scopes work for dossier queries.
         $tenant->makeCurrent();

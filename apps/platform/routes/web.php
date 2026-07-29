@@ -18,7 +18,7 @@ Route::middleware([
     'verified',
     InitializeTenantFromSession::class,
     SetPermissionTeamContext::class,
-])->group(function () {
+])->group(function (): void {
     require __DIR__.'/web/reporting.php';
     require __DIR__.'/web/tenancy.php';
     require __DIR__.'/web/platform.php';

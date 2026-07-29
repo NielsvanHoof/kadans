@@ -9,12 +9,12 @@ use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Redis\RedisManager;
 
-final class InfrastructureReadinessCheck implements ChecksReadiness
+final readonly class InfrastructureReadinessCheck implements ChecksReadiness
 {
     public function __construct(
-        private readonly ConnectionResolverInterface $database,
-        private readonly RedisManager $redis,
-        private readonly FilesystemManager $filesystems,
+        private ConnectionResolverInterface $database,
+        private RedisManager $redis,
+        private FilesystemManager $filesystems,
     ) {}
 
     public function check(): void

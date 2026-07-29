@@ -10,9 +10,9 @@ use App\Audit\Enums\AuditEvent;
 use App\Clients\Models\Client;
 use Illuminate\Support\Facades\DB;
 
-final class RestoreClientAction
+final readonly class RestoreClientAction
 {
-    public function __construct(private readonly LogAuditActivityAction $logAuditActivity) {}
+    public function __construct(private LogAuditActivityAction $logAuditActivity) {}
 
     public function handle(Client $client, User $restoredBy): void
     {

@@ -15,6 +15,6 @@ final class RolesAndPermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        app(SyncTenantRolesAction::class)->handle();
+        resolve(SyncTenantRolesAction::class)->handle();
     }
 }

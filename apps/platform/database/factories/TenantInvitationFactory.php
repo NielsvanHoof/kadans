@@ -10,12 +10,14 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Override;
 
 /**
  * @extends Factory<TenantInvitation>
  */
 final class TenantInvitationFactory extends Factory
 {
+    #[Override]
     protected $model = TenantInvitation::class;
 
     /**

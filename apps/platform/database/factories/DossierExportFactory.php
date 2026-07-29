@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Override;
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<DossierExport>

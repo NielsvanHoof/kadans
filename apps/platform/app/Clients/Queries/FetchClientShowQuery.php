@@ -24,14 +24,14 @@ final class FetchClientShowQuery
             ->latest('updated_at')
             ->paginate(perPage: 15, pageName: 'dossiers_page')
             ->withQueryString()
-            ->through(fn (Dossier $dossier): array => (new ClientDossierRowData(
+            ->through(fn (Dossier $dossier): array => new ClientDossierRowData(
                 id: $dossier->id,
                 title: $dossier->title,
                 reference: $dossier->reference,
                 status: $dossier->status->value,
                 clientName: $client->name,
                 updatedAt: $dossier->updated_at->toIso8601String(),
-            ))->toArray());
+            )->toArray());
 
         return new ClientShowPageData(
             client: new ClientSummaryData(

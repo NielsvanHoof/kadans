@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Override;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<Dossier>

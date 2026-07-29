@@ -16,6 +16,8 @@ use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,35 +29,20 @@ use function hash;
  * Async OCR pipeline for an uploaded document.
  * Mock driver completes in-process; Textract stays processing until SNS/SQS completion.
  */
+#[Backoff([10, 30, 60])]
+#[Tries(self::MAX_TRIES)]
 final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
     use Queueable;
 
-    /**
-     * The upload revision this job is allowed to process.
-     */
-    public ?string $expectedPath = null;
-
-    /**
-     * How many times the job may be attempted before failing permanently.
-     */
-    public int $tries = 3;
-
-    /**
-     * Seconds to wait between retries.
-     *
-     * @var list<int>
-     */
-    public array $backoff = [10, 30, 60];
+    public const int MAX_TRIES = 3;
 
     public function __construct(
         public int $uploadedDocumentId,
-        ?string $expectedPath = null,
-        public ?int $pipelineId = null,
-    ) {
-        $this->expectedPath = $expectedPath;
-    }
+        public ?string $expectedPath = null,
+        public ?int $pipelineId = null
+    ) {}
 
     public function uniqueId(): string
     {
@@ -112,12 +99,12 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             }
         } catch (Throwable $exception) {
             // Let the queue retry until tries are exhausted.
-            if ($this->attempts() < $this->tries) {
+            if ($this->attempts() < self::MAX_TRIES) {
                 Log::warning('OCR: ProcessUploadedDocumentJob failed — will retry.', [
                     'uploaded_document_id' => $claimed->id,
                     'tenant_id' => $claimed->tenant_id,
                     'attempt' => $this->attempts(),
-                    'tries' => $this->tries,
+                    'tries' => self::MAX_TRIES,
                     'error' => $exception->getMessage(),
                 ]);
 
@@ -177,7 +164,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        app(PipelineStateAction::class)->handle(
+        resolve(PipelineStateAction::class)->handle(
             $pipeline,
             PipelineStepOperation::Fail,
             $pipeline->current_stage,

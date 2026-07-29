@@ -10,6 +10,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 final class PurgeSubjectActivityLogAction
@@ -63,19 +64,19 @@ final class PurgeSubjectActivityLogAction
 
         $pipelineQuery = Pipeline::query();
         $pipelineIds = $pipelineQuery->getQuery()
-            ->where(function ($query) use ($dossier, $uploadedDocumentIds, $exportIds): void {
+            ->where(function (Builder $query) use ($dossier, $uploadedDocumentIds, $exportIds): void {
                 $query
-                    ->where(function ($query) use ($dossier): void {
+                    ->where(function (Builder $query) use ($dossier): void {
                         $query->where('pipelineable_type', (new Dossier)->getMorphClass())
                             ->where('pipelineable_id', $dossier->id);
                     })
-                    ->orWhere(function ($query) use ($uploadedDocumentIds, $exportIds): void {
+                    ->orWhere(function (Builder $query) use ($uploadedDocumentIds, $exportIds): void {
                         $query
-                            ->where(function ($query) use ($uploadedDocumentIds): void {
+                            ->where(function (Builder $query) use ($uploadedDocumentIds): void {
                                 $query->where('pipelineable_type', (new UploadedDocument)->getMorphClass())
                                     ->whereIn('pipelineable_id', $uploadedDocumentIds);
                             })
-                            ->orWhere(function ($query) use ($exportIds): void {
+                            ->orWhere(function (Builder $query) use ($exportIds): void {
                                 $query->where('pipelineable_type', (new DossierExport)->getMorphClass())
                                     ->whereIn('pipelineable_id', $exportIds);
                             });

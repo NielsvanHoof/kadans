@@ -19,12 +19,12 @@ use RuntimeException;
 /**
  * When every questionnaire item is submitted, notify workspace staff in real time.
  */
-final class NotifyWorkspaceIfQuestionnaireCompleteAction
+final readonly class NotifyWorkspaceIfQuestionnaireCompleteAction
 {
     public function __construct(
-        private readonly DossierHasOutstandingClientItemsQuery $dossierHasOutstandingClientItems,
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly FetchActiveUsersForTenantQuery $getActiveUsersForTenant,
+        private DossierHasOutstandingClientItemsQuery $dossierHasOutstandingClientItems,
+        private LogAuditActivityAction $logAuditActivity,
+        private FetchActiveUsersForTenantQuery $getActiveUsersForTenant,
     ) {}
 
     public function handle(Dossier $dossier): void
@@ -45,15 +45,11 @@ final class NotifyWorkspaceIfQuestionnaireCompleteAction
 
         $client = $dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         $tenant = $dossier->tenant;
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Dossier tenant is missing.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Dossier tenant is missing.');
 
         $message = __(':client finished the questionnaire for “:dossier”.', [
             'client' => $client->name,
@@ -88,13 +84,6 @@ final class NotifyWorkspaceIfQuestionnaireCompleteAction
             fn (User $user) => $user->notify($notification),
         );
 
-        ClientQuestionnaireCompleted::dispatch(
-            $tenant->slug,
-            $dossier->id,
-            $dossier->title,
-            $client->name,
-            $message,
-            $dossierUrl,
-        );
+        event(new ClientQuestionnaireCompleted($tenant->slug, $dossier->id, $dossier->title, $client->name, $message, $dossierUrl));
     }
 }

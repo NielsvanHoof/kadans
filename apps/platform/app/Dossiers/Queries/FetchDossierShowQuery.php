@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Queries;
 
-use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Models\DossierExport;
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Data\PipelineData;
@@ -22,6 +20,8 @@ use App\Dossiers\Data\StaffUploadedDocumentData;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Models\UploadedDocument;
 use App\Shared\Data\PersonOptionData;
 use RuntimeException;
 

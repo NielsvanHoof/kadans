@@ -8,12 +8,14 @@ use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<QuestionnaireTemplate>
  */
 final class QuestionnaireTemplateFactory extends Factory
 {
+    #[Override]
     protected $model = QuestionnaireTemplate::class;
 
     /**

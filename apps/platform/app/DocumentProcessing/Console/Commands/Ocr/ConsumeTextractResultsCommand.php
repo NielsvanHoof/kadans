@@ -92,8 +92,10 @@ final class ConsumeTextractResultsCommand extends Command
                 $body = $message['Body'] ?? null;
                 $messageId = is_string($message['MessageId'] ?? null) ? $message['MessageId'] : null;
                 $receiveCount = $this->receiveCount($message);
-
-                if (! is_string($receiptHandle) || $receiptHandle === '') {
+                if (! is_string($receiptHandle)) {
+                    continue;
+                }
+                if ($receiptHandle === '') {
                     continue;
                 }
 
@@ -185,9 +187,7 @@ final class ConsumeTextractResultsCommand extends Command
             throw new JsonException('Invalid SQS body JSON: '.$exception->getMessage(), 0, $exception);
         }
 
-        if (! is_array($decoded)) {
-            throw new JsonException('SQS body must be a JSON object.');
-        }
+        throw_unless(is_array($decoded), JsonException::class, 'SQS body must be a JSON object.');
 
         $inner = $decoded['Message'] ?? $decoded;
 
@@ -199,17 +199,13 @@ final class ConsumeTextractResultsCommand extends Command
                 throw new JsonException('Invalid SNS Message JSON: '.$exception->getMessage(), 0, $exception);
             }
 
-            if (! is_array($innerDecoded)) {
-                throw new JsonException('SNS Message must be a JSON object.');
-            }
+            throw_unless(is_array($innerDecoded), JsonException::class, 'SNS Message must be a JSON object.');
 
             /** @var array{JobId?: mixed, Status?: mixed, StatusMessage?: mixed, API?: mixed} $innerDecoded */
             return $innerDecoded;
         }
 
-        if (! is_array($inner)) {
-            throw new JsonException('Unexpected SNS/SQS payload shape.');
-        }
+        throw_unless(is_array($inner), JsonException::class, 'Unexpected SNS/SQS payload shape.');
 
         /** @var array{JobId?: mixed, Status?: mixed, StatusMessage?: mixed, API?: mixed} $inner */
         return $inner;

@@ -9,6 +9,7 @@ use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Override;
 
 final class StoreClientAccessGrantRequest extends FormRequest
 {
@@ -41,6 +42,7 @@ final class StoreClientAccessGrantRequest extends FormRequest
     /**
      * Normalize checkbox / boolean input before validation runs.
      */
+    #[Override]
     protected function prepareForValidation(): void
     {
         if ($this->has('send_invite')) {

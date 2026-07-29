@@ -16,6 +16,7 @@ use App\Tenancy\TenantContext;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -65,7 +66,7 @@ final class SendScheduledDossierRemindersCommand extends Command
 
         $dueDossiersQuery = Dossier::query()
             ->whereNot('status', DossierStatus::Completed)
-            ->whereHas('documentRequests', function ($documentRequestQuery): void {
+            ->whereHas('documentRequests', function (Builder $documentRequestQuery): void {
                 $documentRequestQuery->getQuery()->whereIn('status', [
                     DocumentRequestStatus::Pending->value,
                     DocumentRequestStatus::Rejected->value,

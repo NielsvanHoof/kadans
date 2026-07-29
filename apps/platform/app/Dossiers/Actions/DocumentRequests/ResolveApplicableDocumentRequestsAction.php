@@ -33,6 +33,7 @@ final readonly class ResolveApplicableDocumentRequestsAction
                 }
 
                 $isRequired = ($documentRequest->configuration['is_required'] ?? true) !== false;
+
                 // Optional unanswered fields do not block progress or completion.
                 return $isRequired || $documentRequest->status !== DocumentRequestStatus::Pending;
             })

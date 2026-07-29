@@ -10,10 +10,10 @@ use App\Audit\Enums\AuditEvent;
 use App\ClientPortal\Models\ClientAccessGrant;
 use Illuminate\Support\Facades\DB;
 
-final class RevokeClientPortalAccessAction
+final readonly class RevokeClientPortalAccessAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(ClientAccessGrant $grant, User $revokedBy): ClientAccessGrant

@@ -64,7 +64,7 @@ final class FetchPlatformSupportTenantsQuery
                 $search = mb_trim($value);
 
                 // Base query avoids Larastan staticMethod.dynamicCall on where/orWhere.
-                $query->getQuery()->where(function ($nestedQuery) use ($search): void {
+                $query->getQuery()->where(function (\Illuminate\Contracts\Database\Query\Builder $nestedQuery) use ($search): void {
                     $nestedQuery
                         ->where('name', 'like', "%{$search}%")
                         ->orWhere('slug', 'like', "%{$search}%");

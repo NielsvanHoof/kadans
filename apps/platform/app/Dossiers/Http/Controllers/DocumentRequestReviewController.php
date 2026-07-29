@@ -35,9 +35,7 @@ final class DocumentRequestReviewController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
 
         $decision = DocumentRequestStatus::from((string) $request->validated('decision'));
         $rejectionReason = $request->validated('rejection_reason');

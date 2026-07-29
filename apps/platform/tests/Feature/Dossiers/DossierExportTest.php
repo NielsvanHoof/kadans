@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Database\Seeders\RolesAndPermissionsSeeder;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
@@ -18,6 +17,7 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Enums\Role;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -94,7 +94,8 @@ test('the export job creates a ZIP manifest and copies uploaded documents', func
         ->and(Storage::disk('local')->exists($export->path))->toBeTrue();
 
     $archivePath = tempnam(sys_get_temp_dir(), 'dossier-export-test-');
-    expect($archivePath)->toBeTrue();
+    // tempnam() returns string|false when the temp file cannot be created.
+    expect($archivePath)->toBeString();
     file_put_contents($archivePath, Storage::disk('local')->get($export->path));
 
     $archive = new ZipArchive();

@@ -139,6 +139,6 @@ final class FieldSensitivityClassifier
      */
     private function labelMatches(string $label, array $needles): bool
     {
-        return array_any($needles, fn(string $needle): bool => str_contains($label, $needle));
+        return array_any($needles, fn (string $needle): bool => str_contains($label, $needle));
     }
 }

@@ -11,12 +11,12 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 
-final class IssueClientPortalAccessAction
+final readonly class IssueClientPortalAccessAction
 {
     public function __construct(
-        private readonly CreateClientAccessGrantAction $createClientAccessGrant,
-        private readonly SendClientPortalInviteAction $sendClientPortalInvite,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private CreateClientAccessGrantAction $createClientAccessGrant,
+        private SendClientPortalInviteAction $sendClientPortalInvite,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     /**

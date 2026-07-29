@@ -16,12 +16,12 @@ use Illuminate\Http\UploadedFile;
 /**
  * Staff upload: store the file, mark the dossier in review, and audit.
  */
-final class UploadStaffDocumentAction
+final readonly class UploadStaffDocumentAction
 {
     public function __construct(
-        private readonly UploadDocumentForRequestAction $uploadDocumentForRequest,
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly DossierTransitions $dossierTransitions,
+        private UploadDocumentForRequestAction $uploadDocumentForRequest,
+        private LogAuditActivityAction $logAuditActivity,
+        private DossierTransitions $dossierTransitions,
     ) {}
 
     public function handle(

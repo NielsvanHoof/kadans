@@ -14,11 +14,11 @@ use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 
-final class TenantMembershipPolicy
+final readonly class TenantMembershipPolicy
 {
     use AuthorizesTenantPermission;
 
-    public function __construct(private readonly WorkspaceMemberRoles $memberRoles) {}
+    public function __construct(private WorkspaceMemberRoles $memberRoles) {}
 
     public function viewAny(User $user): bool
     {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Pest\Rector\Rules\ToBeTrueNotFalseRector;
 use Pest\Rector\Set\PestSetList;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Config\RectorConfig;
@@ -22,6 +23,8 @@ return RectorConfig::configure()
     ->withSkip([
         // Historical migrations should stay untouched once shipped.
         __DIR__.'/database/migrations',
+        // Unsafe: turns not->toBeFalse() into toBeTrue() for string|int|false values.
+        ToBeTrueNotFalseRector::class,
     ])
     ->withCache(
         cacheDirectory: __DIR__.'/storage/rector',

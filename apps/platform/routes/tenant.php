@@ -24,7 +24,7 @@ Route::middleware([
 ])
     ->prefix('workspaces/{tenant:slug}')
     ->name('workspaces.')
-    ->group(function () {
+    ->group(function (): void {
         require __DIR__.'/tenant/reporting.php';
         require __DIR__.'/tenant/clients.php';
         require __DIR__.'/tenant/members.php';

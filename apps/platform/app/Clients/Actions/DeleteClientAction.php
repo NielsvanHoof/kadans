@@ -12,11 +12,11 @@ use App\Dossiers\Actions\DeleteDossierAction;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 
-final class DeleteClientAction
+final readonly class DeleteClientAction
 {
     public function __construct(
-        private readonly DeleteDossierAction $deleteDossier,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private DeleteDossierAction $deleteDossier,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(Client $client, User $deletedBy): void

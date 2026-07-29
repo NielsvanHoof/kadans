@@ -15,11 +15,11 @@ use Illuminate\Notifications\Events\NotificationFailed;
 use RuntimeException;
 use Throwable;
 
-final class LogClientPortalReminderFailed
+final readonly class LogClientPortalReminderFailed
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly TenantContext $tenantContext,
+        private LogAuditActivityAction $logAuditActivity,
+        private TenantContext $tenantContext,
     ) {}
 
     public function handle(NotificationFailed $event): void

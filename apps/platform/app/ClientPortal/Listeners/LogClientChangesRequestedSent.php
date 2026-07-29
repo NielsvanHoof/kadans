@@ -16,11 +16,11 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
 
-final class LogClientChangesRequestedSent
+final readonly class LogClientChangesRequestedSent
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly TenantContext $tenantContext,
+        private LogAuditActivityAction $logAuditActivity,
+        private TenantContext $tenantContext,
     ) {}
 
     public function handle(NotificationSent $event): void

@@ -9,6 +9,7 @@ use App\Accounts\Enums\Locale;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\PipelinePermission;
 use App\Platform\Support\SupportSession;
+use App\Platform\Support\SupportSessionData;
 use App\Tenancy\Data\WorkspaceNavItemData;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\Tenant;
@@ -19,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Middleware;
+use Override;
 
 final class HandleInertiaRequests extends Middleware
 {
@@ -29,6 +31,7 @@ final class HandleInertiaRequests extends Middleware
      *
      * @var string
      */
+    #[Override]
     protected $rootView = 'app';
 
     public function __construct(
@@ -43,6 +46,7 @@ final class HandleInertiaRequests extends Middleware
      *
      * @see https://inertiajs.com/asset-versioning
      */
+    #[Override]
     public function version(Request $request): ?string
     {
         return parent::version($request);
@@ -76,6 +80,7 @@ final class HandleInertiaRequests extends Middleware
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function share(Request $request): array
     {
         $user = $request->user();
@@ -112,7 +117,7 @@ final class HandleInertiaRequests extends Middleware
 
                 $session = $this->supportSession->active();
 
-                if ($session === null) {
+                if (! $session instanceof SupportSessionData) {
                     return null;
                 }
 
@@ -133,7 +138,7 @@ final class HandleInertiaRequests extends Middleware
             },
             'workspaces' => $user instanceof User
                 ? Inertia::once(
-                    fn () => array_map(
+                    fn (): array => array_map(
                         static fn (WorkspaceNavItemData $item): array => $item->toArray(),
                         $this->getWorkspaceNavigationForUser->handle($user),
                     ),

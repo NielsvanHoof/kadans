@@ -23,15 +23,11 @@ final class SendClientChangesRequestedNotificationAction
 
         $dossier = $documentRequest->dossier;
 
-        if (! $dossier instanceof Dossier) {
-            throw new RuntimeException('Document request dossier is missing.');
-        }
+        throw_unless($dossier instanceof Dossier, RuntimeException::class, 'Document request dossier is missing.');
 
         $client = $dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         $firmName = $dossier->tenant instanceof Tenant
             ? $dossier->tenant->name
@@ -39,14 +35,14 @@ final class SendClientChangesRequestedNotificationAction
 
         Notification::route('mail', $client->email)
             ->notify(
-                (new ClientChangesRequestedNotification(
+                new ClientChangesRequestedNotification(
                     documentRequestId: $documentRequest->id,
                     dossierId: $dossier->id,
                     clientName: $client->name,
                     dossierTitle: $dossier->title,
                     documentRequestTitle: $documentRequest->title,
                     firmName: $firmName,
-                ))->locale(app()->getLocale()),
+                )->locale(app()->getLocale()),
             );
     }
 }

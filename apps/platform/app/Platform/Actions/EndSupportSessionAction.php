@@ -14,11 +14,11 @@ use App\Tenancy\Models\Tenant;
 /**
  * End an active support session and audit the exit.
  */
-final class EndSupportSessionAction
+final readonly class EndSupportSessionAction
 {
     public function __construct(
-        private readonly SupportSession $supportSession,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private SupportSession $supportSession,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(?User $user = null, AuditEvent $event = AuditEvent::SupportSessionEnded): ?SupportSessionData

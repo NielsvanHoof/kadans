@@ -8,10 +8,10 @@ use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 
-final class PurgeExpiredClientAction
+final readonly class PurgeExpiredClientAction
 {
     public function __construct(
-        private readonly PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
+        private PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
     ) {}
 
     /**

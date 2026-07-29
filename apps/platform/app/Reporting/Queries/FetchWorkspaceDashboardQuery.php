@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
-use Illuminate\Contracts\Database\Query\Builder;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
@@ -14,6 +13,7 @@ use App\Reporting\Data\DashboardMetricsData;
 use App\Reporting\Data\DashboardRecentDossierData;
 use App\Reporting\Data\WorkspaceDashboardPageData;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Contracts\Database\Query\Builder;
 use RuntimeException;
 
 final class FetchWorkspaceDashboardQuery

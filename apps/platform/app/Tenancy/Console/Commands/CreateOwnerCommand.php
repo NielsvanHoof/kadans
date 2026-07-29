@@ -37,7 +37,7 @@ final class CreateOwnerCommand extends Command
         $email = $this->resolveEmail();
         $role = $this->resolveRole();
 
-        if (!$role instanceof Role) {
+        if (! $role instanceof Role) {
             return self::FAILURE;
         }
 

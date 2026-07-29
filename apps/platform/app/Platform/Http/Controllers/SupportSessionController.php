@@ -39,9 +39,7 @@ final class SupportSessionController extends Controller
     ): RedirectResponse {
         $user = $request->user();
 
-        if ($user === null) {
-            abort(403);
-        }
+        abort_if($user === null, 403);
 
         $startSupportSession->handle(
             user: $user,

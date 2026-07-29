@@ -23,9 +23,7 @@ final class DashboardController extends Controller
     ): RedirectResponse|Response {
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(403);
-        }
+        abort_unless($user instanceof User, 403);
 
         $memberships = $getActiveTenantMembershipsForUser->handle($user);
 
@@ -67,9 +65,7 @@ final class DashboardController extends Controller
     {
         $tenant = $membership->tenant;
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Tenant membership is missing its tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Tenant membership is missing its tenant.');
 
         return $tenant;
     }

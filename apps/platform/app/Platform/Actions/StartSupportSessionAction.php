@@ -15,18 +15,16 @@ use InvalidArgumentException;
 /**
  * Start a time-boxed read-only support session for a firm.
  */
-final class StartSupportSessionAction
+final readonly class StartSupportSessionAction
 {
     public function __construct(
-        private readonly SupportSession $supportSession,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private SupportSession $supportSession,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(User $user, Tenant $tenant, string $reason): SupportSessionData
     {
-        if (! $user->isPlatformSupport()) {
-            throw new InvalidArgumentException('Only platform support users can start a support session.');
-        }
+        throw_unless($user->isPlatformSupport(), InvalidArgumentException::class, 'Only platform support users can start a support session.');
 
         // Make tenant current so the audit row gets tenant_id stamped.
         $tenant->makeCurrent();

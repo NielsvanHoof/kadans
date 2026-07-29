@@ -7,15 +7,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('login screen can be rendered', function () {
+test('login screen can be rendered', function (): void {
     $response = $this->get(route('login'));
 
     $response->assertOk();
 });
 
-test('users can authenticate using the login screen', function () {
+test('users can authenticate using the login screen', function (): void {
     $user = User::factory()->create();
 
     $response = $this->post(route('login.store'), [
@@ -27,7 +28,7 @@ test('users can authenticate using the login screen', function () {
     $response->assertRedirect(route('dashboard', absolute: false));
 });
 
-test('users with two factor enabled are redirected to two factor challenge', function () {
+test('users with two factor enabled are redirected to two factor challenge', function (): void {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
     Features::twoFactorAuthentication([
@@ -47,7 +48,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
     $this->assertGuest();
 });
 
-test('users can not authenticate with invalid password', function () {
+test('users can not authenticate with invalid password', function (): void {
     $user = User::factory()->create();
 
     $this->post(route('login.store'), [
@@ -58,7 +59,7 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
-test('users can logout', function () {
+test('users can logout', function (): void {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('logout'));
@@ -68,7 +69,7 @@ test('users can logout', function () {
     $this->assertGuest();
 });
 
-test('users are rate limited', function () {
+test('users are rate limited', function (): void {
     $user = User::factory()->create();
 
     RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);

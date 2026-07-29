@@ -41,7 +41,7 @@ test('bedrock document overview normalizer parses converse json', function (): v
     $bedrock = Mockery::mock(BedrockRuntimeClient::class);
     $bedrock->shouldReceive('converse')
         ->once()
-        ->with(Mockery::on(fn(array $args): bool => ($args['modelId'] ?? null) === 'eu.anthropic.claude-sonnet-4-20250514-v1:0'
+        ->with(Mockery::on(fn (array $args): bool => ($args['modelId'] ?? null) === 'eu.anthropic.claude-sonnet-4-20250514-v1:0'
             && str_contains((string) data_get($args, 'messages.0.content.0.text'), 'BSN: 287505030')
             && ! array_key_exists('additionalModelRequestFields', $args)))
         ->andReturn(new Result([

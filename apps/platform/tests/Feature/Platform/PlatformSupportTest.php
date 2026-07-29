@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Enums\AuditPermission;
@@ -16,6 +15,7 @@ use App\Dossiers\Models\Dossier;
 use App\Platform\Support\SupportSession;
 use App\Questionnaires\Enums\QuestionnaireTemplatePermission;
 use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;

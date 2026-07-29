@@ -16,7 +16,7 @@ Route::middleware([
     'auth',
     InitializeTenantFromSession::class,
     SetPermissionTeamContext::class,
-])->group(function () {
+])->group(function (): void {
     Route::redirect('settings', '/settings/profile');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -28,7 +28,7 @@ Route::middleware([
     'verified',
     InitializeTenantFromSession::class,
     SetPermissionTeamContext::class,
-])->group(function () {
+])->group(function (): void {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])
@@ -45,9 +45,7 @@ Route::middleware([
     Route::patch('settings/language', [LocaleController::class, 'update'])->name('language.update');
 });
 
-Route::get('.well-known/passkey-endpoints', function () {
-    return response()->json([
-        'enroll' => route('security.edit'),
-        'manage' => route('security.edit'),
-    ]);
-})->name('well-known.passkeys');
+Route::get('.well-known/passkey-endpoints', fn () => response()->json([
+    'enroll' => route('security.edit'),
+    'manage' => route('security.edit'),
+]))->name('well-known.passkeys');

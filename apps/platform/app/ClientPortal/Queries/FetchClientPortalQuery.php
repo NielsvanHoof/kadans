@@ -25,12 +25,12 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 use function in_array;
 
-final class FetchClientPortalQuery
+final readonly class FetchClientPortalQuery
 {
     public function __construct(
-        private readonly DetermineDocumentRequestVisibilityAction $determineVisibility,
-        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
-        private readonly DocumentRequestTransitions $documentRequestTransitions,
+        private DetermineDocumentRequestVisibilityAction $determineVisibility,
+        private ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+        private DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
     public function handle(ClientAccessGrant $grant): ClientPortalPageData

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Override;
 use App\DocumentProcessing\Enums\PipelineStatus;
 use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Models\Pipeline;
@@ -12,6 +11,7 @@ use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Override;
 
 /**
  * @extends Factory<Pipeline>

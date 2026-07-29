@@ -173,8 +173,8 @@ test('an existing user can accept an invitation', function (): void {
     actingInWorkspace($tenant);
     expect($invitee->fresh()->hasRole(Role::Reviewer->value))->toBeTrue()
         ->and(Activity::query()
-        ->where('event', AuditEvent::MemberInvitationAccepted->value)
-        ->exists())
+            ->where('event', AuditEvent::MemberInvitationAccepted->value)
+            ->exists())
         ->toBeTrue();
 });
 
@@ -243,8 +243,8 @@ test('owners can change a member role and it is audited', function (): void {
     expect($member->fresh()->hasRole(Role::Reviewer->value))->toBeTrue()
         ->and($member->fresh()->hasRole(Role::Adviser->value))->toBeFalse()
         ->and(Activity::query()
-        ->where('event', AuditEvent::MemberRoleChanged->value)
-        ->exists())
+            ->where('event', AuditEvent::MemberRoleChanged->value)
+            ->exists())
         ->toBeTrue();
 });
 
@@ -300,12 +300,12 @@ test('owners can suspend and remove another member', function (): void {
 
     expect(TenantMembership::query()->whereKey($membership->id)->exists())->toBeFalse()
         ->and(Activity::query()
-        ->where('event', AuditEvent::MemberSuspended->value)
-        ->exists())
+            ->where('event', AuditEvent::MemberSuspended->value)
+            ->exists())
         ->toBeTrue()
         ->and(Activity::query()
-        ->where('event', AuditEvent::MemberRemoved->value)
-        ->exists())
+            ->where('event', AuditEvent::MemberRemoved->value)
+            ->exists())
         ->toBeTrue();
 });
 
@@ -342,8 +342,8 @@ test('invitations can be resent and revoked', function (): void {
 
     expect($invitation->fresh()->isRevoked())->toBeTrue()
         ->and(Activity::query()
-        ->where('event', AuditEvent::MemberInvitationRevoked->value)
-        ->exists())
+            ->where('event', AuditEvent::MemberInvitationRevoked->value)
+            ->exists())
         ->toBeTrue();
 });
 

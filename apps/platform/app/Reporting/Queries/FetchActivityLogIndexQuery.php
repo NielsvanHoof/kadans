@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
-use Illuminate\Support\Facades\Date;
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
@@ -18,6 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Date;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Throwable;

@@ -21,9 +21,7 @@ final class EnsurePlatformSupport
     {
         $user = $request->user();
 
-        if (! $user instanceof User || ! $user->isPlatformSupport()) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_if(! $user instanceof User || ! $user->isPlatformSupport(), Response::HTTP_FORBIDDEN);
 
         return $next($request);
     }

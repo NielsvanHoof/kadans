@@ -20,11 +20,11 @@ use function is_string;
  * Starts async Textract AnalyzeDocument (FORMS + TABLES) for a PDF in S3.
  * Completion arrives later via SNS → SQS → CompleteTextractExtractionAction.
  */
-final class TextractDocumentOcr implements StartsDocumentOcr
+final readonly class TextractDocumentOcr implements StartsDocumentOcr
 {
     public function __construct(
-        private readonly TextractClient $textract,
-        private readonly Repository $config,
+        private TextractClient $textract,
+        private Repository $config,
     ) {}
 
     public function start(UploadedDocument $document): void
@@ -33,17 +33,11 @@ final class TextractDocumentOcr implements StartsDocumentOcr
         $snsTopicArn = $this->config->get('ocr.textract.sns_topic_arn');
         $snsRoleArn = $this->config->get('ocr.textract.sns_role_arn');
 
-        if (! is_string($bucket) || $bucket === '') {
-            throw new InvalidArgumentException('OCR Textract bucket is not configured.');
-        }
+        throw_if(! is_string($bucket) || $bucket === '', InvalidArgumentException::class, 'OCR Textract bucket is not configured.');
 
-        if (! is_string($snsTopicArn) || $snsTopicArn === '') {
-            throw new InvalidArgumentException('OCR Textract SNS topic ARN is not configured.');
-        }
+        throw_if(! is_string($snsTopicArn) || $snsTopicArn === '', InvalidArgumentException::class, 'OCR Textract SNS topic ARN is not configured.');
 
-        if (! is_string($snsRoleArn) || $snsRoleArn === '') {
-            throw new InvalidArgumentException('OCR Textract SNS role ARN is not configured.');
-        }
+        throw_if(! is_string($snsRoleArn) || $snsRoleArn === '', InvalidArgumentException::class, 'OCR Textract SNS role ARN is not configured.');
 
         Log::info('OCR: starting Textract StartDocumentAnalysis.', [
             'uploaded_document_id' => $document->id,
@@ -73,9 +67,7 @@ final class TextractDocumentOcr implements StartsDocumentOcr
 
         $jobId = $result->get('JobId');
 
-        if (! is_string($jobId) || $jobId === '') {
-            throw new RuntimeException('Textract did not return a JobId.');
-        }
+        throw_if(! is_string($jobId) || $jobId === '', RuntimeException::class, 'Textract did not return a JobId.');
 
         // Only attach the external job to the exact upload revision that started it.
         $updated = UploadedDocument::query()

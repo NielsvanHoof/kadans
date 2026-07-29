@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use function is_array;
 use function is_string;
 
-final class LogAuditActivityAction
+final readonly class LogAuditActivityAction
 {
     public function __construct(private Request $request) {}
 

@@ -9,9 +9,9 @@ use App\Clients\Models\Client;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 
-final class BulkDeleteClientsAction
+final readonly class BulkDeleteClientsAction
 {
-    public function __construct(private readonly DeleteClientAction $deleteClient) {}
+    public function __construct(private DeleteClientAction $deleteClient) {}
 
     /**
      * Archive each selected client (cascades live dossiers via DeleteClientAction).

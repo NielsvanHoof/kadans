@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Queries;
 
-use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Shared\Data\PersonOptionData;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Contracts\Database\Query\Builder;
 
 final class FetchResponsibleStaffOptionsQuery
 {

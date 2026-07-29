@@ -8,12 +8,14 @@ use App\DocumentProcessing\Enums\PipelineStepStatus;
 use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Models\PipelineStep;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<PipelineStep>
  */
 final class PipelineStepFactory extends Factory
 {
+    #[Override]
     protected $model = PipelineStep::class;
 
     /**

@@ -39,7 +39,7 @@ test('complete textract extraction maps forms tables and asks bedrock for overvi
     $overview = Mockery::mock(DescribesDocumentOverview::class);
     $overview->shouldReceive('describe')
         ->once()
-        ->with(Mockery::on(fn(array $payload): bool => ($payload['fields'][0]['label'] ?? null) === 'BSN'
+        ->with(Mockery::on(fn (array $payload): bool => ($payload['fields'][0]['label'] ?? null) === 'BSN'
             && ($payload['fields'][0]['value'] ?? null) === '287505030'
             && ($payload['fields'][0]['confidence'] ?? null) === 0.99
             && ($payload['tables'][0]['headers'][0] ?? null) === 'Code'))
@@ -86,9 +86,9 @@ test('complete textract extraction maps forms tables and asks bedrock for overvi
         ->and($uploaded->processing_error)->toBeNull()
         ->and($uploaded->processing_finished_at)->not->toBeNull()
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingCompleted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingCompleted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeTrue();
 
     Event::assertDispatched(fn (MessageLogged $log): bool => $log->level === 'info'
@@ -147,9 +147,9 @@ test('complete textract extraction does not overwrite a replacement upload', fun
         ->and($uploaded->textract_job_id)->toBeNull()
         ->and($uploaded->extracted_text)->toBeNull()
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingCompleted->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingCompleted->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeFalse();
 });
 
@@ -196,9 +196,9 @@ test('complete textract extraction marks failed status', function (): void {
         ->and($uploaded->processing_error)->toBe('Unsupported document format')
         ->and($uploaded->extracted_text)->toBeNull()
         ->and(Activity::query()
-        ->where('event', AuditEvent::DocumentProcessingFailed->value)
-        ->where('subject_id', $uploaded->id)
-        ->exists())
+            ->where('event', AuditEvent::DocumentProcessingFailed->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())
         ->toBeTrue();
 });
 

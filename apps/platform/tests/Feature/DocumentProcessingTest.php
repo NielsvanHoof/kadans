@@ -54,12 +54,12 @@ test('uploading a document dispatches the mock OCR processing job', function ():
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending)
         ->and(Pipeline::query()
-        ->where('pipelineable_type', (new UploadedDocument)->getMorphClass())
-        ->where('pipelineable_id', $uploaded->id)
-        ->sole()->type->value)
+            ->where('pipelineable_type', (new UploadedDocument)->getMorphClass())
+            ->where('pipelineable_id', $uploaded->id)
+            ->sole()->type->value)
         ->toBe('ocr_document');
 
-    Queue::assertPushed(ProcessUploadedDocumentJob::class, fn(ProcessUploadedDocumentJob $job): bool => $job->uploadedDocumentId === $uploaded->id
+    Queue::assertPushed(ProcessUploadedDocumentJob::class, fn (ProcessUploadedDocumentJob $job): bool => $job->uploadedDocumentId === $uploaded->id
         && $job->pipelineId !== null);
 });
 

@@ -14,6 +14,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
+use Override;
 
 use function is_string;
 
@@ -38,6 +39,7 @@ final class InviteTenantMemberRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[Override]
     public function attributes(): array
     {
         return [
@@ -53,7 +55,7 @@ final class InviteTenantMemberRequest extends FormRequest
             $tenant = Tenant::current();
             $roleValue = $this->input('role');
 
-            if (! $user instanceof User || $tenant === null || ! is_string($roleValue)) {
+            if (! $user instanceof User || ! $tenant instanceof Tenant || ! is_string($roleValue)) {
                 return;
             }
 
@@ -63,7 +65,7 @@ final class InviteTenantMemberRequest extends FormRequest
                 return;
             }
 
-            $memberRoles = app(WorkspaceMemberRoles::class);
+            $memberRoles = resolve(WorkspaceMemberRoles::class);
 
             if (! $memberRoles->actorCanAssignRole($user, $tenant, $role)) {
                 $validator->errors()->add(

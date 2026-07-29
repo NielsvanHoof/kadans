@@ -33,9 +33,7 @@ final class FetchActiveTenantMembershipsForUserQuery
     {
         $tenant = $membership->tenant;
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Tenant membership is missing its tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Tenant membership is missing its tenant.');
 
         return $tenant;
     }

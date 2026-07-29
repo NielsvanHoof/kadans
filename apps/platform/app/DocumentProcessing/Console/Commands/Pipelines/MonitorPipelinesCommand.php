@@ -14,7 +14,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 use function Laravel\Prompts\info;
 use function sprintf;
@@ -29,7 +29,7 @@ final class MonitorPipelinesCommand extends Command
     ): int {
         $stuckAfter = max(1, (int) $this->option('stuck-after'));
         $repeatAfter = max(1, (int) $this->option('repeat-after'));
-        $cutoff = Carbon::now()->subMinutes($stuckAfter);
+        $cutoff = Date::now()->subMinutes($stuckAfter);
         $active = 0;
         $markedStuck = 0;
         $repeatedlyFailing = 0;

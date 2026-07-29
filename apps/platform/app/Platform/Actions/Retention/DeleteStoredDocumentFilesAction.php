@@ -10,9 +10,9 @@ use Illuminate\Support\Collection;
 use RuntimeException;
 use Throwable;
 
-final class DeleteStoredDocumentFilesAction
+final readonly class DeleteStoredDocumentFilesAction
 {
-    public function __construct(private readonly FilesystemManager $filesystems) {}
+    public function __construct(private FilesystemManager $filesystems) {}
 
     /**
      * @param  Collection<int, UploadedDocument>  $uploadedDocuments

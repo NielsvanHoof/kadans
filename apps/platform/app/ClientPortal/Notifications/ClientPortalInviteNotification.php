@@ -40,9 +40,7 @@ final class ClientPortalInviteNotification extends Notification implements Shoul
     {
         $client = $this->dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         return (new MailMessage)
             ->subject(__(':firm: documents requested for :title', [

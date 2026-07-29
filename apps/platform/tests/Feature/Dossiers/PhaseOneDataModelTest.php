@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\QueryException;
 use App\Accounts\Models\User;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
@@ -13,6 +12,7 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 pest()

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Override;
 use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Contracts\IsTenant;
 use Spatie\Multitenancy\Models\Concerns\ImplementsTenant;
@@ -55,6 +56,7 @@ final class Tenant extends Model implements IsTenant
         return $this->hasMany(Dossier::class);
     }
 
+    #[Override]
     public function getRouteKeyName(): string
     {
         return 'slug';
@@ -65,6 +67,7 @@ final class Tenant extends Model implements IsTenant
      * (tenant_id null) are intentionally visible across firms, so they
      * must not be resolved through a strict hasMany(tenant_id) relation.
      */
+    #[Override]
     public function resolveChildRouteBinding($childType, $value, $field)
     {
         if (in_array($childType, ['template', 'templates'], true)) {

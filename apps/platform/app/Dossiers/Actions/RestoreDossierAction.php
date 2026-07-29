@@ -12,9 +12,9 @@ use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-final class RestoreDossierAction
+final readonly class RestoreDossierAction
 {
-    public function __construct(private readonly LogAuditActivityAction $logAuditActivity) {}
+    public function __construct(private LogAuditActivityAction $logAuditActivity) {}
 
     public function handle(Dossier $dossier, User $restoredBy): void
     {

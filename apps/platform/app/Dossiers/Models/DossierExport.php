@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Models;
 
-use Override;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\DossierExportStatus;
@@ -17,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
+use Override;
 
 /**
  * Queued ZIP export of a dossier and its submitted documents.

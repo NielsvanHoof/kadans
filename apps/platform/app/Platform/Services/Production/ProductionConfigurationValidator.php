@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Platform\Services\Production;
 
-use Illuminate\Support\Facades\Request;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use LogicException;
@@ -112,8 +111,9 @@ final readonly class ProductionConfigurationValidator
             return false;
         }
 
-        $arguments = Request::server('argv') ?? [];
+        // Composer sets argv on $_SERVER; Request::server() is a stale snapshot.
+        $arguments = $_SERVER['argv'] ?? [];
 
-        return in_array('package:discover', $arguments, true);
+        return is_array($arguments) && in_array('package:discover', $arguments, true);
     }
 }

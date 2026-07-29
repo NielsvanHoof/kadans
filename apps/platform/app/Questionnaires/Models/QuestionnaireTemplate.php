@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Scout\Searchable;
+use Override;
 
 /**
  * Reusable questionnaire pack — system-wide (tenant_id null) or firm-owned.
@@ -42,6 +43,7 @@ final class QuestionnaireTemplate extends Model
     /**
      * @var array<string, mixed>
      */
+    #[Override]
     protected $attributes = [
         'category' => 'custom',
     ];
@@ -92,6 +94,7 @@ final class QuestionnaireTemplate extends Model
     /**
      * Only resolve system templates or templates owned by the current tenant.
      */
+    #[Override]
     public function resolveRouteBinding($value, $field = null): ?Model
     {
         $field ??= $this->getRouteKeyName();
@@ -128,6 +131,7 @@ final class QuestionnaireTemplate extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

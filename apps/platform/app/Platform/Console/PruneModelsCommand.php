@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Platform\Console;
 
 use Illuminate\Database\Console\PruneCommand;
+use Override;
 
 final class PruneModelsCommand extends PruneCommand
 {
     /**
      * @return array<string>
      */
+    #[Override]
     protected function getPath(): array
     {
         $configuredPaths = $this->option('path');

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Support;
 
-use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 

@@ -19,7 +19,8 @@ test('tenant initialization middleware runs before route model binding', functio
 
     $substituteBindingsIndex = array_search(SubstituteBindings::class, $priority, true);
 
-    expect($substituteBindingsIndex)->toBeTrue();
+    // array_search() returns int|false — not a boolean.
+    expect($substituteBindingsIndex)->toBeInt();
 
     $tenantMiddleware = [
         InitializeTenantFromSession::class,
@@ -30,7 +31,7 @@ test('tenant initialization middleware runs before route model binding', functio
     foreach ($tenantMiddleware as $middleware) {
         $index = array_search($middleware, $priority, true);
 
-        expect($index)->toBeTrue()
+        expect($index)->toBeInt()
             ->and($index)->toBeLessThan($substituteBindingsIndex);
     }
 

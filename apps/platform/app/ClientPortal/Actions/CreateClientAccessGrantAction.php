@@ -11,10 +11,10 @@ use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-final class CreateClientAccessGrantAction
+final readonly class CreateClientAccessGrantAction
 {
     public function __construct(
-        private readonly DossierTransitions $dossierTransitions,
+        private DossierTransitions $dossierTransitions,
     ) {}
 
     /**

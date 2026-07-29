@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Models;
 
-use Override;
 use App\Accounts\Models\User;
 use App\Audit\Concerns\LogsTenantAuditableActivity;
 use App\ClientPortal\Models\ClientAccessGrant;
@@ -25,6 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Laravel\Scout\Builder as ScoutBuilder;
 use Laravel\Scout\Searchable;
+use Override;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 

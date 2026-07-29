@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Platform\Support;
 
-use Illuminate\Support\Facades\Date;
 use App\Tenancy\Models\Tenant;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Date;
 
 use function is_int;
 use function is_string;

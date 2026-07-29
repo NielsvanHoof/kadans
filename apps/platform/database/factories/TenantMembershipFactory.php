@@ -9,12 +9,14 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<TenantMembership>
  */
 final class TenantMembershipFactory extends Factory
 {
+    #[Override]
     protected $model = TenantMembership::class;
 
     /**
@@ -35,7 +37,7 @@ final class TenantMembershipFactory extends Factory
 
     public function invited(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn (array $attributes): array => [
             'status' => TenantMembershipStatus::Invited,
             'joined_at' => null,
         ]);

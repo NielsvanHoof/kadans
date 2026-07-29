@@ -29,9 +29,7 @@ final class UpdateClientRequest extends FormRequest
     {
         $client = $this->route('client');
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Cannot update a client without route model binding.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Cannot update a client without route model binding.');
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -51,9 +49,7 @@ final class UpdateClientRequest extends FormRequest
     {
         $tenant = Tenant::current();
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Cannot validate a client without an active tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot validate a client without an active tenant.');
 
         return $tenant->id;
     }

@@ -7,12 +7,14 @@ namespace App\Audit\Actions;
 use App\Audit\Models\Activity;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
+use Override;
 use Spatie\Activitylog\Actions\LogActivityAction;
 
 use function is_int;
 
 final class LogTenantActivityAction extends LogActivityAction
 {
+    #[Override]
     protected function beforeActivityLogged(Model $activity): void
     {
         parent::beforeActivityLogged($activity);

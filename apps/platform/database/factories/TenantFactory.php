@@ -7,12 +7,14 @@ namespace Database\Factories;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Override;
 
 /**
  * @extends Factory<Tenant>
  */
 final class TenantFactory extends Factory
 {
+    #[Override]
     protected $model = Tenant::class;
 
     /**

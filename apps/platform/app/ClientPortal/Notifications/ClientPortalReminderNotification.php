@@ -40,9 +40,7 @@ final class ClientPortalReminderNotification extends Notification implements Sho
     {
         $client = $this->dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         $message = (new MailMessage)
             ->subject(__(':firm: reminder for :title', [

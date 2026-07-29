@@ -10,25 +10,21 @@ use Illuminate\Foundation\Application;
 use InvalidArgumentException;
 use LogicException;
 
-final class OcrDriverFactory
+final readonly class OcrDriverFactory
 {
     public function __construct(
-        private readonly Application $application,
-        private readonly MockOcrExtractor $mockOcrExtractor,
-        private readonly TextractDocumentOcr $textractDocumentOcr,
+        private Application $application,
+        private MockOcrExtractor $mockOcrExtractor,
+        private TextractDocumentOcr $textractDocumentOcr,
     ) {}
 
     public function make(string $driver): StartsDocumentOcr
     {
         $ocrDriver = OcrDriver::tryFrom($driver);
 
-        if (! $ocrDriver instanceof OcrDriver) {
-            throw new InvalidArgumentException("Unsupported OCR driver [{$driver}].");
-        }
+        throw_unless($ocrDriver instanceof OcrDriver, InvalidArgumentException::class, "Unsupported OCR driver [{$driver}].");
 
-        if ($ocrDriver === OcrDriver::Mock && $this->application->isProduction()) {
-            throw new LogicException('Mock OCR driver cannot be used in production.');
-        }
+        throw_if($ocrDriver === OcrDriver::Mock && $this->application->isProduction(), LogicException::class, 'Mock OCR driver cannot be used in production.');
 
         return match ($ocrDriver) {
             OcrDriver::Mock => $this->mockOcrExtractor,

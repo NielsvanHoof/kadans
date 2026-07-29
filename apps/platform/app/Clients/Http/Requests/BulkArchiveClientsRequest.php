@@ -12,6 +12,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 
+use function intval;
+
 final class BulkArchiveClientsRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
@@ -43,7 +45,7 @@ final class BulkArchiveClientsRequest extends FormRequest
     public function clientIds(): array
     {
         /** @var list<int> $ids */
-        $ids = array_map('intval', $this->validated('ids'));
+        $ids = array_map(intval(...), $this->validated('ids'));
 
         return $ids;
     }
@@ -52,9 +54,7 @@ final class BulkArchiveClientsRequest extends FormRequest
     {
         $tenant = Tenant::current();
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Cannot validate clients without an active tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot validate clients without an active tenant.');
 
         return $tenant->id;
     }

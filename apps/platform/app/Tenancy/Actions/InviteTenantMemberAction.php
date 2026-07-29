@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Actions;
 
-use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
@@ -14,6 +13,7 @@ use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 use App\Tenancy\Support\WorkspaceMemberRoles;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Str;
 use App\Accounts\Models\User;
 use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 pest()
     ->use(RefreshDatabase::class);

@@ -128,7 +128,7 @@ test('resolve document temporary url generates a presigned url with attachment d
     $disk = Mockery::mock(FilesystemAdapter::class);
     $disk->shouldReceive('temporaryUrl')
         ->once()
-        ->withArgs(fn(string $path, $expiresAt, array $options): bool => $path === 'tenants/1/dossiers/1/file.pdf'
+        ->withArgs(fn (string $path, $expiresAt, array $options): bool => $path === 'tenants/1/dossiers/1/file.pdf'
             && ($options['ResponseContentDisposition'] ?? null) === 'attachment; filename="file.pdf"'
             && ($options['ResponseContentType'] ?? null) === 'application/pdf')
         ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/file.pdf?X-Amz-Signature=abc');
@@ -160,7 +160,7 @@ test('resolve document temporary url can request inline disposition for previews
     $disk = Mockery::mock(FilesystemAdapter::class);
     $disk->shouldReceive('temporaryUrl')
         ->once()
-        ->withArgs(fn(string $path, $expiresAt, array $options): bool => ($options['ResponseContentDisposition'] ?? null) === 'inline; filename="scan.png"'
+        ->withArgs(fn (string $path, $expiresAt, array $options): bool => ($options['ResponseContentDisposition'] ?? null) === 'inline; filename="scan.png"'
             && ($options['ResponseContentType'] ?? null) === 'image/png')
         ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/scan.png?X-Amz-Signature=abc');
 

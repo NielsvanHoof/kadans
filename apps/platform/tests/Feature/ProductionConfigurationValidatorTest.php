@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\Request;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
 
 beforeEach(function (): void {
@@ -82,7 +81,7 @@ test('non-production environments may use local services', function (): void {
 
 test('composer package discovery can run before production configuration exists', function (): void {
     config(['app.url' => 'http://localhost']);
-    $originalArguments = Request::server('argv') ?? null;
+    $originalArguments = $_SERVER['argv'] ?? null;
     $_SERVER['argv'] = ['artisan', 'package:discover', '--ansi'];
 
     try {

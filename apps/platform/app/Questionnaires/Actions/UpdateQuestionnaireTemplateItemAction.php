@@ -12,10 +12,10 @@ use function is_array;
 /**
  * Persist updated questionnaire template item attributes.
  */
-final class UpdateQuestionnaireTemplateItemAction
+final readonly class UpdateQuestionnaireTemplateItemAction
 {
     public function __construct(
-        private readonly NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
+        private NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
     ) {}
 
     /**

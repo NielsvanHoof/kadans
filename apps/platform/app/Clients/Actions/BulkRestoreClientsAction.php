@@ -9,9 +9,9 @@ use App\Clients\Models\Client;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 
-final class BulkRestoreClientsAction
+final readonly class BulkRestoreClientsAction
 {
-    public function __construct(private readonly RestoreClientAction $restoreClient) {}
+    public function __construct(private RestoreClientAction $restoreClient) {}
 
     /**
      * Restore each selected archived client (dossiers stay archived).

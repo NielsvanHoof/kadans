@@ -95,11 +95,11 @@ final class FetchClientIndexQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var Client $model */
-        return (new ClientIndexRowData(
+        return new ClientIndexRowData(
             id: $model->id,
             name: $model->name,
             email: $model->email,
             dossiersCount: $model->dossiers_count,
-        ))->toArray();
+        )->toArray();
     }
 }

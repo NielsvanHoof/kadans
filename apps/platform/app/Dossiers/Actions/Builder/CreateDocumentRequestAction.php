@@ -11,6 +11,7 @@ use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\DB;
+
 use function is_array;
 
 final readonly class CreateDocumentRequestAction
