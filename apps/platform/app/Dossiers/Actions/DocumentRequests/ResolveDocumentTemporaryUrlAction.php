@@ -5,18 +5,22 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\DocumentRequests;
 
 use App\Dossiers\Models\UploadedDocument;
+use Aws\S3\S3Client;
 use DateTimeInterface;
+use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;
 use RuntimeException;
 
-use function is_array;
 use function is_string;
-use function parse_url;
 
 /**
  * Build a short-lived signed URL for a private stored document.
- * Rewrites Docker-internal MinIO hosts so browsers can open the link.
+ *
+ * When the internal S3 endpoint (e.g. http://minio:9000 inside Docker)
+ * differs from the public URL browsers use (e.g. http://localhost:9000),
+ * we create a dedicated S3 presigner with the public endpoint so the
+ * signature matches the host the browser actually hits.
  */
 final class ResolveDocumentTemporaryUrlAction
 {
@@ -47,55 +51,63 @@ final class ResolveDocumentTemporaryUrlAction
             throw new RuntimeException('Document URL disposition must be attachment or inline.');
         }
 
-        $url = $disk->temporaryUrl(
+        $publicUrl = $this->generatePublicPresignedUrl($disk, $document, $expiresAt, $disposition);
+        if ($publicUrl !== null) {
+            return $publicUrl;
+        }
+
+        return $disk->temporaryUrl(
             $document->path,
             $expiresAt,
             [
-                // attachment downloads; inline lets iframes/images preview in-browser.
                 'ResponseContentDisposition' => $disposition.'; filename="'.$document->original_filename.'"',
                 'ResponseContentType' => $document->mime_type,
             ],
         );
-
-        return $this->rewriteInternalStorageHost($url);
     }
 
     /**
-     * Sail apps talk to http://minio:9000, but browsers need AWS_URL (e.g. localhost:9000).
+     * Create a presigned URL using the public-facing endpoint directly.
+     *
+     * This avoids the signature mismatch that happens when the SDK signs
+     * for the internal Docker hostname (minio:9000) but the browser
+     * sends the request to localhost:9000.
      */
-    private function rewriteInternalStorageHost(string $url): string
-    {
+    private function generatePublicPresignedUrl(
+        FilesystemAdapter $disk,
+        UploadedDocument $document,
+        DateTimeInterface $expiresAt,
+        string $disposition,
+    ): ?string {
         $endpoint = config('filesystems.disks.s3.endpoint');
         $publicBase = config('filesystems.disks.s3.url');
 
-        if (! is_string($endpoint) || $endpoint === '' || ! is_string($publicBase) || $publicBase === '') {
-            return $url;
-        }
-
-        $internalOrigin = $this->originFromUrl($endpoint);
-        $publicOrigin = $this->originFromUrl($publicBase);
-
-        if ($internalOrigin === null || $publicOrigin === null || $internalOrigin === $publicOrigin) {
-            return $url;
-        }
-
-        return str_replace($internalOrigin, $publicOrigin, $url);
-    }
-
-    private function originFromUrl(string $url): ?string
-    {
-        $parts = parse_url($url);
-
-        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
+        // Only needed when internal and public endpoints differ.
+        if (! is_string($endpoint) || ! is_string($publicBase) || $endpoint === $publicBase) {
             return null;
         }
 
-        $origin = $parts['scheme'].'://'.$parts['host'];
-
-        if (isset($parts['port'])) {
-            $origin .= ':'.$parts['port'];
+        if (! $disk instanceof AwsS3V3Adapter) {
+            return null;
         }
 
-        return $origin;
+        // Build a presigning client that targets the public endpoint.
+        $originalClient = $disk->getClient();
+        $publicClient = new S3Client([
+            'region' => $originalClient->getRegion(),
+            'version' => 'latest',
+            'endpoint' => $publicBase,
+            'use_path_style_endpoint' => config('filesystems.disks.s3.use_path_style_endpoint', false),
+            'credentials' => $originalClient->getCredentials()->wait(),
+        ]);
+
+        $command = $publicClient->getCommand('GetObject', [
+            'Bucket' => config('filesystems.disks.s3.bucket'),
+            'Key' => $document->path,
+            'ResponseContentDisposition' => $disposition.'; filename="'.$document->original_filename.'"',
+            'ResponseContentType' => $document->mime_type,
+        ]);
+
+        return (string) $publicClient->createPresignedRequest($command, $expiresAt)->getUri();
     }
 }

@@ -121,10 +121,8 @@ test('local disk previews stream inline without recording a download audit', fun
         ->exists())->toBeFalse();
 });
 
-test('resolve document temporary url rewrites the internal minio host for browsers', function () {
+test('resolve document temporary url generates a presigned url with attachment disposition', function () {
     config()->set('filesystems.disks.s3.driver', 's3');
-    config()->set('filesystems.disks.s3.endpoint', 'http://minio:9000');
-    config()->set('filesystems.disks.s3.url', 'http://localhost:9000');
 
     $disk = Mockery::mock(FilesystemAdapter::class);
     $disk->shouldReceive('temporaryUrl')
@@ -134,7 +132,7 @@ test('resolve document temporary url rewrites the internal minio host for browse
                 && ($options['ResponseContentDisposition'] ?? null) === 'attachment; filename="file.pdf"'
                 && ($options['ResponseContentType'] ?? null) === 'application/pdf';
         })
-        ->andReturn('http://minio:9000/local/tenants/1/dossiers/1/file.pdf?X-Amz-Signature=abc');
+        ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/file.pdf?X-Amz-Signature=abc');
 
     $filesystems = Mockery::mock(FilesystemManager::class);
     $filesystems->shouldReceive('disk')
@@ -159,8 +157,6 @@ test('resolve document temporary url rewrites the internal minio host for browse
 
 test('resolve document temporary url can request inline disposition for previews', function () {
     config()->set('filesystems.disks.s3.driver', 's3');
-    config()->set('filesystems.disks.s3.endpoint', 'http://minio:9000');
-    config()->set('filesystems.disks.s3.url', 'http://localhost:9000');
 
     $disk = Mockery::mock(FilesystemAdapter::class);
     $disk->shouldReceive('temporaryUrl')
@@ -169,7 +165,7 @@ test('resolve document temporary url can request inline disposition for previews
             return ($options['ResponseContentDisposition'] ?? null) === 'inline; filename="scan.png"'
                 && ($options['ResponseContentType'] ?? null) === 'image/png';
         })
-        ->andReturn('http://minio:9000/local/tenants/1/dossiers/1/scan.png?X-Amz-Signature=abc');
+        ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/scan.png?X-Amz-Signature=abc');
 
     $filesystems = Mockery::mock(FilesystemManager::class);
     $filesystems->shouldReceive('disk')

@@ -1,5 +1,6 @@
-import { Form } from '@inertiajs/react';
+import { Form, usePoll } from '@inertiajs/react';
 import { Archive, Download, LoaderCircle } from 'lucide-react';
+import { useEffect } from 'react';
 import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/DossierExportController';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,27 @@ import { formatDateTime } from '@/lib/format-date-time';
 export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
+
+    const hasInFlightProcessing = dossier.exports.some((exportItem) => {
+        return (
+            exportItem.status === 'pending' ||
+            exportItem.status === 'processing'
+        );
+    });
+
+    const { start, stop } = usePoll(
+        2000,
+        { only: ['dossier'] },
+        { autoStart: false, mode: 'rest' },
+    );
+
+    useEffect(() => {
+        if (hasInFlightProcessing) {
+            start();
+        } else {
+            stop();
+        }
+    }, [hasInFlightProcessing, start, stop]);
 
     return (
         <Card>
