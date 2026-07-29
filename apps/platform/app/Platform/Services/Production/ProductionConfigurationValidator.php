@@ -111,7 +111,7 @@ final readonly class ProductionConfigurationValidator
             return false;
         }
 
-        // Composer sets argv on $_SERVER; Request::server() is a stale snapshot.
+        // Read live CLI argv — Request::server() is a request snapshot and misses Composer.
         $arguments = $_SERVER['argv'] ?? [];
 
         return is_array($arguments) && in_array('package:discover', $arguments, true);

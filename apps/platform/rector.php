@@ -6,6 +6,9 @@ use Pest\Rector\Rules\ToBeTrueNotFalseRector;
 use Pest\Rector\Set\PestSetList;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Config\RectorConfig;
+use RectorLaravel\Rector\ArrayDimFetch\RequestVariablesToRequestFacadeRector;
+use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
+use RectorLaravel\Rector\Class_\AddHasFactoryToModelsRector;
 use RectorLaravel\Set\LaravelSetList;
 use RectorLaravel\Set\LaravelSetProvider;
 
@@ -25,6 +28,11 @@ return RectorConfig::configure()
         __DIR__.'/database/migrations',
         // Unsafe: turns not->toBeFalse() into toBeTrue() for string|int|false values.
         ToBeTrueNotFalseRector::class,
+        // Audit/immutable models must not get HasFactory just because they extend Model.
+        AddHasFactoryToModelsRector::class,
+        // $_SERVER['argv'] must stay live for CLI detection; Request::server() is a snapshot.
+        RequestVariablesToRequestFacadeRector::class,
+        ServerVariableToRequestFacadeRector::class,
     ])
     ->withCache(
         cacheDirectory: __DIR__.'/storage/rector',
@@ -53,6 +61,5 @@ return RectorConfig::configure()
         LaravelSetList::LARAVEL_IF_HELPERS,
         LaravelSetList::LARAVEL_TYPE_DECLARATIONS,
         LaravelSetList::LARAVEL_TESTING,
-        LaravelSetList::LARAVEL_FACTORIES,
         PestSetList::CODING_STYLE,
     ]);

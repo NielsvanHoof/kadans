@@ -65,7 +65,7 @@ final readonly class OcrConfigurationValidator
             return false;
         }
 
-        // Composer sets argv on $_SERVER; Request::server() is a stale snapshot.
+        // Read live CLI argv — Request::server() is a request snapshot and misses Composer.
         $argv = $_SERVER['argv'] ?? [];
 
         return is_array($argv) && in_array('package:discover', $argv, true);
