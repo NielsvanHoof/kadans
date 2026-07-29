@@ -16,11 +16,11 @@ use Illuminate\Support\Facades\Log;
  * Orchestrates OCR start and immediate completion audit logging.
  * Deferred adapters leave the document processing until async completion.
  */
-final class OcrOrchestrator
+final readonly class OcrOrchestrator
 {
     public function __construct(
-        private readonly StartsDocumentOcr $ocr,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private StartsDocumentOcr $ocr,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function startProcessing(UploadedDocument $document): OcrProcessingOutcome

@@ -25,15 +25,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('staff can view system and firm templates', function () {
+test('staff can view system and firm templates', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -48,7 +49,7 @@ test('staff can view system and firm templates', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('questionnaires/index')
             ->has('system_templates.data', 4)
             ->where('system_templates.total', 4)
@@ -58,9 +59,9 @@ test('staff can view system and firm templates', function () {
             ->where('can_manage', true));
 });
 
-test('system templates cannot be updated or deleted', function () {
+test('system templates cannot be updated or deleted', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -81,9 +82,9 @@ test('system templates cannot be updated or deleted', function () {
     expect($system->fresh()->name)->not->toBe('Hacked');
 });
 
-test('owner can copy a system template into the firm', function () {
+test('owner can copy a system template into the firm', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -119,10 +120,10 @@ test('owner can copy a system template into the firm', function () {
         ->count())->toBe(2);
 });
 
-test('read only staff cannot copy templates', function () {
+test('read only staff cannot copy templates', function (): void {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -143,10 +144,10 @@ test('read only staff cannot copy templates', function () {
         ->assertForbidden();
 });
 
-test('adviser can apply a template and edit dossier items', function () {
+test('adviser can apply a template and edit dossier items', function (): void {
     $owner = User::factory()->create();
     $adviser = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -228,9 +229,9 @@ test('adviser can apply a template and edit dossier items', function () {
             ->exists())->toBeTrue();
 });
 
-test('applying a template assigns unique field keys when template items have null keys', function () {
+test('applying a template assigns unique field keys when template items have null keys', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -282,7 +283,7 @@ test('applying a template assigns unique field keys when template items have nul
         ->and($fieldKeys->unique()->count())->toBe(2);
 });
 
-test('system questionnaire seeder assigns unique field keys without model events', function () {
+test('system questionnaire seeder assigns unique field keys without model events', function (): void {
     // DatabaseSeeder uses WithoutModelEvents; reproduce that so the creating
     // hook cannot silently paper over a missing field_key in the seeder.
     QuestionnaireTemplateItem::withoutEvents(function (): void {
@@ -296,11 +297,11 @@ test('system questionnaire seeder assigns unique field keys without model events
         ->and($keys->unique()->count())->toBe($keys->count());
 });
 
-test('firm templates are isolated between tenants', function () {
+test('firm templates are isolated between tenants', function (): void {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantA->makeCurrent();
     $templateA = QuestionnaireTemplate::factory()->create([
@@ -314,9 +315,9 @@ test('firm templates are isolated between tenants', function () {
         ->assertNotFound();
 });
 
-test('owner can manage firm template items', function () {
+test('owner can manage firm template items', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
@@ -339,9 +340,9 @@ test('owner can manage firm template items', function () {
         ->and($item->title)->toBe('Confirm completeness');
 });
 
-test('owner can reorder every firm template item', function () {
+test('owner can reorder every firm template item', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
@@ -393,9 +394,9 @@ test('owner can reorder every firm template item', function () {
         ->all())->toBe($reorderedIds);
 });
 
-test('guest can submit text, date, and boolean answers through the portal', function () {
+test('guest can submit text, date, and boolean answers through the portal', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -434,7 +435,7 @@ test('guest can submit text, date, and boolean answers through the portal', func
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
     $plainTextToken = $result['plain_text_token'];
     $grant = $result['grant'];
 
@@ -444,7 +445,7 @@ test('guest can submit text, date, and boolean answers through the portal', func
 
     $this->get(route('portal.show'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('portal/show')
             ->where('dossier.document_requests', fn (Collection $documentRequests): bool => $documentRequests
                 ->pluck('type')

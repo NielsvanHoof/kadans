@@ -14,10 +14,10 @@ use Illuminate\Support\Facades\Log;
  * Persist a terminal Textract failure on the uploaded document and audit it.
  * Shared by completion handling and permanent SQS-receive failure paths.
  */
-final class MarkTextractExtractionFailedAction
+final readonly class MarkTextractExtractionFailedAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(

@@ -11,15 +11,13 @@ use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\DB;
-
-use function array_key_exists;
 use function is_array;
 
-final class CreateDocumentRequestAction
+final readonly class CreateDocumentRequestAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
+        private LogAuditActivityAction $logAuditActivity,
+        private NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
     ) {}
 
     /**
@@ -34,9 +32,7 @@ final class CreateDocumentRequestAction
             $dossierQuery->getQuery()->lockForUpdate();
             $lockedDossier = $dossierQuery->firstOrFail();
 
-            $position = array_key_exists('position', $attributes)
-                ? $attributes['position']
-                : null;
+            $position = $attributes['position'] ?? null;
             unset($attributes['position']);
 
             $type = QuestionnaireItemType::from((string) $attributes['type']);

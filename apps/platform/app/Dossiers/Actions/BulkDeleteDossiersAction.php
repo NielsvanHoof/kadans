@@ -9,9 +9,9 @@ use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 
-final class BulkDeleteDossiersAction
+final readonly class BulkDeleteDossiersAction
 {
-    public function __construct(private readonly DeleteDossierAction $deleteDossier) {}
+    public function __construct(private DeleteDossierAction $deleteDossier) {}
 
     /**
      * Archive each selected dossier.

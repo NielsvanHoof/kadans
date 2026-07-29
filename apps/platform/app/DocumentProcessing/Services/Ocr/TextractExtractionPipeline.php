@@ -20,13 +20,13 @@ use function json_encode;
  * Fetch Textract blocks, map forms/tables, enrich with Bedrock overview, classify PII.
  * Returns the JSON string stored on uploaded_documents.extracted_text.
  */
-final class TextractExtractionPipeline
+final readonly class TextractExtractionPipeline
 {
     public function __construct(
-        private readonly TextractJobBlockFetcher $blockFetcher,
-        private readonly TextractFormsTablesMapper $formsTablesMapper,
-        private readonly DescribesDocumentOverview $describesDocumentOverview,
-        private readonly FieldSensitivityClassifier $fieldSensitivityClassifier,
+        private TextractJobBlockFetcher $blockFetcher,
+        private TextractFormsTablesMapper $formsTablesMapper,
+        private DescribesDocumentOverview $describesDocumentOverview,
+        private FieldSensitivityClassifier $fieldSensitivityClassifier,
     ) {}
 
     public function run(string $jobId, UploadedDocument $document): string

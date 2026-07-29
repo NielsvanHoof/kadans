@@ -15,12 +15,12 @@ use Illuminate\Support\Facades\DB;
 /**
  * Record an answer received outside the portal and preserve staff attribution.
  */
-final class SubmitStaffQuestionnaireAnswerAction
+final readonly class SubmitStaffQuestionnaireAnswerAction
 {
     public function __construct(
-        private readonly SubmitQuestionnaireAnswerAction $submitQuestionnaireAnswer,
-        private readonly DossierTransitions $dossierTransitions,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private SubmitQuestionnaireAnswerAction $submitQuestionnaireAnswer,
+        private DossierTransitions $dossierTransitions,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     /**

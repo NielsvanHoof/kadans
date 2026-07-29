@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Override;
 use App\Accounts\Models\User;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
@@ -15,6 +16,7 @@ use Illuminate\Support\Str;
  */
 final class ClientAccessGrantFactory extends Factory
 {
+    #[Override]
     protected $model = ClientAccessGrant::class;
 
     /**
@@ -30,6 +32,7 @@ final class ClientAccessGrantFactory extends Factory
         ];
     }
 
+    #[Override]
     public function configure(): static
     {
         return $this->afterMaking(function (ClientAccessGrant $grant): void {

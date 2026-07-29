@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Enums\AuditPermission;
@@ -21,13 +22,14 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('non-support users cannot open the platform support page', function () {
+test('non-support users cannot open the platform support page', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -35,9 +37,9 @@ test('non-support users cannot open the platform support page', function () {
         ->assertForbidden();
 });
 
-test('support users without a membership cannot open a firm until a session starts', function () {
+test('support users without a membership cannot open a firm until a session starts', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $this->actingAs($support)
@@ -45,9 +47,9 @@ test('support users without a membership cannot open a firm until a session star
         ->assertNotFound();
 });
 
-test('support users can start a read-only session and view dossiers', function () {
+test('support users can start a read-only session and view dossiers', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $tenant->makeCurrent();
@@ -89,9 +91,9 @@ test('support users can start a read-only session and view dossiers', function (
         ->exists())->toBeFalse();
 });
 
-test('support session is read-only and cannot manage members', function () {
+test('support session is read-only and cannot manage members', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $this->actingAs($support)
@@ -115,9 +117,9 @@ test('support session is read-only and cannot manage members', function () {
         ->and($support->fresh()->can(AuditPermission::View->value))->toBeTrue();
 });
 
-test('expired support sessions are rejected', function () {
+test('expired support sessions are rejected', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $this->actingAs($support)
@@ -137,9 +139,9 @@ test('expired support sessions are rejected', function () {
         ->assertNotFound();
 });
 
-test('ending a support session removes firm access', function () {
+test('ending a support session removes firm access', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $this->actingAs($support)
@@ -162,16 +164,16 @@ test('ending a support session removes firm access', function () {
         ->assertNotFound();
 });
 
-test('support index lists firms for platform staff', function () {
+test('support index lists firms for platform staff', function (): void {
     $owner = User::factory()->create();
-    app(ProvisionTenantAction::class)->handle('Listed Firm', $owner);
-    app(ProvisionTenantAction::class)->handle('Other Firm', $owner);
+    resolve(ProvisionTenantAction::class)->handle('Listed Firm', $owner);
+    resolve(ProvisionTenantAction::class)->handle('Other Firm', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $this->actingAs($support)
         ->get(route('platform.support.index'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('platform/support')
             ->has('tenants', 2)
             ->has('filters'));
@@ -179,16 +181,16 @@ test('support index lists firms for platform staff', function () {
     $this->actingAs($support)
         ->get(route('platform.support.index', ['filter' => ['q' => 'Listed']]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('platform/support')
             ->has('tenants', 1)
             ->where('tenants.0.name', 'Listed Firm')
             ->where('filters.q', 'Listed'));
 });
 
-test('support session grants download and audit view but denies client management', function () {
+test('support session grants download and audit view but denies client management', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $this->actingAs($support)
@@ -223,16 +225,16 @@ test('support session grants download and audit view but denies client managemen
         ->assertOk();
 });
 
-test('support session stays read-only even when the user is also a firm member', function () {
+test('support session stays read-only even when the user is also a firm member', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     // Engineer who is both platform support and a firm member (no Spatie role beyond membership).
     $support = User::factory()->platformSupport()->create();
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
         'user_id' => $support->id,
-        'status' => App\Tenancy\Enums\TenantMembershipStatus::Active,
+        'status' => TenantMembershipStatus::Active,
         'joined_at' => now(),
     ]);
 
@@ -251,9 +253,9 @@ test('support session stays read-only even when the user is also a firm member',
         ->assertForbidden();
 });
 
-test('support users are not listed as workspace members', function () {
+test('support users are not listed as workspace members', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $support = User::factory()->platformSupport()->create();
 
     $this->actingAs($support)
@@ -266,7 +268,7 @@ test('support users are not listed as workspace members', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.members.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/members/index')
             ->has('members', 1)
             ->where('members.0.email', $owner->email));

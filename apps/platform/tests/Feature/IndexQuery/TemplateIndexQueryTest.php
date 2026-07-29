@@ -11,15 +11,16 @@ use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('templates index paginates system and firm buckets independently', function () {
+test('templates index paginates system and firm buckets independently', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -35,7 +36,7 @@ test('templates index paginates system and firm buckets independently', function
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('questionnaires/index')
             ->where('system_templates.total', 4)
             ->has('firm_templates.data', 15)
@@ -47,16 +48,16 @@ test('templates index paginates system and firm buckets independently', function
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant).'?firm_page=2')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('firm_templates.data', 1)
             ->where('firm_templates.current_page', 2)
             // System bucket stays on page 1 when only firm_page changes.
             ->where('system_templates.current_page', 1));
 });
 
-test('templates index shared category filter applies to both buckets', function () {
+test('templates index shared category filter applies to both buckets', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -77,7 +78,7 @@ test('templates index shared category filter applies to both buckets', function 
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant).'?filter[category]=kyc')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('firm_templates.total', 1)
             ->where('firm_templates.data.0.name', 'Firm KYC')
             ->where('system_templates.data', fn ($templates) => collect($templates)->every(

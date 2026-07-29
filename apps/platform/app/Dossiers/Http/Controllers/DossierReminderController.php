@@ -25,9 +25,7 @@ final class DossierReminderController extends Controller
 
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
 
         $sendDossierReminder->handle(
             $dossier,

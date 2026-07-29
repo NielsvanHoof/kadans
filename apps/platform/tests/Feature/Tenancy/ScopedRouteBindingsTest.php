@@ -16,17 +16,18 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('document request routes 404 when the request belongs to another dossier', function () {
+test('document request routes 404 when the request belongs to another dossier', function (): void {
     Storage::fake('local');
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -72,9 +73,9 @@ test('document request routes 404 when the request belongs to another dossier', 
     expect($foreignRequest->fresh()->title)->toBe('Foreign request');
 });
 
-test('template item routes 404 when the item belongs to another template', function () {
+test('template item routes 404 when the item belongs to another template', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
@@ -111,9 +112,9 @@ test('template item routes 404 when the item belongs to another template', funct
         ->and($foreignItem->fresh()->title)->toBe('Foreign item');
 });
 
-test('scoped template item routes still resolve system templates as the parent', function () {
+test('scoped template item routes still resolve system templates as the parent', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 

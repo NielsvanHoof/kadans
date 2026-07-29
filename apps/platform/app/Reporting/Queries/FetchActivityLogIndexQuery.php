@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
+use Illuminate\Support\Facades\Date;
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
@@ -17,7 +18,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Carbon;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Throwable;
@@ -143,7 +143,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                 }
 
                 try {
-                    $date = Carbon::parse($value)->startOfDay();
+                    $date = Date::parse($value)->startOfDay();
                 } catch (Throwable) {
                     return;
                 }
@@ -156,7 +156,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                 }
 
                 try {
-                    $date = Carbon::parse($value)->endOfDay();
+                    $date = Date::parse($value)->endOfDay();
                 } catch (Throwable) {
                     return;
                 }

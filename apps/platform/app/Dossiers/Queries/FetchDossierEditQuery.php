@@ -14,10 +14,10 @@ use RuntimeException;
 /**
  * Shape dossier edit-form props for Inertia.
  */
-final class FetchDossierEditQuery
+final readonly class FetchDossierEditQuery
 {
     public function __construct(
-        private readonly FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
+        private FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
     ) {}
 
     /**
@@ -39,9 +39,7 @@ final class FetchDossierEditQuery
         $dossier->load('client:id,name,email');
         $client = $dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         return [
             'dossier' => [

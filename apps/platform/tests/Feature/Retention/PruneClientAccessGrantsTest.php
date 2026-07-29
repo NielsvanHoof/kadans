@@ -8,7 +8,8 @@ use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     config([

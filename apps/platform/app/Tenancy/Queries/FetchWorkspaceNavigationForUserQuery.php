@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Queries;
 
+use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Tenancy\Data\WorkspaceNavItemData;
 use App\Tenancy\Enums\TenantMembershipStatus;
@@ -21,7 +22,7 @@ final class FetchWorkspaceNavigationForUserQuery
 
         foreach (
             Tenant::query()
-                ->whereHas('memberships', fn ($query) => $query
+                ->whereHas('memberships', fn (Builder $query) => $query
                     ->where('user_id', $user->id)
                     ->where('status', TenantMembershipStatus::Active))
                 ->get(['name', 'slug'])

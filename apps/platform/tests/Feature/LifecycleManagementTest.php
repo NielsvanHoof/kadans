@@ -13,13 +13,14 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('owner can view a client record with active and archived dossier context', function () {
+test('owner can view a client record with active and archived dossier context', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
@@ -43,7 +44,7 @@ test('owner can view a client record with active and archived dossier context', 
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.show', $tenant, ['client' => $client]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('clients/show')
             ->where('client.name', 'Jane Client')
             ->where('client.active_dossiers_count', 1)
@@ -52,7 +53,7 @@ test('owner can view a client record with active and archived dossier context', 
             ->where('dossiers.data.0.title', 'Active dossier'));
 });
 
-test('owner can open the client and dossier edit screens', function () {
+test('owner can open the client and dossier edit screens', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -70,21 +71,21 @@ test('owner can open the client and dossier edit screens', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.edit', $tenant, ['client' => $client]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('clients/edit')
             ->where('client.name', 'Jane Client')
             ->where('client.email', 'jane@example.com'));
 
     $this->get(workspaceRoute('workspaces.dossiers.edit', $tenant, ['dossier' => $dossier]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/edit')
             ->where('dossier.title', 'Annual accounts')
             ->where('dossier.reference', 'AA-2026')
             ->where('dossier.client.name', 'Jane Client'));
 });
 
-test('owner can update client details and the change is audited', function () {
+test('owner can update client details and the change is audited', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -118,7 +119,7 @@ test('owner can update client details and the change is audited', function () {
         ]);
 });
 
-test('client updates keep email addresses unique within the workspace', function () {
+test('client updates keep email addresses unique within the workspace', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $otherClient = Client::factory()->create([
@@ -138,7 +139,7 @@ test('client updates keep email addresses unique within the workspace', function
     expect($client->fresh()->email)->toBe($client->email);
 });
 
-test('owner can update an open dossier but not a completed dossier', function () {
+test('owner can update an open dossier but not a completed dossier', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -170,7 +171,7 @@ test('owner can update an open dossier but not a completed dossier', function ()
     expect($dossier->fresh()->title)->toBe('Annual accounts 2026');
 });
 
-test('archived indexes separate retained records from active work', function () {
+test('archived indexes separate retained records from active work', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -188,14 +189,14 @@ test('archived indexes separate retained records from active work', function () 
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.archived', $tenant).'?filter[q]=Archived')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('clients/archived')
             ->has('clients.data', 1)
             ->where('clients.data.0.name', 'Archived Jane'));
 
     $this->get(workspaceRoute('workspaces.dossiers.archived', $tenant).'?filter[q]=annual')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/archived')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.client_archived', true));
@@ -203,13 +204,13 @@ test('archived indexes separate retained records from active work', function () 
     // Scout also matches archived dossiers by related client name.
     $this->get(workspaceRoute('workspaces.dossiers.archived', $tenant).'?filter[q]=Jane')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/archived')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.client_name', 'Archived Jane'));
 });
 
-test('restoring a client leaves its dossiers archived and records the action', function () {
+test('restoring a client leaves its dossiers archived and records the action', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -233,14 +234,14 @@ test('restoring a client leaves its dossiers archived and records the action', f
             ->exists())->toBeTrue();
 });
 
-test('dossier restore requires an active client and keeps portal access revoked', function () {
+test('dossier restore requires an active client and keeps portal access revoked', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
         'client_id' => $client->id,
     ]);
-    $grant = app(CreateClientAccessGrantAction::class)
+    $grant = resolve(CreateClientAccessGrantAction::class)
         ->handle($dossier, $owner, 7)['grant'];
 
     $this->actingAs($owner)
@@ -265,7 +266,7 @@ test('dossier restore requires an active client and keeps portal access revoked'
             ->exists())->toBeTrue();
 });
 
-test('read only members can inspect the dossier archive but cannot restore records', function () {
+test('read only members can inspect the dossier archive but cannot restore records', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -279,7 +280,7 @@ test('read only members can inspect the dossier archive but cannot restore recor
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.archived', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('can_restore', false)
             ->where('can_restore_clients', false)
             ->has('dossiers.data', 1));
@@ -290,7 +291,7 @@ test('read only members can inspect the dossier archive but cannot restore recor
     expect($dossier->fresh()->trashed())->toBeTrue();
 });
 
-test('archived records cannot be restored through another workspace', function () {
+test('archived records cannot be restored through another workspace', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $client->delete();

@@ -14,54 +14,55 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('locale is resolved from the authenticated user preference', function () {
+test('locale is resolved from the authenticated user preference', function (): void {
     $user = User::factory()->create(['locale' => 'nl']);
 
     $this->actingAs($user)
         ->get(route('profile.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('locale', 'nl')
             ->where('translations.Settings', 'Instellingen'));
 });
 
-test('locale is resolved from the locale cookie when the user has no preference', function () {
+test('locale is resolved from the locale cookie when the user has no preference', function (): void {
     $user = User::factory()->create(['locale' => null]);
 
     $this->actingAs($user)
         ->withUnencryptedCookie('locale', 'nl')
         ->get(route('profile.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('locale', 'nl')
             ->where('translations.Dashboard', 'Dashboard'));
 });
 
-test('locale is resolved from the accept language header as a fallback', function () {
+test('locale is resolved from the accept language header as a fallback', function (): void {
     $this->withHeaders(['Accept-Language' => 'nl-NL,nl;q=0.9,en;q=0.8'])
         ->get(route('login'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('locale', 'nl')
             ->where('translations.Save', 'Opslaan'));
 });
 
-test('available locales are shared with inertia', function () {
+test('available locales are shared with inertia', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user)
         ->get(route('profile.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('available_locales', [
                 ['code' => 'en', 'label' => 'English'],
                 ['code' => 'nl', 'label' => 'Nederlands'],
             ]));
 });
 
-test('authenticated users can update their preferred language', function () {
+test('authenticated users can update their preferred language', function (): void {
     $user = User::factory()->create(['locale' => 'en']);
 
     $this->actingAs($user)
@@ -73,7 +74,7 @@ test('authenticated users can update their preferred language', function () {
     expect($user->fresh()->locale)->toBe('nl');
 });
 
-test('locale update from another page redirects back instead of language settings', function () {
+test('locale update from another page redirects back instead of language settings', function (): void {
     $user = User::factory()->create(['locale' => 'en']);
 
     $this->actingAs($user)
@@ -85,7 +86,7 @@ test('locale update from another page redirects back instead of language setting
     expect($user->fresh()->locale)->toBe('nl');
 });
 
-test('language settings page can be rendered', function () {
+test('language settings page can be rendered', function (): void {
     $this->withoutVite();
 
     $user = User::factory()->create();
@@ -93,10 +94,10 @@ test('language settings page can be rendered', function () {
     $this->actingAs($user)
         ->get(route('language.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->component('settings/language'));
+        ->assertInertia(fn (Assert $page): Assert => $page->component('settings/language'));
 });
 
-test('locale update requires a supported locale', function () {
+test('locale update requires a supported locale', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -104,7 +105,7 @@ test('locale update requires a supported locale', function () {
         ->assertSessionHasErrors('locale');
 });
 
-test('questionnaire completed notification message is translated for dutch locale', function () {
+test('questionnaire completed notification message is translated for dutch locale', function (): void {
     app()->setLocale('nl');
 
     expect(__(':client finished the questionnaire for “:dossier”.', [
@@ -113,18 +114,18 @@ test('questionnaire completed notification message is translated for dutch local
     ]))->toBe('Jane Client heeft de vragenlijst voor “2025 Payroll” afgerond.');
 });
 
-test('auth page translation keys are shared with inertia for guests', function () {
+test('auth page translation keys are shared with inertia for guests', function (): void {
     $this->withHeaders(['Accept-Language' => 'nl-NL,nl;q=0.9'])
         ->get(route('login'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('locale', 'nl')
             ->where('translations.Log in', 'Inloggen')
             ->where('translations.Remember me', 'Onthoud mij')
             ->where('translations.Secure document exchange', 'Veilige documentuitwisseling'));
 });
 
-test('audit event labels are translated for the active locale', function () {
+test('audit event labels are translated for the active locale', function (): void {
     app()->setLocale('nl');
 
     expect(AuditEvent::DossierViewed->label())->toBe('Dossier bekeken')
@@ -134,7 +135,7 @@ test('audit event labels are translated for the active locale', function () {
         ->and(AuditEvent::ClientDeleted->label())->toBe('Klant gearchiveerd');
 });
 
-test('questionnaire template category labels are translated for the active locale', function () {
+test('questionnaire template category labels are translated for the active locale', function (): void {
     app()->setLocale('nl');
 
     expect(QuestionnaireTemplateCategory::Jaarrekening->label())->toBe('Jaarrekening')
@@ -142,11 +143,11 @@ test('questionnaire template category labels are translated for the active local
         ->and(QuestionnaireTemplateCategory::Custom->label())->toBe('Aangepast');
 });
 
-test('validation errors use translated sentences for dutch locale', function () {
+test('validation errors use translated sentences for dutch locale', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create(['locale' => 'nl']);
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $response = $this->actingAs($user)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -163,33 +164,33 @@ test('validation errors use translated sentences for dutch locale', function () 
         ->toBe('E-mailadres is geen geldig e-mailadres.');
 });
 
-test('fortify password reset status is translated for dutch locale', function () {
+test('fortify password reset status is translated for dutch locale', function (): void {
     app()->setLocale('nl');
 
     expect(__('passwords.sent'))
         ->toBe('We hebben je een link gestuurd om je wachtwoord te resetten.');
 });
 
-test('media and workspace translation keys are shared with inertia', function () {
+test('media and workspace translation keys are shared with inertia', function (): void {
     $user = User::factory()->create(['locale' => 'nl']);
 
     $this->actingAs($user)
         ->get(route('profile.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('translations.All documents', 'Alle documenten')
             ->where('translations.Recent activity', 'Recente activiteit')
             ->where('translations.Create firm', 'Kantoor aanmaken')
             ->where('translations.Pending', 'In afwachting'));
 });
 
-test('client dashboard and questionnaire translation keys are shared with inertia', function () {
+test('client dashboard and questionnaire translation keys are shared with inertia', function (): void {
     $user = User::factory()->create(['locale' => 'nl']);
 
     $this->actingAs($user)
         ->get(route('profile.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('translations.All clients', 'Alle klanten')
             ->where('translations.Create client', 'Klant aanmaken')
             ->where('translations.Review queue', 'Beoordelingswachtrij')
@@ -204,7 +205,7 @@ test('client dashboard and questionnaire translation keys are shared with inerti
             ->where('translations.In review', 'In beoordeling'));
 });
 
-test('user preferred locale falls back to the app locale when unset', function () {
+test('user preferred locale falls back to the app locale when unset', function (): void {
     $user = User::factory()->create(['locale' => null]);
 
     expect($user->preferredLocale())->toBe((string) config('app.locale'));
@@ -214,12 +215,12 @@ test('user preferred locale falls back to the app locale when unset', function (
     expect($user->fresh()->preferredLocale())->toBe('nl');
 });
 
-test('portal invite notification is queued with the staff users locale', function () {
+test('portal invite notification is queued with the staff users locale', function (): void {
     Notification::fake();
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $owner = User::factory()->create(['locale' => 'nl']);
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create([

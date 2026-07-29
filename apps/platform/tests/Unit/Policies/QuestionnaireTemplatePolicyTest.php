@@ -6,7 +6,7 @@ use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Policies\QuestionnaireTemplatePolicy;
 use App\Tenancy\Enums\Role;
 
-test('owner can manage firm templates and copy system templates', function () {
+test('owner can manage firm templates and copy system templates', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $firmTemplate = QuestionnaireTemplate::factory()->create([
@@ -25,7 +25,7 @@ test('owner can manage firm templates and copy system templates', function () {
         ->and($policy->apply($owner, $systemTemplate))->toBeTrue();
 });
 
-test('read-only members can view templates but cannot manage them', function () {
+test('read-only members can view templates but cannot manage them', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
 

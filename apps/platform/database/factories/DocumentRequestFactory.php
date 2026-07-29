@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Override;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 final class DocumentRequestFactory extends Factory
 {
+    #[Override]
     protected $model = DocumentRequest::class;
 
     /**
@@ -32,6 +34,7 @@ final class DocumentRequestFactory extends Factory
         ];
     }
 
+    #[Override]
     public function configure(): static
     {
         return $this->afterMaking(function (DocumentRequest $documentRequest): void {

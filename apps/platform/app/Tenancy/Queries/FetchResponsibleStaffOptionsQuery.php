@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Queries;
 
+use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Shared\Data\PersonOptionData;
 use App\Tenancy\Enums\TenantMembershipStatus;
@@ -23,7 +24,7 @@ final class FetchResponsibleStaffOptionsQuery
             User::query()
                 ->whereHas(
                     'tenantMemberships',
-                    fn ($query) => $query
+                    fn (Builder $query) => $query
                         ->where('tenant_id', $tenant->id)
                         ->where('status', TenantMembershipStatus::Active),
                 )

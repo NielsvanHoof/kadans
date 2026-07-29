@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Override;
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\Dossier;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 final class DossierExportFactory extends Factory
 {
+    #[Override]
     protected $model = DossierExport::class;
 
     /**
@@ -48,6 +50,7 @@ final class DossierExportFactory extends Factory
         ]);
     }
 
+    #[Override]
     public function configure(): static
     {
         return $this->afterMaking(function (DossierExport $export): void {

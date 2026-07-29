@@ -15,11 +15,11 @@ use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-final class AcceptTenantInvitationAction
+final readonly class AcceptTenantInvitationAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly WorkspaceMemberRoles $memberRoles,
+        private LogAuditActivityAction $logAuditActivity,
+        private WorkspaceMemberRoles $memberRoles,
     ) {}
 
     public function handle(TenantInvitation $invitation, User $user): TenantMembership
@@ -81,13 +81,7 @@ final class AcceptTenantInvitationAction
                     'invited_at' => $membership->invited_at ?? $locked->created_at,
                 ])->saveOrFail();
             } else {
-                $membership = TenantMembership::query()->create([
-                    'tenant_id' => $tenant->id,
-                    'user_id' => $user->id,
-                    'status' => TenantMembershipStatus::Active,
-                    'invited_at' => $locked->created_at,
-                    'joined_at' => now(),
-                ]);
+                $membership = TenantMembership::query()->create(['tenant_id' => $tenant->id, 'user_id' => $user->id, 'status' => TenantMembershipStatus::Active, 'invited_at' => $locked->created_at, 'joined_at' => now()]);
             }
 
             $this->memberRoles->syncRole($user, $tenant, $locked->role);

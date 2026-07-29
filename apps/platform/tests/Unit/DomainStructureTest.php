@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-test('backend business code is organized by domain', function () {
+test('backend business code is organized by domain', function (): void {
     $root = dirname(__DIR__, 2);
 
     foreach ([
@@ -19,7 +19,8 @@ test('backend business code is organized by domain', function () {
         'Tenancy',
         'WorkspaceNotifications',
     ] as $module) {
-        expect(is_dir($root.'/app/'.$module), $module)->toBeTrue();
+        expect($root.'/app/'.$module)
+            ->toBeDirectory();
     }
 
     foreach ([
@@ -39,21 +40,23 @@ test('backend business code is organized by domain', function () {
         'Support',
         'Transitions',
     ] as $legacyDirectory) {
-        expect(is_dir($root.'/app/'.$legacyDirectory), $legacyDirectory)->toBeFalse();
+        expect($root.'/app/'.$legacyDirectory)->not->toBeDirectory();
     }
 });
 
-test('backend namespaces mirror module paths', function () {
+test('backend namespaces mirror module paths', function (): void {
     $root = dirname(__DIR__, 2);
     $files = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($root.'/app', FilesystemIterator::SKIP_DOTS),
     );
 
     foreach ($files as $file) {
-        if (! $file->isFile() || $file->getExtension() !== 'php') {
+        if (! $file->isFile()) {
             continue;
         }
-
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
         $relativeDirectory = str_replace(
             [$root.'/app', '/'],
             ['', '\\'],
@@ -62,12 +65,12 @@ test('backend namespaces mirror module paths', function () {
         $expectedNamespace = 'App'.$relativeDirectory;
         $contents = (string) file_get_contents($file->getPathname());
 
-        expect($contents, $file->getPathname())
+        expect($contents)
             ->toContain('namespace '.$expectedNamespace.';');
     }
 });
 
-test('frontend business code is organized by feature domain', function () {
+test('frontend business code is organized by feature domain', function (): void {
     $root = dirname(__DIR__, 2);
 
     foreach ([
@@ -105,7 +108,8 @@ test('frontend business code is organized by feature domain', function () {
         'resources/js/components/app-shell',
         'resources/js/components/ui',
     ] as $directory) {
-        expect(is_dir($root.'/'.$directory))->toBeTrue();
+        expect($root.'/'.$directory)
+            ->toBeDirectory();
     }
 
     // Domain types are co-located with their feature, not in the global barrel.
@@ -117,7 +121,8 @@ test('frontend business code is organized by feature domain', function () {
         'resources/js/features/questionnaires/types.ts',
         'resources/js/features/portal/types.ts',
     ] as $typeFile) {
-        expect(is_file($root.'/'.$typeFile))->toBeTrue();
+        expect($root.'/'.$typeFile)
+            ->toBeFile();
     }
 
     // Legacy pre-feature layout must not come back.
@@ -137,7 +142,7 @@ test('frontend business code is organized by feature domain', function () {
     }
 });
 
-test('controllers do not resolve dependencies through service locators', function () {
+test('controllers do not resolve dependencies through service locators', function (): void {
     $controllers = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator(
             dirname(__DIR__, 2).'/app',
@@ -146,22 +151,23 @@ test('controllers do not resolve dependencies through service locators', functio
     );
 
     foreach ($controllers as $controller) {
-        if (
-            ! $controller->isFile()
-            || $controller->getExtension() !== 'php'
-            || ! str_contains($controller->getPathname(), '/Http/Controllers/')
-        ) {
+        if (! $controller->isFile()) {
             continue;
         }
-
+        if ($controller->getExtension() !== 'php') {
+            continue;
+        }
+        if (! str_contains((string) $controller->getPathname(), '/Http/Controllers/')) {
+            continue;
+        }
         $contents = file_get_contents($controller->getPathname());
 
-        expect($contents)->not->toBeFalse()
+        expect($contents)->toBeTrue()
             ->and(preg_match('/\b(?:app|resolve)\s*\(/', (string) $contents))->toBe(0);
     }
 });
 
-test('shared frontend patterns use the intended shadcn compositions', function () {
+test('shared frontend patterns use the intended shadcn compositions', function (): void {
     $root = dirname(__DIR__, 2);
 
     $confirmDialog = (string) file_get_contents(
@@ -198,10 +204,12 @@ test('shared frontend patterns use the intended shadcn compositions', function (
     );
 
     foreach ($frontendFiles as $frontendFile) {
-        if (! $frontendFile->isFile() || $frontendFile->getExtension() !== 'tsx') {
+        if (! $frontendFile->isFile()) {
             continue;
         }
-
+        if ($frontendFile->getExtension() !== 'tsx') {
+            continue;
+        }
         $contents = (string) file_get_contents($frontendFile->getPathname());
         $path = $frontendFile->getPathname();
         $selectContentCount = mb_substr_count($contents, '<SelectContent');
@@ -212,7 +220,6 @@ test('shared frontend patterns use the intended shadcn compositions', function (
                     '/<SelectContent\b[^>]*>\s*<SelectGroup\b/s',
                     $contents,
                 ),
-                $path,
             )->toBe($selectContentCount);
         }
 
@@ -221,7 +228,7 @@ test('shared frontend patterns use the intended shadcn compositions', function (
         }
 
         if (str_contains($contents, '<InputError')) {
-            expect($contents, $path)->toContain('@/components/ui/field');
+            expect($contents)->toContain('@/components/ui/field');
         }
 
         $containsForm = preg_match('/<(?:Form|form)\b/', $contents) === 1;
@@ -231,7 +238,7 @@ test('shared frontend patterns use the intended shadcn compositions', function (
         ) === 1;
 
         if ($containsForm && $containsFormControl) {
-            expect($contents, $path)
+            expect($contents)
                 ->toContain('@/components/ui/field')
                 ->toContain('<Field');
         }

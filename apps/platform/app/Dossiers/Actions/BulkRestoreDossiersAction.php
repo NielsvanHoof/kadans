@@ -9,9 +9,9 @@ use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 
-final class BulkRestoreDossiersAction
+final readonly class BulkRestoreDossiersAction
 {
-    public function __construct(private readonly RestoreDossierAction $restoreDossier) {}
+    public function __construct(private RestoreDossierAction $restoreDossier) {}
 
     /**
      * Restore each selected archived dossier (client must already be active).

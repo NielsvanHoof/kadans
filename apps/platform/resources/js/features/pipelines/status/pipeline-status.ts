@@ -51,6 +51,11 @@ export function pipelineStatusBadgeVariant(
     }
 }
 
+/** True while the run is still active and should be polled on the show page. */
+export function pipelineIsInFlight(status: PipelineStatus): boolean {
+    return status === 'pending' || status === 'running';
+}
+
 export function pipelineStepStatusTone(status: PipelineStepStatus): string {
     switch (status) {
         case 'completed':

@@ -13,9 +13,10 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
@@ -26,7 +27,7 @@ function createWorkspaceNotificationContext(): array
 {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -63,7 +64,7 @@ function notifyOwnerOfQuestionnaire(User $owner, mixed $tenant, Dossier $dossier
     ));
 }
 
-test('shared notifications prop returns tenant-scoped inbox items', function () {
+test('shared notifications prop returns tenant-scoped inbox items', function (): void {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
 
@@ -71,10 +72,10 @@ test('shared notifications prop returns tenant-scoped inbox items', function () 
         ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->get(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/dashboard')
             ->missing('notifications')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
                 ->where('notifications.unread_count', 1)
                 ->has('notifications.items', 1)
                 ->where('notifications.items.0.message', 'Jane Client finished the questionnaire for “2025 Payroll dossier”.')
@@ -82,7 +83,7 @@ test('shared notifications prop returns tenant-scoped inbox items', function () 
                 ->where('notifications.items.0.read_at', null)));
 });
 
-test('shared notifications message uses the viewing users locale', function () {
+test('shared notifications message uses the viewing users locale', function (): void {
     $context = createWorkspaceNotificationContext();
     $context['owner']->update(['locale' => 'nl']);
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
@@ -91,14 +92,14 @@ test('shared notifications message uses the viewing users locale', function () {
         ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->get(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/dashboard')
             ->missing('notifications')
-            ->loadDeferredProps(fn (Assert $reload) => $reload
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
                 ->where('notifications.items.0.message', 'Jane Client heeft de vragenlijst voor “2025 Payroll dossier” afgerond.')));
 });
 
-test('staff can mark one workspace notification as read', function () {
+test('staff can mark one workspace notification as read', function (): void {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
 
@@ -115,7 +116,7 @@ test('staff can mark one workspace notification as read', function () {
     expect($notification->fresh()->read_at)->not->toBeNull();
 });
 
-test('staff can mark all workspace notifications as read', function () {
+test('staff can mark all workspace notifications as read', function (): void {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
@@ -131,7 +132,7 @@ test('staff can mark all workspace notifications as read', function () {
     expect($context['owner']->unreadNotifications()->count())->toBe(0);
 });
 
-test('staff cannot mark another users notification as read', function () {
+test('staff cannot mark another users notification as read', function (): void {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
 

@@ -48,13 +48,17 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Symfony\Component\HttpFoundation\IpUtils;
 
+use function in_array;
 use function is_string;
+use function mb_strtolower;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -68,6 +72,7 @@ final class AppServiceProvider extends ServiceProvider
         ]);
         $this->registerPermissionRegistry();
         $this->registerOcrBindings();
+        $this->configureDebugbarStorageOpen();
         $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
 
         if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
@@ -153,6 +158,42 @@ final class AppServiceProvider extends ServiceProvider
                 config()->array('tenant-permissions.enums'),
             ),
         );
+    }
+
+    /**
+     * Debugbar's default storage.open=null uses IpUtils::isPrivateIp(clientIp).
+     * FrankenPHP/Octane boots workers without a client IP, and Symfony throws
+     * ValueError on "". That aborts the worker before frankenphp_handle_request().
+     * Cast env strings and use a null-safe private-IP check instead.
+     */
+    private function configureDebugbarStorageOpen(): void
+    {
+        $open = config('debugbar.storage.open');
+
+        // .env values are strings; cast so Debugbar treats them as bools.
+        if (is_string($open) && in_array(mb_strtolower($open), ['true', 'false', '1', '0'], true)) {
+            config([
+                'debugbar.storage.open' => filter_var($open, FILTER_VALIDATE_BOOLEAN),
+            ]);
+
+            return;
+        }
+
+        if ($open !== null) {
+            return;
+        }
+
+        config([
+            'debugbar.storage.open' => static function (Request $request): bool {
+                $ip = $request->getClientIp();
+
+                if (! is_string($ip) || $ip === '') {
+                    return false;
+                }
+
+                return IpUtils::isPrivateIp($ip);
+            },
+        ]);
     }
 
     /**

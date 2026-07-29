@@ -9,9 +9,10 @@ use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     // phpunit boots with BROADCAST_CONNECTION=null; channel auth needs a signing driver.
@@ -32,9 +33,9 @@ beforeEach(function () {
     require base_path('routes/channels.php');
 });
 
-test('tenant member can authorize the workspace private channel', function () {
+test('tenant member can authorize the workspace private channel', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->postJson('/broadcasting/auth', [
@@ -45,10 +46,10 @@ test('tenant member can authorize the workspace private channel', function () {
         ->assertJsonStructure(['auth']);
 });
 
-test('non-member cannot authorize the workspace private channel', function () {
+test('non-member cannot authorize the workspace private channel', function (): void {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($outsider)
         ->postJson('/broadcasting/auth', [
@@ -58,10 +59,10 @@ test('non-member cannot authorize the workspace private channel', function () {
         ->assertForbidden();
 });
 
-test('suspended member cannot authorize the workspace private channel', function () {
+test('suspended member cannot authorize the workspace private channel', function (): void {
     $owner = User::factory()->create();
     $member = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

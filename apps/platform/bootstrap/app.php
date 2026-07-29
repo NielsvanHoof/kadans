@@ -79,7 +79,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request): bool => $request->is('api/*') || $request->expectsJson(),
         );
 
         // Register once here: Laravel keeps a single finalizeResponseCallback.
@@ -98,13 +98,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 ! $request->expectsJson()
                 && in_array($status, $statuses, true)
             ) {
-                $response = (new ExceptionResponse(
+                $response = new ExceptionResponse(
                     $exception,
                     $request,
                     $response,
-                    app(Router::class),
-                    app(KernelContract::class),
-                ))
+                    resolve(Router::class),
+                    resolve(KernelContract::class),
+                )
                     ->render('error', ['status' => $status])
                     ->withSharedData()
                     ->usingMiddleware(HandleInertiaRequests::class)

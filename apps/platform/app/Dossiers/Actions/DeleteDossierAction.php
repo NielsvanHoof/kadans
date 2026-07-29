@@ -12,11 +12,11 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 
-final class DeleteDossierAction
+final readonly class DeleteDossierAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly RevokeClientPortalAccessAction $revokeClientPortalAccess,
+        private LogAuditActivityAction $logAuditActivity,
+        private RevokeClientPortalAccessAction $revokeClientPortalAccess,
     ) {}
 
     public function handle(Dossier $dossier, User $deletedBy): void

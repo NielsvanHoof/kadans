@@ -13,11 +13,11 @@ use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-final class SuspendTenantMemberAction
+final readonly class SuspendTenantMemberAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly WorkspaceMemberRoles $memberRoles,
+        private LogAuditActivityAction $logAuditActivity,
+        private WorkspaceMemberRoles $memberRoles,
     ) {}
 
     public function handle(TenantMembership $membership, User $suspendedBy): TenantMembership

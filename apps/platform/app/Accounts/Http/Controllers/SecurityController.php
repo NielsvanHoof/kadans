@@ -28,7 +28,7 @@ final class SecurityController extends Controller
             'passkeys' => Features::canManagePasskeys()
                 ? $user->load('passkeys')->passkeys
                     ->sortByDesc('created_at')
-                    ->map(fn ($passkey) => [
+                    ->map(fn ($passkey): array => [
                         'id' => $passkey->id,
                         'name' => $passkey->name,
                         'authenticator' => $passkey->authenticator,

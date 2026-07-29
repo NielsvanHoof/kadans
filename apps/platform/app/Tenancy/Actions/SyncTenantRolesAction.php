@@ -25,9 +25,9 @@ use function setPermissionsTeamId;
  * no-op, which makes it safe to call from provisioning, the seeder, and
  * deploy-time migrations alike.
  */
-final class SyncTenantRolesAction
+final readonly class SyncTenantRolesAction
 {
-    public function __construct(private readonly PermissionRegistry $registry) {}
+    public function __construct(private PermissionRegistry $registry) {}
 
     /**
      * Sync the global permission table, then every tenant's roles.
@@ -168,6 +168,6 @@ final class SyncTenantRolesAction
 
     private function forgetCachedPermissions(): void
     {
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        resolve(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

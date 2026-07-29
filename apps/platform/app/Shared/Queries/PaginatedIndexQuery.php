@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Queries;
 
+use Spatie\QueryBuilder\AllowedFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -28,7 +29,7 @@ abstract class PaginatedIndexQuery
     abstract protected function subject(): Builder;
 
     /**
-     * @return list<\Spatie\QueryBuilder\AllowedFilter|string>
+     * @return list<AllowedFilter|string>
      */
     abstract protected function allowedFilters(): array;
 

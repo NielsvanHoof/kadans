@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Jobs;
 
+use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\Tries;
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
 use App\DocumentProcessing\Models\Pipeline;
@@ -16,15 +18,12 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 
+#[Backoff([10, 30, 60])]
+#[Tries(3)]
 final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
     use Queueable;
-
-    public int $tries = 3;
-
-    /** @var list<int> */
-    public array $backoff = [10, 30, 60];
 
     public function __construct(public int $pipelineId) {}
 
@@ -38,12 +37,10 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
         $generateDossierExport->handle($this->pipelineId);
     }
 
-    public function failed(
-        Throwable $exception,
-        MarkDossierExportFailedAction $markDossierExportFailed,
-        PipelineStateAction $pipelineState,
-    ): void {
+    public function failed(Throwable $exception): void
+    {
         $pipeline = Pipeline::query()->with('pipelineable')->find($this->pipelineId);
+        $pipelineState = resolve(PipelineStateAction::class);
 
         if ($pipeline instanceof Pipeline && ! $pipeline->status->isTerminal()) {
             $pipelineState->handle(
@@ -58,7 +55,7 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
         $export = $pipeline?->pipelineable;
 
         if ($export instanceof DossierExport) {
-            $markDossierExportFailed->handle($export, $exception);
+            resolve(MarkDossierExportFailedAction::class)->handle($export, $exception);
         }
     }
 }

@@ -35,7 +35,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
-test('application models use stable morph aliases', function () {
+test('application models use stable morph aliases', function (): void {
     /** @var array<string, class-string<Model>> $aliases */
     $aliases = [
         'activity' => Activity::class,
@@ -56,12 +56,12 @@ test('application models use stable morph aliases', function () {
     ];
 
     foreach ($aliases as $alias => $modelClass) {
-        expect(Relation::getMorphedModel($alias), $alias)->toBe($modelClass)
-            ->and((new $modelClass)->getMorphClass(), $modelClass)->toBe($alias);
+        expect(Relation::getMorphedModel($alias))->toBe($modelClass)
+            ->and((new $modelClass)->getMorphClass())->toBe($alias);
     }
 });
 
-test('moved models resolve their explicit factories', function () {
+test('moved models resolve their explicit factories', function (): void {
     /** @var array<class-string<Model>, class-string<Factory<Model>>> $factories */
     $factories = [
         User::class => UserFactory::class,
@@ -81,6 +81,6 @@ test('moved models resolve their explicit factories', function () {
     ];
 
     foreach ($factories as $modelClass => $factoryClass) {
-        expect($modelClass::factory(), $modelClass)->toBeInstanceOf($factoryClass);
+        expect($modelClass::factory())->toBeInstanceOf($factoryClass);
     }
 });

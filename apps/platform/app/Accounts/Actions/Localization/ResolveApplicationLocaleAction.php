@@ -17,7 +17,6 @@ final class ResolveApplicationLocaleAction
         $user = $request->user();
 
         if ($user instanceof User) {
-            /** @var mixed $storedLocale */
             $storedLocale = $user->getAttributes()['locale'] ?? null;
 
             if (is_string($storedLocale) && $storedLocale !== '') {

@@ -31,7 +31,7 @@ function dossierPolicyContext(): array
     ];
 }
 
-test('owner can manage and follow up a draft dossier', function () {
+test('owner can manage and follow up a draft dossier', function (): void {
     $context = dossierPolicyContext();
     $policy = $context['policy'];
     $owner = $context['owner'];
@@ -46,7 +46,7 @@ test('owner can manage and follow up a draft dossier', function () {
         ->and($policy->delete($owner, $dossier))->toBeTrue();
 });
 
-test('update and complete are denied when the dossier is completed', function () {
+test('update and complete are denied when the dossier is completed', function (): void {
     $context = dossierPolicyContext();
     $policy = $context['policy'];
     $owner = $context['owner'];
@@ -60,7 +60,7 @@ test('update and complete are denied when the dossier is completed', function ()
         ->and($policy->delete($owner, $dossier))->toBeTrue();
 });
 
-test('read-only members can view dossiers but cannot create or complete', function () {
+test('read-only members can view dossiers but cannot create or complete', function (): void {
     $context = dossierPolicyContext();
     $policy = $context['policy'];
     $tenant = $context['tenant'];
@@ -76,7 +76,7 @@ test('read-only members can view dossiers but cannot create or complete', functi
         ->and($policy->complete($reader, $dossier))->toBeFalse();
 });
 
-test('users outside the tenant cannot view the dossier', function () {
+test('users outside the tenant cannot view the dossier', function (): void {
     $context = dossierPolicyContext();
     $policy = $context['policy'];
     $dossier = $context['dossier'];

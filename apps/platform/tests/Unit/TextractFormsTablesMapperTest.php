@@ -5,10 +5,11 @@ declare(strict_types=1);
 use App\DocumentProcessing\Services\Ocr\Normalization\TextractFormsTablesMapper;
 use Tests\TestCase;
 
-uses(TestCase::class);
+pest()
+    ->extend(TestCase::class);
 
-test('textract forms tables mapper maps key value pairs and tables with confidence', function () {
-    $payload = app(TextractFormsTablesMapper::class)->map([
+test('textract forms tables mapper maps key value pairs and tables with confidence', function (): void {
+    $payload = resolve(TextractFormsTablesMapper::class)->map([
         [
             'Id' => 'key-1',
             'BlockType' => 'KEY_VALUE_SET',
@@ -90,11 +91,12 @@ test('textract forms tables mapper maps key value pairs and tables with confiden
         ])
         ->and($payload['document_type'])->toBeNull()
         ->and($payload['summary'])->toBeNull()
-        ->and($payload['notes'])->toBe([]);
+        ->and($payload['notes'])
+        ->toBeEmpty();
 });
 
-test('textract forms tables mapper returns empty payload when no forms or tables exist', function () {
-    $payload = app(TextractFormsTablesMapper::class)->map([
+test('textract forms tables mapper returns empty payload when no forms or tables exist', function (): void {
+    $payload = resolve(TextractFormsTablesMapper::class)->map([
         ['Id' => 'line-1', 'BlockType' => 'LINE', 'Text' => 'orphan'],
     ]);
 

@@ -24,9 +24,7 @@ final class ClientPortalSessionController extends Controller
     ): RedirectResponse {
         $grant = $resolveClientAccessGrantFromToken->handle($token);
 
-        if (! $grant instanceof ClientAccessGrant) {
-            abort(Response::HTTP_NOT_FOUND);
-        }
+        abort_unless($grant instanceof ClientAccessGrant, Response::HTTP_NOT_FOUND);
 
         $lifetimeMinutes = max(1, min(
             60,

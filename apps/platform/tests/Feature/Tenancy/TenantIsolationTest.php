@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
+use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
+use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
+use Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession;
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierPermission;
@@ -16,15 +20,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('tenant member can view dossiers in their workspace', function () {
+test('tenant member can view dossiers in their workspace', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -41,15 +46,15 @@ test('tenant member can view dossiers in their workspace', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/show')
             ->where('dossier.title', 'Annual accounts 2025'));
 });
 
-test('users cannot access workspaces they do not belong to', function () {
+test('users cannot access workspaces they do not belong to', function (): void {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -66,12 +71,12 @@ test('users cannot access workspaces they do not belong to', function () {
         ->assertNotFound();
 });
 
-test('users cannot read dossiers from another tenant via id guessing', function () {
+test('users cannot read dossiers from another tenant via id guessing', function (): void {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
 
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     setPermissionsTeamId($tenantB->id);
@@ -88,11 +93,11 @@ test('users cannot read dossiers from another tenant via id guessing', function 
         ->assertNotFound();
 });
 
-test('the workspace in the url takes precedence over the session tenant', function () {
+test('the workspace in the url takes precedence over the session tenant', function (): void {
     $user = User::factory()->create();
 
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenantB->id,
@@ -110,15 +115,15 @@ test('the workspace in the url takes precedence over the session tenant', functi
         ->get(workspaceRoute('workspaces.dossiers.index', $tenantB))
         ->assertOk()
         ->assertSessionHas('active_tenant_id', $tenantB->id)
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('current_firm.slug', $tenantB->slug));
 });
 
-test('members can switch their active firm', function () {
+test('members can switch their active firm', function (): void {
     $user = User::factory()->create();
 
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenantB->id,
@@ -138,14 +143,14 @@ test('members can switch their active firm', function () {
 
     $this->get(workspaceRoute('workspaces.dashboard', $tenantB))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/dashboard'));
 });
 
-test('users cannot activate a firm they do not belong to', function () {
+test('users cannot activate a firm they do not belong to', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Tenant A', $owner);
-    $foreignTenant = app(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create());
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Tenant A', $owner);
+    $foreignTenant = resolve(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create());
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -153,10 +158,10 @@ test('users cannot activate a firm they do not belong to', function () {
         ->assertForbidden();
 });
 
-test('read only members cannot create dossiers', function () {
+test('read only members cannot create dossiers', function (): void {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -172,21 +177,22 @@ test('read only members cannot create dossiers', function () {
     expect($reader->can(DossierPermission::Create->value))->toBeFalse();
 });
 
-test('tenant routes are registered with the expected middleware', function () {
+test('tenant routes are registered with the expected middleware', function (): void {
     $route = Route::getRoutes()->getByName('workspaces.dossiers.index');
 
-    expect($route)->not->toBeNull();
-    expect($route->middleware())->toContain('auth');
-    expect($route->middleware())->toContain(App\Tenancy\Http\Middleware\InitializeTenantFromRoute::class);
-    expect($route->middleware())->toContain(App\Tenancy\Http\Middleware\EnsureValidTenantMembership::class);
-    expect($route->middleware())->toContain(App\Tenancy\Http\Middleware\SetPermissionTeamContext::class);
-    expect($route->middleware())->not->toContain(Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession::class);
-    expect($route->uri())->toBe('workspaces/{tenant}/dossiers');
+    expect($route)->not->toBeNull()
+        ->and($route->middleware())
+        ->toContain('auth')
+        ->toContain(InitializeTenantFromRoute::class)
+        ->toContain(EnsureValidTenantMembership::class)
+        ->toContain(SetPermissionTeamContext::class)->not->toContain(EnsureValidTenantSession::class)
+        ->and($route->uri())
+        ->toBe('workspaces/{tenant}/dossiers');
 });
 
-test('workspace pages load tenant memberships only once', function () {
+test('workspace pages load tenant memberships only once', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     DB::flushQueryLog();
     DB::enableQueryLog();

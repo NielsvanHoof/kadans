@@ -26,15 +26,11 @@ final class CreatePipelineAction
         $tenant = Tenant::current();
         $tenantId = $pipelineable->getAttribute('tenant_id');
 
-        if (! $tenant instanceof Tenant || ! is_numeric($tenantId) || (int) $tenantId !== $tenant->id) {
-            throw new RuntimeException('Cannot create a pipeline outside the current tenant.');
-        }
+        throw_if(! $tenant instanceof Tenant || ! is_numeric($tenantId) || (int) $tenantId !== $tenant->id, RuntimeException::class, 'Cannot create a pipeline outside the current tenant.');
 
         $pipelineableId = $pipelineable->getKey();
 
-        if (! is_numeric($pipelineableId)) {
-            throw new RuntimeException('Pipeline subjects must have a numeric primary key.');
-        }
+        throw_unless(is_numeric($pipelineableId), RuntimeException::class, 'Pipeline subjects must have a numeric primary key.');
 
         $pipeline = Pipeline::query()->create([
             'tenant_id' => $tenant->id,

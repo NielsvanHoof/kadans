@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-test('the complete quality gate includes the production frontend build', function () {
+test('the complete quality gate includes the production frontend build', function (): void {
     /** @var array{scripts: array<string, list<string>>} $composer */
     $composer = json_decode(
         (string) file_get_contents(dirname(__DIR__, 2).'/composer.json'),
@@ -14,7 +14,7 @@ test('the complete quality gate includes the production frontend build', functio
         ->toContain('npm run build');
 });
 
-test('the TypeScript check generates ignored Wayfinder modules on a fresh checkout', function () {
+test('the TypeScript check generates ignored Wayfinder modules on a fresh checkout', function (): void {
     /** @var array{scripts: array<string, string>} $package */
     $package = json_decode(
         (string) file_get_contents(dirname(__DIR__, 2).'/package.json'),

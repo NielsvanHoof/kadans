@@ -13,11 +13,11 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
 
-final class DeleteDocumentRequestAction
+final readonly class DeleteDocumentRequestAction
 {
     public function __construct(
-        private readonly FilesystemManager $filesystems,
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private FilesystemManager $filesystems,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(DocumentRequest $documentRequest): void
@@ -71,10 +71,8 @@ final class DeleteDocumentRequestAction
             return;
         }
 
-        if (! $deleted) {
-            report(new RuntimeException(
-                'Failed to remove the stored file for a deleted document request.',
-            ));
-        }
+        report_unless($deleted, new RuntimeException(
+            'Failed to remove the stored file for a deleted document request.',
+        ));
     }
 }

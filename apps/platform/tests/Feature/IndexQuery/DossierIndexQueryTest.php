@@ -11,15 +11,16 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('dossiers index filters by status and search', function () {
+test('dossiers index filters by status and search', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -47,7 +48,7 @@ test('dossiers index filters by status and search', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[status]=draft')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/index')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.title', 'Payroll 2025')
@@ -58,14 +59,14 @@ test('dossiers index filters by status and search', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[q]=Payroll')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.reference', 'PAY-001'));
 });
 
-test('dossiers index sorts by title ascending', function () {
+test('dossiers index sorts by title ascending', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -85,14 +86,14 @@ test('dossiers index sorts by title ascending', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?sort=title')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('dossiers.data.0.title', 'Alpha dossier')
             ->where('dossiers.data.1.title', 'Zebra dossier'));
 });
 
-test('dossiers index rejects invalid sort', function () {
+test('dossiers index rejects invalid sort', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])

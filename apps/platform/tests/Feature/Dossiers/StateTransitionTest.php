@@ -17,9 +17,10 @@ use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create();
     $this->tenant->makeCurrent();
     $this->client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -27,11 +28,11 @@ beforeEach(function () {
         'tenant_id' => $this->tenant->id,
         'client_id' => $this->client->id,
     ]);
-    $this->dossierTransitions = app(DossierTransitions::class);
-    $this->documentRequestTransitions = app(DocumentRequestTransitions::class);
+    $this->dossierTransitions = resolve(DossierTransitions::class);
+    $this->documentRequestTransitions = resolve(DocumentRequestTransitions::class);
 });
 
-test('a dossier advances without regressing from later open stages', function () {
+test('a dossier advances without regressing from later open stages', function (): void {
     $this->dossierTransitions->markAwaitingClient($this->dossier);
 
     expect($this->dossier->status)->toBe(DossierStatus::AwaitingClient);
@@ -43,22 +44,16 @@ test('a dossier advances without regressing from later open stages', function ()
 
     $this->dossierTransitions->complete($this->dossier);
 
-    expect($this->dossier->status)->toBe(DossierStatus::Completed);
-
-    expect(fn () => $this->dossierTransitions->markAwaitingClient($this->dossier))
-        ->toThrow(
-            ValidationException::class,
-            'A completed dossier cannot receive a new portal invitation.',
-        );
-
-    expect(fn () => $this->dossierTransitions->markInReview($this->dossier))
-        ->toThrow(ValidationException::class, 'A completed dossier cannot return to review.');
-
-    expect(fn () => $this->dossierTransitions->complete($this->dossier))
+    expect($this->dossier->status)->toBe(DossierStatus::Completed)
+        ->and(fn() => $this->dossierTransitions->markAwaitingClient($this->dossier))
+        ->toThrow(ValidationException::class, 'A completed dossier cannot receive a new portal invitation.')
+        ->and(fn() => $this->dossierTransitions->markInReview($this->dossier))
+        ->toThrow(ValidationException::class, 'A completed dossier cannot return to review.')
+        ->and(fn() => $this->dossierTransitions->complete($this->dossier))
         ->toThrow(ValidationException::class, 'This dossier is already completed.');
 });
 
-test('a dossier must be in review before it can be completed', function () {
+test('a dossier must be in review before it can be completed', function (): void {
     expect(fn () => $this->dossierTransitions->complete($this->dossier))
         ->toThrow(ValidationException::class, 'Only a dossier in review can be completed.');
 
@@ -68,7 +63,7 @@ test('a dossier must be in review before it can be completed', function () {
         ->toThrow(ValidationException::class, 'Only a dossier in review can be completed.');
 });
 
-test('an answer can be reviewed and a rejected answer can be corrected', function () {
+test('an answer can be reviewed and a rejected answer can be corrected', function (): void {
     $reviewer = User::factory()->create();
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $this->tenant->id,
@@ -111,7 +106,7 @@ test('an answer can be reviewed and a rejected answer can be corrected', functio
         ->toThrow(ValidationException::class, 'An approved item cannot be submitted again.');
 });
 
-test('only submitted items can be accepted or rejected', function () {
+test('only submitted items can be accepted or rejected', function (): void {
     $reviewer = User::factory()->create();
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $this->tenant->id,
@@ -132,7 +127,7 @@ test('only submitted items can be accepted or rejected', function () {
         ->toThrow(ValidationException::class, 'Explain what the client needs to correct.');
 });
 
-test('a submitted upload can be replaced by staff but not from the portal', function () {
+test('a submitted upload can be replaced by staff but not from the portal', function (): void {
     $reviewer = User::factory()->create();
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $this->tenant->id,
@@ -144,21 +139,14 @@ test('a submitted upload can be replaced by staff but not from the portal', func
     $this->documentRequestTransitions->submitUpload($documentRequest, SubmissionContext::Staff);
 
     expect($documentRequest->status)->toBe(DocumentRequestStatus::Submitted)
-        ->and($documentRequest->answered_at)->toBeInstanceOf(CarbonInterface::class);
-
-    expect($this->documentRequestTransitions->canSubmit(
+        ->and($documentRequest->answered_at)->toBeInstanceOf(CarbonInterface::class)
+        ->and($this->documentRequestTransitions->canSubmit($documentRequest, SubmissionContext::Portal, $this->dossier))
+        ->toBeFalse()
+        ->and(fn() => $this->documentRequestTransitions->submitUpload(
         $documentRequest,
         SubmissionContext::Portal,
-        $this->dossier,
-    ))->toBeFalse();
-
-    expect(fn () => $this->documentRequestTransitions->submitUpload(
-        $documentRequest,
-        SubmissionContext::Portal,
-    ))->toThrow(
-        ValidationException::class,
-        'This item cannot be submitted from the client portal in its current state.',
-    );
+    ))
+        ->toThrow(ValidationException::class, 'This item cannot be submitted from the client portal in its current state.');
 
     $this->documentRequestTransitions->accept($documentRequest, $reviewer);
 
@@ -169,7 +157,7 @@ test('a submitted upload can be replaced by staff but not from the portal', func
         ->toThrow(ValidationException::class, 'An approved item cannot be submitted again.');
 });
 
-test('portal submissions are blocked on completed dossiers', function () {
+test('portal submissions are blocked on completed dossiers', function (): void {
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $this->tenant->id,
         'dossier_id' => $this->dossier->id,
@@ -186,7 +174,7 @@ test('portal submissions are blocked on completed dossiers', function () {
     ))->toBeFalse();
 });
 
-test('answer_text types accept text answers', function (QuestionnaireItemType $type, string $answer) {
+test('answer_text types accept text answers', function (QuestionnaireItemType $type, string $answer): void {
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $this->tenant->id,
         'dossier_id' => $this->dossier->id,

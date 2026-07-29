@@ -145,7 +145,7 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
         $client = $this->resolveClient($dossier);
         $uploaded = $model->uploadedDocument;
 
-        return (new MediaLibraryDocumentRowData(
+        return new MediaLibraryDocumentRowData(
             id: $model->id,
             title: $model->title,
             status: $model->status->value,
@@ -162,16 +162,14 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
                 sizeBytes: $uploaded->size_bytes,
                 uploadedAt: $uploaded->uploaded_at->toIso8601String(),
             ),
-        ))->toArray();
+        )->toArray();
     }
 
     private function resolveDossier(DocumentRequest $documentRequest): Dossier
     {
         $dossier = $documentRequest->dossier;
 
-        if (! $dossier instanceof Dossier) {
-            throw new RuntimeException('Document request dossier is missing.');
-        }
+        throw_unless($dossier instanceof Dossier, RuntimeException::class, 'Document request dossier is missing.');
 
         return $dossier;
     }
@@ -180,9 +178,7 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
     {
         $client = $dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         return $client;
     }

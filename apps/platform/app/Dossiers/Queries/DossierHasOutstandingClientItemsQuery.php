@@ -16,10 +16,10 @@ use function in_array;
  *
  * Hidden and unanswered optional fields are excluded.
  */
-final class DossierHasOutstandingClientItemsQuery
+final readonly class DossierHasOutstandingClientItemsQuery
 {
     public function __construct(
-        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+        private ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
     ) {}
 
     public function handle(Dossier $dossier): bool

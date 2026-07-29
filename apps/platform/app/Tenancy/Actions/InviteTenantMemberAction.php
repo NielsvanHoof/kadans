@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Actions;
 
+use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
@@ -21,11 +22,11 @@ use Illuminate\Validation\ValidationException;
 
 use function is_string;
 
-final class InviteTenantMemberAction
+final readonly class InviteTenantMemberAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly WorkspaceMemberRoles $memberRoles,
+        private LogAuditActivityAction $logAuditActivity,
+        private WorkspaceMemberRoles $memberRoles,
     ) {}
 
     /**
@@ -44,7 +45,7 @@ final class InviteTenantMemberAction
         return DB::transaction(function () use ($tenant, $invitedBy, $email, $role): array {
             $existingMemberQuery = TenantMembership::query()
                 ->where('tenant_id', $tenant->id)
-                ->whereHas('user', fn ($query) => $query->where('email', $email));
+                ->whereHas('user', fn (Builder $query) => $query->where('email', $email));
 
             if ($existingMemberQuery->toBase()->exists()) {
                 throw ValidationException::withMessages([
@@ -82,13 +83,13 @@ final class InviteTenantMemberAction
 
             Notification::route('mail', $email)
                 ->notify(
-                    (new WorkspaceMemberInviteNotification(
+                    new WorkspaceMemberInviteNotification(
                         invitationId: $invitation->id,
                         firmName: $tenant->name,
                         role: $role,
                         acceptUrl: $acceptUrl,
                         expiresAt: $expiresAt,
-                    ))->locale($locale),
+                    )->locale($locale),
                 );
 
             $this->logAuditActivity->handle(

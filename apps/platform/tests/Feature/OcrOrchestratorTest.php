@@ -16,35 +16,36 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     config(['ocr.driver' => 'mock']);
 });
 
-test('ocr orchestrator returns immediate outcome for synchronous drivers', function () {
+test('ocr orchestrator returns immediate outcome for synchronous drivers', function (): void {
     $uploaded = createUploadedDocumentForOcrOrchestratorTest();
 
-    $outcome = app(OcrOrchestrator::class)->startProcessing($uploaded);
+    $outcome = resolve(OcrOrchestrator::class)->startProcessing($uploaded);
 
     $uploaded->refresh();
 
     expect($outcome)->toBe(OcrProcessingOutcome::Immediate)
         ->and($uploaded->processing_status)->toBe(DocumentProcessingStatus::Completed)
-        ->and($uploaded->extracted_text)->toContain('fields');
-
-    expect(Activity::query()
+        ->and($uploaded->extracted_text)->toContain('fields')
+        ->and(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingStarted->value)
         ->where('subject_id', $uploaded->id)
-        ->exists())->toBeTrue();
-
-    expect(Activity::query()
+        ->exists())
+        ->toBeTrue()
+        ->and(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingCompleted->value)
         ->where('subject_id', $uploaded->id)
-        ->exists())->toBeTrue();
+        ->exists())
+        ->toBeTrue();
 });
 
-test('ocr orchestrator returns deferred outcome when the driver leaves processing open', function () {
+test('ocr orchestrator returns deferred outcome when the driver leaves processing open', function (): void {
     $uploaded = createUploadedDocumentForOcrOrchestratorTest();
 
     $mockOcr = Mockery::mock(StartsDocumentOcr::class);
@@ -52,21 +53,21 @@ test('ocr orchestrator returns deferred outcome when the driver leaves processin
         ->once()
         ->with(Mockery::on(fn (UploadedDocument $document): bool => $document->is($uploaded)));
 
-    $orchestrator = new OcrOrchestrator($mockOcr, app(LogAuditActivityAction::class));
+    $orchestrator = new OcrOrchestrator($mockOcr, resolve(LogAuditActivityAction::class));
 
     $outcome = $orchestrator->startProcessing($uploaded);
 
-    expect($outcome)->toBe(OcrProcessingOutcome::Deferred);
-
-    expect(Activity::query()
+    expect($outcome)->toBe(OcrProcessingOutcome::Deferred)
+        ->and(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingStarted->value)
         ->where('subject_id', $uploaded->id)
-        ->exists())->toBeTrue();
-
-    expect(Activity::query()
+        ->exists())
+        ->toBeTrue()
+        ->and(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingCompleted->value)
         ->where('subject_id', $uploaded->id)
-        ->exists())->toBeFalse();
+        ->exists())
+        ->toBeFalse();
 });
 
 /**

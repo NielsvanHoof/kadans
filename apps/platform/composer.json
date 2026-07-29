@@ -31,6 +31,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^4.4",
+        "driftingly/rector-laravel": "^2.5",
         "ekino/phpstan-banned-code": "^3.2",
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",
@@ -42,9 +43,13 @@
         "laravel/telescope": "^5.21",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9.3",
-        "pestphp/pest": "^4.7",
-        "pestphp/pest-plugin-laravel": "^4.1",
-        "phpstan/phpstan-strict-rules": "^2.0"
+        "pestphp/pest": "^5.0",
+        "pestphp/pest-plugin-agent": "^5.0",
+        "pestphp/pest-plugin-laravel": "^5.0",
+        "pestphp/pest-plugin-phpstan": "^5.0",
+        "pestphp/pest-plugin-rector": "^5.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "rector/rector": "^2.5"
     },
     "autoload": {
         "psr-4": {
@@ -92,6 +97,12 @@
         ],
         "types:check": [
             "phpstan analyse --memory-limit=512M"
+        ],
+        "rector": [
+            "rector process --ansi"
+        ],
+        "rector:check": [
+            "rector process --dry-run --ansi"
         ],
         "test": [
             "@php artisan config:clear --ansi",

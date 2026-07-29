@@ -32,9 +32,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
@@ -45,7 +46,7 @@ function createReviewWorkflowContext(): array
 {
     $owner = User::factory()->create();
     $reviewer = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -73,7 +74,7 @@ function createReviewWorkflowContext(): array
     ];
 }
 
-test('a reviewer can approve submitted evidence without editing the questionnaire', function () {
+test('a reviewer can approve submitted evidence without editing the questionnaire', function (): void {
     Notification::fake();
 
     $context = createReviewWorkflowContext();
@@ -124,7 +125,7 @@ test('a reviewer can approve submitted evidence without editing the questionnair
     Notification::assertNothingSent();
 });
 
-test('rejected items show feedback and a client correction returns them to review', function () {
+test('rejected items show feedback and a client correction returns them to review', function (): void {
     Notification::fake();
 
     $context = createReviewWorkflowContext();
@@ -137,7 +138,7 @@ test('rejected items show feedback and a client correction returns them to revie
         'status' => DocumentRequestStatus::Submitted,
     ]);
 
-    $grantResult = app(CreateClientAccessGrantAction::class)->handle(
+    $grantResult = resolve(CreateClientAccessGrantAction::class)->handle(
         $context['dossier'],
         $context['owner'],
         7,
@@ -205,7 +206,7 @@ test('rejected items show feedback and a client correction returns them to revie
 
     $this->get(route('portal.show'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where(
                 'dossier.document_requests.0.rejection_reason',
                 'Please include the full registered address.',
@@ -232,7 +233,7 @@ test('rejected items show feedback and a client correction returns them to revie
     ])->assertForbidden();
 });
 
-test('changes requested delivery outcomes are audited', function () {
+test('changes requested delivery outcomes are audited', function (): void {
     $context = createReviewWorkflowContext();
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
@@ -250,10 +251,10 @@ test('changes requested delivery outcomes are audited', function () {
     );
     $notifiable = (new AnonymousNotifiable)->route('mail', 'jane@example.com');
 
-    app(LogClientChangesRequestedSent::class)->handle(
+    resolve(LogClientChangesRequestedSent::class)->handle(
         new NotificationSent($notifiable, $notification, 'mail'),
     );
-    app(LogClientChangesRequestedFailed::class)->handle(
+    resolve(LogClientChangesRequestedFailed::class)->handle(
         new NotificationFailed($notifiable, $notification, 'mail', [
             'exception' => new RuntimeException('Mail failed.'),
         ]),
@@ -275,7 +276,7 @@ test('changes requested delivery outcomes are audited', function () {
         ->toBe([$documentRequest->id]);
 });
 
-test('a dossier can only be completed after every item is approved', function () {
+test('a dossier can only be completed after every item is approved', function (): void {
     $context = createReviewWorkflowContext();
     $documentRequestQueries = [];
 
@@ -302,7 +303,7 @@ test('a dossier can only be completed after every item is approved', function ()
         'reviewed_at' => now(),
     ]);
 
-    $grantResult = app(CreateClientAccessGrantAction::class)->handle(
+    $grantResult = resolve(CreateClientAccessGrantAction::class)->handle(
         $context['dossier'],
         $context['owner'],
         7,

@@ -6,9 +6,10 @@ use App\Accounts\Enums\PlatformRole;
 use App\Accounts\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('platform grant-support assigns the support role', function () {
+test('platform grant-support assigns the support role', function (): void {
     $user = User::factory()->create(['email' => 'eng@example.com']);
 
     $this->artisan('platform:grant-support', [
@@ -19,7 +20,7 @@ test('platform grant-support assigns the support role', function () {
         ->and($user->fresh()->isPlatformSupport())->toBeTrue();
 });
 
-test('platform revoke-support clears the support role', function () {
+test('platform revoke-support clears the support role', function (): void {
     $user = User::factory()->platformSupport()->create(['email' => 'eng@example.com']);
 
     $this->artisan('platform:revoke-support', [
@@ -30,7 +31,7 @@ test('platform revoke-support clears the support role', function () {
         ->and($user->fresh()->isPlatformSupport())->toBeFalse();
 });
 
-test('platform grant-support fails for unknown emails', function () {
+test('platform grant-support fails for unknown emails', function (): void {
     $this->artisan('platform:grant-support', [
         'email' => 'missing@example.com',
     ])->assertFailed();

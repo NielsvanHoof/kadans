@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
+use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
 use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Enums\PipelineStatus;
+use App\DocumentProcessing\Enums\PipelineStepStatus;
+use App\DocumentProcessing\Enums\PipelineType;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
@@ -14,9 +18,10 @@ use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('textract consume command applies sns envelope and deletes the message', function () {
+test('textract consume command applies sns envelope and deletes the message', function (): void {
     $tenant = Tenant::factory()->create();
     $tenant->makeCurrent();
 
@@ -35,6 +40,7 @@ test('textract consume command applies sns envelope and deletes the message', fu
         'document_request_id' => $documentRequest->id,
         'textract_job_id' => 'job-from-sqs',
     ]);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($uploaded, PipelineType::OcrDocument);
 
     config([
         'ocr.textract.results_queue_url' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
@@ -126,9 +132,20 @@ test('textract consume command applies sns envelope and deletes the message', fu
         ->and($payload['fields'][0]['value'])->toBe('SQS')
         ->and($payload['fields'][0]['confidence'])->toBe(0.9)
         ->and($payload['fields'][0]['sensitivity'])->toBeNull();
+
+    $pipeline->refresh();
+
+    expect($pipeline->status)->toBe(PipelineStatus::Completed)
+        ->and($pipeline->provider_job_id)->toBe('job-from-sqs')
+        ->and($pipeline->steps()->pluck('status')->all())
+        ->toBe([
+            PipelineStepStatus::Completed,
+            PipelineStepStatus::Completed,
+            PipelineStepStatus::Completed,
+        ]);
 });
 
-test('textract consume command marks a document failed after the final receive attempt', function () {
+test('textract consume command marks a document failed after the final receive attempt', function (): void {
     $tenant = Tenant::factory()->create();
     $tenant->makeCurrent();
 

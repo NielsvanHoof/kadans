@@ -15,10 +15,10 @@ use function is_string;
 /**
  * Paginates GetDocumentAnalysis for a finished Textract AnalyzeDocument job.
  */
-final class TextractJobBlockFetcher
+final readonly class TextractJobBlockFetcher
 {
     public function __construct(
-        private readonly TextractClient $textract,
+        private TextractClient $textract,
     ) {}
 
     /**

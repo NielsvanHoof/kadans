@@ -6,15 +6,16 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('tenant context runs callbacks under the given tenant and restores afterward', function () {
+test('tenant context runs callbacks under the given tenant and restores afterward', function (): void {
     $tenantA = Tenant::factory()->create();
     $tenantB = Tenant::factory()->create();
 
     $tenantA->makeCurrent();
 
-    $seenTenantId = app(TenantContext::class)->runForTenant($tenantB, function () use ($tenantB): int {
+    $seenTenantId = resolve(TenantContext::class)->runForTenant($tenantB, function () use ($tenantB): int {
         expect(Tenant::current()?->id)->toBe($tenantB->id);
 
         return $tenantB->id;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Models;
 
+use Override;
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
@@ -68,6 +69,7 @@ final class DocumentRequest extends Model
     /**
      * @var array<string, mixed>
      */
+    #[Override]
     protected $attributes = [
         'type' => 'file',
         'status' => 'pending',
@@ -128,6 +130,7 @@ final class DocumentRequest extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    #[Override]
     protected static function booted(): void
     {
         self::creating(function (self $documentRequest): void {
@@ -139,7 +142,7 @@ final class DocumentRequest extends Model
 
             // Give every new field a normalized configuration, so nothing has to
             // guess defaults later when reading is_required or options.
-            $documentRequest->configuration = app(
+            $documentRequest->configuration = resolve(
                 NormalizeQuestionnaireItemConfigurationAction::class,
             )->handle($documentRequest->type, []);
         });
@@ -148,6 +151,7 @@ final class DocumentRequest extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

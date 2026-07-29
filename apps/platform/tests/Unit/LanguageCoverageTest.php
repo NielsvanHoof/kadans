@@ -41,10 +41,12 @@ function translationKeysUsedInDirectory(string $directory): array
     );
 
     foreach ($iterator as $file) {
-        if (! $file->isFile() || $file->getExtension() !== 'php') {
+        if (! $file->isFile()) {
             continue;
         }
-
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
         $contents = (string) file_get_contents($file->getPathname());
 
         if (preg_match_all("/__\\('([^']+)'/", $contents, $matches) !== false) {
@@ -158,10 +160,12 @@ function flattenValidationKeys(array $lines): array
     $keys = [];
 
     foreach ($lines as $key => $value) {
-        if ($key === 'custom' || $key === 'attributes') {
+        if ($key === 'custom') {
             continue;
         }
-
+        if ($key === 'attributes') {
+            continue;
+        }
         if (is_array($value)) {
             foreach ($value as $nestedKey => $nestedValue) {
                 if (is_string($nestedValue)) {

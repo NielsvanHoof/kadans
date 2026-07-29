@@ -6,11 +6,8 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Policies\TenantMembershipPolicy;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
-
-test('members with manage permission can update memberships', function () {
+test('members with manage permission can update memberships', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $member = workspaceMember($tenant, Role::Adviser);
     $membership = TenantMembership::query()
@@ -18,7 +15,7 @@ test('members with manage permission can update memberships', function () {
         ->where('user_id', $member->id)
         ->firstOrFail();
 
-    $policy = app(TenantMembershipPolicy::class);
+    $policy = resolve(TenantMembershipPolicy::class);
 
     actingInWorkspace($tenant);
 
@@ -29,7 +26,7 @@ test('members with manage permission can update memberships', function () {
         ->and($policy->assignRole($owner, $membership, Role::Owner))->toBeTrue();
 });
 
-test('read-only users cannot manage memberships', function () {
+test('read-only users cannot manage memberships', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
     $member = workspaceMember($tenant, Role::Adviser);
@@ -38,7 +35,7 @@ test('read-only users cannot manage memberships', function () {
         ->where('user_id', $member->id)
         ->firstOrFail();
 
-    $policy = app(TenantMembershipPolicy::class);
+    $policy = resolve(TenantMembershipPolicy::class);
 
     actingInWorkspace($tenant);
 
@@ -46,7 +43,7 @@ test('read-only users cannot manage memberships', function () {
         ->and($policy->update($reader, $membership))->toBeFalse();
 });
 
-test('administrators cannot assign the owner role', function () {
+test('administrators cannot assign the owner role', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $admin = workspaceMember($tenant, Role::Administrator);
     $member = workspaceMember($tenant, Role::Adviser);
@@ -55,7 +52,7 @@ test('administrators cannot assign the owner role', function () {
         ->where('user_id', $member->id)
         ->firstOrFail();
 
-    $policy = app(TenantMembershipPolicy::class);
+    $policy = resolve(TenantMembershipPolicy::class);
 
     actingInWorkspace($tenant);
 
@@ -63,14 +60,14 @@ test('administrators cannot assign the owner role', function () {
         ->and($policy->assignRole($admin, $membership, Role::Reviewer))->toBeTrue();
 });
 
-test('the last owner cannot remove themselves', function () {
+test('the last owner cannot remove themselves', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $membership = TenantMembership::query()
         ->where('tenant_id', $tenant->id)
         ->where('user_id', $owner->id)
         ->firstOrFail();
 
-    $policy = app(TenantMembershipPolicy::class);
+    $policy = resolve(TenantMembershipPolicy::class);
 
     actingInWorkspace($tenant);
 

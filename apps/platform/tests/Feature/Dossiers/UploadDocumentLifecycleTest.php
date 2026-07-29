@@ -17,17 +17,18 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     Storage::fake('local');
     Queue::fake();
     config()->set('filesystems.default', 'local');
 });
 
-test('replacing an upload commits new metadata before deleting the old file', function () {
+test('replacing an upload commits new metadata before deleting the old file', function (): void {
     $documentRequest = createDocumentRequestForUploadLifecycleTest();
-    $upload = app(UploadDocumentForRequestAction::class);
+    $upload = resolve(UploadDocumentForRequestAction::class);
 
     $original = $upload->handle(
         $documentRequest,
@@ -55,9 +56,9 @@ test('replacing an upload commits new metadata before deleting the old file', fu
     );
 });
 
-test('a failed replacement keeps the previous database record and file', function () {
+test('a failed replacement keeps the previous database record and file', function (): void {
     $documentRequest = createDocumentRequestForUploadLifecycleTest();
-    $upload = app(UploadDocumentForRequestAction::class);
+    $upload = resolve(UploadDocumentForRequestAction::class);
 
     $original = $upload->handle(
         $documentRequest,
@@ -85,9 +86,9 @@ test('a failed replacement keeps the previous database record and file', functio
         ->and(Storage::disk('local')->allFiles())->toBe([$original->path]);
 });
 
-test('a failed initial upload removes the newly stored file', function () {
+test('a failed initial upload removes the newly stored file', function (): void {
     $documentRequest = createDocumentRequestForUploadLifecycleTest();
-    $upload = app(UploadDocumentForRequestAction::class);
+    $upload = resolve(UploadDocumentForRequestAction::class);
 
     $event = 'eloquent.creating: '.UploadedDocument::class;
     Event::listen($event, static function (): never {
@@ -105,17 +106,18 @@ test('a failed initial upload removes the newly stored file', function () {
 
     expect(UploadedDocument::query()->exists())->toBeFalse()
         ->and($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Pending)
-        ->and(Storage::disk('local')->allFiles())->toBe([]);
+        ->and(Storage::disk('local')->allFiles())
+        ->toBeEmpty();
 });
 
-test('deleting a document request removes its database graph and stored file', function () {
+test('deleting a document request removes its database graph and stored file', function (): void {
     $documentRequest = createDocumentRequestForUploadLifecycleTest();
-    $uploadedDocument = app(UploadDocumentForRequestAction::class)->handle(
+    $uploadedDocument = resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
         UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
     );
 
-    app(DeleteDocumentRequestAction::class)->handle($documentRequest);
+    resolve(DeleteDocumentRequestAction::class)->handle($documentRequest);
 
     expect(DocumentRequest::query()->whereKey($documentRequest->id)->exists())->toBeFalse()
         ->and(UploadedDocument::query()->whereKey($uploadedDocument->id)->exists())->toBeFalse();
@@ -123,9 +125,9 @@ test('deleting a document request removes its database graph and stored file', f
     Storage::disk('local')->assertMissing($uploadedDocument->path);
 });
 
-test('a failed document request deletion leaves its database graph and file intact', function () {
+test('a failed document request deletion leaves its database graph and file intact', function (): void {
     $documentRequest = createDocumentRequestForUploadLifecycleTest();
-    $uploadedDocument = app(UploadDocumentForRequestAction::class)->handle(
+    $uploadedDocument = resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
         UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
     );
@@ -136,7 +138,7 @@ test('a failed document request deletion leaves its database graph and file inta
     });
 
     try {
-        expect(fn () => app(DeleteDocumentRequestAction::class)->handle($documentRequest))
+        expect(fn () => resolve(DeleteDocumentRequestAction::class)->handle($documentRequest))
             ->toThrow(RuntimeException::class, 'Simulated database failure.');
     } finally {
         Event::forget($event);

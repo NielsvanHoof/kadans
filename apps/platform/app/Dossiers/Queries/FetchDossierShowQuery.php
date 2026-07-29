@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Queries;
 
+use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Models\DossierExport;
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Data\PipelineData;
@@ -25,11 +27,11 @@ use RuntimeException;
 
 use function in_array;
 
-final class FetchDossierShowQuery
+final readonly class FetchDossierShowQuery
 {
     public function __construct(
-        private readonly DetermineDocumentRequestVisibilityAction $determineVisibility,
-        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+        private DetermineDocumentRequestVisibilityAction $determineVisibility,
+        private ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
     ) {}
 
     public function handle(Dossier $dossier, bool $canDownload = false): DossierShowData
@@ -73,7 +75,7 @@ final class FetchDossierShowQuery
             $reviewer = $documentRequest->reviewedBy;
             $latestPipeline = null;
 
-            if ($uploaded instanceof \App\Dossiers\Models\UploadedDocument && $uploaded->relationLoaded('pipelines')) {
+            if ($uploaded instanceof UploadedDocument && $uploaded->relationLoaded('pipelines')) {
                 $latestPipeline = $uploaded->pipelines->sortByDesc('id')->first();
             }
 
@@ -129,7 +131,7 @@ final class FetchDossierShowQuery
 
         /** @var list<DossierExportData> $exports */
         $exports = $dossier->exports
-            ->map(fn ($export): DossierExportData => DossierExportData::fromModel($export, $canDownload))
+            ->map(fn (DossierExport $export): DossierExportData => DossierExportData::fromModel($export, $canDownload))
             ->all();
 
         return new DossierShowData(
@@ -174,9 +176,7 @@ final class FetchDossierShowQuery
     {
         $client = $dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         return $client;
     }

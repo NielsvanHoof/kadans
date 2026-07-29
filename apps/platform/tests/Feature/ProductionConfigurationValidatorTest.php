@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Request;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
 
 beforeEach(function (): void {
@@ -31,7 +32,7 @@ beforeEach(function (): void {
 });
 
 test('safe production configuration passes validation', function (): void {
-    app(ProductionConfigurationValidator::class)->validate();
+    resolve(ProductionConfigurationValidator::class)->validate();
 
     expect(true)->toBeTrue();
 });
@@ -39,7 +40,7 @@ test('safe production configuration passes validation', function (): void {
 test('production rejects unsafe configuration', function (string $key, mixed $value): void {
     config([$key => $value]);
 
-    expect(fn () => app(ProductionConfigurationValidator::class)->validate())
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
         ->toThrow(LogicException::class, $key);
 })->with([
     'debug mode' => ['app.debug', true],
@@ -74,18 +75,18 @@ test('non-production environments may use local services', function (): void {
         'queue.default' => 'sync',
     ]);
 
-    app(ProductionConfigurationValidator::class)->validate();
+    resolve(ProductionConfigurationValidator::class)->validate();
 
     expect(true)->toBeTrue();
 });
 
 test('composer package discovery can run before production configuration exists', function (): void {
     config(['app.url' => 'http://localhost']);
-    $originalArguments = $_SERVER['argv'] ?? null;
+    $originalArguments = Request::server('argv') ?? null;
     $_SERVER['argv'] = ['artisan', 'package:discover', '--ansi'];
 
     try {
-        app(ProductionConfigurationValidator::class)->validate();
+        resolve(ProductionConfigurationValidator::class)->validate();
     } finally {
         if ($originalArguments === null) {
             unset($_SERVER['argv']);

@@ -7,7 +7,7 @@ use App\Clients\Models\Client;
 use App\Clients\Policies\ClientPolicy;
 use App\Tenancy\Enums\Role;
 
-test('owner can viewAny, view, create, update, restore, and delete clients', function () {
+test('owner can viewAny, view, create, update, restore, and delete clients', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -21,7 +21,7 @@ test('owner can viewAny, view, create, update, restore, and delete clients', fun
         ->and($policy->delete($owner, $client))->toBeTrue();
 });
 
-test('read-only members cannot manage clients', function () {
+test('read-only members cannot manage clients', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
 
@@ -36,7 +36,7 @@ test('read-only members cannot manage clients', function () {
         ->and($policy->delete($reader, $client))->toBeFalse();
 });
 
-test('users outside the tenant cannot view a client', function () {
+test('users outside the tenant cannot view a client', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);

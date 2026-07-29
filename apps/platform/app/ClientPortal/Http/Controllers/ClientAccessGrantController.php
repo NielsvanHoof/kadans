@@ -29,9 +29,7 @@ final class ClientAccessGrantController extends Controller
 
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
 
         $sendInvite = (bool) ($request->validated('send_invite') ?? true);
 
@@ -76,9 +74,7 @@ final class ClientAccessGrantController extends Controller
 
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(Response::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
 
         $revokeClientPortalAccess->handle($grant, $user);
 

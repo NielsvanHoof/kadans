@@ -37,7 +37,7 @@ final class CreateOwnerCommand extends Command
         $email = $this->resolveEmail();
         $role = $this->resolveRole();
 
-        if ($role === null) {
+        if (!$role instanceof Role) {
             return self::FAILURE;
         }
 
@@ -183,8 +183,8 @@ final class CreateOwnerCommand extends Command
             label: 'Firm',
             default: "{$name}'s firm",
             required: true,
-            hint: 'Optional — press enter to use the default.',
             validate: ['firm' => 'required|string|max:255'],
+            hint: 'Optional — press enter to use the default.',
             transform: fn (string $value): string => mb_trim($value),
         );
     }
@@ -199,7 +199,6 @@ final class CreateOwnerCommand extends Command
 
         $password = password(
             label: 'Password',
-            hint: 'Leave empty to generate a random password.',
             validate: function (string $value): ?string {
                 if ($value === '') {
                     return null;
@@ -214,6 +213,7 @@ final class CreateOwnerCommand extends Command
                     ? $validator->errors()->first('password')
                     : null;
             },
+            hint: 'Leave empty to generate a random password.',
         );
 
         return $password !== '' ? $password : Str::password(20);

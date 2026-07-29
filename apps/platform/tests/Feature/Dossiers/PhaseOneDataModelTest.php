@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\QueryException;
 use App\Accounts\Models\User;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
@@ -14,15 +15,16 @@ use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('staff can create the phase one document collection graph', function () {
+test('staff can create the phase one document collection graph', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -69,15 +71,15 @@ test('staff can create the phase one document collection graph', function () {
         ->and($grant->dossier->is($dossier))->toBeTrue();
 });
 
-test('tenant owned records cannot be queried without an active tenant', function () {
+test('tenant owned records cannot be queried without an active tenant', function (): void {
     expect(fn () => Client::query()->count())
         ->toThrow(RuntimeException::class, 'Cannot query tenant-owned records without an active tenant.');
 });
 
-test('phase one models are isolated per tenant', function () {
+test('phase one models are isolated per tenant', function (): void {
     $owner = User::factory()->create();
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $owner);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $owner);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $owner);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $owner);
 
     $tenantA->makeCurrent();
 
@@ -93,10 +95,10 @@ test('phase one models are isolated per tenant', function () {
         ->and(Dossier::query()->whereKey($dossierA->id)->exists())->toBeFalse();
 });
 
-test('composite tenant foreign keys reject cross tenant dossier links', function () {
+test('composite tenant foreign keys reject cross tenant dossier links', function (): void {
     $owner = User::factory()->create();
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $owner);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $owner);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $owner);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $owner);
 
     $tenantA->makeCurrent();
     $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
@@ -116,12 +118,12 @@ test('composite tenant foreign keys reject cross tenant dossier links', function
         'tenant_id' => $tenantB->id,
         'dossier_id' => $dossierA->id,
         'title' => 'Invalid request',
-    ]))->toThrow(Illuminate\Database\QueryException::class);
+    ]))->toThrow(QueryException::class);
 });
 
-test('client access grant validity reflects expiry and revocation', function () {
+test('client access grant validity reflects expiry and revocation', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 

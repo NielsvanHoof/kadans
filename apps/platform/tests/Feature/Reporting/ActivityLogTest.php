@@ -17,15 +17,16 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('owner can view the activity log with structured audit entries', function () {
+test('owner can view the activity log with structured audit entries', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -40,7 +41,7 @@ test('owner can view the activity log with structured audit entries', function (
     // Clear dossier-created noise so the manual view event is easy to assert.
     Activity::query()->delete();
 
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossier,
         causer: $owner,
@@ -51,7 +52,7 @@ test('owner can view the activity log with structured audit entries', function (
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.activity.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/activity/index')
             ->has('activities.data', 1)
             ->where('activities.total', 1)
@@ -64,11 +65,11 @@ test('owner can view the activity log with structured audit entries', function (
             ->where('activities.data.0.subject.name', 'Payroll 2025'));
 });
 
-test('activity log does not include entries from another tenant', function () {
+test('activity log does not include entries from another tenant', function (): void {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     setPermissionsTeamId($tenantB->id);
@@ -79,7 +80,7 @@ test('activity log does not include entries from another tenant', function () {
         'title' => 'Foreign dossier',
     ]);
     Activity::query()->delete();
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossierB,
         causer: $ownerB,
@@ -95,7 +96,7 @@ test('activity log does not include entries from another tenant', function () {
         'title' => 'Own dossier',
     ]);
     Activity::query()->delete();
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierCompleted,
         $dossierA,
         causer: $ownerA,
@@ -106,16 +107,16 @@ test('activity log does not include entries from another tenant', function () {
         ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.activity.index', $tenantA))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/activity/index')
             ->has('activities.data', 1)
             ->where('activities.data.0.event', AuditEvent::DossierCompleted->value)
             ->where('activities.data.0.subject.name', 'Own dossier'));
 });
 
-test('activity log resolves client access grant subjects using the dossier title', function () {
+test('activity log resolves client access grant subjects using the dossier title', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -127,11 +128,11 @@ test('activity log resolves client access grant subjects using the dossier title
         'title' => 'Annual accounts 2025',
     ]);
 
-    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     Activity::query()->delete();
 
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::ClientPortalAccessGrantCreated,
         $result['grant'],
         causer: $owner,
@@ -142,7 +143,7 @@ test('activity log resolves client access grant subjects using the dossier title
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.activity.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/activity/index')
             ->has('activities.data', 1)
             ->where('activities.data.0.event', AuditEvent::ClientPortalAccessGrantCreated->value)
@@ -151,10 +152,10 @@ test('activity log resolves client access grant subjects using the dossier title
             ->where('activities.data.0.subject.name', 'Annual accounts 2025'));
 });
 
-test('reviewer cannot view the activity log', function () {
+test('reviewer cannot view the activity log', function (): void {
     $owner = User::factory()->create();
     $reviewer = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -177,15 +178,15 @@ test('reviewer cannot view the activity log', function () {
         ->assertForbidden();
 });
 
-test('guests cannot view the activity log', function () {
+test('guests cannot view the activity log', function (): void {
     $this->get(workspaceRoute('workspaces.activity.index', 'acme-accountants'))
         ->assertRedirect(route('login'));
 });
 
-test('activity log can be filtered by actor and date range', function () {
+test('activity log can be filtered by actor and date range', function (): void {
     $owner = User::factory()->create(['name' => 'Owner User']);
     $other = User::factory()->create(['name' => 'Other User']);
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -199,7 +200,7 @@ test('activity log can be filtered by actor and date range', function () {
 
     Activity::query()->delete();
 
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossier,
         causer: $owner,
@@ -208,7 +209,7 @@ test('activity log can be filtered by actor and date range', function () {
 
     $this->travel(2)->days();
 
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierCompleted,
         $dossier,
         causer: $other,
@@ -222,7 +223,7 @@ test('activity log can be filtered by actor and date range', function () {
             .'?'.http_build_query(['filter' => ['causer_id' => (string) $owner->id]]),
         )
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/activity/index')
             ->has('activities.data', 1)
             ->where('activities.data.0.event', AuditEvent::DossierViewed->value)
@@ -243,7 +244,7 @@ test('activity log can be filtered by actor and date range', function () {
             ]),
         )
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/activity/index')
             ->has('activities.data', 1)
             ->where('activities.data.0.event', AuditEvent::DossierCompleted->value));

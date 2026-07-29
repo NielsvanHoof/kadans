@@ -77,8 +77,10 @@ final class TextractFormsTablesMapper
             }
 
             $entityTypes = $block['EntityTypes'] ?? [];
-
-            if (! is_array($entityTypes) || ! in_array('KEY', $entityTypes, true)) {
+            if (! is_array($entityTypes)) {
+                continue;
+            }
+            if (! in_array('KEY', $entityTypes, true)) {
                 continue;
             }
 
@@ -133,15 +135,25 @@ final class TextractFormsTablesMapper
 
             foreach ($this->relationshipIds($block, 'CHILD') as $childId) {
                 $cell = $byId[$childId] ?? null;
-
-                if ($cell === null || ($cell['BlockType'] ?? null) !== 'CELL') {
+                if ($cell === null) {
+                    continue;
+                }
+                if (($cell['BlockType'] ?? null) !== 'CELL') {
                     continue;
                 }
 
                 $rowIndex = $cell['RowIndex'] ?? null;
                 $colIndex = $cell['ColumnIndex'] ?? null;
-
-                if (! is_int($rowIndex) || ! is_int($colIndex) || $rowIndex < 1 || $colIndex < 1) {
+                if (! is_int($rowIndex)) {
+                    continue;
+                }
+                if (! is_int($colIndex)) {
+                    continue;
+                }
+                if ($rowIndex < 1) {
+                    continue;
+                }
+                if ($colIndex < 1) {
                     continue;
                 }
 
@@ -158,8 +170,10 @@ final class TextractFormsTablesMapper
                     $this->resolveChildText($cell, $byId, 'CHILD'),
                 );
             }
-
-            if ($maxRow === 0 || $maxCol === 0) {
+            if ($maxRow === 0) {
+                continue;
+            }
+            if ($maxCol === 0) {
                 continue;
             }
 

@@ -13,7 +13,8 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Storage::fake('local');
@@ -43,14 +44,14 @@ test('expired archived dossier is permanently purged with files and activity log
 
     Storage::disk('local')->put($uploadedDocument->path, 'retention-test-content');
 
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossier,
         [],
         null,
         false,
     );
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DocumentRequestCreated,
         $documentRequest,
         [],
@@ -109,7 +110,7 @@ test('expired archived client is purged only after dossiers are hard deleted', f
         'client_id' => $client->id,
     ]);
 
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::ClientDeleted,
         $client,
         ['name' => $client->name],

@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Providers\AppServiceProvider;
+use App\Providers\FortifyServiceProvider;
+use App\Providers\HealthServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\FortifyServiceProvider::class,
-    App\Providers\HealthServiceProvider::class,
+    AppServiceProvider::class,
+    FortifyServiceProvider::class,
+    HealthServiceProvider::class,
 ];

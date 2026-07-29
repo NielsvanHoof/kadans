@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Models;
 
+use Override;
 use App\Accounts\Models\User;
 use App\Audit\Concerns\LogsTenantAuditableActivity;
 use App\ClientPortal\Models\ClientAccessGrant;
@@ -63,6 +64,7 @@ final class Dossier extends Model
     /**
      * @var array<string, mixed>
      */
+    #[Override]
     protected $attributes = [
         'status' => 'draft',
     ];
@@ -176,6 +178,7 @@ final class Dossier extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

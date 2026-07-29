@@ -17,10 +17,10 @@ use Illuminate\Support\Str;
 use function array_key_exists;
 use function is_string;
 
-final class ApplyQuestionnaireTemplateToDossierAction
+final readonly class ApplyQuestionnaireTemplateToDossierAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     /**

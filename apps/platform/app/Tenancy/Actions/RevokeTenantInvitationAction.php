@@ -10,9 +10,9 @@ use App\Audit\Enums\AuditEvent;
 use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Validation\ValidationException;
 
-final class RevokeTenantInvitationAction
+final readonly class RevokeTenantInvitationAction
 {
-    public function __construct(private readonly LogAuditActivityAction $logAuditActivity) {}
+    public function __construct(private LogAuditActivityAction $logAuditActivity) {}
 
     public function handle(TenantInvitation $invitation, User $revokedBy): void
     {

@@ -31,9 +31,7 @@ final class UpdateDossierRequest extends FormRequest
     {
         $dossier = $this->route('dossier');
 
-        if (! $dossier instanceof Dossier) {
-            throw new RuntimeException('Cannot update a dossier without route model binding.');
-        }
+        throw_unless($dossier instanceof Dossier, RuntimeException::class, 'Cannot update a dossier without route model binding.');
 
         return [
             'title' => ['required', 'string', 'max:255'],
@@ -61,9 +59,7 @@ final class UpdateDossierRequest extends FormRequest
     {
         $tenant = Tenant::current();
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Cannot validate a dossier without an active tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot validate a dossier without an active tenant.');
 
         return $tenant->id;
     }

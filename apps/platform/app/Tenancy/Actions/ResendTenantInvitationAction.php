@@ -60,13 +60,13 @@ final class ResendTenantInvitationAction
 
         Notification::route('mail', $invitation->email)
             ->notify(
-                (new WorkspaceMemberInviteNotification(
+                new WorkspaceMemberInviteNotification(
                     invitationId: $invitation->id,
                     firmName: $tenant->name,
                     role: $invitation->role,
                     acceptUrl: $acceptUrl,
                     expiresAt: $expiresAt,
-                ))->locale($locale),
+                )->locale($locale),
             );
 
         return [

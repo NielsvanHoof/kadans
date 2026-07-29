@@ -15,13 +15,13 @@ use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 
-final class SubmitPortalAnswerAction
+final readonly class SubmitPortalAnswerAction
 {
     public function __construct(
-        private readonly SubmitQuestionnaireAnswerAction $submitQuestionnaireAnswer,
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly DossierTransitions $dossierTransitions,
-        private readonly NotifyWorkspaceIfQuestionnaireCompleteAction $notifyWorkspaceIfQuestionnaireComplete,
+        private SubmitQuestionnaireAnswerAction $submitQuestionnaireAnswer,
+        private LogAuditActivityAction $logAuditActivity,
+        private DossierTransitions $dossierTransitions,
+        private NotifyWorkspaceIfQuestionnaireCompleteAction $notifyWorkspaceIfQuestionnaireComplete,
     ) {}
 
     /**

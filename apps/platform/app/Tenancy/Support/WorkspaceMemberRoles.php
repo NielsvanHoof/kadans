@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Support;
 
+use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
@@ -69,7 +70,7 @@ final class WorkspaceMemberRoles
             ->join($rolesTable, "{$rolesTable}.id", '=', "{$modelHasRolesTable}.role_id")
             ->where("{$modelHasRolesTable}.model_type", (new User)->getMorphClass())
             ->where("{$modelHasRolesTable}.{$teamForeignKey}", $tenant->id)
-            ->where(function ($query) use ($rolesTable, $teamForeignKey, $tenant): void {
+            ->where(function (Builder $query) use ($rolesTable, $teamForeignKey, $tenant): void {
                 // Match Spatie's teams scope: global roles or this tenant's roles.
                 $query->whereNull("{$rolesTable}.{$teamForeignKey}")
                     ->orWhere("{$rolesTable}.{$teamForeignKey}", $tenant->id);
@@ -217,9 +218,7 @@ final class WorkspaceMemberRoles
             $tenant = $membership->tenant;
         }
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Membership is missing its tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Membership is missing its tenant.');
 
         return $tenant;
     }

@@ -14,29 +14,30 @@ use Spatie\Permission\Models\Role as RoleModel;
 
 use function Pest\Laravel\artisan;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-it('creates a permission row for every registered permission', function () {
-    app(SyncTenantRolesAction::class)->handle();
+it('creates a permission row for every registered permission', function (): void {
+    resolve(SyncTenantRolesAction::class)->handle();
 
     $stored = PermissionModel::query()->where('guard_name', 'web')->pluck('name')->all();
 
-    expect($stored)->toEqualCanonicalizing(app(PermissionRegistry::class)->values());
+    expect($stored)->toEqualCanonicalizing(resolve(PermissionRegistry::class)->values());
 });
 
-it('is a no-op when run twice', function () {
-    app(SyncTenantRolesAction::class)->handle();
+it('is a no-op when run twice', function (): void {
+    resolve(SyncTenantRolesAction::class)->handle();
 
-    $second = app(SyncTenantRolesAction::class)->handle();
+    $second = resolve(SyncTenantRolesAction::class)->handle();
 
     expect($second['permissions_created'])->toBe(0)
         ->and($second['roles_created'])->toBe(0);
 });
 
-it('gives each role exactly the permissions the registry declares', function () {
+it('gives each role exactly the permissions the registry declares', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
-    $registry = app(PermissionRegistry::class);
+    $registry = resolve(PermissionRegistry::class);
 
     foreach (Role::cases() as $roleEnum) {
         $role = RoleModel::query()
@@ -52,7 +53,7 @@ it('gives each role exactly the permissions the registry declares', function () 
     }
 });
 
-it('grants a permission that a role is newly entitled to', function () {
+it('grants a permission that a role is newly entitled to', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $role = RoleModel::query()
@@ -65,14 +66,14 @@ it('grants a permission that a role is newly entitled to', function () {
     expect($role->fresh()->permissions->pluck('name'))
         ->not->toContain(DossierPermission::View->value);
 
-    app(SyncTenantRolesAction::class)->syncTenant($tenant);
+    resolve(SyncTenantRolesAction::class)->syncTenant($tenant);
 
     // Sync restores what the registry declares.
     expect($role->fresh()->permissions->pluck('name'))
         ->toContain(DossierPermission::View->value);
 });
 
-it('revokes a permission a role should no longer hold', function () {
+it('revokes a permission a role should no longer hold', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $role = RoleModel::query()
@@ -84,13 +85,13 @@ it('revokes a permission a role should no longer hold', function () {
     expect($role->fresh()->permissions->pluck('name'))
         ->toContain(DossierPermission::Delete->value);
 
-    app(SyncTenantRolesAction::class)->syncTenant($tenant);
+    resolve(SyncTenantRolesAction::class)->syncTenant($tenant);
 
     expect($role->fresh()->permissions->pluck('name'))
         ->not->toContain(DossierPermission::Delete->value);
 });
 
-it('reaches firms that already existed before a permission was added', function () {
+it('reaches firms that already existed before a permission was added', function (): void {
     ['tenant' => $tenantA] = provisionWorkspace('Firm A');
     ['tenant' => $tenantB] = provisionWorkspace('Firm B');
 
@@ -103,9 +104,9 @@ it('reaches firms that already existed before a permission was added', function 
             ->syncPermissions([]);
     }
 
-    app(SyncTenantRolesAction::class)->handle();
+    resolve(SyncTenantRolesAction::class)->handle();
 
-    $expected = app(PermissionRegistry::class)->valuesForRole(Role::Adviser);
+    $expected = resolve(PermissionRegistry::class)->valuesForRole(Role::Adviser);
 
     foreach ([$tenantA, $tenantB] as $tenant) {
         $role = RoleModel::query()
@@ -117,33 +118,33 @@ it('reaches firms that already existed before a permission was added', function 
     }
 });
 
-it('prunes permissions that are no longer declared in code only when asked', function () {
-    app(SyncTenantRolesAction::class)->handle();
+it('prunes permissions that are no longer declared in code only when asked', function (): void {
+    resolve(SyncTenantRolesAction::class)->handle();
 
     PermissionModel::query()->create(['name' => 'legacy.permission', 'guard_name' => 'web']);
 
-    $withoutPrune = app(SyncTenantRolesAction::class)->handle();
+    $withoutPrune = resolve(SyncTenantRolesAction::class)->handle();
 
     expect($withoutPrune['permissions_pruned'])->toBe(0)
         ->and(PermissionModel::query()->where('name', 'legacy.permission')->exists())->toBeTrue();
 
-    $withPrune = app(SyncTenantRolesAction::class)->handle(prune: true);
+    $withPrune = resolve(SyncTenantRolesAction::class)->handle(prune: true);
 
     expect($withPrune['permissions_pruned'])->toBe(1)
         ->and(PermissionModel::query()->where('name', 'legacy.permission')->exists())->toBeFalse();
 });
 
-it('restores the previous permission team context after syncing', function () {
+it('restores the previous permission team context after syncing', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $before = getPermissionsTeamId();
 
-    app(SyncTenantRolesAction::class)->syncTenant($tenant);
+    resolve(SyncTenantRolesAction::class)->syncTenant($tenant);
 
     expect(getPermissionsTeamId())->toBe($before);
 });
 
-it('resolves a role assignment into the individual permissions it grants', function () {
+it('resolves a role assignment into the individual permissions it grants', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $adviser = workspaceMember($tenant, Role::Adviser);
@@ -156,7 +157,7 @@ it('resolves a role assignment into the individual permissions it grants', funct
         ->and($adviser->hasTenantPermission(AuditPermission::View, $tenant))->toBeFalse();
 });
 
-it('reports what it changed via the console command', function () {
+it('reports what it changed via the console command', function (): void {
     artisan('tenancy:sync-roles')
         ->assertSuccessful();
 

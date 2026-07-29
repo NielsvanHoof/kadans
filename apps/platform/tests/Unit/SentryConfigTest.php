@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-test('sentry dsn is disabled for local and testing environments', function () {
+test('sentry dsn is disabled for local and testing environments', function (): void {
     $config = (string) file_get_contents(dirname(__DIR__, 2).'/config/sentry.php');
 
     // Empty DSN disables the SDK; keep local/testing from reporting even when a DSN is set.

@@ -23,14 +23,14 @@ use function is_array;
  * Session-backed, time-boxed read-only access to a single firm for platform support.
  * Does not create TenantMembership rows.
  */
-final class SupportSession
+final readonly class SupportSession
 {
     public const string SESSION_KEY = 'platform_support';
 
     /** Default support session length. */
     public const int DEFAULT_TTL_HOURS = 2;
 
-    public function __construct(private readonly Session $session) {}
+    public function __construct(private Session $session) {}
 
     /**
      * Permissions granted while in an active support session (read-only).
@@ -68,13 +68,9 @@ final class SupportSession
     {
         $reason = mb_trim($reason);
 
-        if ($reason === '') {
-            throw new InvalidArgumentException('A support session reason is required.');
-        }
+        throw_if($reason === '', InvalidArgumentException::class, 'A support session reason is required.');
 
-        if (! $user->isPlatformSupport()) {
-            throw new InvalidArgumentException('Only platform support users can start a support session.');
-        }
+        throw_unless($user->isPlatformSupport(), InvalidArgumentException::class, 'Only platform support users can start a support session.');
 
         $now = now();
         $data = new SupportSessionData(

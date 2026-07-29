@@ -54,15 +54,11 @@ final class ScoutSearchFilter
     {
         $search = [$modelClass, 'search'];
 
-        if (! is_callable($search)) {
-            throw new InvalidArgumentException("{$modelClass} is not searchable via Scout.");
-        }
+        throw_unless(is_callable($search), InvalidArgumentException::class, "{$modelClass} is not searchable via Scout.");
 
         $scoutBuilder = $search($value);
 
-        if (! $scoutBuilder instanceof ScoutBuilder) {
-            throw new InvalidArgumentException("{$modelClass}::search() must return a Scout builder.");
-        }
+        throw_unless($scoutBuilder instanceof ScoutBuilder, InvalidArgumentException::class, "{$modelClass}::search() must return a Scout builder.");
 
         if ($onlyTrashed) {
             $scoutBuilder->onlyTrashed();

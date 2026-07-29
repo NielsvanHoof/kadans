@@ -65,7 +65,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         OcrOrchestrator $ocrOrchestrator,
         LogAuditActivityAction $logAuditActivity,
-        ?PipelineStateAction $pipelineState = null,
+        PipelineStateAction $pipelineState,
     ): void {
         $document = UploadedDocument::query()->findOrFail($this->uploadedDocumentId);
 
@@ -101,13 +101,13 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         try {
             $pipeline = $this->resolvePipeline();
 
-            if ($pipeline instanceof Pipeline && $pipelineState instanceof PipelineStateAction) {
+            if ($pipeline instanceof Pipeline) {
                 $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'submit');
             }
 
             $outcome = $ocrOrchestrator->startProcessing($claimed);
 
-            if ($pipeline instanceof Pipeline && $pipelineState instanceof PipelineStateAction) {
+            if ($pipeline instanceof Pipeline) {
                 $this->recordOutcome($pipeline, $outcome, $claimed, $pipelineState);
             }
         } catch (Throwable $exception) {
@@ -168,21 +168,16 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
-    public function failed(
-        Throwable $exception,
-        ?PipelineStateAction $pipelineState = null,
-    ): void {
+    public function failed(Throwable $exception): void
+    {
         $pipeline = $this->resolvePipeline();
 
-        if (
-            ! $pipeline instanceof Pipeline
-            || ! $pipelineState instanceof PipelineStateAction
-            || $pipeline->status->isTerminal()
-        ) {
+        // failed() is invoked as $job->failed($e) — resolve deps from the container.
+        if (! $pipeline instanceof Pipeline || $pipeline->status->isTerminal()) {
             return;
         }
 
-        $pipelineState->handle(
+        app(PipelineStateAction::class)->handle(
             $pipeline,
             PipelineStepOperation::Fail,
             $pipeline->current_stage,

@@ -19,9 +19,7 @@ abstract class Controller
     {
         $tenant = request()->route('tenant');
 
-        if (! $tenant instanceof UrlRoutable) {
-            abort(404);
-        }
+        abort_unless($tenant instanceof UrlRoutable, 404);
 
         return ['tenant' => $tenant, ...$parameters];
     }

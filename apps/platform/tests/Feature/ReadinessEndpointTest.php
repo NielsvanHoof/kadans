@@ -63,7 +63,7 @@ test('operational health details require authentication', function (): void {
 });
 
 test('queue schedule and health heartbeats are scheduled every minute', function (): void {
-    $commands = collect(app(Schedule::class)->events())
+    $commands = collect(resolve(Schedule::class)->events())
         ->map(fn ($event): string => (string) $event->command)
         ->implode(' ');
 
@@ -74,7 +74,7 @@ test('queue schedule and health heartbeats are scheduled every minute', function
 });
 
 test('retention and pruning tasks are scheduled', function (): void {
-    $commands = collect(app(Schedule::class)->events())
+    $commands = collect(resolve(Schedule::class)->events())
         ->map(fn ($event): string => (string) $event->command)
         ->implode(' ');
 

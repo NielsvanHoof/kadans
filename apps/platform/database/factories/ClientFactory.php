@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Override;
 use App\Clients\Models\Client;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 final class ClientFactory extends Factory
 {
+    #[Override]
     protected $model = Client::class;
 
     /**

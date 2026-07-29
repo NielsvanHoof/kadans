@@ -11,11 +11,11 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 
-final class RegisterAndAcceptTenantInvitationAction
+final readonly class RegisterAndAcceptTenantInvitationAction
 {
     public function __construct(
-        private readonly CreateNewUser $createNewUser,
-        private readonly AcceptTenantInvitationAction $acceptTenantInvitation,
+        private CreateNewUser $createNewUser,
+        private AcceptTenantInvitationAction $acceptTenantInvitation,
     ) {}
 
     /**

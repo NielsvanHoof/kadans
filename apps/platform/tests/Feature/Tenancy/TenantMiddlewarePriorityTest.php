@@ -8,19 +8,18 @@ use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 
-test('tenant initialization middleware runs before route model binding', function () {
+test('tenant initialization middleware runs before route model binding', function (): void {
     /** @var Kernel $kernel */
-    $kernel = app(Kernel::class);
+    $kernel = resolve(Kernel::class);
 
     $priorityProperty = new ReflectionProperty(Kernel::class, 'middlewarePriority');
-    $priorityProperty->setAccessible(true);
 
     /** @var list<class-string> $priority */
     $priority = $priorityProperty->getValue($kernel);
 
     $substituteBindingsIndex = array_search(SubstituteBindings::class, $priority, true);
 
-    expect($substituteBindingsIndex)->not->toBeFalse();
+    expect($substituteBindingsIndex)->toBeTrue();
 
     $tenantMiddleware = [
         InitializeTenantFromSession::class,
@@ -31,7 +30,7 @@ test('tenant initialization middleware runs before route model binding', functio
     foreach ($tenantMiddleware as $middleware) {
         $index = array_search($middleware, $priority, true);
 
-        expect($index)->not->toBeFalse()
+        expect($index)->toBeTrue()
             ->and($index)->toBeLessThan($substituteBindingsIndex);
     }
 

@@ -7,7 +7,7 @@ use App\Clients\Queries\FetchClientIndexQuery;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Http\Request;
 
-test('fetch client index maps rows and exposes toolbar metadata', function () {
+test('fetch client index maps rows and exposes toolbar metadata', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
@@ -23,8 +23,8 @@ test('fetch client index maps rows and exposes toolbar metadata', function () {
     // Bind an empty request so Spatie Query Builder can read filters/sorts.
     app()->instance('request', Request::create('/clients', 'GET'));
 
-    $paginator = app(FetchClientIndexQuery::class)->handle();
-    $toolbar = app(FetchClientIndexQuery::class)->toolbarMetadata();
+    $paginator = resolve(FetchClientIndexQuery::class)->handle();
+    $toolbar = resolve(FetchClientIndexQuery::class)->toolbarMetadata();
 
     expect($paginator->total())->toBe(1)
         ->and($paginator->items()[0])->toMatchArray([

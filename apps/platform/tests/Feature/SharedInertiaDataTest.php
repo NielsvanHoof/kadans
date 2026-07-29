@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Support\Header;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
 /**
  * @param  array<string, string>  $additionalHeaders
@@ -21,19 +22,19 @@ function sharedDataInertiaHeaders(array $additionalHeaders = []): array
 {
     return [
         Header::INERTIA => 'true',
-        Header::VERSION => app(HandleInertiaRequests::class)->version(request()) ?? '',
+        Header::VERSION => resolve(HandleInertiaRequests::class)->version(request()) ?? '',
         ...$additionalHeaders,
     ];
 }
 
-test('shared authenticated user data is explicitly projected', function () {
+test('shared authenticated user data is explicitly projected', function (): void {
     $user = User::factory()->create();
 
     // Profile is always reachable for verified users (unlike `/`, which may redirect).
     $this->actingAs($user)
         ->get(route('profile.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('settings/profile')
             ->where('auth.user', [
                 'id' => $user->id,
@@ -44,12 +45,12 @@ test('shared authenticated user data is explicitly projected', function () {
             ]));
 });
 
-test('workspace navigation is remembered as a once prop', function () {
+test('workspace navigation is remembered as a once prop', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    app(ProvisionTenantAction::class)->handle('Beta Tax', $user);
-    app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    resolve(ProvisionTenantAction::class)->handle('Beta Tax', $user);
+    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->withHeaders(sharedDataInertiaHeaders())
@@ -62,13 +63,13 @@ test('workspace navigation is remembered as a once prop', function () {
         ->assertJsonPath('onceProps.workspaces.prop', 'workspaces');
 });
 
-test('remembered workspace navigation is not queried on every inertia response', function () {
+test('remembered workspace navigation is not queried on every inertia response', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
     // Two firms so session middleware does not auto-select a tenant (and query further).
-    app(ProvisionTenantAction::class)->handle('Beta Tax', $user);
-    app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    resolve(ProvisionTenantAction::class)->handle('Beta Tax', $user);
+    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     DB::flushQueryLog();
     DB::enableQueryLog();
@@ -89,7 +90,7 @@ test('remembered workspace navigation is not queried on every inertia response',
     expect($workspaceNavigationQueries)->toBeEmpty();
 });
 
-test('workspace navigation is refreshed after provisioning a workspace', function () {
+test('workspace navigation is refreshed after provisioning a workspace', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();

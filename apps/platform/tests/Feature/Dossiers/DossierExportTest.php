@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Database\Seeders\RolesAndPermissionsSeeder;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
@@ -22,10 +23,11 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed(Database\Seeders\RolesAndPermissionsSeeder::class);
+    $this->seed(RolesAndPermissionsSeeder::class);
     Storage::fake('local');
     config(['exports.disk' => 'local']);
 });
@@ -82,9 +84,9 @@ test('the export job creates a ZIP manifest and copies uploaded documents', func
         'dossier_id' => $dossier->id,
         'requested_by' => $owner->id,
     ]);
-    $pipeline = app(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
 
-    app(GenerateDossierExportAction::class)->handle($pipeline->id);
+    resolve(GenerateDossierExportAction::class)->handle($pipeline->id);
     $export->refresh();
 
     expect($export->status)->toBe(DossierExportStatus::Completed)
@@ -92,7 +94,7 @@ test('the export job creates a ZIP manifest and copies uploaded documents', func
         ->and(Storage::disk('local')->exists($export->path))->toBeTrue();
 
     $archivePath = tempnam(sys_get_temp_dir(), 'dossier-export-test-');
-    expect($archivePath)->not->toBeFalse();
+    expect($archivePath)->toBeTrue();
     file_put_contents($archivePath, Storage::disk('local')->get($export->path));
 
     $archive = new ZipArchive();
@@ -184,7 +186,7 @@ test('expired export archives are deleted by retention pruning', function (): vo
         'expires_at' => now()->subMinute(),
     ]);
     Storage::disk('local')->put($export->path, 'archive');
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierExportCompleted,
         $export,
         [],
@@ -206,9 +208,9 @@ test('legal retention removes dossier exports and their audit records', function
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
     ]);
-    $pipeline = app(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
     Storage::disk('local')->put($export->path, 'archive');
-    app(LogAuditActivityAction::class)->handle(
+    resolve(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierExportCompleted,
         $export,
         [],

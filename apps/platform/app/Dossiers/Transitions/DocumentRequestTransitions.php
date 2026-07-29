@@ -65,16 +65,12 @@ final class DocumentRequestTransitions
         ?bool $answerBoolean = null,
         ?array $answerOptionIds = null,
     ): void {
-        if ($documentRequest->type === QuestionnaireItemType::File) {
-            throw new InvalidArgumentException('File items must be answered via upload.');
-        }
+        throw_if($documentRequest->type === QuestionnaireItemType::File, InvalidArgumentException::class, 'File items must be answered via upload.');
 
         $this->ensureCanBeSubmitted($documentRequest, $context);
 
         if ($documentRequest->type->storesAnswerText()) {
-            if ($answerText === null || mb_trim($answerText) === '') {
-                throw new InvalidArgumentException('A text answer is required.');
-            }
+            throw_if($answerText === null || mb_trim($answerText) === '', InvalidArgumentException::class, 'A text answer is required.');
 
             $documentRequest->update([
                 'answer_text' => mb_trim($answerText),
@@ -99,9 +95,7 @@ final class DocumentRequestTransitions
             return;
         }
 
-        if ($answerBoolean === null) {
-            throw new InvalidArgumentException('A yes/no answer is required.');
-        }
+        throw_if($answerBoolean === null, InvalidArgumentException::class, 'A yes/no answer is required.');
 
         $documentRequest->update([
             'answer_boolean' => $answerBoolean,
@@ -115,9 +109,7 @@ final class DocumentRequestTransitions
         DocumentRequest $documentRequest,
         SubmissionContext $context,
     ): void {
-        if ($documentRequest->type !== QuestionnaireItemType::File) {
-            throw new InvalidArgumentException('Only file items accept uploads.');
-        }
+        throw_if($documentRequest->type !== QuestionnaireItemType::File, InvalidArgumentException::class, 'Only file items accept uploads.');
 
         $this->ensureCanBeSubmitted($documentRequest, $context);
         $documentRequest->update($this->submittedState());
@@ -180,23 +172,17 @@ final class DocumentRequestTransitions
         DocumentRequest $documentRequest,
         ?array $answerOptionIds,
     ): void {
-        if ($answerOptionIds === null || $answerOptionIds === []) {
-            throw new InvalidArgumentException('At least one option must be selected.');
-        }
+        throw_if($answerOptionIds === null || $answerOptionIds === [], InvalidArgumentException::class, 'At least one option must be selected.');
 
-        if ($documentRequest->type === QuestionnaireItemType::Choice
-            && count($answerOptionIds) !== 1) {
-            throw new InvalidArgumentException('Choose exactly one option.');
-        }
+        throw_if($documentRequest->type === QuestionnaireItemType::Choice
+            && count($answerOptionIds) !== 1, InvalidArgumentException::class, 'Choose exactly one option.');
 
         $availableOptionIds = array_column(
             $documentRequest->configuration['options'] ?? [],
             'id',
         );
 
-        if (array_diff($answerOptionIds, $availableOptionIds) !== []) {
-            throw new InvalidArgumentException('The selected option is not available.');
-        }
+        throw_if(array_diff($answerOptionIds, $availableOptionIds) !== [], InvalidArgumentException::class, 'The selected option is not available.');
     }
 
     private function ensureCanBeReviewed(DocumentRequest $documentRequest): void

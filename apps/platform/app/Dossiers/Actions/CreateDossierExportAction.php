@@ -13,11 +13,11 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use Illuminate\Support\Facades\DB;
 
-final class CreateDossierExportAction
+final readonly class CreateDossierExportAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly CreatePipelineAction $createPipeline,
+        private LogAuditActivityAction $logAuditActivity,
+        private CreatePipelineAction $createPipeline,
     ) {}
 
     public function handle(Dossier $dossier, User $requestedBy): DossierExport

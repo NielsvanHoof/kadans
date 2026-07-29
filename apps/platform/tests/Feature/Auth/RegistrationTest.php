@@ -5,9 +5,10 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('public registration routes are unavailable', function () {
+test('public registration routes are unavailable', function (): void {
     expect(Route::has('register'))->toBeFalse()
         ->and(Route::has('register.store'))->toBeFalse();
 

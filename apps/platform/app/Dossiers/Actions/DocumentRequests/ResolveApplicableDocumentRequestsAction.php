@@ -14,10 +14,10 @@ use Illuminate\Support\Collection;
  * Hidden (conditional) fields are not applicable.
  * Optional fields that were never answered are also skipped.
  */
-final class ResolveApplicableDocumentRequestsAction
+final readonly class ResolveApplicableDocumentRequestsAction
 {
     public function __construct(
-        private readonly DetermineDocumentRequestVisibilityAction $determineVisibility,
+        private DetermineDocumentRequestVisibilityAction $determineVisibility,
     ) {}
 
     /**
@@ -33,13 +33,8 @@ final class ResolveApplicableDocumentRequestsAction
                 }
 
                 $isRequired = ($documentRequest->configuration['is_required'] ?? true) !== false;
-
                 // Optional unanswered fields do not block progress or completion.
-                if (! $isRequired && $documentRequest->status === DocumentRequestStatus::Pending) {
-                    return false;
-                }
-
-                return true;
+                return $isRequired || $documentRequest->status !== DocumentRequestStatus::Pending;
             })
             ->values();
     }

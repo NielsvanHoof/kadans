@@ -13,10 +13,10 @@ use function is_array;
 /**
  * Update a questionnaire item's editable attributes on the form builder.
  */
-final class UpdateDocumentRequestAction
+final readonly class UpdateDocumentRequestAction
 {
     public function __construct(
-        private readonly NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
+        private NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
     ) {}
 
     /**

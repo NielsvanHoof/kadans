@@ -9,9 +9,10 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('tenancy create-owner provisions a verified owner and firm', function () {
+test('tenancy create-owner provisions a verified owner and firm', function (): void {
     $this->artisan('tenancy:create-owner', [
         'name' => 'Ada Owner',
         'email' => 'ada@example.com',
@@ -37,7 +38,7 @@ test('tenancy create-owner provisions a verified owner and firm', function () {
     expect($user->fresh()->hasRole(Role::Owner->value))->toBeTrue();
 });
 
-test('tenancy create-owner rejects duplicate emails', function () {
+test('tenancy create-owner rejects duplicate emails', function (): void {
     User::factory()->create(['email' => 'ada@example.com']);
 
     $this->artisan('tenancy:create-owner', [
@@ -51,7 +52,7 @@ test('tenancy create-owner rejects duplicate emails', function () {
     expect(Tenant::query()->count())->toBe(0);
 });
 
-test('tenancy create-owner prompts for details and allows optional inputs', function () {
+test('tenancy create-owner prompts for details and allows optional inputs', function (): void {
     $roleOptions = collect(Role::cases())
         ->mapWithKeys(fn (Role $role): array => [$role->value => $role->label()])
         ->all();
@@ -69,6 +70,6 @@ test('tenancy create-owner prompts for details and allows optional inputs', func
 
     expect($user->name)->toBe('Grace Hopper')
         ->and($user->email_verified_at)->not->toBeNull()
-        ->and($user->password)->not->toBe('')
+        ->and($user->password)->not->toBeEmpty()
         ->and($tenant->name)->toBe("Grace Hopper's firm");
 });

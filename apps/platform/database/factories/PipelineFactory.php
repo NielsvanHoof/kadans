@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Override;
 use App\DocumentProcessing\Enums\PipelineStatus;
 use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Models\Pipeline;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
  */
 final class PipelineFactory extends Factory
 {
+    #[Override]
     protected $model = Pipeline::class;
 
     /**
@@ -47,6 +49,7 @@ final class PipelineFactory extends Factory
         ];
     }
 
+    #[Override]
     public function configure(): static
     {
         return $this->afterMaking(function (Pipeline $pipeline): void {

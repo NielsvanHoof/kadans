@@ -19,12 +19,14 @@ use function in_array;
 /**
  * Mark a Textract job as permanently failed after SQS receive exhaustion.
  */
-final class FailTextractExtractionAction
+final readonly class FailTextractExtractionAction
 {
     public function __construct(
-        private readonly MarkTextractExtractionFailedAction $markTextractExtractionFailed,
-        private readonly PipelineStateAction $pipelineState,
-        private readonly TenantContext $tenantContext,
+        private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
+        private PipelineStateAction $pipelineState,
+        private ResolveOcrPipelineForDocumentAction $resolveOcrPipeline,
+        private PrepareOcrPipelineForProviderResultAction $prepareOcrPipeline,
+        private TenantContext $tenantContext,
     ) {}
 
     public function handle(string $jobId, Throwable $exception): bool
@@ -55,12 +57,7 @@ final class FailTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $exception, $jobId): bool {
-            $pipelineId = $document->pipelines()
-                ->toBase()
-                ->where('provider_job_id', $jobId)
-                ->orderByDesc('id')
-                ->value('id');
-            $pipeline = is_numeric($pipelineId) ? Pipeline::query()->find((int) $pipelineId) : null;
+            $pipeline = $this->resolveOcrPipeline->handle($document, $jobId);
 
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
@@ -82,7 +79,12 @@ final class FailTextractExtractionAction
                 'RESULT_PROCESSING_FAILED',
             );
 
-            if ($pipeline !== null) {
+            if ($pipeline instanceof Pipeline) {
+                $pipeline = $this->prepareOcrPipeline->handle(
+                    $pipeline,
+                    (string) config('ocr.driver'),
+                    $jobId,
+                );
                 $this->pipelineState->handle(
                     $pipeline,
                     PipelineStepOperation::Fail,

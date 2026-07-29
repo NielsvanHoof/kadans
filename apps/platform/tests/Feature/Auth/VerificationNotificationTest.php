@@ -8,13 +8,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->skipUnlessFortifyHas(Features::emailVerification());
 });
 
-test('sends verification notification', function () {
+test('sends verification notification', function (): void {
     Notification::fake();
 
     $user = User::factory()->unverified()->create();
@@ -26,7 +27,7 @@ test('sends verification notification', function () {
     Notification::assertSentTo($user, VerifyEmail::class);
 });
 
-test('does not send verification notification if email is verified', function () {
+test('does not send verification notification if email is verified', function (): void {
     Notification::fake();
 
     $user = User::factory()->create();

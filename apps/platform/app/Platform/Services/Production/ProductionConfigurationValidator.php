@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform\Services\Production;
 
+use Illuminate\Support\Facades\Request;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use LogicException;
@@ -15,11 +16,11 @@ use function parse_url;
 use function sprintf;
 use function str_starts_with;
 
-final class ProductionConfigurationValidator
+final readonly class ProductionConfigurationValidator
 {
     public function __construct(
-        private readonly Application $application,
-        private readonly Repository $config,
+        private Application $application,
+        private Repository $config,
     ) {}
 
     public function validate(): void
@@ -111,7 +112,7 @@ final class ProductionConfigurationValidator
             return false;
         }
 
-        $arguments = $_SERVER['argv'] ?? [];
+        $arguments = Request::server('argv') ?? [];
 
         return in_array('package:discover', $arguments, true);
     }

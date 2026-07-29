@@ -18,9 +18,7 @@ trait BelongsToTenant
             if (! isset($model->getAttributes()['tenant_id'])) {
                 $tenant = Tenant::current();
 
-                if (! $tenant instanceof Tenant) {
-                    throw new RuntimeException('Cannot create tenant-owned records without an active tenant.');
-                }
+                throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot create tenant-owned records without an active tenant.');
 
                 $model->setAttribute('tenant_id', $tenant->getKey());
             }
@@ -29,9 +27,7 @@ trait BelongsToTenant
         static::addGlobalScope('tenant', function (Builder $builder): void {
             $tenant = Tenant::current();
 
-            if (! $tenant instanceof Tenant) {
-                throw new RuntimeException('Cannot query tenant-owned records without an active tenant.');
-            }
+            throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot query tenant-owned records without an active tenant.');
 
             $builder->where(
                 $builder->qualifyColumn('tenant_id'),

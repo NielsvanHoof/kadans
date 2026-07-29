@@ -16,15 +16,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('owners can view the members page', function () {
+test('owners can view the members page', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner)
         ->get(workspaceRoute('workspaces.members.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/members/index')
             ->has('members', 1)
             ->has('invitations', 0)
@@ -36,7 +37,7 @@ test('owners can view the members page', function () {
             ->where('members.0.role', Role::Owner->value));
 });
 
-test('members page does not re-query roles already loaded by authorization', function () {
+test('members page does not re-query roles already loaded by authorization', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     workspaceMember($tenant, Role::Adviser);
     workspaceMember($tenant, Role::Reviewer);
@@ -53,7 +54,7 @@ test('members page does not re-query roles already loaded by authorization', fun
     $this->actingAs($owner)
         ->get(workspaceRoute('workspaces.members.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/members/index')
             ->has('members', 3));
 
@@ -62,19 +63,19 @@ test('members page does not re-query roles already loaded by authorization', fun
     expect($rolePivotQueries)->toHaveCount(2);
 });
 
-test('administrators see can_assign_owner as false on the members page', function () {
+test('administrators see can_assign_owner as false on the members page', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $admin = workspaceMember($tenant, Role::Administrator);
 
     $this->actingAs($admin)
         ->get(workspaceRoute('workspaces.members.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/members/index')
             ->where('can_assign_owner', false));
 });
 
-test('read-only members cannot manage workspace members', function () {
+test('read-only members cannot manage workspace members', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
 
@@ -90,7 +91,7 @@ test('read-only members cannot manage workspace members', function () {
         ->assertForbidden();
 });
 
-test('owners can invite a member and send a notification', function () {
+test('owners can invite a member and send a notification', function (): void {
     Notification::fake();
 
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -116,7 +117,7 @@ test('owners can invite a member and send a notification', function () {
         ->exists())->toBeTrue();
 });
 
-test('administrators can invite but cannot assign the owner role', function () {
+test('administrators can invite but cannot assign the owner role', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $admin = workspaceMember($tenant, Role::Administrator);
 
@@ -128,7 +129,7 @@ test('administrators can invite but cannot assign the owner role', function () {
         ->assertSessionHasErrors('role');
 });
 
-test('an existing user can accept an invitation', function () {
+test('an existing user can accept an invitation', function (): void {
     Notification::fake();
 
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -170,14 +171,14 @@ test('an existing user can accept an invitation', function () {
     expect($membership->status)->toBe(TenantMembershipStatus::Active);
 
     actingInWorkspace($tenant);
-    expect($invitee->fresh()->hasRole(Role::Reviewer->value))->toBeTrue();
-
-    expect(Activity::query()
+    expect($invitee->fresh()->hasRole(Role::Reviewer->value))->toBeTrue()
+        ->and(Activity::query()
         ->where('event', AuditEvent::MemberInvitationAccepted->value)
-        ->exists())->toBeTrue();
+        ->exists())
+        ->toBeTrue();
 });
 
-test('a guest can register from an invitation', function () {
+test('a guest can register from an invitation', function (): void {
     Notification::fake();
 
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -222,7 +223,7 @@ test('a guest can register from an invitation', function () {
     expect($user->fresh()->hasRole(Role::Adviser->value))->toBeTrue();
 });
 
-test('owners can change a member role and it is audited', function () {
+test('owners can change a member role and it is audited', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $member = workspaceMember($tenant, Role::Adviser);
     $membership = TenantMembership::query()
@@ -240,14 +241,14 @@ test('owners can change a member role and it is audited', function () {
 
     actingInWorkspace($tenant);
     expect($member->fresh()->hasRole(Role::Reviewer->value))->toBeTrue()
-        ->and($member->fresh()->hasRole(Role::Adviser->value))->toBeFalse();
-
-    expect(Activity::query()
+        ->and($member->fresh()->hasRole(Role::Adviser->value))->toBeFalse()
+        ->and(Activity::query()
         ->where('event', AuditEvent::MemberRoleChanged->value)
-        ->exists())->toBeTrue();
+        ->exists())
+        ->toBeTrue();
 });
 
-test('the last owner cannot be demoted or removed', function () {
+test('the last owner cannot be demoted or removed', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $membership = TenantMembership::query()
         ->where('tenant_id', $tenant->id)
@@ -269,7 +270,7 @@ test('the last owner cannot be demoted or removed', function () {
         ->assertForbidden();
 });
 
-test('owners can suspend and remove another member', function () {
+test('owners can suspend and remove another member', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $member = workspaceMember($tenant, Role::Adviser);
     $membership = TenantMembership::query()
@@ -297,17 +298,18 @@ test('owners can suspend and remove another member', function () {
         ]))
         ->assertRedirect(workspaceRoute('workspaces.members.index', $tenant));
 
-    expect(TenantMembership::query()->whereKey($membership->id)->exists())->toBeFalse();
-
-    expect(Activity::query()
-        ->where('event', AuditEvent::MemberSuspended->value)
-        ->exists())->toBeTrue()
+    expect(TenantMembership::query()->whereKey($membership->id)->exists())->toBeFalse()
         ->and(Activity::query()
-            ->where('event', AuditEvent::MemberRemoved->value)
-            ->exists())->toBeTrue();
+        ->where('event', AuditEvent::MemberSuspended->value)
+        ->exists())
+        ->toBeTrue()
+        ->and(Activity::query()
+        ->where('event', AuditEvent::MemberRemoved->value)
+        ->exists())
+        ->toBeTrue();
 });
 
-test('invitations can be resent and revoked', function () {
+test('invitations can be resent and revoked', function (): void {
     Notification::fake();
 
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -338,14 +340,14 @@ test('invitations can be resent and revoked', function () {
         ]))
         ->assertRedirect(workspaceRoute('workspaces.members.index', $tenant));
 
-    expect($invitation->fresh()->isRevoked())->toBeTrue();
-
-    expect(Activity::query()
+    expect($invitation->fresh()->isRevoked())->toBeTrue()
+        ->and(Activity::query()
         ->where('event', AuditEvent::MemberInvitationRevoked->value)
-        ->exists())->toBeTrue();
+        ->exists())
+        ->toBeTrue();
 });
 
-test('members cannot manage another tenant workspace', function () {
+test('members cannot manage another tenant workspace', function (): void {
     ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Firm A');
     ['owner' => $ownerB, 'tenant' => $tenantB] = provisionWorkspace('Firm B');
 

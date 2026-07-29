@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Audit\Actions\LogTenantActivityAction;
+use App\Reporting\Queries\ActivityLogRowMapper;
+use App\Shared\Queries\PaginatedIndexQuery;
+use App\Shared\Http\Controllers\Controller;
+use App\Audit\Models\Activity;
 use App\Accounts\Models\User;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
@@ -32,129 +37,127 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Unit/Policies', 'Unit/Queries');
 
-pest()->presets()->custom('qompose', function () {
-    return [
-        expect('App')
-            ->toUseStrictTypes(),
+pest()->presets()->custom('qompose', fn() => [
+    expect('App')
+        ->toUseStrictTypes(),
 
-        expect('App\*\Actions')
-            ->classes()
-            ->toBeFinal(),
+    expect('App\*\Actions')
+        ->classes()
+        ->toBeFinal(),
 
-        // Domain actions end in Action; Fortify Accounts contracts keep framework names.
-        expect('App\*\Actions')
-            ->classes()
-            ->toHaveSuffix('Action')
-            ->ignoring([
-                'App\Accounts\Actions',
-            ]),
+    // Domain actions end in Action; Fortify Accounts contracts keep framework names.
+    expect('App\*\Actions')
+        ->classes()
+        ->toHaveSuffix('Action')
+        ->ignoring([
+            'App\Accounts\Actions',
+        ]),
 
-        expect('App\*\Actions')
-            ->classes()
-            ->toHaveMethod('handle')
-            ->ignoring([
-                'App\Accounts\Actions',
-                'App\Audit\Actions\LogTenantActivityAction',
-            ]),
+    expect('App\*\Actions')
+        ->classes()
+        ->toHaveMethod('handle')
+        ->ignoring([
+            'App\Accounts\Actions',
+            LogTenantActivityAction::class,
+        ]),
 
-        expect('App\*\Actions')
-            ->classes()
-            ->not->toHaveMethod('__invoke')
-            ->ignoring([
-                'App\Accounts\Actions',
-                'App\Audit\Actions\LogTenantActivityAction',
-            ]),
+    expect('App\*\Actions')
+        ->classes()
+        ->not->toHaveMethod('__invoke')
+        ->ignoring([
+            'App\Accounts\Actions',
+            LogTenantActivityAction::class,
+        ]),
 
-        // Read models end in Query; Spatie filters and row mappers are not Queries.
-        expect('App\*\Queries')
-            ->classes()
-            ->toHaveSuffix('Query')
-            ->ignoring([
-                'App\Shared\Queries\Filters',
-                'App\Reporting\Queries\ActivityLogRowMapper',
-            ]),
+    // Read models end in Query; Spatie filters and row mappers are not Queries.
+    expect('App\*\Queries')
+        ->classes()
+        ->toHaveSuffix('Query')
+        ->ignoring([
+            'App\Shared\Queries\Filters',
+            ActivityLogRowMapper::class,
+        ]),
 
-        expect('App\*\Queries')
-            ->classes()
-            ->toHaveMethod('handle')
-            ->ignoring([
-                'App\Shared\Queries\PaginatedIndexQuery',
-                'App\Shared\Queries\Filters',
-                'App\Reporting\Queries\ActivityLogRowMapper',
-            ]),
+    expect('App\*\Queries')
+        ->classes()
+        ->toHaveMethod('handle')
+        ->ignoring([
+            PaginatedIndexQuery::class,
+            'App\Shared\Queries\Filters',
+            ActivityLogRowMapper::class,
+        ]),
 
-        expect('App\*\Queries')
-            ->classes()
-            ->not->toHaveMethod('__invoke')
-            ->ignoring([
-                'App\Shared\Queries\PaginatedIndexQuery',
-                'App\Shared\Queries\Filters',
-                'App\Reporting\Queries\ActivityLogRowMapper',
-            ]),
+    expect('App\*\Queries')
+        ->classes()
+        ->not->toHaveMethod('__invoke')
+        ->ignoring([
+            PaginatedIndexQuery::class,
+            'App\Shared\Queries\Filters',
+            ActivityLogRowMapper::class,
+        ]),
 
-        expect('App\*\Queries')
-            ->classes()
-            ->toBeFinal()
-            ->ignoring([
-                'App\Shared\Queries\PaginatedIndexQuery',
-            ]),
+    expect('App\*\Queries')
+        ->classes()
+        ->toBeFinal()
+        ->ignoring([
+            PaginatedIndexQuery::class,
+        ]),
 
-        expect('App\Shared\Http\Controllers\Controller')
-            ->toBeAbstract(),
+    expect(Controller::class)
+        ->toBeAbstract(),
 
-        expect('App\*\Http\Controllers')
-            ->classes()
-            ->toExtend('App\Shared\Http\Controllers\Controller')
-            ->toHaveSuffix('Controller')
-            ->not->toHavePublicMethodsBesides([
-                '__construct',
-                '__invoke',
-                'index',
-                'show',
-                'create',
-                'store',
-                'edit',
-                'update',
-                'destroy',
-                'middleware',
-                // Domain-specific controller actions beyond REST defaults.
-                'copy',
-                'reorder',
-                'applyTemplate',
-                'answer',
-                'download',
-                'archived',
-                'restore',
-                'bulkArchive',
-                'bulkRestore',
-                'resend',
-                'accept',
-                'register',
-                'builder',
-                'review',
-                'preview',
-            ])
-            ->ignoring('App\Shared\Http\Controllers\Controller'),
+    expect('App\*\Http\Controllers')
+        ->classes()
+        ->toExtend(Controller::class)
+        ->toHaveSuffix('Controller')
+        ->not->toHavePublicMethodsBesides([
+            '__construct',
+            '__invoke',
+            'index',
+            'show',
+            'create',
+            'store',
+            'edit',
+            'update',
+            'destroy',
+            'middleware',
+            // Domain-specific controller actions beyond REST defaults.
+            'copy',
+            'reorder',
+            'applyTemplate',
+            'answer',
+            'download',
+            'archived',
+            'restore',
+            'bulkArchive',
+            'bulkRestore',
+            'resend',
+            'accept',
+            'register',
+            'builder',
+            'review',
+            'preview',
+        ])
+        ->ignoring(Controller::class),
 
-        expect('App\Audit\Models\Activity')
-            ->toExtend('Spatie\Activitylog\Models\Activity'),
+    expect(Activity::class)
+        ->toExtend(\Spatie\Activitylog\Models\Activity::class),
 
-        expect('App\Shared')
-            ->not->toUse([
-                'App\Accounts',
-                'App\Audit',
-                'App\ClientPortal',
-                'App\Clients',
-                'App\Dossiers',
-                'App\DocumentProcessing',
-                'App\WorkspaceNotifications',
-                'App\Platform',
-                'App\Questionnaires',
-                'App\Reporting',
-                'App\Tenancy',
-            ]),
-    ];
-});
+    expect('App\Shared')
+        ->not->toUse([
+            'App\Accounts',
+            'App\Audit',
+            'App\ClientPortal',
+            'App\Clients',
+            'App\Dossiers',
+            'App\DocumentProcessing',
+            'App\WorkspaceNotifications',
+            'App\Platform',
+            'App\Questionnaires',
+            'App\Reporting',
+            'App\Tenancy',
+        ]),
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -167,9 +170,7 @@ pest()->presets()->custom('qompose', function () {
 |
 */
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
+expect()->extend('toBeOne', fn() => $this->toBe(1));
 
 /*
 |--------------------------------------------------------------------------
@@ -202,7 +203,7 @@ function provisionWorkspace(string $name = 'Acme Accountants', ?User $owner = nu
     test()->seed(RolesAndPermissionsSeeder::class);
 
     $owner ??= User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle($name, $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle($name, $owner);
 
     actingInWorkspace($tenant);
 

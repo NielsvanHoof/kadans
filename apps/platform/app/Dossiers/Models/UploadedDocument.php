@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Models;
 
+use Override;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Models\Pipeline;
@@ -89,6 +90,7 @@ final class UploadedDocument extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

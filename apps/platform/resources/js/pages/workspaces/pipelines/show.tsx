@@ -1,5 +1,6 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/react';
 import { ArrowLeft, Download, Trash2 } from 'lucide-react';
+import { useEffect } from 'react';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import PipelineStepTimeline from '@/features/pipelines/show/pipeline-step-timeline';
 import {
+    pipelineIsInFlight,
     pipelineStatusBadgeVariant,
     pipelineStatusLabel,
     pipelineStepLabel,
@@ -39,6 +41,27 @@ export default function PipelineShow({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
+
+    // Keep the show page live while submit / provider / results are still moving.
+    const isInFlight = pipelineIsInFlight(pipeline.status);
+    const { start, stop } = usePoll(
+        2000,
+        {
+            only: ['pipeline', 'can_delete', 'can_download'],
+        },
+        {
+            autoStart: false,
+            mode: 'rest',
+        },
+    );
+
+    useEffect(() => {
+        if (isInFlight) {
+            start();
+        } else {
+            stop();
+        }
+    }, [isInFlight, start, stop]);
 
     setLayoutProps({
         breadcrumbs: [

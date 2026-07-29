@@ -17,14 +17,15 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('guests are redirected to the login page', function () {
+test('guests are redirected to the login page', function (): void {
     $response = $this->get(route('dashboard'));
     $response->assertRedirect(route('login'));
 });
 
-test('users without firm memberships are sent to firm setup', function () {
+test('users without firm memberships are sent to firm setup', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -32,21 +33,21 @@ test('users without firm memberships are sent to firm setup', function () {
     $response->assertRedirect(route('onboarding.firm.create'));
 });
 
-test('users without firm memberships can view firm setup', function () {
+test('users without firm memberships can view firm setup', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user)
         ->get(route('onboarding.firm.create'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('onboarding/firm'));
 });
 
-test('users with one firm see its dashboard', function () {
+test('users with one firm see its dashboard', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -54,15 +55,15 @@ test('users with one firm see its dashboard', function () {
 
     $this->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/dashboard'));
 });
 
-test('firm dashboard shows tenant-scoped operational metrics', function () {
+test('firm dashboard shows tenant-scoped operational metrics', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -117,7 +118,7 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/dashboard')
             ->where('metrics.clients', 1)
             ->where('metrics.open_dossiers', 2)
@@ -136,7 +137,7 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
             ->has('metrics.awaiting_client_last_week'));
 });
 
-test('users with multiple firms can choose which firm to open', function () {
+test('users with multiple firms can choose which firm to open', function (): void {
     $user = User::factory()->create();
     $betaTenant = Tenant::factory()->create(['name' => 'Beta Tax', 'slug' => 'beta-tax']);
     $acmeTenant = Tenant::factory()->create(['name' => 'Acme Accountants', 'slug' => 'acme-accountants']);
@@ -153,7 +154,7 @@ test('users with multiple firms can choose which firm to open', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dashboard')
             ->where('firms', [
                 ['name' => 'Acme Accountants', 'slug' => 'acme-accountants'],
@@ -161,7 +162,7 @@ test('users with multiple firms can choose which firm to open', function () {
             ]));
 });
 
-test('verified users can set up their firm', function () {
+test('verified users can set up their firm', function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
@@ -183,7 +184,7 @@ test('verified users can set up their firm', function () {
         ->and($user->hasRole(Role::Owner->value))->toBeTrue();
 });
 
-test('firm setup requires a name', function () {
+test('firm setup requires a name', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -193,7 +194,7 @@ test('firm setup requires a name', function () {
         ->assertSessionHasErrors('name');
 });
 
-test('unverified users are redirected to email verification', function () {
+test('unverified users are redirected to email verification', function (): void {
     $user = User::factory()->unverified()->create();
     $this->actingAs($user);
 
@@ -205,7 +206,7 @@ test('unverified users are redirected to email verification', function () {
         ->assertRedirect(route('verification.notice'));
 });
 
-test('guests cannot set up a firm', function () {
+test('guests cannot set up a firm', function (): void {
     $this->post(route('onboarding.firm.store'), ['name' => 'Acme Accountants'])
         ->assertRedirect(route('login'));
 });

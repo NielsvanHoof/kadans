@@ -20,19 +20,20 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
 test('an authorized workspace member can view pipeline index and details', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    app(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/pipelines/index')
             ->has('pipelines.data', 1)
             ->where('pipelines.data.0.id', $pipeline->id)
@@ -43,7 +44,7 @@ test('an authorized workspace member can view pipeline index and details', funct
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/pipelines/show')
             ->where('pipeline.id', $pipeline->id)
             ->where('pipeline.subject.type', 'UploadedDocument')
@@ -55,11 +56,11 @@ test('an authorized workspace member can view pipeline index and details', funct
 test('pipeline index is tenant isolated', function (): void {
     ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('First Workspace');
     $documentA = pipelineDocument($tenantA->id);
-    $pipelineA = app(CreatePipelineAction::class)->handle($documentA, PipelineType::OcrDocument);
+    $pipelineA = resolve(CreatePipelineAction::class)->handle($documentA, PipelineType::OcrDocument);
 
     ['owner' => $ownerB, 'tenant' => $tenantB] = provisionWorkspace('Second Workspace');
     $documentB = pipelineDocument($tenantB->id);
-    $pipelineB = app(CreatePipelineAction::class)->handle($documentB, PipelineType::OcrDocument);
+    $pipelineB = resolve(CreatePipelineAction::class)->handle($documentB, PipelineType::OcrDocument);
 
     expect($pipelineA->tenant_id)->not->toBe($pipelineB->tenant_id);
 
@@ -67,7 +68,7 @@ test('pipeline index is tenant isolated', function (): void {
         ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.pipelines.index', $tenantA))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('pipelines.data', 1)
             ->where('pipelines.data.0.id', $pipelineA->id));
 
@@ -92,8 +93,8 @@ test('reviewers cannot view pipeline operations', function (): void {
 test('owners can delete terminal pipelines and the deletion is audited', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = app(PipelineStateAction::class);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    $state = resolve(PipelineStateAction::class);
     $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
     $state->handle($pipeline, PipelineStepOperation::Fail, 'submit', errorCode: 'test_failure', errorMessage: 'Test failure.');
 
@@ -114,8 +115,8 @@ test('owners can delete terminal pipelines and the deletion is audited', functio
 test('active pipelines cannot be deleted', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    app(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -127,14 +128,14 @@ test('an export pipeline payload can be downloaded and is audited', function ():
     Storage::fake('local');
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $export = pipelineExport($tenant->id, 'Confidential dossier');
-    $pipeline = app(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
     Storage::disk('local')->put((string) $export->path, 'archive');
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->where('can_download', true));
+        ->assertInertia(fn (Assert $page): Assert => $page->where('can_download', true));
 
     $this->actingAs($owner)
         ->withSession([
@@ -156,7 +157,7 @@ test('the export payload download requires a confirmed password', function (): v
     Storage::fake('local');
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $export = pipelineExport($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
     Storage::disk('local')->put((string) $export->path, 'archive');
 
     $this->actingAs($owner)
@@ -169,11 +170,11 @@ test('ocr pipelines and expired exports have no downloadable payload', function 
     Storage::fake('local');
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
-    $ocrPipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument, $owner);
+    $ocrPipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument, $owner);
 
     $expiredExport = pipelineExport($tenant->id);
     $expiredExport->update(['expires_at' => now()->subMinute()]);
-    $expiredPipeline = app(CreatePipelineAction::class)->handle($expiredExport, PipelineType::DossierExport, $owner);
+    $expiredPipeline = resolve(CreatePipelineAction::class)->handle($expiredExport, PipelineType::DossierExport, $owner);
 
     $session = [
         'active_tenant_id' => $tenant->id,
@@ -184,7 +185,7 @@ test('ocr pipelines and expired exports have no downloadable payload', function 
         ->withSession($session)
         ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $ocrPipeline]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->where('can_download', false));
+        ->assertInertia(fn (Assert $page): Assert => $page->where('can_download', false));
 
     $this->actingAs($owner)
         ->withSession($session)
@@ -202,7 +203,7 @@ test('members without download permission cannot download an export payload', fu
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $reviewer = workspaceMember($tenant, Role::Reviewer);
     $export = pipelineExport($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
     Storage::disk('local')->put((string) $export->path, 'archive');
 
     $this->actingAs($reviewer)

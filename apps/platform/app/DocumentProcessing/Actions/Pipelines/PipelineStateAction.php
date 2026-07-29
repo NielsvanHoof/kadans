@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Throwable;
 
-final class PipelineStateAction
+final readonly class PipelineStateAction
 {
     public function __construct(
-        private readonly PipelineTransitions $transitions,
+        private PipelineTransitions $transitions,
     ) {}
 
     public function handle(
@@ -47,17 +47,15 @@ final class PipelineStateAction
                 ? null
                 : $this->lockStep($lockedPipeline, $stepKey);
 
-            if ($operation === PipelineStepOperation::Fail && $step === null) {
+            if ($operation === PipelineStepOperation::Fail && !$step instanceof PipelineStep) {
                 return $this->transitions->failPipeline($lockedPipeline, $message, $errorCode);
             }
 
-            if ($operation === PipelineStepOperation::Stuck && $step === null) {
+            if ($operation === PipelineStepOperation::Stuck && !$step instanceof PipelineStep) {
                 return $this->transitions->stuckPipeline($lockedPipeline, $message, $errorCode);
             }
 
-            if (! $step instanceof PipelineStep) {
-                throw new InvalidArgumentException('A pipeline step is required for this operation.');
-            }
+            throw_unless($step instanceof PipelineStep, InvalidArgumentException::class, 'A pipeline step is required for this operation.');
 
             return match ($operation) {
                 PipelineStepOperation::Start => $this->transitions->start($lockedPipeline, $step),

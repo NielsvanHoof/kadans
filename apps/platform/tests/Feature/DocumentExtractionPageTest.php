@@ -14,15 +14,16 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('staff can open the OCR extraction page for an uploaded document', function () {
+test('staff can open the OCR extraction page for an uploaded document', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -74,7 +75,7 @@ test('staff can open the OCR extraction page for an uploaded document', function
             'uploadedDocument' => $uploaded,
         ]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('uploaded-documents/show')
             ->where('uploaded_document.original_filename', 'payslip.pdf')
             ->where('uploaded_document.processing_status', DocumentProcessingStatus::Completed->value)
@@ -89,11 +90,11 @@ test('staff can open the OCR extraction page for an uploaded document', function
         );
 });
 
-test('staff from another tenant cannot open an extraction page', function () {
+test('staff from another tenant cannot open an extraction page', function (): void {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenantAction::class)->handle('Firm A', $ownerA);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Firm B', $ownerB);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Firm A', $ownerA);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Firm B', $ownerB);
 
     $tenantA->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenantA->id]);
@@ -121,9 +122,9 @@ test('staff from another tenant cannot open an extraction page', function () {
         ->assertNotFound();
 });
 
-test('staff must recently confirm their password before opening an extraction page', function () {
+test('staff must recently confirm their password before opening an extraction page', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -148,9 +149,9 @@ test('staff must recently confirm their password before opening an extraction pa
         ->assertRedirect(route('password.confirm'));
 });
 
-test('guest cannot open the OCR extraction page', function () {
+test('guest cannot open the OCR extraction page', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);

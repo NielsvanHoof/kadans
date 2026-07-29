@@ -1,9 +1,11 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps, usePoll } from '@inertiajs/react';
+import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
 import IndexQueryResults from '@/components/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import PipelinesListCard from '@/features/pipelines/list/pipelines-list-card';
+import { pipelineIsInFlight } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineIndexRow } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -21,6 +23,28 @@ export default function PipelineIndex({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+
+    const hasInFlightPipeline = pipelines.data.some((pipeline) =>
+        pipelineIsInFlight(pipeline.status),
+    );
+    const { start, stop } = usePoll(
+        2000,
+        {
+            only: ['pipelines', 'filters', 'sort', 'indexQuery', 'flash'],
+        },
+        {
+            autoStart: false,
+            mode: 'rest',
+        },
+    );
+
+    useEffect(() => {
+        if (hasInFlightPipeline) {
+            start();
+        } else {
+            stop();
+        }
+    }, [hasInFlightPipeline, start, stop]);
 
     setLayoutProps({
         breadcrumbs: [

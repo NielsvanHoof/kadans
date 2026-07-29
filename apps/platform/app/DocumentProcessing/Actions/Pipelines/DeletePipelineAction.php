@@ -11,10 +11,10 @@ use App\DocumentProcessing\Models\Pipeline;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-final class DeletePipelineAction
+final readonly class DeletePipelineAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(Pipeline $pipeline, User $user): void

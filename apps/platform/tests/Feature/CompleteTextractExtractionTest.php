@@ -19,9 +19,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-test('complete textract extraction maps forms tables and asks bedrock for overview', function () {
+test('complete textract extraction maps forms tables and asks bedrock for overview', function (): void {
     Event::fake([MessageLogged::class]);
 
     $uploaded = createProcessingDocumentWithTextractJob('job-success-1');
@@ -38,12 +39,10 @@ test('complete textract extraction maps forms tables and asks bedrock for overvi
     $overview = Mockery::mock(DescribesDocumentOverview::class);
     $overview->shouldReceive('describe')
         ->once()
-        ->with(Mockery::on(function (array $payload): bool {
-            return ($payload['fields'][0]['label'] ?? null) === 'BSN'
-                && ($payload['fields'][0]['value'] ?? null) === '287505030'
-                && ($payload['fields'][0]['confidence'] ?? null) === 0.99
-                && ($payload['tables'][0]['headers'][0] ?? null) === 'Code';
-        }))
+        ->with(Mockery::on(fn(array $payload): bool => ($payload['fields'][0]['label'] ?? null) === 'BSN'
+            && ($payload['fields'][0]['value'] ?? null) === '287505030'
+            && ($payload['fields'][0]['confidence'] ?? null) === 0.99
+            && ($payload['tables'][0]['headers'][0] ?? null) === 'Code'))
         ->andReturn([
             'document_type' => 'payslip',
             'summary' => 'Monthly payslip',
@@ -53,7 +52,7 @@ test('complete textract extraction maps forms tables and asks bedrock for overvi
     $this->app->instance(TextractClient::class, $textract);
     $this->app->instance(DescribesDocumentOverview::class, $overview);
 
-    $applied = app(CompleteTextractExtractionAction::class)->handle([
+    $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-success-1',
         'Status' => 'SUCCEEDED',
         'API' => 'StartDocumentAnalysis',
@@ -85,23 +84,23 @@ test('complete textract extraction maps forms tables and asks bedrock for overvi
         ->and($payload['tables'][0]['headers'])->toBe(['Code', 'Omschrijving'])
         ->and($payload['tables'][0]['rows'][0])->toBe(['1000', 'Salaris'])
         ->and($uploaded->processing_error)->toBeNull()
-        ->and($uploaded->processing_finished_at)->not->toBeNull();
-
-    expect(Activity::query()
+        ->and($uploaded->processing_finished_at)->not->toBeNull()
+        ->and(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingCompleted->value)
         ->where('subject_id', $uploaded->id)
-        ->exists())->toBeTrue();
+        ->exists())
+        ->toBeTrue();
 
-    Event::assertDispatched(MessageLogged::class, fn (MessageLogged $log): bool => $log->level === 'info'
+    Event::assertDispatched(fn (MessageLogged $log): bool => $log->level === 'info'
         && str_contains($log->message, 'OCR: applying Textract completion notification.')
         && ($log->context['textract_job_id'] ?? null) === 'job-success-1');
 
-    Event::assertDispatched(MessageLogged::class, fn (MessageLogged $log): bool => $log->level === 'info'
+    Event::assertDispatched(fn (MessageLogged $log): bool => $log->level === 'info'
         && str_contains($log->message, 'OCR: Textract extraction completed successfully.')
         && ($log->context['uploaded_document_id'] ?? null) === $uploaded->id);
 });
 
-test('complete textract extraction does not overwrite a replacement upload', function () {
+test('complete textract extraction does not overwrite a replacement upload', function (): void {
     $uploaded = createProcessingDocumentWithTextractJob('job-replaced-1');
 
     $textract = Mockery::mock(TextractClient::class);
@@ -134,7 +133,7 @@ test('complete textract extraction does not overwrite a replacement upload', fun
     $this->app->instance(TextractClient::class, $textract);
     $this->app->instance(DescribesDocumentOverview::class, $overview);
 
-    $applied = app(CompleteTextractExtractionAction::class)->handle([
+    $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-replaced-1',
         'Status' => 'SUCCEEDED',
         'API' => 'StartDocumentAnalysis',
@@ -146,22 +145,22 @@ test('complete textract extraction does not overwrite a replacement upload', fun
         ->and($uploaded->path)->toBe('replacement.pdf')
         ->and($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending)
         ->and($uploaded->textract_job_id)->toBeNull()
-        ->and($uploaded->extracted_text)->toBeNull();
-
-    expect(Activity::query()
+        ->and($uploaded->extracted_text)->toBeNull()
+        ->and(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingCompleted->value)
         ->where('subject_id', $uploaded->id)
-        ->exists())->toBeFalse();
+        ->exists())
+        ->toBeFalse();
 });
 
-test('complete textract extraction ignores detect document text notifications', function () {
+test('complete textract extraction ignores detect document text notifications', function (): void {
     $uploaded = createProcessingDocumentWithTextractJob('job-detect-1');
 
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldNotReceive('getDocumentAnalysis');
     $this->app->instance(TextractClient::class, $textract);
 
-    $applied = app(CompleteTextractExtractionAction::class)->handle([
+    $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-detect-1',
         'Status' => 'SUCCEEDED',
         'API' => 'StartDocumentTextDetection',
@@ -175,14 +174,14 @@ test('complete textract extraction ignores detect document text notifications', 
         ->and($uploaded->extracted_text)->toBeNull();
 });
 
-test('complete textract extraction marks failed status', function () {
+test('complete textract extraction marks failed status', function (): void {
     $uploaded = createProcessingDocumentWithTextractJob('job-fail-1');
 
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldNotReceive('getDocumentAnalysis');
     $this->app->instance(TextractClient::class, $textract);
 
-    $applied = app(CompleteTextractExtractionAction::class)->handle([
+    $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-fail-1',
         'Status' => 'FAILED',
         'StatusMessage' => 'Unsupported document format',
@@ -195,22 +194,22 @@ test('complete textract extraction marks failed status', function () {
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Failed)
         ->and($uploaded->processing_error)->toBe('Unsupported document format')
-        ->and($uploaded->extracted_text)->toBeNull();
-
-    expect(Activity::query()
+        ->and($uploaded->extracted_text)->toBeNull()
+        ->and(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingFailed->value)
         ->where('subject_id', $uploaded->id)
-        ->exists())->toBeTrue();
+        ->exists())
+        ->toBeTrue();
 });
 
-test('complete textract extraction treats error as a terminal failure', function () {
+test('complete textract extraction treats error as a terminal failure', function (): void {
     $uploaded = createProcessingDocumentWithTextractJob('job-error-1');
 
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldNotReceive('getDocumentAnalysis');
     $this->app->instance(TextractClient::class, $textract);
 
-    $applied = app(CompleteTextractExtractionAction::class)->handle([
+    $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-error-1',
         'Status' => 'ERROR',
         'StatusMessage' => 'Textract could not complete the analysis',
@@ -226,10 +225,10 @@ test('complete textract extraction treats error as a terminal failure', function
         ->and($uploaded->processing_finished_at)->not->toBeNull();
 });
 
-test('fail textract extraction marks a processing document as permanently failed', function () {
+test('fail textract extraction marks a processing document as permanently failed', function (): void {
     $uploaded = createProcessingDocumentWithTextractJob('job-permanent-fail-1');
 
-    $failed = app(FailTextractExtractionAction::class)->handle(
+    $failed = resolve(FailTextractExtractionAction::class)->handle(
         'job-permanent-fail-1',
         new RuntimeException('SQS receive count exhausted'),
     );
@@ -247,7 +246,7 @@ test('fail textract extraction marks a processing document as permanently failed
             ->exists())->toBeTrue();
 });
 
-test('complete textract extraction is idempotent when already completed', function () {
+test('complete textract extraction is idempotent when already completed', function (): void {
     $uploaded = createProcessingDocumentWithTextractJob('job-done-1', [
         'processing_status' => DocumentProcessingStatus::Completed,
         'extracted_text' => '{"document_type":null,"summary":null,"fields":[],"tables":[],"notes":[],"confidence":null}',
@@ -258,7 +257,7 @@ test('complete textract extraction is idempotent when already completed', functi
     $textract->shouldNotReceive('getDocumentAnalysis');
     $this->app->instance(TextractClient::class, $textract);
 
-    $applied = app(CompleteTextractExtractionAction::class)->handle([
+    $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-done-1',
         'Status' => 'SUCCEEDED',
         'API' => 'StartDocumentAnalysis',

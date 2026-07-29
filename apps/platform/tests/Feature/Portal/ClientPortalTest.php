@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Pest\Mixins\Expectation;
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
@@ -34,9 +35,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
@@ -46,7 +48,7 @@ beforeEach(function () {
 function createPortalDossierWithGrant(): array
 {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -61,7 +63,7 @@ function createPortalDossierWithGrant(): array
         'status' => DossierStatus::Draft,
     ]);
 
-    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     return [
         'owner' => $owner,
@@ -73,7 +75,7 @@ function createPortalDossierWithGrant(): array
     ];
 }
 
-test('guest exchanges a valid access token for a restricted portal session', function () {
+test('guest exchanges a valid access token for a restricted portal session', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
@@ -109,7 +111,7 @@ test('guest exchanges a valid access token for a restricted portal session', fun
             ->where('dossier.client.name', $context['client']->name)
             ->missing('token')
             ->has('dossier.document_requests', 1)
-            ->tap(fn (Assert $page) => expect($page->toArray())
+            ->tap(fn (Assert $page): Expectation => expect($page->toArray())
                 ->toHaveKey('encryptHistory', true)));
 
     expect($context['grant']->fresh()->last_used_at)->not->toBeNull();
@@ -123,7 +125,7 @@ test('guest exchanges a valid access token for a restricted portal session', fun
         ->and((string) json_encode($activity->properties))->not->toContain($context['plainTextToken']);
 });
 
-test('invalid or revoked portal tokens are rejected', function () {
+test('invalid or revoked portal tokens are rejected', function (): void {
     $context = createPortalDossierWithGrant();
 
     $this->get(route('portal.exchange', 'not-a-real-token'))
@@ -148,7 +150,7 @@ test('invalid or revoked portal tokens are rejected', function () {
         ->assertHeader('Referrer-Policy', 'no-referrer');
 });
 
-test('portal routes require a live restricted session', function () {
+test('portal routes require a live restricted session', function (): void {
     $context = createPortalDossierWithGrant();
 
     $this->get(route('portal.show'))->assertNotFound();
@@ -164,7 +166,7 @@ test('portal routes require a live restricted session', function () {
         ->assertSessionMissing(ResolveClientPortalGrant::SESSION_EXPIRES_AT);
 });
 
-test('guest can upload a document through the portal', function () {
+test('guest can upload a document through the portal', function (): void {
     Storage::fake('local');
 
     $context = createPortalDossierWithGrant();
@@ -195,7 +197,7 @@ test('guest can upload a document through the portal', function () {
         ->and($context['dossier']->fresh()->status)->toBe(DossierStatus::InReview);
 });
 
-test('portal cannot upload while a file item awaits review', function () {
+test('portal cannot upload while a file item awaits review', function (): void {
     Storage::fake('local');
 
     $context = createPortalDossierWithGrant();
@@ -222,7 +224,7 @@ test('portal cannot upload while a file item awaits review', function () {
     expect(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->exists())->toBeFalse();
 });
 
-test('portal cannot answer while a text item awaits review', function () {
+test('portal cannot answer while a text item awaits review', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
@@ -245,7 +247,7 @@ test('portal cannot answer while a text item awaits review', function () {
     expect($documentRequest->fresh()->answer_text)->toBeNull();
 });
 
-test('a saved choice answer reveals the matching conditional field on the portal', function () {
+test('a saved choice answer reveals the matching conditional field on the portal', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
@@ -289,7 +291,7 @@ test('a saved choice answer reveals the matching conditional field on the portal
 
     $this->get(route('portal.show'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 1)
             ->where('dossier.document_requests.0.id', $choiceRequest->id));
 
@@ -305,12 +307,12 @@ test('a saved choice answer reveals the matching conditional field on the portal
 
     $this->get(route('portal.show'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 2)
             ->where('dossier.document_requests.1.id', $dependentRequest->id));
 });
 
-test('portal upload cannot target a document request from another dossier', function () {
+test('portal upload cannot target a document request from another dossier', function (): void {
     Storage::fake('local');
 
     $context = createPortalDossierWithGrant();
@@ -336,7 +338,7 @@ test('portal upload cannot target a document request from another dossier', func
     )->assertNotFound();
 });
 
-test('portal upload rolls back database and storage when its audit record fails', function () {
+test('portal upload rolls back database and storage when its audit record fails', function (): void {
     Storage::fake('local');
 
     $context = createPortalDossierWithGrant();
@@ -351,9 +353,7 @@ test('portal upload rolls back database and storage when its audit record fails'
 
     $event = 'eloquent.creating: '.Activity::class;
     Event::listen($event, static function (Activity $activity): void {
-        if ($activity->event === AuditEvent::DocumentUploaded->value) {
-            throw new RuntimeException('Simulated audit failure.');
-        }
+        throw_if($activity->event === AuditEvent::DocumentUploaded->value, RuntimeException::class, 'Simulated audit failure.');
     });
 
     $this->get(route('portal.exchange', $context['plainTextToken']));
@@ -375,10 +375,11 @@ test('portal upload rolls back database and storage when its audit record fails'
         ->and(UploadedDocument::query()->exists())->toBeFalse()
         ->and($context['dossier']->fresh()->status)->toBe(DossierStatus::AwaitingClient)
         ->and($context['grant']->fresh()->last_used_at)->toBeNull()
-        ->and(Storage::disk('local')->allFiles())->toBe([]);
+        ->and(Storage::disk('local')->allFiles())
+        ->toBeEmpty();
 });
 
-test('portal answer rolls back when its audit record fails', function () {
+test('portal answer rolls back when its audit record fails', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
@@ -392,9 +393,7 @@ test('portal answer rolls back when its audit record fails', function () {
 
     $event = 'eloquent.creating: '.Activity::class;
     Event::listen($event, static function (Activity $activity): void {
-        if ($activity->event === AuditEvent::QuestionnaireAnswerSubmitted->value) {
-            throw new RuntimeException('Simulated audit failure.');
-        }
+        throw_if($activity->event === AuditEvent::QuestionnaireAnswerSubmitted->value, RuntimeException::class, 'Simulated audit failure.');
     });
 
     $this->get(route('portal.exchange', $context['plainTextToken']));
@@ -415,11 +414,11 @@ test('portal answer rolls back when its audit record fails', function () {
         ->and($context['grant']->fresh()->last_used_at)->toBeNull();
 });
 
-test('staff can email a portal invite when creating an access grant', function () {
+test('staff can email a portal invite when creating an access grant', function (): void {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create([
@@ -488,16 +487,16 @@ test('staff can email a portal invite when creating an access grant', function (
             ->all(),
     );
 
-    expect($plainTextToken)->not->toBe('')
+    expect($plainTextToken)->not->toBeEmpty()
         ->and($auditPayload)->not->toContain($plainTextToken)
         ->and($auditPayload)->not->toContain('/portal/');
 });
 
-test('staff can create a portal link without emailing', function () {
+test('staff can create a portal link without emailing', function (): void {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -526,7 +525,7 @@ test('staff can create a portal link without emailing', function () {
             ->exists())->toBeFalse();
 });
 
-test('revoking portal access is audited atomically', function () {
+test('revoking portal access is audited atomically', function (): void {
     $context = createPortalDossierWithGrant();
 
     $this->actingAs($context['owner'])
@@ -548,7 +547,7 @@ test('revoking portal access is audited atomically', function () {
         ->and($activity->causer_id)->toBe($context['owner']->id);
 });
 
-test('portal invitation delivery outcomes are audited without the bearer url', function () {
+test('portal invitation delivery outcomes are audited without the bearer url', function (): void {
     $context = createPortalDossierWithGrant();
 
     $notification = new ClientPortalInviteNotification(
@@ -560,10 +559,10 @@ test('portal invitation delivery outcomes are audited without the bearer url', f
     );
     $notifiable = (new AnonymousNotifiable)->route('mail', $context['client']->email);
 
-    app(LogClientPortalInviteSent::class)->handle(
+    resolve(LogClientPortalInviteSent::class)->handle(
         new NotificationSent($notifiable, $notification, 'mail'),
     );
-    app(LogClientPortalInviteFailed::class)->handle(
+    resolve(LogClientPortalInviteFailed::class)->handle(
         new NotificationFailed($notifiable, $notification, 'mail', [
             'exception' => new RuntimeException('Mail failed.'),
         ]),
@@ -586,7 +585,7 @@ test('portal invitation delivery outcomes are audited without the bearer url', f
         ->not->toContain('/portal/');
 });
 
-test('delivery audit failures are reported without retrying a delivered invitation', function () {
+test('delivery audit failures are reported without retrying a delivered invitation', function (): void {
     $context = createPortalDossierWithGrant();
     Exceptions::fake();
 
@@ -601,13 +600,11 @@ test('delivery audit failures are reported without retrying a delivered invitati
 
     $event = 'eloquent.creating: '.Activity::class;
     Event::listen($event, static function (Activity $activity): void {
-        if ($activity->event === AuditEvent::ClientPortalInviteSent->value) {
-            throw new RuntimeException('Simulated delivery audit failure.');
-        }
+        throw_if($activity->event === AuditEvent::ClientPortalInviteSent->value, RuntimeException::class, 'Simulated delivery audit failure.');
     });
 
     try {
-        app(LogClientPortalInviteSent::class)->handle(
+        resolve(LogClientPortalInviteSent::class)->handle(
             new NotificationSent($notifiable, $notification, 'mail'),
         );
     } finally {
@@ -620,11 +617,11 @@ test('delivery audit failures are reported without retrying a delivered invitati
     );
 });
 
-test('grant issuance rolls back when its audit transaction fails', function () {
+test('grant issuance rolls back when its audit transaction fails', function (): void {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create([
@@ -639,9 +636,7 @@ test('grant issuance rolls back when its audit transaction fails', function () {
 
     $event = 'eloquent.creating: '.Activity::class;
     Event::listen($event, static function (Activity $activity): void {
-        if ($activity->event === AuditEvent::ClientPortalInviteQueued->value) {
-            throw new RuntimeException('Simulated audit failure.');
-        }
+        throw_if($activity->event === AuditEvent::ClientPortalInviteQueued->value, RuntimeException::class, 'Simulated audit failure.');
     });
 
     try {
@@ -668,7 +663,7 @@ test('grant issuance rolls back when its audit transaction fails', function () {
             ->exists())->toBeFalse();
 });
 
-test('portal locale follows the browser language when no cookie is set', function () {
+test('portal locale follows the browser language when no cookie is set', function (): void {
     $context = createPortalDossierWithGrant();
 
     $this->get(route('portal.exchange', $context['plainTextToken']))
@@ -693,7 +688,7 @@ test('portal locale follows the browser language when no cookie is set', functio
             }));
 });
 
-test('portal locale cookie overrides the browser language', function () {
+test('portal locale cookie overrides the browser language', function (): void {
     $context = createPortalDossierWithGrant();
 
     $this->get(route('portal.exchange', $context['plainTextToken']))

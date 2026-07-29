@@ -25,7 +25,7 @@ final class FieldSensitivityClassifier
     public function classify(array $payload): array
     {
         $payload['fields'] = array_map(
-            fn (array $field): array => $this->classifyField($field),
+            $this->classifyField(...),
             $payload['fields'],
         );
 
@@ -139,12 +139,6 @@ final class FieldSensitivityClassifier
      */
     private function labelMatches(string $label, array $needles): bool
     {
-        foreach ($needles as $needle) {
-            if (str_contains($label, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($needles, fn(string $needle): bool => str_contains($label, $needle));
     }
 }

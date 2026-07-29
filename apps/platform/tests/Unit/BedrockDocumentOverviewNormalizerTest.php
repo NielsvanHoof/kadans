@@ -7,14 +7,15 @@ use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Result;
 use Tests\TestCase;
 
-uses(TestCase::class);
+pest()
+    ->extend(TestCase::class);
 
-test('bedrock document overview normalizer returns empty overview without fields or tables', function () {
+test('bedrock document overview normalizer returns empty overview without fields or tables', function (): void {
     $bedrock = Mockery::mock(BedrockRuntimeClient::class);
     $bedrock->shouldNotReceive('converse');
     $this->app->instance(BedrockRuntimeClient::class, $bedrock);
 
-    $overview = app(BedrockDocumentOverviewNormalizer::class)->describe([
+    $overview = resolve(BedrockDocumentOverviewNormalizer::class)->describe([
         'document_type' => null,
         'summary' => null,
         'fields' => [],
@@ -30,7 +31,7 @@ test('bedrock document overview normalizer returns empty overview without fields
     ]);
 });
 
-test('bedrock document overview normalizer parses converse json', function () {
+test('bedrock document overview normalizer parses converse json', function (): void {
     config([
         'ocr.bedrock.model_id' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
         'ocr.bedrock.max_tokens' => 1024,
@@ -40,11 +41,9 @@ test('bedrock document overview normalizer parses converse json', function () {
     $bedrock = Mockery::mock(BedrockRuntimeClient::class);
     $bedrock->shouldReceive('converse')
         ->once()
-        ->with(Mockery::on(function (array $args): bool {
-            return ($args['modelId'] ?? null) === 'eu.anthropic.claude-sonnet-4-20250514-v1:0'
-                && str_contains((string) data_get($args, 'messages.0.content.0.text'), 'BSN: 287505030')
-                && ! array_key_exists('additionalModelRequestFields', $args);
-        }))
+        ->with(Mockery::on(fn(array $args): bool => ($args['modelId'] ?? null) === 'eu.anthropic.claude-sonnet-4-20250514-v1:0'
+            && str_contains((string) data_get($args, 'messages.0.content.0.text'), 'BSN: 287505030')
+            && ! array_key_exists('additionalModelRequestFields', $args)))
         ->andReturn(new Result([
             'output' => [
                 'message' => [
@@ -67,7 +66,7 @@ JSON
 
     $this->app->instance(BedrockRuntimeClient::class, $bedrock);
 
-    $overview = app(BedrockDocumentOverviewNormalizer::class)->describe([
+    $overview = resolve(BedrockDocumentOverviewNormalizer::class)->describe([
         'document_type' => null,
         'summary' => null,
         'fields' => [
@@ -90,7 +89,7 @@ JSON
     ]);
 });
 
-test('bedrock document overview normalizer rejects invalid json', function () {
+test('bedrock document overview normalizer rejects invalid json', function (): void {
     config(['ocr.bedrock.model_id' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0']);
 
     $bedrock = Mockery::mock(BedrockRuntimeClient::class);
@@ -108,7 +107,7 @@ test('bedrock document overview normalizer rejects invalid json', function () {
 
     $this->app->instance(BedrockRuntimeClient::class, $bedrock);
 
-    expect(fn () => app(BedrockDocumentOverviewNormalizer::class)->describe([
+    expect(fn () => resolve(BedrockDocumentOverviewNormalizer::class)->describe([
         'document_type' => null,
         'summary' => null,
         'fields' => [

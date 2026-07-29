@@ -23,14 +23,16 @@ use function is_string;
  * Applies a Textract AnalyzeDocument SNS completion to an UploadedDocument.
  * Maps FORMS/TABLES via the extraction pipeline, then persists status + audit.
  */
-final class CompleteTextractExtractionAction
+final readonly class CompleteTextractExtractionAction
 {
     public function __construct(
-        private readonly TextractExtractionPipeline $extractionPipeline,
-        private readonly MarkTextractExtractionFailedAction $markTextractExtractionFailed,
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly PipelineStateAction $pipelineState,
-        private readonly TenantContext $tenantContext,
+        private TextractExtractionPipeline $extractionPipeline,
+        private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
+        private LogAuditActivityAction $logAuditActivity,
+        private PipelineStateAction $pipelineState,
+        private ResolveOcrPipelineForDocumentAction $resolveOcrPipeline,
+        private PrepareOcrPipelineForProviderResultAction $prepareOcrPipeline,
+        private TenantContext $tenantContext,
     ) {}
 
     /**
@@ -95,17 +97,28 @@ final class CompleteTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
-            $pipelineId = $document->pipelines()
-                ->toBase()
-                ->where('provider_job_id', $jobId)
-                ->orderByDesc('id')
-                ->value('id');
-            $pipeline = is_numeric($pipelineId) ? Pipeline::query()->find((int) $pipelineId) : null;
+            $pipeline = $this->resolveOcrPipeline->handle($document, $jobId);
 
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
                 DocumentProcessingStatus::Failed,
             ], true)) {
+                // Document may already be done while the pipeline stayed pending (nullable DI bug).
+                if (
+                    $document->processing_status === DocumentProcessingStatus::Completed
+                    && $pipeline instanceof Pipeline
+                    && ! $pipeline->status->isTerminal()
+                ) {
+                    $pipeline = $this->prepareOcrPipeline->handle(
+                        $pipeline,
+                        (string) config('ocr.driver'),
+                        $jobId,
+                    );
+                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
+                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
+                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+                }
+
                 Log::info('OCR: Textract completion already applied — skipping.', [
                     'uploaded_document_id' => $document->id,
                     'tenant_id' => $document->tenant_id,
@@ -124,7 +137,13 @@ final class CompleteTextractExtractionAction
             ]);
 
             if ($status === 'SUCCEEDED') {
-                if ($pipeline !== null) {
+                if ($pipeline instanceof Pipeline) {
+                    // Catch up submit/provider_processing when the submit job never recorded them.
+                    $pipeline = $this->prepareOcrPipeline->handle(
+                        $pipeline,
+                        (string) config('ocr.driver'),
+                        $jobId,
+                    );
                     $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
                     $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
                 }
@@ -158,7 +177,7 @@ final class CompleteTextractExtractionAction
 
                 $document->refresh();
 
-                if ($pipeline !== null) {
+                if ($pipeline instanceof Pipeline) {
                     $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
                 }
 
@@ -192,7 +211,7 @@ final class CompleteTextractExtractionAction
 
                 $this->markTextractExtractionFailed->handle($document, $jobId, $error, $status);
 
-                if ($pipeline !== null) {
+                if ($pipeline instanceof Pipeline) {
                     $this->pipelineState->handle(
                         $pipeline,
                         PipelineStepOperation::Fail,

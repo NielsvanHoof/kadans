@@ -18,7 +18,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
 test('a pipeline requires a polymorphic subject', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
@@ -44,7 +45,7 @@ test('a pipeline creates ordered steps for its polymorphic subject', function ()
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForPipeline($tenant->id);
 
-    $pipeline = app(CreatePipelineAction::class)->handle(
+    $pipeline = resolve(CreatePipelineAction::class)->handle(
         $document,
         PipelineType::OcrDocument,
         metadata: ['source' => 'pilot'],
@@ -60,8 +61,8 @@ test('a pipeline creates ordered steps for its polymorphic subject', function ()
 test('pipeline steps record progress, heartbeats, and terminal failures', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForPipeline($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = app(PipelineStateAction::class);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    $state = resolve(PipelineStateAction::class);
 
     $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
     $state->handle($pipeline, PipelineStepOperation::Complete, 'submit');
@@ -89,8 +90,8 @@ test('pipeline steps record progress, heartbeats, and terminal failures', functi
 test('pipeline transitions guard step ordering and closed pipelines', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForPipeline($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = app(PipelineStateAction::class);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    $state = resolve(PipelineStateAction::class);
 
     expect(fn () => $state->handle($pipeline, PipelineStepOperation::Complete, 'submit'))
         ->toThrow(ValidationException::class, 'Only a running pipeline step can be completed.');
@@ -103,7 +104,7 @@ test('pipeline transitions guard step ordering and closed pipelines', function (
     $state->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
 
     expect($pipeline->fresh()->status)->toBe(PipelineStatus::Completed)
-        ->and(fn () => app(PipelineTransitions::class)->failPipeline(
+        ->and(fn () => resolve(PipelineTransitions::class)->failPipeline(
             $pipeline->fresh(),
             'late failure',
             'late_failure',
@@ -114,7 +115,7 @@ test('pipeline transitions guard step ordering and closed pipelines', function (
 test('pipeline records are isolated by tenant', function (): void {
     ['tenant' => $tenantA] = provisionWorkspace('First Workspace');
     $document = uploadedDocumentForPipeline($tenantA->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
 
     ['tenant' => $tenantB] = provisionWorkspace('Second Workspace');
 
@@ -130,8 +131,8 @@ test('the monitor marks inactive pipelines stuck and reports them', function ():
 
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForPipeline($tenant->id);
-    $pipeline = app(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    app(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
 
     $this->travel(31)->minutes();
 

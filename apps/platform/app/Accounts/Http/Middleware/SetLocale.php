@@ -9,10 +9,10 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-final class SetLocale
+final readonly class SetLocale
 {
     public function __construct(
-        private readonly ResolveApplicationLocaleAction $resolveApplicationLocale,
+        private ResolveApplicationLocaleAction $resolveApplicationLocale,
     ) {}
 
     /**

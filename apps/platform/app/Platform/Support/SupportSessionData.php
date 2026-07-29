@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Platform\Support;
 
+use Illuminate\Support\Facades\Date;
 use App\Tenancy\Models\Tenant;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
 
 use function is_int;
 use function is_string;
@@ -48,8 +48,8 @@ final readonly class SupportSessionData
         return new self(
             tenantId: (int) $tenantId,
             reason: mb_trim($reason),
-            startedAt: Carbon::parse($startedAt),
-            expiresAt: Carbon::parse($expiresAt),
+            startedAt: Date::parse($startedAt),
+            expiresAt: Date::parse($expiresAt),
         );
     }
 

@@ -31,9 +31,7 @@ final class AcceptTenantInvitationController extends Controller
 
         $tenant = $invitation->tenant;
 
-        if (! $tenant instanceof Tenant) {
-            abort(404);
-        }
+        abort_unless($tenant instanceof Tenant, 404);
 
         $user = $request->user();
         $emailMatches = $user instanceof User
@@ -84,9 +82,7 @@ final class AcceptTenantInvitationController extends Controller
             $tenant = $membership->tenant;
         }
 
-        if (! $tenant instanceof Tenant) {
-            abort(404);
-        }
+        abort_unless($tenant instanceof Tenant, 404);
 
         $request->session()->put('active_tenant_id', $tenant->id);
         $request->session()->flash('inertia.refresh.workspaces', true);
@@ -119,9 +115,7 @@ final class AcceptTenantInvitationController extends Controller
             $tenant = $membership->tenant;
         }
 
-        if (! $tenant instanceof Tenant) {
-            abort(404);
-        }
+        abort_unless($tenant instanceof Tenant, 404);
 
         $request->session()->put('active_tenant_id', $tenant->id);
         $request->session()->flash('inertia.refresh.workspaces', true);

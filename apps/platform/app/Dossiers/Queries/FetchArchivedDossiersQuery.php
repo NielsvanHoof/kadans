@@ -105,11 +105,9 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
         /** @var Dossier $model */
         $client = $model->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Archived dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Archived dossier client is missing.');
 
-        return (new ArchivedDossierRowData(
+        return new ArchivedDossierRowData(
             id: $model->id,
             title: $model->title,
             reference: $model->reference,
@@ -117,6 +115,6 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
             clientName: $client->name,
             clientArchived: $client->trashed(),
             archivedAt: $model->deleted_at?->toIso8601String() ?? '',
-        ))->toArray();
+        )->toArray();
     }
 }

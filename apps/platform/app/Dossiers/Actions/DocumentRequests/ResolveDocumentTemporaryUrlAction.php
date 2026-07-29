@@ -22,9 +22,9 @@ use function is_string;
  * we create a dedicated S3 presigner with the public endpoint so the
  * signature matches the host the browser actually hits.
  */
-final class ResolveDocumentTemporaryUrlAction
+final readonly class ResolveDocumentTemporaryUrlAction
 {
-    public function __construct(private readonly FilesystemManager $filesystems) {}
+    public function __construct(private FilesystemManager $filesystems) {}
 
     /**
      * S3-compatible disks support temporary URLs; local disk keeps streaming downloads in tests.
@@ -43,13 +43,9 @@ final class ResolveDocumentTemporaryUrlAction
     ): string {
         $disk = $this->filesystems->disk($document->disk);
 
-        if (! $disk instanceof FilesystemAdapter) {
-            throw new RuntimeException('Disk does not support temporary URLs.');
-        }
+        throw_unless($disk instanceof FilesystemAdapter, RuntimeException::class, 'Disk does not support temporary URLs.');
 
-        if ($disposition !== 'attachment' && $disposition !== 'inline') {
-            throw new RuntimeException('Document URL disposition must be attachment or inline.');
-        }
+        throw_if($disposition !== 'attachment' && $disposition !== 'inline', RuntimeException::class, 'Document URL disposition must be attachment or inline.');
 
         $publicUrl = $this->generatePublicPresignedUrl($disk, $document, $expiresAt, $disposition);
         if ($publicUrl !== null) {

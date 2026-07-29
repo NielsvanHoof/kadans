@@ -13,16 +13,17 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role as RoleModel;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('tenant provisioning creates the complete tenant graph atomically', function () {
+test('tenant provisioning creates the complete tenant graph atomically', function (): void {
     $owner = User::factory()->create();
 
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     expect($tenant->slug)->toBe('acme-accountants')
         ->and(TenantMembership::query()
@@ -34,22 +35,28 @@ test('tenant provisioning creates the complete tenant graph atomically', functio
             ->count())->toBe(count(RoleEnum::cases()));
 });
 
-test('tenant provisioning rolls back the complete tenant graph when a later step fails', function () {
+test('tenant provisioning rolls back the complete tenant graph when a later step fails', function (): void {
     setPermissionsTeamId(123);
 
     $owner = User::factory()->create();
     $owner->delete();
 
-    expect(fn () => app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner))
-        ->toThrow(QueryException::class);
-
-    expect(Tenant::query()->count())->toBe(0)
-        ->and(TenantMembership::query()->count())->toBe(0)
-        ->and(RoleModel::query()->whereNotNull('tenant_id')->count())->toBe(0)
-        ->and(getPermissionsTeamId())->toBe(123);
+    expect(fn () => resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner))
+        ->toThrow(QueryException::class)
+        ->and(Tenant::query()
+        ->count())
+        ->toBe(0)
+        ->and(TenantMembership::query()
+        ->count())
+        ->toBe(0)
+        ->and(RoleModel::query()->whereNotNull('tenant_id')
+        ->count())
+        ->toBe(0)
+        ->and(getPermissionsTeamId())
+        ->toBe(123);
 });
 
-test('tenant provisioning increments a slug that is already reserved', function () {
+test('tenant provisioning increments a slug that is already reserved', function (): void {
     Tenant::factory()->create([
         'name' => 'Existing firm',
         'slug' => 'acme-accountants',
@@ -57,14 +64,14 @@ test('tenant provisioning increments a slug that is already reserved', function 
 
     $owner = User::factory()->create();
 
-    $secondTenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $thirdTenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', User::factory()->create());
+    $secondTenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $thirdTenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', User::factory()->create());
 
     expect($secondTenant->slug)->toBe('acme-accountants-2')
         ->and($thirdTenant->slug)->toBe('acme-accountants-3');
 });
 
-test('tenant provisioning retries when a slug is claimed during insertion', function () {
+test('tenant provisioning retries when a slug is claimed during insertion', function (): void {
     DB::unprepared(<<<'SQL'
         CREATE TRIGGER reserve_acme_slug
         BEFORE INSERT ON tenants
@@ -76,7 +83,7 @@ test('tenant provisioning retries when a slug is claimed during insertion', func
         SQL);
 
     try {
-        $tenant = app(ProvisionTenantAction::class)->handle(
+        $tenant = resolve(ProvisionTenantAction::class)->handle(
             'Acme Accountants',
             User::factory()->create(),
         );
@@ -88,7 +95,7 @@ test('tenant provisioning retries when a slug is claimed during insertion', func
         ->and(Tenant::query()->count())->toBe(1);
 });
 
-test('firm onboarding uses the insertion-safe slug allocator', function () {
+test('firm onboarding uses the insertion-safe slug allocator', function (): void {
     Tenant::factory()->create([
         'name' => 'Existing firm',
         'slug' => 'acme-accountants',

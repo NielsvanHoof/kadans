@@ -27,9 +27,7 @@ final class SendClientPortalInviteAction
 
         $client = $dossier->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         $firmName = $dossier->tenant instanceof Tenant
             ? $dossier->tenant->name
@@ -40,13 +38,13 @@ final class SendClientPortalInviteAction
 
         Notification::route('mail', $client->email)
             ->notify(
-                (new ClientPortalInviteNotification(
+                new ClientPortalInviteNotification(
                     grantId: $grant->id,
                     dossier: $dossier,
                     portalUrl: $portalUrl,
                     expiresAt: $grant->expires_at,
                     firmName: $firmName,
-                ))->locale(app()->getLocale()),
+                )->locale(app()->getLocale()),
             );
     }
 }

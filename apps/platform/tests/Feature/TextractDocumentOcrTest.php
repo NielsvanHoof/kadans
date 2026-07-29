@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Clients\Models\Client;
+use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Services\Ocr\Drivers\TextractDocumentOcr;
@@ -18,9 +19,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     config([
         'ocr.driver' => 'textract',
         'ocr.textract.bucket' => 'test-documents',
@@ -30,7 +32,7 @@ beforeEach(function () {
     ]);
 });
 
-test('textract start persists job id and leaves document processing', function () {
+test('textract start persists job id and leaves document processing', function (): void {
     Event::fake([MessageLogged::class]);
 
     $uploaded = createUploadedDocumentForTextractTest();
@@ -38,22 +40,21 @@ test('textract start persists job id and leaves document processing', function (
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldReceive('startDocumentAnalysis')
         ->once()
-        ->with(Mockery::on(function (array $args) use ($uploaded): bool {
-            return ($args['DocumentLocation']['S3Object']['Bucket'] ?? null) === 'test-documents'
-                && ($args['DocumentLocation']['S3Object']['Name'] ?? null) === $uploaded->path
-                && ($args['FeatureTypes'] ?? null) === ['FORMS', 'TABLES']
-                && ($args['NotificationChannel']['SNSTopicArn'] ?? null) === 'arn:aws:sns:eu-west-1:123:textract'
-                && ($args['NotificationChannel']['RoleArn'] ?? null) === 'arn:aws:iam::123:role/textract-sns'
-                && ($args['ClientRequestToken'] ?? null) === hash('sha256', $uploaded->id.':'.$uploaded->path)
-                && ($args['JobTag'] ?? null) === (string) $uploaded->id;
-        }))
+        ->with(Mockery::on(fn(array $args): bool => ($args['DocumentLocation']['S3Object']['Bucket'] ?? null) === 'test-documents'
+            && ($args['DocumentLocation']['S3Object']['Name'] ?? null) === $uploaded->path
+            && ($args['FeatureTypes'] ?? null) === ['FORMS', 'TABLES']
+            && ($args['NotificationChannel']['SNSTopicArn'] ?? null) === 'arn:aws:sns:eu-west-1:123:textract'
+            && ($args['NotificationChannel']['RoleArn'] ?? null) === 'arn:aws:iam::123:role/textract-sns'
+            && ($args['ClientRequestToken'] ?? null) === hash('sha256', $uploaded->id.':'.$uploaded->path)
+            && ($args['JobTag'] ?? null) === (string) $uploaded->id))
         ->andReturn(new Result(['JobId' => 'textract-job-abc']));
 
     $this->app->instance(TextractClient::class, $textract);
 
-    (new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path))->handle(
-        app(OcrOrchestrator::class),
-        app(LogAuditActivityAction::class),
+    new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path)->handle(
+        resolve(OcrOrchestrator::class),
+        resolve(LogAuditActivityAction::class),
+        resolve(PipelineStateAction::class),
     );
 
     $uploaded->refresh();
@@ -63,16 +64,16 @@ test('textract start persists job id and leaves document processing', function (
         ->and($uploaded->extracted_text)->toBeNull()
         ->and($uploaded->processing_finished_at)->toBeNull();
 
-    Event::assertDispatched(MessageLogged::class, fn (MessageLogged $log): bool => $log->level === 'info'
+    Event::assertDispatched(fn (MessageLogged $log): bool => $log->level === 'info'
         && str_contains($log->message, 'OCR: Textract job started — awaiting SNS/SQS completion.')
         && ($log->context['textract_job_id'] ?? null) === 'textract-job-abc');
 
-    Event::assertDispatched(MessageLogged::class, fn (MessageLogged $log): bool => $log->level === 'info'
+    Event::assertDispatched(fn (MessageLogged $log): bool => $log->level === 'info'
         && str_contains($log->message, 'OCR: orchestrator deferred')
         && ($log->context['textract_job_id'] ?? null) === 'textract-job-abc');
 });
 
-test('textract start does not attach a job id after the upload is replaced', function () {
+test('textract start does not attach a job id after the upload is replaced', function (): void {
     $uploaded = createUploadedDocumentForTextractTest([
         'processing_status' => DocumentProcessingStatus::Processing,
         'processing_started_at' => now(),
@@ -94,7 +95,7 @@ test('textract start does not attach a job id after the upload is replaced', fun
 
     $this->app->instance(TextractClient::class, $textract);
 
-    app(TextractDocumentOcr::class)->start($uploaded);
+    resolve(TextractDocumentOcr::class)->start($uploaded);
 
     $uploaded->refresh();
 

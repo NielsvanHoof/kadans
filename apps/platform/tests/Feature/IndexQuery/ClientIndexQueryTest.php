@@ -9,15 +9,16 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('clients index paginates results and exposes indexQuery config', function () {
+test('clients index paginates results and exposes indexQuery config', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -28,7 +29,7 @@ test('clients index paginates results and exposes indexQuery config', function (
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('clients/index')
             ->has('clients.data', 15)
             ->where('clients.total', 16)
@@ -44,14 +45,14 @@ test('clients index paginates results and exposes indexQuery config', function (
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?page=2')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('clients.data', 1)
             ->where('clients.current_page', 2));
 });
 
-test('clients index filters by search query across name and email', function () {
+test('clients index filters by search query across name and email', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -75,7 +76,7 @@ test('clients index filters by search query across name and email', function () 
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?filter[q]=acme')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('clients.data', 2)
             ->where('clients.total', 2)
             ->where('filters.q', 'acme')
@@ -84,9 +85,9 @@ test('clients index filters by search query across name and email', function () 
             )));
 });
 
-test('clients index inertia page url keeps readable filter brackets', function () {
+test('clients index inertia page url keeps readable filter brackets', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -100,7 +101,7 @@ test('clients index inertia page url keeps readable filter brackets', function (
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?filter[q]=acme&sort=-name')
         ->assertOk()
-        ->assertInertia(function (Assert $page) {
+        ->assertInertia(function (Assert $page): void {
             $url = $page->toArray()['url'];
 
             // fullUrl() encodes [ ] as %5B/%5D; urlResolver must keep Spatie filters readable.
@@ -116,9 +117,9 @@ test('clients index inertia page url keeps readable filter brackets', function (
         });
 });
 
-test('clients index sorts by name descending', function () {
+test('clients index sorts by name descending', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -137,15 +138,15 @@ test('clients index sorts by name descending', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?sort=-name')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('sort', '-name')
             ->where('clients.data.0.name', 'Zulu Client')
             ->where('clients.data.1.name', 'Alpha Client'));
 });
 
-test('clients index rejects invalid filters', function () {
+test('clients index rejects invalid filters', function (): void {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -153,11 +154,11 @@ test('clients index rejects invalid filters', function () {
         ->assertStatus(400);
 });
 
-test('clients index does not leak another tenants clients', function () {
+test('clients index does not leak another tenants clients', function (): void {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     Client::factory()->create([
@@ -177,7 +178,7 @@ test('clients index does not leak another tenants clients', function () {
         ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenantA).'?filter[q]=Client')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('clients.data', 1)
             ->where('clients.data.0.name', 'Own Client'));
 });

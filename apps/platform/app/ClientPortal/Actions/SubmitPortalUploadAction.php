@@ -16,13 +16,13 @@ use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 
-final class SubmitPortalUploadAction
+final readonly class SubmitPortalUploadAction
 {
     public function __construct(
-        private readonly UploadDocumentForRequestAction $uploadDocumentForRequest,
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly DossierTransitions $dossierTransitions,
-        private readonly NotifyWorkspaceIfQuestionnaireCompleteAction $notifyWorkspaceIfQuestionnaireComplete,
+        private UploadDocumentForRequestAction $uploadDocumentForRequest,
+        private LogAuditActivityAction $logAuditActivity,
+        private DossierTransitions $dossierTransitions,
+        private NotifyWorkspaceIfQuestionnaireCompleteAction $notifyWorkspaceIfQuestionnaireComplete,
     ) {}
 
     public function handle(

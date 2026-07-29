@@ -14,9 +14,10 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
@@ -34,10 +35,10 @@ function softDeleteContext(): array
         'title' => 'Annual accounts 2025',
     ]);
 
-    return compact('owner', 'tenant', 'client', 'dossier');
+    return ['owner' => $owner, 'tenant' => $tenant, 'client' => $client, 'dossier' => $dossier];
 }
 
-test('owner can archive a dossier and it disappears from the index', function () {
+test('owner can archive a dossier and it disappears from the index', function (): void {
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
@@ -51,7 +52,7 @@ test('owner can archive a dossier and it disappears from the index', function ()
 
     $this->get(workspaceRoute('workspaces.dossiers.index', $context['tenant']))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossiers.data', 0)
             ->where('dossiers.total', 0));
 
@@ -60,7 +61,7 @@ test('owner can archive a dossier and it disappears from the index', function ()
     ]))->assertNotFound();
 });
 
-test('archiving a dossier logs a tenant scoped audit entry', function () {
+test('archiving a dossier logs a tenant scoped audit entry', function (): void {
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
@@ -80,10 +81,10 @@ test('archiving a dossier logs a tenant scoped audit entry', function () {
         ->and($activity->getProperty('title'))->toBe('Annual accounts 2025');
 });
 
-test('archiving a dossier revokes active portal grants', function () {
+test('archiving a dossier revokes active portal grants', function (): void {
     $context = softDeleteContext();
 
-    $result = app(CreateClientAccessGrantAction::class)->handle(
+    $result = resolve(CreateClientAccessGrantAction::class)->handle(
         $context['dossier'],
         $context['owner'],
     );
@@ -98,7 +99,7 @@ test('archiving a dossier revokes active portal grants', function () {
     expect($grant->fresh()->revoked_at)->not->toBeNull();
 });
 
-test('owner can archive a client and cascade soft delete to dossiers', function () {
+test('owner can archive a client and cascade soft delete to dossiers', function (): void {
     $context = softDeleteContext();
 
     $secondDossier = Dossier::factory()->create([
@@ -121,12 +122,12 @@ test('owner can archive a client and cascade soft delete to dossiers', function 
 
     $this->get(workspaceRoute('workspaces.clients.index', $context['tenant']))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('clients.data', 0)
             ->where('clients.total', 0));
 });
 
-test('archiving a client logs audit entries for the client and each dossier', function () {
+test('archiving a client logs audit entries for the client and each dossier', function (): void {
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
@@ -139,7 +140,7 @@ test('archiving a client logs audit entries for the client and each dossier', fu
         ->and(Activity::query()->where('event', AuditEvent::DossierDeleted->value)->exists())->toBeTrue();
 });
 
-test('users outside the tenant cannot archive a dossier', function () {
+test('users outside the tenant cannot archive a dossier', function (): void {
     $context = softDeleteContext();
     $outsider = User::factory()->create();
 
@@ -153,7 +154,7 @@ test('users outside the tenant cannot archive a dossier', function () {
     expect($context['dossier']->fresh()->trashed())->toBeFalse();
 });
 
-test('read-only members cannot archive clients', function () {
+test('read-only members cannot archive clients', function (): void {
     $context = softDeleteContext();
     $reader = workspaceMember($context['tenant'], Role::ReadOnly);
 
@@ -167,7 +168,7 @@ test('read-only members cannot archive clients', function () {
     expect($context['client']->fresh()->trashed())->toBeFalse();
 });
 
-test('archived dossier subjects remain resolvable in the activity log', function () {
+test('archived dossier subjects remain resolvable in the activity log', function (): void {
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
@@ -184,7 +185,7 @@ test('archived dossier subjects remain resolvable in the activity log', function
         ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->get(workspaceRoute('workspaces.activity.index', $context['tenant']))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('activities.data.0.id', $activity->id)
             ->where('activities.data.0.subject.name', 'Annual accounts 2025'));
 });

@@ -19,9 +19,10 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
@@ -31,7 +32,7 @@ beforeEach(function () {
 function createConditionalFormsContext(): array
 {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create([
@@ -44,7 +45,7 @@ function createConditionalFormsContext(): array
         'status' => DossierStatus::InReview,
     ]);
 
-    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     return [
         'owner' => $owner,
@@ -56,7 +57,7 @@ function createConditionalFormsContext(): array
     ];
 }
 
-test('hidden fields do not block dossier completion and retain answers for audit', function () {
+test('hidden fields do not block dossier completion and retain answers for audit', function (): void {
     $context = createConditionalFormsContext();
     $context['tenant']->makeCurrent();
 
@@ -109,7 +110,7 @@ test('hidden fields do not block dossier completion and retain answers for audit
             'dossier' => $context['dossier'],
         ]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('dossier.ready_to_complete', true)
             ->where('dossier.document_requests.0.is_visible', true)
             ->where('dossier.document_requests.0.is_applicable', true)
@@ -117,7 +118,7 @@ test('hidden fields do not block dossier completion and retain answers for audit
             ->where('dossier.document_requests.1.is_applicable', false)
             ->where('dossier.document_requests.1.answer_text', '12'));
 
-    app(CompleteDossierAction::class)->handle(
+    resolve(CompleteDossierAction::class)->handle(
         $context['dossier']->fresh(),
         $context['owner'],
     );
@@ -127,7 +128,7 @@ test('hidden fields do not block dossier completion and retain answers for audit
         ->and($choiceRequest->fresh()->answer_option_ids)->toBe([$noOptionId]);
 });
 
-test('multi-select visibility matches when any selected option overlaps', function () {
+test('multi-select visibility matches when any selected option overlaps', function (): void {
     $context = createConditionalFormsContext();
     $context['tenant']->makeCurrent();
 
@@ -174,7 +175,7 @@ test('multi-select visibility matches when any selected option overlaps', functi
 
     $this->get(route('portal.show'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 1));
 
     $this->post(route('portal.document-requests.answer', [
@@ -185,12 +186,12 @@ test('multi-select visibility matches when any selected option overlaps', functi
 
     $this->get(route('portal.show'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 2)
             ->where('dossier.document_requests.1.id', $dependent->id));
 });
 
-test('visibility cannot depend on a later field', function () {
+test('visibility cannot depend on a later field', function (): void {
     $context = createConditionalFormsContext();
     $context['tenant']->makeCurrent();
 
@@ -243,7 +244,7 @@ test('visibility cannot depend on a later field', function () {
         ->assertSessionHasErrors('configuration.visibility.source_field_key');
 });
 
-test('a new field cannot be created with visibility depending on a later field', function () {
+test('a new field cannot be created with visibility depending on a later field', function (): void {
     $context = createConditionalFormsContext();
     $context['tenant']->makeCurrent();
 
@@ -290,7 +291,7 @@ test('a new field cannot be created with visibility depending on a later field',
     expect($context['dossier']->documentRequests()->count())->toBe(1);
 });
 
-test('an answer is rejected when it selects an option the field does not offer', function () {
+test('an answer is rejected when it selects an option the field does not offer', function (): void {
     $context = createConditionalFormsContext();
     $context['tenant']->makeCurrent();
 
@@ -331,7 +332,7 @@ test('an answer is rejected when it selects an option the field does not offer',
     expect($choice->fresh()->answer_option_ids)->toBe([$configuredOptionId]);
 });
 
-test('completing a dossier fails when an applicable field is still pending', function () {
+test('completing a dossier fails when an applicable field is still pending', function (): void {
     $context = createConditionalFormsContext();
     $context['tenant']->makeCurrent();
 
@@ -342,7 +343,7 @@ test('completing a dossier fails when an applicable field is still pending', fun
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    expect(fn () => app(CompleteDossierAction::class)->handle(
+    expect(fn () => resolve(CompleteDossierAction::class)->handle(
         $context['dossier']->fresh(),
         $context['owner'],
     ))->toThrow(ValidationException::class);

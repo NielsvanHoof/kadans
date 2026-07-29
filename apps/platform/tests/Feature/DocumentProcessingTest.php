@@ -20,19 +20,20 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
     Storage::fake('local');
     config()->set('filesystems.default', 'local');
 });
 
-test('uploading a document dispatches the mock OCR processing job', function () {
+test('uploading a document dispatches the mock OCR processing job', function (): void {
     Queue::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -46,27 +47,27 @@ test('uploading a document dispatches the mock OCR processing job', function () 
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $uploaded = app(UploadDocumentForRequestAction::class)->handle(
+    $uploaded = resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
         UploadedFile::fake()->create('payslip.pdf', 100, 'application/pdf'),
     );
 
-    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending);
-    expect(Pipeline::query()
+    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending)
+        ->and(Pipeline::query()
         ->where('pipelineable_type', (new UploadedDocument)->getMorphClass())
         ->where('pipelineable_id', $uploaded->id)
-        ->sole()->type->value)->toBe('ocr_document');
+        ->sole()->type->value)
+        ->toBe('ocr_document');
 
-    Queue::assertPushed(ProcessUploadedDocumentJob::class, function (ProcessUploadedDocumentJob $job) use ($uploaded): bool {
-        return $job->uploadedDocumentId === $uploaded->id;
-    });
+    Queue::assertPushed(ProcessUploadedDocumentJob::class, fn(ProcessUploadedDocumentJob $job): bool => $job->uploadedDocumentId === $uploaded->id
+        && $job->pipelineId !== null);
 });
 
-test('staff dossier show includes processing fields for uploaded documents', function () {
+test('staff dossier show includes processing fields for uploaded documents', function (): void {
     Queue::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -80,7 +81,7 @@ test('staff dossier show includes processing fields for uploaded documents', fun
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    app(UploadDocumentForRequestAction::class)->handle(
+    resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
         UploadedFile::fake()->create('payslip.pdf', 100, 'application/pdf'),
     );
@@ -91,9 +92,9 @@ test('staff dossier show includes processing fields for uploaded documents', fun
             'dossier' => $dossier,
         ]))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/show')
-            ->has('dossier.document_requests.0.uploaded_document', fn (Assert $document) => $document
+            ->has('dossier.document_requests.0.uploaded_document', fn (Assert $document): Assert => $document
                 ->where('original_filename', 'payslip.pdf')
                 ->where('processing_status', DocumentProcessingStatus::Pending->value)
                 ->missing('extracted_text')

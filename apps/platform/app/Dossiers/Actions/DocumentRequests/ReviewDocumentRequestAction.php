@@ -17,12 +17,12 @@ use InvalidArgumentException;
 
 use function in_array;
 
-final class ReviewDocumentRequestAction
+final readonly class ReviewDocumentRequestAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly SendClientChangesRequestedNotificationAction $sendClientChangesRequestedNotification,
-        private readonly DocumentRequestTransitions $documentRequestTransitions,
+        private LogAuditActivityAction $logAuditActivity,
+        private SendClientChangesRequestedNotificationAction $sendClientChangesRequestedNotification,
+        private DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
     public function handle(
@@ -31,9 +31,7 @@ final class ReviewDocumentRequestAction
         DocumentRequestStatus $decision,
         ?string $rejectionReason = null,
     ): DocumentRequest {
-        if (! in_array($decision, [DocumentRequestStatus::Accepted, DocumentRequestStatus::Rejected], true)) {
-            throw new InvalidArgumentException('A review decision must accept or reject the request.');
-        }
+        throw_unless(in_array($decision, [DocumentRequestStatus::Accepted, DocumentRequestStatus::Rejected], true), InvalidArgumentException::class, 'A review decision must accept or reject the request.');
 
         return DB::transaction(function () use (
             $documentRequest,

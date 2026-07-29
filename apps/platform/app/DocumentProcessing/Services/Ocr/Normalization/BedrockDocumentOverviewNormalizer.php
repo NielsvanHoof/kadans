@@ -25,11 +25,11 @@ use function mb_strlen;
  * @phpstan-import-type DocumentExtractionPayload from DocumentExtraction
  * @phpstan-import-type DocumentOverview from DocumentExtraction
  */
-final class BedrockDocumentOverviewNormalizer implements DescribesDocumentOverview
+final readonly class BedrockDocumentOverviewNormalizer implements DescribesDocumentOverview
 {
     public function __construct(
-        private readonly BedrockRuntimeClient $bedrock,
-        private readonly Repository $config,
+        private BedrockRuntimeClient $bedrock,
+        private Repository $config,
     ) {}
 
     /**
@@ -50,9 +50,7 @@ final class BedrockDocumentOverviewNormalizer implements DescribesDocumentOvervi
         $maxTokens = (int) $this->config->get('ocr.bedrock.max_tokens', 4096);
         $temperature = (float) $this->config->get('ocr.bedrock.temperature', 0);
 
-        if (! is_string($modelId) || $modelId === '') {
-            throw new RuntimeException('OCR Bedrock model id is not configured.');
-        }
+        throw_if(! is_string($modelId) || $modelId === '', RuntimeException::class, 'OCR Bedrock model id is not configured.');
 
         $converseArgs = [
             'modelId' => $modelId,
@@ -168,21 +166,15 @@ PROMPT;
     {
         $output = $result['output'] ?? null;
 
-        if (! is_array($output)) {
-            throw new RuntimeException('Bedrock Converse response is missing output.');
-        }
+        throw_unless(is_array($output), RuntimeException::class, 'Bedrock Converse response is missing output.');
 
         $message = $output['message'] ?? null;
 
-        if (! is_array($message)) {
-            throw new RuntimeException('Bedrock Converse response is missing message.');
-        }
+        throw_unless(is_array($message), RuntimeException::class, 'Bedrock Converse response is missing message.');
 
         $content = $message['content'] ?? null;
 
-        if (! is_array($content)) {
-            throw new RuntimeException('Bedrock Converse response is missing content.');
-        }
+        throw_unless(is_array($content), RuntimeException::class, 'Bedrock Converse response is missing content.');
 
         $answerParts = [];
         $reasoningParts = [];
@@ -276,9 +268,7 @@ PROMPT;
             throw new RuntimeException('Bedrock returned invalid JSON.', 0, $exception);
         }
 
-        if (! is_array($decoded)) {
-            throw new RuntimeException('Bedrock JSON root must be an object.');
-        }
+        throw_unless(is_array($decoded), RuntimeException::class, 'Bedrock JSON root must be an object.');
 
         return [
             'document_type' => $this->nullableString($decoded['document_type'] ?? null),

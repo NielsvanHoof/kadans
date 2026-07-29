@@ -151,8 +151,10 @@ final class FetchUploadedDocumentShowQuery
             }
 
             $label = $field['label'] ?? null;
-
-            if (! is_string($label) || $label === '') {
+            if (! is_string($label)) {
+                continue;
+            }
+            if ($label === '') {
                 continue;
             }
 

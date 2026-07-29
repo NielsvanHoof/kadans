@@ -8,13 +8,14 @@ use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('owner can bulk archive clients and cascade their dossiers', function () {
+test('owner can bulk archive clients and cascade their dossiers', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $clientA = Client::factory()->create(['tenant_id' => $tenant->id]);
     $clientB = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -40,7 +41,7 @@ test('owner can bulk archive clients and cascade their dossiers', function () {
         ->and($dossierB->fresh()->trashed())->toBeTrue();
 });
 
-test('owner can bulk restore clients without restoring dossiers', function () {
+test('owner can bulk restore clients without restoring dossiers', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $clientA = Client::factory()->create(['tenant_id' => $tenant->id]);
     $clientB = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -70,7 +71,7 @@ test('owner can bulk restore clients without restoring dossiers', function () {
         ->and($dossierB->fresh()->trashed())->toBeTrue();
 });
 
-test('owner can bulk archive dossiers', function () {
+test('owner can bulk archive dossiers', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossierA = Dossier::factory()->create([
@@ -94,7 +95,7 @@ test('owner can bulk archive dossiers', function () {
         ->and($client->fresh()->trashed())->toBeFalse();
 });
 
-test('owner can bulk restore dossiers when clients are active', function () {
+test('owner can bulk restore dossiers when clients are active', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossierA = Dossier::factory()->create([
@@ -119,7 +120,7 @@ test('owner can bulk restore dossiers when clients are active', function () {
         ->and($dossierB->fresh()->trashed())->toBeFalse();
 });
 
-test('bulk restore dossiers fails when a selected dossier client is archived', function () {
+test('bulk restore dossiers fails when a selected dossier client is archived', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -140,7 +141,7 @@ test('bulk restore dossiers fails when a selected dossier client is archived', f
     expect($dossier->fresh()->trashed())->toBeTrue();
 });
 
-test('bulk archive rejects ids from another workspace', function () {
+test('bulk archive rejects ids from another workspace', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $foreignClient = Client::factory()->create(['tenant_id' => $tenant->id]);
     ['owner' => $otherOwner, 'tenant' => $otherTenant] = provisionWorkspace();
@@ -156,7 +157,7 @@ test('bulk archive rejects ids from another workspace', function () {
     expect($foreignClient->fresh()->trashed())->toBeFalse();
 });
 
-test('read only members cannot bulk archive or restore', function () {
+test('read only members cannot bulk archive or restore', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);

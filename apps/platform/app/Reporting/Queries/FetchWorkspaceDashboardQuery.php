@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
+use Illuminate\Contracts\Database\Query\Builder;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
@@ -44,7 +45,7 @@ final class FetchWorkspaceDashboardQuery
         $awaitingClientQuery = Dossier::query()
             ->whereBelongsTo($tenant)
             ->whereNot('status', DossierStatus::Completed)
-            ->whereHas('documentRequests', function ($documentRequestQuery): void {
+            ->whereHas('documentRequests', function (Builder $documentRequestQuery): void {
                 $documentRequestQuery->getQuery()->whereIn('status', [
                     DocumentRequestStatus::Pending->value,
                     DocumentRequestStatus::Rejected->value,
@@ -54,7 +55,7 @@ final class FetchWorkspaceDashboardQuery
         $needsReviewQuery = Dossier::query()
             ->whereBelongsTo($tenant)
             ->whereNot('status', DossierStatus::Completed)
-            ->whereHas('documentRequests', fn ($documentRequestQuery) => $documentRequestQuery
+            ->whereHas('documentRequests', fn (Builder $documentRequestQuery) => $documentRequestQuery
                 ->getQuery()
                 ->where('status', DocumentRequestStatus::Submitted->value));
         $overdueQuery = clone $awaitingClientQuery;
@@ -161,9 +162,7 @@ final class FetchWorkspaceDashboardQuery
         ]) as $dossier) {
             $client = $dossier->client;
 
-            if (! $client instanceof Client) {
-                throw new RuntimeException('Dossier client is missing.');
-            }
+            throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
             $rows[] = new DashboardRecentDossierData(
                 id: $dossier->id,

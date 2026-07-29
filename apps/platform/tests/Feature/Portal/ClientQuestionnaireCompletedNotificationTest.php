@@ -21,9 +21,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
@@ -39,7 +40,7 @@ beforeEach(function () {
 function createQuestionnaireNotificationContext(): array
 {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -54,7 +55,7 @@ function createQuestionnaireNotificationContext(): array
         'title' => '2025 Payroll dossier',
     ]);
 
-    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     return [
         'owner' => $owner,
@@ -65,7 +66,7 @@ function createQuestionnaireNotificationContext(): array
     ];
 }
 
-test('last portal answer submission broadcasts questionnaire completed to the workspace', function () {
+test('last portal answer submission broadcasts questionnaire completed to the workspace', function (): void {
     Event::fake([ClientQuestionnaireCompleted::class]);
 
     $context = createQuestionnaireNotificationContext();
@@ -87,19 +88,16 @@ test('last portal answer submission broadcasts questionnaire completed to the wo
         'answer_text' => '221B Baker Street',
     ])->assertRedirect(route('portal.show'));
 
-    Event::assertDispatched(
-        ClientQuestionnaireCompleted::class,
-        function (ClientQuestionnaireCompleted $event) use ($context): bool {
-            expect($event->tenantSlug)->toBe($context['tenant']->slug)
-                ->and($event->dossierId)->toBe($context['dossier']->id)
-                ->and($event->dossierTitle)->toBe('2025 Payroll dossier')
-                ->and($event->clientName)->toBe('Jane Client')
-                ->and($event->message)->toContain('Jane Client')
-                ->and($event->dossierUrl)->toContain($context['tenant']->slug);
+    Event::assertDispatched(function (ClientQuestionnaireCompleted $event) use ($context): bool {
+        expect($event->tenantSlug)->toBe($context['tenant']->slug)
+            ->and($event->dossierId)->toBe($context['dossier']->id)
+            ->and($event->dossierTitle)->toBe('2025 Payroll dossier')
+            ->and($event->clientName)->toBe('Jane Client')
+            ->and($event->message)->toContain('Jane Client')
+            ->and($event->dossierUrl)->toContain($context['tenant']->slug);
 
-            return true;
-        },
-    );
+        return true;
+    });
 
     expect(
         Activity::query()
@@ -109,7 +107,7 @@ test('last portal answer submission broadcasts questionnaire completed to the wo
     )->toBeTrue();
 });
 
-test('partial portal submission does not broadcast questionnaire completed', function () {
+test('partial portal submission does not broadcast questionnaire completed', function (): void {
     Event::fake([ClientQuestionnaireCompleted::class]);
 
     $context = createQuestionnaireNotificationContext();
@@ -149,19 +147,19 @@ test('partial portal submission does not broadcast questionnaire completed', fun
     )->toBeFalse();
 });
 
-test('empty dossier does not broadcast questionnaire completed', function () {
+test('empty dossier does not broadcast questionnaire completed', function (): void {
     Event::fake([ClientQuestionnaireCompleted::class]);
 
     $context = createQuestionnaireNotificationContext();
 
     $context['tenant']->makeCurrent();
 
-    app(NotifyWorkspaceIfQuestionnaireCompleteAction::class)->handle($context['dossier']);
+    resolve(NotifyWorkspaceIfQuestionnaireCompleteAction::class)->handle($context['dossier']);
 
     Event::assertNotDispatched(ClientQuestionnaireCompleted::class);
 });
 
-test('resubmitting after rejection broadcasts questionnaire completed again', function () {
+test('resubmitting after rejection broadcasts questionnaire completed again', function (): void {
     Event::fake([ClientQuestionnaireCompleted::class]);
 
     $context = createQuestionnaireNotificationContext();
@@ -186,7 +184,7 @@ test('resubmitting after rejection broadcasts questionnaire completed again', fu
     Event::assertDispatched(ClientQuestionnaireCompleted::class);
 });
 
-test('last portal submission creates database notifications for active members only', function () {
+test('last portal submission creates database notifications for active members only', function (): void {
     Event::fake([ClientQuestionnaireCompleted::class]);
 
     $context = createQuestionnaireNotificationContext();
@@ -226,8 +224,10 @@ test('last portal submission creates database notifications for active members o
 
     expect($context['owner']->notifications)->toHaveCount(1)
         ->and($activeMember->notifications)->toHaveCount(1)
-        ->and($suspendedMember->notifications)->toHaveCount(0)
-        ->and($outsider->notifications)->toHaveCount(0);
+        ->and($suspendedMember->notifications)
+        ->toBeEmpty()
+        ->and($outsider->notifications)
+        ->toBeEmpty();
 
     $payload = $context['owner']->notifications->first()->data;
 
@@ -239,7 +239,7 @@ test('last portal submission creates database notifications for active members o
         ->and($payload['dossier_url'])->toContain($context['tenant']->slug);
 });
 
-test('partial portal submission does not create database notifications', function () {
+test('partial portal submission does not create database notifications', function (): void {
     Event::fake([ClientQuestionnaireCompleted::class]);
     Notification::fake();
 

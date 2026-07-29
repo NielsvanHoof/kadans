@@ -25,9 +25,9 @@ use function is_string;
  * Kept as one page query (like FetchWorkspaceDashboardQuery): private methods
  * own each section; role resolution stays on WorkspaceMemberRoles.
  */
-final class FetchWorkspaceMembersQuery
+final readonly class FetchWorkspaceMembersQuery
 {
-    public function __construct(private readonly WorkspaceMemberRoles $memberRoles) {}
+    public function __construct(private WorkspaceMemberRoles $memberRoles) {}
 
     public function handle(Tenant $tenant, User $viewer): WorkspaceMembersPageData
     {
@@ -62,7 +62,7 @@ final class FetchWorkspaceMembersQuery
                 TenantMembershipStatus::Active->value,
                 TenantMembershipStatus::Suspended->value,
             ])
-            ->orderBy('joined_at');
+            ->oldest('joined_at');
 
         return $membershipsQuery->get();
     }
@@ -133,7 +133,8 @@ final class FetchWorkspaceMembersQuery
             ->where('tenant_id', $tenant->id);
 
         TenantInvitation::constrainToPending($invitationsQuery);
-        $invitationsQuery->getQuery()->orderByDesc('created_at');
+        $invitationsQuery->getQuery()
+            ->latest();
 
         /** @var list<WorkspaceInvitationData> $invitations */
         $invitations = [];

@@ -53,9 +53,7 @@ final class ClientPortalUploadController extends Controller
     {
         $grant = $request->attributes->get(ResolveClientPortalGrant::REQUEST_ATTRIBUTE);
 
-        if (! $grant instanceof ClientAccessGrant) {
-            abort(404);
-        }
+        abort_unless($grant instanceof ClientAccessGrant, 404);
 
         return $grant;
     }

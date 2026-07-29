@@ -154,11 +154,9 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
         /** @var Dossier $model */
         $client = $model->client;
 
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
-        return (new DossierIndexRowData(
+        return new DossierIndexRowData(
             id: $model->id,
             clientName: $client->name,
             title: $model->title,
@@ -166,7 +164,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             status: $model->status->value,
             dueDate: $model->due_date?->toDateString(),
             responsibleName: $model->responsibleUser?->name,
-        ))->toArray();
+        )->toArray();
     }
 
     /** @param Builder<Dossier> $query */
@@ -175,7 +173,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
         if ($queue === 'needs_review') {
             $query
                 ->whereNot('status', DossierStatus::Completed)
-                ->whereHas('documentRequests', fn ($documentRequestQuery) => $documentRequestQuery
+                ->whereHas('documentRequests', fn (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery) => $documentRequestQuery
                     ->getQuery()
                     ->where('status', DocumentRequestStatus::Submitted->value));
 
@@ -188,7 +186,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
 
         $query
             ->whereNot('status', DossierStatus::Completed)
-            ->whereHas('documentRequests', function ($documentRequestQuery): void {
+            ->whereHas('documentRequests', function (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery): void {
                 $documentRequestQuery->getQuery()->whereIn('status', [
                     DocumentRequestStatus::Pending->value,
                     DocumentRequestStatus::Rejected->value,

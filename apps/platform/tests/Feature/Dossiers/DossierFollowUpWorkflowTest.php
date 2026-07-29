@@ -24,13 +24,14 @@ use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('dossier follow up details can be assigned only to active workspace staff', function () {
+test('dossier follow up details can be assigned only to active workspace staff', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $adviser = workspaceMember($tenant, Role::Adviser);
     $foreignUser = User::factory()->create();
@@ -64,7 +65,7 @@ test('dossier follow up details can be assigned only to active workspace staff',
     ])->assertSessionHasErrors('responsible_user_id');
 });
 
-test('dashboard and dossier index expose operational workflow queues', function () {
+test('dashboard and dossier index expose operational workflow queues', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $needsReview = Dossier::factory()->create([
@@ -104,19 +105,19 @@ test('dashboard and dossier index expose operational workflow queues', function 
         ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('metrics.needs_review', 1)
             ->where('metrics.awaiting_client', 2)
             ->where('metrics.overdue', 1));
 
     $this->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[queue]=overdue')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.title', 'Overdue payroll'));
 });
 
-test('staff can queue an audited reminder with a fresh portal grant', function () {
+test('staff can queue an audited reminder with a fresh portal grant', function (): void {
     Notification::fake();
 
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -166,12 +167,12 @@ test('staff can queue an audited reminder with a fresh portal grant', function (
     expect($queuedActivity->subject_id)->toBe($dossier->id)
         ->and($queuedActivity->causer_id)->toBe($owner->id)
         ->and($queuedActivity->getProperty('source'))->toBe(DossierReminderSource::Manual->value)
-        ->and((string) json_encode($queuedActivity->properties))->not->toContain($grant->token);
-
-    expect($notification)->toBeInstanceOf(ClientPortalReminderNotification::class);
+        ->and((string) json_encode($queuedActivity->properties))->not->toContain($grant->token)
+        ->and($notification)
+        ->toBeInstanceOf(ClientPortalReminderNotification::class);
     assert($notification instanceof ClientPortalReminderNotification);
 
-    app(LogClientPortalReminderSent::class)->handle(
+    resolve(LogClientPortalReminderSent::class)->handle(
         new NotificationSent(new AnonymousNotifiable, $notification, 'mail'),
     );
 
@@ -182,7 +183,7 @@ test('staff can queue an audited reminder with a fresh portal grant', function (
             ->exists())->toBeTrue();
 });
 
-test('scheduled reminders process only due dossiers with client work remaining', function () {
+test('scheduled reminders process only due dossiers with client work remaining', function (): void {
     Notification::fake();
 
     ['tenant' => $tenant] = provisionWorkspace();
@@ -222,7 +223,7 @@ test('scheduled reminders process only due dossiers with client work remaining',
             ->exists())->toBeTrue();
 });
 
-test('portal reports progress and records the latest client open', function () {
+test('portal reports progress and records the latest client open', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -246,7 +247,7 @@ test('portal reports progress and records the latest client open', function () {
         'dossier_id' => $dossier->id,
         'status' => DocumentRequestStatus::Accepted,
     ]);
-    $grant = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+    $grant = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     $this->get(route('portal.exchange', $grant['plain_text_token']))
         ->assertRedirect(route('portal.show'))
@@ -254,7 +255,7 @@ test('portal reports progress and records the latest client open', function () {
 
     $this->get(route('portal.show'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->where('dossier.progress.total', 3)
             ->where('dossier.progress.completed', 2)
             ->where('dossier.progress.remaining', 1)
@@ -264,7 +265,7 @@ test('portal reports progress and records the latest client open', function () {
     expect($dossier->fresh()->last_client_opened_at)->not->toBeNull();
 });
 
-test('read only members cannot send client reminders', function () {
+test('read only members cannot send client reminders', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -285,7 +286,7 @@ test('read only members cannot send client reminders', function () {
         ->assertForbidden();
 });
 
-test('archiving a dossier cancels its scheduled reminder', function () {
+test('archiving a dossier cancels its scheduled reminder', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

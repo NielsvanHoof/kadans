@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Str;
 use App\Accounts\Models\User;
 use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     config([
@@ -18,8 +20,8 @@ beforeEach(function (): void {
 test('old database notifications are pruned while recent notifications remain', function (): void {
     $user = User::factory()->create();
 
-    $oldNotificationId = (string) Illuminate\Support\Str::uuid();
-    $recentNotificationId = (string) Illuminate\Support\Str::uuid();
+    $oldNotificationId = (string) Str::uuid();
+    $recentNotificationId = (string) Str::uuid();
 
     DB::table('notifications')->insert([
         [

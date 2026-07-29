@@ -69,9 +69,7 @@ final class PipelineController extends Controller
         $pipeline->loadMissing('pipelineable');
         $export = $pipeline->pipelineable;
 
-        if (! $export instanceof DossierExport) {
-            abort(HttpResponse::HTTP_NOT_FOUND);
-        }
+        abort_unless($export instanceof DossierExport, HttpResponse::HTTP_NOT_FOUND);
 
         $logAuditActivity->handle(
             AuditEvent::DossierExportDownloaded,
@@ -95,9 +93,7 @@ final class PipelineController extends Controller
 
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $deletePipeline->handle($pipeline, $user);
 

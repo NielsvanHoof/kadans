@@ -6,10 +6,11 @@ use App\DocumentProcessing\Enums\ExtractionFieldSensitivity;
 use App\DocumentProcessing\Services\Ocr\Normalization\FieldSensitivityClassifier;
 use Tests\TestCase;
 
-uses(TestCase::class);
+pest()
+    ->extend(TestCase::class);
 
-test('field sensitivity classifier tags dutch pii labels', function () {
-    $payload = app(FieldSensitivityClassifier::class)->classify([
+test('field sensitivity classifier tags dutch pii labels', function (): void {
+    $payload = resolve(FieldSensitivityClassifier::class)->classify([
         'document_type' => 'identity',
         'summary' => null,
         'fields' => [
@@ -29,8 +30,8 @@ test('field sensitivity classifier tags dutch pii labels', function () {
         ->and($payload['fields'][3]['sensitivity'])->toBeNull();
 });
 
-test('field sensitivity classifier falls back to iban value shape', function () {
-    $payload = app(FieldSensitivityClassifier::class)->classify([
+test('field sensitivity classifier falls back to iban value shape', function (): void {
+    $payload = resolve(FieldSensitivityClassifier::class)->classify([
         'document_type' => null,
         'summary' => null,
         'fields' => [

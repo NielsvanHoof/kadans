@@ -36,7 +36,7 @@ function documentRequestPolicyContext(): array
     ];
 }
 
-test('owner can view, upload, update, and review document requests on open dossiers', function () {
+test('owner can view, upload, update, and review document requests on open dossiers', function (): void {
     $context = documentRequestPolicyContext();
     $policy = $context['policy'];
     $owner = $context['owner'];
@@ -49,7 +49,7 @@ test('owner can view, upload, update, and review document requests on open dossi
         ->and($policy->review($owner, $documentRequest))->toBeTrue();
 });
 
-test('review and upload are denied when the dossier is completed', function () {
+test('review and upload are denied when the dossier is completed', function (): void {
     $context = documentRequestPolicyContext();
     $policy = $context['policy'];
     $owner = $context['owner'];
@@ -63,7 +63,7 @@ test('review and upload are denied when the dossier is completed', function () {
         ->and($policy->review($owner, $documentRequest))->toBeFalse();
 });
 
-test('reviewers can review but cannot upload or update structure', function () {
+test('reviewers can review but cannot upload or update structure', function (): void {
     $context = documentRequestPolicyContext();
     $policy = $context['policy'];
     $tenant = $context['tenant'];

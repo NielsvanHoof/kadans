@@ -17,17 +17,18 @@ use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('local disk downloads stream through the application', function () {
+test('local disk downloads stream through the application', function (): void {
     Storage::fake('local');
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -74,11 +75,11 @@ test('local disk downloads stream through the application', function () {
         ->exists())->toBeTrue();
 });
 
-test('local disk previews stream inline without recording a download audit', function () {
+test('local disk previews stream inline without recording a download audit', function (): void {
     Storage::fake('local');
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -121,17 +122,15 @@ test('local disk previews stream inline without recording a download audit', fun
         ->exists())->toBeFalse();
 });
 
-test('resolve document temporary url generates a presigned url with attachment disposition', function () {
+test('resolve document temporary url generates a presigned url with attachment disposition', function (): void {
     config()->set('filesystems.disks.s3.driver', 's3');
 
     $disk = Mockery::mock(FilesystemAdapter::class);
     $disk->shouldReceive('temporaryUrl')
         ->once()
-        ->withArgs(function (string $path, $expiresAt, array $options): bool {
-            return $path === 'tenants/1/dossiers/1/file.pdf'
-                && ($options['ResponseContentDisposition'] ?? null) === 'attachment; filename="file.pdf"'
-                && ($options['ResponseContentType'] ?? null) === 'application/pdf';
-        })
+        ->withArgs(fn(string $path, $expiresAt, array $options): bool => $path === 'tenants/1/dossiers/1/file.pdf'
+            && ($options['ResponseContentDisposition'] ?? null) === 'attachment; filename="file.pdf"'
+            && ($options['ResponseContentType'] ?? null) === 'application/pdf')
         ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/file.pdf?X-Amz-Signature=abc');
 
     $filesystems = Mockery::mock(FilesystemManager::class);
@@ -147,7 +146,7 @@ test('resolve document temporary url generates a presigned url with attachment d
         'mime_type' => 'application/pdf',
     ]);
 
-    $url = (new ResolveDocumentTemporaryUrlAction($filesystems))->handle(
+    $url = new ResolveDocumentTemporaryUrlAction($filesystems)->handle(
         $uploaded,
         now()->addMinutes(5),
     );
@@ -155,16 +154,14 @@ test('resolve document temporary url generates a presigned url with attachment d
     expect($url)->toBe('http://localhost:9000/local/tenants/1/dossiers/1/file.pdf?X-Amz-Signature=abc');
 });
 
-test('resolve document temporary url can request inline disposition for previews', function () {
+test('resolve document temporary url can request inline disposition for previews', function (): void {
     config()->set('filesystems.disks.s3.driver', 's3');
 
     $disk = Mockery::mock(FilesystemAdapter::class);
     $disk->shouldReceive('temporaryUrl')
         ->once()
-        ->withArgs(function (string $path, $expiresAt, array $options): bool {
-            return ($options['ResponseContentDisposition'] ?? null) === 'inline; filename="scan.png"'
-                && ($options['ResponseContentType'] ?? null) === 'image/png';
-        })
+        ->withArgs(fn(string $path, $expiresAt, array $options): bool => ($options['ResponseContentDisposition'] ?? null) === 'inline; filename="scan.png"'
+            && ($options['ResponseContentType'] ?? null) === 'image/png')
         ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/scan.png?X-Amz-Signature=abc');
 
     $filesystems = Mockery::mock(FilesystemManager::class);
@@ -180,7 +177,7 @@ test('resolve document temporary url can request inline disposition for previews
         'mime_type' => 'image/png',
     ]);
 
-    $url = (new ResolveDocumentTemporaryUrlAction($filesystems))->handle(
+    $url = new ResolveDocumentTemporaryUrlAction($filesystems)->handle(
         $uploaded,
         now()->addMinutes(5),
         'inline',
@@ -189,11 +186,11 @@ test('resolve document temporary url can request inline disposition for previews
     expect($url)->toBe('http://localhost:9000/local/tenants/1/dossiers/1/scan.png?X-Amz-Signature=abc');
 });
 
-test('s3 disk reports temporary url support while local does not', function () {
+test('s3 disk reports temporary url support while local does not', function (): void {
     config()->set('filesystems.disks.s3.driver', 's3');
     config()->set('filesystems.disks.local.driver', 'local');
 
-    $resolver = app(ResolveDocumentTemporaryUrlAction::class);
+    $resolver = resolve(ResolveDocumentTemporaryUrlAction::class);
 
     expect($resolver->supportsTemporaryUrl(new UploadedDocument(['disk' => 's3'])))->toBeTrue()
         ->and($resolver->supportsTemporaryUrl(new UploadedDocument(['disk' => 'local'])))->toBeFalse();

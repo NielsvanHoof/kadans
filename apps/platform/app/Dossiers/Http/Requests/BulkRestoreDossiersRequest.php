@@ -71,7 +71,7 @@ final class BulkRestoreDossiersRequest extends FormRequest
     public function dossierIds(): array
     {
         /** @var list<int> $ids */
-        $ids = array_map('intval', $this->validated('ids'));
+        $ids = array_map(intval(...), $this->validated('ids'));
 
         return $ids;
     }
@@ -80,9 +80,7 @@ final class BulkRestoreDossiersRequest extends FormRequest
     {
         $tenant = Tenant::current();
 
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Cannot validate dossiers without an active tenant.');
-        }
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot validate dossiers without an active tenant.');
 
         return $tenant->id;
     }

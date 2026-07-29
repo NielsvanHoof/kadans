@@ -30,18 +30,14 @@ final class DossierExportController extends Controller
         $this->authorize('export', $dossier);
         $user = request()->user();
 
-        if (! $user instanceof User) {
-            abort(HttpResponse::HTTP_FORBIDDEN);
-        }
+        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
 
         $export = $createDossierExport->handle($dossier, $user);
         $pipeline = $export->pipeline;
 
-        if (! $pipeline instanceof Pipeline) {
-            abort(HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        abort_unless($pipeline instanceof Pipeline, HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
 
-        GenerateDossierExportJob::dispatch($pipeline->id)->afterCommit();
+        dispatch(new GenerateDossierExportJob($pipeline->id))->afterCommit();
 
         Inertia::flash('toast', [
             'type' => 'success',

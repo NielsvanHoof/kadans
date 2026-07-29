@@ -12,31 +12,32 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-uses(RefreshDatabase::class);
+pest()
+    ->use(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('guests are redirected to the login page', function () {
+test('guests are redirected to the login page', function (): void {
     $this->get(route('firms.create'))
         ->assertRedirect(route('login'));
 });
 
-test('a user with an existing firm can view the create firm page', function () {
+test('a user with an existing firm can view the create firm page', function (): void {
     $user = User::factory()->create();
-    app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->get(route('firms.create'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('firms/create'));
 });
 
-test('a user can create an additional firm and is switched to it', function () {
+test('a user can create an additional firm and is switched to it', function (): void {
     $user = User::factory()->create();
-    $firstTenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    $firstTenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $response = $this->actingAs($user)
         ->withSession(['active_tenant_id' => $firstTenant->id])
@@ -70,9 +71,9 @@ test('a user can create an additional firm and is switched to it', function () {
         ->exists())->toBeTrue();
 });
 
-test('creating a firm requires a name', function () {
+test('creating a firm requires a name', function (): void {
     $user = User::factory()->create();
-    app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->post(route('firms.store'), ['name' => ''])

@@ -17,9 +17,9 @@ use Throwable;
 use function getPermissionsTeamId;
 use function setPermissionsTeamId;
 
-final class ProvisionTenantAction
+final readonly class ProvisionTenantAction
 {
-    public function __construct(private readonly SyncTenantRolesAction $syncTenantRoles) {}
+    public function __construct(private SyncTenantRolesAction $syncTenantRoles) {}
 
     public function handle(
         string $name,

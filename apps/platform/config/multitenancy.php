@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Tenancy\Models\Tenant;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Mail\SendQueuedMailable;
@@ -49,7 +50,7 @@ return [
      * It must  extend `Spatie\Multitenancy\Models\Tenant::class` or
      * implement `Spatie\Multitenancy\Contracts\IsTenant::class` interface
      */
-    'tenant_model' => App\Tenancy\Models\Tenant::class,
+    'tenant_model' => Tenant::class,
 
     /*
      * If there is a current tenant when dispatching a job, the id of the current tenant

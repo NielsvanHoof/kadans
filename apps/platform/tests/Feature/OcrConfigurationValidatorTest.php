@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Request;
 use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 
-beforeEach(function () {
+beforeEach(function (): void {
     config([
         'ocr.driver' => 'textract',
         'ocr.textract.key' => null,
@@ -23,31 +24,31 @@ beforeEach(function () {
     ]);
 });
 
-test('valid production textract configuration passes without static credentials', function () {
+test('valid production textract configuration passes without static credentials', function (): void {
     $this->app->instance('env', 'production');
 
-    app(OcrConfigurationValidator::class)->validate();
+    resolve(OcrConfigurationValidator::class)->validate();
 
     expect(true)->toBeTrue();
 });
 
-test('validation is skipped outside production', function () {
+test('validation is skipped outside production', function (): void {
     config(['ocr.driver' => 'unsupported']);
 
-    app(OcrConfigurationValidator::class)->validate();
+    resolve(OcrConfigurationValidator::class)->validate();
 
     expect(true)->toBeTrue();
 });
 
-test('validation is skipped during package discovery even in production', function () {
+test('validation is skipped during package discovery even in production', function (): void {
     $this->app->instance('env', 'production');
     config(['ocr.driver' => 'mock']);
 
-    $originalArgv = $_SERVER['argv'] ?? null;
+    $originalArgv = Request::server('argv') ?? null;
     $_SERVER['argv'] = ['artisan', 'package:discover', '--ansi'];
 
     try {
-        app(OcrConfigurationValidator::class)->validate();
+        resolve(OcrConfigurationValidator::class)->validate();
     } finally {
         if ($originalArgv === null) {
             unset($_SERVER['argv']);
@@ -59,11 +60,11 @@ test('validation is skipped during package discovery even in production', functi
     expect(true)->toBeTrue();
 });
 
-test('production requires the textract driver', function (mixed $driver) {
+test('production requires the textract driver', function (mixed $driver): void {
     $this->app->instance('env', 'production');
     config(['ocr.driver' => $driver]);
 
-    expect(fn () => app(OcrConfigurationValidator::class)->validate())
+    expect(fn () => resolve(OcrConfigurationValidator::class)->validate())
         ->toThrow(LogicException::class, 'Production OCR requires OCR_DRIVER=textract.');
 })->with([
     'mock' => 'mock',
@@ -71,11 +72,11 @@ test('production requires the textract driver', function (mixed $driver) {
     'missing' => null,
 ]);
 
-test('production rejects invalid textract settings', function (string $key, mixed $value) {
+test('production rejects invalid textract settings', function (string $key, mixed $value): void {
     $this->app->instance('env', 'production');
     config([$key => $value]);
 
-    expect(fn () => app(OcrConfigurationValidator::class)->validate())
+    expect(fn () => resolve(OcrConfigurationValidator::class)->validate())
         ->toThrow(LogicException::class, $key);
 })->with([
     'missing bucket' => ['ocr.textract.bucket', null],
@@ -93,11 +94,11 @@ test('production rejects invalid textract settings', function (string $key, mixe
     'bedrock max tokens too low' => ['ocr.bedrock.max_tokens', 128],
 ]);
 
-test('production requires static AWS credentials to be configured as a pair', function (string $key, mixed $value) {
+test('production requires static AWS credentials to be configured as a pair', function (string $key, mixed $value): void {
     $this->app->instance('env', 'production');
     config([$key => $value]);
 
-    expect(fn () => app(OcrConfigurationValidator::class)->validate())
+    expect(fn () => resolve(OcrConfigurationValidator::class)->validate())
         ->toThrow(LogicException::class, 'ocr.textract.key/secret');
 })->with([
     'key only' => ['ocr.textract.key', 'access-key'],

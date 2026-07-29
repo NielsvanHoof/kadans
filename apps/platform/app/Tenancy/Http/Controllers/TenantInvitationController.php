@@ -45,9 +45,7 @@ final class TenantInvitationController extends Controller
 
         $user = $request->user();
 
-        if (! $user instanceof User) {
-            abort(403);
-        }
+        abort_unless($user instanceof User, 403);
 
         $revokeTenantInvitation->handle($invitation, $user);
 
@@ -61,8 +59,6 @@ final class TenantInvitationController extends Controller
 
     private function ensureInvitationBelongsToTenant(TenantInvitation $invitation, Tenant $tenant): void
     {
-        if ($invitation->tenant_id !== $tenant->id) {
-            abort(404);
-        }
+        abort_if($invitation->tenant_id !== $tenant->id, 404);
     }
 }

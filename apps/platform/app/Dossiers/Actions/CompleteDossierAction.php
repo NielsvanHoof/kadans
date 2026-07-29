@@ -15,12 +15,12 @@ use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-final class CompleteDossierAction
+final readonly class CompleteDossierAction
 {
     public function __construct(
-        private readonly LogAuditActivityAction $logAuditActivity,
-        private readonly DossierTransitions $dossierTransitions,
-        private readonly ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+        private LogAuditActivityAction $logAuditActivity,
+        private DossierTransitions $dossierTransitions,
+        private ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
     ) {}
 
     public function handle(Dossier $dossier, User $completedBy): Dossier

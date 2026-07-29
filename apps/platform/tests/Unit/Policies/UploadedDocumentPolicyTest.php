@@ -9,7 +9,7 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Policies\UploadedDocumentPolicy;
 use App\Tenancy\Enums\Role;
 
-test('owner can view and download uploaded documents', function () {
+test('owner can view and download uploaded documents', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -32,7 +32,7 @@ test('owner can view and download uploaded documents', function () {
         ->and($policy->download($owner, $uploadedDocument))->toBeTrue();
 });
 
-test('reviewers can view uploads but cannot download without the download permission', function () {
+test('reviewers can view uploads but cannot download without the download permission', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $reviewer = workspaceMember($tenant, Role::Reviewer);
 
