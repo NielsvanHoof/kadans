@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Platform\Support\DebugbarStorageOpen;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 
@@ -23,15 +24,27 @@ it('lets the Sail supervisor own the local HTTP server', function (): void {
 });
 
 it('keeps Debugbar storage.open safe when Octane boots without a client IP', function (): void {
-    $open = config('debugbar.storage.open');
-
-    expect($open)->toBeCallable();
+    // Class string (not a Closure) so config:cache / optimize can serialize it.
+    expect(config('debugbar.storage.open'))->toBe(DebugbarStorageOpen::class);
 
     // FrankenPHP worker boot has an empty REMOTE_ADDR; IpUtils used to throw.
     $bootRequest = Request::create('/', server: ['REMOTE_ADDR' => '']);
 
     expect($bootRequest->getClientIp())->toBe('')
-        ->and(($open)($bootRequest))->toBeFalse()
-        ->and($open(Request::create('/', server: ['REMOTE_ADDR' => '127.0.0.1'])))
+        ->and(DebugbarStorageOpen::resolve($bootRequest))->toBeFalse()
+        ->and(DebugbarStorageOpen::resolve(Request::create('/', server: ['REMOTE_ADDR' => '127.0.0.1'])))
         ->toBeTrue();
+});
+
+it('can cache configuration with the Debugbar storage.open resolver', function (): void {
+    $this->artisan('config:cache')->assertSuccessful();
+
+    try {
+        $cached = require config_path('../bootstrap/cache/config.php');
+
+        expect($cached['debugbar']['storage']['open'] ?? null)
+            ->toBe(DebugbarStorageOpen::class);
+    } finally {
+        $this->artisan('config:clear')->assertSuccessful();
+    }
 });

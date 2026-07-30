@@ -31,6 +31,7 @@ use App\Platform\Console\PruneModelsCommand;
 use App\Platform\Contracts\Production\ChecksReadiness;
 use App\Platform\Services\Production\InfrastructureReadinessCheck;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
+use App\Platform\Support\DebugbarStorageOpen;
 use App\Platform\Support\SupportSession;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
@@ -50,7 +51,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -58,7 +58,6 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Telescope\TelescopeServiceProvider;
 use Override;
-use Symfony\Component\HttpFoundation\IpUtils;
 
 use function in_array;
 use function is_string;
@@ -169,7 +168,9 @@ final class AppServiceProvider extends ServiceProvider
      * Debugbar's default storage.open=null uses IpUtils::isPrivateIp(clientIp).
      * FrankenPHP/Octane boots workers without a client IP, and Symfony throws
      * ValueError on "". That aborts the worker before frankenphp_handle_request().
-     * Cast env strings and use a null-safe private-IP check instead.
+     *
+     * Cast env strings to bools, and register a class name (not a Closure) so
+     * `config:cache` / `optimize` can serialize the config.
      */
     private function configureDebugbarStorageOpen(): void
     {
@@ -188,16 +189,9 @@ final class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        // Class string stays serializable; Debugbar calls ::resolve($request).
         config([
-            'debugbar.storage.open' => static function (Request $request): bool {
-                $ip = $request->getClientIp();
-
-                if (! is_string($ip) || $ip === '') {
-                    return false;
-                }
-
-                return IpUtils::isPrivateIp($ip);
-            },
+            'debugbar.storage.open' => DebugbarStorageOpen::class,
         ]);
     }
 
