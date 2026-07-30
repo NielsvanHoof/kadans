@@ -38,8 +38,10 @@ use App\Questionnaires\Policies\QuestionnaireTemplatePolicy;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Policies\TenantInvitationPolicy;
 use App\Tenancy\Policies\TenantMembershipPolicy;
+use App\Tenancy\Policies\TenantRolePolicy;
 use App\Tenancy\Support\PermissionRegistry;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
@@ -319,6 +321,7 @@ final class AppServiceProvider extends ServiceProvider
         Gate::policy(Pipeline::class, PipelinePolicy::class);
         Gate::policy(TenantInvitation::class, TenantInvitationPolicy::class);
         Gate::policy(TenantMembership::class, TenantMembershipPolicy::class);
+        Gate::policy(TenantRole::class, TenantRolePolicy::class);
         Gate::policy(UploadedDocument::class, UploadedDocumentPolicy::class);
     }
 }

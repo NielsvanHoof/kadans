@@ -29,8 +29,8 @@ Each permission case must provide:
 | Method | Purpose |
 |--------|---------|
 | `value` (backed enum) | Spatie permission name, e.g. `dossiers.view` |
-| `label()` | UI label |
-| `description()` | Short explanation for role screens |
+| `label()` | UI label, shown on the roles matrix |
+| `description()` | Short explanation, shown under the label on the roles matrix |
 | `group()` | [`PermissionGroup`](../app/Tenancy/Enums/PermissionGroup.php) for display |
 | `defaultRoles()` | Roles that get this permission by default |
 
@@ -107,6 +107,43 @@ vendor/bin/sail artisan tenancy:sync-roles
 ```
 
 Use `--prune` only when you intend to delete Spatie permission rows that no longer exist in code.
+
+## Role management UI
+
+`workspaces/{tenant:slug}/roles` renders a roles × permissions matrix, gated by
+`WorkspacePermission::ViewRoles` (`roles.view`, default: Administrator) through
+[`TenantRolePolicy`](../app/Tenancy/Policies/TenantRolePolicy.php).
+
+[`FetchWorkspaceRolesQuery`](../app/Tenancy/Queries/FetchWorkspaceRolesQuery.php)
+reads the **grants persisted for that firm**, not `PermissionRegistry` defaults.
+Authorization runs through Spatie's `can()`, which reads the same
+`role_has_permissions` rows, so the page shows what the firm will actually
+experience and any seeding drift stays visible. The registry supplies only the
+row axis — labels, descriptions, and `PermissionGroup` ordering — so a stale
+permission row left in the database is simply not displayed.
+
+### System vs firm-authored roles
+
+`roles.is_system` marks the rows owned by [`Role`](../app/Tenancy/Enums/Role.php).
+[`TenantRole`](../app/Tenancy/Models/TenantRole.php) is registered as
+`permission.models.role`, so Spatie returns it from `assignRole()`,
+`syncRoles()`, and `findByName()` everywhere.
+
+**Always reach roles through `TenantRole`, never `Spatie\Permission\Models\Role`
+directly** — the base class has no `is_system` cast, so a direct import silently
+yields `int` instead of `bool`.
+
+The five presets are deliberately **not** editable per firm.
+`SyncTenantRolesAction::syncTenant()` calls `syncPermissions()` on every deploy,
+so a tenant edit to a preset would be reverted on the next release; supporting
+that properly needs a grant/revoke override table rather than a flag. Firms will
+instead be able to add their own roles alongside the presets — `is_system` is the
+discriminator that keeps `tenancy:sync-roles` off those rows.
+
+`WorkspacePermission::ManageRoles` (`roles.manage`) exists with
+`defaultRoles() => []`, making it owner-only by the same convention as
+`ManageSettings`. It gates no endpoint yet; it is registered so writes can be
+added without a second permission-sync deploy.
 
 ## Adding permissions
 

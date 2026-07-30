@@ -96,7 +96,7 @@
             "@test"
         ],
         "types:check": [
-            "phpstan analyse --memory-limit=512M"
+            "phpstan analyse --memory-limit=1024M"
         ],
         "rector": [
             "rector process --ansi"

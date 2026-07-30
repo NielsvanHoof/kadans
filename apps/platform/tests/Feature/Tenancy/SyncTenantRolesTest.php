@@ -7,10 +7,10 @@ use App\Dossiers\Enums\DossierPermission;
 use App\Tenancy\Actions\SyncTenantRolesAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
+use App\Tenancy\Models\TenantRole as RoleModel;
 use App\Tenancy\Support\PermissionRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission as PermissionModel;
-use Spatie\Permission\Models\Role as RoleModel;
 
 use function Pest\Laravel\artisan;
 
@@ -163,4 +163,56 @@ it('reports what it changed via the console command', function (): void {
 
     artisan('tenancy:sync-roles', ['--prune' => true])
         ->assertSuccessful();
+});
+
+it('marks every role it seeds as owned by code', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $roles = RoleModel::query()->where('tenant_id', $tenant->id)->get();
+
+    expect($roles)->toHaveSameSize(Role::cases())
+        ->and($roles->every(fn (RoleModel $role): bool => $role->is_system))->toBeTrue();
+});
+
+it('repairs a system role that predates the is_system column', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $role = RoleModel::query()
+        ->where('name', Role::Adviser->value)
+        ->where('tenant_id', $tenant->id)
+        ->firstOrFail();
+
+    $role->forceFill(['is_system' => false])->save();
+
+    $result = resolve(SyncTenantRolesAction::class)->handle();
+
+    // Repaired in place — never duplicated past the (name, guard, tenant) index.
+    expect($result['roles_created'])->toBe(0)
+        ->and($role->fresh()->is_system)->toBeTrue()
+        ->and(RoleModel::query()
+            ->where('name', Role::Adviser->value)
+            ->where('tenant_id', $tenant->id)
+            ->count())->toBe(1);
+});
+
+it('leaves a firm-authored role alone', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $custom = RoleModel::query()->create([
+        'name' => 'senior-adviser',
+        'guard_name' => 'web',
+        'tenant_id' => $tenant->id,
+        'is_system' => false,
+    ]);
+
+    $custom->syncPermissions([DossierPermission::View->value]);
+
+    resolve(SyncTenantRolesAction::class)->handle();
+
+    $custom = $custom->fresh();
+
+    expect($custom)->not->toBeNull()
+        ->and($custom->is_system)->toBeFalse()
+        ->and($custom->permissions->pluck('name')->all())
+        ->toBe([DossierPermission::View->value]);
 });

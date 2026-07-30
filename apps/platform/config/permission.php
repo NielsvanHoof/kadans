@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Tenancy\Models\TenantRole;
 use Spatie\Permission\DefaultTeamResolver;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 return [
 
@@ -30,7 +30,7 @@ return [
          * `Spatie\Permission\Contracts\Role` contract.
          */
 
-        'role' => Role::class,
+        'role' => TenantRole::class,
 
         /*
          * When using the "Teams" feature from this package, we need to know which

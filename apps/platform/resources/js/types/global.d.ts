@@ -30,6 +30,8 @@ declare module '@inertiajs/core' {
             workspaces: Firm[];
             current_firm: Firm | null;
             can_manage_members: boolean;
+            can_view_roles: boolean;
+            can_view_pipelines: boolean;
             support_session: SupportSessionShared | null;
             notifications: WorkspaceNotificationsSummary | null | undefined;
             sidebarOpen: boolean;

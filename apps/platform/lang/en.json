@@ -1034,5 +1034,18 @@
     "Change what a member is allowed to do. Grants privilege escalation.": "Change what a member is allowed to do. Grants privilege escalation.",
     "Change firm-wide settings.": "Change firm-wide settings.",
     "View audit log": "View audit log",
-    "Read the firm-wide record of who did what and when.": "Read the firm-wide record of who did what and when."
+    "Read the firm-wide record of who did what and when.": "Read the firm-wide record of who did what and when.",
+    "Roles & permissions": "Roles & permissions",
+    "Permissions by role": "Permissions by role",
+    "Permission": "Permission",
+    "These are the standard roles. They are the same for every firm and cannot be changed here — assign a member a different role on the Members page.": "These are the standard roles. They are the same for every firm and cannot be changed here — assign a member a different role on the Members page.",
+    "Every member holds exactly one role. Changing a member’s role changes what they can do immediately.": "Every member holds exactly one role. Changing a member’s role changes what they can do immediately.",
+    "No role grants this.": "No role grants this.",
+    "No roles are set up for this firm.": "No roles are set up for this firm.",
+    ":role can :permission": ":role can :permission",
+    ":role cannot :permission": ":role cannot :permission",
+    "View roles": "View roles",
+    "Manage roles": "Manage roles",
+    "See which permissions each role grants.": "See which permissions each role grants.",
+    "Change what each role is allowed to do.": "Change what each role is allowed to do."
 }

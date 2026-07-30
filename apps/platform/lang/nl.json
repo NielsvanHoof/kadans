@@ -1034,5 +1034,18 @@
     "Change what a member is allowed to do. Grants privilege escalation.": "Wijzigen wat een lid mag doen. Maakt rechtenuitbreiding mogelijk.",
     "Change firm-wide settings.": "Kantoorbrede instellingen wijzigen.",
     "View audit log": "Auditlogboek bekijken",
-    "Read the firm-wide record of who did what and when.": "Het kantoorbrede overzicht lezen van wie wat wanneer heeft gedaan."
+    "Read the firm-wide record of who did what and when.": "Het kantoorbrede overzicht lezen van wie wat wanneer heeft gedaan.",
+    "Roles & permissions": "Rollen & rechten",
+    "Permissions by role": "Rechten per rol",
+    "Permission": "Recht",
+    "These are the standard roles. They are the same for every firm and cannot be changed here — assign a member a different role on the Members page.": "Dit zijn de standaardrollen. Ze zijn voor elk kantoor gelijk en kunnen hier niet worden gewijzigd — geef een lid een andere rol op de pagina Leden.",
+    "Every member holds exactly one role. Changing a member’s role changes what they can do immediately.": "Elk lid heeft precies één rol. Als je de rol van een lid wijzigt, verandert direct wat diegene mag doen.",
+    "No role grants this.": "Geen enkele rol geeft dit recht.",
+    "No roles are set up for this firm.": "Er zijn geen rollen ingesteld voor dit kantoor.",
+    ":role can :permission": ":role kan :permission",
+    ":role cannot :permission": ":role kan niet :permission",
+    "View roles": "Rollen bekijken",
+    "Manage roles": "Rollen beheren",
+    "See which permissions each role grants.": "Bekijken welke rechten elke rol geeft.",
+    "Change what each role is allowed to do.": "Wijzigen wat elke rol mag doen."
 }

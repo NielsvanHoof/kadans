@@ -13,6 +13,8 @@ enum WorkspacePermission: string implements TenantPermission
     case SuspendMembers = 'members.suspend';
     case RemoveMembers = 'members.remove';
     case AssignMemberRoles = 'members.assign_role';
+    case ViewRoles = 'roles.view';
+    case ManageRoles = 'roles.manage';
     case ManageSettings = 'tenant.settings.manage';
 
     public function label(): string
@@ -23,6 +25,8 @@ enum WorkspacePermission: string implements TenantPermission
             self::SuspendMembers => __('Suspend members'),
             self::RemoveMembers => __('Remove members'),
             self::AssignMemberRoles => __('Change member roles'),
+            self::ViewRoles => __('View roles'),
+            self::ManageRoles => __('Manage roles'),
             self::ManageSettings => __('Manage firm settings'),
         };
     }
@@ -35,6 +39,8 @@ enum WorkspacePermission: string implements TenantPermission
             self::SuspendMembers => __('Temporarily block a member from accessing the firm.'),
             self::RemoveMembers => __('Permanently remove a member from the firm.'),
             self::AssignMemberRoles => __('Change what a member is allowed to do. Grants privilege escalation.'),
+            self::ViewRoles => __('See which permissions each role grants.'),
+            self::ManageRoles => __('Change what each role is allowed to do.'),
             self::ManageSettings => __('Change firm-wide settings.'),
         };
     }
@@ -50,8 +56,8 @@ enum WorkspacePermission: string implements TenantPermission
     public function defaultRoles(): array
     {
         return match ($this) {
-            // Firm settings stay owner-only.
-            self::ManageSettings => [],
+            // Firm settings and reshaping roles stay owner-only.
+            self::ManageSettings, self::ManageRoles => [],
             default => [Role::Administrator],
         };
     }

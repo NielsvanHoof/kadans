@@ -7,6 +7,7 @@ import {
     LifeBuoy,
     ListChecks,
     ScrollText,
+    ShieldCheck,
     UserPlus,
     Users,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
 import { index as membersIndex } from '@/routes/workspaces/members';
 import { index as pipelineIndex } from '@/routes/workspaces/pipelines';
+import { index as rolesIndex } from '@/routes/workspaces/roles';
 import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
@@ -40,6 +42,7 @@ export function AppSidebar() {
     const {
         current_firm: currentFirm,
         can_manage_members: canManageMembers,
+        can_view_roles: canViewRoles,
         can_view_pipelines: canViewPipelines,
         auth,
     } = usePage().props;
@@ -82,6 +85,15 @@ export function AppSidebar() {
                                 title: t('Members'),
                                 href: membersIndex(currentFirm),
                                 icon: UserPlus,
+                            },
+                        ]
+                      : []),
+                  ...(canViewRoles
+                      ? [
+                            {
+                                title: t('Roles & permissions'),
+                                href: rolesIndex(currentFirm),
+                                icon: ShieldCheck,
                             },
                         ]
                       : []),

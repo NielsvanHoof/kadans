@@ -6,9 +6,9 @@ namespace App\Tenancy\Actions;
 
 use App\Tenancy\Enums\Role as RoleEnum;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantRole as RoleModel;
 use App\Tenancy\Support\PermissionRegistry;
 use Spatie\Permission\Models\Permission as PermissionModel;
-use Spatie\Permission\Models\Role as RoleModel;
 use Spatie\Permission\PermissionRegistrar;
 use Throwable;
 
@@ -86,9 +86,13 @@ final readonly class SyncTenantRolesAction
                         'name' => $roleEnum->value,
                         'guard_name' => 'web',
                         'tenant_id' => $tenant->getKey(),
+                        'is_system' => true,
                     ]);
 
                     $rolesCreated++;
+                } elseif (! $role->is_system) {
+                    // Repairs rows that predate the is_system column.
+                    $role->forceFill(['is_system' => true])->save();
                 }
 
                 // syncPermissions both grants what is missing and revokes what

@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use Pest\Expectation;
 
 pest()
     ->use(RefreshDatabase::class);
@@ -110,7 +111,7 @@ test('guest exchanges a valid access token for a restricted portal session', fun
             ->where('dossier.client.name', $context['client']->name)
             ->missing('token')
             ->has('dossier.document_requests', 1)
-            ->tap(fn (Assert $page) => expect($page->toArray())
+            ->tap(fn (Assert $page): Expectation => expect($page->toArray())
                 ->toHaveKey('encryptHistory', true)));
 
     expect($context['grant']->fresh()->last_used_at)->not->toBeNull();
