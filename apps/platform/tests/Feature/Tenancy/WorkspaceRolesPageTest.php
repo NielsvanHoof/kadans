@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
 use App\Dossiers\Enums\DossierPermission;
 use App\Tenancy\Enums\PermissionGroup;
 use App\Tenancy\Enums\Role;
@@ -47,6 +49,7 @@ test('owners see every role and permission group', function (): void {
             ->component('workspaces/roles/index')
             ->has('roles', count(Role::cases()))
             ->has('permission_groups', count($expectedGroups))
+            ->where('can_manage_roles', true)
             ->where('roles.0.value', Role::Owner->value)
             ->where('roles.0.is_system', true));
 });
@@ -57,7 +60,28 @@ test('administrators can view roles because roles.view is a default', function (
 
     $this->actingAs($admin)
         ->get(workspaceRoute('workspaces.roles.index', $tenant))
-        ->assertOk();
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page->where('can_manage_roles', false));
+});
+
+test('owners can open the dedicated custom roles management page', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.roles.manage', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/roles/manage')
+            ->where('can_manage_roles', true));
+});
+
+test('administrators cannot open the dedicated custom roles management page', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $admin = workspaceMember($tenant, Role::Administrator);
+
+    $this->actingAs($admin)
+        ->get(workspaceRoute('workspaces.roles.manage', $tenant))
+        ->assertForbidden();
 });
 
 test('members without roles.view cannot open the page', function (Role $role): void {
@@ -241,4 +265,127 @@ test('the roles capability is shared with the frontend so the sidebar can gate o
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page->where('can_view_roles', false));
+});
+
+test('owners can create update and delete custom roles', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $this->actingAs($owner)
+        ->post(workspaceRoute('workspaces.roles.store', $tenant), [
+            'name' => 'operations-manager',
+            'permissions' => [
+                WorkspacePermission::ViewMembers->value,
+                WorkspacePermission::InviteMembers->value,
+            ],
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.roles.manage', $tenant));
+
+    $customRole = TenantRole::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('name', 'operations-manager')
+        ->firstOrFail();
+
+    expect($customRole->is_system)->toBeFalse()
+        ->and($customRole->hasPermissionTo(WorkspacePermission::ViewMembers->value))->toBeTrue()
+        ->and($customRole->hasPermissionTo(WorkspacePermission::InviteMembers->value))->toBeTrue();
+
+    $this->actingAs($owner)
+        ->patch(workspaceRoute('workspaces.roles.update', $tenant, [
+            'role' => $customRole,
+        ]), [
+            'name' => 'operations-lead',
+            'permissions' => [
+                WorkspacePermission::ViewMembers->value,
+            ],
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.roles.manage', $tenant));
+
+    $customRole = $customRole->fresh();
+
+    expect($customRole)->not->toBeNull()
+        ->and($customRole?->name)->toBe('operations-lead')
+        ->and($customRole?->hasPermissionTo(WorkspacePermission::ViewMembers->value))->toBeTrue()
+        ->and($customRole?->hasPermissionTo(WorkspacePermission::InviteMembers->value))->toBeFalse();
+
+    $this->actingAs($owner)
+        ->delete(workspaceRoute('workspaces.roles.destroy', $tenant, [
+            'role' => $customRole,
+        ]))
+        ->assertRedirect(workspaceRoute('workspaces.roles.manage', $tenant));
+
+    expect(TenantRole::query()->whereKey($customRole?->id)->exists())->toBeFalse()
+        ->and(Activity::query()->where('event', AuditEvent::RoleCreated->value)
+            ->exists())
+        ->toBeTrue()
+        ->and(Activity::query()->where('event', AuditEvent::RoleUpdated->value)
+            ->exists())
+        ->toBeTrue()
+        ->and(Activity::query()->where('event', AuditEvent::RoleDeleted->value)
+            ->exists())
+        ->toBeTrue();
+});
+
+test('non role managers cannot mutate roles', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $admin = workspaceMember($tenant, Role::Administrator);
+
+    $this->actingAs($admin)
+        ->post(workspaceRoute('workspaces.roles.store', $tenant), [
+            'name' => 'forbidden-role',
+            'permissions' => [WorkspacePermission::ViewMembers->value],
+        ])
+        ->assertForbidden();
+});
+
+test('system roles cannot be updated or deleted', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $systemRole = TenantRole::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('name', Role::Administrator->value)
+        ->firstOrFail();
+
+    $this->actingAs($owner)
+        ->patch(workspaceRoute('workspaces.roles.update', $tenant, [
+            'role' => $systemRole,
+        ]), [
+            'name' => 'admin-renamed',
+            'permissions' => [WorkspacePermission::ViewMembers->value],
+        ])
+        ->assertForbidden();
+
+    $this->actingAs($owner)
+        ->delete(workspaceRoute('workspaces.roles.destroy', $tenant, [
+            'role' => $systemRole,
+        ]))
+        ->assertForbidden();
+});
+
+test('custom roles in use cannot be deleted', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $member = workspaceMember($tenant, Role::Reviewer);
+
+    $customRole = TenantRole::query()->create([
+        'name' => 'temp-ops',
+        'guard_name' => 'web',
+        'tenant_id' => $tenant->id,
+        'is_system' => false,
+    ]);
+    $customRole->syncPermissions([WorkspacePermission::ViewMembers->value]);
+
+    actingInWorkspace($tenant);
+    $member->syncRoles([$customRole->name]);
+
+    $this->actingAs($owner)
+        ->delete(workspaceRoute('workspaces.roles.destroy', $tenant, [
+            'role' => $customRole,
+        ]))
+        ->assertSessionHasErrors('role')
+        ->assertInertiaFlash('toast.type', 'error')
+        ->assertInertiaFlash(
+            'toast.message',
+            __('This role is still assigned to active members. Reassign them first.'),
+        );
+
+    expect($customRole->fresh())->not->toBeNull();
 });

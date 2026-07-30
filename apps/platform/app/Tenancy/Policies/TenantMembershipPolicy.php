@@ -77,7 +77,7 @@ final readonly class TenantMembershipPolicy
         return true;
     }
 
-    public function assignRole(User $user, TenantMembership $membership, Role $role): bool
+    public function assignRole(User $user, TenantMembership $membership, Role|string $role): bool
     {
         if (! $this->holdsPermissionInMembershipTenant($user, $membership, WorkspacePermission::AssignMemberRoles)) {
             return false;
@@ -90,7 +90,9 @@ final readonly class TenantMembershipPolicy
             return false;
         }
 
-        return $this->memberRoles->actorCanAssignRole($user, $tenant, $role);
+        $roleName = $role instanceof Role ? $role->value : $role;
+
+        return $this->memberRoles->actorCanAssignRole($user, $tenant, $roleName);
     }
 
     private function holdsPermissionInMembershipTenant(

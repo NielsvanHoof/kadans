@@ -40,6 +40,9 @@ enum AuditEvent: string
     case MemberInvitationAccepted = 'member.invitation_accepted';
     case MemberInvitationRevoked = 'member.invitation_revoked';
     case MemberRoleChanged = 'member.role_changed';
+    case RoleCreated = 'role.created';
+    case RoleUpdated = 'role.updated';
+    case RoleDeleted = 'role.deleted';
     case MemberSuspended = 'member.suspended';
     case MemberRemoved = 'member.removed';
     case DossierDeleted = 'dossier.deleted';
@@ -92,6 +95,9 @@ enum AuditEvent: string
             self::MemberInvitationAccepted => __('Member invitation accepted'),
             self::MemberInvitationRevoked => __('Member invitation revoked'),
             self::MemberRoleChanged => __('Member role changed'),
+            self::RoleCreated => __('Role created'),
+            self::RoleUpdated => __('Role updated'),
+            self::RoleDeleted => __('Role deleted'),
             self::MemberSuspended => __('Member suspended'),
             self::MemberRemoved => __('Member removed'),
             self::DossierDeleted => __('Dossier archived'),

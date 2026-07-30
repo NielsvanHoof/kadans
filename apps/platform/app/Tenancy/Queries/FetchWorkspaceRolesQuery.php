@@ -35,13 +35,14 @@ final readonly class FetchWorkspaceRolesQuery
 {
     public function __construct(private PermissionRegistry $registry) {}
 
-    public function handle(Tenant $tenant): WorkspaceRolesPageData
+    public function handle(Tenant $tenant, bool $canManageRoles): WorkspaceRolesPageData
     {
         $roles = $this->roles($tenant);
 
         return new WorkspaceRolesPageData(
             roles: $this->roleColumns($roles, $tenant),
             permissionGroups: $this->permissionGroups($roles),
+            canManageRoles: $canManageRoles,
         );
     }
 
@@ -84,6 +85,7 @@ final readonly class FetchWorkspaceRolesQuery
 
         foreach ($roles as $role) {
             $columns[] = new WorkspaceRoleData(
+                id: $role->id,
                 value: $role->name,
                 label: $role->displayLabel(),
                 isSystem: $role->is_system,

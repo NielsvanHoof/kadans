@@ -1,4 +1,5 @@
 export type WorkspaceRole = {
+    id: number;
     value: string;
     label: string;
     /** True for the presets Qompose defines; false for firm-authored roles. */

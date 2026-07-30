@@ -1,13 +1,18 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 import RoleMatrixCard from '@/features/roles/role-matrix-card';
+import RolesOverviewSummaryCard from '@/features/roles/roles-overview-summary-card';
 import type {
     WorkspacePermissionGroup,
     WorkspaceRole,
 } from '@/features/roles/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { index as rolesIndex } from '@/routes/workspaces/roles';
+import {
+    manage as manageRoles,
+    index as rolesIndex,
+} from '@/routes/workspaces/roles';
 
 /**
  * Reference view of what each role in this firm is allowed to do.
@@ -15,9 +20,11 @@ import { index as rolesIndex } from '@/routes/workspaces/roles';
 export default function WorkspaceRolesIndex({
     roles,
     permission_groups: permissionGroups,
+    can_manage_roles: canManageRoles,
 }: {
     roles: WorkspaceRole[];
     permission_groups: WorkspacePermissionGroup[];
+    can_manage_roles: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -36,14 +43,28 @@ export default function WorkspaceRolesIndex({
             <Head title={t('Roles & permissions')} />
 
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
-                <Heading
-                    level={1}
-                    title={t('Roles & permissions')}
-                    description={t(
-                        'These are the standard roles. They are the same for every firm and cannot be changed here — assign a member a different role on the Members page.',
-                    )}
-                />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        level={1}
+                        className="mb-0"
+                        title={t('Roles & permissions')}
+                        description={t(
+                            'Review which permissions each role grants in this workspace.',
+                        )}
+                    />
+                    {canManageRoles ? (
+                        <Button asChild>
+                            <Link href={manageRoles(currentWorkspace)}>
+                                {t('Manage custom roles')}
+                            </Link>
+                        </Button>
+                    ) : null}
+                </div>
 
+                <RolesOverviewSummaryCard
+                    roles={roles}
+                    canManageRoles={canManageRoles}
+                />
                 <RoleMatrixCard
                     roles={roles}
                     permissionGroups={permissionGroups}

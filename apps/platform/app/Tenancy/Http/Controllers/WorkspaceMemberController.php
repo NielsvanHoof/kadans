@@ -10,7 +10,6 @@ use App\Tenancy\Actions\InviteTenantMemberAction;
 use App\Tenancy\Actions\RemoveTenantMemberAction;
 use App\Tenancy\Actions\SuspendTenantMemberAction;
 use App\Tenancy\Actions\UpdateTenantMemberRoleAction;
-use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Http\Requests\InviteTenantMemberRequest;
 use App\Tenancy\Http\Requests\UpdateTenantMemberRequest;
@@ -21,6 +20,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+
+use function is_string;
 
 final class WorkspaceMemberController extends Controller
 {
@@ -81,7 +82,7 @@ final class WorkspaceMemberController extends Controller
         $role = $request->role();
         $status = $request->status();
 
-        if ($role instanceof Role) {
+        if (is_string($role)) {
             $updateTenantMemberRole->handle($membership, $user, $role);
         }
 

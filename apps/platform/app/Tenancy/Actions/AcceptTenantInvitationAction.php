@@ -93,7 +93,7 @@ final readonly class AcceptTenantInvitationAction
                 $membership,
                 [
                     'email' => $locked->email,
-                    'role' => $locked->role->value,
+                    'role' => $locked->role,
                     'invitation_id' => $locked->id,
                 ],
                 $user,

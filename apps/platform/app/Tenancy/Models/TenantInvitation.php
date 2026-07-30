@@ -6,7 +6,6 @@ namespace App\Tenancy\Models;
 
 use App\Accounts\Models\User;
 use App\Tenancy\Concerns\BelongsToTenant;
-use App\Tenancy\Enums\Role;
 use Database\Factories\TenantInvitationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -26,7 +25,7 @@ use Override;
  * @property int $id
  * @property int $tenant_id
  * @property string $email
- * @property Role $role
+ * @property string $role
  * @property string $token
  * @property int $invited_by
  * @property Carbon $expires_at
@@ -121,7 +120,6 @@ final class TenantInvitation extends Model
     protected function casts(): array
     {
         return [
-            'role' => Role::class,
             'expires_at' => 'datetime',
             'accepted_at' => 'datetime',
             'revoked_at' => 'datetime',

@@ -6,7 +6,6 @@ namespace App\Tenancy\Http\Requests;
 
 use App\Accounts\Models\User;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
-use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Support\WorkspaceMemberRoles;
@@ -30,9 +29,18 @@ final class InviteTenantMemberRequest extends FormRequest
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
+        $tenant = $this->route('tenant');
+        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
+
         return [
             'email' => ['required', 'string', 'email', 'max:255'],
-            'role' => ['required', 'string', Rule::enum(Role::class)],
+            'role' => [
+                'required',
+                'string',
+                Rule::exists(config('permission.table_names.roles'), 'name')
+                    ->where($teamForeignKey, $tenant instanceof Tenant ? $tenant->id : null)
+                    ->where('guard_name', 'web'),
+            ],
         ];
     }
 
@@ -59,15 +67,9 @@ final class InviteTenantMemberRequest extends FormRequest
                 return;
             }
 
-            $role = Role::tryFrom($roleValue);
-
-            if ($role === null) {
-                return;
-            }
-
             $memberRoles = resolve(WorkspaceMemberRoles::class);
 
-            if (! $memberRoles->actorCanAssignRole($user, $tenant, $role)) {
+            if (! $memberRoles->actorCanAssignRole($user, $tenant, $roleValue)) {
                 $validator->errors()->add(
                     'role',
                     __('Only an owner can assign the owner role.'),
@@ -76,9 +78,9 @@ final class InviteTenantMemberRequest extends FormRequest
         });
     }
 
-    public function role(): Role
+    public function role(): string
     {
-        return Role::from((string) $this->validated('role'));
+        return (string) $this->validated('role');
     }
 
     public function email(): string

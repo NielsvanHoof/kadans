@@ -24,7 +24,7 @@ use function setPermissionsTeamId;
  */
 final class WorkspaceMemberRoles
 {
-    public function roleFor(User $user, Tenant $tenant): ?Role
+    public function roleFor(User $user, Tenant $tenant): ?string
     {
         $previousTeamId = getPermissionsTeamId();
         setPermissionsTeamId($tenant->id);
@@ -38,7 +38,7 @@ final class WorkspaceMemberRoles
 
             $roleName = $user->getRoleNames()->first();
 
-            return is_string($roleName) ? Role::tryFrom($roleName) : null;
+            return is_string($roleName) ? $roleName : null;
         } finally {
             setPermissionsTeamId($previousTeamId);
         }
@@ -150,17 +150,17 @@ final class WorkspaceMemberRoles
     {
         $role = $this->roleFor($user, $tenant);
 
-        if ($role !== Role::Owner) {
+        if ($role !== Role::Owner->value) {
             return false;
         }
 
         return $this->activeOwnerCount($tenant) <= 1;
     }
 
-    public function actorCanAssignRole(User $actor, Tenant $tenant, Role $role): bool
+    public function actorCanAssignRole(User $actor, Tenant $tenant, string $role): bool
     {
-        if ($role === Role::Owner) {
-            return $this->roleFor($actor, $tenant) === Role::Owner;
+        if ($role === Role::Owner->value) {
+            return $this->roleFor($actor, $tenant) === Role::Owner->value;
         }
 
         return true;
@@ -169,7 +169,7 @@ final class WorkspaceMemberRoles
     /**
      * Assign a single tenant-scoped role, replacing any previous roles for the team.
      */
-    public function syncRole(User $user, Tenant $tenant, Role $role): void
+    public function syncRole(User $user, Tenant $tenant, string $role): void
     {
         $previousTeamId = getPermissionsTeamId();
         setPermissionsTeamId($tenant->id);
@@ -177,7 +177,7 @@ final class WorkspaceMemberRoles
         try {
             $user->unsetRelation('roles');
             $user->unsetRelation('permissions');
-            $user->syncRoles([$role->value]);
+            $user->syncRoles([$role]);
         } finally {
             setPermissionsTeamId($previousTeamId);
             $user->unsetRelation('roles');

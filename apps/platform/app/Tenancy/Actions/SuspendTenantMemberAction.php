@@ -55,7 +55,7 @@ final readonly class SuspendTenantMemberAction
                 [
                     'user_id' => $member->id,
                     'email' => $member->email,
-                    'role' => $this->memberRoles->roleFor($member, $tenant)?->value,
+                    'role' => $this->memberRoles->roleFor($member, $tenant),
                 ],
                 $suspendedBy,
             );

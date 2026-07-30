@@ -23,6 +23,7 @@ final readonly class WorkspaceMembersPageData implements Arrayable
         public array $invitations,
         public array $roleOptions,
         public bool $canAssignOwner,
+        public ?string $roleFilter = null,
     ) {}
 
     /**
@@ -48,7 +49,8 @@ final readonly class WorkspaceMembersPageData implements Arrayable
      *         expires_at: string
      *     }>,
      *     role_options: list<array{value: string, label: string}>,
-     *     can_assign_owner: bool
+     *     can_assign_owner: bool,
+     *     role_filter: string|null
      * }
      */
     public function toArray(): array
@@ -67,6 +69,7 @@ final readonly class WorkspaceMembersPageData implements Arrayable
                 $this->roleOptions,
             ),
             'can_assign_owner' => $this->canAssignOwner,
+            'role_filter' => $this->roleFilter,
         ];
     }
 }

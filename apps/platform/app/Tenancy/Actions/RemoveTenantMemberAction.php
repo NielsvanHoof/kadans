@@ -50,7 +50,7 @@ final readonly class RemoveTenantMemberAction
                 [
                     'user_id' => $member->id,
                     'email' => $member->email,
-                    'role' => $role?->value,
+                    'role' => $role,
                 ],
                 $removedBy,
             );

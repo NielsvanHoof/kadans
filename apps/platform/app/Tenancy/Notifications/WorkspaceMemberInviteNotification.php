@@ -16,13 +16,16 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
 {
     use Queueable;
 
+    public string $role;
+
     public function __construct(
         public int $invitationId,
         public string $firmName,
-        public Role $role,
+        Role|string $role,
         public string $acceptUrl,
         public CarbonInterface $expiresAt,
     ) {
+        $this->role = $role instanceof Role ? $role->value : $role;
         $this->afterCommit();
     }
 
@@ -44,7 +47,7 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
             ->greeting(__('You have been invited'))
             ->line(__(':firm invited you to join their workspace as :role.', [
                 'firm' => $this->firmName,
-                'role' => $this->role->label(),
+                'role' => Role::tryFrom($this->role)?->label() ?? $this->role,
             ]))
             ->line(__('This invitation expires on :date.', [
                 'date' => $this->expiresAt->timezone(config('app.timezone'))->toDayDateTimeString(),

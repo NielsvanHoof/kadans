@@ -9,6 +9,7 @@ use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Actions\AcceptTenantInvitationAction;
 use App\Tenancy\Actions\RegisterAndAcceptTenantInvitationAction;
 use App\Tenancy\Actions\ResolveTenantInvitationFromTokenAction;
+use App\Tenancy\Enums\Role;
 use App\Tenancy\Http\Requests\RegisterFromInvitationRequest;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
@@ -45,8 +46,8 @@ final class AcceptTenantInvitationController extends Controller
             ],
             'invitation' => [
                 'email' => $invitation->email,
-                'role' => $invitation->role->value,
-                'role_label' => $invitation->role->label(),
+                'role' => $invitation->role,
+                'role_label' => Role::tryFrom($invitation->role)?->label() ?? $invitation->role,
                 'expires_at' => $invitation->expires_at->toIso8601String(),
             ],
             'auth' => [

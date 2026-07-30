@@ -24,3 +24,5 @@ export type RoleOption = {
     value: string;
     label: string;
 };
+
+export type MembersRoleFilter = string | null;

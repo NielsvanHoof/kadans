@@ -7,8 +7,10 @@ use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -107,7 +109,7 @@ test('owners can invite a member and send a notification', function (): void {
         ->where('email', 'colleague@example.com')
         ->firstOrFail();
 
-    expect($invitation->role)->toBe(Role::Adviser)
+    expect($invitation->role)->toBe(Role::Adviser->value)
         ->and($invitation->isPending())->toBeTrue();
 
     Notification::assertSentOnDemand(WorkspaceMemberInviteNotification::class);
@@ -367,4 +369,62 @@ test('members cannot manage another tenant workspace', function (): void {
     // Keep ownerB referenced so the second workspace stays provisioned.
     expect($ownerB->belongsToTenant($tenantB))->toBeTrue()
         ->and($ownerA->belongsToTenant($tenantA))->toBeTrue();
+});
+
+test('custom tenant roles appear in member role options and can be assigned', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $member = workspaceMember($tenant, Role::Adviser);
+    $membership = TenantMembership::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $member->id)
+        ->firstOrFail();
+
+    TenantRole::query()->create([
+        'name' => 'qa-specialist',
+        'guard_name' => 'web',
+        'tenant_id' => $tenant->id,
+        'is_system' => false,
+    ])->syncPermissions([WorkspacePermission::ViewMembers->value]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.members.index', $tenant))
+        ->assertOk()
+        ->assertInertia(function (Assert $page): void {
+            /** @var array<int, array{value: string, label: string}> $options */
+            $options = $page->toArray()['props']['role_options'];
+
+            expect(array_column($options, 'value'))
+                ->toContain(Role::Owner->value)
+                ->toContain('qa-specialist');
+        });
+
+    $this->actingAs($owner)
+        ->patch(workspaceRoute('workspaces.members.update', $tenant, [
+            'membership' => $membership,
+        ]), [
+            'role' => 'qa-specialist',
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.members.index', $tenant));
+
+    actingInWorkspace($tenant);
+
+    expect($member->fresh()->hasRole('qa-specialist'))->toBeTrue();
+});
+
+test('members page supports filtering by role', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    workspaceMember($tenant, Role::Adviser);
+    workspaceMember($tenant, Role::Reviewer);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.members.index', $tenant).'?role='.Role::Adviser->value)
+        ->assertOk()
+        ->assertInertia(function (Assert $page): void {
+            /** @var array<int, array{role: string|null}> $members */
+            $members = $page->toArray()['props']['members'];
+
+            expect($page->toArray()['props']['role_filter'])->toBe(Role::Adviser->value)
+                ->and($members)->not->toBeEmpty()
+                ->and(array_unique(array_filter(array_column($members, 'role'))))->toBe([Role::Adviser->value]);
+        });
 });

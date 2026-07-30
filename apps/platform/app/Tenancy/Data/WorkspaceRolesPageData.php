@@ -20,11 +20,13 @@ final readonly class WorkspaceRolesPageData implements Arrayable
     public function __construct(
         public array $roles,
         public array $permissionGroups,
+        public bool $canManageRoles,
     ) {}
 
     /**
      * @return array{
      *     roles: list<array{
+     *         id: int,
      *         value: string,
      *         label: string,
      *         is_system: bool,
@@ -39,7 +41,8 @@ final readonly class WorkspaceRolesPageData implements Arrayable
      *             description: string,
      *             granted_to: list<string>
      *         }>
-     *     }>
+     *     }>,
+     *     can_manage_roles: bool
      * }
      */
     public function toArray(): array
@@ -53,6 +56,7 @@ final readonly class WorkspaceRolesPageData implements Arrayable
                 static fn (WorkspacePermissionGroupData $group): array => $group->toArray(),
                 $this->permissionGroups,
             ),
+            'can_manage_roles' => $this->canManageRoles,
         ];
     }
 }

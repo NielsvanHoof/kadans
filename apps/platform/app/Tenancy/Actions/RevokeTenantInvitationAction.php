@@ -33,7 +33,7 @@ final readonly class RevokeTenantInvitationAction
             $invitation,
             [
                 'email' => $invitation->email,
-                'role' => $invitation->role->value,
+                'role' => $invitation->role,
             ],
             $revokedBy,
         );

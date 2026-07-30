@@ -14,8 +14,11 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Support\WorkspaceMemberRoles;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
 
 use function is_string;
 
@@ -27,7 +30,10 @@ use function is_string;
  */
 final readonly class FetchWorkspaceMembersQuery
 {
-    public function __construct(private WorkspaceMemberRoles $memberRoles) {}
+    public function __construct(
+        private WorkspaceMemberRoles $memberRoles,
+        private Request $request,
+    ) {}
 
     public function handle(Tenant $tenant, User $viewer): WorkspaceMembersPageData
     {
@@ -42,8 +48,9 @@ final readonly class FetchWorkspaceMembersQuery
         return new WorkspaceMembersPageData(
             members: $this->members($memberships, $viewer, $roleNamesByUserId),
             invitations: $this->pendingInvitations($tenant),
-            roleOptions: $this->assignableRoleOptions($viewerIsOwner),
+            roleOptions: $this->assignableRoleOptions($tenant, $viewerIsOwner),
             canAssignOwner: $viewerIsOwner,
+            roleFilter: $this->filteredRoleName(),
         );
     }
 
@@ -52,6 +59,7 @@ final readonly class FetchWorkspaceMembersQuery
      */
     private function memberships(Tenant $tenant): Collection
     {
+        $roleFilter = $this->filteredRoleName();
         $membershipsQuery = TenantMembership::query()
             ->with('user')
             ->where('tenant_id', $tenant->id);
@@ -64,7 +72,31 @@ final readonly class FetchWorkspaceMembersQuery
             ])
             ->oldest('joined_at');
 
+        if (is_string($roleFilter) && $roleFilter !== '') {
+            $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
+            $rolesTable = (string) config('permission.table_names.roles');
+            $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
+            $modelKey = (string) config('permission.column_names.model_morph_key');
+
+            $membershipsQuery->getQuery()->whereExists(function (Builder $query) use ($tenant, $roleFilter, $teamForeignKey, $rolesTable, $modelHasRolesTable, $modelKey): void {
+                $query->selectRaw('1')
+                    ->from($modelHasRolesTable)
+                    ->join($rolesTable, "{$rolesTable}.id", '=', "{$modelHasRolesTable}.role_id")
+                    ->whereColumn("{$modelHasRolesTable}.{$modelKey}", 'tenant_memberships.user_id')
+                    ->where("{$modelHasRolesTable}.model_type", (new User)->getMorphClass())
+                    ->where("{$modelHasRolesTable}.{$teamForeignKey}", $tenant->id)
+                    ->where("{$rolesTable}.name", $roleFilter);
+            });
+        }
+
         return $membershipsQuery->get();
+    }
+
+    private function filteredRoleName(): ?string
+    {
+        $role = $this->request->query('role');
+
+        return is_string($role) && $role !== '' ? $role : null;
     }
 
     /**
@@ -105,7 +137,9 @@ final readonly class FetchWorkspaceMembersQuery
             }
 
             $roleName = $roleNamesByUserId[$user->id] ?? null;
-            $role = is_string($roleName) ? Role::tryFrom($roleName) : null;
+            $roleLabel = is_string($roleName)
+                ? (Role::tryFrom($roleName)?->label() ?? $roleName)
+                : null;
 
             $members[] = new WorkspaceMemberData(
                 id: $membership->id,
@@ -113,8 +147,8 @@ final readonly class FetchWorkspaceMembersQuery
                 name: $user->name,
                 email: $user->email,
                 status: $membership->status->value,
-                role: $role?->value,
-                roleLabel: $role?->label(),
+                role: $roleName,
+                roleLabel: $roleLabel,
                 joinedAt: $membership->joined_at?->toIso8601String(),
                 lastAccessedAt: $membership->last_accessed_at?->toIso8601String(),
                 isCurrentUser: $user->id === $viewer->id,
@@ -143,8 +177,8 @@ final readonly class FetchWorkspaceMembersQuery
             $invitations[] = new WorkspaceInvitationData(
                 id: $invitation->id,
                 email: $invitation->email,
-                role: $invitation->role->value,
-                roleLabel: $invitation->role->label(),
+                role: $invitation->role,
+                roleLabel: Role::tryFrom($invitation->role)?->label() ?? $invitation->role,
                 invitedAt: $invitation->created_at?->toIso8601String() ?? now()->toIso8601String(),
                 expiresAt: $invitation->expires_at->toIso8601String(),
             );
@@ -156,19 +190,29 @@ final readonly class FetchWorkspaceMembersQuery
     /**
      * @return list<WorkspaceRoleOptionData>
      */
-    private function assignableRoleOptions(bool $viewerIsOwner): array
+    private function assignableRoleOptions(Tenant $tenant, bool $viewerIsOwner): array
     {
+        $rolesQuery = TenantRole::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('guard_name', 'web');
+
+        $rolesQuery->getQuery()
+            ->orderByDesc('is_system')
+            ->orderBy('name');
+
+        $roles = $rolesQuery->get();
+
         /** @var list<WorkspaceRoleOptionData> $roleOptions */
         $roleOptions = [];
 
-        foreach (Role::assignable() as $role) {
-            if (! $viewerIsOwner && $role === Role::Owner) {
+        foreach ($roles as $role) {
+            if (! $viewerIsOwner && $role->name === Role::Owner->value) {
                 continue;
             }
 
             $roleOptions[] = new WorkspaceRoleOptionData(
-                value: $role->value,
-                label: $role->label(),
+                value: $role->name,
+                label: $role->displayLabel(),
             );
         }
 

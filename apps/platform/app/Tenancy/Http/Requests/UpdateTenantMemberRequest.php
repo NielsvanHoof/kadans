@@ -8,6 +8,7 @@ use App\Accounts\Models\User;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -33,8 +34,18 @@ final class UpdateTenantMemberRequest extends FormRequest
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
+        $tenant = $this->route('tenant');
+        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
+
         return [
-            'role' => ['sometimes', 'required', 'string', Rule::enum(Role::class)],
+            'role' => [
+                'sometimes',
+                'required',
+                'string',
+                Rule::exists(config('permission.table_names.roles'), 'name')
+                    ->where($teamForeignKey, $tenant instanceof Tenant ? $tenant->id : null)
+                    ->where('guard_name', 'web'),
+            ],
             'status' => [
                 'sometimes',
                 'required',
@@ -81,13 +92,7 @@ final class UpdateTenantMemberRequest extends FormRequest
                 return;
             }
 
-            $role = Role::tryFrom($roleValue);
-
-            if ($role === null) {
-                return;
-            }
-
-            if (! ($this->user()?->can('assignRole', [$membership, $role]) ?? false)) {
+            if (! ($this->user()?->can('assignRole', [$membership, $roleValue]) ?? false)) {
                 $validator->errors()->add(
                     'role',
                     __('Only an owner can assign the owner role.'),
@@ -102,8 +107,8 @@ final class UpdateTenantMemberRequest extends FormRequest
 
             if (
                 $member instanceof User
-                && $memberRoles->roleFor($member, $tenant) === Role::Owner
-                && $role !== Role::Owner
+                && $memberRoles->roleFor($member, $tenant) === Role::Owner->value
+                && $roleValue !== Role::Owner->value
                 && $memberRoles->isLastActiveOwner($member, $tenant)
             ) {
                 $validator->errors()->add(
@@ -114,11 +119,11 @@ final class UpdateTenantMemberRequest extends FormRequest
         });
     }
 
-    public function role(): ?Role
+    public function role(): ?string
     {
         $role = $this->validated('role') ?? null;
 
-        return is_string($role) ? Role::from($role) : null;
+        return is_string($role) ? $role : null;
     }
 
     public function status(): ?TenantMembershipStatus

@@ -7,7 +7,6 @@ namespace App\Tenancy\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
@@ -32,7 +31,7 @@ final readonly class InviteTenantMemberAction
     /**
      * @return array{invitation: TenantInvitation, plain_text_token: string}
      */
-    public function handle(Tenant $tenant, User $invitedBy, string $email, Role $role): array
+    public function handle(Tenant $tenant, User $invitedBy, string $email, string $role): array
     {
         $email = mb_strtolower(mb_trim($email));
 
@@ -97,7 +96,7 @@ final readonly class InviteTenantMemberAction
                 $invitation,
                 [
                     'email' => $email,
-                    'role' => $role->value,
+                    'role' => $role,
                     'expires_at' => $expiresAt->toIso8601String(),
                 ],
                 $invitedBy,

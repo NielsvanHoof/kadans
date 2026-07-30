@@ -64,14 +64,22 @@ final readonly class LogAuditActivityAction
     }
 
     /**
-     * @param  array<string, mixed>  $properties
-     * @return array<string, mixed>
+     * @param  array<array-key, mixed>  $properties
+     * @return array<array-key, mixed>
      */
     private function withoutSensitiveProperties(array $properties): array
     {
         $safeProperties = [];
 
         foreach ($properties as $key => $value) {
+            if (! is_string($key)) {
+                $safeProperties[$key] = is_array($value)
+                    ? $this->withoutSensitiveProperties($value)
+                    : $value;
+
+                continue;
+            }
+
             if ($this->isSensitiveProperty($key)) {
                 continue;
             }

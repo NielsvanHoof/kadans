@@ -21,7 +21,7 @@ final readonly class UpdateTenantMemberRoleAction
         private WorkspaceMemberRoles $memberRoles,
     ) {}
 
-    public function handle(TenantMembership $membership, User $updatedBy, Role $role): TenantMembership
+    public function handle(TenantMembership $membership, User $updatedBy, string $role): TenantMembership
     {
         return DB::transaction(function () use ($membership, $updatedBy, $role): TenantMembership {
             $membershipQuery = TenantMembership::query()->whereKey($membership->getKey());
@@ -52,7 +52,7 @@ final readonly class UpdateTenantMemberRoleAction
 
             $previousRole = $this->memberRoles->roleFor($member, $tenant);
 
-            if ($previousRole === Role::Owner && $role !== Role::Owner
+            if ($previousRole === Role::Owner->value && $role !== Role::Owner->value
                 && $this->memberRoles->isLastActiveOwner($member, $tenant)) {
                 throw ValidationException::withMessages([
                     'role' => __('The workspace must keep at least one owner.'),
@@ -71,8 +71,8 @@ final readonly class UpdateTenantMemberRoleAction
                 [
                     'user_id' => $member->id,
                     'email' => $member->email,
-                    'old_role' => $previousRole?->value,
-                    'new_role' => $role->value,
+                    'old_role' => $previousRole,
+                    'new_role' => $role,
                 ],
                 $updatedBy,
             );
