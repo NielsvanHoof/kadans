@@ -9,6 +9,7 @@ use App\Audit\Concerns\LogsTenantAuditableActivity;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
+use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
 use App\Tenancy\Concerns\BelongsToTenant;
 use Database\Factories\DossierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -59,7 +60,7 @@ use Spatie\Activitylog\Support\LogOptions;
 final class Dossier extends Model
 {
     /** @use HasFactory<DossierFactory> */
-    use BelongsToTenant, HasFactory, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+    use BelongsToTenant, HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
 
     /**
      * @var array<string, mixed>

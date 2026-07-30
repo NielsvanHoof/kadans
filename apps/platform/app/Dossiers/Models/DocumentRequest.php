@@ -8,6 +8,7 @@ use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
 use App\Tenancy\Concerns\BelongsToTenant;
 use Carbon\CarbonInterface;
 use Database\Factories\DocumentRequestFactory;
@@ -64,7 +65,7 @@ use Override;
 final class DocumentRequest extends Model
 {
     /** @use HasFactory<DocumentRequestFactory> */
-    use BelongsToTenant, HasFactory, Searchable;
+    use BelongsToTenant, HasFactory, InvalidatesWorkspaceDashboardCache, Searchable;
 
     /**
      * @var array<string, mixed>

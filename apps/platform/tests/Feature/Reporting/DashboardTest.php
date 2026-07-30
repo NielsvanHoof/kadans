@@ -15,6 +15,7 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 pest()
@@ -135,6 +136,106 @@ test('firm dashboard shows tenant-scoped operational metrics', function (): void
             ->has('metrics.needs_review_last_week')
             ->has('metrics.awaiting_client_this_week')
             ->has('metrics.awaiting_client_last_week'));
+});
+
+test('dashboard metrics cache is used across requests', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $owner = User::factory()->create();
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant->makeCurrent();
+
+    Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    // Warm the cache with clients = 1.
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dashboard', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/dashboard')
+            ->where('metrics.clients', 1));
+
+    // Insert without model events so the invalidation trait does not fire.
+    DB::table('clients')->insert([
+        'tenant_id' => $tenant->id,
+        'name' => 'Silent Client',
+        'email' => 'silent@example.com',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    // Cached metrics should still report the pre-insert count.
+    $this->get(workspaceRoute('workspaces.dashboard', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/dashboard')
+            ->where('metrics.clients', 1));
+});
+
+test('dashboard metrics cache is forgotten when a dossier is created', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $owner = User::factory()->create();
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant->makeCurrent();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dashboard', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/dashboard')
+            ->where('metrics.open_dossiers', 0));
+
+    // Factory create fires the saved event, which forgets the cache.
+    Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'status' => DossierStatus::AwaitingClient,
+    ]);
+
+    $this->get(workspaceRoute('workspaces.dashboard', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/dashboard')
+            ->where('metrics.open_dossiers', 1));
+});
+
+test('dashboard metrics cache keys are tenant-scoped', function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $ownerA = User::factory()->create();
+    $tenantA = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $ownerA);
+    $tenantA->makeCurrent();
+    Client::factory()->create(['tenant_id' => $tenantA->id]);
+
+    $ownerB = User::factory()->create();
+    $tenantB = resolve(ProvisionTenantAction::class)->handle('Beta Tax', $ownerB);
+    $tenantB->makeCurrent();
+    Client::factory()->count(2)->create(['tenant_id' => $tenantB->id]);
+
+    // Warm tenant A's cache first.
+    $tenantA->makeCurrent();
+    $this->actingAs($ownerA)
+        ->withSession(['active_tenant_id' => $tenantA->id])
+        ->get(workspaceRoute('workspaces.dashboard', $tenantA))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/dashboard')
+            ->where('metrics.clients', 1));
+
+    // Tenant B must see its own counts, not A's cached value.
+    $tenantB->makeCurrent();
+    $this->actingAs($ownerB)
+        ->withSession(['active_tenant_id' => $tenantB->id])
+        ->get(workspaceRoute('workspaces.dashboard', $tenantB))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/dashboard')
+            ->where('metrics.clients', 2));
 });
 
 test('users with multiple firms can choose which firm to open', function (): void {

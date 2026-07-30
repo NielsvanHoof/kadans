@@ -6,6 +6,7 @@ namespace App\Clients\Models;
 
 use App\Audit\Concerns\LogsTenantAuditableActivity;
 use App\Dossiers\Models\Dossier;
+use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
 use App\Tenancy\Concerns\BelongsToTenant;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -31,7 +32,7 @@ use Spatie\Activitylog\Support\LogOptions;
 final class Client extends Model
 {
     /** @use HasFactory<ClientFactory> */
-    use BelongsToTenant, HasFactory, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+    use BelongsToTenant, HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
 
     /**
      * Columns Scout's database engine searches with LIKE.
