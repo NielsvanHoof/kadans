@@ -27,8 +27,10 @@ Copy this and tick as you go.
 
 ### Composition root wiring
 
-- [ ] `Gate::policy(Model::class, Policy::class)` in [`AppServiceProvider::configurePolicies()`](../app/Providers/AppServiceProvider.php)
-- [ ] Morph map alias for the model in `AppServiceProvider` (stable string keys — do not rename lightly)
+- [ ] Create `app/{Domain}/{Domain}ServiceProvider.php` when the domain has policies or container bindings
+- [ ] `Gate::policy(Model::class, Policy::class)` in that domain service provider’s `boot()`
+- [ ] Register the provider in [`bootstrap/providers.php`](../bootstrap/providers.php)
+- [ ] Morph map alias for the model in [`AppServiceProvider`](../app/Providers/AppServiceProvider.php) (stable string keys — do not rename lightly)
 - [ ] If you add Artisan commands: put them under `app/{Domain}/Console/Commands` and add that path to `withCommands([...])` in [`bootstrap/app.php`](../bootstrap/app.php)
 - [ ] Listeners under `app/{Domain}/Listeners` are auto-discovered — no extra registration
 
@@ -75,7 +77,7 @@ When you only need screens over existing models:
 ## Do not invent parallel systems
 
 - Reuse Tenancy for tenant scoping and permissions — do not add a second permission store
-- Register policies and morphs in `AppServiceProvider` — do not add a domain service provider
+- Register policies and domain bindings in the domain’s `*ServiceProvider`; keep the morph map in `AppServiceProvider`
 - Keep migrations/factories in `database/` — not inside `app/{Domain}`
 
 ## Smoke path after wiring

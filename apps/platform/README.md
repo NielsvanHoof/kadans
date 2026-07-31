@@ -56,7 +56,7 @@ Octane reloads its workers automatically when backend files change. After changi
 - **Questionnaire template** — reusable set of items (system-wide or firm-owned) that can be applied to a dossier.
 - **Client portal** — token-based magic-link page (no account) where clients answer requests.
 
-Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). There are no per-domain service providers — wiring lives in `bootstrap/` and `AppServiceProvider`. See [architecture](docs/architecture.md).
+Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). Domain bindings and policies live in each domain’s `*ServiceProvider`; `AppServiceProvider` keeps cross-cutting defaults. See [architecture](docs/architecture.md).
 
 ## Frontend architecture
 

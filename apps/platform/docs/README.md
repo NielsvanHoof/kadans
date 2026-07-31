@@ -8,11 +8,12 @@ Guides for how this application is structured and how to extend it.
 |-------|------|
 | `app/{Domain}/` | Code ownership (PSR-4 under `App\`) |
 | `routes/{web,tenant,portal}/` | HTTP surface, grouped by audience |
-| `bootstrap/` + `App\Providers\AppServiceProvider` | Composition root — wiring, not domain code |
+| `bootstrap/` + `App\Providers\AppServiceProvider` | App composition root — defaults, morph map, local tooling |
+| `app/{Domain}/*ServiceProvider` | Domain bindings and policies |
 | `database/` | Shared persistence (migrations, factories, seeders) |
 | `resources/js/{pages,features}` | UI ownership parallel to domains |
 
-Domains are **folder namespaces**, not Laravel packages. There are no per-domain service providers. Routes, policies, morph map entries, and permission enums are registered explicitly at the application root.
+Domains are **folder namespaces**, not Laravel packages. Each domain that needs policies or container bindings has a `*ServiceProvider` registered in `bootstrap/providers.php`. The morph map and app-wide defaults stay in `AppServiceProvider`.
 
 ## Reading order
 

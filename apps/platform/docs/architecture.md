@@ -1,6 +1,6 @@
 # Architecture
 
-This application is a multi-tenant Laravel app with **folder-based domains** under `app/`. Cross-cutting wiring lives in the composition root — not inside domain service providers.
+This application is a multi-tenant Laravel app with **folder-based domains** under `app/`. Cross-cutting defaults live in `AppServiceProvider`; domain bindings and policies live in each domain’s `*ServiceProvider`.
 
 ## Domains
 
@@ -18,9 +18,9 @@ This application is a multi-tenant Laravel app with **folder-based domains** und
 | **Shared** | Base controller, pagination helpers, shared DTOs |
 | **Tenancy** | Tenants, memberships, invitations, permission infrastructure |
 | **WorkspaceNotifications** | In-app notification inbox |
-| **Providers** | App-level providers only (`AppServiceProvider`, Fortify, Health) |
+| **Providers** | App-level providers (`AppServiceProvider`, Fortify, Health) plus per-domain `*ServiceProvider` classes |
 
-`app/Providers/` is **not** a product domain — it is the application composition root alongside `bootstrap/`.
+`app/Providers/` holds framework/app providers. Domain `*ServiceProvider` classes live next to their domain code under `app/{Domain}/`.
 
 ### Typical domain layout
 
@@ -39,31 +39,32 @@ app/{Domain}/
 ├── Models/
 ├── Policies/          # AuthorizesTenantPermission
 ├── Queries/           # reads — Fetch*Query, existence helpers
-└── Transitions/       # optional state machines
+├── Transitions/       # optional state machines
+└── {Domain}ServiceProvider.php  # policies + container bindings
 ```
 
 Thin domains (e.g. Reporting, WorkspaceNotifications) may only have `Http/`, `Queries/`, `Data/`, and sometimes `Actions/` — no models or policies when they reuse another domain’s models.
 
 ## Composition root
 
-Domains stay plain PHP namespaces. The app wires them explicitly:
+Domains are PHP namespaces with their own service providers for bindings and policies. The app registers them explicitly:
 
 | Concern | Where |
 |---------|-------|
 | Routes | [`bootstrap/app.php`](../bootstrap/app.php) loads `routes/web.php`, then `health`, `tenant`, `portal` |
 | Console commands | `withCommands([...])` paths under domain `Console/Commands` |
 | Event listeners | Discovery: `app/*/Listeners` |
-| Policies | `Gate::policy()` in [`AppServiceProvider`](../app/Providers/AppServiceProvider.php) |
-| Morph map | `Relation::enforceMorphMap()` in `AppServiceProvider` |
+| Policies | `Gate::policy()` in the owning domain’s `*ServiceProvider` |
+| Container bindings | Domain `*ServiceProvider::register()` (e.g. OCR/AWS in `DocumentProcessingServiceProvider`) |
+| Morph map | `Relation::enforceMorphMap()` in [`AppServiceProvider`](../app/Providers/AppServiceProvider.php) |
 | Permissions | Enums listed in [`config/tenant-permissions.php`](../config/tenant-permissions.php) |
 
 Providers registered in [`bootstrap/providers.php`](../bootstrap/providers.php):
 
-- `AppServiceProvider`
-- `FortifyServiceProvider`
-- `HealthServiceProvider`
+- App-level: `AppServiceProvider`, `FortifyServiceProvider`, `HealthServiceProvider`
+- Domain: `Platform`, `Tenancy`, `DocumentProcessing`, `Dossiers`, `Audit`, `Clients`, `ClientPortal`, `Questionnaires`
 
-There are **no** `*ServiceProvider` classes inside domain folders.
+`AppServiceProvider` stays thin — defaults, factory discovery, morph map, and local tooling. Domain wiring (AWS/OCR, gates, policies) belongs in the matching domain provider.
 
 ## HTTP audiences
 
