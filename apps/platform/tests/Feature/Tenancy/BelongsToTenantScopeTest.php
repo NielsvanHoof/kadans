@@ -7,7 +7,6 @@ use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use RuntimeException;
 
 pest()
     ->use(RefreshDatabase::class);
@@ -31,7 +30,7 @@ test('strict mode throws when querying without a current tenant', function (): v
         ->toThrow(RuntimeException::class, 'Cannot query tenant-owned records without an active tenant.');
 });
 
-test('withoutTenantScope allows intentional cross-tenant lookups', function (): void {
+test('queryWithoutTenantScope allows intentional cross-tenant lookups', function (): void {
     $owner = provisionWorkspace()['owner'];
     $tenant = resolve(ProvisionTenantAction::class)->handle('Lookup Firm', $owner);
     $tenant->makeCurrent();
@@ -40,7 +39,7 @@ test('withoutTenantScope allows intentional cross-tenant lookups', function (): 
 
     Tenant::forgetCurrent();
 
-    expect(Client::query()->withoutTenantScope()->whereKey($client->id)->exists())->toBeTrue()
+    expect(Client::queryWithoutTenantScope()->whereKey($client->id)->exists())->toBeTrue()
         ->and(Client::query()->whereKey($client->id)->exists())->toBeFalse();
 });
 

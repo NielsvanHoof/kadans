@@ -765,6 +765,8 @@
     "Adding component…": "Adding component…",
     "Could not add the component. Try again.": "Could not add the component. Try again.",
     "Component added.": "Component added.",
+    "Component deleted.": "Component deleted.",
+    "Could not delete the component. Try again.": "Could not delete the component. Try again.",
     "Form order saved.": "Form order saved.",
     "Could not save the new order.": "Could not save the new order.",
     "Field settings saved.": "Field settings saved.",

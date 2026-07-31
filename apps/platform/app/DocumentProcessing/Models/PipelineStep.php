@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\DocumentProcessing\Models;
 
 use App\DocumentProcessing\Enums\PipelineStepStatus;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\PipelineStepFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
@@ -60,10 +59,10 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class PipelineStep extends Model
+final class PipelineStep extends TenantOwnedModel
 {
     /** @use HasFactory<PipelineStepFactory> */
-    use BelongsToTenant, HasFactory;
+    use HasFactory;
 
     /**
      * @var list<string>

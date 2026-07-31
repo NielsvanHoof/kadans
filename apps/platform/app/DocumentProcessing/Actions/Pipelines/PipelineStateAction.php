@@ -75,7 +75,6 @@ final readonly class PipelineStateAction
                 PipelineStepOperation::Fail => $this->transitions->fail($lockedPipeline, $step, $message, $errorCode),
                 PipelineStepOperation::Skip => $this->transitions->skip($lockedPipeline, $step),
                 PipelineStepOperation::Stuck => $this->transitions->stuck($lockedPipeline, $step, $message, $errorCode),
-                PipelineStepOperation::Heartbeat => $this->transitions->heartbeat($lockedPipeline, $step),
             };
 
             // Notify open workspace pages

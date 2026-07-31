@@ -132,15 +132,14 @@ export default function QuestionnaireBuilder({
                         strategy={verticalListSortingStrategy}
                     >
                         <QuestionnaireBuilderCanvas
-                            dossierId={dossierId}
                             items={state.items}
                             selectedId={state.selectedId}
                             canEdit={canEditStructure}
-                            pendingInsert={state.pendingInsert}
                             onSelect={state.setSelectedId}
                             onAdd={(type) => {
                                 state.addAt(type);
                             }}
+                            onDestroy={state.handleDestroy}
                         />
                     </SortableContext>
 

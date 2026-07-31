@@ -8,14 +8,13 @@ use App\Audit\Concerns\LogsTenantAuditableActivity;
 use App\Audit\Models\Activity;
 use App\Dossiers\Models\Dossier;
 use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
@@ -54,10 +53,10 @@ use Spatie\Activitylog\Support\LogOptions;
  *
  * @mixin \Eloquent
  */
-final class Client extends Model
+final class Client extends TenantOwnedModel
 {
     /** @use HasFactory<ClientFactory> */
-    use BelongsToTenant, HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+    use HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
 
     /**
      * @var list<string>

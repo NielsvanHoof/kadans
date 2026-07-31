@@ -152,7 +152,7 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
             description: $model->description,
             category: $model->category->value,
             categoryLabel: $model->category->label(),
-            itemsCount: $model->items_count,
+            itemsCount: (int) ($model->items_count ?? 0),
             isSystem: $model->isSystem(),
         )->toArray();
     }

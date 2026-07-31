@@ -36,6 +36,9 @@ Route::scopeBindings()->group(function (): void {
 });
 
 // Not nested under a dossier — BelongsToTenant global scope is enough.
+// Live status has no password gate so review can refresh OCR without re-confirming.
+Route::get('uploaded-documents/{uploadedDocument}/live', [UploadedDocumentController::class, 'live'])
+    ->name('uploaded-documents.live');
 Route::get('uploaded-documents/{uploadedDocument}', [UploadedDocumentController::class, 'show'])
     ->middleware(RequirePassword::using(
         passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),

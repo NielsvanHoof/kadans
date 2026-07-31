@@ -13,8 +13,24 @@ parameters:
 
     level: 8
 
+    # Keep cache inside the project so Sail (uid sail) and root runs do not
+    # fight over /tmp/phpstan ownership.
+    tmpDir: storage/framework/cache/phpstan
+
     parseModelCastsMethod: true
     enableMigrationCache: true
     checkModelProperties: true
 
+    # Relations / loaded models are often typed as non-null in PHPDoc while
+    # runtime still uses defensive instanceof / abort_unless checks.
+    treatPhpDocTypesAsCertain: false
+
     reportUnmatchedIgnoredErrors: true
+
+    ignoreErrors:
+        # Validated request payloads are array<string, mixed>; Eloquent create/update
+        # still go through $fillable / $guarded at runtime. Keep checkModelProperties
+        # for where()/column typos without requiring attribute-by-attribute assignment.
+        -
+            identifier: argument.type
+            message: '#expects array<model property of .+>, array<string, mixed> given#'

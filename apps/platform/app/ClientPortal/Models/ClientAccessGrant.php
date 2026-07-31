@@ -6,15 +6,14 @@ namespace App\ClientPortal\Models;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\ClientAccessGrantFactory;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\MassPrunable;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
@@ -51,10 +50,10 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class ClientAccessGrant extends Model
+final class ClientAccessGrant extends TenantOwnedModel
 {
     /** @use HasFactory<ClientAccessGrantFactory> */
-    use BelongsToTenant, HasFactory, MassPrunable;
+    use HasFactory, MassPrunable;
 
     /**
      * @var list<string>
@@ -121,8 +120,7 @@ final class ClientAccessGrant extends Model
     {
         $cutoff = now()->subDays((int) config('retention.portal_grants_days'));
 
-        return self::query()
-            ->withoutTenantScope()
+        return self::queryWithoutTenantScope()
             ->where(function (Builder $query) use ($cutoff): void {
                 $query->getQuery()
                     ->whereNotNull('revoked_at')

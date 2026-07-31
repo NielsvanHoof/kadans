@@ -8,6 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Actions\DocumentRequests\UploadStaffDocumentAction;
+use App\Dossiers\Data\StaffUploadedDocumentData;
 use App\Dossiers\Http\Requests\DocumentRequests\StoreUploadedDocumentRequest;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -15,7 +16,9 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Queries\FetchUploadedDocumentShowQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,18 +62,39 @@ final class UploadedDocumentController extends Controller
 
     /**
      * Dedicated OCR extraction page — key/values and tables off the dossier list.
+     * JSON powers the extraction-page island (full OCR body).
      */
     public function show(
         Tenant $tenant,
+        Request $request,
         UploadedDocument $uploadedDocument,
         FetchUploadedDocumentShowQuery $fetchUploadedDocumentShow,
-    ): Response {
+    ): Response|JsonResponse {
         $this->authorize('view', $uploadedDocument);
 
-        return Inertia::render(
-            'uploaded-documents/show',
-            $fetchUploadedDocumentShow->handle($uploadedDocument),
-        );
+        $props = $fetchUploadedDocumentShow->handle($uploadedDocument);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'uploaded_document' => $props['uploaded_document'],
+            ]);
+        }
+
+        return Inertia::render('uploaded-documents/show', $props);
+    }
+
+    /**
+     * Narrow processing slice for review/show islands (no extraction, no password gate).
+     */
+    public function live(
+        Tenant $tenant,
+        UploadedDocument $uploadedDocument,
+    ): JsonResponse {
+        $this->authorize('view', $uploadedDocument);
+
+        return response()->json([
+            'uploaded_document' => StaffUploadedDocumentData::fromModel($uploadedDocument)->toArray(),
+        ]);
     }
 
     /**

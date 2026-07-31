@@ -6,8 +6,6 @@ namespace App\Dossiers\Queries;
 
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Data\PipelineData;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Data\DossierAccessGrantData;
@@ -73,11 +71,6 @@ final readonly class FetchDossierShowQuery
         foreach ($dossier->documentRequests as $documentRequest) {
             $uploaded = $documentRequest->uploadedDocument;
             $reviewer = $documentRequest->reviewedBy;
-            $latestPipeline = null;
-
-            if ($uploaded instanceof UploadedDocument && $uploaded->relationLoaded('pipelines')) {
-                $latestPipeline = $uploaded->pipelines->sortByDesc('id')->first();
-            }
 
             $documentRequestRows[] = new StaffDocumentRequestData(
                 id: $documentRequest->id,
@@ -100,17 +93,9 @@ final readonly class FetchDossierShowQuery
                     $documentRequests,
                 ),
                 isApplicable: in_array($documentRequest->id, $applicableIds, true),
-                uploadedDocument: $uploaded === null ? null : new StaffUploadedDocumentData(
-                    id: $uploaded->id,
-                    originalFilename: $uploaded->original_filename,
-                    sizeBytes: $uploaded->size_bytes,
-                    uploadedAt: $uploaded->uploaded_at->toIso8601String(),
-                    processingStatus: $uploaded->processing_status->value,
-                    processingError: $uploaded->processing_error,
-                    pipeline: $latestPipeline instanceof Pipeline
-                        ? PipelineData::fromModel($latestPipeline)
-                        : null,
-                ),
+                uploadedDocument: $uploaded instanceof UploadedDocument
+                    ? StaffUploadedDocumentData::fromModel($uploaded)
+                    : null,
             );
         }
 

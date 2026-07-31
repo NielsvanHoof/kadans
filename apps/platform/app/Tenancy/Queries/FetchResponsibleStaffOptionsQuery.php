@@ -8,7 +8,7 @@ use App\Accounts\Models\User;
 use App\Shared\Data\PersonOptionData;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
-use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 
 final class FetchResponsibleStaffOptionsQuery
 {
@@ -24,9 +24,11 @@ final class FetchResponsibleStaffOptionsQuery
             User::query()
                 ->whereHas(
                     'tenantMemberships',
-                    fn (Builder $query) => $query
-                        ->where('tenant_id', $tenant->id)
-                        ->where('status', TenantMembershipStatus::Active),
+                    function (Builder $query) use ($tenant): void {
+                        $query->getQuery()
+                            ->where('tenant_id', $tenant->id)
+                            ->where('status', TenantMembershipStatus::Active);
+                    },
                 )
                 ->oldest('name')
                 ->get(['id', 'name', 'email']) as $user

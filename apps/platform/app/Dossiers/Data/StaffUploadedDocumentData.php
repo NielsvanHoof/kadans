@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Dossiers\Data;
 
 use App\DocumentProcessing\Data\PipelineData;
+use App\Dossiers\Models\UploadedDocument;
 
 /**
  * Uploaded file metadata for a staff document-request row.
+ * List/review island payload — no OCR extraction body.
  */
 final readonly class StaffUploadedDocumentData
 {
@@ -20,6 +22,28 @@ final readonly class StaffUploadedDocumentData
         public ?string $processingError,
         public ?PipelineData $pipeline,
     ) {}
+
+    /**
+     * Build the list/review slice from a document (loads pipelines when needed).
+     */
+    public static function fromModel(UploadedDocument $uploadedDocument): self
+    {
+        $uploadedDocument->loadMissing('pipelines.steps');
+
+        $latestPipeline = $uploadedDocument->pipelines->sortByDesc('id')->first();
+
+        return new self(
+            id: $uploadedDocument->id,
+            originalFilename: $uploadedDocument->original_filename,
+            sizeBytes: $uploadedDocument->size_bytes,
+            uploadedAt: $uploadedDocument->uploaded_at->toIso8601String(),
+            processingStatus: $uploadedDocument->processing_status->value,
+            processingError: $uploadedDocument->processing_error,
+            pipeline: $latestPipeline === null
+                ? null
+                : PipelineData::fromModel($latestPipeline),
+        );
+    }
 
     /**
      * @return array{

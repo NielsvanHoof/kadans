@@ -233,6 +233,29 @@ test('legal retention removes dossier exports and their audit records', function
             ->exists())->toBeFalse();
 });
 
+test('export status island returns json for a dossier export', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = dossierForTenant($tenant->id);
+    $export = DossierExport::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'requested_by' => $owner->id,
+        'status' => DossierExportStatus::Processing,
+    ]);
+    resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->getJson(workspaceRoute('workspaces.dossiers.exports.show', $tenant, [
+            'dossier' => $dossier,
+            'export' => $export,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('export.id', $export->id)
+        ->assertJsonPath('export.status', DossierExportStatus::Processing->value)
+        ->assertJsonStructure(['export' => ['id', 'status', 'created_at', 'pipeline']]);
+});
+
 function dossierForTenant(int $tenantId, string $title = 'Test dossier'): Dossier
 {
     $client = Client::factory()->create(['tenant_id' => $tenantId]);

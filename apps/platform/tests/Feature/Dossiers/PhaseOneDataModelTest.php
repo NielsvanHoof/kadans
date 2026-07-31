@@ -15,7 +15,6 @@ use App\Tenancy\TenantContext;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use RuntimeException;
 
 pest()
     ->use(RefreshDatabase::class);

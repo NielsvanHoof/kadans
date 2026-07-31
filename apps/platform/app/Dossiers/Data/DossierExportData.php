@@ -51,7 +51,7 @@ final readonly class DossierExportData
         return new self(
             id: $export->id,
             status: $export->status->value,
-            createdAt: $export->created_at->format(DATE_ATOM),
+            createdAt: $export->created_at?->format(DATE_ATOM) ?? '',
             expiresAt: $expiresAt?->format(DATE_ATOM),
             downloadUrl: $downloadUrl,
             error: $export->error,

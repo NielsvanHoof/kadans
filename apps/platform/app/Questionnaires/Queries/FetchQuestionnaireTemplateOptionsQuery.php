@@ -30,7 +30,7 @@ final class FetchQuestionnaireTemplateOptionsQuery
                 id: $template->id,
                 name: $template->name,
                 categoryLabel: $template->category->label(),
-                itemsCount: $template->items_count,
+                itemsCount: (int) ($template->items_count ?? 0),
                 isSystem: $template->isSystem(),
             );
         }

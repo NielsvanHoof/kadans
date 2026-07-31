@@ -150,6 +150,86 @@ test('builder mutations redirect back to the builder instead of the overview', f
         ->assertRedirect($builderUrl);
 });
 
+test('builder island mutations return json for the touched document request', function (): void {
+    [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+    ] = createDossierShowContext(DossierStatus::Draft);
+
+    $existing = $dossier->documentRequests()->sole();
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->postJson(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'type' => 'text',
+            'title' => 'Island create',
+            'position' => 0,
+        ])
+        ->assertCreated()
+        ->assertJsonPath('document_request.title', 'Island create')
+        ->assertJsonPath('document_request.type', 'text')
+        ->assertJsonStructure(['document_request' => [
+            'id',
+            'field_key',
+            'sort_order',
+            'is_visible',
+            'is_applicable',
+        ]]);
+
+    $this->putJson(workspaceRoute('workspaces.dossiers.document-requests.update', $tenant, [
+        'dossier' => $dossier,
+        'documentRequest' => $existing,
+    ]), [
+        'type' => 'file',
+        'title' => 'Island update',
+        'instructions' => 'Upload PDF',
+    ])
+        ->assertOk()
+        ->assertJsonPath('document_request.title', 'Island update')
+        ->assertJsonPath('document_request.type', 'file');
+
+    $this->deleteJson(workspaceRoute('workspaces.dossiers.document-requests.destroy', $tenant, [
+        'dossier' => $dossier,
+        'documentRequest' => $existing,
+    ]))
+        ->assertNoContent();
+
+    expect(DocumentRequest::query()->whereKey($existing->id)->exists())->toBeFalse();
+});
+
+test('builder island reorder still returns no content for json clients', function (): void {
+    [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+    ] = createDossierShowContext(DossierStatus::Draft);
+
+    $first = $dossier->documentRequests()->sole();
+    $second = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'sort_order' => 1,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->postJson(workspaceRoute('workspaces.dossiers.document-requests.reorder', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'document_request_ids' => [$second->id, $first->id],
+        ])
+        ->assertNoContent();
+
+    expect(DocumentRequest::query()
+        ->whereBelongsTo($dossier)
+        ->oldest('sort_order')
+        ->pluck('id')
+        ->all())->toBe([$second->id, $first->id]);
+});
+
 test('dossier review page renders shared dossier props', function (): void {
     [
         'owner' => $owner,

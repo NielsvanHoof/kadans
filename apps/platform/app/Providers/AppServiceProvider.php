@@ -31,6 +31,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Telescope\TelescopeServiceProvider;
 use Override;
+use RuntimeException;
 
 use function in_array;
 use function is_string;
@@ -98,9 +99,20 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function configureFactoryDiscovery(): void
     {
-        Factory::guessFactoryNamesUsing(
-            static fn (string $modelName): string => 'Database\\Factories\\'.class_basename($modelName).'Factory',
-        );
+        Factory::guessFactoryNamesUsing($this->guessFactoryForModel(...));
+    }
+
+    /**
+     * @param  class-string<Model>  $modelName
+     * @return class-string<Factory<Model>>
+     */
+    private function guessFactoryForModel(string $modelName): string
+    {
+        $factory = 'Database\\Factories\\'.class_basename($modelName).'Factory';
+
+        throw_unless(is_a($factory, Factory::class, true), RuntimeException::class, "Factory [{$factory}] does not exist.");
+
+        return $factory;
     }
 
     /**

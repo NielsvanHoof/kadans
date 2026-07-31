@@ -148,7 +148,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                     return;
                 }
 
-                $query->where('created_at', '>=', $date);
+                $query->getQuery()->where('created_at', '>=', $date);
             }),
             AllowedFilter::callback('created_to', function (Builder $query, mixed $value): void {
                 if (! is_string($value) || $value === '') {
@@ -161,7 +161,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                     return;
                 }
 
-                $query->where('created_at', '<=', $date);
+                $query->getQuery()->where('created_at', '<=', $date);
             }),
         ];
     }

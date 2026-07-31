@@ -68,8 +68,7 @@ final readonly class CompleteTextractExtractionAction
             return false;
         }
 
-        $document = UploadedDocument::query()
-            ->withoutTenantScope()
+        $document = UploadedDocument::queryWithoutTenantScope()
             ->where('textract_job_id', $jobId)
             ->first();
 

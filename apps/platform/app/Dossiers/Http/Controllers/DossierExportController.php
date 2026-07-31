@@ -10,11 +10,13 @@ use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\CreateDossierExportAction;
 use App\Dossiers\Actions\DownloadDossierExportAction;
+use App\Dossiers\Data\DossierExportData;
 use App\Dossiers\Jobs\GenerateDossierExportJob;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -48,6 +50,27 @@ final class DossierExportController extends Controller
             'workspaces.dossiers.show',
             $this->workspaceRouteParameters(['dossier' => $dossier]),
         );
+    }
+
+    /**
+     * Narrow export status for the show-page island (Echo → JSON merge).
+     */
+    public function show(
+        Tenant $tenant,
+        Dossier $dossier,
+        DossierExport $export,
+    ): JsonResponse {
+        $this->authorize('export', $dossier);
+
+        abort_unless($export->dossier_id === $dossier->id, HttpResponse::HTTP_NOT_FOUND);
+
+        $export->loadMissing(['pipeline.steps', 'tenant']);
+
+        $canDownload = request()->user()?->can('export', $dossier) ?? false;
+
+        return response()->json([
+            'export' => DossierExportData::fromModel($export, $canDownload)->toArray(),
+        ]);
     }
 
     public function download(

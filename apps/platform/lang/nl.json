@@ -765,6 +765,8 @@
     "Adding component…": "Component toevoegen…",
     "Could not add the component. Try again.": "Kon het component niet toevoegen. Probeer opnieuw.",
     "Component added.": "Component toegevoegd.",
+    "Component deleted.": "Component verwijderd.",
+    "Could not delete the component. Try again.": "Kon het component niet verwijderen. Probeer opnieuw.",
     "Form order saved.": "Formuliervolgorde opgeslagen.",
     "Could not save the new order.": "Kon de nieuwe volgorde niet opslaan.",
     "Field settings saved.": "Veldinstellingen opgeslagen.",

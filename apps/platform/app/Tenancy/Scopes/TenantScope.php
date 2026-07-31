@@ -17,11 +17,13 @@ use RuntimeException;
  * Soft by default: with no current tenant, the query matches nothing (no leak).
  * Strict mode (opt-in via TenantContext) throws instead — used on workspace/portal
  * requests where a tenant must already be current.
+ *
+ * @implements Scope<Model>
  */
 final class TenantScope implements Scope
 {
     /**
-     * @param  Builder<Model>  $builder
+     * @param  Builder<covariant Model>  $builder
      */
     public function apply(Builder $builder, Model $model): void
     {
@@ -29,7 +31,7 @@ final class TenantScope implements Scope
 
         if ($tenant instanceof Tenant) {
             $builder->where(
-                $builder->qualifyColumn('tenant_id'),
+                $model->qualifyColumn('tenant_id'),
                 $tenant->getKey(),
             );
 
@@ -39,6 +41,6 @@ final class TenantScope implements Scope
         throw_if(resolve(TenantContext::class)->isStrict(), RuntimeException::class, 'Cannot query tenant-owned records without an active tenant.');
 
         // Soft default: empty result set so accidental queries do not cross tenants.
-        $builder->whereRaw('0 = 1');
+        $builder->getQuery()->whereRaw('0 = 1');
     }
 }

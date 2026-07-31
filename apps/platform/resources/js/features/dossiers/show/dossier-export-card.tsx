@@ -1,5 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { Archive, Download, LoaderCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/DossierExportController';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,31 +10,55 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import type { Dossier } from '@/features/dossiers/types';
+import type { Dossier, DossierExport } from '@/features/dossiers/types';
 import {
     pipelineStepLabel,
     pipelineStepStatusLabel,
 } from '@/features/pipelines/status/pipeline-status';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
+import { useFetchOnPipelineUpdated } from '@/hooks/use-fetch-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 
+/**
+ * Dossier ZIP export card. In-flight exports refresh via a JSON island.
+ */
 export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
+    const [exports, setExports] = useState(dossier.exports);
 
-    const hasInFlightProcessing = dossier.exports.some((exportItem) => {
+    // Sync when Inertia replaces the dossier prop (create export redirect).
+    useEffect(() => {
+        setExports(dossier.exports);
+    }, [dossier.exports]);
+
+    const hasInFlightProcessing = exports.some((exportItem) => {
         return (
             exportItem.status === 'pending' ||
             exportItem.status === 'processing'
         );
     });
 
-    useReloadOnPipelineUpdated(['dossier'], {
+    useFetchOnPipelineUpdated<{ export: DossierExport }>({
         enabled: hasInFlightProcessing,
         match: (event) =>
-            event.dossier_id === dossier.id && event.type === 'dossier_export',
+            event.dossier_id === dossier.id &&
+            event.type === 'dossier_export' &&
+            event.subject_type === 'dossier_export',
+        urlForEvent: (event) =>
+            DossierExportController.show.url({
+                tenant: currentWorkspace,
+                dossier: dossier.id,
+                export: event.subject_id,
+            }),
+        onData: ({ export: nextExport }) => {
+            setExports((previous) =>
+                previous.map((item) =>
+                    item.id === nextExport.id ? nextExport : item,
+                ),
+            );
+        },
     });
 
     return (
@@ -71,9 +96,9 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
                     )}
                 </Form>
 
-                {dossier.exports.length > 0 ? (
+                {exports.length > 0 ? (
                     <div className="divide-y rounded-md border">
-                        {dossier.exports.map((exportItem) => (
+                        {exports.map((exportItem) => (
                             <div
                                 key={exportItem.id}
                                 className="px-4 py-3 text-sm"

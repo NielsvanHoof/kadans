@@ -9,13 +9,12 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\DocumentRequestFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
@@ -80,10 +79,10 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class DocumentRequest extends Model
+final class DocumentRequest extends TenantOwnedModel
 {
     /** @use HasFactory<DocumentRequestFactory> */
-    use BelongsToTenant, HasFactory, InvalidatesWorkspaceDashboardCache, Searchable;
+    use HasFactory, InvalidatesWorkspaceDashboardCache, Searchable;
 
     /**
      * @var list<string>

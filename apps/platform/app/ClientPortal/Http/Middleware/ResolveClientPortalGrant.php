@@ -47,8 +47,7 @@ final readonly class ResolveClientPortalGrant
             abort(Response::HTTP_NOT_FOUND);
         }
 
-        $grant = ClientAccessGrant::query()
-            ->withoutTenantScope()
+        $grant = ClientAccessGrant::queryWithoutTenantScope()
             ->whereKey($grantId)
             ->where('revoked_at', null)
             ->where('expires_at', '>', now())

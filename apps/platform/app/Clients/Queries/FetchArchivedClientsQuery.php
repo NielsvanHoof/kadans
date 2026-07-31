@@ -93,7 +93,7 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
             id: $model->id,
             name: $model->name,
             email: $model->email,
-            dossiersCount: $model->dossiers_count,
+            dossiersCount: (int) ($model->dossiers_count ?? 0),
             archivedAt: $model->deleted_at?->toIso8601String() ?? '',
         )->toArray();
     }

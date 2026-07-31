@@ -137,6 +137,7 @@ pest()->presets()->custom('qompose', fn (): array => [
             'builder',
             'review',
             'preview',
+            'live',
         ])
         ->ignoring(Controller::class),
 

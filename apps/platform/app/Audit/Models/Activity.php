@@ -39,7 +39,7 @@ use Spatie\Activitylog\Models\Activity as SpatieActivity;
  * @method static Builder<static>|Activity forEvent(ActivityEvent|string $event)
  * @method static Builder<static>|Activity forSubject(Model $subject)
  * @method static Builder<static>|Activity forTenant(Tenant $tenant)
- * @method static Builder<static>|Activity inLog(array|string ...$logNames)
+ * @method static Builder<static>|Activity inLog(array<int, string>|string ...$logNames)
  * @method static Builder<static>|Activity newModelQuery()
  * @method static Builder<static>|Activity newQuery()
  * @method static Builder<static>|Activity query()

@@ -7,13 +7,12 @@ namespace App\Dossiers\Models;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\DossierExportStatus;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\DossierExportFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Override;
@@ -61,10 +60,10 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class DossierExport extends Model
+final class DossierExport extends TenantOwnedModel
 {
     /** @use HasFactory<DossierExportFactory> */
-    use BelongsToTenant, HasFactory;
+    use HasFactory;
 
     /**
      * @var list<string>

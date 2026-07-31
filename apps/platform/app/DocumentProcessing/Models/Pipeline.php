@@ -7,8 +7,8 @@ namespace App\DocumentProcessing\Models;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\PipelineStatus;
 use App\DocumentProcessing\Enums\PipelineType;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\PipelineFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,10 +81,10 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class Pipeline extends Model
+final class Pipeline extends TenantOwnedModel
 {
     /** @use HasFactory<PipelineFactory> */
-    use BelongsToTenant, HasFactory;
+    use HasFactory;
 
     /**
      * @var list<string>

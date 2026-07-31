@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import ErrorState from '@/components/error-state';
 import Heading from '@/components/heading';
@@ -10,34 +11,52 @@ import DocumentPreviewPanel, {
 } from '@/features/document-requests/staff/review/document-preview-panel';
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
+import { useFetchOnPipelineUpdated } from '@/hooks/use-fetch-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
+type UploadedDocumentDetail = UploadedDocumentShowProps['uploaded_document'];
+
 /**
  * OCR extraction body for a single uploaded document.
- * Reloads via Reverb when the OCR pipeline advances.
+ * Refreshes via Reverb + JSON island when the OCR pipeline advances.
  */
 export default function UploadedDocumentShowContent({
-    uploaded_document: uploadedDocument,
+    uploaded_document: initialUploadedDocument,
     document_request: documentRequest,
     dossier,
     can_download: canDownload,
 }: UploadedDocumentShowProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
+    const [uploadedDocument, setUploadedDocument] = useState(
+        initialUploadedDocument,
+    );
+
+    // Sync when Inertia replaces the page prop (navigation / password confirm).
+    useEffect(() => {
+        setUploadedDocument(initialUploadedDocument);
+    }, [initialUploadedDocument]);
 
     const isProcessing =
         uploadedDocument.processing_status === 'pending' ||
         uploadedDocument.processing_status === 'processing';
 
-    useReloadOnPipelineUpdated(['uploaded_document'], {
+    useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocumentDetail }>({
         enabled: isProcessing,
         match: (event) =>
             event.subject_type === 'uploaded_document' &&
             event.subject_id === uploadedDocument.id,
+        urlForEvent: () =>
+            UploadedDocumentController.show.url({
+                tenant: currentWorkspace,
+                uploadedDocument: uploadedDocument.id,
+            }),
+        onData: ({ uploaded_document: next }) => {
+            setUploadedDocument(next);
+        },
     });
 
     const downloadUrl = canDownload

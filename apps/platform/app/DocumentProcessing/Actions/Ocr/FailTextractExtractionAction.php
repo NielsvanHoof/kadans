@@ -31,8 +31,7 @@ final readonly class FailTextractExtractionAction
 
     public function handle(string $jobId, Throwable $exception): bool
     {
-        $document = UploadedDocument::query()
-            ->withoutTenantScope()
+        $document = UploadedDocument::queryWithoutTenantScope()
             ->where('textract_job_id', $jobId)
             ->first();
 

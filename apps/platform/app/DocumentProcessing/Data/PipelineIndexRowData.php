@@ -30,7 +30,7 @@ final readonly class PipelineIndexRowData
             currentStage: $pipeline->current_stage,
             attemptNumber: $pipeline->attempt_number,
             lastActivityAt: $pipeline->last_activity_at?->toIso8601String(),
-            createdAt: $pipeline->created_at->toIso8601String(),
+            createdAt: $pipeline->created_at?->toIso8601String() ?? '',
             subjectType: MorphType::classBasename($pipeline->pipelineable_type),
             subjectId: $pipeline->pipelineable_id,
         );

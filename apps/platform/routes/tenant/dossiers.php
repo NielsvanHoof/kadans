@@ -40,6 +40,9 @@ Route::post('dossiers/{dossier}/apply-template', [DocumentRequestController::cla
 Route::scopeBindings()->group(function (): void {
     Route::post('dossiers/{dossier}/exports', [DossierExportController::class, 'store'])
         ->name('dossiers.exports.store');
+    // Status island for Echo updates — download stays signed + password-gated.
+    Route::get('dossiers/{dossier}/exports/{export}', [DossierExportController::class, 'show'])
+        ->name('dossiers.exports.show');
     Route::get('dossiers/{dossier}/exports/{export}/download', [DossierExportController::class, 'download'])
         ->middleware([
             'signed',

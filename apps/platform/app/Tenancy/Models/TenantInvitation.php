@@ -5,19 +5,17 @@ declare(strict_types=1);
 namespace App\Tenancy\Models;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Concerns\BelongsToTenant;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenantInvitationFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\MassPrunable;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
 /**
  * Pending staff invite into a workspace. Looked up by hashed token before a
- * tenant is current (accept links), so callers must use withoutTenantScope().
+ * tenant is current (accept links), so callers must use queryWithoutTenantScope().
  *
  * @property int $id
  * @property int $tenant_id
@@ -51,10 +49,10 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class TenantInvitation extends Model
+final class TenantInvitation extends TenantOwnedModel
 {
     /** @use HasFactory<TenantInvitationFactory> */
-    use BelongsToTenant, HasFactory, MassPrunable;
+    use HasFactory, MassPrunable;
 
     /**
      * @var list<string>
@@ -132,8 +130,7 @@ final class TenantInvitation extends Model
     {
         $cutoff = now()->subDays((int) config('retention.member_invitations_days'));
 
-        return self::query()
-            ->withoutTenantScope()
+        return self::queryWithoutTenantScope()
             ->where(function (Builder $query) use ($cutoff): void {
                 $query->getQuery()
                     ->whereNotNull('revoked_at')

@@ -7,14 +7,13 @@ namespace App\Dossiers\Models;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Models\Pipeline;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\UploadedDocumentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Override;
@@ -73,10 +72,10 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class UploadedDocument extends Model
+final class UploadedDocument extends TenantOwnedModel
 {
     /** @use HasFactory<UploadedDocumentFactory> */
-    use BelongsToTenant, HasFactory;
+    use HasFactory;
 
     /**
      * @var list<string>

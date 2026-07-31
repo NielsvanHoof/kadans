@@ -1,74 +1,77 @@
-import { router, useHttp } from '@inertiajs/react';
+import { useHttp } from '@inertiajs/react';
 import { useCallback } from 'react';
 import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController';
 import type {
+    DocumentRequest,
     QuestionnaireItemConfiguration,
     QuestionnaireItemType,
 } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { inlineActionOptions } from '@/lib/inline-action-options';
 
 export type BuilderSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
+type DocumentRequestResponse = {
+    document_request: DocumentRequest;
+};
+
 /**
- * Shared create / update / reorder helpers for the questionnaire builder.
+ * Builder-island mutations via useHttp (JSON). Local state owns the canvas;
+ * the server returns only the touched item (or 204 for reorder/delete).
  */
 export function useQuestionnaireBuilderActions(dossierId: number) {
     const currentWorkspace = useCurrentWorkspace();
-    const { post, setData } = useHttp({
+    const { post: createPost, setData: setCreateData } = useHttp({
+        type: 'text' as QuestionnaireItemType,
+        title: '',
+        position: undefined as number | undefined,
+    });
+    const { put: updatePut, setData: setUpdateData } = useHttp({
+        type: 'text' as QuestionnaireItemType,
+        title: '',
+        instructions: null as string | null,
+        configuration: undefined as QuestionnaireItemConfiguration | undefined,
+    });
+    const { post: reorderPost, setData: setReorderData } = useHttp({
         document_request_ids: [] as number[],
     });
+    const { delete: destroyDelete } = useHttp({});
 
     const createComponent = useCallback(
         async (input: {
             type: QuestionnaireItemType;
             title: string;
             position?: number;
-        }): Promise<boolean> => {
-            let failed = false;
+        }): Promise<DocumentRequest | null> => {
+            setCreateData({
+                type: input.type,
+                title: input.title,
+                position: input.position,
+            });
 
             try {
-                await new Promise<void>((resolve, reject) => {
-                    router.post(
-                        DocumentRequestController.store.url({
-                            tenant: currentWorkspace,
-                            dossier: dossierId,
-                        }),
-                        {
-                            type: input.type,
-                            title: input.title,
-                            ...(input.position !== undefined
-                                ? { position: input.position }
-                                : {}),
-                        },
-                        {
-                            ...inlineActionOptions,
-                            onError: () => {
-                                failed = true;
-                                resolve();
-                            },
-                            onSuccess: () => resolve(),
-                            onCancel: () => reject(new Error('cancelled')),
-                        },
-                    );
-                });
+                const response = (await createPost(
+                    DocumentRequestController.store.url({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                    }),
+                )) as DocumentRequestResponse | undefined;
 
-                return !failed;
+                return response?.document_request ?? null;
             } catch {
-                return false;
+                return null;
             }
         },
-        [currentWorkspace, dossierId],
+        [createPost, currentWorkspace, dossierId, setCreateData],
     );
 
     const reorderComponents = useCallback(
         async (orderedIds: number[]): Promise<boolean> => {
-            setData('document_request_ids', orderedIds);
+            setReorderData({ document_request_ids: orderedIds });
 
             let failed = false;
 
             try {
-                await post(
+                await reorderPost(
                     DocumentRequestController.reorder.url({
                         tenant: currentWorkspace,
                         dossier: dossierId,
@@ -85,7 +88,7 @@ export function useQuestionnaireBuilderActions(dossierId: number) {
                 return false;
             }
         },
-        [currentWorkspace, dossierId, post, setData],
+        [currentWorkspace, dossierId, reorderPost, setReorderData],
     );
 
     const updateComponent = useCallback(
@@ -97,48 +100,54 @@ export function useQuestionnaireBuilderActions(dossierId: number) {
                 instructions: string | null;
                 configuration?: QuestionnaireItemConfiguration;
             },
-        ): Promise<boolean> => {
-            let failed = false;
+        ): Promise<DocumentRequest | null> => {
+            setUpdateData({
+                type: input.type,
+                title: input.title,
+                instructions: input.instructions,
+                configuration: input.configuration,
+            });
 
             try {
-                await new Promise<void>((resolve, reject) => {
-                    router.put(
-                        DocumentRequestController.update.url({
-                            tenant: currentWorkspace,
-                            dossier: dossierId,
-                            documentRequest: documentRequestId,
-                        }),
-                        {
-                            type: input.type,
-                            title: input.title,
-                            instructions: input.instructions,
-                            ...(input.configuration !== undefined
-                                ? { configuration: input.configuration }
-                                : {}),
-                        },
-                        {
-                            ...inlineActionOptions,
-                            onError: () => {
-                                failed = true;
-                                resolve();
-                            },
-                            onSuccess: () => resolve(),
-                            onCancel: () => reject(new Error('cancelled')),
-                        },
-                    );
-                });
+                const response = (await updatePut(
+                    DocumentRequestController.update.url({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                        documentRequest: documentRequestId,
+                    }),
+                )) as DocumentRequestResponse | undefined;
 
-                return !failed;
+                return response?.document_request ?? null;
+            } catch {
+                return null;
+            }
+        },
+        [currentWorkspace, dossierId, setUpdateData, updatePut],
+    );
+
+    const destroyComponent = useCallback(
+        async (documentRequestId: number): Promise<boolean> => {
+            try {
+                await destroyDelete(
+                    DocumentRequestController.destroy.url({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                        documentRequest: documentRequestId,
+                    }),
+                );
+
+                return true;
             } catch {
                 return false;
             }
         },
-        [currentWorkspace, dossierId],
+        [currentWorkspace, destroyDelete, dossierId],
     );
 
     return {
         createComponent,
         reorderComponents,
         updateComponent,
+        destroyComponent,
     };
 }

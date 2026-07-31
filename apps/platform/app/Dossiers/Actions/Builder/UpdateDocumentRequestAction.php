@@ -22,7 +22,7 @@ final readonly class UpdateDocumentRequestAction
     /**
      * @param  array<string, mixed>  $attributes
      */
-    public function handle(DocumentRequest $documentRequest, array $attributes): void
+    public function handle(DocumentRequest $documentRequest, array $attributes): DocumentRequest
     {
         $type = QuestionnaireItemType::from((string) ($attributes['type'] ?? $documentRequest->type->value));
 
@@ -34,5 +34,7 @@ final readonly class UpdateDocumentRequestAction
         );
 
         $documentRequest->update($attributes);
+
+        return $documentRequest->refresh();
     }
 }

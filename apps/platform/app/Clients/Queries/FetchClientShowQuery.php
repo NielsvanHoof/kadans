@@ -30,7 +30,7 @@ final class FetchClientShowQuery
                 reference: $dossier->reference,
                 status: $dossier->status->value,
                 clientName: $client->name,
-                updatedAt: $dossier->updated_at->toIso8601String(),
+                updatedAt: $dossier->updated_at?->toIso8601String() ?? '',
             )->toArray());
 
         return new ClientShowPageData(

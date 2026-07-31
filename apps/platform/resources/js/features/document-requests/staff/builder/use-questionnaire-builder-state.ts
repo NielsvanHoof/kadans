@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import {
     type BuilderSaveStatus,
@@ -11,15 +11,9 @@ import type {
 } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 
-/** In-flight create shown as a ghost row on the canvas. */
-export type PendingInsert = {
-    index: number;
-    type: QuestionnaireItemType;
-    title: string;
-};
-
 /**
- * Local builder state: selection, autosave status, and create/reorder/update helpers.
+ * Local builder island state: canvas items, selection, and save status.
+ * Mutations go through useHttp — no full-dossier Inertia reload.
  */
 export function useQuestionnaireBuilderState({
     dossierId,
@@ -31,8 +25,12 @@ export function useQuestionnaireBuilderState({
     canEdit: boolean;
 }) {
     const { t } = useTranslation();
-    const { createComponent, reorderComponents, updateComponent } =
-        useQuestionnaireBuilderActions(dossierId);
+    const {
+        createComponent,
+        reorderComponents,
+        updateComponent,
+        destroyComponent,
+    } = useQuestionnaireBuilderActions(dossierId);
 
     const [items, setItems] = useState(documentRequests);
     const [selectedId, setSelectedId] = useState<number | null>(
@@ -40,29 +38,11 @@ export function useQuestionnaireBuilderState({
     );
     const [saveStatus, setSaveStatus] = useState<BuilderSaveStatus>('idle');
     const [announcement, setAnnouncement] = useState('');
-    // Ghost row while create is in flight; pending flag comes from useTransition.
-    const [pendingInsert, setPendingInsert] = useState<PendingInsert | null>(
-        null,
-    );
     const [isInsertPending, startInsertTransition] = useTransition();
 
-    // Survives across the Inertia refresh so we can select the new field by position.
-    const pendingInsertAtRef = useRef<number | null>(null);
-
-    // Single sync path: refresh items, then resolve selection (pending insert or stale id).
+    // Sync only when Inertia replaces the initial page props (e.g. apply template).
     useEffect(() => {
         setItems(documentRequests);
-
-        if (pendingInsertAtRef.current !== null) {
-            const next = documentRequests[pendingInsertAtRef.current];
-
-            if (next) {
-                setSelectedId(next.id);
-            }
-
-            return;
-        }
-
         setSelectedId((current) => {
             if (
                 current !== null &&
@@ -81,7 +61,6 @@ export function useQuestionnaireBuilderState({
         }
 
         const definition = getQuestionnaireItemTypeDefinition(type);
-        // Default: insert after the selected field so Add stays near the user's focus.
         const selectedIndex =
             selectedId === null
                 ? -1
@@ -90,32 +69,34 @@ export function useQuestionnaireBuilderState({
             position ?? (selectedIndex >= 0 ? selectedIndex + 1 : items.length);
         const title = t(definition.defaultTitle);
 
-        // Park the ghost row at the drop index before the transition starts.
-        pendingInsertAtRef.current = insertAt;
-        setPendingInsert({ index: insertAt, type, title });
         setSaveStatus('saving');
         setAnnouncement(t('Adding component…'));
 
-        // Transition owns the async create — isInsertPending stays true until it settles.
         startInsertTransition(async () => {
-            const ok = await createComponent({
+            const created = await createComponent({
                 type,
                 title,
                 position: insertAt,
             });
 
-            if (!ok) {
-                pendingInsertAtRef.current = null;
-                setPendingInsert(null);
+            if (!created) {
                 setSaveStatus('error');
                 setAnnouncement(t('Could not add the component. Try again.'));
 
                 return;
             }
 
-            // Inertia usually refreshed during the await; the effect already selected the real id.
-            pendingInsertAtRef.current = null;
-            setPendingInsert(null);
+            setItems((previous) => {
+                const next = [...previous];
+                next.splice(insertAt, 0, created);
+
+                // Keep local sort_order aligned with canvas order after a mid-list insert.
+                return next.map((item, index) => ({
+                    ...item,
+                    sort_order: index,
+                }));
+            });
+            setSelectedId(created.id);
             setSaveStatus('saved');
             setAnnouncement(t('Component added.'));
         });
@@ -132,10 +113,7 @@ export function useQuestionnaireBuilderState({
         return ok;
     };
 
-    const selected =
-        items.find((item) => item.id === selectedId) ??
-        documentRequests.find((item) => item.id === selectedId) ??
-        null;
+    const selected = items.find((item) => item.id === selectedId) ?? null;
 
     const handleSave = async (input: {
         type: QuestionnaireItemType;
@@ -148,15 +126,53 @@ export function useQuestionnaireBuilderState({
         }
 
         setSaveStatus('saving');
-        const ok = await updateComponent(selected.id, input);
-        setSaveStatus(ok ? 'saved' : 'error');
-        setAnnouncement(
-            ok
-                ? t('Field settings saved.')
-                : t('Could not save field settings.'),
-        );
+        const updated = await updateComponent(selected.id, input);
 
-        return ok;
+        if (!updated) {
+            setSaveStatus('error');
+            setAnnouncement(t('Could not save field settings.'));
+
+            return false;
+        }
+
+        setItems((previous) =>
+            previous.map((item) => (item.id === updated.id ? updated : item)),
+        );
+        setSaveStatus('saved');
+        setAnnouncement(t('Field settings saved.'));
+
+        return true;
+    };
+
+    const handleDestroy = async (
+        documentRequestId: number,
+    ): Promise<boolean> => {
+        setSaveStatus('saving');
+        const ok = await destroyComponent(documentRequestId);
+
+        if (!ok) {
+            setSaveStatus('error');
+            setAnnouncement(t('Could not delete the component. Try again.'));
+
+            return false;
+        }
+
+        const remaining = items
+            .filter((item) => item.id !== documentRequestId)
+            .map((item, index) => ({ ...item, sort_order: index }));
+
+        setItems(remaining);
+        setSelectedId((current) => {
+            if (current !== documentRequestId) {
+                return current;
+            }
+
+            return remaining[0]?.id ?? null;
+        });
+        setSaveStatus('saved');
+        setAnnouncement(t('Component deleted.'));
+
+        return true;
     };
 
     return {
@@ -167,10 +183,10 @@ export function useQuestionnaireBuilderState({
         selected,
         saveStatus,
         announcement,
-        pendingInsert,
         isInsertPending,
         addAt,
         handleReorder,
         handleSave,
+        handleDestroy,
     };
 }

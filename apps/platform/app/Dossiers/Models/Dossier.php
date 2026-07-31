@@ -11,14 +11,13 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
-use App\Tenancy\Concerns\BelongsToTenant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\DossierFactory;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -82,10 +81,10 @@ use Spatie\Activitylog\Support\LogOptions;
  *
  * @mixin \Eloquent
  */
-final class Dossier extends Model
+final class Dossier extends TenantOwnedModel
 {
     /** @use HasFactory<DossierFactory> */
-    use BelongsToTenant, HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+    use HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
 
     /**
      * @var list<string>

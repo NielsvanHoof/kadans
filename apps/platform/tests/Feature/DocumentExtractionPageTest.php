@@ -172,3 +172,82 @@ test('guest cannot open the OCR extraction page', function (): void {
         'uploadedDocument' => $uploaded,
     ]))->assertRedirect();
 });
+
+test('extraction page island returns json for the uploaded document', function (): void {
+    $owner = User::factory()->create();
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant->makeCurrent();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'Payslip',
+    ]);
+    $uploaded = UploadedDocument::factory()->processed(
+        json_encode([
+            'document_type' => 'payslip',
+            'summary' => 'January payslip',
+            'fields' => [],
+            'tables' => [],
+            'notes' => [],
+            'confidence' => 0.9,
+        ], JSON_THROW_ON_ERROR),
+    )->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'processing_status' => DocumentProcessingStatus::Completed,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession([
+            'active_tenant_id' => $tenant->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
+        ->getJson(workspaceRoute('workspaces.uploaded-documents.show', $tenant, [
+            'uploadedDocument' => $uploaded,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('uploaded_document.processing_status', DocumentProcessingStatus::Completed->value)
+        ->assertJsonPath('uploaded_document.extraction.document_type', 'payslip')
+        ->assertJsonMissingPath('document_request')
+        ->assertJsonMissingPath('dossier');
+});
+
+test('live uploaded document island returns processing status without password confirm', function (): void {
+    $owner = User::factory()->create();
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant->makeCurrent();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $uploaded = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'processing_status' => DocumentProcessingStatus::Processing,
+        'original_filename' => 'scan.pdf',
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->getJson(workspaceRoute('workspaces.uploaded-documents.live', $tenant, [
+            'uploadedDocument' => $uploaded,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('uploaded_document.id', $uploaded->id)
+        ->assertJsonPath('uploaded_document.processing_status', DocumentProcessingStatus::Processing->value)
+        ->assertJsonPath('uploaded_document.original_filename', 'scan.pdf')
+        ->assertJsonMissingPath('uploaded_document.extraction')
+        ->assertJsonMissingPath('uploaded_document.raw_json');
+});

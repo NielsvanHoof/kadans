@@ -45,8 +45,7 @@ final class DossierFactory extends Factory
                 return;
             }
 
-            $client = Client::query()
-                ->withoutTenantScope()
+            $client = Client::queryWithoutTenantScope()
                 ->find($dossier->client_id);
 
             if ($client instanceof Client) {

@@ -12,7 +12,7 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 
 /**
- * Push a workspace pipeline.updated broadcast for live Inertia reloads.
+ * Push a workspace pipeline.updated broadcast for live JSON / Inertia islands.
  */
 final class BroadcastPipelineUpdatedAction
 {

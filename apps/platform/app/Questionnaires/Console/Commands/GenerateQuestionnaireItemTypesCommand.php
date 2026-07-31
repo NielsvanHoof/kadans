@@ -52,7 +52,7 @@ final class GenerateQuestionnaireItemTypesCommand extends Command
     private function renderTypeScript(): string
     {
         $values = QuestionnaireItemType::values();
-        $valueLiterals = implode(', ', array_map(
+        $valueLiterals = implode(",\n    ", array_map(
             static fn (string $value): string => "'{$value}'",
             $values,
         ));

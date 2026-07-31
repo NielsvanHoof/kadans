@@ -1,12 +1,9 @@
 import { useDroppable } from '@dnd-kit/core';
-import { Fragment } from 'react';
 import EmptyState from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
 import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/questionnaire-item-type-registry';
-import { BuilderInsertPlaceholder } from '@/features/document-requests/staff/builder/questionnaire-builder-chrome';
 import QuestionnaireBuilderItem from '@/features/document-requests/staff/builder/questionnaire-builder-item';
-import type { PendingInsert } from '@/features/document-requests/staff/builder/use-questionnaire-builder-state';
 import type {
     DocumentRequest,
     QuestionnaireItemType,
@@ -21,22 +18,19 @@ export const BUILDER_CANVAS_DROPPABLE_ID = 'builder-canvas';
  * DnD context and SortableContext live in the parent builder root.
  */
 export default function QuestionnaireBuilderCanvas({
-    dossierId,
     items,
     selectedId,
     canEdit,
-    pendingInsert = null,
     onSelect,
     onAdd,
+    onDestroy,
 }: {
-    dossierId: number;
     items: DocumentRequest[];
     selectedId: number | null;
     canEdit: boolean;
-    /** Ghost row for an in-flight create, or null when idle. */
-    pendingInsert?: PendingInsert | null;
     onSelect: (id: number) => void;
     onAdd: (type: QuestionnaireItemType) => void;
+    onDestroy: (id: number) => Promise<boolean>;
 }) {
     const { t } = useTranslation();
     const { setNodeRef, isOver } = useDroppable({
@@ -44,7 +38,7 @@ export default function QuestionnaireBuilderCanvas({
     });
     const quickAddTypes = getQuestionnaireItemTypeDefinitions(t).slice(0, 4);
 
-    const isEmpty = items.length === 0 && pendingInsert === null;
+    const isEmpty = items.length === 0;
 
     return (
         <section
@@ -115,32 +109,16 @@ export default function QuestionnaireBuilderCanvas({
                 ) : (
                     <ol className="space-y-2">
                         {items.map((item, index) => (
-                            <Fragment key={item.id}>
-                                {/* Ghost sits at the drop index ahead of existing fields. */}
-                                {pendingInsert?.index === index ? (
-                                    <BuilderInsertPlaceholder
-                                        index={pendingInsert.index}
-                                        type={pendingInsert.type}
-                                        title={pendingInsert.title}
-                                    />
-                                ) : null}
-                                <QuestionnaireBuilderItem
-                                    dossierId={dossierId}
-                                    documentRequest={item}
-                                    index={index}
-                                    selected={selectedId === item.id}
-                                    canEdit={canEdit}
-                                    onSelect={onSelect}
-                                />
-                            </Fragment>
-                        ))}
-                        {pendingInsert?.index === items.length ? (
-                            <BuilderInsertPlaceholder
-                                index={pendingInsert.index}
-                                type={pendingInsert.type}
-                                title={pendingInsert.title}
+                            <QuestionnaireBuilderItem
+                                key={item.id}
+                                documentRequest={item}
+                                index={index}
+                                selected={selectedId === item.id}
+                                canEdit={canEdit}
+                                onSelect={onSelect}
+                                onDestroy={onDestroy}
                             />
-                        ) : null}
+                        ))}
                     </ol>
                 )}
             </div>

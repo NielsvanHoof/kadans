@@ -360,8 +360,7 @@ test('members cannot manage another tenant workspace', function (): void {
         ])
         ->assertNotFound();
 
-    expect(TenantInvitation::query()
-        ->withoutTenantScope()
+    expect(TenantInvitation::queryWithoutTenantScope()
         ->where('tenant_id', $tenantB->id)
         ->where('email', 'intruder@example.com')
         ->exists())->toBeFalse();

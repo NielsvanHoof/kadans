@@ -178,7 +178,7 @@ final class FetchWorkspaceDashboardQuery
                 clientName: $client->name,
                 dueDate: $dossier->due_date?->toDateString(),
                 responsibleName: $dossier->responsibleUser?->name,
-                updatedAt: $dossier->updated_at->toDateTimeString(),
+                updatedAt: $dossier->updated_at?->toDateTimeString() ?? '',
             );
         }
 

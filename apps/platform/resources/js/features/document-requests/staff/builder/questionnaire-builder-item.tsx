@@ -2,16 +2,13 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { useMediaQuery } from 'usehooks-ts';
-import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/questionnaire-item-type-registry';
 import type { DocumentRequest } from '@/features/document-requests/types';
-import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { inlineActionOptions } from '@/lib/inline-action-options';
 import { cn } from '@/lib/utils';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
@@ -20,22 +17,21 @@ const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
  * Compact sortable canvas row. Only the selected field expands its client preview.
  */
 export default function QuestionnaireBuilderItem({
-    dossierId,
     documentRequest,
     index,
     selected,
     canEdit,
     onSelect,
+    onDestroy,
 }: {
-    dossierId: number;
     documentRequest: DocumentRequest;
     index: number;
     selected: boolean;
     canEdit: boolean;
     onSelect: (id: number) => void;
+    onDestroy: (id: number) => Promise<boolean>;
 }) {
     const { t } = useTranslation();
-    const currentWorkspace = useCurrentWorkspace();
     const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
     const definition = getQuestionnaireItemTypeDefinition(documentRequest.type);
     const { Preview: BuilderPreview } = getQuestionnaireItemTypeBuilderRenderer(
@@ -48,55 +44,42 @@ export default function QuestionnaireBuilderItem({
         transform,
         transition,
         isDragging,
-        isOver,
-        active,
     } = useSortable({
         id: documentRequest.id,
         disabled: !canEdit,
-        data: { source: 'canvas', id: documentRequest.id },
     });
 
-    // Line above this row when another field (or palette item) will insert here.
-    const showDropIndicator =
-        isOver && active !== null && active.id !== documentRequest.id;
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition: prefersReducedMotion ? undefined : transition,
+    };
 
     return (
         <li
             ref={setNodeRef}
-            style={{
-                transform: CSS.Transform.toString(transform),
-                transition: prefersReducedMotion ? undefined : transition,
-            }}
+            style={style}
             className={cn(
-                'relative animate-in list-none rounded-xl border bg-card shadow-xs duration-200 fade-in motion-reduce:animate-none',
-                'transition-colors duration-150 motion-reduce:transition-none',
+                'rounded-xl border bg-card shadow-sm transition-[box-shadow,border-color] duration-150 motion-reduce:transition-none',
                 selected
-                    ? 'border-primary ring-[3px] ring-ring/40'
-                    : 'border-border/70 hover:border-border',
-                isDragging && 'relative z-10 opacity-40 shadow-md',
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border/80',
+                isDragging && 'opacity-40',
             )}
         >
-            {showDropIndicator ? (
-                <div
-                    className="pointer-events-none absolute -top-1.5 right-2 left-2 z-20 h-0.5 rounded-full bg-primary shadow-[0_0_0_2px_color-mix(in_oklab,var(--primary)_25%,transparent)]"
-                    aria-hidden="true"
-                />
-            ) : null}
-
-            <div className="flex items-center gap-1.5 px-2 py-1.5">
+            <div className="flex items-center gap-1 px-2 py-2">
                 {canEdit ? (
-                    <Button
+                    <button
                         type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0 cursor-grab touch-none active:cursor-grabbing"
+                        className="inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-muted active:cursor-grabbing"
                         aria-label={t('Drag to reorder')}
                         {...attributes}
                         {...listeners}
                     >
-                        <GripVertical aria-hidden="true" />
-                    </Button>
-                ) : null}
+                        <GripVertical aria-hidden="true" className="size-4" />
+                    </button>
+                ) : (
+                    <span className="size-8 shrink-0" aria-hidden="true" />
+                )}
 
                 <button
                     type="button"
@@ -124,12 +107,9 @@ export default function QuestionnaireBuilderItem({
                             { title: documentRequest.title },
                         )}
                         confirmLabel={t('Delete')}
-                        form={DocumentRequestController.destroy.form({
-                            tenant: currentWorkspace,
-                            dossier: dossierId,
-                            documentRequest: documentRequest.id,
-                        })}
-                        options={inlineActionOptions}
+                        onConfirm={async () => {
+                            await onDestroy(documentRequest.id);
+                        }}
                         trigger={
                             <Button
                                 type="button"
@@ -148,7 +128,7 @@ export default function QuestionnaireBuilderItem({
             </div>
 
             {selected ? (
-                <div className="pointer-events-none border-t border-border/60 px-3 py-3">
+                <div className="border-t border-border/60 px-3 py-3">
                     <BuilderPreview
                         title={documentRequest.title}
                         instructions={documentRequest.instructions}

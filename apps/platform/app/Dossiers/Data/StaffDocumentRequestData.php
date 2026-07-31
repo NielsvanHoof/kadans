@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
+use App\Accounts\Models\User;
+use App\Dossiers\Models\DocumentRequest;
+
 /**
  * Staff-facing document request row on dossier show.
  */
@@ -33,6 +36,42 @@ final readonly class StaffDocumentRequestData
         public bool $isApplicable,
         public ?StaffUploadedDocumentData $uploadedDocument,
     ) {}
+
+    /**
+     * Builder-island payload for a single questionnaire item (no dossier graph).
+     * Fresh creates are visible/applicable until the next full show reload.
+     */
+    public static function fromModel(
+        DocumentRequest $documentRequest,
+        bool $isVisible = true,
+        bool $isApplicable = true,
+        ?StaffUploadedDocumentData $uploadedDocument = null,
+    ): self {
+        $reviewer = $documentRequest->relationLoaded('reviewedBy')
+            ? $documentRequest->reviewedBy
+            : null;
+
+        return new self(
+            id: $documentRequest->id,
+            type: $documentRequest->type->value,
+            fieldKey: $documentRequest->field_key,
+            title: $documentRequest->title,
+            instructions: $documentRequest->instructions,
+            configuration: $documentRequest->configuration,
+            status: $documentRequest->status->value,
+            answerText: $documentRequest->answer_text,
+            answerBoolean: $documentRequest->answer_boolean,
+            answerOptionIds: $documentRequest->answer_option_ids,
+            answeredAt: $documentRequest->answered_at?->toIso8601String(),
+            reviewedAt: $documentRequest->reviewed_at?->toIso8601String(),
+            reviewedByName: $reviewer instanceof User ? $reviewer->name : null,
+            rejectionReason: $documentRequest->rejection_reason,
+            sortOrder: $documentRequest->sort_order,
+            isVisible: $isVisible,
+            isApplicable: $isApplicable,
+            uploadedDocument: $uploadedDocument,
+        );
+    }
 
     /**
      * @return array{

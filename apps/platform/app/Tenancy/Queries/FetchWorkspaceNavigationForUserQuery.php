@@ -8,7 +8,7 @@ use App\Accounts\Models\User;
 use App\Tenancy\Data\WorkspaceNavItemData;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
-use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 
 final class FetchWorkspaceNavigationForUserQuery
 {
@@ -22,9 +22,11 @@ final class FetchWorkspaceNavigationForUserQuery
 
         foreach (
             Tenant::query()
-                ->whereHas('memberships', fn (Builder $query) => $query
-                    ->where('user_id', $user->id)
-                    ->where('status', TenantMembershipStatus::Active))
+                ->whereHas('memberships', function (Builder $query) use ($user): void {
+                    $query->getQuery()
+                        ->where('user_id', $user->id)
+                        ->where('status', TenantMembershipStatus::Active);
+                })
                 ->get(['name', 'slug'])
                 ->sortBy('name')
                 ->values() as $tenant
