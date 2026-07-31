@@ -1,18 +1,16 @@
+import {
+    type QuestionnaireItemType,
+    questionnaireItemTypeCapabilities,
+} from '@/features/document-requests/item-types/generated';
 import type { Pipeline } from '@/features/dossiers/types';
 
-/**
- * Frontend mirror of the backend QuestionnaireItemType enum.
- * Keeping this union explicit makes every type-specific UI exhaustive.
- */
-export type QuestionnaireItemType =
-    | 'file'
-    | 'text'
-    | 'textarea'
-    | 'date'
-    | 'number'
-    | 'boolean'
-    | 'choice'
-    | 'multi_select';
+export type { QuestionnaireItemType } from '@/features/document-requests/item-types/generated';
+export {
+    BOOLEAN_NO_OPTION_ID,
+    BOOLEAN_YES_OPTION_ID,
+    QUESTIONNAIRE_ITEM_TYPES,
+    questionnaireItemTypeCapabilities,
+} from '@/features/document-requests/item-types/generated';
 
 export type QuestionnaireOption = { id: string; label: string };
 
@@ -25,36 +23,24 @@ export type QuestionnaireItemConfiguration = {
     };
 };
 
-/** Types whose answers are stored in answer_text (mirrors PHP storesAnswerText()). */
+/** Types whose answers are stored in answer_text (from generated PHP capabilities). */
 export function storesAnswerText(type: QuestionnaireItemType): boolean {
-    return (
-        type === 'text' ||
-        type === 'textarea' ||
-        type === 'date' ||
-        type === 'number'
-    );
+    return questionnaireItemTypeCapabilities[type].storesAnswerText;
 }
 
 /** Types whose answers are stored as selected option ids. */
 export function storesAnswerOptionIds(type: QuestionnaireItemType): boolean {
-    return type === 'choice' || type === 'multi_select';
+    return questionnaireItemTypeCapabilities[type].storesAnswerOptionIds;
 }
 
 /**
  * Types whose answer can drive another field's visibility rule
- * (mirrors PHP QuestionnaireItemType::canDriveVisibility()).
+ * (from generated PHP capabilities).
  */
 export function canDriveVisibility(type: QuestionnaireItemType): boolean {
-    return type === 'boolean' || storesAnswerOptionIds(type);
+    return questionnaireItemTypeCapabilities[type].canDriveVisibility;
 }
 
-/**
- * Yes/no fields have no stored options, so visibility rules match them against
- * these fixed ids. Mirrors QuestionnaireItemType::BooleanYesOptionId / BooleanNoOptionId.
- */
-export const BOOLEAN_YES_OPTION_ID = 'true';
-
-export const BOOLEAN_NO_OPTION_ID = 'false';
 export type DocumentRequestStatus =
     'pending' | 'submitted' | 'accepted' | 'rejected';
 

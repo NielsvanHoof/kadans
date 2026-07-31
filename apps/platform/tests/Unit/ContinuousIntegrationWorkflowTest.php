@@ -24,6 +24,8 @@ test('the TypeScript check generates ignored Wayfinder modules on a fresh checko
 
     expect($package['scripts']['wayfinder:generate'])
         ->toBe('php artisan wayfinder:generate --with-form --no-interaction')
+        ->and($package['scripts']['questionnaire:generate'])
+        ->toBe('php artisan questionnaire:generate-item-types --no-interaction')
         ->and($package['scripts']['types:check'])
-        ->toStartWith('npm run wayfinder:generate && ');
+        ->toStartWith('npm run wayfinder:generate && npm run questionnaire:generate && ');
 });

@@ -125,6 +125,17 @@ test('frontend business code is organized by feature domain', function (): void 
             ->toBeFile();
     }
 
+    // Feature root files that must exist for document-request type wiring.
+    foreach ([
+        'resources/js/features/document-requests/questionnaire-item-type-registry.tsx',
+        'resources/js/features/document-requests/item-types/generated.ts',
+        'resources/js/features/document-requests/item-types/definitions.ts',
+        'resources/js/features/document-requests/item-types/portal-registry.ts',
+    ] as $registryFile) {
+        expect($root.'/'.$registryFile)
+            ->toBeFile();
+    }
+
     // Legacy pre-feature layout must not come back.
     foreach ([
         'resources/js/components/clients',
@@ -132,7 +143,6 @@ test('frontend business code is organized by feature domain', function (): void 
         'resources/js/components/questionnaires',
         'resources/js/components/portal',
         'resources/js/features/document-requests/portal',
-        'resources/js/features/document-requests/questionnaire-item-type-registry.tsx',
         'resources/js/types/clients.ts',
         'resources/js/types/dossiers.ts',
         'resources/js/types/questionnaires.ts',

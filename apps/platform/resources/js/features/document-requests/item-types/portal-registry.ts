@@ -9,6 +9,12 @@ import {
     PortalTextRequestContent,
 } from '@/features/portal/document-requests/portal-document-request-type-content';
 
+/**
+ * Portal-only item-type content map.
+ * Kept separate from the staff registry so guest portal chunks never import
+ * staff review/builder UI. Exhaustiveness still tracks the generated PHP enum.
+ */
+
 type PortalDocumentRequestTypeContent =
     ComponentType<PortalDocumentRequestTypeProps>;
 

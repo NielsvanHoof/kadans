@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
-import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/staff/builder/questionnaire-item-type-renderers';
+import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/questionnaire-item-type-registry';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 

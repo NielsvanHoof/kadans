@@ -147,6 +147,8 @@ Rough backend → frontend map:
 
 Import boundaries and nesting rules are enforced by Biome — see [`.cursor/rules/frontend-architecture.mdc`](../.cursor/rules/frontend-architecture.mdc).
 
+Questionnaire item types are defined once in PHP (`QuestionnaireItemType`), codegen’d to `features/document-requests/item-types/generated.ts`, and wired in staff (`questionnaire-item-type-registry.tsx`) and portal (`item-types/portal-registry.ts`) registries.
+
 ## Tests
 
 Feature tests live under `tests/Feature/{Domain}/` (and related folders such as `Portal`). Prefer factories from `database/factories/`. Run the suite near your change with Sail + Pest.

@@ -1,4 +1,4 @@
-import type { QuestionnaireItemType } from '@/features/document-requests/types';
+import type { QuestionnaireItemType } from '@/features/document-requests/item-types/generated';
 
 export type QuestionnaireItemTypeDefinition = {
     value: QuestionnaireItemType;

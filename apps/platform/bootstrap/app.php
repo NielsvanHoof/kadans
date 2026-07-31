@@ -37,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Dossiers/Console/Commands',
         __DIR__.'/../app/DocumentProcessing/Console/Commands',
         __DIR__.'/../app/Platform/Console/Commands',
+        __DIR__.'/../app/Questionnaires/Console/Commands',
         __DIR__.'/../app/Tenancy/Console/Commands',
     ])
     ->withEvents(discover: [

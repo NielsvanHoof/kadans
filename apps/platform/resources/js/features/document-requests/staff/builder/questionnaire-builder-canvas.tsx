@@ -3,9 +3,9 @@ import { Fragment } from 'react';
 import EmptyState from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
+import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/questionnaire-item-type-registry';
 import { BuilderInsertPlaceholder } from '@/features/document-requests/staff/builder/questionnaire-builder-chrome';
 import QuestionnaireBuilderItem from '@/features/document-requests/staff/builder/questionnaire-builder-item';
-import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/staff/builder/questionnaire-item-type-renderers';
 import type { PendingInsert } from '@/features/document-requests/staff/builder/use-questionnaire-builder-state';
 import type {
     DocumentRequest,

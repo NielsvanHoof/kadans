@@ -10,6 +10,7 @@ import DossierReminderController from '@/actions/App/Dossiers/Http/Controllers/D
 import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Field, FieldLegend, FieldSet } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
@@ -31,11 +32,10 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
     return (
         <Card className="overflow-hidden border-primary/15">
             <CardContent className="grid gap-0 p-0">
-                <div
-                    className="grid gap-0 md:grid-cols-3"
-                    role="group"
-                    aria-label={t('Follow-up status')}
-                >
+                <FieldSet className="m-0 grid min-w-0 gap-0 border-0 p-0 md:grid-cols-3">
+                    <FieldLegend className="sr-only">
+                        {t('Follow-up status')}
+                    </FieldLegend>
                     <FollowUpDatum
                         icon={CalendarClock}
                         label={t('Due and owner')}
@@ -93,7 +93,7 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                                 : t('Automatic reminders off')
                         }
                     />
-                </div>
+                </FieldSet>
 
                 {/* Facts above, act below — quiet prompt left, CTA right when available. */}
                 <div className="flex flex-col gap-3 border-t bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -114,7 +114,7 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                             className="shrink-0"
                         >
                             {({ errors, processing }) => (
-                                <div className="flex flex-col gap-1 sm:items-end">
+                                <Field className="gap-1 sm:items-end">
                                     <Button
                                         type="submit"
                                         disabled={processing}
@@ -136,7 +136,7 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                                         id={reminderErrorId}
                                         message={errors.dossier}
                                     />
-                                </div>
+                                </Field>
                             )}
                         </Form>
                     ) : null}

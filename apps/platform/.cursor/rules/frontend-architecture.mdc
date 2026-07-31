@@ -43,9 +43,12 @@ Cross-feature imports of another feature's `types.ts` are fine and intentional (
 
 ## Document request types
 
-New questionnaire item types (currently `file` | `text` | `textarea` | `date` | `number` | `boolean` | `choice` | `multi_select`) are added by:
+New questionnaire item types are added by:
 
-1. Extending `QuestionnaireItemType` in `features/document-requests/types.ts` (mirrors the PHP `QuestionnaireItemType` enum).
-2. Adding a registry entry in `questionnaire-item-type-registry.tsx` with a label, a `StaffContent` renderer (`staff/`), and a `PortalContent` renderer (`portal/`). The `satisfies Record<QuestionnaireItemType, ...>` makes TypeScript flag missing entries.
+1. Extending the PHP enum `App\Questionnaires\Enums\QuestionnaireItemType`.
+2. Running `php artisan questionnaire:generate-item-types` (also part of `npm run types:check`) to refresh `item-types/generated.ts` (union + capability flags).
+3. Adding label/description metadata in `item-types/definitions.ts`.
+4. Filling staff UI in `questionnaire-item-type-registry.tsx` (builder preview/icon, `StaffContent`, staff answer form).
+5. Filling portal UI in `item-types/portal-registry.ts`.
 
-Never branch on `documentRequest.type` inside cards or pages — resolve through the registry.
+Both registries use `satisfies Record<QuestionnaireItemType, …>` so TypeScript flags missing keys. Never branch on `documentRequest.type` inside cards or pages — resolve through these registries. Staff and portal UI modules must not import each other; the registries are the only wiring points.

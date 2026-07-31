@@ -5,7 +5,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { getStaffAnswerForm } from '@/features/document-requests/staff/review/staff-answer-form-renderers';
+import { getStaffAnswerForm } from '@/features/document-requests/questionnaire-item-type-registry';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 

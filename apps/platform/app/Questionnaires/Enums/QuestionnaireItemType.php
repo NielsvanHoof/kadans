@@ -18,7 +18,8 @@ enum QuestionnaireItemType: string
     /**
      * Yes/no answers have no stored option rows, so visibility rules match them
      * against these two fixed identifiers instead. Mirrored in
-     * resources/js/features/document-requests/types.ts.
+     * resources/js/features/document-requests/item-types/generated.ts
+     * (via `php artisan questionnaire:generate-item-types`).
      */
     public const string BooleanYesOptionId = 'true';
 
