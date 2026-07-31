@@ -9,6 +9,7 @@ use App\Dossiers\Models\Dossier;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Http\Middleware\EnforceStrictTenantScope;
 use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
@@ -184,6 +185,7 @@ test('tenant routes are registered with the expected middleware', function (): v
         ->and($route->middleware())
         ->toContain('auth')
         ->toContain(InitializeTenantFromRoute::class)
+        ->toContain(EnforceStrictTenantScope::class)
         ->toContain(EnsureValidTenantMembership::class)
         ->toContain(SetPermissionTeamContext::class)->not->toContain(EnsureValidTenantSession::class)
         ->and($route->uri())

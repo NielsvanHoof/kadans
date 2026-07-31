@@ -24,3 +24,23 @@ test('tenant context runs callbacks under the given tenant and restores afterwar
     expect($seenTenantId)->toBe($tenantB->id)
         ->and(Tenant::current()?->id)->toBe($tenantA->id);
 });
+
+test('tenant context strict flag is restored after runStrict', function (): void {
+    $context = resolve(TenantContext::class);
+
+    expect($context->isStrict())->toBeFalse();
+
+    $context->runStrict(function () use ($context): void {
+        expect($context->isStrict())->toBeTrue();
+    });
+
+    expect($context->isStrict())->toBeFalse();
+
+    $context->enableStrict();
+
+    $context->runStrict(function () use ($context): void {
+        expect($context->isStrict())->toBeTrue();
+    });
+
+    expect($context->isStrict())->toBeTrue();
+});

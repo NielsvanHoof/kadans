@@ -26,7 +26,7 @@ final readonly class AcceptTenantInvitationAction
     {
         return DB::transaction(function () use ($invitation, $user): TenantMembership {
             $lockQuery = TenantInvitation::query()
-                ->withoutGlobalScopes()
+                ->withoutTenantScope()
                 ->whereKey($invitation->getKey());
 
             // lockForUpdate lives on the base builder; call it there for strict-rules.

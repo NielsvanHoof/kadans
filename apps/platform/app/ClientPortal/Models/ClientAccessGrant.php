@@ -122,7 +122,7 @@ final class ClientAccessGrant extends Model
         $cutoff = now()->subDays((int) config('retention.portal_grants_days'));
 
         return self::query()
-            ->withoutGlobalScopes()
+            ->withoutTenantScope()
             ->where(function (Builder $query) use ($cutoff): void {
                 $query->getQuery()
                     ->whereNotNull('revoked_at')

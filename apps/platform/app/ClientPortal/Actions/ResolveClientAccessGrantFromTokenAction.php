@@ -18,9 +18,9 @@ final class ResolveClientAccessGrantFromTokenAction
             return null;
         }
 
-        // withoutGlobalScopes: portal magic links resolve before a tenant is current.
+        // withoutTenantScope: portal magic links resolve before a tenant is current.
         return ClientAccessGrant::query()
-            ->withoutGlobalScopes()
+            ->withoutTenantScope()
             ->where('token', ClientAccessGrant::hashToken($plainTextToken))
             ->where('revoked_at', null)
             ->where('expires_at', '>', now())

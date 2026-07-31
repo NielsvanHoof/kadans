@@ -115,8 +115,8 @@ Controllers stay thin: authorize → call an Action or Query → return `Inertia
 - **Queries** — read models / index / show payloads (`FetchDossierIndexQuery`, …)
 - **Data** — readonly DTOs shaped for the frontend
 - **Transitions** — status rules (`DossierTransitions`, `DocumentRequestTransitions`)
-- **BelongsToTenant** — tenant-scoped Eloquent models ([`app/Tenancy/Concerns/BelongsToTenant.php`](../app/Tenancy/Concerns/BelongsToTenant.php))
-- **TenantContext** — `runForTenant()` for console jobs and async code when HTTP middleware did not set the tenant
+- **BelongsToTenant** — tenant-scoped Eloquent models ([`app/Tenancy/Concerns/BelongsToTenant.php`](../app/Tenancy/Concerns/BelongsToTenant.php)). Soft by default (no current tenant → empty results); workspace/portal opt into strict throw via `TenantContext`. Cross-tenant lookups use `withoutTenantScope()`, not `withoutGlobalScopes()`.
+- **TenantContext** — `runForTenant()` for console/async code; opt-in `enableStrict()` / `runStrict()` for fail-fast scoping (Octane-safe via Laravel Context)
 
 Migrations and factories stay under `database/` — not inside `app/{Domain}`.
 

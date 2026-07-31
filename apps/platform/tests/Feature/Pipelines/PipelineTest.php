@@ -34,7 +34,7 @@ test('a pipeline requires a polymorphic subject', function (): void {
 test('the pipeline factory creates a tenant-consistent subject', function (): void {
     $pipeline = Pipeline::factory()->create();
     $subject = UploadedDocument::query()
-        ->withoutGlobalScopes()
+        ->withoutTenantScope()
         ->findOrFail($pipeline->pipelineable_id);
 
     expect($pipeline->pipelineable_type)->toBe($subject->getMorphClass())

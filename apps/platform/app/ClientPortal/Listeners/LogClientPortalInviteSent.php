@@ -34,7 +34,7 @@ final readonly class LogClientPortalInviteSent
 
         try {
             $grant = ClientAccessGrant::query()
-                ->withoutGlobalScopes()
+                ->withoutTenantScope()
                 ->whereKey($event->notification->grantId)
                 ->first();
 

@@ -17,7 +17,7 @@ use Override;
 
 /**
  * Pending staff invite into a workspace. Looked up by hashed token before a
- * tenant is current (accept links), so callers must use withoutGlobalScopes.
+ * tenant is current (accept links), so callers must use withoutTenantScope().
  *
  * @property int $id
  * @property int $tenant_id
@@ -133,7 +133,7 @@ final class TenantInvitation extends Model
         $cutoff = now()->subDays((int) config('retention.member_invitations_days'));
 
         return self::query()
-            ->withoutGlobalScopes()
+            ->withoutTenantScope()
             ->where(function (Builder $query) use ($cutoff): void {
                 $query->getQuery()
                     ->whereNotNull('revoked_at')

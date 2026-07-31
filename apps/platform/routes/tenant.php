@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Tenancy\Http\Middleware\EnforceStrictTenantScope;
 use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
@@ -18,6 +19,7 @@ Route::middleware([
     'auth',
     'verified',
     InitializeTenantFromRoute::class,
+    EnforceStrictTenantScope::class,
     EnsureValidTenantMembership::class,
     SetPermissionTeamContext::class,
     NeedsTenant::class,

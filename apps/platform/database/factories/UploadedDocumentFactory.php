@@ -92,7 +92,7 @@ final class UploadedDocumentFactory extends Factory
             }
 
             $documentRequest = DocumentRequest::query()
-                ->withoutGlobalScopes()
+                ->withoutTenantScope()
                 ->find($uploadedDocument->document_request_id);
 
             if ($documentRequest instanceof DocumentRequest) {

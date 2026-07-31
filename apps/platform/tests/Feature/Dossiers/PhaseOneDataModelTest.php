@@ -11,9 +11,11 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\TenantContext;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 
 pest()
     ->use(RefreshDatabase::class);
@@ -71,7 +73,13 @@ test('staff can create the phase one document collection graph', function (): vo
         ->and($grant->dossier->is($dossier))->toBeTrue();
 });
 
-test('tenant owned records cannot be queried without an active tenant', function (): void {
+test('tenant owned records are empty without an active tenant by default', function (): void {
+    expect(Client::query()->count())->toBe(0);
+});
+
+test('tenant owned records throw without a tenant when strict scope is enabled', function (): void {
+    resolve(TenantContext::class)->enableStrict();
+
     expect(fn () => Client::query()->count())
         ->toThrow(RuntimeException::class, 'Cannot query tenant-owned records without an active tenant.');
 });

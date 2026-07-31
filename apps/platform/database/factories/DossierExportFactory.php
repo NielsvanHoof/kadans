@@ -59,7 +59,7 @@ final class DossierExportFactory extends Factory
             }
 
             $dossier = Dossier::query()
-                ->withoutGlobalScopes()
+                ->withoutTenantScope()
                 ->find($export->dossier_id);
 
             if ($dossier instanceof Dossier) {
