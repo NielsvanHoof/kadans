@@ -1,6 +1,5 @@
-import { Form, usePoll } from '@inertiajs/react';
+import { Form } from '@inertiajs/react';
 import { Archive, Download, LoaderCircle } from 'lucide-react';
-import { useEffect } from 'react';
 import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/DossierExportController';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +15,7 @@ import {
     pipelineStepStatusLabel,
 } from '@/features/pipelines/status/pipeline-status';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 
@@ -30,19 +30,11 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
         );
     });
 
-    const { start, stop } = usePoll(
-        2000,
-        { only: ['dossier'] },
-        { autoStart: false, mode: 'rest' },
-    );
-
-    useEffect(() => {
-        if (hasInFlightProcessing) {
-            start();
-        } else {
-            stop();
-        }
-    }, [hasInFlightProcessing, start, stop]);
+    useReloadOnPipelineUpdated(['dossier'], {
+        enabled: hasInFlightProcessing,
+        match: (event) =>
+            event.dossier_id === dossier.id && event.type === 'dossier_export',
+    });
 
     return (
         <Card>

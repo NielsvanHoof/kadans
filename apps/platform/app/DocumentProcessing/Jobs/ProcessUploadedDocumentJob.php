@@ -49,6 +49,25 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         return "{$this->uploadedDocumentId}:{$this->pipelineId}:".hash('sha256', $this->expectedPath ?? 'legacy');
     }
 
+    /**
+     * Telescope / Horizon searchable tags (jobs carry IDs, not Eloquent models).
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        $tags = [
+            'ocr',
+            'uploaded_document:'.$this->uploadedDocumentId,
+        ];
+
+        if ($this->pipelineId !== null) {
+            $tags[] = 'pipeline:'.$this->pipelineId;
+        }
+
+        return $tags;
+    }
+
     public function handle(
         OcrOrchestrator $ocrOrchestrator,
         LogAuditActivityAction $logAuditActivity,

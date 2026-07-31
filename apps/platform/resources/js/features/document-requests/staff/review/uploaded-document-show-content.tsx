@@ -1,5 +1,4 @@
-import { Link, usePoll } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { Link } from '@inertiajs/react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import ErrorState from '@/components/error-state';
 import Heading from '@/components/heading';
@@ -11,6 +10,7 @@ import DocumentPreviewPanel, {
 } from '@/features/document-requests/staff/review/document-preview-panel';
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
@@ -18,7 +18,7 @@ import { show as showDossier } from '@/routes/workspaces/dossiers';
 
 /**
  * OCR extraction body for a single uploaded document.
- * Polls while processing so results appear without a full page reload.
+ * Reloads via Reverb when the OCR pipeline advances.
  */
 export default function UploadedDocumentShowContent({
     uploaded_document: uploadedDocument,
@@ -33,24 +33,12 @@ export default function UploadedDocumentShowContent({
         uploadedDocument.processing_status === 'pending' ||
         uploadedDocument.processing_status === 'processing';
 
-    const { start, stop } = usePoll(
-        2000,
-        {
-            only: ['uploaded_document'],
-        },
-        {
-            autoStart: false,
-            mode: 'rest',
-        },
-    );
-
-    useEffect(() => {
-        if (isProcessing) {
-            start();
-        } else {
-            stop();
-        }
-    }, [isProcessing, start, stop]);
+    useReloadOnPipelineUpdated(['uploaded_document'], {
+        enabled: isProcessing,
+        match: (event) =>
+            event.subject_type === 'uploaded_document' &&
+            event.subject_id === uploadedDocument.id,
+    });
 
     const downloadUrl = canDownload
         ? UploadedDocumentController.download.url({

@@ -1,6 +1,5 @@
-import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft, Download, Trash2 } from 'lucide-react';
-import { useEffect } from 'react';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +21,7 @@ import {
 } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineDetail } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 import {
@@ -44,24 +44,10 @@ export default function PipelineShow({
 
     // Keep the show page live while submit / provider / results are still moving.
     const isInFlight = pipelineIsInFlight(pipeline.status);
-    const { start, stop } = usePoll(
-        2000,
-        {
-            only: ['pipeline', 'can_delete', 'can_download'],
-        },
-        {
-            autoStart: false,
-            mode: 'rest',
-        },
-    );
-
-    useEffect(() => {
-        if (isInFlight) {
-            start();
-        } else {
-            stop();
-        }
-    }, [isInFlight, start, stop]);
+    useReloadOnPipelineUpdated(['pipeline', 'can_delete', 'can_download'], {
+        enabled: isInFlight,
+        match: (event) => event.pipeline_id === pipeline.id,
+    });
 
     setLayoutProps({
         breadcrumbs: [

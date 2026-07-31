@@ -48,6 +48,21 @@ final class ClientQuestionnaireCompleted implements ShouldBroadcast
     }
 
     /**
+     * Telescope tags for the queued BroadcastEvent wrapper.
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return [
+            'broadcast',
+            'client.questionnaire.completed',
+            'tenant:'.$this->tenantSlug,
+            'dossier:'.$this->dossierId,
+        ];
+    }
+
+    /**
      * @return array{
      *     dossier_id: int,
      *     dossier_title: string,

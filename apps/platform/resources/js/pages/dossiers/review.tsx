@@ -1,6 +1,5 @@
-import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +10,7 @@ import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card'
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import {
     index as dossierIndex,
@@ -61,26 +61,17 @@ export default function ReviewDossier({
         ],
     });
 
-    // Poll while OCR is still running so extracted JSON appears without a refresh.
+    // Reload while OCR is still running so extracted JSON appears without a refresh.
     const hasInFlightProcessing = dossier.document_requests.some((request) => {
         const status = request.uploaded_document?.processing_status;
 
         return status === 'pending' || status === 'processing';
     });
 
-    const { start, stop } = usePoll(
-        2000,
-        { only: ['dossier'] },
-        { autoStart: false, mode: 'rest' },
-    );
-
-    useEffect(() => {
-        if (hasInFlightProcessing) {
-            start();
-        } else {
-            stop();
-        }
-    }, [hasInFlightProcessing, start, stop]);
+    useReloadOnPipelineUpdated(['dossier'], {
+        enabled: hasInFlightProcessing,
+        match: (event) => event.dossier_id === dossier.id,
+    });
 
     return (
         <>

@@ -37,6 +37,21 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
         return ['mail'];
     }
 
+    /**
+     * Telescope tags for the queued notification job.
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return [
+            'notification',
+            'mail',
+            'workspace_member_invite',
+            'invitation:'.$this->invitationId,
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
@@ -53,6 +68,8 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
                 'date' => $this->expiresAt->timezone(config('app.timezone'))->toDayDateTimeString(),
             ]))
             ->action(__('Accept invitation'), $this->acceptUrl)
-            ->line(__('If you did not expect this email, you can ignore it.'));
+            ->line(__('If you did not expect this email, you can ignore it.'))
+            ->tag('workspace_member_invite')
+            ->metadata('invitation_id', (string) $this->invitationId);
     }
 }
