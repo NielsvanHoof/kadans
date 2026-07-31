@@ -7,17 +7,15 @@ namespace App\ClientPortal\Models;
 use App\Accounts\Models\User;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Concerns\BelongsToTenant;
+use App\Tenancy\Models\Tenant;
+use Carbon\CarbonImmutable;
 use Database\Factories\ClientAccessGrantFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Override;
 
 /**
@@ -25,18 +23,60 @@ use Override;
  * @property int $tenant_id
  * @property int $dossier_id
  * @property string $token
- * @property Carbon $expires_at
- * @property Carbon|null $revoked_at
- * @property Carbon|null $last_used_at
+ * @property CarbonImmutable $expires_at
+ * @property CarbonImmutable|null $revoked_at
+ * @property CarbonImmutable|null $last_used_at
  * @property int $created_by
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read User $createdBy
+ * @property-read Dossier|null $dossier
+ * @property-read Tenant $tenant
+ *
+ * @method static ClientAccessGrantFactory factory($count = null, $state = [])
+ * @method static Builder<static>|ClientAccessGrant newModelQuery()
+ * @method static Builder<static>|ClientAccessGrant newQuery()
+ * @method static Builder<static>|ClientAccessGrant query()
+ * @method static Builder<static>|ClientAccessGrant valid()
+ * @method static Builder<static>|ClientAccessGrant whereCreatedAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereCreatedBy($value)
+ * @method static Builder<static>|ClientAccessGrant whereDossierId($value)
+ * @method static Builder<static>|ClientAccessGrant whereExpiresAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereId($value)
+ * @method static Builder<static>|ClientAccessGrant whereLastUsedAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereRevokedAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereTenantId($value)
+ * @method static Builder<static>|ClientAccessGrant whereToken($value)
+ * @method static Builder<static>|ClientAccessGrant whereUpdatedAt($value)
+ *
+ * @mixin Model
  */
-#[Fillable(['tenant_id', 'dossier_id', 'token', 'expires_at', 'revoked_at', 'last_used_at', 'created_by'])]
-#[Hidden(['token'])]
-#[UseFactory(ClientAccessGrantFactory::class)]
 final class ClientAccessGrant extends Model
 {
     /** @use HasFactory<ClientAccessGrantFactory> */
     use BelongsToTenant, HasFactory, MassPrunable;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'tenant_id',
+        'dossier_id',
+        'token',
+        'expires_at',
+        'revoked_at',
+        'last_used_at',
+        'created_by',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $hidden = [
+        'token',
+    ];
 
     public static function hashToken(string $plainTextToken): string
     {

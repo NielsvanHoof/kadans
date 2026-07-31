@@ -6,13 +6,13 @@ namespace App\DocumentProcessing\Models;
 
 use App\DocumentProcessing\Enums\PipelineStepStatus;
 use App\Tenancy\Concerns\BelongsToTenant;
+use App\Tenancy\Models\Tenant;
+use Carbon\CarbonImmutable;
 use Database\Factories\PipelineStepFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Override;
 
 /**
@@ -27,32 +27,63 @@ use Override;
  * @property int $attempts
  * @property string|null $error_code
  * @property string|null $error_message
- * @property array<string, mixed>|null $metadata
- * @property Carbon|null $started_at
- * @property Carbon|null $last_activity_at
- * @property Carbon|null $completed_at
- * @property Carbon|null $failed_at
+ * @property array<array-key, mixed>|null $metadata
+ * @property CarbonImmutable|null $started_at
+ * @property CarbonImmutable|null $last_activity_at
+ * @property CarbonImmutable|null $completed_at
+ * @property CarbonImmutable|null $failed_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Pipeline $pipeline
+ * @property-read Tenant $tenant
+ *
+ * @method static PipelineStepFactory factory($count = null, $state = [])
+ * @method static Builder<static>|PipelineStep newModelQuery()
+ * @method static Builder<static>|PipelineStep newQuery()
+ * @method static Builder<static>|PipelineStep query()
+ * @method static Builder<static>|PipelineStep whereAttempts($value)
+ * @method static Builder<static>|PipelineStep whereCompletedAt($value)
+ * @method static Builder<static>|PipelineStep whereCreatedAt($value)
+ * @method static Builder<static>|PipelineStep whereErrorCode($value)
+ * @method static Builder<static>|PipelineStep whereErrorMessage($value)
+ * @method static Builder<static>|PipelineStep whereFailedAt($value)
+ * @method static Builder<static>|PipelineStep whereId($value)
+ * @method static Builder<static>|PipelineStep whereKey($value)
+ * @method static Builder<static>|PipelineStep whereLastActivityAt($value)
+ * @method static Builder<static>|PipelineStep whereMetadata($value)
+ * @method static Builder<static>|PipelineStep wherePipelineId($value)
+ * @method static Builder<static>|PipelineStep wherePosition($value)
+ * @method static Builder<static>|PipelineStep whereStartedAt($value)
+ * @method static Builder<static>|PipelineStep whereStatus($value)
+ * @method static Builder<static>|PipelineStep whereTenantId($value)
+ * @method static Builder<static>|PipelineStep whereUpdatedAt($value)
+ *
+ * @mixin Model
  */
-#[Fillable([
-    'tenant_id',
-    'pipeline_id',
-    'key',
-    'position',
-    'status',
-    'attempts',
-    'error_code',
-    'error_message',
-    'metadata',
-    'started_at',
-    'last_activity_at',
-    'completed_at',
-    'failed_at',
-])]
-#[UseFactory(PipelineStepFactory::class)]
 final class PipelineStep extends Model
 {
     /** @use HasFactory<PipelineStepFactory> */
     use BelongsToTenant, HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'tenant_id',
+        'pipeline_id',
+        'key',
+        'position',
+        'status',
+        'attempts',
+        'error_code',
+        'error_message',
+        'metadata',
+        'started_at',
+        'last_activity_at',
+        'completed_at',
+        'failed_at',
+    ];
 
     #[Override]
     protected $attributes = [

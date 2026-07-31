@@ -13,4 +13,8 @@ parameters:
 
     level: 8
 
+    parseModelCastsMethod: true
+    enableMigrationCache: true
+    checkModelProperties: true
+
     reportUnmatchedIgnoredErrors: true

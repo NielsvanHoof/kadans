@@ -9,6 +9,21 @@ use Rector\Config\RectorConfig;
 use RectorLaravel\Rector\ArrayDimFetch\RequestVariablesToRequestFacadeRector;
 use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
 use RectorLaravel\Rector\Class_\AddHasFactoryToModelsRector;
+use RectorLaravel\Rector\Class_\AppendsPropertyToAppendsAttributeRector;
+use RectorLaravel\Rector\Class_\CollectedByPropertyToCollectedByAttributeRector;
+use RectorLaravel\Rector\Class_\ConnectionPropertyToConnectionAttributeRector;
+use RectorLaravel\Rector\Class_\DateFormatPropertyToDateFormatAttributeRector;
+use RectorLaravel\Rector\Class_\FillablePropertyToFillableAttributeRector;
+use RectorLaravel\Rector\Class_\GuardedPropertyToGuardedAttributeRector;
+use RectorLaravel\Rector\Class_\HiddenPropertyToHiddenAttributeRector;
+use RectorLaravel\Rector\Class_\TablePropertyToTableAttributeRector;
+use RectorLaravel\Rector\Class_\TouchesPropertyToTouchesAttributeRector;
+use RectorLaravel\Rector\Class_\VisiblePropertyToVisibleAttributeRector;
+use RectorLaravel\Rector\Class_\WithoutIncrementingPropertyToWithoutIncrementingAttributeRector;
+use RectorLaravel\Rector\Class_\WithoutTimestampsPropertyToWithoutTimestampsAttributeRector;
+use RectorLaravel\Rector\Empty_\EmptyToBlankAndFilledFuncRector;
+use RectorLaravel\Rector\FuncCall\RemoveDumpDataDeadCodeRector;
+use RectorLaravel\Rector\MethodCall\WhereToWhereLikeRector;
 use RectorLaravel\Set\LaravelSetList;
 use RectorLaravel\Set\LaravelSetProvider;
 
@@ -33,6 +48,21 @@ return RectorConfig::configure()
         // $_SERVER['argv'] must stay live for CLI detection; Request::server() is a snapshot.
         RequestVariablesToRequestFacadeRector::class,
         ServerVariableToRequestFacadeRector::class,
+        // Prefer classic $fillable/$hidden (and related Eloquent properties) over #[Fillable]
+        // attributes — readable next to ide-helper PHPDoc. Composer-based Laravel 13 sets
+        // would otherwise convert these back on every run. Command #[Signature] stays enabled.
+        AppendsPropertyToAppendsAttributeRector::class,
+        CollectedByPropertyToCollectedByAttributeRector::class,
+        ConnectionPropertyToConnectionAttributeRector::class,
+        DateFormatPropertyToDateFormatAttributeRector::class,
+        FillablePropertyToFillableAttributeRector::class,
+        GuardedPropertyToGuardedAttributeRector::class,
+        HiddenPropertyToHiddenAttributeRector::class,
+        TablePropertyToTableAttributeRector::class,
+        TouchesPropertyToTouchesAttributeRector::class,
+        VisiblePropertyToVisibleAttributeRector::class,
+        WithoutIncrementingPropertyToWithoutIncrementingAttributeRector::class,
+        WithoutTimestampsPropertyToWithoutTimestampsAttributeRector::class,
     ])
     ->withCache(
         cacheDirectory: __DIR__.'/storage/rector',
@@ -61,5 +91,19 @@ return RectorConfig::configure()
         LaravelSetList::LARAVEL_IF_HELPERS,
         LaravelSetList::LARAVEL_TYPE_DECLARATIONS,
         LaravelSetList::LARAVEL_TESTING,
+        LaravelSetList::LARAVEL_FACADE_ALIASES_TO_FULL_NAMES,
+        LaravelSetList::LARAVEL_CONTAINER_STRING_TO_FULLY_QUALIFIED_NAME,
+        LaravelSetList::LARAVEL_ARRAYACCESS_TO_METHOD_CALL,
         PestSetList::CODING_STYLE,
+    ])
+    ->withRules([
+        EmptyToBlankAndFilledFuncRector::class,
+    ])
+    ->withConfiguredRule(WhereToWhereLikeRector::class, [
+        WhereToWhereLikeRector::USING_POSTGRES_DRIVER => true,
+    ])
+    ->withConfiguredRule(RemoveDumpDataDeadCodeRector::class, [
+        'dd',
+        'dump',
+        'var_dump',
     ]);

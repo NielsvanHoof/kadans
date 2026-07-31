@@ -25,8 +25,8 @@ use function Laravel\Prompts\select;
 use function Laravel\Prompts\table;
 use function Laravel\Prompts\text;
 
-#[Signature('tenancy:create-owner {name? : Full name of the owner} {email? : Email address used to sign in} {--firm= : Firm / workspace name} {--password= : Plain-text password (random if omitted)} {--role= : Role of the user (default: owner)}')]
-#[Description('Create a verified workspace owner and provision their firm')]
+#[Signature('tenancy:create-owner {name? : Full name of the owner} {email? : Email address used to sign in} {--firm= : Firm / workspace name (omit for default onboarding)} {--password= : Plain-text password (random if omitted)} {--role= : Role of the user when a firm is provisioned (default: owner)}')]
+#[Description('Create a verified owner, optionally provisioning their firm')]
 final class CreateOwnerCommand extends Command
 {
     public function handle(
@@ -35,13 +35,17 @@ final class CreateOwnerCommand extends Command
     ): int {
         $name = $this->resolveName();
         $email = $this->resolveEmail();
-        $role = $this->resolveRole();
+        $firmName = $this->resolveFirm();
+        $role = null;
 
-        if (! $role instanceof Role) {
-            return self::FAILURE;
+        if ($firmName !== null) {
+            $role = $this->resolveRole();
+
+            if (! $role instanceof Role) {
+                return self::FAILURE;
+            }
         }
 
-        $firmName = $this->resolveFirm($name);
         $password = $this->resolvePassword();
 
         try {
@@ -52,14 +56,14 @@ final class CreateOwnerCommand extends Command
                     'firm' => $firmName,
                     'password' => $password,
                     'password_confirmation' => $password,
-                    'role' => $role->value,
+                    'role' => $role?->value,
                 ],
                 [
                     'name' => ['required', 'string', 'max:255'],
                     'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-                    'firm' => ['required', 'string', 'max:255'],
+                    'firm' => ['nullable', 'string', 'max:255'],
                     'password' => ['required', 'string', Password::defaults(), 'confirmed'],
-                    'role' => ['required', 'string', Rule::enum(Role::class)],
+                    'role' => ['required_with:firm', 'nullable', 'string', Rule::enum(Role::class)],
                 ],
             )->validate();
         } catch (ValidationException $exception) {
@@ -72,12 +76,6 @@ final class CreateOwnerCommand extends Command
             return self::FAILURE;
         }
 
-        // Global permissions must exist before tenant roles are seeded.
-        $this->callSilent('db:seed', [
-            '--class' => RolesAndPermissionsSeeder::class,
-            '--force' => true,
-        ]);
-
         $user = $createNewUser->create([
             'name' => $name,
             'email' => $email,
@@ -86,6 +84,26 @@ final class CreateOwnerCommand extends Command
         ]);
 
         $user->forceFill(['email_verified_at' => now()])->save();
+
+        if ($firmName === null) {
+            info('Owner created. They will complete onboarding on first login.');
+            table(
+                headers: ['Field', 'Value'],
+                rows: [
+                    ['Name', $user->name],
+                    ['Email', $user->email],
+                    ['Password', $password],
+                    ['Firm', '(none — onboarding)'],
+                ],
+            );
+
+            return self::SUCCESS;
+        }
+
+        $this->callSilent('db:seed', [
+            '--class' => RolesAndPermissionsSeeder::class,
+            '--force' => true,
+        ]);
 
         $tenant = $provisionTenant->handle(
             name: $firmName,
@@ -171,22 +189,40 @@ final class CreateOwnerCommand extends Command
         return Role::from($selected);
     }
 
-    private function resolveFirm(string $name): string
+    /**
+     * Resolve an optional firm name.
+     *
+     * When omitted (or left blank interactively), no workspace is provisioned
+     * and the user goes through the default onboarding experience on login.
+     */
+    private function resolveFirm(): ?string
     {
         $firmOption = $this->option('firm');
 
-        if (is_string($firmOption) && $firmOption !== '') {
-            return mb_trim($firmOption);
+        if (is_string($firmOption)) {
+            $firmOption = mb_trim($firmOption);
+
+            return $firmOption !== '' ? $firmOption : null;
         }
 
-        return text(
+        // Option omitted with name provided via args: treat as no firm (scripted usage).
+        $nameArgument = $this->argument('name');
+
+        if (is_string($nameArgument) && $nameArgument !== '') {
+            return null;
+        }
+
+        // Fully interactive run: allow leaving firm blank to skip provisioning.
+        $firm = text(
             label: 'Firm',
-            default: "{$name}'s firm",
-            required: true,
-            validate: ['firm' => 'required|string|max:255'],
-            hint: 'Optional — press enter to use the default.',
+            default: '',
+            required: false,
+            validate: ['firm' => 'nullable|string|max:255'],
+            hint: 'Leave empty to skip — user will go through onboarding.',
             transform: fn (string $value): string => mb_trim($value),
         );
+
+        return $firm !== '' ? $firm : null;
     }
 
     private function resolvePassword(): string

@@ -48,6 +48,7 @@ use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
@@ -97,6 +98,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->configurePolicies();
         $this->configureSupportPermissionGate();
         $this->configureDefaults();
+        $this->configureFactoryDiscovery();
         $this->configureDevCommands();
     }
 
@@ -124,6 +126,17 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict();
 
         Model::preventLazyLoading(! app()->isProduction());
+    }
+
+    /**
+     * Factories live flat under Database\Factories\{Model}Factory while models
+     * are grouped by domain (App\Accounts\Models\User, etc.).
+     */
+    private function configureFactoryDiscovery(): void
+    {
+        Factory::guessFactoryNamesUsing(
+            static fn (string $modelName): string => 'Database\\Factories\\'.class_basename($modelName).'Factory',
+        );
     }
 
     /**

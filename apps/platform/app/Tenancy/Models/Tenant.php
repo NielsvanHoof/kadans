@@ -7,9 +7,10 @@ namespace App\Tenancy\Models;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Models\QuestionnaireTemplate;
+use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +18,7 @@ use Override;
 use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Contracts\IsTenant;
 use Spatie\Multitenancy\Models\Concerns\ImplementsTenant;
+use Spatie\Multitenancy\TenantCollection;
 
 use function in_array;
 
@@ -24,13 +26,42 @@ use function in_array;
  * @property int $id
  * @property string $name
  * @property string $slug
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Collection<int, Client> $clients
+ * @property-read int|null $clients_count
+ * @property-read Collection<int, Dossier> $dossiers
+ * @property-read int|null $dossiers_count
+ * @property-read Collection<int, TenantMembership> $memberships
+ * @property-read int|null $memberships_count
+ *
+ * @method static TenantCollection<int, static> all($columns = ['*'])
+ * @method static TenantFactory factory($count = null, $state = [])
+ * @method static TenantCollection<int, static> get($columns = ['*'])
+ * @method static Builder<static>|Tenant newModelQuery()
+ * @method static Builder<static>|Tenant newQuery()
+ * @method static Builder<static>|Tenant query()
+ * @method static Builder<static>|Tenant whereCreatedAt($value)
+ * @method static Builder<static>|Tenant whereId($value)
+ * @method static Builder<static>|Tenant whereName($value)
+ * @method static Builder<static>|Tenant whereSlug($value)
+ * @method static Builder<static>|Tenant whereUpdatedAt($value)
+ *
+ * @mixin Model
  */
-#[Fillable(['name', 'slug'])]
-#[UseFactory(TenantFactory::class)]
 final class Tenant extends Model implements IsTenant
 {
     /** @use HasFactory<TenantFactory> */
     use HasFactory, ImplementsTenant, UsesMultitenancyConfig;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'name',
+        'slug',
+    ];
 
     /**
      * @return HasMany<TenantMembership, $this>

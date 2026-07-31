@@ -38,6 +38,21 @@ test('tenancy create-owner provisions a verified owner and firm', function (): v
     expect($user->fresh()->hasRole(Role::Owner->value))->toBeTrue();
 });
 
+test('tenancy create-owner creates a verified user without a firm when firm is omitted', function (): void {
+    $this->artisan('tenancy:create-owner', [
+        'name' => 'Ada Owner',
+        'email' => 'ada@example.com',
+        '--password' => 'password',
+    ])->assertSuccessful();
+
+    $user = User::query()->where('email', 'ada@example.com')->firstOrFail();
+
+    expect($user->email_verified_at)->not->toBeNull()
+        ->and($user->name)->toBe('Ada Owner')
+        ->and(Tenant::query()->count())->toBe(0)
+        ->and(TenantMembership::query()->where('user_id', $user->id)->exists())->toBeFalse();
+});
+
 test('tenancy create-owner rejects duplicate emails', function (): void {
     User::factory()->create(['email' => 'ada@example.com']);
 
@@ -60,8 +75,8 @@ test('tenancy create-owner prompts for details and allows optional inputs', func
     $this->artisan('tenancy:create-owner')
         ->expectsQuestion('Name', 'Grace Hopper')
         ->expectsQuestion('Email', 'grace@example.com')
-        ->expectsChoice('Role', Role::Owner->value, $roleOptions)
         ->expectsQuestion('Firm', "Grace Hopper's firm")
+        ->expectsChoice('Role', Role::Owner->value, $roleOptions)
         ->expectsQuestion('Password', '')
         ->assertSuccessful();
 
@@ -72,4 +87,19 @@ test('tenancy create-owner prompts for details and allows optional inputs', func
         ->and($user->email_verified_at)->not->toBeNull()
         ->and($user->password)->not->toBeEmpty()
         ->and($tenant->name)->toBe("Grace Hopper's firm");
+});
+
+test('tenancy create-owner prompts and skips firm when left blank', function (): void {
+    $this->artisan('tenancy:create-owner')
+        ->expectsQuestion('Name', 'Grace Hopper')
+        ->expectsQuestion('Email', 'grace@example.com')
+        ->expectsQuestion('Firm', '')
+        ->expectsQuestion('Password', '')
+        ->assertSuccessful();
+
+    $user = User::query()->where('email', 'grace@example.com')->firstOrFail();
+
+    expect($user->name)->toBe('Grace Hopper')
+        ->and($user->email_verified_at)->not->toBeNull()
+        ->and(Tenant::query()->count())->toBe(0);
 });

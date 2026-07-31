@@ -6,16 +6,13 @@ namespace App\Tenancy\Models;
 
 use App\Accounts\Models\User;
 use App\Tenancy\Concerns\BelongsToTenant;
+use Carbon\CarbonImmutable;
 use Database\Factories\TenantInvitationFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Override;
 
 /**
@@ -28,17 +25,59 @@ use Override;
  * @property string $role
  * @property string $token
  * @property int $invited_by
- * @property Carbon $expires_at
- * @property Carbon|null $accepted_at
- * @property Carbon|null $revoked_at
+ * @property CarbonImmutable $expires_at
+ * @property CarbonImmutable|null $accepted_at
+ * @property CarbonImmutable|null $revoked_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read User $invitedBy
+ * @property-read Tenant $tenant
+ *
+ * @method static TenantInvitationFactory factory($count = null, $state = [])
+ * @method static Builder<static>|TenantInvitation newModelQuery()
+ * @method static Builder<static>|TenantInvitation newQuery()
+ * @method static Builder<static>|TenantInvitation query()
+ * @method static Builder<static>|TenantInvitation whereAcceptedAt($value)
+ * @method static Builder<static>|TenantInvitation whereCreatedAt($value)
+ * @method static Builder<static>|TenantInvitation whereEmail($value)
+ * @method static Builder<static>|TenantInvitation whereExpiresAt($value)
+ * @method static Builder<static>|TenantInvitation whereId($value)
+ * @method static Builder<static>|TenantInvitation whereInvitedBy($value)
+ * @method static Builder<static>|TenantInvitation whereRevokedAt($value)
+ * @method static Builder<static>|TenantInvitation whereRole($value)
+ * @method static Builder<static>|TenantInvitation whereTenantId($value)
+ * @method static Builder<static>|TenantInvitation whereToken($value)
+ * @method static Builder<static>|TenantInvitation whereUpdatedAt($value)
+ *
+ * @mixin Model
  */
-#[Fillable(['tenant_id', 'email', 'role', 'token', 'invited_by', 'expires_at', 'accepted_at', 'revoked_at'])]
-#[Hidden(['token'])]
-#[UseFactory(TenantInvitationFactory::class)]
 final class TenantInvitation extends Model
 {
     /** @use HasFactory<TenantInvitationFactory> */
     use BelongsToTenant, HasFactory, MassPrunable;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'tenant_id',
+        'email',
+        'role',
+        'token',
+        'invited_by',
+        'expires_at',
+        'accepted_at',
+        'revoked_at',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $hidden = [
+        'token',
+    ];
 
     public static function hashToken(string $plainTextToken): string
     {

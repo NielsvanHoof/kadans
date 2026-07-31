@@ -55,12 +55,6 @@ final readonly class AcceptTenantInvitationAction
                 $tenant = $locked->tenant;
             }
 
-            if (! $tenant instanceof Tenant) {
-                throw ValidationException::withMessages([
-                    'invitation' => __('This invitation is no longer valid.'),
-                ]);
-            }
-
             $this->memberRoles->lockMembershipPair($tenant->id, $user->id);
 
             $membership = TenantMembership::query()

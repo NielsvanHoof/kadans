@@ -8,18 +8,20 @@ use App\Accounts\Models\User;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Tenancy\Concerns\BelongsToTenant;
+use App\Tenancy\Models\Tenant;
+use Carbon\CarbonImmutable;
 use Database\Factories\DossierExportFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Support\Carbon;
 use Override;
 
 /**
  * Queued ZIP export of a dossier and its submitted documents.
+ *
+ * created_at is nullable in DDL but Eloquent always writes it.
  *
  * @property int $id
  * @property int $tenant_id
@@ -29,29 +31,57 @@ use Override;
  * @property string|null $disk
  * @property string|null $path
  * @property string|null $error
- * @property Carbon|null $expires_at
- * @property Carbon|null $completed_at
- * @property Carbon|null $failed_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable|null $expires_at
+ * @property CarbonImmutable|null $completed_at
+ * @property CarbonImmutable|null $failed_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Dossier|null $dossier
+ * @property-read Pipeline|null $pipeline
+ * @property-read User|null $requestedBy
+ * @property-read Tenant $tenant
+ *
+ * @method static DossierExportFactory factory($count = null, $state = [])
+ * @method static Builder<static>|DossierExport newModelQuery()
+ * @method static Builder<static>|DossierExport newQuery()
+ * @method static Builder<static>|DossierExport query()
+ * @method static Builder<static>|DossierExport whereCompletedAt($value)
+ * @method static Builder<static>|DossierExport whereCreatedAt($value)
+ * @method static Builder<static>|DossierExport whereDisk($value)
+ * @method static Builder<static>|DossierExport whereDossierId($value)
+ * @method static Builder<static>|DossierExport whereError($value)
+ * @method static Builder<static>|DossierExport whereExpiresAt($value)
+ * @method static Builder<static>|DossierExport whereFailedAt($value)
+ * @method static Builder<static>|DossierExport whereId($value)
+ * @method static Builder<static>|DossierExport wherePath($value)
+ * @method static Builder<static>|DossierExport whereRequestedBy($value)
+ * @method static Builder<static>|DossierExport whereStatus($value)
+ * @method static Builder<static>|DossierExport whereTenantId($value)
+ * @method static Builder<static>|DossierExport whereUpdatedAt($value)
+ *
+ * @mixin Model
  */
-#[Fillable([
-    'tenant_id',
-    'dossier_id',
-    'requested_by',
-    'status',
-    'disk',
-    'path',
-    'error',
-    'expires_at',
-    'completed_at',
-    'failed_at',
-])]
-#[UseFactory(DossierExportFactory::class)]
 final class DossierExport extends Model
 {
     /** @use HasFactory<DossierExportFactory> */
     use BelongsToTenant, HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'tenant_id',
+        'dossier_id',
+        'requested_by',
+        'status',
+        'disk',
+        'path',
+        'error',
+        'expires_at',
+        'completed_at',
+        'failed_at',
+    ];
 
     /**
      * @return BelongsTo<Dossier, $this>

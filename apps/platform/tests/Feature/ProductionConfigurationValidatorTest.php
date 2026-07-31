@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Platform\Services\Production\ProductionConfigurationValidator;
 
 beforeEach(function (): void {
-    $this->app['env'] = 'production';
+    $this->app->bind('env', 'production');
 
     config([
         'app.debug' => false,
@@ -64,7 +64,7 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
 ]);
 
 test('non-production environments may use local services', function (): void {
-    $this->app['env'] = 'testing';
+    $this->app->bind('env', 'testing');
 
     config([
         'app.debug' => true,
