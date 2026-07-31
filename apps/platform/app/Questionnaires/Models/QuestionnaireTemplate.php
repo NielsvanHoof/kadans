@@ -46,7 +46,7 @@ use Override;
  * @method static Builder<static>|QuestionnaireTemplate whereTenantId($value)
  * @method static Builder<static>|QuestionnaireTemplate whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class QuestionnaireTemplate extends Model
 {

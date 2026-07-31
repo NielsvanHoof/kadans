@@ -49,7 +49,7 @@ use Override;
  * @method static Builder<static>|TenantInvitation whereToken($value)
  * @method static Builder<static>|TenantInvitation whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class TenantInvitation extends Model
 {

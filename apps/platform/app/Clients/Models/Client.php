@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Clients\Models;
 
-use Override;
 use App\Audit\Concerns\LogsTenantAuditableActivity;
 use App\Audit\Models\Activity;
 use App\Dossiers\Models\Dossier;
@@ -20,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
+use Override;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -52,7 +52,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static Builder<static>|Client withTrashed(bool $withTrashed = true)
  * @method static Builder<static>|Client withoutTrashed()
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class Client extends Model
 {

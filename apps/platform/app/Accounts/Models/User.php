@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Accounts\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Accounts\Enums\PlatformRole;
 use App\Platform\Support\SupportSession;
 use App\Tenancy\Contracts\TenantPermission;
@@ -82,7 +81,7 @@ use function array_key_exists;
  * @method static Builder<static>|User withoutRole($roles, ?string $guard = null)
  * @method static Builder<static>|User withoutTeam($teams)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, PasskeyUser
 {

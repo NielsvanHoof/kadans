@@ -43,7 +43,7 @@ use Override;
  * @method static Builder<static>|TenantMembership whereUpdatedAt($value)
  * @method static Builder<static>|TenantMembership whereUserId($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class TenantMembership extends Model
 {

@@ -58,7 +58,7 @@ use Override;
  * @method static Builder<static>|PipelineStep whereTenantId($value)
  * @method static Builder<static>|PipelineStep whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class PipelineStep extends Model
 {

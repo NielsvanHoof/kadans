@@ -47,7 +47,7 @@ use function in_array;
  * @method static Builder<static>|Tenant whereSlug($value)
  * @method static Builder<static>|Tenant whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class Tenant extends Model implements IsTenant
 {

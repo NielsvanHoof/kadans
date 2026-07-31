@@ -49,7 +49,7 @@ use Override;
  * @method static Builder<static>|ClientAccessGrant whereToken($value)
  * @method static Builder<static>|ClientAccessGrant whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class ClientAccessGrant extends Model
 {

@@ -79,7 +79,7 @@ use Override;
  * @method static Builder<static>|Pipeline whereType($value)
  * @method static Builder<static>|Pipeline whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class Pipeline extends Model
 {

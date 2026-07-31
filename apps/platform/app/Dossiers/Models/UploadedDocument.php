@@ -71,7 +71,7 @@ use Override;
  * @method static Builder<static>|UploadedDocument whereUpdatedAt($value)
  * @method static Builder<static>|UploadedDocument whereUploadedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class UploadedDocument extends Model
 {

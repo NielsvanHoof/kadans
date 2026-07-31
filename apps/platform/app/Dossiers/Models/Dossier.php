@@ -80,7 +80,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @method static EloquentBuilder<static>|Dossier withTrashed(bool $withTrashed = true)
  * @method static EloquentBuilder<static>|Dossier withoutTrashed()
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class Dossier extends Model
 {

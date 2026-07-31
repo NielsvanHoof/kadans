@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Accounts\Models\User;
 use App\Tenancy\Enums\Role as RoleEnum;
 use Carbon\CarbonImmutable;
@@ -55,7 +54,7 @@ use Spatie\Permission\Models\Role as SpatieRole;
  * @method static Builder<static>|TenantRole whereUpdatedAt($value)
  * @method static Builder<static>|TenantRole withoutPermission($permissions)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class TenantRole extends SpatieRole
 {

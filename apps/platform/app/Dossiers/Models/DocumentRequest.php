@@ -78,7 +78,7 @@ use Override;
  * @method static Builder<static>|DocumentRequest whereType($value)
  * @method static Builder<static>|DocumentRequest whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class DocumentRequest extends Model
 {

@@ -6,6 +6,7 @@ use Pest\Rector\Rules\ToBeTrueNotFalseRector;
 use Pest\Rector\Set\PestSetList;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Config\RectorConfig;
+use Rector\Renaming\Rector\Name\RenameClassRector;
 use RectorLaravel\Rector\ArrayDimFetch\RequestVariablesToRequestFacadeRector;
 use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
 use RectorLaravel\Rector\Class_\AddHasFactoryToModelsRector;
@@ -91,10 +92,55 @@ return RectorConfig::configure()
         LaravelSetList::LARAVEL_IF_HELPERS,
         LaravelSetList::LARAVEL_TYPE_DECLARATIONS,
         LaravelSetList::LARAVEL_TESTING,
-        LaravelSetList::LARAVEL_FACADE_ALIASES_TO_FULL_NAMES,
         LaravelSetList::LARAVEL_CONTAINER_STRING_TO_FULLY_QUALIFIED_NAME,
         LaravelSetList::LARAVEL_ARRAYACCESS_TO_METHOD_CALL,
         PestSetList::CODING_STYLE,
+    ])
+    // Facade aliases → FQCN, but keep Eloquent: ide-helper writes @mixin \Eloquent for
+    // Builder completion via _ide_helper.php. Renaming it to Model duplicates @mixin and
+    // breaks that helper.
+    ->withConfiguredRule(RenameClassRector::class, [
+        'App' => 'Illuminate\Support\Facades\App',
+        'Arr' => 'Illuminate\Support\Arr',
+        'Artisan' => 'Illuminate\Support\Facades\Artisan',
+        'Auth' => 'Illuminate\Support\Facades\Auth',
+        'Blade' => 'Illuminate\Support\Facades\Blade',
+        'Broadcast' => 'Illuminate\Support\Facades\Broadcast',
+        'Bus' => 'Illuminate\Support\Facades\Bus',
+        'Cache' => 'Illuminate\Support\Facades\Cache',
+        'Config' => 'Illuminate\Support\Facades\Config',
+        'Context' => 'Illuminate\Support\Facades\Context',
+        'Cookie' => 'Illuminate\Support\Facades\Cookie',
+        'Crypt' => 'Illuminate\Support\Facades\Crypt',
+        'Date' => 'Illuminate\Support\Facades\Date',
+        'DB' => 'Illuminate\Support\Facades\DB',
+        'Event' => 'Illuminate\Support\Facades\Event',
+        'File' => 'Illuminate\Support\Facades\File',
+        'Gate' => 'Illuminate\Support\Facades\Gate',
+        'Hash' => 'Illuminate\Support\Facades\Hash',
+        'Http' => 'Illuminate\Support\Facades\Http',
+        'Js' => 'Illuminate\Support\Js',
+        'Lang' => 'Illuminate\Support\Facades\Lang',
+        'Log' => 'Illuminate\Support\Facades\Log',
+        'Mail' => 'Illuminate\Support\Facades\Mail',
+        'Notification' => 'Illuminate\Support\Facades\Notification',
+        'Number' => 'Illuminate\Support\Number',
+        'Password' => 'Illuminate\Support\Facades\Password',
+        'Process' => 'Illuminate\Support\Facades\Process',
+        'Queue' => 'Illuminate\Support\Facades\Queue',
+        'RateLimiter' => 'Illuminate\Support\Facades\RateLimiter',
+        'Redirect' => 'Illuminate\Support\Facades\Redirect',
+        'Request' => 'Illuminate\Support\Facades\Request',
+        'Response' => 'Illuminate\Support\Facades\Response',
+        'Route' => 'Illuminate\Support\Facades\Route',
+        'Schema' => 'Illuminate\Support\Facades\Schema',
+        'Session' => 'Illuminate\Support\Facades\Session',
+        'Storage' => 'Illuminate\Support\Facades\Storage',
+        'Str' => 'Illuminate\Support\Str',
+        'URL' => 'Illuminate\Support\Facades\URL',
+        'Validator' => 'Illuminate\Support\Facades\Validator',
+        'View' => 'Illuminate\Support\Facades\View',
+        'Vite' => 'Illuminate\Support\Facades\Vite',
     ])
     ->withRules([
         EmptyToBlankAndFilledFuncRector::class,

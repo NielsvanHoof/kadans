@@ -59,7 +59,7 @@ use Override;
  * @method static Builder<static>|DossierExport whereTenantId($value)
  * @method static Builder<static>|DossierExport whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class DossierExport extends Model
 {

@@ -57,7 +57,7 @@ use Spatie\Activitylog\Models\Activity as SpatieActivity;
  * @method static Builder<static>|Activity whereTenantId($value)
  * @method static Builder<static>|Activity whereUpdatedAt($value)
  *
- * @mixin Model
+ * @mixin \Eloquent
  */
 final class Activity extends SpatieActivity
 {
