@@ -193,30 +193,39 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\Tenancy',
         ]),
 
-    // Omitted: Tenancy (User relations — standing exception), Audit
-    // (ProfileController logs directly) and Platform (User::isPlatformSupport
-    // reaches into SupportSession). Both are Phase 2 debt.
+    // User is the cross-domain hub: its Eloquent relations reach Tenancy (standing
+    // exception) and User::isPlatformSupport() still reaches Platform (Phase 2 debt).
+    // Ignoring User keeps this rule meaningful for every other Accounts class.
+    // Omitted: Audit — ProfileController logs activity directly (Phase 2).
     expect('App\Accounts')
         ->not->toUse([
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
+            'App\Tenancy',
             'App\WorkspaceNotifications',
-        ]),
+        ])
+        ->ignoring(User::class),
 
-    // Omitted: Audit (tenant actions log activity directly — Phase 2),
-    // Platform (support session — Phase 1 inverts this behind a contract),
-    // and Clients/Dossiers/Questionnaires (Tenant relations — standing exception).
+    // Tenant's Eloquent relations reach Clients/Dossiers/Questionnaires under the
+    // standing exception; Platform is now inverted behind SupportSessionState.
+    // Omitted: Audit — tenant actions log activity directly (Phase 2).
     expect('App\Tenancy')
         ->not->toUse([
             'App\ClientPortal',
+            'App\Clients',
             'App\DocumentProcessing',
+            'App\Dossiers',
+            'App\Platform',
+            'App\Questionnaires',
             'App\Reporting',
             'App\WorkspaceNotifications',
-        ]),
+        ])
+        ->ignoring(Tenant::class),
 
     expect('App\Audit')
         ->not->toUse([
@@ -239,23 +248,27 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\WorkspaceNotifications',
         ]),
 
-    // Omitted: Dossiers — Phase 1 moves the template-option DTOs here.
     expect('App\Questionnaires')
         ->not->toUse([
             'App\ClientPortal',
             'App\DocumentProcessing',
+            'App\Dossiers',
             'App\Platform',
             'App\Reporting',
             'App\WorkspaceNotifications',
         ]),
 
-    // Omitted: ClientPortal (Phase 1 — SubmissionContext moves here, the rest
-    // becomes domain events), DocumentProcessing and Reporting (Phase 2).
+    // Omitted: DocumentProcessing and Reporting (Phase 2).
+    // ClientPortal is reached only through DossierArchived / DocumentRequestRejected
+    // events and the ClientPortalReminders contract; the Dossier model keeps its
+    // ClientAccessGrant relation under the standing exception.
     expect('App\Dossiers')
         ->not->toUse([
+            'App\ClientPortal',
             'App\Platform',
             'App\WorkspaceNotifications',
-        ]),
+        ])
+        ->ignoring(Dossier::class),
 
     expect('App\DocumentProcessing')
         ->not->toUse([

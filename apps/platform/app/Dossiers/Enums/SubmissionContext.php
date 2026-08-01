@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Enums;
+namespace App\Dossiers\Enums;
 
 /**
  * Who is submitting a document request answer or upload.

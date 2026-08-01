@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Http\Middleware;
 
 use App\Accounts\Models\User;
-use App\Audit\Enums\AuditEvent;
-use App\Platform\Actions\EndSupportSessionAction;
-use App\Platform\Support\SupportSession;
-use App\Platform\Support\SupportSessionData;
+use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
@@ -16,10 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final readonly class EnsureValidTenantMembership
 {
-    public function __construct(
-        private SupportSession $supportSession,
-        private EndSupportSessionAction $endSupportSession,
-    ) {}
+    public function __construct(private SupportSessionState $supportSession) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -32,7 +26,7 @@ final readonly class EnsureValidTenantMembership
         abort_if(! $user instanceof User || ! $tenant instanceof Tenant, Response::HTTP_FORBIDDEN);
 
         // Clear and audit expired support sessions before access checks.
-        $this->clearExpiredSupportSession($user);
+        $this->supportSession->clearIfExpired($user);
 
         $user->loadMissing('tenantMemberships.tenant');
 
@@ -50,19 +44,5 @@ final readonly class EnsureValidTenantMembership
         }
 
         return $next($request);
-    }
-
-    private function clearExpiredSupportSession(User $user): void
-    {
-        $peek = $this->supportSession->peek();
-
-        if (! $peek instanceof SupportSessionData || ! $peek->hasExpired()) {
-            return;
-        }
-
-        $this->endSupportSession->handle(
-            user: $user,
-            event: AuditEvent::SupportSessionExpired,
-        );
     }
 }

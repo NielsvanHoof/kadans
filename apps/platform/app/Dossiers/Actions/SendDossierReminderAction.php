@@ -7,24 +7,18 @@ namespace App\Dossiers\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
-use App\ClientPortal\Notifications\ClientPortalReminderNotification;
-use App\Clients\Models\Client;
+use App\Dossiers\Contracts\ClientPortalReminders;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
-use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 
 final readonly class SendDossierReminderAction
 {
     public function __construct(
-        private CreateClientAccessGrantAction $createClientAccessGrant,
+        private ClientPortalReminders $clientPortalReminders,
         private DossierHasOutstandingClientItemsQuery $dossierHasOutstandingClientItems,
         private LogAuditActivityAction $logAuditActivity,
     ) {}
@@ -62,37 +56,11 @@ final readonly class SendDossierReminderAction
                 ]);
             }
 
-            $lockedDossier->loadMissing(['client', 'tenant']);
-            $client = $lockedDossier->client;
-
-            throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
-
-            $result = $this->createClientAccessGrant->handle(
+            $grantId = $this->clientPortalReminders->sendReminder(
                 $lockedDossier,
                 $grantCreator,
-                7,
+                $source,
             );
-
-            $firmName = $lockedDossier->tenant instanceof Tenant
-                ? $lockedDossier->tenant->name
-                : (string) config('app.name');
-            $portalUrl = URL::route('portal.exchange', [
-                'token' => $result['plain_text_token'],
-            ]);
-
-            $locale = $grantCreator->preferredLocale();
-
-            Notification::route('mail', $client->email)
-                ->notify(
-                    new ClientPortalReminderNotification(
-                        grantId: $result['grant']->id,
-                        dossier: $lockedDossier,
-                        portalUrl: $portalUrl,
-                        expiresAt: $result['grant']->expires_at,
-                        firmName: $firmName,
-                        source: $source,
-                    )->locale($locale),
-                );
 
             $nextReminderAt = $lockedDossier->reminder_interval_days === null
                 ? null
@@ -105,7 +73,7 @@ final readonly class SendDossierReminderAction
                 AuditEvent::DossierReminderQueued,
                 $lockedDossier,
                 [
-                    'grant_id' => $result['grant']->id,
+                    'grant_id' => $grantId,
                     'source' => $source->value,
                     'channel' => 'mail',
                     'next_reminder_at' => $nextReminderAt?->toIso8601String(),

@@ -8,10 +8,10 @@ use App\Accounts\Models\User;
 use App\Dossiers\Actions\Builder\AcquireDossierBuilderLockAction;
 use App\Dossiers\Data\DossierBuilderData;
 use App\Dossiers\Data\DossierBuilderLockData;
-use App\Dossiers\Data\QuestionnaireTemplateOptionData;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Questionnaires\Data\QuestionnaireTemplateOptionData;
 use App\Questionnaires\Queries\FetchQuestionnaireTemplateOptionsQuery;
 use Illuminate\Http\Request;
 

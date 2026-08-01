@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Questionnaires\Data;
 
 /**
  * Lean template item for local apply in the dossier builder draft.

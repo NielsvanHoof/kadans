@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Questionnaires\Queries;
 
-use App\Dossiers\Data\QuestionnaireTemplateItemOptionData;
-use App\Dossiers\Data\QuestionnaireTemplateOptionData;
+use App\Questionnaires\Data\QuestionnaireTemplateItemOptionData;
+use App\Questionnaires\Data\QuestionnaireTemplateOptionData;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 
 use function count;

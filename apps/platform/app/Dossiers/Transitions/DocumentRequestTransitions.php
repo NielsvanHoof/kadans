@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Dossiers\Transitions;
 
 use App\Accounts\Models\User;
-use App\ClientPortal\Enums\SubmissionContext;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;

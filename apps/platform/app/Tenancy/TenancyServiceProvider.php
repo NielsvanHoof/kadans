@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy;
 
 use App\Accounts\Models\User;
-use App\Platform\Support\SupportSession;
+use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
@@ -67,7 +67,7 @@ final class TenancyServiceProvider extends ServiceProvider
                 return null;
             }
 
-            $supportSession = resolve(SupportSession::class);
+            $supportSession = resolve(SupportSessionState::class);
 
             // Support session takes priority over firm membership (read-only overlay).
             if (! $supportSession->isActiveFor($tenant)) {

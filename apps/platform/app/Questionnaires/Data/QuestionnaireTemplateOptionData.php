@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Questionnaires\Data;
 
 /**
  * Apply-template option on the dossier builder (includes items for local draft apply).
