@@ -14,21 +14,18 @@ use App\Dossiers\Actions\CreateDossierAction;
 use App\Dossiers\Actions\DeleteDossierAction;
 use App\Dossiers\Actions\RestoreDossierAction;
 use App\Dossiers\Actions\UpdateDossierAction;
-use App\Dossiers\Data\QuestionnaireTemplateOptionData;
-use App\Dossiers\Enums\DocumentRequestPermission;
-use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Http\Requests\BulkArchiveDossiersRequest;
 use App\Dossiers\Http\Requests\BulkRestoreDossiersRequest;
 use App\Dossiers\Http\Requests\StoreDossierRequest;
 use App\Dossiers\Http\Requests\UpdateDossierRequest;
-use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\FetchArchivedDossiersQuery;
+use App\Dossiers\Queries\FetchDossierBuilderQuery;
 use App\Dossiers\Queries\FetchDossierCreateQuery;
 use App\Dossiers\Queries\FetchDossierEditQuery;
 use App\Dossiers\Queries\FetchDossierIndexQuery;
+use App\Dossiers\Queries\FetchDossierReviewQuery;
 use App\Dossiers\Queries\FetchDossierShowQuery;
-use App\Questionnaires\Queries\FetchQuestionnaireTemplateOptionsQuery;
 use App\Shared\Data\PersonOptionData;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
@@ -39,8 +36,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Inertia\Support\Header;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-
-use function is_string;
 
 final class DossierController extends Controller
 {
@@ -106,8 +101,7 @@ final class DossierController extends Controller
         Tenant $tenant,
         Request $request,
         Dossier $dossier,
-        FetchDossierShowQuery $getDossierShowData,
-        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
+        FetchDossierShowQuery $fetchDossierShow,
         LogAuditActivityAction $logAuditActivity,
     ): Response {
         $this->authorize('view', $dossier);
@@ -119,15 +113,7 @@ final class DossierController extends Controller
             );
         }
 
-        return Inertia::render(
-            'dossiers/show',
-            $this->dossierPageProps(
-                $request,
-                $dossier,
-                $getDossierShowData,
-                $fetchQuestionnaireTemplateOptions,
-            ),
-        );
+        return Inertia::render('dossiers/show', $fetchDossierShow->handle($request, $dossier));
     }
 
     /**
@@ -137,20 +123,11 @@ final class DossierController extends Controller
         Tenant $tenant,
         Request $request,
         Dossier $dossier,
-        FetchDossierShowQuery $getDossierShowData,
-        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
+        FetchDossierBuilderQuery $fetchDossierBuilder,
     ): Response {
         $this->authorize('view', $dossier);
 
-        return Inertia::render(
-            'dossiers/builder',
-            $this->dossierPageProps(
-                $request,
-                $dossier,
-                $getDossierShowData,
-                $fetchQuestionnaireTemplateOptions,
-            ),
-        );
+        return Inertia::render('dossiers/builder', $fetchDossierBuilder->handle($request, $dossier));
     }
 
     /**
@@ -160,19 +137,11 @@ final class DossierController extends Controller
         Tenant $tenant,
         Request $request,
         Dossier $dossier,
-        FetchDossierShowQuery $getDossierShowData,
+        FetchDossierReviewQuery $fetchDossierReview,
     ): Response {
         $this->authorize('view', $dossier);
 
-        return Inertia::render(
-            'dossiers/review',
-            $this->dossierPageProps(
-                $request,
-                $dossier,
-                $getDossierShowData,
-                includeTemplates: false,
-            ),
-        );
+        return Inertia::render('dossiers/review', $fetchDossierReview->handle($request, $dossier));
     }
 
     public function edit(
@@ -308,59 +277,9 @@ final class DossierController extends Controller
         );
     }
 
-    /**
-     * Shared Inertia props for overview, builder, and review surfaces.
-     *
-     * @return array<string, mixed>
-     */
-    private function dossierPageProps(
-        Request $request,
-        Dossier $dossier,
-        FetchDossierShowQuery $getDossierShowData,
-        ?FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions = null,
-        bool $includeTemplates = true,
-    ): array {
-        $props = [
-            'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
-            'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
-            'can_manage' => $request->user()?->can('create', DocumentRequest::class) ?? false,
-            'can_edit' => $request->user()?->can('update', $dossier) ?? false,
-            'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
-            'can_review' => $request->user()?->hasTenantPermission(DocumentRequestPermission::Review) ?? false,
-            'can_download' => $request->user()?->hasTenantPermission(UploadedDocumentPermission::Download) ?? false,
-            'dossier' => fn (): array => $getDossierShowData->handle(
-                $dossier,
-                $request->user()?->can('export', $dossier) ?? false,
-            )->toArray(),
-        ];
-
-        if ($includeTemplates && $fetchQuestionnaireTemplateOptions instanceof FetchQuestionnaireTemplateOptionsQuery) {
-            $props['templates'] = fn (): array => array_map(
-                static fn (QuestionnaireTemplateOptionData $template): array => $template->toArray(),
-                $fetchQuestionnaireTemplateOptions->handle(),
-            );
-        }
-
-        return $props;
-    }
-
     private function isDossierPartialReload(Request $request, string $component): bool
     {
         return $request->headers->has(Header::INERTIA)
             && $request->header(Header::PARTIAL_COMPONENT) === $component;
-    }
-
-    private function flashedAccessGrantToken(Request $request): ?string
-    {
-        $token = $request->session()->pull('access_grant_token');
-
-        return is_string($token) && $token !== '' ? $token : null;
-    }
-
-    private function flashedAccessGrantPortalUrl(Request $request): ?string
-    {
-        $url = $request->session()->pull('access_grant_portal_url');
-
-        return is_string($url) && $url !== '' ? $url : null;
     }
 }

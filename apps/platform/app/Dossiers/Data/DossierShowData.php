@@ -7,7 +7,7 @@ namespace App\Dossiers\Data;
 use App\Shared\Data\PersonOptionData;
 
 /**
- * Dossier detail object on the show page (without the templates list).
+ * Dossier detail object on the overview (show) page.
  */
 final readonly class DossierShowData
 {

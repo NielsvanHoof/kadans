@@ -14,7 +14,7 @@ import type {
 import { DossierPermissionsProvider } from '@/features/dossiers/permissions/dossier-permissions-context';
 import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
-import type { Dossier } from '@/features/dossiers/types';
+import type { DossierReview } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useFetchOnPipelineUpdated } from '@/hooks/use-fetch-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
@@ -35,10 +35,7 @@ export default function ReviewDossier({
     can_review: canReview,
     can_download: canDownload,
 }: {
-    dossier: Dossier;
-    templates?: unknown[];
-    access_grant_token?: string | null;
-    access_grant_portal_url?: string | null;
+    dossier: DossierReview;
     can_manage: boolean;
     can_edit: boolean;
     can_send_reminder: boolean;

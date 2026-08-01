@@ -6,33 +6,52 @@ namespace App\Dossiers\Queries;
 
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
-use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
-use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Data\DossierAccessGrantData;
 use App\Dossiers\Data\DossierClientSummaryData;
 use App\Dossiers\Data\DossierExportData;
-use App\Dossiers\Data\DossierReviewSummaryData;
 use App\Dossiers\Data\DossierShowData;
-use App\Dossiers\Data\StaffDocumentRequestData;
-use App\Dossiers\Data\StaffUploadedDocumentData;
-use App\Dossiers\Enums\DocumentRequestStatus;
-use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Enums\DocumentRequestPermission;
+use App\Dossiers\Enums\UploadedDocumentPermission;
+use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
-use App\Dossiers\Models\UploadedDocument;
 use App\Shared\Data\PersonOptionData;
+use Illuminate\Http\Request;
 use RuntimeException;
 
-use function in_array;
+use function is_string;
 
+/**
+ * Full Inertia prop bag for the dossier overview (show) page.
+ */
 final readonly class FetchDossierShowQuery
 {
     public function __construct(
-        private DetermineDocumentRequestVisibilityAction $determineVisibility,
-        private ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+        private MapStaffDocumentRequestRowsQuery $mapStaffDocumentRequestRowsQuery,
     ) {}
 
-    public function handle(Dossier $dossier, bool $canDownload = false): DossierShowData
+    /**
+     * @return array<string, mixed>
+     */
+    public function handle(Request $request, Dossier $dossier): array
+    {
+        return [
+            'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
+            'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
+            'can_manage' => $request->user()?->can('create', DocumentRequest::class) ?? false,
+            'can_edit' => $request->user()?->can('update', $dossier) ?? false,
+            'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
+            'can_review' => $request->user()?->hasTenantPermission(DocumentRequestPermission::Review) ?? false,
+            'can_download' => $request->user()?->hasTenantPermission(UploadedDocumentPermission::Download) ?? false,
+            // Lazy so partial reloads skip the full graph when only flash/cans change.
+            'dossier' => fn (): array => $this->dossierPayload(
+                $dossier,
+                $request->user()?->can('export', $dossier) ?? false,
+            )->toArray(),
+        ];
+    }
+
+    private function dossierPayload(Dossier $dossier, bool $canDownload): DossierShowData
     {
         $dossier->load([
             'client:id,name,email',
@@ -46,58 +65,12 @@ final readonly class FetchDossierShowQuery
         ]);
 
         $client = $this->resolveClient($dossier);
-        $documentRequests = $dossier->documentRequests;
-        // Progress / completion only count applicable (visible + required-or-answered) fields.
-        $applicableDocumentRequests = $this->resolveApplicableDocumentRequests->handle(
-            $documentRequests,
+        $mapped = $this->mapStaffDocumentRequestRowsQuery->handle(
+            $dossier->status,
+            $dossier->documentRequests,
         );
-        $applicableIds = $applicableDocumentRequests
-            ->map(fn ($documentRequest): int => $documentRequest->id)
-            ->all();
-        $totalRequestCount = $applicableDocumentRequests->count();
-        $acceptedRequestCount = $applicableDocumentRequests
-            ->where('status', DocumentRequestStatus::Accepted)
-            ->count();
-        $outstandingClientItemCount = $applicableDocumentRequests
-            ->whereIn('status', [
-                DocumentRequestStatus::Pending,
-                DocumentRequestStatus::Rejected,
-            ])
-            ->count();
 
-        /** @var list<StaffDocumentRequestData> $documentRequestRows */
-        $documentRequestRows = [];
-
-        foreach ($dossier->documentRequests as $documentRequest) {
-            $uploaded = $documentRequest->uploadedDocument;
-            $reviewer = $documentRequest->reviewedBy;
-
-            $documentRequestRows[] = new StaffDocumentRequestData(
-                id: $documentRequest->id,
-                type: $documentRequest->type->value,
-                fieldKey: $documentRequest->field_key,
-                title: $documentRequest->title,
-                instructions: $documentRequest->instructions,
-                configuration: $documentRequest->configuration,
-                status: $documentRequest->status->value,
-                answerText: $documentRequest->answer_text,
-                answerBoolean: $documentRequest->answer_boolean,
-                answerOptionIds: $documentRequest->answer_option_ids,
-                answeredAt: $documentRequest->answered_at?->toIso8601String(),
-                reviewedAt: $documentRequest->reviewed_at?->toIso8601String(),
-                reviewedByName: $reviewer instanceof User ? $reviewer->name : null,
-                rejectionReason: $documentRequest->rejection_reason,
-                sortOrder: $documentRequest->sort_order,
-                isVisible: $this->determineVisibility->handle(
-                    $documentRequest,
-                    $documentRequests,
-                ),
-                isApplicable: in_array($documentRequest->id, $applicableIds, true),
-                uploadedDocument: $uploaded instanceof UploadedDocument
-                    ? StaffUploadedDocumentData::fromModel($uploaded)
-                    : null,
-            );
-        }
+        $responsibleUser = $dossier->responsibleUser;
 
         /** @var list<DossierAccessGrantData> $accessGrants */
         $accessGrants = [];
@@ -111,8 +84,6 @@ final readonly class FetchDossierShowQuery
                 isValid: $grant->isValid(),
             );
         }
-
-        $responsibleUser = $dossier->responsibleUser;
 
         /** @var list<DossierExportData> $exports */
         $exports = $dossier->exports
@@ -136,22 +107,14 @@ final readonly class FetchDossierShowQuery
             nextReminderAt: $dossier->next_reminder_at?->toIso8601String(),
             lastClientMessageSentAt: $dossier->last_client_message_sent_at?->toIso8601String(),
             lastClientOpenedAt: $dossier->last_client_opened_at?->toIso8601String(),
-            hasOutstandingClientItems: $outstandingClientItemCount > 0,
-            readyToComplete: $dossier->status !== DossierStatus::Completed
-                && $totalRequestCount > 0
-                && $acceptedRequestCount === $totalRequestCount,
-            reviewSummary: new DossierReviewSummaryData(
-                total: $totalRequestCount,
-                pending: $applicableDocumentRequests->where('status', DocumentRequestStatus::Pending)->count(),
-                submitted: $applicableDocumentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
-                accepted: $acceptedRequestCount,
-                rejected: $applicableDocumentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
-            ),
+            hasOutstandingClientItems: $mapped->hasOutstandingClientItems,
+            readyToComplete: $mapped->readyToComplete,
+            reviewSummary: $mapped->reviewSummary,
             client: new DossierClientSummaryData(
                 name: $client->name,
                 email: $client->email,
             ),
-            documentRequests: $documentRequestRows,
+            documentRequests: $mapped->rows,
             accessGrants: $accessGrants,
             exports: $exports,
         );
@@ -164,5 +127,19 @@ final readonly class FetchDossierShowQuery
         throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
         return $client;
+    }
+
+    private function flashedAccessGrantToken(Request $request): ?string
+    {
+        $token = $request->session()->pull('access_grant_token');
+
+        return is_string($token) && $token !== '' ? $token : null;
+    }
+
+    private function flashedAccessGrantPortalUrl(Request $request): ?string
+    {
+        $url = $request->session()->pull('access_grant_portal_url');
+
+        return is_string($url) && $url !== '' ? $url : null;
     }
 }

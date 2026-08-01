@@ -81,7 +81,8 @@ test('dossier overview page renders props for each workflow status', function (D
             ->has('dossier.document_requests', 1)
             ->has('dossier.review_summary')
             ->has('dossier.access_grants')
-            ->has('templates')
+            ->has('dossier.exports')
+            ->missing('templates')
             ->has('can_manage')
             ->has('can_edit')
             ->has('can_review')
@@ -93,7 +94,7 @@ test('dossier overview page renders props for each workflow status', function (D
     DossierStatus::Completed,
 ]);
 
-test('dossier builder page renders shared dossier props', function (): void {
+test('dossier builder page renders lean builder props', function (): void {
     [
         'owner' => $owner,
         'tenant' => $tenant,
@@ -107,10 +108,17 @@ test('dossier builder page renders shared dossier props', function (): void {
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/builder')
             ->where('dossier.id', $dossier->id)
+            ->where('dossier.title', $dossier->title)
+            ->where('dossier.status', DossierStatus::Draft->value)
             ->has('dossier.document_requests', 1)
+            ->missing('dossier.access_grants')
+            ->missing('dossier.exports')
+            ->missing('dossier.review_summary')
             ->has('templates')
             ->where('can_manage', true)
-            ->has('can_edit'));
+            ->missing('can_edit')
+            ->missing('can_review')
+            ->missing('can_download'));
 });
 
 test('builder mutations redirect back to the builder instead of the overview', function (): void {
@@ -230,7 +238,7 @@ test('builder island reorder still returns no content for json clients', functio
         ->all())->toBe([$second->id, $first->id]);
 });
 
-test('dossier review page renders shared dossier props', function (): void {
+test('dossier review page renders lean review props', function (): void {
     [
         'owner' => $owner,
         'tenant' => $tenant,
@@ -244,9 +252,17 @@ test('dossier review page renders shared dossier props', function (): void {
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/review')
             ->where('dossier.id', $dossier->id)
+            ->has('dossier.client')
+            ->has('dossier.document_requests', 1)
             ->has('dossier.review_summary')
+            ->has('dossier.ready_to_complete')
+            ->missing('dossier.access_grants')
+            ->missing('dossier.exports')
+            ->missing('templates')
             ->where('can_review', true)
-            ->has('can_download'));
+            ->has('can_download')
+            ->has('can_manage')
+            ->has('can_edit'));
 });
 
 test('empty dossier overview exposes zero form items for invite gating', function (): void {
@@ -264,7 +280,8 @@ test('empty dossier overview exposes zero form items for invite gating', functio
             ->component('dossiers/show')
             ->has('dossier.document_requests', 0)
             ->where('dossier.review_summary.total', 0)
-            ->where('dossier.ready_to_complete', false));
+            ->where('dossier.ready_to_complete', false)
+            ->missing('templates'));
 });
 
 test('read-only member can view overview builder and review with restricted action flags', function (): void {
@@ -275,17 +292,35 @@ test('read-only member can view overview builder and review with restricted acti
 
     $reader = workspaceMember($tenant, Role::ReadOnly);
 
-    foreach (['show', 'builder', 'review'] as $action) {
-        $this->actingAs($reader)
-            ->withSession(['active_tenant_id' => $tenant->id])
-            ->get(workspaceRoute("workspaces.dossiers.{$action}", $tenant, ['dossier' => $dossier]))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page): Assert => $page
-                ->component("dossiers/{$action}")
-                ->where('can_manage', false)
-                ->where('can_edit', false)
-                ->where('can_review', false));
-    }
+    $this->actingAs($reader)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/show')
+            ->where('can_manage', false)
+            ->where('can_edit', false)
+            ->where('can_review', false));
+
+    $this->actingAs($reader)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/builder')
+            ->where('can_manage', false)
+            ->missing('can_edit')
+            ->missing('can_review'));
+
+    $this->actingAs($reader)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/review')
+            ->where('can_manage', false)
+            ->where('can_edit', false)
+            ->where('can_review', false));
 });
 
 test('reviewer can view dossier surfaces with review permissions only', function (): void {
@@ -305,5 +340,6 @@ test('reviewer can view dossier surfaces with review permissions only', function
             ->where('can_manage', false)
             ->where('can_edit', false)
             ->where('can_review', true)
-            ->has('can_download'));
+            ->has('can_download')
+            ->missing('templates'));
 });

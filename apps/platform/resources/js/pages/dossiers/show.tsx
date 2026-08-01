@@ -22,7 +22,6 @@ export default function ShowDossier({
     can_download: canDownload,
 }: {
     dossier: Dossier;
-    templates?: unknown[];
     access_grant_token?: string | null;
     access_grant_portal_url?: string | null;
     can_manage: boolean;

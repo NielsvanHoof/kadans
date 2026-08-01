@@ -22,12 +22,16 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup } from '@/components/ui/field';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
-import type { Dossier } from '@/features/dossiers/types';
+import type { DossierWorkflowProgress } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { inlineActionOptions } from '@/lib/inline-action-options';
 
-export default function DossierWorkflowCard({ dossier }: { dossier: Dossier }) {
+export default function DossierWorkflowCard({
+    dossier,
+}: {
+    dossier: DossierWorkflowProgress;
+}) {
     const { t } = useTranslation();
     const { canReview } = useDossierCapabilities();
     const summary = dossier.review_summary;

@@ -8,7 +8,16 @@ import type { AccessGrant } from '../portal/types';
 export type DossierStatus =
     'draft' | 'awaiting_client' | 'in_review' | 'completed';
 
-/** Full dossier payload for the staff show page. */
+/** Review progress counts shared by overview and review surfaces. */
+export type DossierReviewSummary = {
+    total: number;
+    pending: number;
+    submitted: number;
+    accepted: number;
+    rejected: number;
+};
+
+/** Full dossier payload for the staff overview (show) page. */
 export type Dossier = {
     id: number;
     title: string;
@@ -22,13 +31,7 @@ export type Dossier = {
     last_client_opened_at: string | null;
     has_outstanding_client_items: boolean;
     ready_to_complete: boolean;
-    review_summary: {
-        total: number;
-        pending: number;
-        submitted: number;
-        accepted: number;
-        rejected: number;
-    };
+    review_summary: DossierReviewSummary;
     client: {
         name: string;
         email: string;
@@ -37,6 +40,30 @@ export type Dossier = {
     access_grants: AccessGrant[];
     exports: DossierExport[];
 };
+
+/** Lean dossier payload for the questionnaire builder page. */
+export type DossierBuilder = Pick<
+    Dossier,
+    'id' | 'title' | 'status' | 'document_requests'
+>;
+
+/** Lean dossier payload for the review queue page. */
+export type DossierReview = Pick<
+    Dossier,
+    | 'id'
+    | 'title'
+    | 'status'
+    | 'client'
+    | 'document_requests'
+    | 'review_summary'
+    | 'ready_to_complete'
+>;
+
+/** Fields needed by the review progress / complete card. */
+export type DossierWorkflowProgress = Pick<
+    Dossier,
+    'id' | 'status' | 'review_summary' | 'ready_to_complete'
+>;
 
 export type DossierExport = {
     id: number;
