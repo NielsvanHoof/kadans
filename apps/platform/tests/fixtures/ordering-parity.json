@@ -1,0 +1,53 @@
+{
+    "_comment": "Shared cases for DocumentRequest::isOrderedBefore (PHP) and isOrderedBefore (TS). Both implementations are asserted against this same table so the mirror cannot drift. See tests/Unit/DocumentRequestOrderingTest.php and resources/js/features/document-requests/ordering.test.ts.",
+    "cases": [
+        {
+            "name": "lower sort_order comes first",
+            "field": { "id": 9, "sort_order": 0 },
+            "other": { "id": 1, "sort_order": 1 },
+            "expected": true
+        },
+        {
+            "name": "higher sort_order does not come first",
+            "field": { "id": 1, "sort_order": 5 },
+            "other": { "id": 9, "sort_order": 4 },
+            "expected": false
+        },
+        {
+            "name": "tied sort_order falls back to a lower id",
+            "field": { "id": 3, "sort_order": 2 },
+            "other": { "id": 4, "sort_order": 2 },
+            "expected": true
+        },
+        {
+            "name": "tied sort_order with a higher id is not first",
+            "field": { "id": 7, "sort_order": 2 },
+            "other": { "id": 4, "sort_order": 2 },
+            "expected": false
+        },
+        {
+            "name": "a field never precedes itself",
+            "field": { "id": 5, "sort_order": 3 },
+            "other": { "id": 5, "sort_order": 3 },
+            "expected": false
+        },
+        {
+            "name": "zero sort_order is honoured, not treated as absent",
+            "field": { "id": 2, "sort_order": 0 },
+            "other": { "id": 1, "sort_order": 0 },
+            "expected": false
+        },
+        {
+            "name": "negative sort_order sorts ahead of zero",
+            "field": { "id": 8, "sort_order": -1 },
+            "other": { "id": 1, "sort_order": 0 },
+            "expected": true
+        },
+        {
+            "name": "large gaps in sort_order compare numerically, not as strings",
+            "field": { "id": 1, "sort_order": 9 },
+            "other": { "id": 2, "sort_order": 10 },
+            "expected": true
+        }
+    ]
+}

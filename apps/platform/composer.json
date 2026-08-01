@@ -96,6 +96,7 @@
             "npm run format:check",
             "npm run types:check",
             "npm run build",
+            "npm run test",
             "@rector:check",
             "@test"
         ],

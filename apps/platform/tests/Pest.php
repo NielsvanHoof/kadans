@@ -40,6 +40,11 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Unit/Policies', 'Unit/Queries');
 
+// Model unit tests need the Laravel app for Eloquent, but not the database.
+// The rest of Unit/ stays pure PHP (file inspection, mappers, config checks).
+pest()->extend(TestCase::class)
+    ->in('Unit/Models');
+
 pest()->presets()->custom('qompose', fn (): array => [
     expect('App')
         ->toUseStrictTypes(),
