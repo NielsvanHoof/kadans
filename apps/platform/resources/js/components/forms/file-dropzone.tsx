@@ -1,7 +1,7 @@
 import { FileIcon, Upload, X } from 'lucide-react';
 import type { DragEvent } from 'react';
 import { useCallback, useId, useRef, useState } from 'react';
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Progress } from '@/components/ui/progress';

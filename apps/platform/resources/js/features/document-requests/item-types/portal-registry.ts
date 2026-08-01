@@ -1,5 +1,4 @@
 import type { ComponentType } from 'react';
-import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import {
     PortalBooleanRequestContent,
     PortalChoiceRequestContent,
@@ -7,7 +6,8 @@ import {
     PortalFileRequestContent,
     PortalMultiSelectRequestContent,
     PortalTextRequestContent,
-} from '@/features/portal/document-requests/portal-document-request-type-content';
+} from '@/features/document-requests/portal/portal-document-request-type-content';
+import type { QuestionnaireItemType } from '@/features/document-requests/types';
 
 /**
  * Portal-only item-type content map.

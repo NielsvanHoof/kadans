@@ -6,12 +6,12 @@ import { AppSidebar } from '@/components/app-shell/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-shell/app-sidebar-header';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/features/notifications/notification-bell';
+import { WorkspaceNotifications } from '@/features/notifications/use-workspace-notifications';
 import SupportSessionBanner from '@/features/platform/support-session-banner';
 import AppearanceMenu from '@/features/settings/appearance-menu';
 import LocaleMenu from '@/features/settings/locale-menu';
 import { useInertiaNavigationEffects } from '@/hooks/use-inertia-navigation-effects';
 import { useTranslation } from '@/hooks/use-translation';
-import { WorkspaceNotifications } from '@/hooks/use-workspace-notifications';
 import type { AppLayoutProps } from '@/types';
 
 /**

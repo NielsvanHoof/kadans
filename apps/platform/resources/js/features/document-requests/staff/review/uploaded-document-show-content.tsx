@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
-import ErrorState from '@/components/error-state';
-import Heading from '@/components/heading';
+import ErrorState from '@/components/primitives/error-state';
+import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DocumentExtractionView from '@/features/document-requests/staff/review/document-extraction-view';
@@ -10,8 +10,8 @@ import DocumentPreviewPanel, {
     documentPreviewKind,
 } from '@/features/document-requests/staff/review/document-preview-panel';
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
+import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useFetchOnPipelineUpdated } from '@/hooks/use-fetch-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';

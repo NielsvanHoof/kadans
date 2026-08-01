@@ -1,6 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import StatusMessage from '@/components/status-message';
-import TextLink from '@/components/text-link';
+import StatusMessage from '@/components/primitives/status-message';
+import TextLink from '@/components/primitives/text-link';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';

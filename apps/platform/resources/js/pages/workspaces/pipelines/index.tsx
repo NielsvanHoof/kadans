@@ -1,13 +1,13 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import IndexPagination from '@/components/index-query/index-pagination';
-import IndexQueryResults from '@/components/index-query/index-query-results';
-import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import Heading from '@/components/primitives/heading';
+import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
 import PipelinesListCard from '@/features/pipelines/list/pipelines-list-card';
 import { pipelineIsInFlight } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineIndexRow } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as pipelineIndex } from '@/routes/workspaces/pipelines';
 import type { IndexQueryConfig, Paginated } from '@/types/pagination';

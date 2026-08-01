@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import FirmPickerGrid from '@/features/workspaces/firm-picker-grid';
 import type { Firm } from '@/features/workspaces/types';
 import { useTranslation } from '@/hooks/use-translation';

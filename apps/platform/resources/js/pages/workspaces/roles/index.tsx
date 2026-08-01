@@ -1,5 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import { Button } from '@/components/ui/button';
 import RoleMatrixCard from '@/features/roles/role-matrix-card';
 import RolesOverviewSummaryCard from '@/features/roles/roles-overview-summary-card';

@@ -8,38 +8,78 @@ alwaysApply: false
 
 ## Where files go
 
-- `resources/js/features/<domain>/` — all domain code (components + a co-located `types.ts`). Domains: `dossiers`, `document-requests`, `portal`, `questionnaires`, `clients`, `invitations`, `media`, `dashboard`, `workspaces`, `members`, `audit`, `notifications`, `security`, `settings`.
-- `resources/js/components/` — only domain-agnostic shared code: `ui/` (shadcn), `app-shell/` (chrome: nav, sidebar, breadcrumbs), `sortable/`, and generic primitives (`heading`, `input-error`, `text-link`, `alert-error`, `password-input`).
+- `resources/js/features/<domain>/` — all domain code (components, domain hooks under `hooks/`, and a co-located `types.ts`). Domains: `dossiers`, `document-requests`, `portal`, `questionnaires`, `clients`, `invitations`, `media`, `dashboard`, `workspaces`, `members`, `roles`, `audit`, `notifications`, `pipelines`, `security`, `settings`, `platform`.
+- `resources/js/components/` — domain-agnostic shared code only, grouped by role:
+  - `ui/` — shadcn primitives (vendored; Biome- and Prettier-ignored)
+  - `primitives/` — single-purpose, no composition: `heading`, `text-link`, `input-error`, `alert-error`, `or-divider`, `status-message`, `empty-state`, `error-state`, `segmented-control`, `password-input`, `settings-section`
+  - `data/` — data display: `data-table`, `data-table-bulk-toolbar`, `index-list`, `index-query/`, `sortable/`
+  - `forms/` — inputs beyond `ui/`: `file-dropzone`, `date-picker`
+  - `feedback/` — `confirm-destroy-dialog`
+  - `brand/` — brand assets: `brand-hero-panel`, `brand-shield-watermark`, `brand-shields.ts`
+  - `app-shell/` — app chrome: nav, sidebar, breadcrumbs
+- `resources/js/hooks/` — **app-wide only**. A hook used by one feature belongs in that feature (`features/<domain>/hooks/` or beside its component). Current residents: `use-appearance`, `use-current-url`, `use-current-workspace`, `use-flash-toast`, `use-index-query`, `use-inertia-navigation-effects`, `use-initials`, `use-mobile`, `use-mobile-navigation`, `use-permissions`, `use-translation`.
+- `resources/js/lib/` — generic helpers only, no domain knowledge: `utils`, `format-bytes`, `format-date-time`, `reorder`, `set-client-cookie`, `ulid`, `inline-action-options`, `file-icon-for-filename`.
+- `resources/js/layouts/` — one folder per audience (`app/`, `auth/`, `onboarding/`, `portal/`, `settings/`, `dossiers/`). No loose files at the root, and no file named just `layout`.
 - `resources/js/pages/` — thin Inertia entry points only. Pages compose feature components; they hold no reusable logic.
-- `resources/js/types/` — only cross-cutting types (`auth`, `navigation`, `ui`). Domain types live in `features/<domain>/types.ts` and are imported directly, never re-exported through `@/types`.
+- `resources/js/types/` — cross-cutting types only (`auth`, `navigation`, `ui`, `pagination`) plus:
+  - `types/generated/` — **generated, do not edit**: `app.d.ts` (from PHP Data objects + enums) and `tenant-permissions.ts`
+  - `types/laravel.d.ts` — hand-written globals for framework classes the generated file references
+
+## Payload types are generated, not written
+
+Domain payload shapes come from the PHP `*Data` objects via
+`php artisan typescript:transform` (part of `npm run types:check`). A
+`features/<domain>/types.ts` should mostly be **aliases**:
+
+```ts
+export type Dossier = App.Dossiers.Data.DossierShowData;
+export type DossierStatus = App.Dossiers.Enums.DossierStatus;
+```
+
+Add a payload field in the PHP DTO, never here. CI fails if the committed
+generated output is stale.
+
+Only refine a generated type when PHP genuinely cannot express the shape — today
+that is `configuration` on document requests and template items, a free-form JSON
+column. Use `Omit<Generated, 'k'> & { k: Refined }` so every other field still
+flows from PHP:
+
+```ts
+export type DocumentRequest = Omit<
+    App.Dossiers.Data.StaffDocumentRequestData,
+    'configuration'
+> & { configuration: QuestionnaireItemConfiguration | null };
+```
 
 ## When to nest inside a feature
 
 - **Feature root** holds `types.ts`, cross-cutting wiring (e.g. registries), and shared helpers used by multiple subfolders.
-- **Nest by audience** when code must not import across sides (`staff/` vs `portal/` — already enforced in Biome for document-requests).
+- **Nest by audience** when code must not import across sides (`staff/` vs `portal/` under `document-requests` — enforced in Biome).
 - **Nest by concern** when one audience mixes several topics (status vs stage vs show composition).
+- **Put domain hooks in `hooks/`** once a feature has more than one.
 - **Stay flat** when a feature has few files that already read as one cluster (~≤5 components, one concern). Examples: `audit`, `dashboard`, `media`, `members`, `notifications`, `portal`, `settings`, `workspaces`.
-- **No barrel `index.ts` files** — import concrete paths (e.g. `@/features/dossiers/status/dossier-status-badge`).
-- **Keep descriptive filenames** inside subfolders (same style as `document-requests/staff/review/document-request-review.tsx`).
+- **No barrel `index.ts` files** — import concrete paths.
+- **Keep descriptive filenames** inside subfolders.
 - **Do not move `types.ts`** off the feature root.
 
 Current nested layouts:
 
-- `dossiers/` — `permissions/`, `status/`, `stage/`, `show/`, `list/` (includes restore), `create/`, `edit/`, `follow-up/`
-- `document-requests/` — `status/`, `staff/builder/`, `staff/review/`, `portal/` (registry + shared upload form stay at root)
-- `clients/` — `list/` (index + archive), `manage/` (create/edit/archive button)
-- `invitations/` — invitation accept/register UI (`types.ts` at root)
-- `security/` — `passkeys/`, `two-factor/` (`delete-user.tsx` stays at root)
+- `dossiers/` — `permissions/`, `status/`, `stage/`, `show/`, `list/`, `create/`, `edit/`, `follow-up/`, `hooks/`
+- `document-requests/` — `status/`, `controls/`, `item-types/`, `staff/builder/`, `staff/review/`, `portal/`
+- `pipelines/` — `list/`, `show/`, `status/`, `hooks/`
+- `clients/` — `list/`, `manage/`
 - `questionnaires/` — `list/`, `show/`
+- `security/` — `passkeys/`, `two-factor/`
 
 ## Import boundaries (enforced by Biome noRestrictedImports)
 
 - Nothing imports from `@/pages/**`.
 - `components/**` never imports from `@/features/**`.
-- `features/document-requests/staff/**` and `.../portal/**` never import each other. Only the registry at the feature root (`questionnaire-item-type-registry.tsx`) wires both sides.
+- `components/primitives/**` may only use `@/components/ui` and other primitives — not `data/`, `forms/`, `feedback/`, `brand/`, or `app-shell/`.
+- `features/document-requests/staff/**` and `.../portal/**` never import each other. Only the registries under `item-types/` wire both sides.
 - `pages/portal/**` (guest magic-link portal) never imports staff-side UI or `components/app-shell`.
 
-Cross-feature imports of another feature's `types.ts` are fine and intentional (e.g. `@/features/dossiers/types` from document-requests).
+Cross-feature imports of another feature's `types.ts` are fine and intentional.
 
 ## Document request types
 
@@ -51,4 +91,4 @@ New questionnaire item types are added by:
 4. Filling staff UI in `questionnaire-item-type-registry.tsx` (builder preview/icon, `StaffContent`, staff answer form).
 5. Filling portal UI in `item-types/portal-registry.ts`.
 
-Both registries use `satisfies Record<QuestionnaireItemType, …>` so TypeScript flags missing keys. Never branch on `documentRequest.type` inside cards or pages — resolve through these registries. Staff and portal UI modules must not import each other; the registries are the only wiring points.
+Both registries use `satisfies Record<QuestionnaireItemType, …>` so TypeScript flags missing keys. Never branch on `documentRequest.type` inside cards or pages — resolve through these registries.

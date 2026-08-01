@@ -1,7 +1,7 @@
 import { Form, Link } from '@inertiajs/react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
-import EmptyState from '@/components/empty-state';
-import InputError from '@/components/input-error';
+import EmptyState from '@/components/primitives/empty-state';
+import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';

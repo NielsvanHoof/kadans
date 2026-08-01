@@ -1,12 +1,12 @@
-import type { PortalDocumentRequest } from '@/features/document-requests/types';
-import { storesAnswerText } from '@/features/document-requests/types';
 import {
     PortalBooleanDocumentAnswer,
     PortalChoiceDocumentAnswer,
     PortalMultiSelectDocumentAnswer,
     PortalTextDocumentAnswer,
-} from '@/features/portal/document-requests/portal-document-answer';
-import PortalDocumentUpload from '@/features/portal/document-requests/portal-document-upload';
+} from '@/features/document-requests/portal/portal-document-answer';
+import PortalDocumentUpload from '@/features/document-requests/portal/portal-document-upload';
+import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { storesAnswerText } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';

@@ -1,7 +1,9 @@
 import { Form } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { useEffect, useRef, useState } from 'react';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup } from '@/components/ui/field';
 import {
@@ -9,8 +11,11 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import {
+    OTP_MAX_LENGTH,
+    OTP_SLOTS,
+} from '@/features/security/two-factor/use-two-factor-auth';
 import { useTranslation } from '@/hooks/use-translation';
-import { OTP_MAX_LENGTH, OTP_SLOTS } from '@/hooks/use-two-factor-auth';
 import { confirm } from '@/routes/two-factor';
 
 /**

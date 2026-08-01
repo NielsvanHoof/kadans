@@ -1,6 +1,6 @@
 import { Form, Link } from '@inertiajs/react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';

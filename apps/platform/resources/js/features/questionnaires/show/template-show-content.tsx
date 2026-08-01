@@ -1,8 +1,8 @@
 import { Form, Link } from '@inertiajs/react';
 import QuestionnaireTemplateController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateController';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import Heading from '@/components/primitives/heading';
+import InputError from '@/components/primitives/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

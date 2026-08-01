@@ -1,7 +1,7 @@
 import { Form, Head, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import Heading from '@/components/primitives/heading';
+import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Field,

@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { useMediaQuery } from 'usehooks-ts';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';

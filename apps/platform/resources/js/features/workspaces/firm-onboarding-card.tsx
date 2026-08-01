@@ -1,5 +1,5 @@
 import { Building2 } from 'lucide-react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import {
     Card,
     CardContent,

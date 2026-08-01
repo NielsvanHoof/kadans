@@ -1,6 +1,8 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
+import PasswordInput from '@/components/primitives/password-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';

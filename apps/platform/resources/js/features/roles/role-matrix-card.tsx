@@ -1,6 +1,6 @@
 import { Check, Minus } from 'lucide-react';
 import { Fragment } from 'react';
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,

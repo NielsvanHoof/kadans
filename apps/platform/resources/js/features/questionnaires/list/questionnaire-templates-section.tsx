@@ -1,8 +1,8 @@
 import { Form, Link } from '@inertiajs/react';
 import { CopyIcon } from 'lucide-react';
 import QuestionnaireTemplateController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateController';
-import EmptyState from '@/components/empty-state';
-import IndexPagination from '@/components/index-query/index-pagination';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

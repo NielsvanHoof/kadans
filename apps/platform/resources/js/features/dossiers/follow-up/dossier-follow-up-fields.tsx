@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import DatePicker from '@/components/date-picker';
-import InputError from '@/components/input-error';
+import DatePicker from '@/components/forms/date-picker';
+import InputError from '@/components/primitives/input-error';
 import {
     Field,
     FieldDescription,

@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight, CircleAlert, Clock3, ScanSearch } from 'lucide-react';
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import {
     Card,
     CardContent,

@@ -1,4 +1,4 @@
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';

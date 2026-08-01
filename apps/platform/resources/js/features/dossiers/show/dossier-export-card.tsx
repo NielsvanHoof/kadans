@@ -11,12 +11,12 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { Dossier, DossierExport } from '@/features/dossiers/types';
+import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import {
     pipelineStepLabel,
     pipelineStepStatusLabel,
 } from '@/features/pipelines/status/pipeline-status';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useFetchOnPipelineUpdated } from '@/hooks/use-fetch-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 

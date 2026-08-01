@@ -2,10 +2,10 @@ import { Form, useHttp } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useCallback } from 'react';
 import QuestionnaireTemplateItemController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateItemController';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import EmptyState from '@/components/empty-state';
-import InputError from '@/components/input-error';
-import SortableList from '@/components/sortable/sortable-list';
+import SortableList from '@/components/data/sortable/sortable-list';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import EmptyState from '@/components/primitives/empty-state';
+import InputError from '@/components/primitives/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

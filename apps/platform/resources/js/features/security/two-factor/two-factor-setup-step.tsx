@@ -1,6 +1,6 @@
 import { Check, Copy } from 'lucide-react';
 import { useCopyToClipboard } from 'usehooks-ts';
-import AlertError from '@/components/alert-error';
+import AlertError from '@/components/primitives/alert-error';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {

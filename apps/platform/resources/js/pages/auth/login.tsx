@@ -1,18 +1,20 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { AlertCircle } from 'lucide-react';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import StatusMessage from '@/components/status-message';
-import TextLink from '@/components/text-link';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
+import PasswordInput from '@/components/primitives/password-input';
+import StatusMessage from '@/components/primitives/status-message';
+import TextLink from '@/components/primitives/text-link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { isLoginThrottleMessage } from '@/features/security/is-login-throttle-message';
 import PasskeyVerify from '@/features/security/passkeys/passkey-verify';
 import { useTranslation } from '@/hooks/use-translation';
-import { isLoginThrottleMessage } from '@/lib/is-login-throttle-message';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 

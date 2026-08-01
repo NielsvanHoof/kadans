@@ -127,10 +127,31 @@ Migrations and factories stay under `database/` — not inside `app/{Domain}`.
 | Area | Role |
 |------|------|
 | `pages/` | Thin Inertia entry points — compose features |
-| `features/<domain>/` | Domain UI + co-located `types.ts` |
-| `components/` | Shared only (`ui/`, `app-shell/`, primitives) — never import from `features/` |
-| `types/` | Cross-cutting types only (`auth`, `navigation`, `ui`) |
+| `features/<domain>/` | Domain UI, domain hooks (`hooks/`), co-located `types.ts` |
+| `components/` | Shared only, grouped by role — never imports from `features/` |
+| `hooks/`, `lib/` | App-wide hooks and generic helpers only — nothing domain-aware |
+| `layouts/` | One folder per audience (`app/`, `auth/`, `onboarding/`, `portal/`, `settings/`, `dossiers/`) |
+| `types/` | Cross-cutting types (`auth`, `navigation`, `ui`, `pagination`) |
+| `types/generated/` | Generated from PHP Data objects + enums — do not edit |
 | `actions/`, `routes/` | Wayfinder-generated — do not edit |
+
+`components/` sub-groups, bottom layer first:
+
+| Group | Contents |
+|-------|----------|
+| `ui/` | shadcn primitives (vendored, lint-ignored) |
+| `primitives/` | single-purpose, no composition (`heading`, `input-error`, `empty-state`, …) |
+| `data/` | `data-table`, `index-list`, `index-query/`, `sortable/` |
+| `forms/` | `file-dropzone`, `date-picker` |
+| `feedback/` | `confirm-destroy-dialog` |
+| `brand/` | brand panels, watermark, shields |
+| `app-shell/` | nav, sidebar, breadcrumbs |
+
+**Payload types are generated.** Domain payload shapes come from the PHP `*Data`
+objects (`php artisan typescript:transform`, part of `npm run types:check`), so
+`features/<domain>/types.ts` is mostly aliases like
+`export type Dossier = App.Dossiers.Data.DossierShowData`. Add a field in the PHP
+DTO, not in TypeScript; CI fails if the committed generated output is stale.
 
 Rough backend → frontend map:
 
@@ -139,7 +160,7 @@ Rough backend → frontend map:
 | Dossiers | `pages/dossiers`, `features/dossiers`, `features/document-requests` |
 | Clients | `pages/clients`, `features/clients` |
 | Questionnaires | `pages/questionnaires`, `features/questionnaires` |
-| ClientPortal | `pages/portal`, `features/portal` (+ portal side of document-requests) |
+| ClientPortal | `pages/portal`, `features/portal` (shell) + `features/document-requests/portal` (renderers) |
 | Tenancy | firms, onboarding, members, invitations |
 | Reporting | dashboard / activity / media under workspaces |
 | DocumentProcessing | pipelines under workspaces |

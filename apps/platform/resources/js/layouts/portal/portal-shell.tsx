@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
-import BrandShieldWatermark from '@/components/brand-shield-watermark';
+import BrandShieldWatermark from '@/components/brand/brand-shield-watermark';
 import PortalLocaleSwitcher from '@/features/portal/portal-locale-switcher';
 import { useTranslation } from '@/hooks/use-translation';
 

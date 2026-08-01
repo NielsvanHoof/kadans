@@ -101,12 +101,24 @@ test('frontend business code is organized by feature domain', function (): void 
         'resources/js/features/questionnaires/show',
         'resources/js/features/security/passkeys',
         'resources/js/features/security/two-factor',
+        'resources/js/features/document-requests/portal',
         'resources/js/features/portal',
-        'resources/js/features/portal/document-requests',
         'resources/js/features/platform',
         'resources/js/pages/platform',
+        'resources/js/features/pipelines/hooks',
         'resources/js/components/app-shell',
+        'resources/js/components/brand',
+        'resources/js/components/data',
+        'resources/js/components/feedback',
+        'resources/js/components/forms',
+        'resources/js/components/primitives',
         'resources/js/components/ui',
+        'resources/js/layouts/app',
+        'resources/js/layouts/auth',
+        'resources/js/layouts/onboarding',
+        'resources/js/layouts/portal',
+        'resources/js/layouts/settings',
+        'resources/js/types/generated',
     ] as $directory) {
         expect($root.'/'.$directory)
             ->toBeDirectory();
@@ -142,7 +154,14 @@ test('frontend business code is organized by feature domain', function (): void 
         'resources/js/components/dossiers',
         'resources/js/components/questionnaires',
         'resources/js/components/portal',
-        'resources/js/features/document-requests/portal',
+        'resources/js/features/portal/document-requests',
+        'resources/js/components/heading.tsx',
+        'resources/js/components/data-table.tsx',
+        'resources/js/components/confirm-destroy-dialog.tsx',
+        'resources/js/layouts/app-layout.tsx',
+        'resources/js/layouts/settings/layout.tsx',
+        'resources/js/hooks/use-two-factor-auth.ts',
+        'resources/js/lib/brand-shields.ts',
         'resources/js/types/clients.ts',
         'resources/js/types/dossiers.ts',
         'resources/js/types/questionnaires.ts',
@@ -182,19 +201,19 @@ test('shared frontend patterns use the intended shadcn compositions', function (
     $root = dirname(__DIR__, 2);
 
     $confirmDialog = (string) file_get_contents(
-        $root.'/resources/js/components/confirm-destroy-dialog.tsx',
+        $root.'/resources/js/components/feedback/confirm-destroy-dialog.tsx',
     );
     $emptyState = (string) file_get_contents(
-        $root.'/resources/js/components/empty-state.tsx',
+        $root.'/resources/js/components/primitives/empty-state.tsx',
     );
     $notificationBell = (string) file_get_contents(
         $root.'/resources/js/features/notifications/notification-bell.tsx',
     );
     $passwordInput = (string) file_get_contents(
-        $root.'/resources/js/components/password-input.tsx',
+        $root.'/resources/js/components/primitives/password-input.tsx',
     );
     $inputError = (string) file_get_contents(
-        $root.'/resources/js/components/input-error.tsx',
+        $root.'/resources/js/components/primitives/input-error.tsx',
     );
 
     expect($confirmDialog)

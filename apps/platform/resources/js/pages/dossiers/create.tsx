@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import CreateDossierForm from '@/features/dossiers/create/create-dossier-form';
 import type {
     DossierClientOption,

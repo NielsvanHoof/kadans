@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import BrandShieldWatermark from '@/components/brand-shield-watermark';
+import BrandShieldWatermark from '@/components/brand/brand-shield-watermark';
 import { cn } from '@/lib/utils';
 
 type BrandHeroPanelProps = {

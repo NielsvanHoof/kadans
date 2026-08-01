@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { Archive, MoreHorizontal, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,

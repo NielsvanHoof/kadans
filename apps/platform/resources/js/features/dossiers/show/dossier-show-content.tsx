@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight, Mail, Plus } from 'lucide-react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import { Button } from '@/components/ui/button';
 import DossierFollowUpCard from '@/features/dossiers/follow-up/dossier-follow-up-card';
 import {

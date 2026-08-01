@@ -1,3 +1,11 @@
+/**
+ * Pipeline domain types. Payload shapes are generated from the PHP Data objects.
+ */
+
+/** Wire payload of the workspace `pipeline.updated` broadcast. */
+export type PipelineUpdatedPayload =
+    App.DocumentProcessing.Data.PipelineUpdatedPayloadData;
+
 export type PipelineStatus = App.DocumentProcessing.Enums.PipelineStatus;
 
 export type PipelineStepStatus =

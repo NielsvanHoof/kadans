@@ -1,7 +1,9 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
-import StatusMessage from '@/components/status-message';
-import TextLink from '@/components/text-link';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
+import StatusMessage from '@/components/primitives/status-message';
+import TextLink from '@/components/primitives/text-link';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';

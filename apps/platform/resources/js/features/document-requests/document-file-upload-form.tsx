@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import FileDropzone from '@/components/file-dropzone';
+import FileDropzone from '@/components/forms/file-dropzone';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup } from '@/components/ui/field';
 import { useTranslation } from '@/hooks/use-translation';

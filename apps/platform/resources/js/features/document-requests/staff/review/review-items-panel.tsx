@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestReviewController';
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';

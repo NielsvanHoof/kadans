@@ -226,6 +226,14 @@ declare namespace App {
                 readonly context: string | null;
                 readonly href: string | null;
             };
+            export type PipelineUpdatedPayloadData = {
+                readonly pipeline_id: number;
+                readonly type: string;
+                readonly status: string;
+                readonly subject_type: string;
+                readonly subject_id: number;
+                readonly dossier_id: number | null;
+            };
         }
         namespace Enums {
             export type DocumentProcessingStatus =

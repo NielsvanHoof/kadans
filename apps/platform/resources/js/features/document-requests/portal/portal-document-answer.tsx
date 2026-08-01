@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { lazy, Suspense } from 'react';
 import ClientPortalAnswerController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalAnswerController';
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -16,7 +16,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { inlineActionOptions } from '@/lib/inline-action-options';
 import { cn } from '@/lib/utils';
 
-const DatePicker = lazy(() => import('@/components/date-picker'));
+const DatePicker = lazy(() => import('@/components/forms/date-picker'));
 
 /**
  * Portal form for answer_text types (text, textarea, date, number).

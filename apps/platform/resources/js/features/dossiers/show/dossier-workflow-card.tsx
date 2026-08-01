@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
 import DossierCompletionController from '@/actions/App/Dossiers/Http/Controllers/DossierCompletionController';
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Card,

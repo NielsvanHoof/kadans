@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Events;
 
+use App\DocumentProcessing\Data\PipelineUpdatedPayloadData;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -71,24 +72,19 @@ final class PipelineUpdated implements ShouldBroadcast
     }
 
     /**
-     * @return array{
-     *     pipeline_id: int,
-     *     type: string,
-     *     status: string,
-     *     subject_type: string,
-     *     subject_id: int,
-     *     dossier_id: int|null
-     * }
+     * Shape is owned by PipelineUpdatedPayloadData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
      */
     public function broadcastWith(): array
     {
-        return [
-            'pipeline_id' => $this->pipelineId,
-            'type' => $this->type,
-            'status' => $this->status,
-            'subject_type' => $this->subjectType,
-            'subject_id' => $this->subjectId,
-            'dossier_id' => $this->dossierId,
-        ];
+        return new PipelineUpdatedPayloadData(
+            pipelineId: $this->pipelineId,
+            type: $this->type,
+            status: $this->status,
+            subjectType: $this->subjectType,
+            subjectId: $this->subjectId,
+            dossierId: $this->dossierId,
+        )->toArray();
     }
 }

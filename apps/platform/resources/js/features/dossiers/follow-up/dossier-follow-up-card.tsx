@@ -7,7 +7,9 @@ import {
 } from 'lucide-react';
 import { useId } from 'react';
 import DossierReminderController from '@/actions/App/Dossiers/Http/Controllers/DossierReminderController';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Field, FieldLegend, FieldSet } from '@/components/ui/field';

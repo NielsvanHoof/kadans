@@ -1,4 +1,4 @@
-import { brandShields } from '@/lib/brand-shields';
+import { brandShields } from '@/components/brand/brand-shields';
 import { cn } from '@/lib/utils';
 
 type BrandShieldWatermarkProps = {

@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
-import EmptyState from '@/components/empty-state';
-import IndexList from '@/components/index-list';
+import IndexList from '@/components/data/index-list';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

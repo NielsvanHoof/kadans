@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { Button } from '@/components/ui/button';
 import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
 import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/questionnaire-item-type-registry';

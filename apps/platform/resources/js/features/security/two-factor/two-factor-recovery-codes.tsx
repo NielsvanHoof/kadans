@@ -8,7 +8,7 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import AlertError from '@/components/alert-error';
+import AlertError from '@/components/primitives/alert-error';
 import { Button } from '@/components/ui/button';
 import {
     Card,

@@ -1,9 +1,9 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Archive, Plus } from 'lucide-react';
-import Heading from '@/components/heading';
-import IndexPagination from '@/components/index-query/index-pagination';
-import IndexQueryResults from '@/components/index-query/index-query-results';
-import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import Heading from '@/components/primitives/heading';
 import { Button } from '@/components/ui/button';
 import ClientsListCard from '@/features/clients/list/clients-list-card';
 import type { ClientSummary } from '@/features/clients/types';

@@ -1,5 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import { Button } from '@/components/ui/button';
 import DashboardMetricsGrid from '@/features/dashboard/dashboard-metrics-grid';
 import RecentDossiersCard from '@/features/dashboard/recent-dossiers-card';

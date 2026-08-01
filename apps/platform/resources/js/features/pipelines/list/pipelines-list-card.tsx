@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Activity, ArrowRight } from 'lucide-react';
-import DataTable, { type DataTableColumn } from '@/components/data-table';
-import EmptyState from '@/components/empty-state';
+import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,

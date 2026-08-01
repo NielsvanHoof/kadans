@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Monitor } from 'lucide-react';
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 

@@ -3,11 +3,11 @@ import { configureEcho } from '@laravel/echo-react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
-import AppLayout from '@/layouts/app-layout';
-import AuthLayout from '@/layouts/auth-layout';
+import AppLayout from '@/layouts/app/app-layout';
+import AuthLayout from '@/layouts/auth/auth-layout';
 import DossierBuilderLayout from '@/layouts/dossiers/dossier-builder-layout';
-import OnboardingLayout from '@/layouts/onboarding-layout';
-import SettingsLayout from '@/layouts/settings/layout';
+import OnboardingLayout from '@/layouts/onboarding/onboarding-layout';
+import SettingsLayout from '@/layouts/settings/settings-layout';
 
 // Reverb WebSocket client — keys come from VITE_REVERB_* (.env).
 configureEcho({

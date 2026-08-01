@@ -1,7 +1,9 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { useEffect, useMemo, useState } from 'react';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -10,8 +12,11 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import {
+    OTP_MAX_LENGTH,
+    OTP_SLOTS,
+} from '@/features/security/two-factor/use-two-factor-auth';
 import { useTranslation } from '@/hooks/use-translation';
-import { OTP_MAX_LENGTH, OTP_SLOTS } from '@/hooks/use-two-factor-auth';
 import { store } from '@/routes/two-factor/login';
 
 function ChallengeFormBody({

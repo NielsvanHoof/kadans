@@ -2,7 +2,7 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
@@ -15,8 +15,8 @@ import { DossierPermissionsProvider } from '@/features/dossiers/permissions/doss
 import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierReview } from '@/features/dossiers/types';
+import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useFetchOnPipelineUpdated } from '@/hooks/use-fetch-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import {
     index as dossierIndex,

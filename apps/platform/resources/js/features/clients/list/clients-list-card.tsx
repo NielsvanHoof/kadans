@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
-import DataTable, { type DataTableColumn } from '@/components/data-table';
-import DataTableBulkToolbar from '@/components/data-table-bulk-toolbar';
-import EmptyState from '@/components/empty-state';
+import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
+import EmptyState from '@/components/primitives/empty-state';
 import { Button } from '@/components/ui/button';
 import {
     Card,

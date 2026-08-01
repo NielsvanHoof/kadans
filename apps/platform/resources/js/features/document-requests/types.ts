@@ -2,7 +2,6 @@ import {
     type QuestionnaireItemType,
     questionnaireItemTypeCapabilities,
 } from '@/features/document-requests/item-types/generated';
-import type { Pipeline } from '@/features/dossiers/types';
 
 export type { QuestionnaireItemType } from '@/features/document-requests/item-types/generated';
 export {

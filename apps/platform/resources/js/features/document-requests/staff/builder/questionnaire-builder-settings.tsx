@@ -1,4 +1,4 @@
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Field,

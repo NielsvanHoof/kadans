@@ -74,6 +74,36 @@
             }
         },
         {
+            "includes": ["resources/js/components/primitives/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noRestrictedImports": {
+                            "level": "error",
+                            "options": {
+                                "patterns": [
+                                    {
+                                        "group": ["@/pages/**", "@/features/**"],
+                                        "message": "Shared components must stay domain-agnostic."
+                                    },
+                                    {
+                                        "group": [
+                                            "@/components/data/**",
+                                            "@/components/forms/**",
+                                            "@/components/feedback/**",
+                                            "@/components/brand/**",
+                                            "@/components/app-shell/**"
+                                        ],
+                                        "message": "Primitives are the bottom layer: they may only use @/components/ui and each other. Composites belong in data/, forms/, or feedback/."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
             "includes": ["resources/js/features/document-requests/staff/**"],
             "linter": {
                 "rules": {
@@ -88,7 +118,7 @@
                                     },
                                     {
                                         "group": [
-                                            "@/features/portal/document-requests/**"
+                                            "@/features/document-requests/portal/**"
                                         ],
                                         "message": "Staff renderers must not depend on portal renderers. Only the item-type registry wires both sides together."
                                     }
@@ -100,7 +130,7 @@
             }
         },
         {
-            "includes": ["resources/js/features/portal/document-requests/**"],
+            "includes": ["resources/js/features/document-requests/portal/**"],
             "linter": {
                 "rules": {
                     "style": {
@@ -145,7 +175,7 @@
                                             "!@/features/dossiers/types",
                                             "@/components/app-shell/**"
                                         ],
-                                        "message": "The guest portal must not pull in staff-side UI. Use @/features/portal or @/features/portal/document-requests instead."
+                                        "message": "The guest portal must not pull in staff-side UI. Use @/features/portal or @/features/document-requests/portal instead."
                                     }
                                 ]
                             }

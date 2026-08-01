@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { Check, RotateCcw } from 'lucide-react';
 import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestReviewController';
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {

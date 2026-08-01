@@ -1,9 +1,9 @@
 import { Form } from '@inertiajs/react';
 import AcceptTenantInvitationController from '@/actions/App/Tenancy/Http/Controllers/AcceptTenantInvitationController';
-import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import StatusMessage from '@/components/status-message';
-import TextLink from '@/components/text-link';
+import InputError from '@/components/primitives/input-error';
+import PasswordInput from '@/components/primitives/password-input';
+import StatusMessage from '@/components/primitives/status-message';
+import TextLink from '@/components/primitives/text-link';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';

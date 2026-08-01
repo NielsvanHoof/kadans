@@ -1,7 +1,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Archive, FolderOpen, Mail, Pencil } from 'lucide-react';
-import Heading from '@/components/heading';
-import IndexPagination from '@/components/index-query/index-pagination';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import Heading from '@/components/primitives/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import ArchiveClientButton from '@/features/clients/manage/archive-client-button';

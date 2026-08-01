@@ -1,7 +1,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft, Download, Trash2 } from 'lucide-react';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import Heading from '@/components/heading';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
 import PipelineStepTimeline from '@/features/pipelines/show/pipeline-step-timeline';
 import {
     pipelineIsInFlight,
@@ -21,7 +22,6 @@ import {
 } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineDetail } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useReloadOnPipelineUpdated } from '@/hooks/use-reload-on-pipeline-updated';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 import {

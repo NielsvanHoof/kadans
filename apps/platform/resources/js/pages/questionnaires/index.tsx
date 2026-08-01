@@ -1,15 +1,15 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import Heading from '@/components/heading';
-import IndexQueryResults from '@/components/index-query/index-query-results';
-import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import Heading from '@/components/primitives/heading';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import QuestionnaireTemplatesSection from '@/features/questionnaires/list/questionnaire-templates-section';
 import type { TemplateLibraryTab } from '@/features/questionnaires/list/template-library-tab';
 import type { TemplateSummary } from '@/features/questionnaires/types';
+import { useTemplateLibraryTab } from '@/features/questionnaires/use-template-library-tab';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useTemplateLibraryTab } from '@/hooks/use-template-library-tab';
 import { useTranslation } from '@/hooks/use-translation';
 import {
     create as createTemplate,

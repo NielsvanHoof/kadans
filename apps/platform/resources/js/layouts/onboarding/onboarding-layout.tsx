@@ -1,7 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
-import BrandHeroPanel from '@/components/brand-hero-panel';
+import BrandHeroPanel from '@/components/brand/brand-hero-panel';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 

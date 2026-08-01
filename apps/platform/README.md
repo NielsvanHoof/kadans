@@ -66,9 +66,10 @@ Run `vendor/bin/sail npm run dev` (or `npm run build`) so Wayfinder generates th
 
 Key conventions (enforced by Biome; full rules in [`.cursor/rules/frontend-architecture.mdc`](.cursor/rules/frontend-architecture.mdc)):
 
-- Domain types live in `features/<domain>/types.ts`, not in the global `@/types` barrel.
-- Shared `components/` never import from `features/`.
-- Staff and portal document-request renderers never import each other; the item-type registry wires both sides.
+- Payload types are generated from the PHP `*Data` objects into `types/generated/` — `features/<domain>/types.ts` mostly aliases them.
+- Shared `components/` never import from `features/`, and are grouped by role (`ui/`, `primitives/`, `data/`, `forms/`, `feedback/`, `brand/`, `app-shell/`).
+- `hooks/` and `lib/` are app-wide only; domain hooks live in `features/<domain>/hooks/`.
+- Staff and portal document-request renderers never import each other; the item-type registries wire both sides.
 
 ## Testing
 
