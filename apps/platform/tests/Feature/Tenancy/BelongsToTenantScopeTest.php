@@ -6,10 +6,6 @@ use App\Clients\Models\Client;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('without a tenant soft scope returns no rows instead of throwing', function (): void {
     $owner = provisionWorkspace()['owner'];

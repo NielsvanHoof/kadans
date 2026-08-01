@@ -7,10 +7,6 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('tenancy create-owner provisions a verified owner and firm', function (): void {
     $this->artisan('tenancy:create-owner', [

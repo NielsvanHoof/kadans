@@ -13,11 +13,7 @@ use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

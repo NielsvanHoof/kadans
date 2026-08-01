@@ -6,10 +6,6 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\TenantInvitation;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     config([

@@ -87,7 +87,7 @@
                                     },
                                     {
                                         "group": [
-                                            "@/features/document-requests/portal/**"
+                                            "@/features/portal/document-requests/**"
                                         ],
                                         "message": "Staff renderers must not depend on portal renderers. Only the item-type registry wires both sides together."
                                     }
@@ -99,7 +99,7 @@
             }
         },
         {
-            "includes": ["resources/js/features/document-requests/portal/**"],
+            "includes": ["resources/js/features/portal/document-requests/**"],
             "linter": {
                 "rules": {
                     "style": {
@@ -144,7 +144,7 @@
                                             "!@/features/dossiers/types",
                                             "@/components/app-shell/**"
                                         ],
-                                        "message": "The guest portal must not pull in staff-side UI. Use @/features/portal or @/features/document-requests/portal instead."
+                                        "message": "The guest portal must not pull in staff-side UI. Use @/features/portal or @/features/portal/document-requests instead."
                                     }
                                 ]
                             }

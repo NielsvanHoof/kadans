@@ -94,6 +94,7 @@
             "npm run format:check",
             "npm run types:check",
             "npm run build",
+            "@rector:check",
             "@test"
         ],
         "types:check": [
@@ -120,7 +121,13 @@
             "Composer\\Config::disableProcessTimeout",
             "@putenv XDEBUG_MODE=coverage",
             "@php artisan config:clear --ansi",
-            "@php artisan test --parallel --coverage --coverage-html=coverage --min=79"
+            "@php artisan test --parallel --coverage --coverage-html=coverage --min=85"
+        ],
+        "test:coverage:ci": [
+            "Composer\\Config::disableProcessTimeout",
+            "@putenv XDEBUG_MODE=coverage",
+            "@php artisan config:clear --ansi",
+            "@php artisan test --parallel --coverage --min=85"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

@@ -15,11 +15,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('a pipeline requires a polymorphic subject', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();

@@ -14,10 +14,6 @@ use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\TenantContext;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

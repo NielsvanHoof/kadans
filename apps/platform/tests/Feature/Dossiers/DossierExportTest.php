@@ -18,13 +18,9 @@ use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

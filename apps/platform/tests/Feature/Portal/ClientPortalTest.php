@@ -21,7 +21,6 @@ use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationFailed;
@@ -34,9 +33,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Pest\Expectation;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

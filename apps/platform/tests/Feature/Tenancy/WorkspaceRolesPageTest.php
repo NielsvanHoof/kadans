@@ -11,12 +11,8 @@ use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Support\PermissionRegistry;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 /**
  * Roles that hold a permission, as the page reports them.

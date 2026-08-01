@@ -16,10 +16,6 @@ use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('textract consume command applies sns envelope and deletes the message', function (): void {
     $tenant = Tenant::factory()->create();

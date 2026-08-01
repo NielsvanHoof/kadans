@@ -14,12 +14,8 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('guests are redirected to the login page', function (): void {
     $response = $this->get(route('dashboard'));

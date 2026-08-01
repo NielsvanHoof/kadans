@@ -11,11 +11,7 @@ use App\DocumentProcessing\Events\PipelineUpdated;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('creating a pipeline broadcasts pipeline updated to the workspace', function (): void {
     Event::fake([PipelineUpdated::class]);

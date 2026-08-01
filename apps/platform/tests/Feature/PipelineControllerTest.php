@@ -16,12 +16,8 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Enums\Role;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('an authorized workspace member can view pipeline index and details', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

@@ -14,11 +14,7 @@ use App\Dossiers\Transitions\DossierTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Models\Tenant;
 use Carbon\CarbonInterface;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create();

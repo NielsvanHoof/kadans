@@ -30,8 +30,9 @@ use Tests\TestCase;
 |
 */
 
+// Feature tests hit the database by default; individual files must not re-declare this.
 pest()->extend(TestCase::class)
- // ->use(RefreshDatabase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
 
 // Policy and Query unit tests need the Laravel app + database.
@@ -148,6 +149,35 @@ pest()->presets()->custom('qompose', fn (): array => [
     expect(Activity::class)
         ->toExtend(Spatie\Activitylog\Models\Activity::class),
 
+    /*
+    |----------------------------------------------------------------------
+    | Domain layering
+    |----------------------------------------------------------------------
+    |
+    | Domains are ordered; a domain may use domains BELOW it and its own
+    | layer siblings, never above. This is what stops the folder-based
+    | domains from decaying back into one big namespace.
+    |
+    |   L0  Shared
+    |   L1  Accounts
+    |   L2  Tenancy
+    |   L3  Audit
+    |   L4  Clients, Questionnaires
+    |   L5  Dossiers
+    |   L6  DocumentProcessing, ClientPortal
+    |   L7  Reporting, Platform, WorkspaceNotifications
+    |
+    | Each expectation below lists the upward domains it must not reach.
+    | Where a domain is knowingly OMITTED from its own list, the comment
+    | names the debt — deleting those comments (and re-adding the omitted
+    | namespace) is the definition of done for the phase that owns it.
+    |
+    | Standing exception: Eloquent models may reference models from any
+    | domain, because relations are inherently bidirectional. That covers
+    | User -> Tenancy and Tenant -> Clients/Dossiers/Questionnaires.
+    |
+    */
+
     expect('App\Shared')
         ->not->toUse([
             'App\Accounts',
@@ -161,6 +191,86 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\Questionnaires',
             'App\Reporting',
             'App\Tenancy',
+        ]),
+
+    // Omitted: Tenancy (User relations — standing exception), Audit
+    // (ProfileController logs directly) and Platform (User::isPlatformSupport
+    // reaches into SupportSession). Both are Phase 2 debt.
+    expect('App\Accounts')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Clients',
+            'App\Dossiers',
+            'App\DocumentProcessing',
+            'App\Questionnaires',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    // Omitted: Audit (tenant actions log activity directly — Phase 2),
+    // Platform (support session — Phase 1 inverts this behind a contract),
+    // and Clients/Dossiers/Questionnaires (Tenant relations — standing exception).
+    expect('App\Tenancy')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\DocumentProcessing',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    expect('App\Audit')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Clients',
+            'App\Dossiers',
+            'App\DocumentProcessing',
+            'App\Platform',
+            'App\Questionnaires',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    // Omitted: Dossiers and Reporting — Phase 2 debt.
+    expect('App\Clients')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\DocumentProcessing',
+            'App\Platform',
+            'App\WorkspaceNotifications',
+        ]),
+
+    // Omitted: Dossiers — Phase 1 moves the template-option DTOs here.
+    expect('App\Questionnaires')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\DocumentProcessing',
+            'App\Platform',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    // Omitted: ClientPortal (Phase 1 — SubmissionContext moves here, the rest
+    // becomes domain events), DocumentProcessing and Reporting (Phase 2).
+    expect('App\Dossiers')
+        ->not->toUse([
+            'App\Platform',
+            'App\WorkspaceNotifications',
+        ]),
+
+    expect('App\DocumentProcessing')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Platform',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    expect('App\ClientPortal')
+        ->not->toUse([
+            'App\DocumentProcessing',
+            'App\Platform',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
         ]),
 ]);
 

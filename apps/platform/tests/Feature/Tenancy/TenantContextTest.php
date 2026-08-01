@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('tenant context runs callbacks under the given tenant and restores afterward', function (): void {
     $tenantA = Tenant::factory()->create();

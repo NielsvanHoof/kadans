@@ -10,11 +10,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Storage::fake('local');

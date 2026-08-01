@@ -15,14 +15,10 @@ use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

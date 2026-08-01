@@ -9,13 +9,9 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantRole as RoleModel;
 use App\Tenancy\Support\PermissionRegistry;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission as PermissionModel;
 
 use function Pest\Laravel\artisan;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 it('creates a permission row for every registered permission', function (): void {
     resolve(SyncTenantRolesAction::class)->handle();

@@ -13,13 +13,9 @@ use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('owners can view the members page', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

@@ -3,12 +3,8 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());

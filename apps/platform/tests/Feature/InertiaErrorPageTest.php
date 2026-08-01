@@ -3,12 +3,8 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('missing pages render the inertia error page', function (): void {
     $this->get('/this-page-definitely-does-not-exist')
