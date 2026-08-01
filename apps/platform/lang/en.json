@@ -1113,5 +1113,8 @@
     "Clear filter": "Clear filter",
     "Role created": "Role created",
     "Role updated": "Role updated",
-    "Role deleted": "Role deleted"
+    "Role deleted": "Role deleted",
+    "Uploading · :percent%": "Uploading · :percent%",
+    "Remove :name": "Remove :name",
+    "Replace :name": "Replace :name"
 }

@@ -1,11 +1,21 @@
-import { FileIcon, Upload, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import type { DragEvent } from 'react';
-import { useCallback, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import InputError from '@/components/primitives/input-error';
-import { Button } from '@/components/ui/button';
+import {
+    Attachment,
+    AttachmentAction,
+    AttachmentActions,
+    AttachmentContent,
+    AttachmentDescription,
+    AttachmentMedia,
+    AttachmentTitle,
+    AttachmentTrigger,
+} from '@/components/ui/attachment';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
+import { fileIconForFilename } from '@/lib/file-icon-for-filename';
 import { formatBytes } from '@/lib/format-bytes';
 import { cn } from '@/lib/utils';
 
@@ -31,9 +41,37 @@ type FileDropzoneProps = {
     className?: string;
 };
 
+type AttachmentState = 'idle' | 'uploading' | 'error';
+
+/**
+ * Resolve Attachment visual state from validation + Inertia upload progress.
+ * `idle` keeps the dashed border for a selected-but-not-yet-uploaded file.
+ */
+function resolveAttachmentState(
+    hasError: boolean,
+    progressPercent: number | null | undefined,
+): AttachmentState {
+    if (hasError) {
+        return 'error';
+    }
+
+    if (progressPercent !== null && progressPercent !== undefined) {
+        return 'uploading';
+    }
+
+    return 'idle';
+}
+
+/** Short type label for the attachment description (e.g. PDF · 1.2 MB). */
+function fileTypeLabel(file: File): string {
+    const extension = file.name.split('.').pop()?.toUpperCase();
+
+    return extension && extension.length <= 5 ? extension : 'FILE';
+}
+
 /**
  * Drag-and-drop file picker with client-side size validation.
- * Structured for single-file use today; multi-file can extend selectedFiles[] later.
+ * Empty state is a dashed browse target; a selected file becomes an Attachment window.
  */
 export default function FileDropzone({
     inputId,
@@ -54,6 +92,31 @@ export default function FileDropzone({
     const inputRef = useRef<HTMLInputElement>(null);
     const [dragActive, setDragActive] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    const displayError = error ?? localError;
+    const attachmentState = resolveAttachmentState(
+        Boolean(displayError),
+        progressPercent,
+    );
+
+    // Object URL for image thumbnails in AttachmentMedia; revoke on change/unmount.
+    useEffect(() => {
+        if (!file?.type.startsWith('image/')) {
+            setPreviewUrl(null);
+
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+
+        return () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }, [file]);
+
+    const FileTypeIcon = file ? fileIconForFilename(file.name) : null;
 
     const validateAndSet = useCallback(
         (nextFile: File | null): void => {
@@ -79,19 +142,19 @@ export default function FileDropzone({
         [maxBytes, onFileChange, t],
     );
 
-    function handleDragOver(event: DragEvent<HTMLButtonElement>): void {
+    function handleDragOver(event: DragEvent<HTMLElement>): void {
         event.preventDefault();
         if (!disabled) {
             setDragActive(true);
         }
     }
 
-    function handleDragLeave(event: DragEvent<HTMLButtonElement>): void {
+    function handleDragLeave(event: DragEvent<HTMLElement>): void {
         event.preventDefault();
         setDragActive(false);
     }
 
-    function handleDrop(event: DragEvent<HTMLButtonElement>): void {
+    function handleDrop(event: DragEvent<HTMLElement>): void {
         event.preventDefault();
         setDragActive(false);
 
@@ -103,6 +166,12 @@ export default function FileDropzone({
         validateAndSet(dropped);
     }
 
+    function openFilePicker(): void {
+        if (!disabled) {
+            inputRef.current?.click();
+        }
+    }
+
     function clearSelection(): void {
         validateAndSet(null);
         if (inputRef.current) {
@@ -110,7 +179,23 @@ export default function FileDropzone({
         }
     }
 
-    const displayError = error ?? localError;
+    const attachmentDescription = (() => {
+        if (displayError) {
+            return displayError;
+        }
+
+        if (progressPercent !== null && progressPercent !== undefined && file) {
+            return t('Uploading · :percent%', {
+                percent: String(progressPercent),
+            });
+        }
+
+        if (file) {
+            return `${fileTypeLabel(file)} · ${formatBytes(file.size)}`;
+        }
+
+        return null;
+    })();
 
     return (
         <Field
@@ -133,97 +218,117 @@ export default function FileDropzone({
                 }
             />
 
-            {/*
-              Semantic <button> is both the drop target and browse trigger.
-              Clear stays outside so we never nest interactive controls.
-            */}
-            <button
-                type="button"
-                disabled={disabled}
-                aria-describedby={hintId}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => {
-                    if (!disabled) {
-                        inputRef.current?.click();
-                    }
-                }}
-                className={cn(
-                    'relative flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
-                    dragActive
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border/70 hover:border-border hover:bg-muted/30',
-                    disabled
-                        ? 'cursor-not-allowed opacity-60'
-                        : 'cursor-pointer',
-                    file && 'py-4',
-                )}
-            >
-                {file ? (
-                    <>
-                        <FileIcon
-                            className="size-8 text-muted-foreground"
-                            aria-hidden
-                        />
-                        <span className="min-w-0 space-y-0.5">
-                            <span className="block truncate text-sm font-medium">
-                                {file.name}
-                            </span>
-                            <span className="block text-xs text-muted-foreground">
-                                {formatBytes(file.size)}
-                            </span>
-                        </span>
-                        <span
-                            id={hintId}
-                            className="text-xs text-muted-foreground"
-                        >
-                            {t('Drop to replace or click to browse')}
-                        </span>
-                    </>
-                ) : (
-                    <>
-                        <Upload
-                            className="size-8 text-muted-foreground"
-                            aria-hidden
-                        />
-                        <span className="text-sm font-medium">
-                            {t('Drop a file here or click to browse')}
-                        </span>
-                        <span
-                            id={hintId}
-                            className="text-xs text-muted-foreground"
-                        >
-                            {resolvedAcceptHint} ·{' '}
-                            {t('max :size', { size: formatBytes(maxBytes) })}
-                        </span>
-                    </>
-                )}
-            </button>
-
             {file ? (
-                <div className="flex">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={disabled}
-                        onClick={clearSelection}
+                /*
+                  Selected file: Attachment window with replace trigger + clear action.
+                  Drag/drop lives on AttachmentTrigger (a real button) so the wrapper
+                  stays a static layout element for a11y lint.
+                */
+                <div
+                    className={cn(
+                        'rounded-xl transition-colors',
+                        dragActive && 'bg-primary/5 ring-1 ring-primary/40',
+                        disabled && 'opacity-60',
+                    )}
+                >
+                    <Attachment
+                        state={attachmentState}
+                        className="w-full max-w-full"
                     >
-                        <X aria-hidden />
-                        {t('Clear')}
-                    </Button>
-                </div>
-            ) : null}
+                        <AttachmentMedia
+                            variant={previewUrl ? 'image' : 'icon'}
+                        >
+                            {attachmentState === 'uploading' ? (
+                                <Spinner />
+                            ) : previewUrl ? (
+                                <img
+                                    src={previewUrl}
+                                    alt=""
+                                    className="size-full object-cover"
+                                />
+                            ) : FileTypeIcon ? (
+                                <FileTypeIcon aria-hidden />
+                            ) : null}
+                        </AttachmentMedia>
 
-            {progressPercent !== null && progressPercent !== undefined ? (
-                <Progress
-                    value={progressPercent}
-                    max={100}
-                    aria-label={t('Upload progress')}
-                    className="w-full"
-                />
-            ) : null}
+                        <AttachmentContent>
+                            <AttachmentTitle>{file.name}</AttachmentTitle>
+                            {attachmentDescription ? (
+                                <AttachmentDescription>
+                                    {attachmentDescription}
+                                </AttachmentDescription>
+                            ) : null}
+                        </AttachmentContent>
+
+                        <AttachmentActions>
+                            <AttachmentAction
+                                type="button"
+                                disabled={disabled}
+                                aria-label={t('Remove :name', {
+                                    name: file.name,
+                                })}
+                                onClick={clearSelection}
+                            >
+                                <X />
+                            </AttachmentAction>
+                        </AttachmentActions>
+
+                        {/* Full-card browse + drop target; actions sit above it (z-20). */}
+                        <AttachmentTrigger
+                            disabled={disabled}
+                            aria-describedby={hintId}
+                            aria-label={t('Replace :name', {
+                                name: file.name,
+                            })}
+                            onClick={openFilePicker}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        />
+                    </Attachment>
+
+                    <p
+                        id={hintId}
+                        className="mt-1.5 text-xs text-muted-foreground"
+                    >
+                        {t('Drop to replace or click to browse')}
+                    </p>
+                </div>
+            ) : (
+                /*
+                  Empty state: semantic button is both drop target and browse trigger.
+                */
+                <button
+                    type="button"
+                    disabled={disabled}
+                    aria-describedby={hintId}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={openFilePicker}
+                    className={cn(
+                        'relative flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        dragActive
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border/70 hover:border-border hover:bg-muted/30',
+                        disabled
+                            ? 'cursor-not-allowed opacity-60'
+                            : 'cursor-pointer',
+                    )}
+                >
+                    <Upload
+                        className="size-8 text-muted-foreground"
+                        aria-hidden
+                    />
+                    <span className="text-sm font-medium">
+                        {t('Drop a file here or click to browse')}
+                    </span>
+                    <span id={hintId} className="text-xs text-muted-foreground">
+                        {resolvedAcceptHint} ·{' '}
+                        {t('max :size', { size: formatBytes(maxBytes) })}
+                    </span>
+                </button>
+            )}
 
             <InputError message={displayError ?? undefined} />
         </Field>

@@ -205,3 +205,40 @@
         font-family: var(--font-data);
     }
 }
+
+/*
+ * Text shimmer for Attachment uploading/processing titles.
+ * Mirrors shadcn's shimmer utility without pulling in the full `shadcn` package.
+ */
+@utility shimmer {
+    --shimmer-duration: 2s;
+    --shimmer-color: color-mix(in oklch, currentColor 35%, white);
+    background-image: linear-gradient(
+        90deg,
+        currentColor 0%,
+        var(--shimmer-color) 45%,
+        currentColor 90%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: tw-shimmer var(--shimmer-duration) linear infinite;
+}
+
+@keyframes tw-shimmer {
+    from {
+        background-position: 100% 0;
+    }
+
+    to {
+        background-position: -100% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shimmer {
+        animation: none;
+        background-image: none;
+        color: currentColor;
+    }
+}
