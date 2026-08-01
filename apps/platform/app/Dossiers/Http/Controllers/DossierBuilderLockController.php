@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Controllers;
 
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\Builder\AcquireDossierBuilderLockAction;
 use App\Dossiers\Actions\Builder\HeartbeatDossierBuilderLockAction;
 use App\Dossiers\Actions\Builder\ReleaseDossierBuilderLockAction;
@@ -20,6 +21,8 @@ use Illuminate\Http\JsonResponse;
  */
 final class DossierBuilderLockController extends Controller
 {
+    use ResolvesCurrentUser;
+
     /**
      * Claim the lock when free, or report who currently holds it.
      */
@@ -29,8 +32,7 @@ final class DossierBuilderLockController extends Controller
         Dossier $dossier,
         AcquireDossierBuilderLockAction $acquireDossierBuilderLock,
     ): JsonResponse {
-        $user = $request->user();
-        abort_unless($user !== null, 403);
+        $user = $this->currentUser();
 
         $lock = $acquireDossierBuilderLock->handle($dossier, $user);
 
@@ -48,8 +50,7 @@ final class DossierBuilderLockController extends Controller
         Dossier $dossier,
         HeartbeatDossierBuilderLockAction $heartbeatDossierBuilderLock,
     ): JsonResponse {
-        $user = $request->user();
-        abort_unless($user !== null, 403);
+        $user = $this->currentUser();
 
         $lock = $heartbeatDossierBuilderLock->handle(
             $dossier,
@@ -71,8 +72,7 @@ final class DossierBuilderLockController extends Controller
         Dossier $dossier,
         ReleaseDossierBuilderLockAction $releaseDossierBuilderLock,
     ): JsonResponse {
-        $user = $request->user();
-        abort_unless($user !== null, 403);
+        $user = $this->currentUser();
 
         $lock = $releaseDossierBuilderLock->handle(
             $dossier,

@@ -16,18 +16,33 @@ final readonly class BulkRestoreClientsAction
     /**
      * Restore each selected archived client (dossiers stay archived).
      *
-     * @param  Collection<int, Client>  $clients
+     * @param  list<int>  $clientIds
      */
-    public function handle(Collection $clients, User $restoredBy): int
+    public function handle(array $clientIds, User $restoredBy): int
     {
         $count = 0;
 
-        foreach ($clients as $client) {
+        foreach ($this->resolveTrashedClients($clientIds) as $client) {
             Gate::forUser($restoredBy)->authorize('restore', $client);
             $this->restoreClient->handle($client, $restoredBy);
             $count++;
         }
 
         return $count;
+    }
+
+    /**
+     * Tenant scoping still applies; getQuery() only sidesteps the scoped
+     * builder's whereIn() signature.
+     *
+     * @param  list<int>  $clientIds
+     * @return Collection<int, Client>
+     */
+    private function resolveTrashedClients(array $clientIds): Collection
+    {
+        $clientsQuery = Client::onlyTrashed()->with('tenant');
+        $clientsQuery->getQuery()->whereIn('id', $clientIds);
+
+        return $clientsQuery->get();
     }
 }

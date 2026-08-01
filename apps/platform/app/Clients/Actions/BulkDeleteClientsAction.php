@@ -16,18 +16,34 @@ final readonly class BulkDeleteClientsAction
     /**
      * Archive each selected client (cascades live dossiers via DeleteClientAction).
      *
-     * @param  Collection<int, Client>  $clients
+     * @param  list<int>  $clientIds
      */
-    public function handle(Collection $clients, User $deletedBy): int
+    public function handle(array $clientIds, User $deletedBy): int
     {
         $count = 0;
 
-        foreach ($clients as $client) {
+        foreach ($this->resolveClients($clientIds) as $client) {
             Gate::forUser($deletedBy)->authorize('delete', $client);
             $this->deleteClient->handle($client, $deletedBy);
             $count++;
         }
 
         return $count;
+    }
+
+    /**
+     * Tenant scoping still applies; getQuery() only sidesteps the scoped
+     * builder's whereIn() signature, and is kept here rather than in the
+     * controller so the escape hatch lives next to the domain logic.
+     *
+     * @param  list<int>  $clientIds
+     * @return Collection<int, Client>
+     */
+    private function resolveClients(array $clientIds): Collection
+    {
+        $clientsQuery = Client::query()->with('tenant');
+        $clientsQuery->getQuery()->whereIn('id', $clientIds);
+
+        return $clientsQuery->get();
     }
 }

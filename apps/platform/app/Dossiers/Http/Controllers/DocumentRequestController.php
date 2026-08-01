@@ -19,11 +19,11 @@ use App\Dossiers\Http\Requests\Builder\UpdateDocumentRequestRequest;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -124,13 +124,8 @@ final class DocumentRequestController extends Controller
 
         $documentRequests = $syncDossierDocumentRequests->handle($dossier, $items);
 
-        $toast = [
-            'type' => 'success',
-            'message' => __('Form saved.'),
-        ];
-
         // Same flash shape as redirecting mutations — JSON clients apply it via router.flash().
-        Inertia::flash('toast', $toast);
+        $toast = Toast::flash('success', __('Form saved.'));
 
         return response()->json([
             'document_requests' => $documentRequests,

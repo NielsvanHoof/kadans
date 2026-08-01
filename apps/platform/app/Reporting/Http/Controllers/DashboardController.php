@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reporting\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Models\Dossier;
 use App\Reporting\Queries\FetchWorkspaceDashboardQuery;
 use App\Shared\Http\Controllers\Controller;
@@ -18,12 +18,12 @@ use RuntimeException;
 
 final class DashboardController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function index(
         FetchActiveTenantMembershipsForUserQuery $getActiveTenantMembershipsForUser,
     ): RedirectResponse|Response {
-        $user = request()->user();
-
-        abort_unless($user instanceof User, 403);
+        $user = $this->currentUser();
 
         $memberships = $getActiveTenantMembershipsForUser->handle($user);
 

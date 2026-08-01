@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Clients\Models\Client;
@@ -28,6 +28,7 @@ use App\Dossiers\Queries\FetchDossierReviewQuery;
 use App\Dossiers\Queries\FetchDossierShowQuery;
 use App\Shared\Data\PersonOptionData;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Queries\FetchResponsibleStaffOptionsQuery;
 use Illuminate\Http\RedirectResponse;
@@ -35,10 +36,11 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Inertia\Support\Header;
-use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class DossierController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function index(Tenant $tenant, FetchDossierIndexQuery $fetchDossierIndex, Request $request): Response
     {
         $this->authorize('viewAny', Dossier::class);
@@ -162,10 +164,7 @@ final class DossierController extends Controller
     ): RedirectResponse {
         $updateDossier->handle($dossier, $request->validated());
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Dossier details updated.'),
-        ]);
+        Toast::success(__('Dossier details updated.'));
 
         return to_route(
             'workspaces.dossiers.show',
@@ -180,16 +179,11 @@ final class DossierController extends Controller
     ): RedirectResponse {
         $this->authorize('delete', $dossier);
 
-        $user = request()->user();
-
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $deleteDossier->handle($dossier, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Dossier archived.'),
-        ]);
+        Toast::success(__('Dossier archived.'));
 
         return to_route(
             'workspaces.dossiers.index',
@@ -204,16 +198,11 @@ final class DossierController extends Controller
     ): RedirectResponse {
         $this->authorize('restore', $dossier);
 
-        $user = request()->user();
-
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $restoreDossier->handle($dossier, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Dossier restored. Create a new portal link before inviting the client again.'),
-        ]);
+        Toast::success(__('Dossier restored. Create a new portal link before inviting the client again.'));
 
         return to_route(
             'workspaces.dossiers.show',
@@ -226,22 +215,13 @@ final class DossierController extends Controller
         BulkArchiveDossiersRequest $request,
         BulkDeleteDossiersAction $bulkDeleteDossiers,
     ): RedirectResponse {
-        $user = $request->user();
+        $user = $this->currentUser();
 
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $count = $bulkDeleteDossiers->handle($request->dossierIds(), $user);
 
-        $dossiersQuery = Dossier::query()->with('tenant');
-        $dossiersQuery->getQuery()->whereIn('id', $request->dossierIds());
-        $dossiers = $dossiersQuery->get();
-
-        $count = $bulkDeleteDossiers->handle($dossiers, $user);
-
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => $count === 1
-                ? __('1 dossier archived.')
-                : __(':count dossiers archived.', ['count' => $count]),
-        ]);
+        Toast::success($count === 1
+            ? __('1 dossier archived.')
+            : __(':count dossiers archived.', ['count' => $count]));
 
         return to_route(
             'workspaces.dossiers.index',
@@ -254,22 +234,13 @@ final class DossierController extends Controller
         BulkRestoreDossiersRequest $request,
         BulkRestoreDossiersAction $bulkRestoreDossiers,
     ): RedirectResponse {
-        $user = $request->user();
+        $user = $this->currentUser();
 
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $count = $bulkRestoreDossiers->handle($request->dossierIds(), $user);
 
-        $dossiersQuery = Dossier::onlyTrashed()->with('tenant');
-        $dossiersQuery->getQuery()->whereIn('id', $request->dossierIds());
-        $dossiers = $dossiersQuery->get();
-
-        $count = $bulkRestoreDossiers->handle($dossiers, $user);
-
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => $count === 1
-                ? __('1 dossier restored. Create a new portal link before inviting the client again.')
-                : __(':count dossiers restored. Create a new portal link before inviting the client again.', ['count' => $count]),
-        ]);
+        Toast::success($count === 1
+            ? __('1 dossier restored. Create a new portal link before inviting the client again.')
+            : __(':count dossiers restored. Create a new portal link before inviting the client again.', ['count' => $count]));
 
         return to_route(
             'workspaces.dossiers.archived',

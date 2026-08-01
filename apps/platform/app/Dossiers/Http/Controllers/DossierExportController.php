@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Models\Pipeline;
@@ -15,24 +15,24 @@ use App\Dossiers\Jobs\GenerateDossierExportJob;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class DossierExportController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function store(
         Tenant $tenant,
         Dossier $dossier,
         CreateDossierExportAction $createDossierExport,
     ): RedirectResponse {
         $this->authorize('export', $dossier);
-        $user = request()->user();
-
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $export = $createDossierExport->handle($dossier, $user);
         $pipeline = $export->pipeline;
@@ -41,10 +41,7 @@ final class DossierExportController extends Controller
 
         dispatch(new GenerateDossierExportJob($pipeline->id))->afterCommit();
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Dossier export queued.'),
-        ]);
+        Toast::success(__('Dossier export queued.'));
 
         return to_route(
             'workspaces.dossiers.show',

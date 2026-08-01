@@ -7,6 +7,7 @@ namespace App\Accounts\Http\Controllers;
 use App\Accounts\Http\Requests\PasswordUpdateRequest;
 use App\Accounts\Http\Requests\TwoFactorAuthenticationRequest;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -60,7 +61,7 @@ final class SecurityController extends Controller
             'password' => $request->password,
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
+        Toast::success(__('Password updated.'));
 
         return back();
     }

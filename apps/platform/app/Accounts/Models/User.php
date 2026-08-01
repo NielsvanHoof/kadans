@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Accounts\Models;
 
 use App\Accounts\Enums\PlatformRole;
-use App\Platform\Support\SupportSession;
+use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
@@ -173,7 +173,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
         }
 
         return $this->isPlatformSupport()
-            && resolve(SupportSession::class)->isActiveFor($tenant);
+            && resolve(SupportSessionState::class)->isActiveFor($tenant);
     }
 
     /**
@@ -190,7 +190,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
             return false;
         }
 
-        $supportSession = resolve(SupportSession::class);
+        $supportSession = resolve(SupportSessionState::class);
 
         if ($this->isPlatformSupport() && $supportSession->isActiveFor($tenant)) {
             return $supportSession->allowsPermission($permission);

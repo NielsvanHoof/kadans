@@ -24,6 +24,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import { index as platformSupportIndex } from '@/routes/platform/support';
@@ -39,13 +40,8 @@ import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const {
-        current_firm: currentFirm,
-        can_manage_members: canManageMembers,
-        can_view_roles: canViewRoles,
-        can_view_pipelines: canViewPipelines,
-        auth,
-    } = usePage().props;
+    const { current_firm: currentFirm, auth } = usePage().props;
+    const { can } = usePermissions();
     const { t } = useTranslation();
     const dashboardRoute = currentFirm
         ? workspaceDashboard(currentFirm)
@@ -79,7 +75,7 @@ export function AppSidebar() {
                       href: clientIndex(currentFirm),
                       icon: Users,
                   },
-                  ...(canManageMembers
+                  ...(can('members.view')
                       ? [
                             {
                                 title: t('Members'),
@@ -88,7 +84,7 @@ export function AppSidebar() {
                             },
                         ]
                       : []),
-                  ...(canViewRoles
+                  ...(can('roles.view')
                       ? [
                             {
                                 title: t('Roles & permissions'),
@@ -112,7 +108,7 @@ export function AppSidebar() {
                       href: activityIndex(currentFirm),
                       icon: ScrollText,
                   },
-                  ...(canViewPipelines
+                  ...(can('pipelines.view')
                       ? [
                             {
                                 title: t('Pipelines'),

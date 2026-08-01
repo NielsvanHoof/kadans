@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Actions\InviteTenantMemberAction;
 use App\Tenancy\Actions\RemoveTenantMemberAction;
 use App\Tenancy\Actions\SuspendTenantMemberAction;
@@ -25,6 +26,8 @@ use function is_string;
 
 final class WorkspaceMemberController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function index(
         Tenant $tenant,
         Request $request,
@@ -32,9 +35,7 @@ final class WorkspaceMemberController extends Controller
     ): Response {
         $this->authorize('viewAny', TenantMembership::class);
 
-        $user = $request->user();
-
-        abort_unless($user instanceof User, 403);
+        $user = $this->currentUser();
 
         return Inertia::render(
             'workspaces/members/index',
@@ -47,9 +48,7 @@ final class WorkspaceMemberController extends Controller
         InviteTenantMemberRequest $request,
         InviteTenantMemberAction $inviteTenantMember,
     ): RedirectResponse {
-        $user = $request->user();
-
-        abort_unless($user instanceof User, 403);
+        $user = $this->currentUser();
 
         $inviteTenantMember->handle(
             $tenant,
@@ -58,10 +57,7 @@ final class WorkspaceMemberController extends Controller
             $request->role(),
         );
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Invitation sent.'),
-        ]);
+        Toast::success(__('Invitation sent.'));
 
         return to_route('workspaces.members.index', $this->workspaceRouteParameters());
     }
@@ -75,9 +71,7 @@ final class WorkspaceMemberController extends Controller
     ): RedirectResponse {
         $this->ensureMembershipBelongsToTenant($membership, $tenant);
 
-        $user = $request->user();
-
-        abort_unless($user instanceof User, 403);
+        $user = $this->currentUser();
 
         $role = $request->role();
         $status = $request->status();
@@ -91,10 +85,7 @@ final class WorkspaceMemberController extends Controller
             $suspendTenantMember->handle($membership, $user);
         }
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Member updated.'),
-        ]);
+        Toast::success(__('Member updated.'));
 
         return to_route('workspaces.members.index', $this->workspaceRouteParameters());
     }
@@ -108,16 +99,11 @@ final class WorkspaceMemberController extends Controller
         $this->ensureMembershipBelongsToTenant($membership, $tenant);
         $this->authorize('remove', $membership);
 
-        $user = $request->user();
-
-        abort_unless($user instanceof User, 403);
+        $user = $this->currentUser();
 
         $removeTenantMember->handle($membership, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Member removed.'),
-        ]);
+        Toast::success(__('Member removed.'));
 
         return to_route('workspaces.members.index', $this->workspaceRouteParameters());
     }

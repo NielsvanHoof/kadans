@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\DocumentRequests\ReviewDocumentRequestAction;
 use App\Dossiers\Actions\DocumentRequests\SubmitStaffQuestionnaireAnswerAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
@@ -13,10 +13,9 @@ use App\Dossiers\Http\Requests\DocumentRequests\StoreQuestionnaireAnswerRequest;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
-use Symfony\Component\HttpFoundation\Response;
 
 use function array_key_exists;
 use function is_string;
@@ -26,6 +25,8 @@ use function is_string;
  */
 final class DocumentRequestReviewController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function store(
         Tenant $tenant,
         ReviewDocumentRequestRequest $request,
@@ -33,9 +34,7 @@ final class DocumentRequestReviewController extends Controller
         DocumentRequest $documentRequest,
         ReviewDocumentRequestAction $reviewDocumentRequest,
     ): RedirectResponse {
-        $user = $request->user();
-
-        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $decision = DocumentRequestStatus::from((string) $request->validated('decision'));
         $rejectionReason = $request->validated('rejection_reason');
@@ -47,12 +46,9 @@ final class DocumentRequestReviewController extends Controller
             is_string($rejectionReason) ? $rejectionReason : null,
         );
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => $decision === DocumentRequestStatus::Accepted
-                ? __('Item approved.')
-                : __('Changes requested. The client notification has been queued.'),
-        ]);
+        Toast::success($decision === DocumentRequestStatus::Accepted
+            ? __('Item approved.')
+            : __('Changes requested. The client notification has been queued.'));
 
         return $this->redirectToReview($dossier);
     }
@@ -77,10 +73,7 @@ final class DocumentRequestReviewController extends Controller
                 : null,
         );
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Answer saved on behalf of the client.'),
-        ]);
+        Toast::success(__('Answer saved on behalf of the client.'));
 
         return $this->redirectToReview($dossier);
     }

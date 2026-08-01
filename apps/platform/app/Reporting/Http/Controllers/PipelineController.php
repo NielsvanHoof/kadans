@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reporting\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Actions\Pipelines\DeletePipelineAction;
@@ -14,6 +14,7 @@ use App\Dossiers\Models\DossierExport;
 use App\Reporting\Queries\FetchPipelineIndexQuery;
 use App\Reporting\Queries\FetchPipelineShowQuery;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class PipelineController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function index(
         Tenant $tenant,
         FetchPipelineIndexQuery $fetchPipelineIndex,
@@ -91,16 +94,11 @@ final class PipelineController extends Controller
     ): RedirectResponse {
         $this->authorize('delete', $pipeline);
 
-        $user = $request->user();
-
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $deletePipeline->handle($pipeline, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Pipeline deleted.'),
-        ]);
+        Toast::success(__('Pipeline deleted.'));
 
         return to_route('workspaces.pipelines.index', $this->workspaceRouteParameters());
     }

@@ -193,10 +193,8 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\Tenancy',
         ]),
 
-    // User is the cross-domain hub: its Eloquent relations reach Tenancy (standing
-    // exception) and User::isPlatformSupport() still reaches Platform (Phase 2 debt).
-    // Ignoring User keeps this rule meaningful for every other Accounts class.
-    // Omitted: Audit — ProfileController logs activity directly (Phase 2).
+    // User is the cross-domain hub, so it is ignored here and constrained
+    // separately below. Omitted: Audit — ProfileController logs directly (Phase 2).
     expect('App\Accounts')
         ->not->toUse([
             'App\ClientPortal',
@@ -210,6 +208,21 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\WorkspaceNotifications',
         ])
         ->ignoring(User::class),
+
+    // The one class allowed to reach up, and only as far as Tenancy: Eloquent
+    // relations plus the SupportSessionState contract. Without this, ignoring
+    // User above would let any upward dependency hide inside the hub.
+    expect(User::class)
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Clients',
+            'App\Dossiers',
+            'App\DocumentProcessing',
+            'App\Platform',
+            'App\Questionnaires',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
 
     // Tenant's Eloquent relations reach Clients/Dossiers/Questionnaires under the
     // standing exception; Platform is now inverted behind SupportSessionState.

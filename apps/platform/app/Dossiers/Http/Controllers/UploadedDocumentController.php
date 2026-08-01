@@ -15,6 +15,7 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Queries\FetchUploadedDocumentShowQuery;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -48,10 +49,7 @@ final class UploadedDocumentController extends Controller
 
         $uploadStaffDocument->handle($documentRequest, $file);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Document uploaded.'),
-        ]);
+        Toast::success(__('Document uploaded.'));
 
         // Staff uploads land on the focused review page.
         return to_route(

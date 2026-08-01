@@ -10,8 +10,8 @@ use App\ClientPortal\Http\Requests\StorePortalUploadedDocumentRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\DocumentRequest;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 
 final class ClientPortalUploadController extends Controller
 {
@@ -41,10 +41,7 @@ final class ClientPortalUploadController extends Controller
             $file,
         );
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Document uploaded. Thank you.'),
-        ]);
+        Toast::success(__('Document uploaded. Thank you.'));
 
         return to_route('portal.show');
     }

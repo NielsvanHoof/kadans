@@ -6,6 +6,7 @@ namespace App\Tenancy\Http\Controllers;
 
 use App\Accounts\Models\User;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Actions\AcceptTenantInvitationAction;
 use App\Tenancy\Actions\RegisterAndAcceptTenantInvitationAction;
 use App\Tenancy\Actions\ResolveTenantInvitationFromTokenAction;
@@ -88,10 +89,7 @@ final class AcceptTenantInvitationController extends Controller
         $request->session()->put('active_tenant_id', $tenant->id);
         $request->session()->flash('inertia.refresh.workspaces', true);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Welcome to :firm.', ['firm' => $tenant->name]),
-        ]);
+        Toast::success(__('Welcome to :firm.', ['firm' => $tenant->name]));
 
         return to_route('workspaces.dashboard', ['tenant' => $tenant]);
     }
@@ -121,10 +119,7 @@ final class AcceptTenantInvitationController extends Controller
         $request->session()->put('active_tenant_id', $tenant->id);
         $request->session()->flash('inertia.refresh.workspaces', true);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Welcome to :firm.', ['firm' => $tenant->name]),
-        ]);
+        Toast::success(__('Welcome to :firm.', ['firm' => $tenant->name]));
 
         return to_route('workspaces.dashboard', ['tenant' => $tenant]);
     }
