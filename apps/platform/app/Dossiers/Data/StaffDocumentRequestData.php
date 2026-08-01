@@ -5,36 +5,41 @@ declare(strict_types=1);
 namespace App\Dossiers\Data;
 
 use App\Accounts\Models\User;
+use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Staff-facing document request row on dossier show.
  */
-final readonly class StaffDocumentRequestData
+#[TypeScript]
+final class StaffDocumentRequestData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $type,
-        public string $fieldKey,
-        public string $title,
-        public ?string $instructions,
+        public readonly int $id,
+        public readonly QuestionnaireItemType $type,
+        public readonly string $fieldKey,
+        public readonly string $title,
+        public readonly ?string $instructions,
         /** @var array<string, mixed>|null */
-        public ?array $configuration,
-        public string $status,
-        public ?string $answerText,
-        public ?bool $answerBoolean,
+        public readonly ?array $configuration,
+        public readonly DocumentRequestStatus $status,
+        public readonly ?string $answerText,
+        public readonly ?bool $answerBoolean,
         /** @var list<string>|null */
-        public ?array $answerOptionIds,
-        public ?string $answeredAt,
-        public ?string $reviewedAt,
-        public ?string $reviewedByName,
-        public ?string $rejectionReason,
-        public int $sortOrder,
+        public readonly ?array $answerOptionIds,
+        public readonly ?string $answeredAt,
+        public readonly ?string $reviewedAt,
+        public readonly ?string $reviewedByName,
+        public readonly ?string $rejectionReason,
+        public readonly int $sortOrder,
         /** Whether this field is currently shown to the client. */
-        public bool $isVisible,
+        public readonly bool $isVisible,
         /** Whether this field counts toward progress, review, and completion. */
-        public bool $isApplicable,
-        public ?StaffUploadedDocumentData $uploadedDocument,
+        public readonly bool $isApplicable,
+        public readonly ?StaffUploadedDocumentData $uploadedDocument,
     ) {}
 
     /**
@@ -53,12 +58,12 @@ final readonly class StaffDocumentRequestData
 
         return new self(
             id: $documentRequest->id,
-            type: $documentRequest->type->value,
+            type: $documentRequest->type,
             fieldKey: $documentRequest->field_key,
             title: $documentRequest->title,
             instructions: $documentRequest->instructions,
             configuration: $documentRequest->configuration,
-            status: $documentRequest->status->value,
+            status: $documentRequest->status,
             answerText: $documentRequest->answer_text,
             answerBoolean: $documentRequest->answer_boolean,
             answerOptionIds: $documentRequest->answer_option_ids,
@@ -71,58 +76,5 @@ final readonly class StaffDocumentRequestData
             isApplicable: $isApplicable,
             uploadedDocument: $uploadedDocument,
         );
-    }
-
-    /**
-     * @return array{
-     *     id: int,
-     *     type: string,
-     *     field_key: string,
-     *     title: string,
-     *     instructions: string|null,
-     *     configuration: array<string, mixed>|null,
-     *     status: string,
-     *     answer_text: string|null,
-     *     answer_boolean: bool|null,
-     *     answer_option_ids: list<string>|null,
-     *     answered_at: string|null,
-     *     reviewed_at: string|null,
-     *     reviewed_by_name: string|null,
-     *     rejection_reason: string|null,
-     *     sort_order: int,
-     *     is_visible: bool,
-     *     is_applicable: bool,
-     *     uploaded_document: array{
-     *         id: int,
-     *         original_filename: string,
-     *         size_bytes: int,
-     *         uploaded_at: string,
-     *         processing_status: string,
-     *         processing_error: string|null
-     *     }|null
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'type' => $this->type,
-            'field_key' => $this->fieldKey,
-            'title' => $this->title,
-            'instructions' => $this->instructions,
-            'configuration' => $this->configuration,
-            'status' => $this->status,
-            'answer_text' => $this->answerText,
-            'answer_boolean' => $this->answerBoolean,
-            'answer_option_ids' => $this->answerOptionIds,
-            'answered_at' => $this->answeredAt,
-            'reviewed_at' => $this->reviewedAt,
-            'reviewed_by_name' => $this->reviewedByName,
-            'rejection_reason' => $this->rejectionReason,
-            'sort_order' => $this->sortOrder,
-            'is_visible' => $this->isVisible,
-            'is_applicable' => $this->isApplicable,
-            'uploaded_document' => $this->uploadedDocument?->toArray(),
-        ];
     }
 }

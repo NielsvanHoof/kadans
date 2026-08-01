@@ -146,7 +146,7 @@ final readonly class FetchWorkspaceMembersQuery
                 userId: $user->id,
                 name: $user->name,
                 email: $user->email,
-                status: $membership->status->value,
+                status: $membership->status,
                 role: $roleName,
                 roleLabel: $roleLabel,
                 joinedAt: $membership->joined_at?->toIso8601String(),

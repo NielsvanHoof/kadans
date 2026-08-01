@@ -11,6 +11,7 @@ use App\Platform\PlatformServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\HealthServiceProvider;
+use App\Providers\TypeScriptTransformerServiceProvider;
 use App\Questionnaires\QuestionnairesServiceProvider;
 use App\Tenancy\TenancyServiceProvider;
 
@@ -18,6 +19,7 @@ return [
     AppServiceProvider::class,
     FortifyServiceProvider::class,
     HealthServiceProvider::class,
+    TypeScriptTransformerServiceProvider::class,
     PlatformServiceProvider::class,
     TenancyServiceProvider::class,
     DocumentProcessingServiceProvider::class,

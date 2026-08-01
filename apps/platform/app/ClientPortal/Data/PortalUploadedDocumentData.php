@@ -4,30 +4,18 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Uploaded file shown to the client on the portal.
  */
-final readonly class PortalUploadedDocumentData
+#[TypeScript]
+final class PortalUploadedDocumentData extends Data
 {
     public function __construct(
-        public string $originalFilename,
-        public int $sizeBytes,
-        public string $uploadedAt,
+        public readonly string $originalFilename,
+        public readonly int $sizeBytes,
+        public readonly string $uploadedAt,
     ) {}
-
-    /**
-     * @return array{
-     *     original_filename: string,
-     *     size_bytes: int,
-     *     uploaded_at: string
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'original_filename' => $this->originalFilename,
-            'size_bytes' => $this->sizeBytes,
-            'uploaded_at' => $this->uploadedAt,
-        ];
-    }
 }

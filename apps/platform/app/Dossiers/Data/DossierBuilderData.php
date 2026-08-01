@@ -4,39 +4,23 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
+use App\Dossiers\Enums\DossierStatus;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Lean dossier payload for the questionnaire builder page.
  */
-final readonly class DossierBuilderData
+#[TypeScript]
+final class DossierBuilderData extends Data
 {
     /**
      * @param  list<StaffDocumentRequestData>  $documentRequests
      */
     public function __construct(
-        public int $id,
-        public string $title,
-        public string $status,
-        public array $documentRequests,
+        public readonly int $id,
+        public readonly string $title,
+        public readonly DossierStatus $status,
+        public readonly array $documentRequests,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     status: string,
-     *     document_requests: list<array<string, mixed>>
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'status' => $this->status,
-            'document_requests' => array_map(
-                static fn (StaffDocumentRequestData $request): array => $request->toArray(),
-                $this->documentRequests,
-            ),
-        ];
-    }
 }

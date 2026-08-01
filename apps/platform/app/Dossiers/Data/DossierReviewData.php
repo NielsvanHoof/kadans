@@ -4,54 +4,26 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
+use App\Dossiers\Enums\DossierStatus;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Lean dossier payload for the review queue page.
  */
-final readonly class DossierReviewData
+#[TypeScript]
+final class DossierReviewData extends Data
 {
     /**
      * @param  list<StaffDocumentRequestData>  $documentRequests
      */
     public function __construct(
-        public int $id,
-        public string $title,
-        public string $status,
-        public DossierClientSummaryData $client,
-        public array $documentRequests,
-        public DossierReviewSummaryData $reviewSummary,
-        public bool $readyToComplete,
+        public readonly int $id,
+        public readonly string $title,
+        public readonly DossierStatus $status,
+        public readonly DossierClientSummaryData $client,
+        public readonly array $documentRequests,
+        public readonly DossierReviewSummaryData $reviewSummary,
+        public readonly bool $readyToComplete,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     status: string,
-     *     client: array{name: string, email: string},
-     *     document_requests: list<array<string, mixed>>,
-     *     review_summary: array{
-     *         total: int,
-     *         pending: int,
-     *         submitted: int,
-     *         accepted: int,
-     *         rejected: int
-     *     },
-     *     ready_to_complete: bool
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'status' => $this->status,
-            'client' => $this->client->toArray(),
-            'document_requests' => array_map(
-                static fn (StaffDocumentRequestData $request): array => $request->toArray(),
-                $this->documentRequests,
-            ),
-            'review_summary' => $this->reviewSummary->toArray(),
-            'ready_to_complete' => $this->readyToComplete,
-        ];
-    }
 }

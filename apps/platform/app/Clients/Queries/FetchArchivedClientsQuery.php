@@ -85,7 +85,11 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
         return '-deleted_at';
     }
 
-    /** @return array{id: int, name: string, email: string, dossiers_count: int, archived_at: string} */
+    /**
+     * Row shape is owned by ArchivedClientRowData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
+     */
     protected function mapModel(Model $model): array
     {
         /** @var Client $model */

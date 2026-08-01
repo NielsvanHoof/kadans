@@ -4,24 +4,17 @@ declare(strict_types=1);
 
 namespace App\Reporting\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Compact activity log request metadata.
  */
-final readonly class ActivityLogPropertiesData
+#[TypeScript]
+final class ActivityLogPropertiesData extends Data
 {
     public function __construct(
-        public ?string $ip,
-        public ?string $route,
+        public readonly ?string $ip,
+        public readonly ?string $route,
     ) {}
-
-    /**
-     * @return array{ip: string|null, route: string|null}
-     */
-    public function toArray(): array
-    {
-        return [
-            'ip' => $this->ip,
-            'route' => $this->route,
-        ];
-    }
 }

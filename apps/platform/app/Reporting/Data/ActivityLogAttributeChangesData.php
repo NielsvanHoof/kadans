@@ -4,28 +4,21 @@ declare(strict_types=1);
 
 namespace App\Reporting\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Activity log attribute diff payload.
  */
-final readonly class ActivityLogAttributeChangesData
+#[TypeScript]
+final class ActivityLogAttributeChangesData extends Data
 {
     /**
      * @param  array<string, mixed>  $attributes
      * @param  array<string, mixed>  $old
      */
     public function __construct(
-        public array $attributes,
-        public array $old,
+        public readonly array $attributes,
+        public readonly array $old,
     ) {}
-
-    /**
-     * @return array{attributes: array<string, mixed>, old: array<string, mixed>}
-     */
-    public function toArray(): array
-    {
-        return [
-            'attributes' => $this->attributes,
-            'old' => $this->old,
-        ];
-    }
 }

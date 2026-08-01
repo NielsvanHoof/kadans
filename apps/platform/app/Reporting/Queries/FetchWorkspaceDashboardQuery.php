@@ -174,7 +174,7 @@ final class FetchWorkspaceDashboardQuery
                 id: $dossier->id,
                 title: $dossier->title,
                 reference: $dossier->reference,
-                status: $dossier->status->value,
+                status: $dossier->status,
                 clientName: $client->name,
                 dueDate: $dossier->due_date?->toDateString(),
                 responsibleName: $dossier->responsibleUser?->name,

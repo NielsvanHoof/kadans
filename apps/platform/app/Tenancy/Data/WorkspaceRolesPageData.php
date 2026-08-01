@@ -4,59 +4,22 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Data;
 
-use Illuminate\Contracts\Support\Arrayable;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Full payload for the workspace roles Inertia page.
- *
- * @implements Arrayable<string, mixed>
  */
-final readonly class WorkspaceRolesPageData implements Arrayable
+#[TypeScript]
+final class WorkspaceRolesPageData extends Data
 {
     /**
      * @param  list<WorkspaceRoleData>  $roles
      * @param  list<WorkspacePermissionGroupData>  $permissionGroups
      */
     public function __construct(
-        public array $roles,
-        public array $permissionGroups,
-        public bool $canManageRoles,
+        public readonly array $roles,
+        public readonly array $permissionGroups,
+        public readonly bool $canManageRoles,
     ) {}
-
-    /**
-     * @return array{
-     *     roles: list<array{
-     *         id: int,
-     *         value: string,
-     *         label: string,
-     *         is_system: bool,
-     *         member_count: int
-     *     }>,
-     *     permission_groups: list<array{
-     *         value: string,
-     *         label: string,
-     *         permissions: list<array{
-     *             value: string,
-     *             label: string,
-     *             description: string,
-     *             granted_to: list<string>
-     *         }>
-     *     }>,
-     *     can_manage_roles: bool
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'roles' => array_map(
-                static fn (WorkspaceRoleData $role): array => $role->toArray(),
-                $this->roles,
-            ),
-            'permission_groups' => array_map(
-                static fn (WorkspacePermissionGroupData $group): array => $group->toArray(),
-                $this->permissionGroups,
-            ),
-            'can_manage_roles' => $this->canManageRoles,
-        ];
-    }
 }

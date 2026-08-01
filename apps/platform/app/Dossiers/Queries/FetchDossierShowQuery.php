@@ -94,7 +94,7 @@ final readonly class FetchDossierShowQuery
             id: $dossier->id,
             title: $dossier->title,
             reference: $dossier->reference,
-            status: $dossier->status->value,
+            status: $dossier->status,
             dueDate: $dossier->due_date?->toDateString(),
             responsibleStaff: $responsibleUser instanceof User
                 ? new PersonOptionData(

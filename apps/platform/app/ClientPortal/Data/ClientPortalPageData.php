@@ -4,31 +4,17 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Data;
 
-use Illuminate\Contracts\Support\Arrayable;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Full client portal Inertia payload.
- *
- * @implements Arrayable<string, mixed>
  */
-final readonly class ClientPortalPageData implements Arrayable
+#[TypeScript]
+final class ClientPortalPageData extends Data
 {
     public function __construct(
-        public PortalFirmData $firm,
-        public PortalDossierData $dossier,
+        public readonly PortalFirmData $firm,
+        public readonly PortalDossierData $dossier,
     ) {}
-
-    /**
-     * @return array{
-     *     firm: array{name: string},
-     *     dossier: array<string, mixed>
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'firm' => $this->firm->toArray(),
-            'dossier' => $this->dossier->toArray(),
-        ];
-    }
 }

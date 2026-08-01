@@ -1,129 +1,54 @@
+/**
+ * Dossier domain types.
+ *
+ * Payload shapes are generated from the PHP Data objects (see
+ * resources/js/types/generated/app.d.ts) and only aliased here, so the names
+ * used across the feature stay short and import sites do not churn. Add a new
+ * payload field in the PHP DTO, not here.
+ */
 import type { DocumentRequest } from '@/features/document-requests/types';
-import type {
-    PipelineStatus,
-    PipelineStepStatus,
-} from '@/features/pipelines/types';
-import type { AccessGrant } from '../portal/types';
 
-export type DossierStatus =
-    'draft' | 'awaiting_client' | 'in_review' | 'completed';
+export type DossierStatus = App.Dossiers.Enums.DossierStatus;
 
 /** Review progress counts shared by overview and review surfaces. */
-export type DossierReviewSummary = {
-    total: number;
-    pending: number;
-    submitted: number;
-    accepted: number;
-    rejected: number;
+export type DossierReviewSummary = App.Dossiers.Data.DossierReviewSummaryData;
+
+/**
+ * Payloads carrying questionnaire items swap in the refined DocumentRequest,
+ * whose `configuration` is structured rather than a free-form JSON map.
+ */
+type WithItems<T> = Omit<T, 'document_requests'> & {
+    document_requests: DocumentRequest[];
 };
 
 /** Full dossier payload for the staff overview (show) page. */
-export type Dossier = {
-    id: number;
-    title: string;
-    reference: string | null;
-    status: DossierStatus;
-    due_date: string | null;
-    responsible_staff: ResponsibleStaffOption | null;
-    reminder_interval_days: number | null;
-    next_reminder_at: string | null;
-    last_client_message_sent_at: string | null;
-    last_client_opened_at: string | null;
-    has_outstanding_client_items: boolean;
-    ready_to_complete: boolean;
-    review_summary: DossierReviewSummary;
-    client: {
-        name: string;
-        email: string;
-    };
-    document_requests: DocumentRequest[];
-    access_grants: AccessGrant[];
-    exports: DossierExport[];
-};
+export type Dossier = WithItems<App.Dossiers.Data.DossierShowData>;
 
 /** Lean dossier payload for the questionnaire builder page. */
-export type DossierBuilder = Pick<
-    Dossier,
-    'id' | 'title' | 'status' | 'document_requests'
->;
+export type DossierBuilder = WithItems<App.Dossiers.Data.DossierBuilderData>;
 
 /** Exclusive builder edit lease returned with the builder page / lock endpoints. */
-export type DossierBuilderLock = {
-    is_mine: boolean;
-    token: string | null;
-    expires_at: string | null;
-    holder: {
-        id: number;
-        name: string;
-        email: string;
-    } | null;
-};
+export type DossierBuilderLock = App.Dossiers.Data.DossierBuilderLockData;
 
 /** Lean dossier payload for the review queue page. */
-export type DossierReview = Pick<
-    Dossier,
-    | 'id'
-    | 'title'
-    | 'status'
-    | 'client'
-    | 'document_requests'
-    | 'review_summary'
-    | 'ready_to_complete'
->;
+export type DossierReview = WithItems<App.Dossiers.Data.DossierReviewData>;
 
 /** Fields needed by the review progress / complete card. */
 export type DossierWorkflowProgress = Pick<
-    Dossier,
+    DossierReview,
     'id' | 'status' | 'review_summary' | 'ready_to_complete'
 >;
 
-export type DossierExport = {
-    id: number;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    created_at: string;
-    expires_at: string | null;
-    download_url: string | null;
-    error: string | null;
-    pipeline: Pipeline | null;
-};
+export type DossierExport = App.Dossiers.Data.DossierExportData;
 
-export type Pipeline = {
-    id: number;
-    type: string;
-    status: PipelineStatus;
-    current_stage: string | null;
-    attempt_number: number;
-    last_activity_at: string | null;
-    steps: PipelineStep[];
-};
+export type Pipeline = App.DocumentProcessing.Data.PipelineData;
 
-export type PipelineStep = {
-    key: string;
-    status: PipelineStepStatus;
-    attempts: number;
-    started_at: string | null;
-    last_activity_at: string | null;
-    completed_at: string | null;
-    error_code: string | null;
-    error_message: string | null;
-};
+export type PipelineStep = App.DocumentProcessing.Data.PipelineStepData;
 
 /** Compact dossier row for index / dashboard lists. */
-export type DossierSummary = {
-    id: number;
-    title: string;
-    reference: string | null;
-    status: DossierStatus;
-    client_name: string;
-    due_date?: string | null;
-    responsible_name?: string | null;
-    updated_at?: string;
-};
+export type DossierSummary = App.Dossiers.Data.DossierIndexRowData;
 
-export type ArchivedDossierSummary = DossierSummary & {
-    client_archived: boolean;
-    archived_at: string;
-};
+export type ArchivedDossierSummary = App.Dossiers.Data.ArchivedDossierRowData;
 
 export type EditableDossier = Pick<
     Dossier,
@@ -140,14 +65,9 @@ export type EditableDossierWithResponsibility = EditableDossier & {
 };
 
 /** Client option for the create-dossier form. */
-export type DossierClientOption = {
-    id: number;
-    name: string;
-    email: string;
-};
+export type DossierClientOption = App.Shared.Data.PersonOptionData;
 
-export type ResponsibleStaffOption = {
-    id: number;
-    name: string;
-    email: string;
-};
+export type ResponsibleStaffOption = App.Shared.Data.PersonOptionData;
+
+/** Re-exported so dossier surfaces can keep importing item rows from here. */
+export type { DocumentRequest };

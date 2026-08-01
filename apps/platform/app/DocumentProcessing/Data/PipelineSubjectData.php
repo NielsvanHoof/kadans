@@ -4,27 +4,17 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Data;
 
-final readonly class PipelineSubjectData
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+#[TypeScript]
+final class PipelineSubjectData extends Data
 {
     public function __construct(
-        public string $type,
-        public int $id,
-        public ?string $label,
-        public ?string $context,
-        public ?string $href,
+        public readonly string $type,
+        public readonly int $id,
+        public readonly ?string $label,
+        public readonly ?string $context,
+        public readonly ?string $href,
     ) {}
-
-    /**
-     * @return array{type: string, id: int, label: string|null, context: string|null, href: string|null}
-     */
-    public function toArray(): array
-    {
-        return [
-            'type' => $this->type,
-            'id' => $this->id,
-            'label' => $this->label,
-            'context' => $this->context,
-            'href' => $this->href,
-        ];
-    }
 }

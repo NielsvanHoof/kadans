@@ -58,7 +58,7 @@ final readonly class FetchDossierReviewQuery
         return new DossierReviewData(
             id: $dossier->id,
             title: $dossier->title,
-            status: $dossier->status->value,
+            status: $dossier->status,
             client: new DossierClientSummaryData(
                 name: $client->name,
                 email: $client->email,

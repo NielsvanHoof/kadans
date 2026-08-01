@@ -66,6 +66,20 @@ jobs:
       - name: Run the complete quality gate
         run: composer ci:check
 
+      # ci:check regenerates these; any change means the committed output is stale.
+      # Uses status --porcelain rather than `diff` so a generated file that was
+      # never committed is caught too, not just a modified one.
+      - name: Fail on stale generated TypeScript
+        run: |
+          paths="resources/js/types/generated resources/js/features/document-requests/item-types/generated.ts"
+          changed=$(git status --porcelain -- $paths)
+          if [ -n "$changed" ]; then
+            echo "Generated TypeScript is out of date or uncommitted:"
+            echo "$changed"
+            git diff -- $paths
+            exit 1
+          fi
+
   coverage:
     name: Test coverage gate
     runs-on: ubuntu-latest

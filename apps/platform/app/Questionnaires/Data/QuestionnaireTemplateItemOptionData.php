@@ -4,42 +4,25 @@ declare(strict_types=1);
 
 namespace App\Questionnaires\Data;
 
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Lean template item for local apply in the dossier builder draft.
  */
-final readonly class QuestionnaireTemplateItemOptionData
+#[TypeScript]
+final class QuestionnaireTemplateItemOptionData extends Data
 {
     /**
      * @param  array<string, mixed>|null  $configuration
      */
     public function __construct(
-        public string $type,
-        public string $fieldKey,
-        public string $title,
-        public ?string $instructions,
-        public ?array $configuration,
-        public int $sortOrder,
+        public readonly QuestionnaireItemType $type,
+        public readonly string $fieldKey,
+        public readonly string $title,
+        public readonly ?string $instructions,
+        public readonly ?array $configuration,
+        public readonly int $sortOrder,
     ) {}
-
-    /**
-     * @return array{
-     *     type: string,
-     *     field_key: string,
-     *     title: string,
-     *     instructions: string|null,
-     *     configuration: array<string, mixed>|null,
-     *     sort_order: int
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'type' => $this->type,
-            'field_key' => $this->fieldKey,
-            'title' => $this->title,
-            'instructions' => $this->instructions,
-            'configuration' => $this->configuration,
-            'sort_order' => $this->sortOrder,
-        ];
-    }
 }

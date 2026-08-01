@@ -4,29 +4,34 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Data;
 
+use App\DocumentProcessing\Enums\PipelineStatus;
+use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Shared\Database\MorphType;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
-final readonly class PipelineIndexRowData
+#[TypeScript]
+final class PipelineIndexRowData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $type,
-        public string $status,
-        public ?string $currentStage,
-        public int $attemptNumber,
-        public ?string $lastActivityAt,
-        public string $createdAt,
-        public string $subjectType,
-        public int $subjectId,
+        public readonly int $id,
+        public readonly PipelineType $type,
+        public readonly PipelineStatus $status,
+        public readonly ?string $currentStage,
+        public readonly int $attemptNumber,
+        public readonly ?string $lastActivityAt,
+        public readonly string $createdAt,
+        public readonly string $subjectType,
+        public readonly int $subjectId,
     ) {}
 
     public static function fromModel(Pipeline $pipeline): self
     {
         return new self(
             id: $pipeline->id,
-            type: $pipeline->type->value,
-            status: $pipeline->status->value,
+            type: $pipeline->type,
+            status: $pipeline->status,
             currentStage: $pipeline->current_stage,
             attemptNumber: $pipeline->attempt_number,
             lastActivityAt: $pipeline->last_activity_at?->toIso8601String(),
@@ -34,23 +39,5 @@ final readonly class PipelineIndexRowData
             subjectType: MorphType::classBasename($pipeline->pipelineable_type),
             subjectId: $pipeline->pipelineable_id,
         );
-    }
-
-    /**
-     * @return array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, created_at: string, subject_type: string, subject_id: int}
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'type' => $this->type,
-            'status' => $this->status,
-            'current_stage' => $this->currentStage,
-            'attempt_number' => $this->attemptNumber,
-            'last_activity_at' => $this->lastActivityAt,
-            'created_at' => $this->createdAt,
-            'subject_type' => $this->subjectType,
-            'subject_id' => $this->subjectId,
-        ];
     }
 }

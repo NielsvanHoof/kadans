@@ -10,10 +10,11 @@
         "format:check": "prettier --check resources/",
         "lint": "biome check --write .",
         "lint:check": "biome check .",
-        "types:check": "npm run wayfinder:generate && npm run questionnaire:generate && npm run permissions:generate && tsc --noEmit",
+        "types:check": "npm run wayfinder:generate && npm run questionnaire:generate && npm run permissions:generate && npm run types:transform && tsc --noEmit",
         "wayfinder:generate": "php artisan wayfinder:generate --with-form --no-interaction",
         "questionnaire:generate": "php artisan questionnaire:generate-item-types --no-interaction",
-        "permissions:generate": "php artisan tenancy:generate-permissions --no-interaction"
+        "permissions:generate": "php artisan tenancy:generate-permissions --no-interaction",
+        "types:transform": "php artisan typescript:transform --no-interaction"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.4",

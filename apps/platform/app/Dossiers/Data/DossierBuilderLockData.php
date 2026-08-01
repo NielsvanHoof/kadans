@@ -7,17 +7,20 @@ namespace App\Dossiers\Data;
 use App\Accounts\Models\User;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Data\PersonOptionData;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Builder edit-lock state for Inertia / JSON clients.
  */
-final readonly class DossierBuilderLockData
+#[TypeScript]
+final class DossierBuilderLockData extends Data
 {
     public function __construct(
-        public bool $isMine,
-        public ?string $token,
-        public ?string $expiresAt,
-        public ?PersonOptionData $holder,
+        public readonly bool $isMine,
+        public readonly ?string $token,
+        public readonly ?string $expiresAt,
+        public readonly ?PersonOptionData $holder,
     ) {}
 
     /**
@@ -50,23 +53,5 @@ final readonly class DossierBuilderLockData
                 )
                 : null,
         );
-    }
-
-    /**
-     * @return array{
-     *     is_mine: bool,
-     *     token: string|null,
-     *     expires_at: string|null,
-     *     holder: array{id: int, name: string, email: string}|null
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'is_mine' => $this->isMine,
-            'token' => $this->token,
-            'expires_at' => $this->expiresAt,
-            'holder' => $this->holder?->toArray(),
-        ];
     }
 }

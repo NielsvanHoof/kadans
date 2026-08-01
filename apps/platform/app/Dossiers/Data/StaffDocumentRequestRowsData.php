@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Mapped staff document-request rows plus progress counters shared by dossier pages.
  */
-final readonly class StaffDocumentRequestRowsData
+#[TypeScript]
+final class StaffDocumentRequestRowsData extends Data
 {
     /**
      * @param  list<StaffDocumentRequestData>  $rows
      */
     public function __construct(
-        public array $rows,
-        public DossierReviewSummaryData $reviewSummary,
-        public bool $hasOutstandingClientItems,
-        public bool $readyToComplete,
+        public readonly array $rows,
+        public readonly DossierReviewSummaryData $reviewSummary,
+        public readonly bool $hasOutstandingClientItems,
+        public readonly bool $readyToComplete,
     ) {}
 }

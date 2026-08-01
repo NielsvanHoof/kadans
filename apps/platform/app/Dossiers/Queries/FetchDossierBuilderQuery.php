@@ -91,7 +91,7 @@ final readonly class FetchDossierBuilderQuery
         return new DossierBuilderData(
             id: $dossier->id,
             title: $dossier->title,
-            status: $dossier->status->value,
+            status: $dossier->status,
             documentRequests: $mapped->rows,
         );
     }

@@ -180,17 +180,9 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{
-     *     id: int,
-     *     event: string|null,
-     *     label: string,
-     *     description: string,
-     *     causer_name: string|null,
-     *     subject: array{type: string, id: int, name: string|null}|null,
-     *     created_at: string|null,
-     *     properties: array{ip: string|null, route: string|null},
-     *     attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null
-     * }
+     * Row shape is owned by ActivityLogRowData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
      */
     protected function mapModel(Model $model): array
     {

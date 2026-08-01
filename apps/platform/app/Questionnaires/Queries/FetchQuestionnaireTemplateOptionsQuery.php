@@ -35,7 +35,7 @@ final class FetchQuestionnaireTemplateOptionsQuery
 
             foreach ($template->items as $item) {
                 $items[] = new QuestionnaireTemplateItemOptionData(
-                    type: $item->type->value,
+                    type: $item->type,
                     fieldKey: $item->field_key,
                     title: $item->title,
                     instructions: $item->instructions,
