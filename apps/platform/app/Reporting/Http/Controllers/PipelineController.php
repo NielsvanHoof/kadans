@@ -88,7 +88,6 @@ final class PipelineController extends Controller
 
     public function destroy(
         Tenant $tenant,
-        Request $request,
         Pipeline $pipeline,
         DeletePipelineAction $deletePipeline,
     ): RedirectResponse {

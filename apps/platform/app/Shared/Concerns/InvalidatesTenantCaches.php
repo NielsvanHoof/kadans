@@ -2,22 +2,24 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Concerns;
+namespace App\Shared\Concerns;
 
-use App\Reporting\Support\WorkspaceDashboardCache;
+use App\Shared\Cache\TenantCacheInvalidator;
 use Illuminate\Database\Eloquent\Model;
 
 use function is_numeric;
 
 /**
- * Forget the workspace dashboard metrics cache when a metric-driving model changes.
+ * Forget tenant-scoped derived caches when this model changes.
  *
- * Reads tenant_id from the model itself (not Tenant::current()) so portal
- * and queued writes still invalidate the right firm.
+ * Reads tenant_id from the model itself (not Tenant::current()) so portal and
+ * queued writes still invalidate the right firm.
+ *
+ * @see TenantCacheInvalidator for why the dependency is inverted.
  */
-trait InvalidatesWorkspaceDashboardCache
+trait InvalidatesTenantCaches
 {
-    public static function bootInvalidatesWorkspaceDashboardCache(): void
+    public static function bootInvalidatesTenantCaches(): void
     {
         // restored / forceDeleted only fire on SoftDeletes models; harmless elsewhere.
         foreach (['saved', 'deleted', 'restored', 'forceDeleted'] as $event) {
@@ -29,7 +31,7 @@ trait InvalidatesWorkspaceDashboardCache
                     return;
                 }
 
-                WorkspaceDashboardCache::forget((int) $tenantId);
+                resolve(TenantCacheInvalidator::class)->forgetForTenant((int) $tenantId);
             });
         }
     }

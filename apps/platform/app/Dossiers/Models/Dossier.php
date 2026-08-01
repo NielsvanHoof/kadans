@@ -10,7 +10,7 @@ use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
-use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
+use App\Shared\Concerns\InvalidatesTenantCaches;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
@@ -90,7 +90,7 @@ use function is_string;
 final class Dossier extends TenantOwnedModel
 {
     /** @use HasFactory<DossierFactory> */
-    use HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+    use HasFactory, InvalidatesTenantCaches, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
 
     /**
      * @var list<string>

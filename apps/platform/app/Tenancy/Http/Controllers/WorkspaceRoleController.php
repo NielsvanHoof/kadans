@@ -16,7 +16,6 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Queries\FetchWorkspaceRolesQuery;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -99,7 +98,6 @@ final class WorkspaceRoleController extends Controller
     public function destroy(
         Tenant $tenant,
         TenantRole $role,
-        Request $request,
         DeleteTenantRoleAction $deleteTenantRole,
     ): RedirectResponse {
         $user = $this->currentUser();

@@ -7,7 +7,7 @@ namespace App\Clients\Models;
 use App\Audit\Concerns\LogsTenantAuditableActivity;
 use App\Audit\Models\Activity;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
+use App\Shared\Concerns\InvalidatesTenantCaches;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
@@ -56,7 +56,7 @@ use Spatie\Activitylog\Support\LogOptions;
 final class Client extends TenantOwnedModel
 {
     /** @use HasFactory<ClientFactory> */
-    use HasFactory, InvalidatesWorkspaceDashboardCache, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+    use HasFactory, InvalidatesTenantCaches, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
 
     /**
      * @var list<string>

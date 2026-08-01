@@ -15,7 +15,7 @@ This application is a multi-tenant Laravel app with **folder-based domains** und
 | **Platform** | Support sessions, Inertia shared props, retention, readiness |
 | **Questionnaires** | Reusable questionnaire templates |
 | **Reporting** | Dashboards / activity / media UI over other domains’ models |
-| **Shared** | Base controller, pagination helpers, shared DTOs |
+| **Shared** | Base controller, pagination helpers, shared DTOs, cross-layer contracts |
 | **Tenancy** | Tenants, memberships, invitations, permission infrastructure |
 | **WorkspaceNotifications** | In-app notification inbox |
 | **Providers** | App-level providers (`AppServiceProvider`, Fortify, Health) plus per-domain `*ServiceProvider` classes |
@@ -62,7 +62,7 @@ Domains are PHP namespaces with their own service providers for bindings and pol
 Providers registered in [`bootstrap/providers.php`](../bootstrap/providers.php):
 
 - App-level: `AppServiceProvider`, `FortifyServiceProvider`, `HealthServiceProvider`
-- Domain: `Platform`, `Tenancy`, `DocumentProcessing`, `Dossiers`, `Audit`, `Clients`, `ClientPortal`, `Questionnaires`
+- Domain: `Platform`, `Tenancy`, `DocumentProcessing`, `Dossiers`, `Audit`, `Clients`, `ClientPortal`, `Questionnaires`, `Reporting`
 
 `AppServiceProvider` stays thin — defaults, factory discovery, morph map, and local tooling. Domain wiring (AWS/OCR, gates, policies) belongs in the matching domain provider.
 
@@ -117,6 +117,34 @@ Controllers stay thin: authorize → call an Action or Query → return `Inertia
 - **Transitions** — status rules (`DossierTransitions`, `DocumentRequestTransitions`)
 - **BelongsToTenant** — tenant-scoped Eloquent models ([`app/Tenancy/Concerns/BelongsToTenant.php`](../app/Tenancy/Concerns/BelongsToTenant.php)). Soft by default (no current tenant → empty results); workspace/portal opt into strict throw via `TenantContext`. Cross-tenant lookups use `queryWithoutTenantScope()`, not `withoutGlobalScopes()`.
 - **TenantContext** — `runForTenant()` for console/async code; opt-in `enableStrict()` / `runStrict()` for fail-fast scoping (Octane-safe via Laravel Context)
+
+### Domain layering
+
+Domains are ordered; a domain may use domains below it and its own layer
+siblings, never above. Enforced in [`tests/Pest.php`](../tests/Pest.php).
+
+```
+L0  Shared
+L1  Accounts
+L2  Tenancy
+L3  Questionnaires
+L4  Clients, Dossiers, DocumentProcessing
+L5  ClientPortal
+L6  Reporting, Platform, WorkspaceNotifications
+```
+
+**Audit is cross-cutting**, not a layer: any domain may log activity, and Audit
+itself may only reach Accounts and Tenancy.
+
+Three pairs deliberately share a layer because the dependency really is mutual —
+`Clients`/`Dossiers` (a dossier is a case *for* a client, and deleting a client
+cascades) and `Dossiers`/`DocumentProcessing` (OCR and export pipelines are part
+of the upload and dossier lifecycle).
+
+When a lower layer needs something from a higher one, invert it with a contract
+the lower layer owns and the higher one binds — see
+`Tenancy\Contracts\SupportSessionState`, `Dossiers\Contracts\ClientPortalReminders`,
+and `Shared\Cache\TenantCacheInvalidator`.
 
 Migrations and factories stay under `database/` — not inside `app/{Domain}`.
 

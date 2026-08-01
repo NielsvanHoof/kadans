@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Lives in Accounts rather than on the shared base controller because App\Shared
  * must not depend on another domain (enforced in tests/Pest.php).
  *
- * @see EnsuresAuthenticatedUser for the FormRequest equivalent.
+ * @see AuthorizesAnyAuthenticatedUser for the FormRequest equivalent.
  */
 trait ResolvesCurrentUser
 {

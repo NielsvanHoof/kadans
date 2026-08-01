@@ -114,41 +114,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     expect(Controller::class)
         ->toBeAbstract(),
 
+    // Per-controller action contracts live in tests/Unit/ControllerActionsTest.php;
+    // one global allowlist here permitted any listed name on every controller.
     expect('App\*\Http\Controllers')
         ->classes()
         ->toExtend(Controller::class)
         ->toHaveSuffix('Controller')
-        ->not->toHavePublicMethodsBesides([
-            '__construct',
-            '__invoke',
-            'index',
-            'show',
-            'create',
-            'store',
-            'edit',
-            'update',
-            'destroy',
-            'middleware',
-            // Domain-specific controller actions beyond REST defaults.
-            'copy',
-            'reorder',
-            'sync',
-            'applyTemplate',
-            'answer',
-            'download',
-            'archived',
-            'restore',
-            'bulkArchive',
-            'bulkRestore',
-            'resend',
-            'accept',
-            'register',
-            'builder',
-            'review',
-            'preview',
-            'live',
-            'heartbeat',
-        ])
         ->ignoring(Controller::class),
 
     expect(Activity::class)
@@ -166,16 +137,27 @@ pest()->presets()->custom('qompose', fn (): array => [
     |   L0  Shared
     |   L1  Accounts
     |   L2  Tenancy
-    |   L3  Audit
-    |   L4  Clients, Questionnaires
-    |   L5  Dossiers
-    |   L6  DocumentProcessing, ClientPortal
-    |   L7  Reporting, Platform, WorkspaceNotifications
+    |   L3  Questionnaires
+    |   L4  Clients, Dossiers, DocumentProcessing
+    |   L5  ClientPortal
+    |   L6  Reporting, Platform, WorkspaceNotifications
+    |
+    |   Cross-cutting: Audit — any domain may log activity; Audit itself may
+    |   only reach Accounts and Tenancy (enforced separately below).
+    |
+    | Three pairs share a layer because their dependency really is mutual, and
+    | pretending otherwise only produced permanent "debt" entries:
+    |
+    |   Clients <-> Dossiers            a dossier is a case FOR a client; deleting
+    |                                   a client cascades to its dossiers
+    |   Dossiers <-> DocumentProcessing OCR/export pipelines act on uploads and
+    |                                   dossiers, and are part of their lifecycle
+    |
+    | Audit was likewise modelled as a layer (L3) and generated ~20 violations,
+    | because logging is genuinely cross-cutting: every domain writes activity,
+    | while Audit needs User and Tenant to type its own rows.
     |
     | Each expectation below lists the upward domains it must not reach.
-    | Where a domain is knowingly OMITTED from its own list, the comment
-    | names the debt — deleting those comments (and re-adding the omitted
-    | namespace) is the definition of done for the phase that owns it.
     |
     | Standing exception: Eloquent models may reference models from any
     | domain, because relations are inherently bidirectional. That covers
@@ -199,7 +181,7 @@ pest()->presets()->custom('qompose', fn (): array => [
         ]),
 
     // User is the cross-domain hub, so it is ignored here and constrained
-    // separately below. Omitted: Audit — ProfileController logs directly (Phase 2).
+    // separately below. Audit is cross-cutting and deliberately absent.
     expect('App\Accounts')
         ->not->toUse([
             'App\ClientPortal',
@@ -230,8 +212,7 @@ pest()->presets()->custom('qompose', fn (): array => [
         ]),
 
     // Tenant's Eloquent relations reach Clients/Dossiers/Questionnaires under the
-    // standing exception; Platform is now inverted behind SupportSessionState.
-    // Omitted: Audit — tenant actions log activity directly (Phase 2).
+    // standing exception; Platform is inverted behind SupportSessionState.
     expect('App\Tenancy')
         ->not->toUse([
             'App\ClientPortal',
@@ -245,6 +226,8 @@ pest()->presets()->custom('qompose', fn (): array => [
         ])
         ->ignoring(Tenant::class),
 
+    // Cross-cutting, so anyone may use it — but it must stay cheap to depend on:
+    // Audit itself may only reach Accounts and Tenancy.
     expect('App\Audit')
         ->not->toUse([
             'App\ClientPortal',
@@ -257,12 +240,13 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\WorkspaceNotifications',
         ]),
 
-    // Omitted: Dossiers and Reporting — Phase 2 debt.
+    // Dossiers is a layer sibling (mutual by design). Reporting is now reached
+    // through the TenantCacheInvalidator contract instead of a Reporting trait.
     expect('App\Clients')
         ->not->toUse([
             'App\ClientPortal',
-            'App\DocumentProcessing',
             'App\Platform',
+            'App\Reporting',
             'App\WorkspaceNotifications',
         ]),
 
@@ -276,7 +260,7 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\WorkspaceNotifications',
         ]),
 
-    // Omitted: DocumentProcessing and Reporting (Phase 2).
+    // Clients and DocumentProcessing are layer siblings (mutual by design).
     // ClientPortal is reached only through DossierArchived / DocumentRequestRejected
     // events and the ClientPortalReminders contract; the Dossier model keeps its
     // ClientAccessGrant relation under the standing exception.
@@ -284,6 +268,7 @@ pest()->presets()->custom('qompose', fn (): array => [
         ->not->toUse([
             'App\ClientPortal',
             'App\Platform',
+            'App\Reporting',
             'App\WorkspaceNotifications',
         ])
         ->ignoring(Dossier::class),

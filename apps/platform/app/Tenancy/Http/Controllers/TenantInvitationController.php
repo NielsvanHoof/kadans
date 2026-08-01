@@ -12,7 +12,6 @@ use App\Tenancy\Actions\RevokeTenantInvitationAction;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 final class TenantInvitationController extends Controller
 {
@@ -36,7 +35,6 @@ final class TenantInvitationController extends Controller
     public function destroy(
         Tenant $tenant,
         TenantInvitation $invitation,
-        Request $request,
         RevokeTenantInvitationAction $revokeTenantInvitation,
     ): RedirectResponse {
         $this->ensureInvitationBelongsToTenant($invitation, $tenant);

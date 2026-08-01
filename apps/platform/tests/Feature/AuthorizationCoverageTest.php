@@ -94,7 +94,7 @@ function methodSource(ReflectionMethod $method): string
 /**
  * Does this source fragment consult the Gate?
  *
- * Positive detection on purpose. EnsuresAuthenticatedUser::authorize() only
+ * Positive detection on purpose. AuthorizesAnyAuthenticatedUser::authorize() only
  * asserts `$this->user() instanceof User`, which is authentication, not
  * authorization — it must not count, or every settings route would look guarded.
  */

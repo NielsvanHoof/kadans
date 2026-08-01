@@ -10,7 +10,6 @@ use App\Tenancy\Models\Tenant;
 use App\WorkspaceNotifications\Actions\MarkAllWorkspaceNotificationsReadAction;
 use App\WorkspaceNotifications\Actions\MarkWorkspaceNotificationReadAction;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 final class WorkspaceNotificationController extends Controller
 {
@@ -20,7 +19,6 @@ final class WorkspaceNotificationController extends Controller
      * Mark one workspace notification as read.
      */
     public function update(
-        Request $request,
         Tenant $tenant,
         string $notification,
         MarkWorkspaceNotificationReadAction $markWorkspaceNotificationRead,
@@ -36,7 +34,6 @@ final class WorkspaceNotificationController extends Controller
      * Mark every unread workspace notification as read for this tenant.
      */
     public function store(
-        Request $request,
         Tenant $tenant,
         MarkAllWorkspaceNotificationsReadAction $markAllWorkspaceNotificationsRead,
     ): RedirectResponse {

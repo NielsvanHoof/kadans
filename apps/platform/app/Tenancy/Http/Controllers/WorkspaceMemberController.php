@@ -18,7 +18,6 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Queries\FetchWorkspaceMembersQuery;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,7 +29,6 @@ final class WorkspaceMemberController extends Controller
 
     public function index(
         Tenant $tenant,
-        Request $request,
         FetchWorkspaceMembersQuery $fetchWorkspaceMembers,
     ): Response {
         $this->authorize('viewAny', TenantMembership::class);
@@ -93,7 +91,6 @@ final class WorkspaceMemberController extends Controller
     public function destroy(
         Tenant $tenant,
         TenantMembership $membership,
-        Request $request,
         RemoveTenantMemberAction $removeTenantMember,
     ): RedirectResponse {
         $this->ensureMembershipBelongsToTenant($membership, $tenant);

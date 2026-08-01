@@ -8,7 +8,7 @@ use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Reporting\Concerns\InvalidatesWorkspaceDashboardCache;
+use App\Shared\Concerns\InvalidatesTenantCaches;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
@@ -82,7 +82,7 @@ use Override;
 final class DocumentRequest extends TenantOwnedModel
 {
     /** @use HasFactory<DocumentRequestFactory> */
-    use HasFactory, InvalidatesWorkspaceDashboardCache, Searchable;
+    use HasFactory, InvalidatesTenantCaches, Searchable;
 
     /**
      * @var list<string>

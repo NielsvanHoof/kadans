@@ -13,6 +13,7 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\HealthServiceProvider;
 use App\Providers\TypeScriptTransformerServiceProvider;
 use App\Questionnaires\QuestionnairesServiceProvider;
+use App\Reporting\ReportingServiceProvider;
 use App\Tenancy\TenancyServiceProvider;
 
 return [
@@ -28,4 +29,5 @@ return [
     ClientsServiceProvider::class,
     ClientPortalServiceProvider::class,
     QuestionnairesServiceProvider::class,
+    ReportingServiceProvider::class,
 ];
