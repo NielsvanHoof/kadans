@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Dossiers\Http\Controllers\DocumentRequestController;
+use App\Dossiers\Http\Controllers\DossierBuilderLockController;
 use App\Dossiers\Http\Controllers\DossierCompletionController;
 use App\Dossiers\Http\Controllers\DossierController;
 use App\Dossiers\Http\Controllers\DossierExportController;
@@ -22,6 +23,13 @@ Route::post('dossiers/bulk-restore', [DossierController::class, 'bulkRestore'])
 Route::get('dossiers/{dossier}', [DossierController::class, 'show'])->name('dossiers.show');
 Route::get('dossiers/{dossier}/builder', [DossierController::class, 'builder'])
     ->name('dossiers.builder');
+Route::post('dossiers/{dossier}/builder-lock', [DossierBuilderLockController::class, 'store'])
+    ->name('dossiers.builder-lock.store');
+Route::post('dossiers/{dossier}/builder-lock/heartbeat', [DossierBuilderLockController::class, 'heartbeat'])
+    ->name('dossiers.builder-lock.heartbeat');
+// POST (not DELETE) so tab-close can use sendBeacon / keepalive fetch with a body.
+Route::post('dossiers/{dossier}/builder-lock/release', [DossierBuilderLockController::class, 'destroy'])
+    ->name('dossiers.builder-lock.destroy');
 Route::get('dossiers/{dossier}/review', [DossierController::class, 'review'])
     ->name('dossiers.review');
 Route::get('dossiers/{dossier}/edit', [DossierController::class, 'edit'])->name('dossiers.edit');

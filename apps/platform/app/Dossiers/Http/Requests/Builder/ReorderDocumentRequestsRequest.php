@@ -4,25 +4,19 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Builder;
 
-use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Models\Dossier;
+use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class ReorderDocumentRequestsRequest extends FormRequest
 {
+    use AuthorizesDossierBuilderMutation;
     use LocalizesValidationAttributes;
 
     public function authorize(): bool
     {
-        $dossier = $this->route('dossier');
-        $user = $this->user();
-
-        return $user !== null
-            && $dossier instanceof Dossier
-            && $user->can('update', $dossier)
-            && $user->can('create', DocumentRequest::class);
+        return $this->userHoldsBuilderLockForMutation();
     }
 
     /** @return array<string, list<ValidationRule|string>> */

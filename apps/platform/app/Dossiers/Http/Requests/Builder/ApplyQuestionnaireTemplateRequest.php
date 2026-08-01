@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Builder;
 
-use App\Dossiers\Models\Dossier;
+use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -13,20 +13,19 @@ use Illuminate\Validation\Rule;
 
 final class ApplyQuestionnaireTemplateRequest extends FormRequest
 {
+    use AuthorizesDossierBuilderMutation;
     use LocalizesValidationAttributes;
 
     public function authorize(): bool
     {
-        $dossier = $this->route('dossier');
-        $user = $this->user();
-
-        if ($user === null || ! $dossier instanceof Dossier || ! $user->can('update', $dossier)) {
+        if (! $this->userHoldsBuilderLockForMutation()) {
             return false;
         }
 
+        $user = $this->user();
         $templateId = $this->input('questionnaire_template_id');
 
-        if (! is_numeric($templateId)) {
+        if ($user === null || ! is_numeric($templateId)) {
             return false;
         }
 

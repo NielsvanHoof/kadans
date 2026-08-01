@@ -180,6 +180,8 @@ test('adviser can apply a template and edit dossier items', function (): void {
         ->where('category', QuestionnaireTemplateCategory::Kyc->value)
         ->firstOrFail();
 
+    grantDossierBuilderLock($dossier, $adviser);
+
     $this->actingAs($adviser)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.apply-template', $tenant, [
@@ -263,6 +265,8 @@ test('applying a template assigns unique field keys when template items have nul
     });
 
     expect($template->items()->whereNull('field_key')->count())->toBe(2);
+
+    grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])

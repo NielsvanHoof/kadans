@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
+use App\Dossiers\Models\Dossier;
 use App\Reporting\Queries\ActivityLogRowMapper;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Queries\PaginatedIndexQuery;
@@ -15,6 +16,7 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -124,6 +126,7 @@ pest()->presets()->custom('qompose', fn (): array => [
             // Domain-specific controller actions beyond REST defaults.
             'copy',
             'reorder',
+            'sync',
             'applyTemplate',
             'answer',
             'download',
@@ -138,6 +141,7 @@ pest()->presets()->custom('qompose', fn (): array => [
             'review',
             'preview',
             'live',
+            'heartbeat',
         ])
         ->ignoring(Controller::class),
 
@@ -241,4 +245,20 @@ function workspaceMember(Tenant $tenant, Role $role, ?User $user = null): User
     $user->assignRole($role->value);
 
     return $user->fresh();
+}
+
+/**
+ * Grant an active exclusive builder lock so structure mutations authorize.
+ */
+function grantDossierBuilderLock(Dossier $dossier, User $user): string
+{
+    $token = (string) Str::ulid();
+
+    $dossier->forceFill([
+        'builder_locked_by_user_id' => $user->id,
+        'builder_lock_token' => $token,
+        'builder_lock_expires_at' => now()->addMinutes(5),
+    ])->save();
+
+    return $token;
 }

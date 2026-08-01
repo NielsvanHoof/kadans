@@ -224,6 +224,8 @@ test('visibility cannot depend on a later field', function (): void {
         ],
     ]);
 
+    grantDossierBuilderLock($context['dossier'], $context['owner']);
+
     $this->actingAs($context['owner'])
         ->put(route('workspaces.dossiers.document-requests.update', [
             'tenant' => $context['tenant'],
@@ -268,6 +270,8 @@ test('a new field cannot be created with visibility depending on a later field',
             ],
         ],
     ]);
+
+    grantDossierBuilderLock($context['dossier'], $context['owner']);
 
     $this->actingAs($context['owner'])
         ->post(route('workspaces.dossiers.document-requests.store', [

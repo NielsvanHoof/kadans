@@ -47,6 +47,18 @@ export type DossierBuilder = Pick<
     'id' | 'title' | 'status' | 'document_requests'
 >;
 
+/** Exclusive builder edit lease returned with the builder page / lock endpoints. */
+export type DossierBuilderLock = {
+    is_mine: boolean;
+    token: string | null;
+    expires_at: string | null;
+    holder: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
+};
+
 /** Lean dossier payload for the review queue page. */
 export type DossierReview = Pick<
     Dossier,

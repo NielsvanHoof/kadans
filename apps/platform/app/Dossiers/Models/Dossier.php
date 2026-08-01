@@ -28,6 +28,8 @@ use Override;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+use function is_string;
+
 /**
  * @property int $id
  * @property int $tenant_id
@@ -44,8 +46,12 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property CarbonImmutable|null $next_reminder_at
  * @property CarbonImmutable|null $last_client_message_sent_at
  * @property CarbonImmutable|null $last_client_opened_at
+ * @property int|null $builder_locked_by_user_id
+ * @property string|null $builder_lock_token
+ * @property CarbonImmutable|null $builder_lock_expires_at
  * @property-read EloquentCollection<int, Activity> $activitiesAsSubject
  * @property-read int|null $activities_as_subject_count
+ * @property-read User|null $builderLockedBy
  * @property-read Client|null $client
  * @property-read EloquentCollection<int, ClientAccessGrant> $clientAccessGrants
  * @property-read int|null $client_access_grants_count
@@ -173,6 +179,49 @@ final class Dossier extends TenantOwnedModel
     }
 
     /**
+     * Staff member currently holding the exclusive builder edit lease.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function builderLockedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'builder_locked_by_user_id');
+    }
+
+    /**
+     * True when a non-expired builder lock is present.
+     */
+    public function hasActiveBuilderLock(): bool
+    {
+        return $this->builder_locked_by_user_id !== null
+            && is_string($this->builder_lock_token)
+            && $this->builder_lock_token !== ''
+            && $this->builder_lock_expires_at !== null
+            && $this->builder_lock_expires_at->isFuture();
+    }
+
+    /**
+     * True when the given user holds a still-valid builder lock.
+     */
+    public function isBuilderLockedBy(User $user): bool
+    {
+        return $this->hasActiveBuilderLock()
+            && (int) $this->builder_locked_by_user_id === (int) $user->getKey();
+    }
+
+    /**
+     * Clear builder lock columns without touching fillable / activity log.
+     */
+    public function clearBuilderLock(): void
+    {
+        $this->forceFill([
+            'builder_locked_by_user_id' => null,
+            'builder_lock_token' => null,
+            'builder_lock_expires_at' => null,
+        ])->save();
+    }
+
+    /**
      * @return HasMany<DocumentRequest, $this>
      */
     public function documentRequests(): HasMany
@@ -228,6 +277,7 @@ final class Dossier extends TenantOwnedModel
             'next_reminder_at' => 'datetime',
             'last_client_message_sent_at' => 'datetime',
             'last_client_opened_at' => 'datetime',
+            'builder_lock_expires_at' => 'datetime',
         ];
     }
 

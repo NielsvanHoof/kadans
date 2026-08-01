@@ -1,4 +1,4 @@
-import { useHttp } from '@inertiajs/react';
+import { router, useHttp } from '@inertiajs/react';
 import { useCallback } from 'react';
 import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController';
 import type {
@@ -7,147 +7,74 @@ import type {
     QuestionnaireItemType,
 } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import type { FlashToast } from '@/types/ui';
 
 export type BuilderSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-type DocumentRequestResponse = {
-    document_request: DocumentRequest;
+export type BuilderSyncItem = {
+    /** Positive persisted id, or null for a new draft row. */
+    id: number | null;
+    field_key: string;
+    type: QuestionnaireItemType;
+    title: string;
+    instructions: string | null;
+    configuration: QuestionnaireItemConfiguration | null;
+};
+
+type SyncResponse = {
+    document_requests: DocumentRequest[];
+    flash?: {
+        toast?: FlashToast;
+    };
 };
 
 /**
- * Builder-island mutations via useHttp (JSON). Local state owns the canvas;
- * the server returns only the touched item (or 204 for reorder/delete).
+ * Persist the full builder draft via bulk sync (JSON).
  */
 export function useQuestionnaireBuilderActions(dossierId: number) {
     const currentWorkspace = useCurrentWorkspace();
-    const { post: createPost, setData: setCreateData } = useHttp({
-        type: 'text' as QuestionnaireItemType,
-        title: '',
-        position: undefined as number | undefined,
+    const { put: syncPut, setData: setSyncData } = useHttp({
+        items: [] as BuilderSyncItem[],
     });
-    const { put: updatePut, setData: setUpdateData } = useHttp({
-        type: 'text' as QuestionnaireItemType,
-        title: '',
-        instructions: null as string | null,
-        configuration: undefined as QuestionnaireItemConfiguration | undefined,
-    });
-    const { post: reorderPost, setData: setReorderData } = useHttp({
-        document_request_ids: [] as number[],
-    });
-    const { delete: destroyDelete } = useHttp({});
 
-    const createComponent = useCallback(
-        async (input: {
-            type: QuestionnaireItemType;
-            title: string;
-            position?: number;
-        }): Promise<DocumentRequest | null> => {
-            setCreateData({
-                type: input.type,
-                title: input.title,
-                position: input.position,
-            });
+    const syncDocumentRequests = useCallback(
+        async (items: DocumentRequest[]): Promise<DocumentRequest[] | null> => {
+            const payload: BuilderSyncItem[] = items.map((item) => ({
+                id: item.id > 0 ? item.id : null,
+                field_key: item.field_key,
+                type: item.type,
+                title: item.title,
+                instructions: item.instructions,
+                configuration: item.configuration,
+            }));
+
+            setSyncData({ items: payload });
 
             try {
-                const response = (await createPost(
-                    DocumentRequestController.store.url({
+                const response = (await syncPut(
+                    DocumentRequestController.sync.url({
                         tenant: currentWorkspace,
                         dossier: dossierId,
                     }),
-                )) as DocumentRequestResponse | undefined;
+                )) as SyncResponse | undefined;
 
-                return response?.document_request ?? null;
+                const documentRequests = response?.document_requests ?? null;
+
+                // useHttp is not an Inertia visit, so server Inertia::flash() is not
+                // delivered automatically — re-apply the flash payload for toasts.
+                if (documentRequests !== null && response?.flash?.toast) {
+                    router.flash({ toast: response.flash.toast });
+                }
+
+                return documentRequests;
             } catch {
                 return null;
             }
         },
-        [createPost, currentWorkspace, dossierId, setCreateData],
-    );
-
-    const reorderComponents = useCallback(
-        async (orderedIds: number[]): Promise<boolean> => {
-            setReorderData({ document_request_ids: orderedIds });
-
-            let failed = false;
-
-            try {
-                await reorderPost(
-                    DocumentRequestController.reorder.url({
-                        tenant: currentWorkspace,
-                        dossier: dossierId,
-                    }),
-                    {
-                        onError: () => {
-                            failed = true;
-                        },
-                    },
-                );
-
-                return !failed;
-            } catch {
-                return false;
-            }
-        },
-        [currentWorkspace, dossierId, reorderPost, setReorderData],
-    );
-
-    const updateComponent = useCallback(
-        async (
-            documentRequestId: number,
-            input: {
-                type: QuestionnaireItemType;
-                title: string;
-                instructions: string | null;
-                configuration?: QuestionnaireItemConfiguration;
-            },
-        ): Promise<DocumentRequest | null> => {
-            setUpdateData({
-                type: input.type,
-                title: input.title,
-                instructions: input.instructions,
-                configuration: input.configuration,
-            });
-
-            try {
-                const response = (await updatePut(
-                    DocumentRequestController.update.url({
-                        tenant: currentWorkspace,
-                        dossier: dossierId,
-                        documentRequest: documentRequestId,
-                    }),
-                )) as DocumentRequestResponse | undefined;
-
-                return response?.document_request ?? null;
-            } catch {
-                return null;
-            }
-        },
-        [currentWorkspace, dossierId, setUpdateData, updatePut],
-    );
-
-    const destroyComponent = useCallback(
-        async (documentRequestId: number): Promise<boolean> => {
-            try {
-                await destroyDelete(
-                    DocumentRequestController.destroy.url({
-                        tenant: currentWorkspace,
-                        dossier: dossierId,
-                        documentRequest: documentRequestId,
-                    }),
-                );
-
-                return true;
-            } catch {
-                return false;
-            }
-        },
-        [currentWorkspace, destroyDelete, dossierId],
+        [currentWorkspace, dossierId, setSyncData, syncPut],
     );
 
     return {
-        createComponent,
-        reorderComponents,
-        updateComponent,
-        destroyComponent,
+        syncDocumentRequests,
     };
 }

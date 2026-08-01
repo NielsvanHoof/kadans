@@ -15,12 +15,15 @@ use Illuminate\Support\Facades\Route;
 Route::scopeBindings()->group(function (): void {
     Route::post('dossiers/{dossier}/document-requests', [DocumentRequestController::class, 'store'])
         ->name('dossiers.document-requests.store');
+    // Static paths before {documentRequest} so "sync" is not treated as an id.
+    Route::put('dossiers/{dossier}/document-requests/sync', [DocumentRequestController::class, 'sync'])
+        ->name('dossiers.document-requests.sync');
+    Route::post('dossiers/{dossier}/document-requests/reorder', [DocumentRequestController::class, 'reorder'])
+        ->name('dossiers.document-requests.reorder');
     Route::put('dossiers/{dossier}/document-requests/{documentRequest}', [DocumentRequestController::class, 'update'])
         ->name('dossiers.document-requests.update');
     Route::delete('dossiers/{dossier}/document-requests/{documentRequest}', [DocumentRequestController::class, 'destroy'])
         ->name('dossiers.document-requests.destroy');
-    Route::post('dossiers/{dossier}/document-requests/reorder', [DocumentRequestController::class, 'reorder'])
-        ->name('dossiers.document-requests.reorder');
     Route::post(
         'dossiers/{dossier}/document-requests/{documentRequest}/answer',
         [DocumentRequestReviewController::class, 'answer'],

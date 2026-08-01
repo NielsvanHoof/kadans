@@ -45,6 +45,8 @@ test('document request routes 404 when the request belongs to another dossier', 
         'title' => 'Foreign request',
     ]);
 
+    grantDossierBuilderLock($dossier, $owner);
+
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->put(workspaceRoute('workspaces.dossiers.document-requests.update', $tenant, [

@@ -15,18 +15,18 @@ import { cn } from '@/lib/utils';
  * Compact searchable palette of registered components plus optional templates.
  */
 export default function QuestionnaireBuilderPalette({
-    dossierId,
     templates,
     canEdit,
     insertAfterTitle,
     onAdd,
+    onApplyTemplate,
 }: {
-    dossierId: number;
     templates: ApplyTemplateOption[];
     canEdit: boolean;
     /** Label of the selected field — Add inserts after it. */
     insertAfterTitle?: string | null;
     onAdd: (type: QuestionnaireItemType) => void;
+    onApplyTemplate: (template: ApplyTemplateOption) => void;
 }) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
@@ -112,8 +112,9 @@ export default function QuestionnaireBuilderPalette({
 
             {canEdit ? (
                 <QuestionnaireBuilderTemplates
-                    dossierId={dossierId}
                     templates={templates}
+                    canEdit={canEdit}
+                    onApply={onApplyTemplate}
                 />
             ) : null}
         </aside>

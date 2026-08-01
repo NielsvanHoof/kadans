@@ -79,7 +79,9 @@ export default function QuestionnaireBuilderSettings({
                         {t('Field settings')}
                     </h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        {t('Changes save automatically.')}
+                        {t(
+                            'Edits update your draft. Save the form to persist.',
+                        )}
                     </p>
                 </div>
                 <p

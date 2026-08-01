@@ -8,11 +8,13 @@ use App\Dossiers\Actions\Builder\ApplyQuestionnaireTemplateToDossierAction;
 use App\Dossiers\Actions\Builder\CreateDocumentRequestAction;
 use App\Dossiers\Actions\Builder\DeleteDocumentRequestAction;
 use App\Dossiers\Actions\Builder\ReorderDocumentRequestsAction;
+use App\Dossiers\Actions\Builder\SyncDossierDocumentRequestsAction;
 use App\Dossiers\Actions\Builder\UpdateDocumentRequestAction;
 use App\Dossiers\Data\StaffDocumentRequestData;
 use App\Dossiers\Http\Requests\Builder\ApplyQuestionnaireTemplateRequest;
 use App\Dossiers\Http\Requests\Builder\ReorderDocumentRequestsRequest;
 use App\Dossiers\Http\Requests\Builder\StoreDocumentRequestRequest;
+use App\Dossiers\Http\Requests\Builder\SyncDocumentRequestsRequest;
 use App\Dossiers\Http\Requests\Builder\UpdateDocumentRequestRequest;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -21,6 +23,7 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -74,6 +77,12 @@ final class DocumentRequestController extends Controller
         $this->authorize('view', $dossier);
         $this->authorize('delete', $documentRequest);
 
+        $user = $request->user();
+        abort_unless(
+            $user !== null && $dossier->isBuilderLockedBy($user),
+            403,
+        );
+
         $deleteDocumentRequest->handle($documentRequest);
 
         if ($request->expectsJson()) {
@@ -99,6 +108,36 @@ final class DocumentRequestController extends Controller
         }
 
         return $this->redirectToBuilder($dossier);
+    }
+
+    /**
+     * Persist the full builder draft in one shot (create / update / delete / reorder).
+     */
+    public function sync(
+        Tenant $tenant,
+        SyncDocumentRequestsRequest $request,
+        Dossier $dossier,
+        SyncDossierDocumentRequestsAction $syncDossierDocumentRequests,
+    ): JsonResponse {
+        /** @var list<array<string, mixed>> $items */
+        $items = array_values($request->validated('items'));
+
+        $documentRequests = $syncDossierDocumentRequests->handle($dossier, $items);
+
+        $toast = [
+            'type' => 'success',
+            'message' => __('Form saved.'),
+        ];
+
+        // Same flash shape as redirecting mutations — JSON clients apply it via router.flash().
+        Inertia::flash('toast', $toast);
+
+        return response()->json([
+            'document_requests' => $documentRequests,
+            'flash' => [
+                'toast' => $toast,
+            ],
+        ]);
     }
 
     public function applyTemplate(

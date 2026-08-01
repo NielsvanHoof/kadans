@@ -116,6 +116,8 @@ test('dossier builder page renders lean builder props', function (): void {
             ->missing('dossier.review_summary')
             ->has('templates')
             ->where('can_manage', true)
+            ->where('builder_lock.is_mine', true)
+            ->has('builder_lock.token')
             ->missing('can_edit')
             ->missing('can_review')
             ->missing('can_download'));
@@ -130,6 +132,8 @@ test('builder mutations redirect back to the builder instead of the overview', f
 
     $builderUrl = workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]);
     $existing = $dossier->documentRequests()->sole();
+
+    grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -166,6 +170,8 @@ test('builder island mutations return json for the touched document request', fu
     ] = createDossierShowContext(DossierStatus::Draft);
 
     $existing = $dossier->documentRequests()->sole();
+
+    grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -221,6 +227,8 @@ test('builder island reorder still returns no content for json clients', functio
         'dossier_id' => $dossier->id,
         'sort_order' => 1,
     ]);
+
+    grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -309,6 +317,7 @@ test('read-only member can view overview builder and review with restricted acti
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/builder')
             ->where('can_manage', false)
+            ->where('builder_lock.is_mine', false)
             ->missing('can_edit')
             ->missing('can_review'));
 

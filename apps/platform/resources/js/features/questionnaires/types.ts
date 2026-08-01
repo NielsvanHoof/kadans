@@ -1,4 +1,7 @@
-import type { QuestionnaireItemType } from '@/features/document-requests/types';
+import type {
+    QuestionnaireItemConfiguration,
+    QuestionnaireItemType,
+} from '@/features/document-requests/types';
 
 /** Category option for template forms. */
 export type TemplateCategoryOption = {
@@ -37,6 +40,16 @@ export type TemplateDetail = {
     items: TemplateItem[];
 };
 
+/** Template item payload embedded on the builder apply picker. */
+export type ApplyTemplateItem = {
+    type: QuestionnaireItemType;
+    field_key: string;
+    title: string;
+    instructions: string | null;
+    configuration: QuestionnaireItemConfiguration | null;
+    sort_order: number;
+};
+
 /** Template option on the dossier apply picker. */
 export type ApplyTemplateOption = {
     id: number;
@@ -44,4 +57,5 @@ export type ApplyTemplateOption = {
     category_label: string;
     items_count: number;
     is_system: boolean;
+    items: ApplyTemplateItem[];
 };
