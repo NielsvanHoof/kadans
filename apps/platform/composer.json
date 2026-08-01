@@ -124,13 +124,13 @@
             "Composer\\Config::disableProcessTimeout",
             "@putenv XDEBUG_MODE=coverage",
             "@php artisan config:clear --ansi",
-            "@php artisan test --parallel --coverage --coverage-html=coverage --min=85"
+            "@php artisan test --parallel --coverage --coverage-html=coverage --min=87"
         ],
         "test:coverage:ci": [
             "Composer\\Config::disableProcessTimeout",
             "@putenv XDEBUG_MODE=coverage",
             "@php artisan config:clear --ansi",
-            "@php artisan test --parallel --coverage --min=85"
+            "@php artisan test --parallel --coverage --min=87"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
