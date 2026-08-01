@@ -57,8 +57,9 @@ createInertiaApp({
         );
     },
     progress: {
-        // Brand coral — matches --primary in app.css / qompose.nl.
-        color: '#ef5734',
+        // Brass — matches --warning in app.css. The progress bar means "in
+        // flight", which is the same thing the brass audit mark means.
+        color: '#A87C28',
     },
 });
 

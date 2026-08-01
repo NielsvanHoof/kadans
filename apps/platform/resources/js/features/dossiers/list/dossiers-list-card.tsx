@@ -3,7 +3,6 @@ import { useState } from 'react';
 import DataTable, { type DataTableColumn } from '@/components/data/data-table';
 import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
 import EmptyState from '@/components/primitives/empty-state';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -13,10 +12,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import BulkArchiveDossiersButton from '@/features/dossiers/list/bulk-archive-dossiers-button';
-import {
-    dossierStatusBadgeVariant,
-    dossierStatusLabel,
-} from '@/features/dossiers/status/dossier-status';
+import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -89,11 +85,7 @@ export default function DossiersListCard({
         {
             key: 'status',
             header: t('Status'),
-            cell: (dossier) => (
-                <Badge variant={dossierStatusBadgeVariant(dossier.status)}>
-                    {dossierStatusLabel(dossier.status, t)}
-                </Badge>
-            ),
+            cell: (dossier) => <DossierStatusBadge status={dossier.status} />,
         },
     ];
 

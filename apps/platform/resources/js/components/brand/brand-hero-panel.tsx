@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import BrandShieldWatermark from '@/components/brand/brand-shield-watermark';
+import LedgerField from '@/components/brand/ledger-field';
 import { cn } from '@/lib/utils';
 
 type BrandHeroPanelProps = {
@@ -8,7 +8,12 @@ type BrandHeroPanelProps = {
 };
 
 /**
- * Marketing-site hero panel with Qompose shield watermarks on a brand background.
+ * Ink panel on ruled ledger paper — the brand surface for the signed-out half
+ * of the app (auth, onboarding).
+ *
+ * Uses `brand-panel` rather than `primary` on purpose: this is a printed ink
+ * surface and has to stay dark in both themes. `--primary` inverts to bone in
+ * dark mode, which would turn the panel inside out.
  */
 export default function BrandHeroPanel({
     children,
@@ -17,18 +22,11 @@ export default function BrandHeroPanel({
     return (
         <div
             className={cn(
-                'relative isolate overflow-hidden bg-primary text-primary-foreground',
+                'relative isolate overflow-hidden bg-brand-panel text-brand-panel-foreground',
                 className,
             )}
         >
-            <BrandShieldWatermark
-                variant="primary"
-                className="-bottom-24 -left-16 h-[min(70%,28rem)] w-[min(120%,36rem)] opacity-90"
-            />
-            <BrandShieldWatermark
-                variant="light"
-                className="-top-12 -right-20 h-[min(55%,22rem)] w-[min(90%,30rem)] opacity-35"
-            />
+            <LedgerField tone="onPanel" />
             <div className="relative z-10 flex h-full flex-col">{children}</div>
         </div>
     );

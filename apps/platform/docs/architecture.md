@@ -172,7 +172,7 @@ Migrations and factories stay under `database/` — not inside `app/{Domain}`.
 | `data/` | `data-table`, `index-list`, `index-query/`, `sortable/` |
 | `forms/` | `file-dropzone`, `date-picker` |
 | `feedback/` | `confirm-destroy-dialog` |
-| `brand/` | brand panels, watermark, shields |
+| `brand/` | brand panel, `ledger-field`, `audit-mark` |
 | `app-shell/` | nav, sidebar, breadcrumbs |
 
 **Payload types are generated.** Domain payload shapes come from the PHP `*Data`

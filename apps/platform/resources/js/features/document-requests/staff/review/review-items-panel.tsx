@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import { getQuestionnaireItemTypeStaffContent } from '@/features/document-requests/questionnaire-item-type-registry';
 import DocumentRequestReview from '@/features/document-requests/staff/review/document-request-review';
-import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
+import DocumentRequestStatusBadge from '@/features/document-requests/status/document-request-status-badge';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -303,12 +303,9 @@ function ReviewGroup({
                                                 : t('Not applicable')}
                                         </Badge>
                                     ) : (
-                                        <Badge variant="secondary">
-                                            {documentRequestStatusLabel(
-                                                documentRequest.status,
-                                                t,
-                                            )}
-                                        </Badge>
+                                        <DocumentRequestStatusBadge
+                                            status={documentRequest.status}
+                                        />
                                     )}
                                 </div>
                                 <StaffContent

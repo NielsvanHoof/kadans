@@ -1,7 +1,6 @@
 import { Link } from '@inertiajs/react';
 import IndexList from '@/components/data/index-list';
 import EmptyState from '@/components/primitives/empty-state';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -10,10 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    dossierStatusBadgeVariant,
-    dossierStatusLabel,
-} from '@/features/dossiers/status/dossier-status';
+import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -102,13 +98,7 @@ export default function RecentDossiersCard({
                                         </p>
                                     )}
                                 </div>
-                                <Badge
-                                    variant={dossierStatusBadgeVariant(
-                                        dossier.status,
-                                    )}
-                                >
-                                    {dossierStatusLabel(dossier.status, t)}
-                                </Badge>
+                                <DossierStatusBadge status={dossier.status} />
                             </Link>
                         ))}
                     </IndexList>

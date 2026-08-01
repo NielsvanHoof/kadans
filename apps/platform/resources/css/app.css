@@ -8,13 +8,23 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* UI sans for body and headings — hierarchy comes from size/weight. */
+    /*
+     * Three faces, three jobs.
+     * Inter carries body copy and dense form UI — it disappears, which is what
+     * you want under a table of forty document requests.
+     * Schibsted Grotesk is the display voice: a grotesk drawn for a publisher
+     * of record, so it reads editorial rather than startup. Used at headings
+     * and above only; never for body text.
+     * IBM Plex Mono is the data face — every date, count, reference, and
+     * amount, so figures always align down a column like a ledger.
+     */
     --font-sans:
-        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-display:
-        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Schibsted Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
     --font-data:
         'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
         'Liberation Mono', 'Courier New', monospace;
@@ -22,6 +32,12 @@
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+
+    --color-ledger-rule: var(--ledger-rule);
+    --color-ledger-stripe: var(--ledger-stripe);
+
+    --color-brand-panel: var(--brand-panel);
+    --color-brand-panel-foreground: var(--brand-panel-foreground);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -78,103 +94,134 @@
 }
 
 /*
- * brand coral #ef5734, slate muted #64748b, charcoal text #333, cool gray surfaces.
+ * "Ink & Brass" — the accountant's desk, not a marketing site.
+ *
+ * Primary is near-black ink #1A1D1F, so buttons, active nav, and progress bars
+ * are simply the strongest thing on the page. Brass #A87C28 is the only accent
+ * and it means exactly one thing: waiting on someone. Surfaces are bone
+ * #F6F5F2 — warm-neutral paper stock, not cream.
+ *
+ * In dark mode the primary inverts to bone rather than shifting hue: "primary"
+ * here means maximum contrast against the canvas, whichever way the canvas
+ * goes. That keeps a primary button unmistakable in both themes.
+ *
+ * Colour never carries a status on its own. Every status also carries an
+ * AuditMark glyph with its own shape, so the review table stays readable in
+ * greyscale and to anyone who can't separate the brass from the green.
  */
 :root {
     color-scheme: light;
-    /* Clean white surfaces (uk-section-default) */
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.321 0 0);
+    /* Bone canvas, white paper laid on top of it */
+    --background: oklch(0.9701 0.0041 91.4);
+    --foreground: oklch(0.2121 0.005 248.1);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.321 0 0);
+    --card-foreground: oklch(0.2121 0.005 248.1);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.321 0 0);
-    /* Brand coral — #ef5734 */
-    --primary: oklch(0.655 0.194 34.3);
-    --primary-foreground: oklch(1 0 0);
-    /* Cool muted wash — #e5e7eb / slate soft */
-    --secondary: oklch(0.968 0.007 247.9);
-    --secondary-foreground: oklch(0.321 0 0);
-    --muted: oklch(0.928 0.006 264.5);
-    --muted-foreground: oklch(0.554 0.041 257.4);
-    /* Soft coral tint — #fde8e4 */
-    --accent: oklch(0.947 0.024 30.5);
-    --accent-foreground: oklch(0.321 0 0);
-    /* Active brand shade — #de3812 */
-    --destructive: oklch(0.593 0.207 33.4);
-    --destructive-foreground: oklch(1 0 0);
-    --success: oklch(0.5 0.11 155);
-    --success-foreground: oklch(0.35 0.09 155);
-    --success-muted: oklch(0.5 0.11 155 / 0.08);
-    --success-border: oklch(0.5 0.11 155 / 0.28);
-    --warning: oklch(0.867 0.167 99);
-    --warning-foreground: oklch(0.45 0.1 75);
-    --warning-muted: oklch(0.867 0.167 99 / 0.12);
-    --warning-border: oklch(0.867 0.167 99 / 0.35);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.655 0.194 34.3);
-    /* Chart story: coral → slate → sage → gold → charcoal */
-    --chart-1: oklch(0.655 0.194 34.3);
-    --chart-2: oklch(0.554 0.041 257.4);
-    --chart-3: oklch(0.55 0.1 155);
-    --chart-4: oklch(0.867 0.167 99);
-    --chart-5: oklch(0.252 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.968 0.007 247.9);
-    --sidebar-foreground: oklch(0.321 0 0);
-    --sidebar-primary: oklch(0.655 0.194 34.3);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.928 0.006 264.5);
-    --sidebar-accent-foreground: oklch(0.321 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.655 0.194 34.3);
+    --popover-foreground: oklch(0.2121 0.005 248.1);
+    /* Ink #1A1D1F — 15.5:1 against its own foreground */
+    --primary: oklch(0.2284 0.006 236.8);
+    --primary-foreground: oklch(0.9701 0.0041 91.4);
+    /* Warm greys, kept off pure neutral so they sit with the bone */
+    --secondary: oklch(0.9397 0.0055 95.1);
+    --secondary-foreground: oklch(0.2121 0.005 248.1);
+    --muted: oklch(0.9397 0.0055 95.1);
+    --muted-foreground: oklch(0.4999 0.0079 233.8);
+    --accent: oklch(0.9127 0.0084 91.5);
+    --accent-foreground: oklch(0.2121 0.005 248.1);
+    /* Oxblood #8C2F26 — rejection, not alarm */
+    --destructive: oklch(0.4412 0.1283 28.8);
+    --destructive-foreground: oklch(0.9796 0.0101 32.5);
+    /* Seal green #2F6E52 — accepted */
+    --success: oklch(0.4885 0.0798 162.1);
+    --success-foreground: oklch(0.4078 0.0668 162.7);
+    --success-muted: oklch(0.4885 0.0798 162.1 / 0.08);
+    --success-border: oklch(0.4885 0.0798 162.1 / 0.28);
+    /* Brass #A87C28 — the accent, and it only ever means "waiting" */
+    --warning: oklch(0.6151 0.1117 79.5);
+    --warning-foreground: oklch(0.457 0.082 81.7);
+    --warning-muted: oklch(0.6151 0.1117 79.5 / 0.12);
+    --warning-border: oklch(0.6151 0.1117 79.5 / 0.35);
+    --border: oklch(0.9005 0.0084 91.5);
+    --input: oklch(0.8673 0.0101 87.5);
+    /*
+     * Brass, not ink: the focus ring has to stay visible on top of a primary
+     * button, and an ink ring on an ink button is invisible.
+     */
+    --ring: oklch(0.6151 0.1117 79.5);
+    /* Ledger paper: the hairline rule and the alternating row tint */
+    --ledger-rule: oklch(0.9005 0.0084 91.5);
+    --ledger-stripe: oklch(0.2121 0.005 248.1 / 0.028);
+    /*
+     * The signed-out brand panel. Fixed in both themes — it is a printed ink
+     * surface, so it must not follow --primary when the theme inverts.
+     */
+    --brand-panel: oklch(0.2111 0.0061 236.9);
+    --brand-panel-foreground: oklch(0.9523 0.007 88.6);
+    /* Chart story: ink → brass → graphite → oxblood → stone */
+    --chart-1: oklch(0.2284 0.006 236.8);
+    --chart-2: oklch(0.6151 0.1117 79.5);
+    --chart-3: oklch(0.4999 0.0079 233.8);
+    --chart-4: oklch(0.4412 0.1283 28.8);
+    --chart-5: oklch(0.6612 0.0192 73);
+    /* Tighter than the shadcn default — ledger precision, not friendly SaaS */
+    --radius: 0.5rem;
+    --sidebar: oklch(0.9518 0.0054 95.1);
+    --sidebar-foreground: oklch(0.2121 0.005 248.1);
+    --sidebar-primary: oklch(0.2284 0.006 236.8);
+    --sidebar-primary-foreground: oklch(0.9701 0.0041 91.4);
+    --sidebar-accent: oklch(0.9127 0.0084 91.5);
+    --sidebar-accent-foreground: oklch(0.2121 0.005 248.1);
+    --sidebar-border: oklch(0.8857 0.01 87.5);
+    --sidebar-ring: oklch(0.6151 0.1117 79.5);
 }
 
 .dark {
     color-scheme: dark;
-    /* Deep charcoal night — matches marketing secondary #222 */
-    --background: oklch(0.2 0.01 260);
-    --foreground: oklch(0.97 0.005 90);
-    --card: oklch(0.24 0.012 260);
-    --card-foreground: oklch(0.97 0.005 90);
-    --popover: oklch(0.24 0.012 260);
-    --popover-foreground: oklch(0.97 0.005 90);
-    /* Same brand coral for dark mode recognition */
-    --primary: oklch(0.655 0.194 34.3);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.3 0.015 260);
-    --secondary-foreground: oklch(0.97 0.005 90);
-    --muted: oklch(0.3 0.015 260);
-    --muted-foreground: oklch(0.72 0.03 257);
-    --accent: oklch(0.32 0.04 34);
-    --accent-foreground: oklch(0.97 0.005 90);
-    --destructive: oklch(0.593 0.207 33.4);
-    --destructive-foreground: oklch(1 0 0);
-    --success: oklch(0.7 0.11 155);
-    --success-foreground: oklch(0.86 0.07 155);
-    --success-muted: oklch(0.7 0.11 155 / 0.12);
-    --success-border: oklch(0.7 0.11 155 / 0.35);
-    --warning: oklch(0.867 0.167 99);
-    --warning-foreground: oklch(0.92 0.08 95);
-    --warning-muted: oklch(0.867 0.167 99 / 0.12);
-    --warning-border: oklch(0.867 0.167 99 / 0.35);
-    --border: oklch(0.35 0.015 260);
-    --input: oklch(0.35 0.015 260);
-    --ring: oklch(0.655 0.194 34.3);
-    --chart-1: oklch(0.655 0.194 34.3);
-    --chart-2: oklch(0.7 0.05 257);
-    --chart-3: oklch(0.7 0.11 155);
-    --chart-4: oklch(0.867 0.167 99);
-    --chart-5: oklch(0.75 0.02 260);
-    --sidebar: oklch(0.18 0.012 260);
-    --sidebar-foreground: oklch(0.97 0.005 90);
-    --sidebar-primary: oklch(0.655 0.194 34.3);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.3 0.015 260);
-    --sidebar-accent-foreground: oklch(0.97 0.005 90);
-    --sidebar-border: oklch(0.35 0.015 260);
-    --sidebar-ring: oklch(0.655 0.194 34.3);
+    --background: oklch(0.1944 0.0051 248.1);
+    --foreground: oklch(0.9251 0.0071 88.6);
+    --card: oklch(0.2284 0.006 236.8);
+    --card-foreground: oklch(0.9251 0.0071 88.6);
+    --popover: oklch(0.2284 0.006 236.8);
+    --popover-foreground: oklch(0.9251 0.0071 88.6);
+    /* Inverted: primary is still "the strongest thing against the canvas" */
+    --primary: oklch(0.9493 0.007 88.6);
+    --primary-foreground: oklch(0.2111 0.0061 236.9);
+    --secondary: oklch(0.2668 0.0071 248.1);
+    --secondary-foreground: oklch(0.9251 0.0071 88.6);
+    --muted: oklch(0.2668 0.0071 248.1);
+    --muted-foreground: oklch(0.7018 0.0082 228.9);
+    --accent: oklch(0.2984 0.0078 240.1);
+    --accent-foreground: oklch(0.9251 0.0071 88.6);
+    --destructive: oklch(0.5933 0.1411 28.9);
+    --destructive-foreground: oklch(0.1658 0.0313 32.9);
+    --success: oklch(0.6519 0.1017 161.5);
+    --success-foreground: oklch(0.7977 0.0767 163.1);
+    --success-muted: oklch(0.6519 0.1017 161.5 / 0.12);
+    --success-border: oklch(0.6519 0.1017 161.5 / 0.35);
+    --warning: oklch(0.7078 0.1198 78.6);
+    --warning-foreground: oklch(0.8143 0.0926 79.9);
+    --warning-muted: oklch(0.7078 0.1198 78.6 / 0.12);
+    --warning-border: oklch(0.7078 0.1198 78.6 / 0.35);
+    --border: oklch(0.3144 0.0077 240.1);
+    --input: oklch(0.3564 0.0085 233.9);
+    --ring: oklch(0.7078 0.1198 78.6);
+    --ledger-rule: oklch(0.3144 0.0077 240.1);
+    --ledger-stripe: oklch(0.9251 0.0071 88.6 / 0.035);
+    --brand-panel: oklch(0.2111 0.0061 236.9);
+    --brand-panel-foreground: oklch(0.9523 0.007 88.6);
+    --chart-1: oklch(0.9493 0.007 88.6);
+    --chart-2: oklch(0.7078 0.1198 78.6);
+    --chart-3: oklch(0.7018 0.0082 228.9);
+    --chart-4: oklch(0.5933 0.1411 28.9);
+    --chart-5: oklch(0.6134 0.0158 74.3);
+    --sidebar: oklch(0.1763 0.0052 248.1);
+    --sidebar-foreground: oklch(0.8798 0.0088 84.6);
+    --sidebar-primary: oklch(0.9493 0.007 88.6);
+    --sidebar-primary-foreground: oklch(0.2111 0.0061 236.9);
+    --sidebar-accent: oklch(0.2668 0.0071 248.1);
+    --sidebar-accent-foreground: oklch(0.9251 0.0071 88.6);
+    --sidebar-border: oklch(0.3144 0.0077 240.1);
+    --sidebar-ring: oklch(0.7078 0.1198 78.6);
 }
 
 @layer base {
@@ -195,14 +242,44 @@
         outline: none;
     }
 
-    /* Heading face — same stack as body; size/weight provide hierarchy. */
+    /*
+     * Display face — Schibsted Grotesk. Set tighter than the body face: at
+     * heading sizes its default tracking reads loose and the words stop
+     * holding together as a phrase.
+     */
     .font-display {
         font-family: var(--font-display);
+        letter-spacing: -0.018em;
     }
 
-    /* Utility/data typography for timestamps, counters, and document metadata. */
+    /*
+     * Data face for timestamps, counters, reference numbers, and document
+     * metadata. Tabular figures are the whole point — a column of counts has
+     * to line up on the decimal like a ledger column, and `slashed-zero`
+     * keeps 0 and O apart in reference codes.
+     */
     .font-data {
         font-family: var(--font-data);
+        font-variant-numeric: tabular-nums slashed-zero;
+    }
+
+    /*
+     * Figures inside tables align even when they're set in the body face —
+     * Inter's proportional digits make a column of counts wobble.
+     */
+    table {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/*
+ * Green-bar striping, lifted from ledger paper: alternate rows carry a very
+ * faint green tint so the eye can track across a wide row without a rule.
+ * Deliberately weaker than a hover state, which still has to win.
+ */
+@utility ledger-rows {
+    & tbody tr:nth-child(even of :not([hidden])) {
+        background-color: var(--ledger-stripe);
     }
 }
 

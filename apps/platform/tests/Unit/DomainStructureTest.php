@@ -162,6 +162,8 @@ test('frontend business code is organized by feature domain', function (): void 
         'resources/js/layouts/settings/layout.tsx',
         'resources/js/hooks/use-two-factor-auth.ts',
         'resources/js/lib/brand-shields.ts',
+        'resources/js/components/brand/brand-shields.ts',
+        'resources/js/components/brand/brand-shield-watermark.tsx',
         'resources/js/types/clients.ts',
         'resources/js/types/dossiers.ts',
         'resources/js/types/questionnaires.ts',

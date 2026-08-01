@@ -24,18 +24,18 @@ export default function OnboardingLayout({
                     href={dashboard()}
                     className="flex items-center gap-3 text-lg font-semibold"
                 >
-                    <AppLogoIcon className="size-8 text-primary-foreground" />
+                    <AppLogoIcon className="size-8 text-brand-panel-foreground" />
                     {name}
                 </Link>
 
                 <div className="mt-auto max-w-md space-y-4 pb-4">
-                    <p className="text-sm font-medium tracking-wide text-primary-foreground/80 uppercase">
+                    <p className="text-sm font-medium tracking-wide text-brand-panel-foreground/80 uppercase">
                         {t('Secure document exchange')}
                     </p>
                     <h2 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">
                         {t('The smart, secure way to request client documents')}
                     </h2>
-                    <p className="text-sm leading-relaxed text-primary-foreground/85">
+                    <p className="text-sm leading-relaxed text-brand-panel-foreground/85">
                         {t(
                             'One professional environment for your team and clients to share documents with clarity, structure, and control.',
                         )}

@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import { getQuestionnaireItemTypePortalContent } from '@/features/document-requests/item-types/portal-registry';
-import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
+import DocumentRequestStatusBadge from '@/features/document-requests/status/document-request-status-badge';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
@@ -83,7 +83,7 @@ export default function PortalDocumentRequestsCard({
                                             >
                                                 {t(definition.label)}
                                             </Badge>
-                                            <StatusBadge
+                                            <DocumentRequestStatusBadge
                                                 status={documentRequest.status}
                                             />
                                         </div>
@@ -126,26 +126,6 @@ export default function PortalDocumentRequestsCard({
                 </ol>
             )}
         </section>
-    );
-}
-
-function StatusBadge({ status }: { status: PortalDocumentRequest['status'] }) {
-    const { t } = useTranslation();
-
-    return (
-        <Badge
-            variant="outline"
-            className={cn(
-                'shrink-0',
-                status === 'accepted' &&
-                    'border-success-border bg-success-muted text-success-foreground',
-                status === 'rejected' &&
-                    'border-destructive/30 bg-destructive/5 text-destructive',
-                status === 'submitted' && 'bg-muted/60',
-            )}
-        >
-            {documentRequestStatusLabel(status, t)}
-        </Badge>
     );
 }
 

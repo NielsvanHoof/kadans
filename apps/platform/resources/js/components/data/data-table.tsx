@@ -108,7 +108,10 @@ export default function DataTable<T>({
             {toolbar}
 
             <div className="rounded-md border">
-                <Table>
+                {/* `ledger-rows` is the green-bar striping from ledger paper:
+                    alternate rows carry a faint tint so the eye can track a
+                    wide row across without needing a rule between every one. */}
+                <Table className="ledger-rows">
                     <TableHeader>
                         <TableRow>
                             {selectionEnabled ? (
