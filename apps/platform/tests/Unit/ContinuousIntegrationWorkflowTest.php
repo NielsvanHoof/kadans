@@ -29,3 +29,23 @@ test('the TypeScript check generates ignored Wayfinder modules on a fresh checko
         ->and($package['scripts']['types:check'])
         ->toStartWith('npm run wayfinder:generate && npm run questionnaire:generate && ');
 });
+
+test('the committed CI env avoids Sail Redis so Artisan generators can run on GitHub Actions', function (): void {
+    $envCiPath = dirname(__DIR__, 2).'/.env.ci';
+
+    expect(file_exists($envCiPath))->toBeTrue();
+
+    $envCi = (string) file_get_contents($envCiPath);
+
+    // These must stay array/sync/collection so typescript:transform and friends
+    // never try to resolve Sail hostnames (redis, pgsql, mailpit) on CI runners.
+    expect($envCi)
+        ->toContain('CACHE_STORE=array')
+        ->toContain('SESSION_DRIVER=array')
+        ->toContain('QUEUE_CONNECTION=sync')
+        ->toContain('MAIL_MAILER=array')
+        ->toContain('SCOUT_DRIVER=collection')
+        ->toContain('OCR_DRIVER=mock')
+        ->not->toContain('REDIS_HOST=redis')
+        ->not->toContain('DB_HOST=pgsql');
+});

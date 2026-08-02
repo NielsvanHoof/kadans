@@ -24,6 +24,7 @@
 /.env
 /.env.*
 !/.env.example
+!/.env.ci
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

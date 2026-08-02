@@ -60,7 +60,7 @@ jobs:
 
       - name: Prepare the application
         run: |
-          cp .env.example .env
+          cp .env.ci .env
           php artisan key:generate --no-interaction
 
       - name: Run the complete quality gate
@@ -102,7 +102,7 @@ jobs:
 
       - name: Prepare the application
         run: |
-          cp .env.example .env
+          cp .env.ci .env
           php artisan key:generate --no-interaction
 
       # Fails under the --min threshold in composer.json (currently 85%).
