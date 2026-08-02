@@ -57,7 +57,8 @@ test('local disk downloads stream through the application', function (): void {
             'uploadedDocument' => $uploaded,
         ]))
         ->assertOk()
-        ->assertHeader('content-disposition', 'attachment; filename=payslip.pdf');
+        ->assertHeader('content-disposition', 'attachment; filename=payslip.pdf')
+        ->assertHeader('x-content-type-options', 'nosniff');
 
     $this->travel(16)->minutes();
 
@@ -116,6 +117,58 @@ test('local disk previews stream inline without recording a download audit', fun
         ->where('event', AuditEvent::DocumentDownloaded->value)
         ->where('subject_id', $uploaded->id)
         ->exists())->toBeFalse();
+});
+
+test('inline previews of client-supplied bytes cannot execute script', function (): void {
+    Storage::fake('local');
+
+    $owner = User::factory()->create();
+    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    $tenant->makeCurrent();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
+    $path = 'tenants/'.$tenant->id.'/dossiers/'.$dossier->id.'/payslip.pdf';
+    Storage::disk('local')->put($path, '<script>alert(1)</script>');
+
+    // A client-controlled mime type must not turn the preview into an HTML document.
+    $uploaded = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'disk' => 'local',
+        'path' => $path,
+        'original_filename' => 'payslip.pdf',
+        'mime_type' => 'text/html',
+    ]);
+
+    $response = $this->actingAs($owner)
+        ->withSession([
+            'active_tenant_id' => $tenant->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
+        ->get(workspaceRoute('workspaces.uploaded-documents.preview', $tenant, [
+            'uploadedDocument' => $uploaded,
+        ]))
+        ->assertOk()
+        ->assertHeader('x-content-type-options', 'nosniff')
+        ->assertHeader('referrer-policy', 'no-referrer')
+        ->assertHeader('cross-origin-resource-policy', 'same-origin');
+
+    expect($response->headers->get('content-security-policy'))
+        ->toContain("script-src 'none'")
+        ->toContain("object-src 'none'")
+        ->toContain("frame-ancestors 'none'");
+
+    // The app-wide policy must not overwrite the stricter per-file one.
+    expect($response->headers->all('content-security-policy'))->toHaveCount(1);
 });
 
 test('resolve document temporary url generates a presigned url with attachment disposition', function (): void {

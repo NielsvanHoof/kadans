@@ -20,7 +20,8 @@ Domains are **folder namespaces**, not Laravel packages. Each domain that needs 
 1. [Getting started](getting-started.md) — local Sail setup and first login
 2. [Architecture](architecture.md) — domains, request flow, backend/frontend patterns
 3. [Permissions](permissions.md) — how tenant permissions are defined and enforced
-4. [Adding a domain](adding-a-domain.md) — checklist for a new feature area
+4. [Security](security.md) — threat model, tenant isolation, portal tokens, response hardening, open gaps
+5. [Adding a domain](adding-a-domain.md) — checklist for a new feature area
 
 ## Related
 

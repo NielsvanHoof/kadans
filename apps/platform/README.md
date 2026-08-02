@@ -15,6 +15,7 @@ Longer guides live under [`docs/`](docs/):
 - [Getting started](docs/getting-started.md) — Sail boot, first owner, day-to-day commands
 - [Architecture](docs/architecture.md) — domains, composition root, request flow
 - [Permissions](docs/permissions.md) — enum → registry → Spatie → policies
+- [Security](docs/security.md) — threat model, tenant isolation, portal tokens, response hardening
 - [Adding a domain](docs/adding-a-domain.md) — checklist for a new feature area
 
 [`CONTEXT.md`](CONTEXT.md) is the short domain glossary (entities and workflow terms).

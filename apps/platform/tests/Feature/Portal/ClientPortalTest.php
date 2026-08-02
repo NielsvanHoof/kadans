@@ -99,7 +99,6 @@ test('guest exchanges a valid access token for a restricted portal session', fun
         ->assertHeader('Referrer-Policy', 'no-referrer')
         ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
         ->assertHeader('X-Frame-Options', 'DENY')
-        ->assertHeader('Content-Security-Policy', "frame-ancestors 'none'")
         ->assertInertia(fn (Assert $page) => $page
             ->component('portal/show')
             ->where('firm.name', 'Acme Accountants')
@@ -110,7 +109,14 @@ test('guest exchanges a valid access token for a restricted portal session', fun
             ->tap(fn (Assert $page): Expectation => expect($page->toArray())
                 ->toHaveKey('encryptHistory', true)));
 
-    expect($context['grant']->fresh()->last_used_at)->not->toBeNull();
+    // The portal inherits the app-wide policy; its own middleware only keeps the
+    // stricter Referrer-Policy asserted above. One header, not two.
+    expect($response->headers->all('Content-Security-Policy'))->toHaveCount(1);
+    expect($response->headers->get('Content-Security-Policy'))
+        ->toContain("frame-ancestors 'none'")
+        ->toContain("object-src 'none'")
+        ->toContain('script-src')
+        ->and($context['grant']->fresh()->last_used_at)->not->toBeNull();
 
     $activity = Activity::query()
         ->where('event', AuditEvent::ClientPortalAccessed->value)

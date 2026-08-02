@@ -6,6 +6,7 @@ use App\Accounts\Http\Middleware\SetLocale;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
+use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\HandleAppearance;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
@@ -72,6 +73,9 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->web(append: [
+            // First in, last out: generates the Vite nonce before the root view
+            // renders, then writes CSP and friends onto the finished response.
+            AddSecurityHeaders::class,
             HandleAppearance::class,
             SetLocale::class,
             HandleInertiaRequests::class,

@@ -30,6 +30,27 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 final class UploadedDocumentController extends Controller
 {
+    /**
+     * Response hardening for bytes a client uploaded.
+     *
+     * On S3 these files are served from the storage host via a signed URL, but the
+     * local/CI disk streams them straight off this origin, and `mime_type` comes
+     * from the upload — so it must never be able to drive script execution here.
+     *
+     * The policy blocks scripts rather than using `default-src 'none'` or a bare
+     * `sandbox`: both of those are known to interfere with the browser's built-in
+     * PDF viewer, and PDF preview is the main reason this endpoint exists.
+     * `script-src 'none'` still stops JavaScript in a smuggled HTML/SVG file *and*
+     * embedded JavaScript inside a PDF, which is the actual threat.
+     */
+    private const array UNTRUSTED_FILE_HEADERS = [
+        'X-Content-Type-Options' => 'nosniff',
+        'Content-Security-Policy' => "script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        'Referrer-Policy' => 'no-referrer',
+        'Cross-Origin-Resource-Policy' => 'same-origin',
+        'X-Robots-Tag' => 'noindex, nofollow, noarchive',
+    ];
+
     public function store(
         Tenant $tenant,
         StoreUploadedDocumentRequest $request,
@@ -159,13 +180,14 @@ final class UploadedDocumentController extends Controller
             return Storage::disk($uploadedDocument->disk)->response(
                 $uploadedDocument->path,
                 $uploadedDocument->original_filename,
-                ['Content-Type' => $uploadedDocument->mime_type],
+                ['Content-Type' => $uploadedDocument->mime_type] + self::UNTRUSTED_FILE_HEADERS,
             );
         }
 
         return Storage::disk($uploadedDocument->disk)->download(
             $uploadedDocument->path,
             $uploadedDocument->original_filename,
+            self::UNTRUSTED_FILE_HEADERS,
         );
     }
 }
