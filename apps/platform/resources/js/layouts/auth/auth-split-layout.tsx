@@ -25,7 +25,7 @@ export default function AuthSplitLayout({
                 </Link>
 
                 <div className="mt-auto max-w-md space-y-4 pb-4">
-                    <p className="text-sm font-medium tracking-wide text-brand-panel-foreground/80 uppercase">
+                    <p className="text-sm font-medium tracking-wide text-brand-panel-foreground/85 uppercase">
                         {t('Secure document exchange')}
                     </p>
                     <h2 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">
@@ -46,8 +46,10 @@ export default function AuthSplitLayout({
                         aria-label={name}
                         className="relative z-20 flex items-center justify-center lg:hidden"
                     >
-                        <div className="flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground sm:size-14">
-                            <AppLogoIcon className="size-7 text-primary-foreground sm:size-8" />
+                        {/* Stands in for the coral panel below `lg`, so it
+                            carries the same coral rather than ink. */}
+                        <div className="flex size-12 items-center justify-center rounded-md bg-brand text-white sm:size-14">
+                            <AppLogoIcon className="size-7 sm:size-8" />
                         </div>
                     </Link>
                     <main

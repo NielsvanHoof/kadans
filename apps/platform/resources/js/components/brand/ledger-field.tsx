@@ -2,9 +2,9 @@ import { cn } from '@/lib/utils';
 
 type LedgerFieldProps = {
     /**
-     * `onPanel` sits on the ink brand panels (auth, portal header); `onSurface`
-     * sits on bone or card. Only the alpha differs — the rules have to stay at
-     * the threshold of visible on both.
+     * `onPanel` sits on the coral brand panels (auth, portal header);
+     * `onSurface` sits on the canvas or a card. The rules have to stay at the
+     * threshold of visible on both.
      */
     tone?: 'onPanel' | 'onSurface';
     className?: string;
@@ -13,7 +13,7 @@ type LedgerFieldProps = {
 /**
  * The branded backdrop: ruled ledger paper.
  *
- * Horizontal rules on a 2rem rhythm with a single brass margin rule down the
+ * Horizontal rules on a 2rem rhythm with a single coral margin rule down the
  * left, which is what an accountant's working paper actually looks like. It
  * replaces the old stamped-on logo wash — texture carries the brand, so it
  * never competes with the content sitting on top.
@@ -50,11 +50,15 @@ export default function LedgerField({
                 }}
             />
 
-            {/* The margin rule, always brass, always at the same inset. */}
+            {/*
+             * The margin rule, always at the same inset. Coral on light
+             * surfaces; on the panel the surface is itself coral, so the rule
+             * has to invert to the panel foreground to stay visible at all.
+             */}
             <div
                 className={cn(
                     'absolute inset-y-0 left-10 w-px',
-                    onPanel ? 'bg-warning/45' : 'bg-warning/25',
+                    onPanel ? 'bg-brand-panel-foreground/45' : 'bg-brand/30',
                 )}
             />
         </div>

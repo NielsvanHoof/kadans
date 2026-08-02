@@ -4,8 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {{-- Matches --background in resources/css/app.css so the mobile toolbar blends into the page. --}}
-        <meta name="theme-color" content="#F6F5F2" media="(prefers-color-scheme: light)">
-        <meta name="theme-color" content="#131517" media="(prefers-color-scheme: dark)">
+        <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#0F141A" media="(prefers-color-scheme: dark)">
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>
@@ -25,11 +25,11 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: oklch(0.9701 0.0041 91.4);
+                background-color: oklch(0.9842 0.0034 247.9);
             }
 
             html.dark {
-                background-color: oklch(0.1944 0.0051 248.1);
+                background-color: oklch(0.1889 0.0145 253.2);
             }
         </style>
 

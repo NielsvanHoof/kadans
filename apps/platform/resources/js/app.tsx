@@ -90,9 +90,9 @@ createInertiaApp({
         );
     },
     progress: {
-        // Brass — matches --warning in app.css. The progress bar means "in
-        // flight", which is the same thing the brass audit mark means.
-        color: '#A87C28',
+        // Coral — matches --brand in app.css. Inertia takes a static colour, so
+        // this cannot read the token; keep the two in step by hand.
+        color: '#EF5734',
     },
 });
 

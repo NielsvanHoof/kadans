@@ -61,8 +61,8 @@ export default function PortalLocaleSwitcher({
                             'rounded px-2.5 py-1 text-xs font-medium transition-colors',
                             isOnPanel
                                 ? isActive
-                                    ? 'bg-brand-panel-foreground/25 text-brand-panel-foreground'
-                                    : 'text-brand-panel-foreground/75 hover:text-brand-panel-foreground'
+                                    ? 'bg-brand-panel-foreground text-brand-panel'
+                                    : 'text-brand-panel-foreground/85 hover:text-brand-panel-foreground'
                                 : isActive
                                   ? 'bg-background text-foreground shadow-xs'
                                   : 'text-muted-foreground hover:text-foreground',

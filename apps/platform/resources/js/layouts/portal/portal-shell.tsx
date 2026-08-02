@@ -37,7 +37,7 @@ export default function PortalShell({
                                 <AppLogoIcon className="size-6 text-brand-panel-foreground" />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-xs font-medium tracking-wide text-brand-panel-foreground/75 uppercase">
+                                <p className="text-xs font-medium tracking-wide text-brand-panel-foreground/85 uppercase">
                                     {t('Secure client portal')}
                                 </p>
                                 <p className="truncate text-base text-brand-panel-foreground">
@@ -57,7 +57,7 @@ export default function PortalShell({
                             </p>
                         ) : null}
                         {meta ? (
-                            <p className="text-sm text-brand-panel-foreground/70">
+                            <p className="text-sm text-brand-panel-foreground/85">
                                 {meta}
                             </p>
                         ) : null}

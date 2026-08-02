@@ -29,7 +29,7 @@ export default function OnboardingLayout({
                 </Link>
 
                 <div className="mt-auto max-w-md space-y-4 pb-4">
-                    <p className="text-sm font-medium tracking-wide text-brand-panel-foreground/80 uppercase">
+                    <p className="text-sm font-medium tracking-wide text-brand-panel-foreground/85 uppercase">
                         {t('Secure document exchange')}
                     </p>
                     <h2 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">

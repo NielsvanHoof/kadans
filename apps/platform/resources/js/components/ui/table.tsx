@@ -71,12 +71,19 @@ function TableFooter<T>({ className, ...props }: TableFooterProps<T>) {
   )
 }
 
+/**
+ * Diverges from stock `mira`: a selected row carries the coral brand wash, not
+ * `bg-muted`. Selection has to out-rank the grey hover and the ledger stripe,
+ * and grey-on-grey lost that fight in a long review table.
+ *
+ * `shadcn add table --overwrite` will silently revert this.
+ */
 function TableRow<T>({ className, ...props }: RowProps<T>) {
   return (
     <RowPrimitive
       data-slot="table-row"
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted data-selected:bg-muted",
+        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-brand-muted data-selected:bg-brand-muted",
         className
       )}
       {...props}

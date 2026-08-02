@@ -218,10 +218,10 @@ export default function QuestionnaireBuilder({
         // Fill the viewport-locked layout; columns scroll internally.
         <div className="flex min-h-0 flex-1 flex-col gap-3">
             {lockBanner ? (
-                <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-100">
+                <Alert className="border-warning-border bg-warning-muted text-warning-foreground">
                     <LockKeyhole aria-hidden />
                     <AlertTitle>{lockBanner}</AlertTitle>
-                    <AlertDescription className="text-amber-950/80 dark:text-amber-100/80">
+                    <AlertDescription className="text-warning-foreground/80">
                         {t(
                             'You can view the last saved form. Editing unlocks when they leave or the lock expires.',
                         )}

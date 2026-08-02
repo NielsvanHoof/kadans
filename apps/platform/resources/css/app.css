@@ -51,6 +51,11 @@
     --color-brand-panel: var(--brand-panel);
     --color-brand-panel-foreground: var(--brand-panel-foreground);
 
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-muted: var(--brand-muted);
+    --color-brand-border: var(--brand-border);
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
@@ -106,134 +111,176 @@
 }
 
 /*
- * "Ink & Brass" — the accountant's desk, not a marketing site.
+ * "Ink & Coral" — the qompose.nl palette, retuned for a dense product UI.
  *
- * Primary is near-black ink #1A1D1F, so buttons, active nav, and progress bars
- * are simply the strongest thing on the page. Brass #A87C28 is the only accent
- * and it means exactly one thing: waiting on someone. Surfaces are bone
- * #F6F5F2 — warm-neutral paper stock, not cream.
+ * Coral #EF5734 is the brand: it is the marketing site's link, button, and
+ * full-bleed section colour. Here it stays the brand but not the primary.
+ * Primary is near-black ink #1D2129, so buttons and active nav are simply the
+ * strongest thing on the page, and coral is free to mean "this is Qompose"
+ * without also having to mean "submit". Coral carries links, focus rings, the
+ * active nav rail, and the brand panel; it never carries a status.
  *
- * In dark mode the primary inverts to bone rather than shifting hue: "primary"
- * here means maximum contrast against the canvas, whichever way the canvas
- * goes. That keeps a primary button unmistakable in both themes.
+ * Two things forced a retune rather than a straight lift:
+ *
+ * 1. #EF5734 is 3.45:1 on white — it fails AA as a link or as a white label on
+ *    a coral button. So --brand is the display coral for large surfaces, and
+ *    --brand-foreground is the darkened #C2411C (4.94:1) used for any coral
+ *    text or icon. Same split as --warning/--warning-foreground below.
+ * 2. Coral sits at OKLCH hue 34°, which is where the old oxblood destructive
+ *    lived. Destructive moved to crimson #A4142E (hue 19.5°) and warning moved
+ *    from brass to a yellower amber #B8830F (hue 79°), so brand, rejection,
+ *    and waiting stay three clearly separate hues.
+ *
+ * Neutrals are the cool slate ramp the marketing site already uses (#64748B
+ * body, #E2E8F0 rules) rather than the old warm bone. Warm coral against cool
+ * grey is qompose.nl's own pairing and it holds up at table density. The site's
+ * #64748B is demoted from body text to --muted-foreground; body text is
+ * slate-700, because 4.76:1 is too thin to read a whole dossier in.
+ *
+ * In dark mode the primary inverts to near-white rather than shifting hue:
+ * "primary" here means maximum contrast against the canvas, whichever way the
+ * canvas goes. Coral does not invert — it lifts slightly to #F4693F so it keeps
+ * its identity without vibrating against the dark slate.
  *
  * Colour never carries a status on its own. Every status also carries an
  * AuditMark glyph with its own shape, so the review table stays readable in
- * greyscale and to anyone who can't separate the brass from the green.
+ * greyscale and to anyone who can't separate the coral from the green.
  */
 :root {
     color-scheme: light;
-    /* Bone canvas, white paper laid on top of it */
-    --background: oklch(0.9701 0.0041 91.4);
-    --foreground: oklch(0.2121 0.005 248.1);
+    /* Cool off-white canvas, white paper laid on top of it */
+    --background: oklch(0.9842 0.0034 247.9);
+    --foreground: oklch(0.2472 0.0164 264.2);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.2121 0.005 248.1);
+    --card-foreground: oklch(0.2472 0.0164 264.2);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.2121 0.005 248.1);
-    /* Ink #1A1D1F — 15.5:1 against its own foreground */
-    --primary: oklch(0.2284 0.006 236.8);
-    --primary-foreground: oklch(0.9701 0.0041 91.4);
-    /* Warm greys, kept off pure neutral so they sit with the bone */
-    --secondary: oklch(0.9397 0.0055 95.1);
-    --secondary-foreground: oklch(0.2121 0.005 248.1);
-    --muted: oklch(0.9397 0.0055 95.1);
-    --muted-foreground: oklch(0.4999 0.0079 233.8);
-    --accent: oklch(0.9127 0.0084 91.5);
-    --accent-foreground: oklch(0.2121 0.005 248.1);
-    /* Oxblood #8C2F26 — rejection, not alarm */
-    --destructive: oklch(0.4412 0.1283 28.8);
-    --destructive-foreground: oklch(0.9796 0.0101 32.5);
+    --popover-foreground: oklch(0.2472 0.0164 264.2);
+    /* Ink #1D2129 — 15.4:1 against the canvas */
+    --primary: oklch(0.2472 0.0164 264.2);
+    --primary-foreground: oklch(0.9842 0.0034 247.9);
+    /* Slate ramp, lifted from the marketing site's own greys */
+    --secondary: oklch(0.9683 0.0069 247.9);
+    --secondary-foreground: oklch(0.2472 0.0164 264.2);
+    --muted: oklch(0.9683 0.0069 247.9);
+    /* #64748B — the site's body colour, demoted to secondary text (4.55:1) */
+    --muted-foreground: oklch(0.5544 0.0407 257.4);
+    --accent: oklch(0.9288 0.0126 255.5);
+    --accent-foreground: oklch(0.2472 0.0164 264.2);
+    /* Crimson #A4142E — rejection. Pushed off coral's hue on purpose. */
+    --destructive: oklch(0.4631 0.1744 19.5);
+    --destructive-foreground: oklch(0.9574 0.0188 5.3);
     /* Seal green #2F6E52 — accepted */
     --success: oklch(0.4885 0.0798 162.1);
     --success-foreground: oklch(0.4078 0.0668 162.7);
     --success-muted: oklch(0.4885 0.0798 162.1 / 0.08);
     --success-border: oklch(0.4885 0.0798 162.1 / 0.28);
-    /* Brass #A87C28 — the accent, and it only ever means "waiting" */
-    --warning: oklch(0.6151 0.1117 79.5);
-    --warning-foreground: oklch(0.457 0.082 81.7);
-    --warning-muted: oklch(0.6151 0.1117 79.5 / 0.12);
-    --warning-border: oklch(0.6151 0.1117 79.5 / 0.35);
-    --border: oklch(0.9005 0.0084 91.5);
-    --input: oklch(0.8673 0.0101 87.5);
+    /* Amber #B8830F — only ever means "waiting on someone" */
+    --warning: oklch(0.6462 0.1308 79.2);
+    --warning-foreground: oklch(0.5224 0.1059 78.9);
+    --warning-muted: oklch(0.6462 0.1308 79.2 / 0.12);
+    --warning-border: oklch(0.6462 0.1308 79.2 / 0.35);
     /*
-     * Brass, not ink: the focus ring has to stay visible on top of a primary
-     * button, and an ink ring on an ink button is invisible.
+     * Coral #EF5734 — the brand accent. --brand is the display value for fills
+     * and rings; --brand-foreground (#C2411C, 4.94:1) is the only one allowed
+     * to carry text or a small icon.
      */
-    --ring: oklch(0.6151 0.1117 79.5);
+    --brand: oklch(0.6551 0.1938 34.3);
+    --brand-foreground: oklch(0.5543 0.1716 35.9);
+    --brand-muted: oklch(0.6551 0.1938 34.3 / 0.1);
+    --brand-border: oklch(0.6551 0.1938 34.3 / 0.32);
+    --border: oklch(0.9288 0.0126 255.5);
+    --input: oklch(0.869 0.0198 252.9);
+    /*
+     * Coral, not ink: the focus ring has to stay visible on top of a primary
+     * button, and an ink ring on an ink button is invisible. Coral clears 3:1
+     * against both the canvas (3.30:1) and the ink button (4.67:1).
+     */
+    --ring: oklch(0.6551 0.1938 34.3);
     /* Ledger paper: the hairline rule and the alternating row tint */
-    --ledger-rule: oklch(0.9005 0.0084 91.5);
-    --ledger-stripe: oklch(0.2121 0.005 248.1 / 0.028);
+    --ledger-rule: oklch(0.9288 0.0126 255.5);
+    --ledger-stripe: oklch(0.2472 0.0164 264.2 / 0.03);
     /*
-     * The signed-out brand panel. Fixed in both themes — it is a printed ink
-     * surface, so it must not follow --primary when the theme inverts.
+     * The signed-out brand panel — auth, onboarding, and the client portal
+     * header. Fixed in both themes: it is a printed brand surface, so it must
+     * not follow --primary when the theme inverts.
+     *
+     * Burnt coral #B03A18 rather than the #EF5734 display value. The panel
+     * carries body copy, and white on #EF5734 is 3.45:1. At this depth white is
+     * 6.06:1, which leaves room for a second text tier — but only down to /85
+     * (4.80:1). Anything fainter than that on this surface fails AA.
      */
-    --brand-panel: oklch(0.2111 0.0061 236.9);
-    --brand-panel-foreground: oklch(0.9523 0.007 88.6);
-    /* Chart story: ink → brass → graphite → oxblood → stone */
-    --chart-1: oklch(0.2284 0.006 236.8);
-    --chart-2: oklch(0.6151 0.1117 79.5);
-    --chart-3: oklch(0.4999 0.0079 233.8);
-    --chart-4: oklch(0.4412 0.1283 28.8);
-    --chart-5: oklch(0.6612 0.0192 73);
+    --brand-panel: oklch(0.5153 0.1599 35.9);
+    --brand-panel-foreground: oklch(1 0 0);
+    /* Chart story: ink → coral → slate → seal green → amber */
+    --chart-1: oklch(0.2472 0.0164 264.2);
+    --chart-2: oklch(0.6551 0.1938 34.3);
+    --chart-3: oklch(0.5544 0.0407 257.4);
+    --chart-4: oklch(0.4885 0.0798 162.1);
+    --chart-5: oklch(0.6462 0.1308 79.2);
     /* Tighter than the shadcn default — ledger precision, not friendly SaaS */
     --radius: 0.5rem;
-    --sidebar: oklch(0.9518 0.0054 95.1);
-    --sidebar-foreground: oklch(0.2121 0.005 248.1);
-    --sidebar-primary: oklch(0.2284 0.006 236.8);
-    --sidebar-primary-foreground: oklch(0.9701 0.0041 91.4);
-    --sidebar-accent: oklch(0.9127 0.0084 91.5);
-    --sidebar-accent-foreground: oklch(0.2121 0.005 248.1);
-    --sidebar-border: oklch(0.8857 0.01 87.5);
-    --sidebar-ring: oklch(0.6151 0.1117 79.5);
+    --sidebar: oklch(0.9683 0.0069 247.9);
+    --sidebar-foreground: oklch(0.2472 0.0164 264.2);
+    --sidebar-primary: oklch(0.2472 0.0164 264.2);
+    --sidebar-primary-foreground: oklch(0.9842 0.0034 247.9);
+    --sidebar-accent: oklch(0.9288 0.0126 255.5);
+    --sidebar-accent-foreground: oklch(0.2472 0.0164 264.2);
+    --sidebar-border: oklch(0.9288 0.0126 255.5);
+    --sidebar-ring: oklch(0.6551 0.1938 34.3);
 }
 
 .dark {
     color-scheme: dark;
-    --background: oklch(0.1944 0.0051 248.1);
-    --foreground: oklch(0.9251 0.0071 88.6);
-    --card: oklch(0.2284 0.006 236.8);
-    --card-foreground: oklch(0.9251 0.0071 88.6);
-    --popover: oklch(0.2284 0.006 236.8);
-    --popover-foreground: oklch(0.9251 0.0071 88.6);
+    --background: oklch(0.1889 0.0145 253.2);
+    --foreground: oklch(0.9288 0.0126 255.5);
+    --card: oklch(0.2289 0.0197 258.4);
+    --card-foreground: oklch(0.9288 0.0126 255.5);
+    --popover: oklch(0.2289 0.0197 258.4);
+    --popover-foreground: oklch(0.9288 0.0126 255.5);
     /* Inverted: primary is still "the strongest thing against the canvas" */
-    --primary: oklch(0.9493 0.007 88.6);
-    --primary-foreground: oklch(0.2111 0.0061 236.9);
-    --secondary: oklch(0.2668 0.0071 248.1);
-    --secondary-foreground: oklch(0.9251 0.0071 88.6);
-    --muted: oklch(0.2668 0.0071 248.1);
-    --muted-foreground: oklch(0.7018 0.0082 228.9);
-    --accent: oklch(0.2984 0.0078 240.1);
-    --accent-foreground: oklch(0.9251 0.0071 88.6);
-    --destructive: oklch(0.5933 0.1411 28.9);
-    --destructive-foreground: oklch(0.1658 0.0313 32.9);
+    --primary: oklch(0.944 0.0097 252.8);
+    --primary-foreground: oklch(0.2077 0.0177 259.7);
+    --secondary: oklch(0.2622 0.0214 257.3);
+    --secondary-foreground: oklch(0.9288 0.0126 255.5);
+    --muted: oklch(0.2622 0.0214 257.3);
+    --muted-foreground: oklch(0.7107 0.0351 256.8);
+    --accent: oklch(0.2989 0.0246 258.4);
+    --accent-foreground: oklch(0.9288 0.0126 255.5);
+    --destructive: oklch(0.6334 0.1797 10.5);
+    --destructive-foreground: oklch(0.2029 0.0538 7.9);
     --success: oklch(0.6519 0.1017 161.5);
     --success-foreground: oklch(0.7977 0.0767 163.1);
     --success-muted: oklch(0.6519 0.1017 161.5 / 0.12);
     --success-border: oklch(0.6519 0.1017 161.5 / 0.35);
-    --warning: oklch(0.7078 0.1198 78.6);
-    --warning-foreground: oklch(0.8143 0.0926 79.9);
-    --warning-muted: oklch(0.7078 0.1198 78.6 / 0.12);
-    --warning-border: oklch(0.7078 0.1198 78.6 / 0.35);
-    --border: oklch(0.3144 0.0077 240.1);
-    --input: oklch(0.3564 0.0085 233.9);
-    --ring: oklch(0.7078 0.1198 78.6);
-    --ledger-rule: oklch(0.3144 0.0077 240.1);
-    --ledger-stripe: oklch(0.9251 0.0071 88.6 / 0.035);
-    --brand-panel: oklch(0.2111 0.0061 236.9);
-    --brand-panel-foreground: oklch(0.9523 0.007 88.6);
-    --chart-1: oklch(0.9493 0.007 88.6);
-    --chart-2: oklch(0.7078 0.1198 78.6);
-    --chart-3: oklch(0.7018 0.0082 228.9);
-    --chart-4: oklch(0.5933 0.1411 28.9);
-    --chart-5: oklch(0.6134 0.0158 74.3);
-    --sidebar: oklch(0.1763 0.0052 248.1);
-    --sidebar-foreground: oklch(0.8798 0.0088 84.6);
-    --sidebar-primary: oklch(0.9493 0.007 88.6);
-    --sidebar-primary-foreground: oklch(0.2111 0.0061 236.9);
-    --sidebar-accent: oklch(0.2668 0.0071 248.1);
-    --sidebar-accent-foreground: oklch(0.9251 0.0071 88.6);
-    --sidebar-border: oklch(0.3144 0.0077 240.1);
-    --sidebar-ring: oklch(0.7078 0.1198 78.6);
+    --warning: oklch(0.7532 0.141 83.8);
+    --warning-foreground: oklch(0.8334 0.1158 87.8);
+    --warning-muted: oklch(0.7532 0.141 83.8 / 0.12);
+    --warning-border: oklch(0.7532 0.141 83.8 / 0.35);
+    /* Coral lifts rather than inverts — it is the one hue that stays itself */
+    --brand: oklch(0.6865 0.1805 37.3);
+    --brand-foreground: oklch(0.7752 0.1346 36.2);
+    --brand-muted: oklch(0.6865 0.1805 37.3 / 0.14);
+    --brand-border: oklch(0.6865 0.1805 37.3 / 0.38);
+    --border: oklch(0.3183 0.0264 257.5);
+    --input: oklch(0.3858 0.0265 252.8);
+    --ring: oklch(0.6865 0.1805 37.3);
+    --ledger-rule: oklch(0.3183 0.0264 257.5);
+    --ledger-stripe: oklch(0.9288 0.0126 255.5 / 0.035);
+    --brand-panel: oklch(0.5153 0.1599 35.9);
+    --brand-panel-foreground: oklch(1 0 0);
+    --chart-1: oklch(0.944 0.0097 252.8);
+    --chart-2: oklch(0.6865 0.1805 37.3);
+    --chart-3: oklch(0.7107 0.0351 256.8);
+    --chart-4: oklch(0.6519 0.1017 161.5);
+    --chart-5: oklch(0.7532 0.141 83.8);
+    --sidebar: oklch(0.1748 0.0131 248.6);
+    --sidebar-foreground: oklch(0.9288 0.0126 255.5);
+    --sidebar-primary: oklch(0.944 0.0097 252.8);
+    --sidebar-primary-foreground: oklch(0.2077 0.0177 259.7);
+    --sidebar-accent: oklch(0.2622 0.0214 257.3);
+    --sidebar-accent-foreground: oklch(0.9288 0.0126 255.5);
+    --sidebar-border: oklch(0.3183 0.0264 257.5);
+    --sidebar-ring: oklch(0.6865 0.1805 37.3);
 }
 
 @layer base {

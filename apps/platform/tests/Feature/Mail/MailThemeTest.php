@@ -8,6 +8,9 @@ use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 /**
  * Rendered Markdown mail should pick up the published Qompose theme
  * (ink primary CTA + audit-mark logo in the header).
+ *
+ * The coral link colour is the darkened #c2411c, not the #ef5734 display
+ * coral: the brand value is only 3.45:1 on white and links are body-sized.
  */
 test('markdown mail theme uses qompose brand color and mark logo', function (): void {
     $mail = new WorkspaceMemberInviteNotification(
@@ -22,6 +25,7 @@ test('markdown mail theme uses qompose brand color and mark logo', function (): 
 
     expect($html)
         // The Markdown mail pipeline lowercases hex, so match its output.
-        ->toContain('#1a1d1f')
+        ->toContain('#1d2129')
+        ->toContain('#c2411c')
         ->toContain('images/brand/mark.png');
 });
