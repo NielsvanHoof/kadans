@@ -97,13 +97,28 @@ jobs:
           coverage: pcov
           tools: composer:v2
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/platform/package-lock.json
+
       - name: Install PHP dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install frontend dependencies
+        run: npm ci
 
       - name: Prepare the application
         run: |
           cp .env.ci .env
           php artisan key:generate --no-interaction
+
+      # Feature tests render Inertia pages against the built Vite manifest
+      # (see Tests\TestCase). Coverage runs outside ci:check, so build here.
+      - name: Build frontend assets
+        run: npm run build
 
       # Fails under the --min threshold in composer.json (currently 85%).
       - name: Enforce the coverage threshold

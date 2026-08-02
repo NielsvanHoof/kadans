@@ -9,7 +9,6 @@ use Rector\Config\RectorConfig;
 use Rector\Renaming\Rector\Name\RenameClassRector;
 use RectorLaravel\Rector\ArrayDimFetch\RequestVariablesToRequestFacadeRector;
 use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
-use RectorLaravel\Rector\Class_\AddHasFactoryToModelsRector;
 use RectorLaravel\Rector\Class_\AppendsPropertyToAppendsAttributeRector;
 use RectorLaravel\Rector\Class_\CollectedByPropertyToCollectedByAttributeRector;
 use RectorLaravel\Rector\Class_\ConnectionPropertyToConnectionAttributeRector;
@@ -44,8 +43,6 @@ return RectorConfig::configure()
         __DIR__.'/database/migrations',
         // Unsafe: turns not->toBeFalse() into toBeTrue() for string|int|false values.
         ToBeTrueNotFalseRector::class,
-        // Audit/immutable models must not get HasFactory just because they extend Model.
-        AddHasFactoryToModelsRector::class,
         // $_SERVER['argv'] must stay live for CLI detection; Request::server() is a snapshot.
         RequestVariablesToRequestFacadeRector::class,
         ServerVariableToRequestFacadeRector::class,

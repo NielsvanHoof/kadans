@@ -42,5 +42,11 @@
              SECURITY_CSP_* overrides; individual tests opt into report-only. -->
         <env name="SECURITY_CSP_ENABLED" value="true"/>
         <env name="SECURITY_CSP_REPORT_ONLY" value="false"/>
+        <!-- Same idea for HSTS: assert the production-shaped header regardless of
+             a developer's (or .env.ci) SECURITY_HSTS_* overrides. -->
+        <env name="SECURITY_HSTS_ENABLED" value="true"/>
+        <env name="SECURITY_HSTS_MAX_AGE" value="31536000"/>
+        <env name="SECURITY_HSTS_INCLUDE_SUBDOMAINS" value="true"/>
+        <env name="SECURITY_HSTS_PRELOAD" value="false"/>
     </php>
 </phpunit>

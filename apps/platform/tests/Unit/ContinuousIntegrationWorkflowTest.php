@@ -46,6 +46,9 @@ test('the committed CI env avoids Sail Redis so Artisan generators can run on Gi
         ->toContain('MAIL_MAILER=array')
         ->toContain('SCOUT_DRIVER=collection')
         ->toContain('OCR_DRIVER=mock')
+        // Match production-shaped HSTS so SecurityHeadersTest can assert the
+        // HTTPS header without depending on .env / .env.ci alone.
+        ->toContain('SECURITY_HSTS_ENABLED=true')
         ->not->toContain('REDIS_HOST=redis')
         ->not->toContain('DB_HOST=pgsql');
 });
