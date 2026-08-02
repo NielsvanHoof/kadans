@@ -3,7 +3,7 @@ import { useState } from 'react';
 import DataTable, { type DataTableColumn } from '@/components/data/data-table';
 import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
 import EmptyState from '@/components/primitives/empty-state';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -147,11 +147,12 @@ export default function ClientsListCard({
                                 'Add your first client to create a dossier.',
                             )}
                             action={
-                                <Button asChild size="sm">
-                                    <Link href={createClient(currentWorkspace)}>
-                                        {t('New client')}
-                                    </Link>
-                                </Button>
+                                <LinkButton
+                                    size="sm"
+                                    href={createClient(currentWorkspace).url}
+                                >
+                                    {t('New client')}
+                                </LinkButton>
                             }
                         />
                     }

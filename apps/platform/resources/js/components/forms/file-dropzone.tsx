@@ -263,7 +263,7 @@ export default function FileDropzone({
                         <AttachmentActions>
                             <AttachmentAction
                                 type="button"
-                                disabled={disabled}
+                                isDisabled={disabled}
                                 aria-label={t('Remove :name', {
                                     name: file.name,
                                 })}

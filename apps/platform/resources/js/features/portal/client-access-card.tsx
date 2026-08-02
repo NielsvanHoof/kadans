@@ -14,7 +14,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -130,8 +129,8 @@ export default function ClientAccessCard({
                                     >
                                         <Checkbox
                                             id="send_invite"
-                                            checked={sendInvite}
-                                            onCheckedChange={(checked) =>
+                                            isSelected={sendInvite}
+                                            onChange={(checked) =>
                                                 setSendInvite(checked === true)
                                             }
                                         />
@@ -144,7 +143,7 @@ export default function ClientAccessCard({
                                     <Field orientation="horizontal">
                                         <Button
                                             type="submit"
-                                            disabled={processing}
+                                            isDisabled={processing}
                                             variant="secondary"
                                         >
                                             {sendInvite
@@ -170,13 +169,11 @@ function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
     const [processing, setProcessing] = useState(false);
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button type="button" variant="outline" size="sm">
-                    {t('Revoke')}
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
+        <DialogTrigger>
+            <Button type="button" variant="outline" size="sm">
+                {t('Revoke')}
+            </Button>
+            <Dialog>
                 <DialogHeader>
                     <DialogTitle>{t('Revoke portal access?')}</DialogTitle>
                     <DialogDescription>
@@ -186,19 +183,17 @@ function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="gap-2">
-                    <DialogClose asChild>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            disabled={processing}
-                        >
-                            {t('Cancel')}
-                        </Button>
+                    <DialogClose
+                        type="button"
+                        variant="secondary"
+                        isDisabled={processing}
+                    >
+                        {t('Cancel')}
                     </DialogClose>
                     <Button
                         type="button"
                         variant="destructive"
-                        disabled={processing}
+                        isDisabled={processing}
                         onClick={() => {
                             setProcessing(true);
                             router.delete(
@@ -216,7 +211,7 @@ function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
                         {t('Revoke access')}
                     </Button>
                 </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </Dialog>
+        </DialogTrigger>
     );
 }

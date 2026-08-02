@@ -60,8 +60,9 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
                             <Field>
                                 <Button
+                                    type="submit"
                                     className="w-full"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                     data-test="email-password-reset-link-button"
                                 >
                                     {processing && <Spinner />}

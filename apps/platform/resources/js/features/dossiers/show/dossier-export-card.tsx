@@ -2,7 +2,7 @@ import { Form } from '@inertiajs/react';
 import { Archive, Download, LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/DossierExportController';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -82,7 +82,7 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
                     })}
                 >
                     {({ processing }) => (
-                        <Button type="submit" disabled={processing}>
+                        <Button type="submit" isDisabled={processing}>
                             {processing ? (
                                 <LoaderCircle
                                     className="animate-spin"
@@ -139,16 +139,16 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
                                         ) : null}
                                     </div>
                                     {exportItem.download_url ? (
-                                        <Button
-                                            asChild
-                                            variant="outline"
-                                            size="sm"
+                                        <a
+                                            className={buttonVariants({
+                                                variant: 'outline',
+                                                size: 'sm',
+                                            })}
+                                            href={exportItem.download_url}
                                         >
-                                            <a href={exportItem.download_url}>
-                                                <Download aria-hidden="true" />
-                                                {t('Download')}
-                                            </a>
-                                        </Button>
+                                            <Download aria-hidden="true" />
+                                            {t('Download')}
+                                        </a>
                                     ) : null}
                                 </div>
                                 {exportItem.pipeline ? (

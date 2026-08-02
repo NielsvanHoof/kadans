@@ -1,8 +1,7 @@
-import { Link } from '@inertiajs/react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import ErrorState from '@/components/primitives/error-state';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants, LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { documentProcessingStatusLabel } from '@/features/document-requests/status/document-processing-status';
 import type {
@@ -56,28 +55,30 @@ export default function DocumentProcessingPanel({
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {isComplete && (
-                        <Button variant="secondary" size="sm" asChild>
-                            <Link
-                                href={UploadedDocumentController.show.url({
-                                    tenant: currentWorkspace,
-                                    uploadedDocument: uploadedDocument.id,
-                                })}
-                            >
-                                {t('View extraction')}
-                            </Link>
-                        </Button>
+                        <LinkButton
+                            variant="secondary"
+                            size="sm"
+                            href={UploadedDocumentController.show.url({
+                                tenant: currentWorkspace,
+                                uploadedDocument: uploadedDocument.id,
+                            })}
+                        >
+                            {t('View extraction')}
+                        </LinkButton>
                     )}
                     {canDownload && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a
-                                href={UploadedDocumentController.download.url({
-                                    tenant: currentWorkspace,
-                                    uploadedDocument: uploadedDocument.id,
-                                })}
-                            >
-                                {t('Download')}
-                            </a>
-                        </Button>
+                        <a
+                            className={buttonVariants({
+                                variant: 'outline',
+                                size: 'sm',
+                            })}
+                            href={UploadedDocumentController.download.url({
+                                tenant: currentWorkspace,
+                                uploadedDocument: uploadedDocument.id,
+                            })}
+                        >
+                            {t('Download')}
+                        </a>
                     )}
                 </div>
             </div>

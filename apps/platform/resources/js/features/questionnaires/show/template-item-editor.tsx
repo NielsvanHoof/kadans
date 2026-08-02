@@ -146,7 +146,7 @@ export default function TemplateItemEditor({
                                                 <Button
                                                     type="submit"
                                                     size="sm"
-                                                    disabled={processing}
+                                                    isDisabled={processing}
                                                 >
                                                     {t('Save item')}
                                                 </Button>
@@ -193,7 +193,7 @@ export default function TemplateItemEditor({
                                 errors={errors}
                             />
                             <Field orientation="horizontal">
-                                <Button type="submit" disabled={processing}>
+                                <Button type="submit" isDisabled={processing}>
                                     {t('Add item')}
                                 </Button>
                             </Field>

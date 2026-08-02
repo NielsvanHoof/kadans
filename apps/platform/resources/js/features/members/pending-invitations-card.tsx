@@ -90,7 +90,7 @@ export default function PendingInvitationsCard({
                                             type="submit"
                                             variant="outline"
                                             size="sm"
-                                            disabled={processing}
+                                            isDisabled={processing}
                                         >
                                             {t('Resend')}
                                         </Button>

@@ -1,9 +1,8 @@
-import { Link } from '@inertiajs/react';
 import { FolderOpen } from 'lucide-react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants, LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -121,44 +120,40 @@ export default function MediaDocumentsCard({
                                             {statusLabel(document.status, t)}
                                         </Badge>
 
-                                        <Button
+                                        <LinkButton
                                             variant="outline"
                                             size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={showDossier({
+                                            href={
+                                                showDossier({
                                                     tenant: currentWorkspace,
                                                     dossier:
                                                         document.dossier.id,
-                                                })}
-                                            >
-                                                <FolderOpen />
-                                                {t('Dossier')}
-                                            </Link>
-                                        </Button>
+                                                }).url
+                                            }
+                                        >
+                                            <FolderOpen />
+                                            {t('Dossier')}
+                                        </LinkButton>
 
                                         {document.uploaded_document &&
                                             canDownload && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    asChild
+                                                <a
+                                                    className={buttonVariants({
+                                                        variant: 'outline',
+                                                        size: 'sm',
+                                                    })}
+                                                    href={UploadedDocumentController.download.url(
+                                                        {
+                                                            tenant: currentWorkspace,
+                                                            uploadedDocument:
+                                                                document
+                                                                    .uploaded_document
+                                                                    .id,
+                                                        },
+                                                    )}
                                                 >
-                                                    <a
-                                                        href={UploadedDocumentController.download.url(
-                                                            {
-                                                                tenant: currentWorkspace,
-                                                                uploadedDocument:
-                                                                    document
-                                                                        .uploaded_document
-                                                                        .id,
-                                                            },
-                                                        )}
-                                                    >
-                                                        {t('Download')}
-                                                    </a>
-                                                </Button>
+                                                    {t('Download')}
+                                                </a>
                                             )}
                                     </div>
                                 </li>

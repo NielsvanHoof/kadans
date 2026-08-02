@@ -81,7 +81,7 @@ export function PortalTextDocumentAnswer({
                     <Field orientation="horizontal">
                         <Button
                             type="submit"
-                            disabled={processing}
+                            isDisabled={processing}
                             className="w-full sm:w-auto"
                         >
                             {processing
@@ -156,7 +156,7 @@ function BooleanAnswerButton({
                     />
                     <Button
                         type="submit"
-                        disabled={processing}
+                        isDisabled={processing}
                         variant={active ? 'default' : 'outline'}
                         className={cn(
                             'h-11 touch-manipulation',
@@ -203,7 +203,7 @@ export function PortalChoiceDocumentAnswer({
                                 />
                                 <Button
                                     type="submit"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                     variant={
                                         documentRequest
                                             .answer_option_ids?.[0] ===
@@ -277,7 +277,7 @@ export function PortalMultiSelectDocumentAnswer({
                     <Field orientation="horizontal">
                         <Button
                             type="submit"
-                            disabled={processing}
+                            isDisabled={processing}
                             className="w-full sm:w-auto"
                         >
                             {processing

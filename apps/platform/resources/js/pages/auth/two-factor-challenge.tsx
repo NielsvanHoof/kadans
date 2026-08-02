@@ -150,7 +150,11 @@ function ChallengeFields({
             )}
 
             <Field>
-                <Button type="submit" className="w-full" disabled={processing}>
+                <Button
+                    type="submit"
+                    className="w-full"
+                    isDisabled={processing}
+                >
                     {t('Continue')}
                 </Button>
             </Field>

@@ -86,25 +86,25 @@ export default function CreateTemplate({
                                     {t('Category')}
                                 </FieldLabel>
                                 <Select
-                                    required
+                                    isRequired
                                     defaultValue="custom"
                                     name="category"
+                                    placeholder={t('Select a category')}
+                                    aria-label={t('Select a category')}
                                 >
                                     <SelectTrigger
                                         id="category"
                                         className="w-full"
                                         aria-invalid={Boolean(errors.category)}
                                     >
-                                        <SelectValue
-                                            placeholder={t('Select a category')}
-                                        />
+                                        <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
                                         <SelectGroup>
                                             {categories.map((category) => (
                                                 <SelectItem
                                                     key={category.value}
-                                                    value={category.value}
+                                                    id={category.value}
                                                 >
                                                     {category.label}
                                                 </SelectItem>
@@ -130,7 +130,7 @@ export default function CreateTemplate({
                             </Field>
 
                             <Field orientation="horizontal">
-                                <Button disabled={processing}>
+                                <Button type="submit" isDisabled={processing}>
                                     {processing && <Spinner />}
                                     {t('Create template')}
                                 </Button>

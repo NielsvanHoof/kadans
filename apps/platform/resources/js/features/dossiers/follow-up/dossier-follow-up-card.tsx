@@ -43,11 +43,7 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                         label={t('Due and owner')}
                         value={
                             dossier.due_date
-                                ? // Date-only: avoid formatDateTime (adds a midnight clock).
-                                  formatDate(
-                                      `${dossier.due_date}T00:00:00Z`,
-                                      locale,
-                                  )
+                                ? formatDate(dossier.due_date, locale)
                                 : t('No due date')
                         }
                         detail={
@@ -119,7 +115,7 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                                 <Field className="gap-1 sm:items-end">
                                     <Button
                                         type="submit"
-                                        disabled={processing}
+                                        isDisabled={processing}
                                         {...fieldErrorAriaProps(
                                             reminderErrorId,
                                             errors.dossier,

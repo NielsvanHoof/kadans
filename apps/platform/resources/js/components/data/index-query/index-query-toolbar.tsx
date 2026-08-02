@@ -181,23 +181,25 @@ export default function IndexQueryToolbar({
                             {t(filter.label)}
                         </span>
                         <Select
-                            value={filters[filter.key] ?? ALL_VALUE}
-                            onValueChange={(value) =>
-                                handleSelectChange(filter.key, value)
+                            selectedKey={filters[filter.key] ?? ALL_VALUE}
+                            onSelectionChange={(value) =>
+                                handleSelectChange(filter.key, String(value))
                             }
+                            placeholder={t(filter.label)}
+                            aria-label={t(filter.label)}
                         >
                             <SelectTrigger className="w-full min-w-40">
-                                <SelectValue placeholder={t(filter.label)} />
+                                <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    <SelectItem value={ALL_VALUE}>
+                                    <SelectItem id={ALL_VALUE}>
                                         {t('All')}
                                     </SelectItem>
                                     {(filter.options ?? []).map((option) => (
                                         <SelectItem
                                             key={option.value}
-                                            value={option.value}
+                                            id={option.value}
                                         >
                                             {t(option.label)}
                                         </SelectItem>
@@ -215,18 +217,22 @@ export default function IndexQueryToolbar({
                         {t('Sort')}
                     </span>
                     <Select
-                        value={activeSort}
-                        onValueChange={(value) => setSort(value)}
+                        selectedKey={activeSort}
+                        onSelectionChange={(value) =>
+                            setSort(value === null ? null : String(value))
+                        }
+                        placeholder={t('Sort')}
+                        aria-label={t('Sort')}
                     >
                         <SelectTrigger className="w-full min-w-44">
-                            <SelectValue placeholder={t('Sort')} />
+                            <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
                                 {config.sorts.map((option) => (
                                     <SelectItem
                                         key={option.key}
-                                        value={option.key}
+                                        id={option.key}
                                     >
                                         {t(option.label)}
                                     </SelectItem>

@@ -45,29 +45,27 @@ export default function QuestionnaireBuilderTemplates({
 
     return (
         <Collapsible className="border-t border-border/60 pt-3">
-            <CollapsibleTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    // Allow the helper line to wrap in the narrow palette column.
-                    className="group h-auto w-full justify-between gap-2 px-0 py-1 text-left whitespace-normal"
-                >
-                    <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold">
-                            {t('Templates')}
-                        </span>
-                        <span className="block text-xs font-normal text-pretty text-muted-foreground">
-                            {t(
-                                'Append a reusable pack. Existing items are kept. Save to persist.',
-                            )}
-                        </span>
+            <CollapsibleTrigger
+                type="button"
+                variant="ghost"
+                size="sm"
+                // Allow the helper line to wrap in the narrow palette column.
+                className="group h-auto w-full justify-between gap-2 px-0 py-1 text-left whitespace-normal"
+            >
+                <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">
+                        {t('Templates')}
                     </span>
-                    <ChevronDown
-                        className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180"
-                        aria-hidden="true"
-                    />
-                </Button>
+                    <span className="block text-xs font-normal text-pretty text-muted-foreground">
+                        {t(
+                            'Append a reusable pack. Existing items are kept. Save to persist.',
+                        )}
+                    </span>
+                </span>
+                <ChevronDown
+                    className="size-4 shrink-0 transition-transform group-aria-expanded:rotate-180"
+                    aria-hidden="true"
+                />
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-3">
                 <FieldGroup className="gap-3">
@@ -76,30 +74,30 @@ export default function QuestionnaireBuilderTemplates({
                             {t('Template')}
                         </FieldLabel>
                         <Select
-                            required
-                            value={selectedTemplateId || undefined}
-                            onValueChange={setSelectedTemplateId}
-                            disabled={!canEdit}
+                            isRequired
+                            placeholder={t('Select a template…')}
+                            selectedKey={selectedTemplateId || undefined}
+                            onSelectionChange={(key) =>
+                                setSelectedTemplateId(String(key ?? ''))
+                            }
+                            isDisabled={!canEdit}
+                            aria-label={t('Select a template…')}
                         >
                             <SelectTrigger
                                 id="questionnaire_template_id"
                                 className="w-full min-w-0 overflow-hidden"
                             >
-                                <SelectValue
-                                    placeholder={t('Select a template…')}
-                                >
+                                <SelectValue>
                                     {selectedTemplate?.name}
                                 </SelectValue>
                             </SelectTrigger>
-                            <SelectContent
-                                align="start"
-                                className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] bg-background"
-                            >
+                            <SelectContent className="max-w-(--anchor-width) bg-background">
                                 <SelectGroup>
                                     {templates.map((template) => (
                                         <SelectItem
                                             key={template.id}
-                                            value={template.id.toString()}
+                                            id={template.id.toString()}
+                                            textValue={template.name}
                                             className="items-start"
                                         >
                                             <span className="flex min-w-0 flex-col gap-0.5 text-left">
@@ -123,7 +121,7 @@ export default function QuestionnaireBuilderTemplates({
                     <Field>
                         <Button
                             type="button"
-                            disabled={!canEdit || !selectedTemplate}
+                            isDisabled={!canEdit || !selectedTemplate}
                             className="w-full"
                             size="sm"
                             onClick={() => {

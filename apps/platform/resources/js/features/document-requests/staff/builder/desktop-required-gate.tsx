@@ -1,7 +1,6 @@
-import { Link } from '@inertiajs/react';
 import { Monitor } from 'lucide-react';
 import EmptyState from '@/components/primitives/empty-state';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
@@ -25,9 +24,9 @@ export default function DesktopRequiredGate({
                     'Building a client form uses a side-by-side palette, canvas, and settings panel. Open this page on a desktop or laptop to continue.',
                 )}
                 action={
-                    <Button asChild>
-                        <Link href={backHref}>{t('Back to dossier')}</Link>
-                    </Button>
+                    <LinkButton href={backHref}>
+                        {t('Back to dossier')}
+                    </LinkButton>
                 }
             />
         </div>

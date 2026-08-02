@@ -1,6 +1,6 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import InviteMemberForm from '@/features/members/invite-member-form';
 import MembersListCard from '@/features/members/members-list-card';
 import PendingInvitationsCard from '@/features/members/pending-invitations-card';
@@ -58,11 +58,13 @@ export default function WorkspaceMembersIndex({
                         <span>
                             {t('Filtered by role: :role', { role: roleFilter })}
                         </span>
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href={membersIndex.url(currentWorkspace)}>
-                                {t('Clear filter')}
-                            </Link>
-                        </Button>
+                        <LinkButton
+                            variant="ghost"
+                            size="sm"
+                            href={membersIndex.url(currentWorkspace)}
+                        >
+                            {t('Clear filter')}
+                        </LinkButton>
                     </div>
                 ) : null}
 

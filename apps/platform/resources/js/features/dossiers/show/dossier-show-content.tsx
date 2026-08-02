@@ -1,7 +1,6 @@
-import { Link } from '@inertiajs/react';
 import { ArrowRight, Mail, Plus } from 'lucide-react';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { buttonVariants, LinkButton } from '@/components/ui/button';
 import DossierFollowUpCard from '@/features/dossiers/follow-up/dossier-follow-up-card';
 import {
     DossierPermissionsProvider,
@@ -166,23 +165,24 @@ function DossierShowBody({
                 <div className="flex flex-wrap items-center gap-2">
                     {primaryAction ? (
                         primaryAction.kind === 'link' ? (
-                            <Button asChild>
-                                <Link href={primaryAction.href}>
-                                    {primaryAction.label === t('Build form') ? (
-                                        <Plus aria-hidden />
-                                    ) : (
-                                        <ArrowRight aria-hidden />
-                                    )}
-                                    {primaryAction.label}
-                                </Link>
-                            </Button>
+                            <LinkButton href={primaryAction.href}>
+                                {primaryAction.label === t('Build form') ? (
+                                    <Plus aria-hidden />
+                                ) : (
+                                    <ArrowRight aria-hidden />
+                                )}
+                                {primaryAction.label}
+                            </LinkButton>
                         ) : (
-                            <Button asChild>
-                                <a href={primaryAction.href}>
-                                    <Mail aria-hidden />
-                                    {primaryAction.label}
-                                </a>
-                            </Button>
+                            // Plain anchor: this is an in-page `#…` jump, and
+                            // RouterProvider would hand it to Inertia.
+                            <a
+                                className={buttonVariants()}
+                                href={primaryAction.href}
+                            >
+                                <Mail aria-hidden />
+                                {primaryAction.label}
+                            </a>
                         )
                     ) : null}
                     <DossierActionsMenu

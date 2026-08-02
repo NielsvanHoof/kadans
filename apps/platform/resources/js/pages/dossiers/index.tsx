@@ -1,10 +1,10 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { Archive, Plus } from 'lucide-react';
 import IndexPagination from '@/components/data/index-query/index-pagination';
 import IndexQueryResults from '@/components/data/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import DossiersListCard from '@/features/dossiers/list/dossiers-list-card';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -60,23 +60,23 @@ export default function DossierIndex({
                     />
 
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="ghost" asChild>
-                            <Link href={archivedDossiers(currentWorkspace)}>
-                                <Archive aria-hidden="true" />
-                                {t('Archived')}
-                            </Link>
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href={clientIndex(currentWorkspace)}>
-                                {t('Clients')}
-                            </Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href={create(currentWorkspace)}>
-                                <Plus />
-                                {t('New dossier')}
-                            </Link>
-                        </Button>
+                        <LinkButton
+                            variant="ghost"
+                            href={archivedDossiers(currentWorkspace).url}
+                        >
+                            <Archive aria-hidden="true" />
+                            {t('Archived')}
+                        </LinkButton>
+                        <LinkButton
+                            variant="outline"
+                            href={clientIndex(currentWorkspace).url}
+                        >
+                            {t('Clients')}
+                        </LinkButton>
+                        <LinkButton href={create(currentWorkspace).url}>
+                            <Plus />
+                            {t('New dossier')}
+                        </LinkButton>
                     </div>
                 </div>
 

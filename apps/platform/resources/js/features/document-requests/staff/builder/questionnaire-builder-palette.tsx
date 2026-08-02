@@ -179,7 +179,7 @@ function PaletteItem({
                     size="icon"
                     variant="outline"
                     className="size-8 shrink-0"
-                    disabled={disabled}
+                    isDisabled={disabled}
                     aria-label={t('Add :component', { component: label })}
                     onClick={onAdd}
                 >

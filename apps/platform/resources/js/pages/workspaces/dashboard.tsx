@@ -1,6 +1,6 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import DashboardMetricsGrid from '@/features/dashboard/dashboard-metrics-grid';
 import RecentDossiersCard from '@/features/dashboard/recent-dossiers-card';
 import ReviewQueueCard from '@/features/dashboard/review-queue-card';
@@ -55,16 +55,15 @@ export default function WorkspaceDashboard({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" asChild>
-                            <Link href={createClient(currentWorkspace)}>
-                                {t('New client')}
-                            </Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href={createDossier(currentWorkspace)}>
-                                {t('New dossier')}
-                            </Link>
-                        </Button>
+                        <LinkButton
+                            variant="outline"
+                            href={createClient(currentWorkspace).url}
+                        >
+                            {t('New client')}
+                        </LinkButton>
+                        <LinkButton href={createDossier(currentWorkspace).url}>
+                            {t('New dossier')}
+                        </LinkButton>
                     </div>
                 </div>
 

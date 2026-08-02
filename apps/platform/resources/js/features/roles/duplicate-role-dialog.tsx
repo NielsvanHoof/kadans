@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -33,7 +32,6 @@ export default function DuplicateRoleDialog({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
-    const [name, setName] = useState('');
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
         [],
     );
@@ -50,7 +48,6 @@ export default function DuplicateRoleDialog({
             return;
         }
 
-        setName(t(':name copy', { name: role.label }));
         setSelectedPermissions(
             permissionGroups
                 .flatMap((group) => group.permissions)
@@ -59,83 +56,72 @@ export default function DuplicateRoleDialog({
                 )
                 .map((permission) => permission.value),
         );
-    }, [permissionGroups, role, t]);
+    }, [permissionGroups, role]);
 
     return (
-        <Dialog open={role !== null} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{t('Duplicate role')}</DialogTitle>
-                    <DialogDescription>
-                        {t('Create a new role based on this role.')}
-                    </DialogDescription>
-                </DialogHeader>
-                {role ? (
-                    <Form
-                        {...WorkspaceRoleController.store.form(
-                            currentWorkspace,
-                        )}
-                        options={{ preserveScroll: true }}
-                        onSuccess={() => onOpenChange(false)}
-                    >
-                        {({ processing, errors }) => (
-                            <div className="space-y-4">
-                                <Field data-invalid={Boolean(errors.name)}>
-                                    <FieldLabel htmlFor="duplicate-role-name">
-                                        {t('Role name')}
-                                    </FieldLabel>
-                                    <Input
-                                        id="duplicate-role-name"
-                                        name="name"
-                                        value={name}
-                                        onChange={(event) =>
-                                            setName(event.target.value)
-                                        }
-                                        required
-                                        maxLength={255}
-                                    />
-                                    <InputError message={errors.name} />
-                                </Field>
-                                <PermissionChecklist
-                                    permissionGroups={permissionGroups}
-                                    selectedPermissions={selectedPermissions}
-                                    onSelectedPermissionsChange={
-                                        setSelectedPermissions
-                                    }
-                                    onSelectAll={() =>
-                                        setSelectedPermissions(
-                                            allPermissionValues,
-                                        )
-                                    }
-                                    onClearAll={() =>
-                                        setSelectedPermissions([])
-                                    }
+        <Dialog isOpen={role !== null} onOpenChange={onOpenChange}>
+            <DialogHeader>
+                <DialogTitle>{t('Duplicate role')}</DialogTitle>
+                <DialogDescription>
+                    {t('Create a new role based on this role.')}
+                </DialogDescription>
+            </DialogHeader>
+            {role ? (
+                // Remount per role: the name input is uncontrolled, so its
+                // defaultValue only refreshes when the subtree is recreated.
+                <Form
+                    key={role.id}
+                    {...WorkspaceRoleController.store.form(currentWorkspace)}
+                    options={{ preserveScroll: true }}
+                    onSuccess={() => onOpenChange(false)}
+                >
+                    {({ processing, errors }) => (
+                        <div className="space-y-4">
+                            <Field data-invalid={Boolean(errors.name)}>
+                                <FieldLabel htmlFor="duplicate-role-name">
+                                    {t('Role name')}
+                                </FieldLabel>
+                                <Input
+                                    id="duplicate-role-name"
+                                    name="name"
+                                    defaultValue={t(':name copy', {
+                                        name: role.label,
+                                    })}
+                                    required
+                                    maxLength={255}
                                 />
-                                <InputError message={errors.permissions} />
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
-                                    </DialogClose>
-                                    <Button
-                                        type="submit"
-                                        disabled={
-                                            processing ||
-                                            selectedPermissions.length === 0
-                                        }
-                                    >
-                                        {t('Create role')}
-                                    </Button>
-                                </DialogFooter>
-                            </div>
-                        )}
-                    </Form>
-                ) : null}
-            </DialogContent>
+                                <InputError message={errors.name} />
+                            </Field>
+                            <PermissionChecklist
+                                permissionGroups={permissionGroups}
+                                selectedPermissions={selectedPermissions}
+                                onSelectedPermissionsChange={
+                                    setSelectedPermissions
+                                }
+                                onSelectAll={() =>
+                                    setSelectedPermissions(allPermissionValues)
+                                }
+                                onClearAll={() => setSelectedPermissions([])}
+                            />
+                            <InputError message={errors.permissions} />
+                            <DialogFooter>
+                                <DialogClose type="button" variant="secondary">
+                                    {t('Cancel')}
+                                </DialogClose>
+                                <Button
+                                    type="submit"
+                                    isDisabled={
+                                        processing ||
+                                        selectedPermissions.length === 0
+                                    }
+                                >
+                                    {t('Create role')}
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    )}
+                </Form>
+            ) : null}
         </Dialog>
     );
 }

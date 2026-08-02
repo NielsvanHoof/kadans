@@ -9,7 +9,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-    AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
@@ -243,7 +242,7 @@ export default function QuestionnaireBuilder({
                     <Button
                         type="button"
                         size="sm"
-                        disabled={
+                        isDisabled={
                             !canEditStructure ||
                             !state.isDirty ||
                             state.saveStatus === 'saving'
@@ -309,32 +308,32 @@ export default function QuestionnaireBuilder({
                 </DragOverlay>
             </DndContext>
 
-            <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            {t('Discard unsaved changes?')}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t(
-                                'You have unsaved form changes. Leave without saving?',
-                            )}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            onClick={() => {
-                                setPendingHref(null);
-                            }}
-                        >
-                            {t('Keep editing')}
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={leaveWithoutSaving}>
-                            {t('Leave without saving')}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* AlertDialogContent *is* the modal in React Aria, so the open
+                state goes straight on it — no outer AlertDialog wrapper. */}
+            <AlertDialogContent isOpen={leaveOpen} onOpenChange={setLeaveOpen}>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        {t('Discard unsaved changes?')}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {t(
+                            'You have unsaved form changes. Leave without saving?',
+                        )}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel
+                        onPress={() => {
+                            setPendingHref(null);
+                        }}
+                    >
+                        {t('Keep editing')}
+                    </AlertDialogCancel>
+                    <AlertDialogAction onPress={leaveWithoutSaving}>
+                        {t('Leave without saving')}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
         </div>
     );
 }

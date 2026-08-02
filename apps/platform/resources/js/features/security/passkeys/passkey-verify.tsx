@@ -51,7 +51,7 @@ export default function PasskeyVerify({
                         variant="outline"
                         className="w-full"
                         onClick={verify}
-                        disabled={isLoading}
+                        isDisabled={isLoading}
                         aria-invalid={Boolean(error)}
                     >
                         {isLoading ? (

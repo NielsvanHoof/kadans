@@ -1,14 +1,11 @@
+import { type CalendarDate, parseDate } from '@internationalized/date';
 import { CalendarIcon, X } from 'lucide-react';
 import { useState } from 'react';
-import { enGB, nl } from 'react-day-picker/locale';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { useTranslation } from '@/hooks/use-translation';
+import { formatDate } from '@/lib/format-date-time';
 import { cn } from '@/lib/utils';
 
 type DatePickerProps = {
@@ -20,6 +17,15 @@ type DatePickerProps = {
     triggerClassName?: string;
 };
 
+/**
+ * Date field backed by React Aria's Calendar.
+ *
+ * The wire format is a plain `YYYY-MM-DD` string, which is exactly what
+ * `CalendarDate` parses and serialises — so unlike the previous `Date`-based
+ * version there is no hand-rolled parsing, and no timezone can shift the day
+ * across a boundary. Month and weekday names follow the locale supplied by
+ * `I18nProvider` in `app.tsx`.
+ */
 export default function DatePicker({
     id,
     name,
@@ -30,68 +36,59 @@ export default function DatePicker({
 }: DatePickerProps) {
     const { locale, t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(() =>
-        parseDate(defaultValue),
+    const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(() =>
+        parseDateValue(defaultValue),
     );
-    const calendarLocale = locale === 'nl' ? nl : enGB;
-
-    function selectDate(date: Date | undefined) {
-        setSelectedDate(date);
-        setIsOpen(false);
-    }
 
     return (
         <div className="flex gap-2">
             <input
                 type="hidden"
                 name={name}
-                value={selectedDate ? serializeDate(selectedDate) : ''}
+                value={selectedDate ? selectedDate.toString() : ''}
                 readOnly
             />
 
-            <Popover open={isOpen} onOpenChange={setIsOpen}>
-                <PopoverTrigger asChild>
-                    <Button
-                        id={id}
-                        type="button"
-                        role="combobox"
-                        variant="outline"
-                        aria-invalid={invalid}
-                        aria-required={required}
-                        className={cn(
-                            'min-w-0 flex-1 justify-start text-left font-normal',
-                            !selectedDate && 'text-muted-foreground',
-                            triggerClassName,
-                        )}
-                    >
-                        <CalendarIcon aria-hidden="true" />
-                        <span className="truncate">
-                            {selectedDate
-                                ? selectedDate.toLocaleDateString(locale, {
-                                      dateStyle: 'long',
-                                  })
-                                : t('Choose a date')}
-                        </span>
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+            <PopoverTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
+                <Button
+                    id={id}
+                    type="button"
+                    variant="outline"
+                    aria-invalid={invalid}
+                    aria-required={required}
+                    className={cn(
+                        'min-w-0 flex-1 justify-start text-left font-normal',
+                        !selectedDate && 'text-muted-foreground',
+                        triggerClassName,
+                    )}
+                >
+                    <CalendarIcon aria-hidden="true" />
+                    <span className="truncate">
+                        {selectedDate
+                            ? formatDate(selectedDate.toString(), locale, {
+                                  dateStyle: 'long',
+                              })
+                            : t('Choose a date')}
+                    </span>
+                </Button>
+                <Popover className="w-auto p-0">
                     <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        defaultMonth={selectedDate}
-                        onSelect={selectDate}
-                        locale={calendarLocale}
+                        value={selectedDate}
+                        onChange={(date) => {
+                            setSelectedDate(date);
+                            setIsOpen(false);
+                        }}
                         autoFocus
                     />
-                </PopoverContent>
-            </Popover>
+                </Popover>
+            </PopoverTrigger>
 
             {selectedDate ? (
                 <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    onClick={() => setSelectedDate(undefined)}
+                    onPress={() => setSelectedDate(null)}
                 >
                     <X aria-hidden="true" />
                     <span className="sr-only">{t('Clear date')}</span>
@@ -101,30 +98,15 @@ export default function DatePicker({
     );
 }
 
-function parseDate(value: string): Date | undefined {
-    const [year, month, day] = value.split('-').map(Number);
-
-    if (!year || !month || !day) {
-        return undefined;
+/** `parseDate` throws on anything that is not a valid `YYYY-MM-DD`. */
+function parseDateValue(value: string): CalendarDate | null {
+    if (!value) {
+        return null;
     }
 
-    const date = new Date(year, month - 1, day);
-
-    if (
-        date.getFullYear() !== year ||
-        date.getMonth() !== month - 1 ||
-        date.getDate() !== day
-    ) {
-        return undefined;
+    try {
+        return parseDate(value);
+    } catch {
+        return null;
     }
-
-    return date;
-}
-
-function serializeDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
 }

@@ -98,9 +98,9 @@ export default function QuestionnaireBuilderSettings({
                         {t('Type')}
                     </FieldLabel>
                     <Select
-                        value={form.type}
-                        disabled={!canEdit}
-                        onValueChange={(value) =>
+                        selectedKey={form.type}
+                        isDisabled={!canEdit}
+                        onSelectionChange={(value) =>
                             form.changeType(
                                 value as QuestionnaireItemType,
                                 buildDefaultOptions(t),
@@ -118,7 +118,7 @@ export default function QuestionnaireBuilderSettings({
                                 {definitions.map((definition) => (
                                     <SelectItem
                                         key={definition.value}
-                                        value={definition.value}
+                                        id={definition.value}
                                     >
                                         {definition.label}
                                     </SelectItem>
@@ -180,9 +180,9 @@ export default function QuestionnaireBuilderSettings({
                 >
                     <Checkbox
                         id={`builder-required-${documentRequest.id}`}
-                        checked={form.configuration.is_required !== false}
-                        disabled={!canEdit}
-                        onCheckedChange={(checked) =>
+                        isSelected={form.configuration.is_required !== false}
+                        isDisabled={!canEdit}
+                        onChange={(checked) =>
                             form.updateConfiguration(
                                 {
                                     ...form.configuration,

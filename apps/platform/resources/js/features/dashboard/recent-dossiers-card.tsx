@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 import IndexList from '@/components/data/index-list';
 import EmptyState from '@/components/primitives/empty-state';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -41,11 +41,13 @@ export default function RecentDossiersCard({
                         {t('The latest activity across your firm.')}
                     </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" asChild>
-                    <Link href={dossierIndex(currentWorkspace)}>
-                        {t('View all')}
-                    </Link>
-                </Button>
+                <LinkButton
+                    variant="ghost"
+                    size="sm"
+                    href={dossierIndex(currentWorkspace).url}
+                >
+                    {t('View all')}
+                </LinkButton>
             </CardHeader>
             <CardContent>
                 {dossiers.length === 0 ? (
@@ -54,11 +56,12 @@ export default function RecentDossiersCard({
                             'Create a dossier to start collecting documents.',
                         )}
                         action={
-                            <Button asChild size="sm">
-                                <Link href={createDossier(currentWorkspace)}>
-                                    {t('New dossier')}
-                                </Link>
-                            </Button>
+                            <LinkButton
+                                size="sm"
+                                href={createDossier(currentWorkspace).url}
+                            >
+                                {t('New dossier')}
+                            </LinkButton>
                         }
                     />
                 ) : (

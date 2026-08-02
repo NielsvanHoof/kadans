@@ -1,9 +1,9 @@
-import { Form, Link } from '@inertiajs/react';
+import { Form } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import WorkspaceRoleController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceRoleController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import InputError from '@/components/primitives/input-error';
-import { Button } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -121,7 +121,7 @@ export default function RoleManagementCard({
                             ) : null}
                             <Button
                                 type="submit"
-                                disabled={
+                                isDisabled={
                                     processing ||
                                     newRolePermissions.length === 0
                                 }
@@ -173,25 +173,20 @@ export default function RoleManagementCard({
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
+                                    <LinkButton
                                         variant="outline"
                                         size="sm"
-                                        asChild
-                                    >
-                                        <Link
-                                            href={membersIndex.url(
-                                                currentWorkspace,
-                                                {
-                                                    query: {
-                                                        role: role.value,
-                                                    },
+                                        href={membersIndex.url(
+                                            currentWorkspace,
+                                            {
+                                                query: {
+                                                    role: role.value,
                                                 },
-                                            )}
-                                        >
-                                            {t('View members')}
-                                        </Link>
-                                    </Button>
+                                            },
+                                        )}
+                                    >
+                                        {t('View members')}
+                                    </LinkButton>
                                     <Button
                                         type="button"
                                         variant="outline"

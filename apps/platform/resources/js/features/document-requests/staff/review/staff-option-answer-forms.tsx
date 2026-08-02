@@ -52,7 +52,7 @@ export function StaffChoiceAnswerForm({
                                 <Button
                                     type="submit"
                                     size="sm"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                     variant={
                                         documentRequest
                                             .answer_option_ids?.[0] ===
@@ -120,7 +120,7 @@ export function StaffMultiSelectAnswerForm({
                         <InputError message={errors.answer_option_ids} />
                     </FieldSet>
                     <Field orientation="horizontal">
-                        <Button type="submit" size="sm" disabled={processing}>
+                        <Button type="submit" size="sm" isDisabled={processing}>
                             {processing
                                 ? t('Saving…')
                                 : t('Save client answer')}

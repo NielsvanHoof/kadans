@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
     Collapsible,
     CollapsibleContent,
@@ -32,18 +31,20 @@ export default function DocumentRequestAnswer({
     }
 
     return (
-        <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
-            <CollapsibleTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="px-0"
-                >
-                    {open
-                        ? t('Hide staff answer')
-                        : t('Answer on behalf of client')}
-                </Button>
+        <Collapsible
+            isExpanded={open}
+            onExpandedChange={setOpen}
+            className="mt-2"
+        >
+            <CollapsibleTrigger
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="px-0"
+            >
+                {open
+                    ? t('Hide staff answer')
+                    : t('Answer on behalf of client')}
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-2">
                 <AnswerForm

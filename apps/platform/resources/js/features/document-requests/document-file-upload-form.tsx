@@ -58,7 +58,7 @@ export default function DocumentFileUploadForm({
                     <Button
                         type="submit"
                         size="sm"
-                        disabled={form.processing || !form.data.document}
+                        isDisabled={form.processing || !form.data.document}
                     >
                         {form.processing ? t('Uploading…') : t('Upload')}
                     </Button>

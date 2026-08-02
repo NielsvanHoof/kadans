@@ -3,7 +3,7 @@ import { ArrowLeft, Download, Trash2 } from 'lucide-react';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -96,18 +96,22 @@ export default function PipelineShow({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                        {/* Plain anchor, not LinkButton: RouterProvider hands
+                            every React Aria href to Inertia, which would
+                            swallow this file download. */}
                         {canDownload ? (
-                            <Button asChild variant="outline" type="button">
-                                <a
-                                    href={downloadPipeline.url({
-                                        tenant: currentWorkspace,
-                                        pipeline: pipeline.id,
-                                    })}
-                                >
-                                    <Download aria-hidden="true" />
-                                    {t('Download payload')}
-                                </a>
-                            </Button>
+                            <a
+                                className={buttonVariants({
+                                    variant: 'outline',
+                                })}
+                                href={downloadPipeline.url({
+                                    tenant: currentWorkspace,
+                                    pipeline: pipeline.id,
+                                })}
+                            >
+                                <Download aria-hidden="true" />
+                                {t('Download payload')}
+                            </a>
                         ) : null}
 
                         {canDelete ? (

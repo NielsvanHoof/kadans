@@ -65,8 +65,9 @@ export default function ConfirmPassword() {
 
                         <Field>
                             <Button
+                                type="submit"
                                 className="w-full"
-                                disabled={processing}
+                                isDisabled={processing}
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}

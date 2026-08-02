@@ -1,3 +1,9 @@
+/*
+ * Plain semantic <table> rather than the React Aria Table primitive.
+ * This grid uses colSpan group-separator rows, which a React Aria collection
+ * cannot express, and it needs none of the collection behaviour (no selection,
+ * no row actions). Native table semantics are fully accessible here.
+ */
 import { Check, Minus } from 'lucide-react';
 import { Fragment } from 'react';
 import EmptyState from '@/components/primitives/empty-state';
@@ -9,14 +15,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import type {
     WorkspacePermissionGroup,
     WorkspaceRole,
@@ -91,17 +89,16 @@ function PermissionGrid({
     const { t } = useTranslation();
 
     return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead scope="col" className="min-w-56">
+        <table className="w-full caption-bottom text-xs">
+            <thead className="[&_tr]:border-b">
+                <tr className="border-b transition-colors hover:bg-muted/50">
+                    <th className="min-w-56 p-2 text-left align-middle font-medium">
                         {t('Permission')}
-                    </TableHead>
+                    </th>
                     {roles.map((role) => (
-                        <TableHead
+                        <th
+                            className="p-2 text-center align-middle font-medium"
                             key={role.value}
-                            scope="col"
-                            className="text-center"
                         >
                             <span className="block text-foreground">
                                 {role.label}
@@ -113,35 +110,38 @@ function PermissionGrid({
                                           count: role.member_count,
                                       })}
                             </span>
-                        </TableHead>
+                        </th>
                     ))}
-                </TableRow>
-            </TableHeader>
-            <TableBody>
+                </tr>
+            </thead>
+            <tbody className="[&_tr:last-child]:border-0">
                 {permissionGroups.map((group) => (
                     <Fragment key={group.value}>
-                        <TableRow className="hover:bg-transparent">
-                            <TableCell
+                        <tr className="border-b transition-colors hover:bg-muted/50 hover:bg-transparent">
+                            <td
+                                className="bg-muted/40 p-2 align-middle text-xs font-semibold tracking-wide uppercase"
                                 colSpan={roles.length + 1}
-                                className="bg-muted/40 text-xs font-semibold tracking-wide uppercase"
                             >
                                 {group.label}
-                            </TableCell>
-                        </TableRow>
+                            </td>
+                        </tr>
                         {group.permissions.map((permission) => (
-                            <TableRow key={permission.value}>
-                                <TableCell>
+                            <tr
+                                className="border-b transition-colors hover:bg-muted/50"
+                                key={permission.value}
+                            >
+                                <td className="p-2 align-middle">
                                     <span className="block font-medium">
                                         {permission.label}
                                     </span>
                                     <span className="block text-xs text-pretty whitespace-normal text-muted-foreground">
                                         {permission.description}
                                     </span>
-                                </TableCell>
+                                </td>
                                 {roles.map((role) => (
-                                    <TableCell
+                                    <td
+                                        className="p-2 text-center align-middle"
                                         key={role.value}
-                                        className="text-center"
                                     >
                                         <GrantMark
                                             granted={permission.granted_to.includes(
@@ -150,14 +150,14 @@ function PermissionGrid({
                                             permissionLabel={permission.label}
                                             roleLabel={role.label}
                                         />
-                                    </TableCell>
+                                    </td>
                                 ))}
-                            </TableRow>
+                            </tr>
                         ))}
                     </Fragment>
                 ))}
-            </TableBody>
-        </Table>
+            </tbody>
+        </table>
     );
 }
 

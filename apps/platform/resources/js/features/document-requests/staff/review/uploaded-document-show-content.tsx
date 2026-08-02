@@ -1,10 +1,9 @@
-import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import ErrorState from '@/components/primitives/error-state';
 import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants, LinkButton } from '@/components/ui/button';
 import DocumentExtractionView from '@/features/document-requests/staff/review/document-extraction-view';
 import DocumentPreviewPanel, {
     documentPreviewKind,
@@ -101,21 +100,29 @@ export default function UploadedDocumentShowContent({
                         )}
                     </Badge>
                     {dossier && (
-                        <Button variant="outline" size="sm" asChild>
-                            <Link
-                                href={showDossier({
+                        <LinkButton
+                            variant="outline"
+                            size="sm"
+                            href={
+                                showDossier({
                                     tenant: currentWorkspace,
                                     dossier: dossier.id,
-                                })}
-                            >
-                                {t('Back to dossier')}
-                            </Link>
-                        </Button>
+                                }).url
+                            }
+                        >
+                            {t('Back to dossier')}
+                        </LinkButton>
                     )}
                     {canDownload && downloadUrl && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a href={downloadUrl}>{t('Download')}</a>
-                        </Button>
+                        <a
+                            className={buttonVariants({
+                                variant: 'outline',
+                                size: 'sm',
+                            })}
+                            href={downloadUrl}
+                        >
+                            {t('Download')}
+                        </a>
                     )}
                 </div>
             </div>

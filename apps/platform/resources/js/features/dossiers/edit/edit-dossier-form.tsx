@@ -1,8 +1,8 @@
-import { Form, Link } from '@inertiajs/react';
+import { Form } from '@inertiajs/react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
 import InputError from '@/components/primitives/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -90,20 +90,21 @@ export default function EditDossierForm({
                         />
 
                         <Field orientation="horizontal" className="gap-3">
-                            <Button disabled={processing}>
+                            <Button type="submit" isDisabled={processing}>
                                 {processing && <Spinner />}
                                 {t('Save changes')}
                             </Button>
-                            <Button variant="ghost" asChild>
-                                <Link
-                                    href={showDossier({
+                            <LinkButton
+                                variant="ghost"
+                                href={
+                                    showDossier({
                                         tenant: currentWorkspace,
                                         dossier: dossier.id,
-                                    })}
-                                >
-                                    {t('Cancel')}
-                                </Link>
-                            </Button>
+                                    }).url
+                                }
+                            >
+                                {t('Cancel')}
+                            </LinkButton>
                         </Field>
                     </FieldGroup>
                 </div>

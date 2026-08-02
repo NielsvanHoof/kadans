@@ -53,7 +53,7 @@ export function StaffTextAnswerForm({
                         <InputError message={errors.answer_text} />
                     </Field>
                     <Field orientation="horizontal">
-                        <Button type="submit" size="sm" disabled={processing}>
+                        <Button type="submit" size="sm" isDisabled={processing}>
                             {processing
                                 ? t('Saving…')
                                 : t('Save client answer')}
@@ -100,7 +100,7 @@ export function StaffBooleanAnswerForm({
                                 <Button
                                     type="submit"
                                     size="sm"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                     variant={
                                         documentRequest.answer_boolean === value
                                             ? 'default'

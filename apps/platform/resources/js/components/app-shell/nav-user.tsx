@@ -4,21 +4,16 @@ import { UserInfo } from '@/components/app-shell/user-info';
 import { UserMenuContent } from '@/components/app-shell/user-menu-content';
 import {
     DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    useSidebar,
 } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 export function NavUser() {
     const { auth } = usePage().props;
-    const { state } = useSidebar();
-    const isMobile = useIsMobile();
 
     if (!auth.user) {
         return null;
@@ -27,31 +22,22 @@ export function NavUser() {
     return (
         <SidebarMenu>
             <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
-                            data-test="sidebar-menu-button"
-                        >
-                            <UserInfo user={auth.user} />
-                            <ChevronsUpDown className="ml-auto size-4" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        align="end"
-                        side={
-                            isMobile
-                                ? 'bottom'
-                                : state === 'collapsed'
-                                  ? 'left'
-                                  : 'bottom'
-                        }
+                <DropdownMenuTrigger>
+                    <SidebarMenuButton
+                        size="lg"
+                        className="group text-sidebar-accent-foreground data-open:bg-sidebar-accent"
+                        data-test="sidebar-menu-button"
+                    >
+                        <UserInfo user={auth.user} />
+                        <ChevronsUpDown className="ml-auto size-4" />
+                    </SidebarMenuButton>
+                    <DropdownMenu
+                        className="min-w-56 rounded-lg"
+                        placement="bottom end"
                     >
                         <UserMenuContent user={auth.user} />
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenu>
+                </DropdownMenuTrigger>
             </SidebarMenuItem>
         </SidebarMenu>
     );

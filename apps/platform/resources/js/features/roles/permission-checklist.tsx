@@ -118,10 +118,10 @@ export default function PermissionChecklist({
                                         id={checkboxId}
                                         name="permissions[]"
                                         value={permission.value}
-                                        checked={selectedPermissionSet.has(
+                                        isSelected={selectedPermissionSet.has(
                                             permission.value,
                                         )}
-                                        onCheckedChange={(checked) =>
+                                        onChange={(checked) =>
                                             togglePermission(
                                                 permission.value,
                                                 checked === true,

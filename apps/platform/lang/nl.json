@@ -1116,5 +1116,6 @@
     "Role deleted": "Rol verwijderd",
     "Uploading · :percent%": "Uploaden · :percent%",
     "Remove :name": "Verwijder :name",
-    "Replace :name": "Vervang :name"
+    "Replace :name": "Vervang :name",
+    "Data table": "Gegevenstabel"
 }

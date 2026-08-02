@@ -229,7 +229,7 @@ function ReviewGroup({
                     <Button
                         type="button"
                         size="sm"
-                        disabled={bulkProcessing}
+                        isDisabled={bulkProcessing}
                         onClick={() => void approveSelected()}
                     >
                         <Check aria-hidden />
@@ -265,10 +265,10 @@ function ReviewGroup({
                                 <div className="flex flex-wrap items-center gap-2">
                                     {selectable ? (
                                         <Checkbox
-                                            checked={selectedIds.has(
+                                            isSelected={selectedIds.has(
                                                 documentRequest.id,
                                             )}
-                                            onCheckedChange={(checked) => {
+                                            onChange={(checked) => {
                                                 setSelectedIds((current) => {
                                                     const next = new Set(
                                                         current,
@@ -337,14 +337,9 @@ function ReviewGroup({
             {showBulk && items.length > 0 ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Checkbox
-                        checked={
-                            allSelected
-                                ? true
-                                : selectedIds.size > 0
-                                  ? 'indeterminate'
-                                  : false
-                        }
-                        onCheckedChange={(checked) => {
+                        isSelected={allSelected}
+                        isIndeterminate={!allSelected && selectedIds.size > 0}
+                        onChange={(checked) => {
                             if (checked) {
                                 setSelectedIds(
                                     new Set(items.map((item) => item.id)),

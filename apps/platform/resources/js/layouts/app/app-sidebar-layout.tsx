@@ -56,7 +56,7 @@ export default function AppSidebarLayout({
                                         variant="ghost"
                                         size="icon"
                                         className="relative size-9"
-                                        disabled
+                                        isDisabled
                                         aria-label={t('Notifications')}
                                     >
                                         <Bell className="size-5 opacity-50" />

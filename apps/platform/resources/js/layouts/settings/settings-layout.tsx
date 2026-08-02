@@ -1,7 +1,6 @@
-import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useTranslation } from '@/hooks/use-translation';
@@ -54,22 +53,23 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         aria-label={t('Settings')}
                     >
                         {sidebarNavItems.map((item) => (
-                            <Button
+                            <LinkButton
                                 key={toUrl(item.href)}
                                 size="sm"
                                 variant="ghost"
-                                asChild
+
                                 className={cn('w-full justify-start', {
                                     'bg-muted': isCurrentOrParentUrl(item.href),
                                 })}
+                                href={
+                                    typeof item.href === 'string'
+                                        ? item.href
+                                        : item.href.url
+                                }
                             >
-                                <Link href={item.href}>
-                                    {item.icon && (
-                                        <item.icon className="h-4 w-4" />
-                                    )}
-                                    {item.title}
-                                </Link>
-                            </Button>
+                                {item.icon && <item.icon className="h-4 w-4" />}
+                                {item.title}
+                            </LinkButton>
                         ))}
                     </nav>
                 </aside>

@@ -1,4 +1,3 @@
-import { Link } from '@inertiajs/react';
 import { Archive, MoreHorizontal, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
@@ -6,7 +5,6 @@ import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuSeparator,
@@ -47,26 +45,22 @@ export default function DossierActionsMenu({
 
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        aria-label={t('Actions')}
-                        data-test="dossier-actions-menu"
-                    >
-                        <MoreHorizontal aria-hidden="true" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuTrigger>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={t('Actions')}
+                    data-test="dossier-actions-menu"
+                >
+                    <MoreHorizontal aria-hidden="true" />
+                </Button>
+                <DropdownMenu placement="bottom end" className="min-w-44">
                     {canEditDetails ? (
                         <DropdownMenuGroup>
-                            <DropdownMenuItem asChild>
-                                <Link href={editDossier(routeArgs)}>
-                                    <Pencil aria-hidden="true" />
-                                    {t('Edit dossier')}
-                                </Link>
+                            <DropdownMenuItem href={editDossier(routeArgs).url}>
+                                <Pencil aria-hidden="true" />
+                                {t('Edit dossier')}
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                     ) : null}
@@ -78,15 +72,15 @@ export default function DossierActionsMenu({
                             <DropdownMenuItem
                                 variant="destructive"
                                 data-test="archive-dossier-button"
-                                onSelect={() => setArchiveOpen(true)}
+                                onAction={() => setArchiveOpen(true)}
                             >
                                 <Archive aria-hidden="true" />
                                 {t('Archive dossier')}
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                     ) : null}
-                </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenu>
+            </DropdownMenuTrigger>
 
             <ConfirmDestroyDialog
                 open={archiveOpen}

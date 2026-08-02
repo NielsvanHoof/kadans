@@ -31,12 +31,14 @@ export default function SegmentedControl({
 }: SegmentedControlProps) {
     return (
         <ToggleGroup
-            type="single"
-            value={value}
-            onValueChange={(next) => {
-                // Radix clears the value when re-clicking the active item — ignore that.
-                if (next) {
-                    onValueChange(next);
+            selectionMode="single"
+            selectedKeys={[value]}
+            onSelectionChange={(keys) => {
+                // React Aria clears the selection when re-clicking the active
+                // item — keep the current value rather than emitting empty.
+                const [next] = Array.from(keys);
+                if (next !== undefined) {
+                    onValueChange(String(next));
                 }
             }}
             aria-label={ariaLabel}
@@ -48,7 +50,7 @@ export default function SegmentedControl({
             {options.map((option) => (
                 <ToggleGroupItem
                     key={option.value}
-                    value={option.value}
+                    id={option.value}
                     aria-label={
                         typeof option.label === 'string'
                             ? option.label
@@ -56,8 +58,8 @@ export default function SegmentedControl({
                     }
                     className={cn(
                         'flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm shadow-none',
-                        'data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-xs',
-                        'data-[state=off]:text-muted-foreground data-[state=off]:hover:bg-muted/80 data-[state=off]:hover:text-foreground',
+                        'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                        'data-selected:bg-background data-selected:text-foreground data-selected:shadow-xs',
                     )}
                 >
                     {option.icon}

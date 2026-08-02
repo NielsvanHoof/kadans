@@ -13,7 +13,6 @@ import {
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -103,14 +102,12 @@ function CompleteDossierDialog({
     const { t } = useTranslation();
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button type="button" className="w-full" disabled={!ready}>
-                    <CheckCircle2 aria-hidden="true" />
-                    {t('Complete dossier')}
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
+        <DialogTrigger>
+            <Button type="button" className="w-full" isDisabled={!ready}>
+                <CheckCircle2 aria-hidden="true" />
+                {t('Complete dossier')}
+            </Button>
+            <Dialog>
                 <DialogHeader>
                     <DialogTitle>{t('Complete this dossier?')}</DialogTitle>
                     <DialogDescription>
@@ -133,15 +130,16 @@ function CompleteDossierDialog({
                             </Field>
                             <Field>
                                 <DialogFooter className="gap-2">
-                                    <DialogClose asChild>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
+                                    <DialogClose
+                                        type="button"
+                                        variant="secondary"
+                                    >
+                                        {t('Cancel')}
                                     </DialogClose>
-                                    <Button type="submit" disabled={processing}>
+                                    <Button
+                                        type="submit"
+                                        isDisabled={processing}
+                                    >
                                         {t('Complete dossier')}
                                     </Button>
                                 </DialogFooter>
@@ -149,8 +147,8 @@ function CompleteDossierDialog({
                         </FieldGroup>
                     )}
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </Dialog>
+        </DialogTrigger>
     );
 }
 

@@ -6,7 +6,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -104,7 +103,7 @@ export default function DocumentRequestReview({
                 {({ processing }) => (
                     <>
                         <input type="hidden" name="decision" value="accepted" />
-                        <Button type="submit" size="sm" disabled={processing}>
+                        <Button type="submit" size="sm" isDisabled={processing}>
                             <Check aria-hidden="true" />
                             {t('Approve')}
                         </Button>
@@ -112,14 +111,12 @@ export default function DocumentRequestReview({
                 )}
             </Form>
 
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button type="button" size="sm" variant="outline">
-                        <RotateCcw aria-hidden="true" />
-                        {t('Request changes')}
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
+            <DialogTrigger>
+                <Button type="button" size="sm" variant="outline">
+                    <RotateCcw aria-hidden="true" />
+                    {t('Request changes')}
+                </Button>
+                <Dialog>
                     <DialogHeader>
                         <DialogTitle>{t('Request changes')}</DialogTitle>
                         <DialogDescription>
@@ -174,7 +171,7 @@ export default function DocumentRequestReview({
                                             <Button
                                                 type="submit"
                                                 variant="destructive"
-                                                disabled={processing}
+                                                isDisabled={processing}
                                             >
                                                 {t('Request changes')}
                                             </Button>
@@ -184,8 +181,8 @@ export default function DocumentRequestReview({
                             </>
                         )}
                     </Form>
-                </DialogContent>
-            </Dialog>
+                </Dialog>
+            </DialogTrigger>
         </div>
     );
 }

@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import {
     Collapsible,
     CollapsibleContent,
@@ -38,15 +37,13 @@ export default function ExtractionRawJson({
 
             {rawJson !== null && rawJson !== '' && (
                 <Collapsible className="space-y-2">
-                    <CollapsibleTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="px-0"
-                        >
-                            {t('Raw JSON')}
-                        </Button>
+                    <CollapsibleTrigger
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="px-0"
+                    >
+                        {t('Raw JSON')}
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                         <pre className="max-h-96 overflow-auto rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs whitespace-pre-wrap">

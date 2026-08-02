@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -40,7 +39,6 @@ export default function EditRoleDialog({
             ),
         [permissionGroups],
     );
-    const [roleName, setRoleName] = useState('');
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
         [],
     );
@@ -50,7 +48,6 @@ export default function EditRoleDialog({
             return;
         }
 
-        setRoleName(role.label);
         setSelectedPermissions(
             permissionGroups
                 .flatMap((group) => group.permissions)
@@ -62,88 +59,77 @@ export default function EditRoleDialog({
     }, [permissionGroups, role]);
 
     return (
-        <Dialog open={role !== null} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{t('Edit role')}</DialogTitle>
-                    <DialogDescription>
-                        {t('Update role name and permissions.')}
-                    </DialogDescription>
-                </DialogHeader>
-                {role ? (
-                    <Form
-                        {...WorkspaceRoleController.update.form({
-                            tenant: currentWorkspace,
-                            role: role.id,
-                        })}
-                        options={{ preserveScroll: true }}
-                        onSuccess={() => onOpenChange(false)}
-                    >
-                        {({ processing, errors }) => (
-                            <div className="space-y-4">
-                                <Field data-invalid={Boolean(errors.name)}>
-                                    <FieldLabel htmlFor="edit-role-name">
-                                        {t('Role name')}
-                                    </FieldLabel>
-                                    <Input
-                                        id="edit-role-name"
-                                        name="name"
-                                        value={roleName}
-                                        onChange={(event) =>
-                                            setRoleName(event.target.value)
-                                        }
-                                        required
-                                        maxLength={255}
-                                    />
-                                    <InputError message={errors.name} />
-                                </Field>
-                                <PermissionChecklist
-                                    permissionGroups={permissionGroups}
-                                    selectedPermissions={selectedPermissions}
-                                    onSelectedPermissionsChange={
-                                        setSelectedPermissions
-                                    }
-                                    onSelectAll={() =>
-                                        setSelectedPermissions(
-                                            allPermissionValues,
-                                        )
-                                    }
-                                    onClearAll={() =>
-                                        setSelectedPermissions([])
-                                    }
+        <Dialog isOpen={role !== null} onOpenChange={onOpenChange}>
+            <DialogHeader>
+                <DialogTitle>{t('Edit role')}</DialogTitle>
+                <DialogDescription>
+                    {t('Update role name and permissions.')}
+                </DialogDescription>
+            </DialogHeader>
+            {role ? (
+                // Remount per role: the name input is uncontrolled, so its
+                // defaultValue only refreshes when the subtree is recreated.
+                <Form
+                    key={role.id}
+                    {...WorkspaceRoleController.update.form({
+                        tenant: currentWorkspace,
+                        role: role.id,
+                    })}
+                    options={{ preserveScroll: true }}
+                    onSuccess={() => onOpenChange(false)}
+                >
+                    {({ processing, errors }) => (
+                        <div className="space-y-4">
+                            <Field data-invalid={Boolean(errors.name)}>
+                                <FieldLabel htmlFor="edit-role-name">
+                                    {t('Role name')}
+                                </FieldLabel>
+                                <Input
+                                    id="edit-role-name"
+                                    name="name"
+                                    defaultValue={role.label}
+                                    required
+                                    maxLength={255}
                                 />
-                                <InputError message={errors.permissions} />
-                                {selectedPermissions.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground">
-                                        {t(
-                                            'Choose at least one permission before saving this role.',
-                                        )}
-                                    </p>
-                                ) : null}
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
-                                    </DialogClose>
-                                    <Button
-                                        type="submit"
-                                        disabled={
-                                            processing ||
-                                            selectedPermissions.length === 0
-                                        }
-                                    >
-                                        {t('Save role')}
-                                    </Button>
-                                </DialogFooter>
-                            </div>
-                        )}
-                    </Form>
-                ) : null}
-            </DialogContent>
+                                <InputError message={errors.name} />
+                            </Field>
+                            <PermissionChecklist
+                                permissionGroups={permissionGroups}
+                                selectedPermissions={selectedPermissions}
+                                onSelectedPermissionsChange={
+                                    setSelectedPermissions
+                                }
+                                onSelectAll={() =>
+                                    setSelectedPermissions(allPermissionValues)
+                                }
+                                onClearAll={() => setSelectedPermissions([])}
+                            />
+                            <InputError message={errors.permissions} />
+                            {selectedPermissions.length === 0 ? (
+                                <p className="text-xs text-muted-foreground">
+                                    {t(
+                                        'Choose at least one permission before saving this role.',
+                                    )}
+                                </p>
+                            ) : null}
+                            <DialogFooter>
+                                <DialogClose type="button" variant="secondary">
+                                    {t('Cancel')}
+                                </DialogClose>
+                                <Button
+                                    type="submit"
+                                    isDisabled={
+                                        processing ||
+                                        selectedPermissions.length === 0
+                                    }
+                                >
+                                    {t('Save role')}
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    )}
+                </Form>
+            ) : null}
         </Dialog>
     );
 }

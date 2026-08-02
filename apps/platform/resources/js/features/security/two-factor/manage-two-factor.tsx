@@ -65,7 +65,7 @@ export default function ManageTwoFactor(props: Props) {
                                 <Button
                                     variant="destructive"
                                     type="submit"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                 >
                                     {t('Disable 2FA')}
                                 </Button>
@@ -99,7 +99,10 @@ export default function ManageTwoFactor(props: Props) {
                                 onSuccess={() => setShowSetupModal(true)}
                             >
                                 {({ processing }) => (
-                                    <Button type="submit" disabled={processing}>
+                                    <Button
+                                        type="submit"
+                                        isDisabled={processing}
+                                    >
                                         {t('Enable 2FA')}
                                     </Button>
                                 )}

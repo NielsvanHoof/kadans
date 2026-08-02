@@ -1,5 +1,5 @@
 import { ArrowDown, CheckCircle2, Clock3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import type { PortalDossier } from '@/features/portal/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
@@ -107,12 +107,13 @@ export default function PortalProgressOverview({
                 </div>
 
                 {progress.next_incomplete ? (
-                    <Button asChild className="w-full sm:w-auto">
-                        <a href={`#request-${progress.next_incomplete.id}`}>
-                            {t('Continue')}
-                            <ArrowDown aria-hidden="true" />
-                        </a>
-                    </Button>
+                    <a
+                        className={cn(buttonVariants(), 'w-full sm:w-auto')}
+                        href={`#request-${progress.next_incomplete.id}`}
+                    >
+                        {t('Continue')}
+                        <ArrowDown aria-hidden="true" />
+                    </a>
                 ) : null}
             </div>
         </section>

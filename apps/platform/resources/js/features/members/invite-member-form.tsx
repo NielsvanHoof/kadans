@@ -86,16 +86,18 @@ export default function InviteMemberForm({
                                     {t('Role')}
                                 </FieldLabel>
                                 <Select
-                                    required
+                                    isRequired
                                     name="role"
                                     defaultValue={defaultRole}
+                                    placeholder={t('Role')}
+                                    aria-label={t('Role')}
                                 >
                                     <SelectTrigger
                                         id="role"
                                         className="w-full"
                                         aria-invalid={Boolean(errors.role)}
                                     >
-                                        <SelectValue placeholder={t('Role')} />
+                                        <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
                                         <SelectGroup>
@@ -103,7 +105,7 @@ export default function InviteMemberForm({
                                                 (option) => (
                                                     <SelectItem
                                                         key={option.value}
-                                                        value={option.value}
+                                                        id={option.value}
                                                     >
                                                         {option.label}
                                                     </SelectItem>
@@ -116,7 +118,7 @@ export default function InviteMemberForm({
                             </Field>
 
                             <Field>
-                                <Button type="submit" disabled={processing}>
+                                <Button type="submit" isDisabled={processing}>
                                     {processing && <Spinner />}
                                     {t('Send invite')}
                                 </Button>

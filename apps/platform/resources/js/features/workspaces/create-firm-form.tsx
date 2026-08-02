@@ -40,7 +40,7 @@ export default function CreateFirmForm({
                     </Field>
 
                     <Field>
-                        <Button disabled={processing}>
+                        <Button type="submit" isDisabled={processing}>
                             {processing && <Spinner />}
                             {submitLabel}
                         </Button>

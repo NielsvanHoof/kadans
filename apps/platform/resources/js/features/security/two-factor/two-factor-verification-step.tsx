@@ -140,14 +140,14 @@ function VerificationFields({
                     variant="outline"
                     className="flex-1"
                     onClick={onBack}
-                    disabled={processing}
+                    isDisabled={processing}
                 >
                     {t('Back')}
                 </Button>
                 <Button
                     type="submit"
                     className="flex-1"
-                    disabled={processing || code.length < OTP_MAX_LENGTH}
+                    isDisabled={processing || code.length < OTP_MAX_LENGTH}
                 >
                     {t('Confirm')}
                 </Button>

@@ -1,9 +1,9 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import ReviewItemsPanel from '@/features/document-requests/staff/review/review-items-panel';
@@ -111,22 +111,20 @@ export default function ReviewDossier({
                 <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="space-y-3">
-                            <Button
+                            <LinkButton
                                 variant="ghost"
                                 size="sm"
                                 className="px-0"
-                                asChild
-                            >
-                                <Link
-                                    href={showDossier({
+                                href={
+                                    showDossier({
                                         tenant: currentWorkspace,
                                         dossier: dossier.id,
-                                    })}
-                                >
-                                    <ArrowLeft aria-hidden="true" />
-                                    {t('Back to dossier')}
-                                </Link>
-                            </Button>
+                                    }).url
+                                }
+                            >
+                                <ArrowLeft aria-hidden="true" />
+                                {t('Back to dossier')}
+                            </LinkButton>
                             <Heading
                                 level={1}
                                 className="mb-0"

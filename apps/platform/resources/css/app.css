@@ -2,6 +2,18 @@
 
 @import 'tw-animate-css';
 
+/*
+ * shadcn's data-attribute variants (data-open, data-active, data-checked, …).
+ * Required by every component from the `radix-*` / `base-*` styles: each variant
+ * matches BOTH Radix's `data-state="open"` and Base UI's `data-open`, so the
+ * same component source works on either primitive library.
+ *
+ * The CLI adds this on `init` but not on `add` — without it Tailwind falls back
+ * to bare attribute-presence selectors, which silently breaks open/close
+ * animations and makes `data-active="false"` match as active.
+ */
+@import 'shadcn/tailwind.css';
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 

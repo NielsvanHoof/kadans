@@ -2,7 +2,6 @@ import { Form } from '@inertiajs/react';
 import type { ComponentProps, ReactNode } from 'react';
 import { useState } from 'react';
 import {
-    AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
@@ -21,7 +20,8 @@ type ConfirmDestroyDialogBase = {
     description: string;
     confirmLabel: string;
     /**
-     * Trigger control (usually a Button). Wrapped with AlertDialogTrigger asChild.
+     * Trigger control (usually a Button). AlertDialogTrigger is the root —
+     * pass the trigger as a child, not via Radix `asChild`.
      * Omit when driving the dialog with `open` / `onOpenChange` instead.
      */
     trigger?: ReactNode;
@@ -80,17 +80,22 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
     };
 
     return (
-        <AlertDialog
-            open={isControlled || 'onConfirm' in props ? dialogOpen : open}
+        /*
+         * React Aria inverts the compound shape: AlertDialogTrigger is the
+         * root, and AlertDialogContent *is* the modal (it renders overlay +
+         * modal + alertdialog). Wrapping the content in another AlertDialog —
+         * the Radix shape — mounts two nested modals, which renders an empty
+         * outer panel and warns that the dialog has no title.
+         */
+        <AlertDialogTrigger
+            isOpen={isControlled || 'onConfirm' in props ? dialogOpen : open}
             onOpenChange={
                 isControlled || 'onConfirm' in props
                     ? setDialogOpen
                     : onOpenChange
             }
         >
-            {trigger ? (
-                <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-            ) : null}
+            {trigger}
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -109,11 +114,11 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
                             <AlertDialogAction
                                 type="button"
                                 variant={confirmVariant}
-                                disabled={callbackProcessing}
+                                isDisabled={callbackProcessing}
                                 data-test={confirmTestId}
-                                onClick={async (event) => {
-                                    // Keep the dialog open until the island mutation finishes.
-                                    event.preventDefault();
+                                onPress={async () => {
+                                    // AlertDialogAction does not auto-close;
+                                    // wait for the island mutation, then dismiss.
                                     setCallbackProcessing(true);
 
                                     try {
@@ -129,7 +134,14 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
                         </AlertDialogFooter>
                     </>
                 ) : 'form' in props && props.form ? (
-                    <Form {...props.form} options={props.options}>
+                    <Form
+                        {...props.form}
+                        options={props.options}
+                        onSuccess={(...args) => {
+                            setDialogOpen(false);
+                            props.form.onSuccess?.(...args);
+                        }}
+                    >
                         {({ processing }) => (
                             <>
                                 {children}
@@ -140,7 +152,7 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
                                     <AlertDialogAction
                                         type="submit"
                                         variant={confirmVariant}
-                                        disabled={processing}
+                                        isDisabled={processing}
                                         data-test={confirmTestId}
                                     >
                                         {confirmLabel}
@@ -151,6 +163,6 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
                     </Form>
                 ) : null}
             </AlertDialogContent>
-        </AlertDialog>
+        </AlertDialogTrigger>
     );
 }

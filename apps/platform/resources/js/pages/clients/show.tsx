@@ -1,8 +1,8 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { Archive, FolderOpen, Mail, Pencil } from 'lucide-react';
 import IndexPagination from '@/components/data/index-query/index-pagination';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import ArchiveClientButton from '@/features/clients/manage/archive-client-button';
 import type { ClientDetails } from '@/features/clients/types';
@@ -73,22 +73,21 @@ export default function ShowClient({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" asChild>
-                            <Link
-                                href={editClient({
+                        <LinkButton
+                            variant="outline"
+                            href={
+                                editClient({
                                     tenant: currentWorkspace,
                                     client: client.id,
-                                })}
-                            >
-                                <Pencil aria-hidden="true" />
-                                {t('Edit client')}
-                            </Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href={createDossier(currentWorkspace)}>
-                                {t('New dossier')}
-                            </Link>
-                        </Button>
+                                }).url
+                            }
+                        >
+                            <Pencil aria-hidden="true" />
+                            {t('Edit client')}
+                        </LinkButton>
+                        <LinkButton href={createDossier(currentWorkspace).url}>
+                            {t('New dossier')}
+                        </LinkButton>
                         <ArchiveClientButton
                             clientId={client.id}
                             clientName={client.name}
@@ -130,20 +129,19 @@ export default function ShowClient({
                                 </div>
                             </div>
                             {client.archived_dossiers_count > 0 ? (
-                                <Button variant="ghost" size="sm" asChild>
-                                    <Link
-                                        href={archivedDossiers(
-                                            currentWorkspace,
-                                            {
-                                                query: {
-                                                    filter: { q: client.name },
-                                                },
+                                <LinkButton
+                                    variant="ghost"
+                                    size="sm"
+                                    href={
+                                        archivedDossiers(currentWorkspace, {
+                                            query: {
+                                                filter: { q: client.name },
                                             },
-                                        )}
-                                    >
-                                        {t('View archive')}
-                                    </Link>
-                                </Button>
+                                        }).url
+                                    }
+                                >
+                                    {t('View archive')}
+                                </LinkButton>
                             ) : null}
                         </CardContent>
                     </Card>

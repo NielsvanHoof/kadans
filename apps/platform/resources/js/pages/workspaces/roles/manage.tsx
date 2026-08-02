@@ -1,6 +1,6 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/primitives/heading';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import RoleManagementCard from '@/features/roles/role-management-card';
 import type {
     WorkspacePermissionGroup,
@@ -52,11 +52,12 @@ export default function WorkspaceRolesManage({
                             'Create, update, and delete tenant-specific roles and permissions.',
                         )}
                     />
-                    <Button variant="outline" asChild>
-                        <Link href={rolesIndex(currentWorkspace)}>
-                            {t('Back to overview')}
-                        </Link>
-                    </Button>
+                    <LinkButton
+                        variant="outline"
+                        href={rolesIndex(currentWorkspace).url}
+                    >
+                        {t('Back to overview')}
+                    </LinkButton>
                 </div>
                 <RoleManagementCard
                     roles={roles}

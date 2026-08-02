@@ -110,7 +110,10 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
                 </Field>
 
                 <Field orientation="horizontal" className="gap-2">
-                    <Button type="submit" disabled={isLoading || !name.trim()}>
+                    <Button
+                        type="submit"
+                        isDisabled={isLoading || !name.trim()}
+                    >
                         {isLoading ? t('Registering…') : t('Register passkey')}
                     </Button>
                     <Button

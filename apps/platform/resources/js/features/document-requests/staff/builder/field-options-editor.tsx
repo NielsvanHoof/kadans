@@ -98,7 +98,7 @@ export function FieldOptionsEditor({
                         size="icon"
                         variant="ghost"
                         className="size-8 shrink-0"
-                        disabled={!canEdit || index === 0}
+                        isDisabled={!canEdit || index === 0}
                         aria-label={t('Move option up')}
                         onClick={() => moveOption(index, -1)}
                     >
@@ -109,7 +109,7 @@ export function FieldOptionsEditor({
                         size="icon"
                         variant="ghost"
                         className="size-8 shrink-0"
-                        disabled={!canEdit || index === options.length - 1}
+                        isDisabled={!canEdit || index === options.length - 1}
                         aria-label={t('Move option down')}
                         onClick={() => moveOption(index, 1)}
                     >
@@ -120,7 +120,9 @@ export function FieldOptionsEditor({
                         size="icon"
                         variant="ghost"
                         className="size-8 shrink-0"
-                        disabled={!canEdit || options.length <= MINIMUM_OPTIONS}
+                        isDisabled={
+                            !canEdit || options.length <= MINIMUM_OPTIONS
+                        }
                         aria-label={t('Remove option')}
                         onClick={() => removeOption(index)}
                     >
@@ -132,7 +134,7 @@ export function FieldOptionsEditor({
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!canEdit || options.length >= MAXIMUM_OPTIONS}
+                isDisabled={!canEdit || options.length >= MAXIMUM_OPTIONS}
                 className="self-start"
                 onClick={addOption}
             >

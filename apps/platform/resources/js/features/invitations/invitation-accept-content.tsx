@@ -45,7 +45,7 @@ export default function InvitationAcceptContent({
                         <Button
                             type="submit"
                             className="w-full"
-                            disabled={processing}
+                            isDisabled={processing}
                         >
                             {processing && <Spinner />}
                             {t('Accept invitation')}
@@ -189,7 +189,7 @@ export default function InvitationAcceptContent({
                                             <Button
                                                 type="submit"
                                                 className="w-full"
-                                                disabled={processing}
+                                                isDisabled={processing}
                                             >
                                                 {processing && <Spinner />}
                                                 {t('Create account and join')}

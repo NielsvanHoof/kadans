@@ -139,7 +139,7 @@ export default function PlatformSupport({
                                             <Button
                                                 type="submit"
                                                 size="sm"
-                                                disabled={
+                                                isDisabled={
                                                     processing ||
                                                     reason.trim().length < 3
                                                 }

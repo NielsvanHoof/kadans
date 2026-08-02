@@ -2,7 +2,6 @@ import { router, usePage } from '@inertiajs/react';
 import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react';
 import {
     DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
@@ -29,23 +28,20 @@ export function WorkspaceSwitcher() {
     return (
         <SidebarMenu>
             <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
-                        >
-                            <Building2 className="size-4" />
-                            <span className="truncate font-medium">
-                                {currentFirm.name}
-                            </span>
-                            <ChevronsUpDown className="ml-auto size-4" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        align="end"
-                        side="top"
+                <DropdownMenuTrigger>
+                    <SidebarMenuButton
+                        size="lg"
+                        className="group text-sidebar-accent-foreground data-open:bg-sidebar-accent"
+                    >
+                        <Building2 className="size-4" />
+                        <span className="truncate font-medium">
+                            {currentFirm.name}
+                        </span>
+                        <ChevronsUpDown className="ml-auto size-4" />
+                    </SidebarMenuButton>
+                    <DropdownMenu
+                        className="min-w-56 rounded-lg"
+                        placement="bottom end"
                     >
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>
@@ -55,7 +51,7 @@ export function WorkspaceSwitcher() {
                             {workspaces.map((firm) => (
                                 <DropdownMenuItem
                                     key={firm.slug}
-                                    onSelect={() => {
+                                    onAction={() => {
                                         if (firm.slug !== currentFirm.slug) {
                                             router.visit(
                                                 workspaceDashboard.url(firm),
@@ -76,14 +72,14 @@ export function WorkspaceSwitcher() {
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <DropdownMenuItem
-                                onSelect={() => router.visit(createFirm.url())}
+                                onAction={() => router.visit(createFirm.url())}
                             >
                                 <Plus />
                                 <span>{t('Create new firm')}</span>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenu>
+                </DropdownMenuTrigger>
             </SidebarMenuItem>
         </SidebarMenu>
     );

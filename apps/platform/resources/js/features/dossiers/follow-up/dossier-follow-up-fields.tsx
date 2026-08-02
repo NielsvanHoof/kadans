@@ -82,27 +82,30 @@ export default function DossierFollowUpFields({
                         {t('Responsible staff member')}
                     </FieldLabel>
                     <Select
-                        value={responsibleUserId}
-                        onValueChange={setResponsibleUserId}
+                        selectedKey={responsibleUserId}
+                        onSelectionChange={(key) =>
+                            setResponsibleUserId(String(key ?? ''))
+                        }
                     >
                         <SelectTrigger
                             id="responsible_user_id"
                             className="w-full min-w-0 overflow-hidden"
                             aria-invalid={Boolean(errors.responsible_user_id)}
                         >
-                            <SelectValue placeholder={t('Unassigned')}>
+                            <SelectValue>
                                 {selectedStaffMember?.name ?? t('Unassigned')}
                             </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="space-y-1 bg-background p-1">
                             <SelectGroup>
-                                <SelectItem value={UNASSIGNED_VALUE}>
+                                <SelectItem id={UNASSIGNED_VALUE}>
                                     {t('Unassigned')}
                                 </SelectItem>
                                 {responsibleStaff.map((staffMember) => (
                                     <SelectItem
                                         key={staffMember.id}
-                                        value={staffMember.id.toString()}
+                                        id={staffMember.id.toString()}
+                                        textValue={staffMember.name}
                                         className="flex flex-col items-start"
                                     >
                                         <span className="font-medium">

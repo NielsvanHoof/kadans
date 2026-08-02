@@ -3,7 +3,7 @@ import { useState } from 'react';
 import DataTable, { type DataTableColumn } from '@/components/data/data-table';
 import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
 import EmptyState from '@/components/primitives/empty-state';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -127,11 +127,12 @@ export default function DossiersListCard({
                                 'Create a dossier to start collecting documents.',
                             )}
                             action={
-                                <Button asChild size="sm">
-                                    <Link href={create(currentWorkspace)}>
-                                        {t('New dossier')}
-                                    </Link>
-                                </Button>
+                                <LinkButton
+                                    size="sm"
+                                    href={create(currentWorkspace).url}
+                                >
+                                    {t('New dossier')}
+                                </LinkButton>
                             }
                         />
                     }

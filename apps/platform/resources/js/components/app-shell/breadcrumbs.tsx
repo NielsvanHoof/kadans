@@ -1,5 +1,4 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
-import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
 import {
     Breadcrumb,
@@ -7,7 +6,6 @@ import {
     BreadcrumbLink,
     BreadcrumbList,
     BreadcrumbPage,
-    BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
@@ -49,14 +47,18 @@ export function Breadcrumbs({
                                                 {item.title}
                                             </BreadcrumbPage>
                                         ) : (
-                                            <BreadcrumbLink asChild>
-                                                <Link href={item.href}>
-                                                    {item.title}
-                                                </Link>
+                                            <BreadcrumbLink
+                                                href={
+                                                    typeof item.href ===
+                                                    'string'
+                                                        ? item.href
+                                                        : item.href.url
+                                                }
+                                            >
+                                                {item.title}
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>
-                                    {!isLast && <BreadcrumbSeparator />}
                                 </Fragment>
                             );
                         })}

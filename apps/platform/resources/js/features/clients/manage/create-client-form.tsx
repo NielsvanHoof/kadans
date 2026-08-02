@@ -1,7 +1,7 @@
-import { Form, Link } from '@inertiajs/react';
+import { Form } from '@inertiajs/react';
 import ClientController from '@/actions/App/Clients/Http/Controllers/ClientController';
 import InputError from '@/components/primitives/input-error';
-import { Button } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -50,15 +50,16 @@ export default function CreateClientForm() {
                     </Field>
 
                     <Field orientation="horizontal" className="gap-3">
-                        <Button disabled={processing}>
+                        <Button type="submit" isDisabled={processing}>
                             {processing && <Spinner />}
                             {t('Create client')}
                         </Button>
-                        <Button variant="ghost" asChild>
-                            <Link href={clientIndex(currentWorkspace)}>
-                                {t('Cancel')}
-                            </Link>
-                        </Button>
+                        <LinkButton
+                            variant="ghost"
+                            href={clientIndex(currentWorkspace).url}
+                        >
+                            {t('Cancel')}
+                        </LinkButton>
                     </Field>
                 </FieldGroup>
             )}

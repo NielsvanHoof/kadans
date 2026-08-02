@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import {
     ClipboardList,
     FolderGit2,
@@ -126,10 +126,8 @@ export function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboardRoute} prefetch>
-                                <AppLogo />
-                            </Link>
+                        <SidebarMenuButton size="lg" href={dashboardRoute.url}>
+                            <AppLogo />
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
