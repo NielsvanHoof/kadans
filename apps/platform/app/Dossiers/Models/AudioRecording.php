@@ -31,6 +31,7 @@ use Override;
  * @property int|null $uploaded_by
  * @property TranscriptionStatus $transcription_status
  * @property string|null $transcript
+ * @property array<int, array{text: string, speaker: string, start_seconds: float, end_seconds: float}>|null $segments
  * @property string|null $transcription_error
  * @property CarbonImmutable|null $transcription_started_at
  * @property CarbonImmutable|null $transcription_finished_at
@@ -87,6 +88,7 @@ final class AudioRecording extends TenantOwnedModel
         'uploaded_by',
         'transcription_status',
         'transcript',
+        'segments',
         'transcription_error',
         'transcription_started_at',
         'transcription_finished_at',
@@ -126,6 +128,7 @@ final class AudioRecording extends TenantOwnedModel
             'size_bytes' => 'integer',
             'uploaded_at' => 'datetime',
             'transcription_status' => TranscriptionStatus::class,
+            'segments' => 'array',
             'transcription_started_at' => 'datetime',
             'transcription_finished_at' => 'datetime',
         ];

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Services\Drivers;
 
 use App\AudioProcessing\Contracts\TranscribesAudio;
+use App\AudioProcessing\Data\TranscriptionResult;
 use App\Dossiers\Models\AudioRecording;
+use Laravel\Ai\Responses\Data\TranscriptionSegment;
 use Laravel\Ai\Transcription;
 
 /**
@@ -15,8 +17,22 @@ use Laravel\Ai\Transcription;
  */
 final class LaravelAiAudioTranscriber implements TranscribesAudio
 {
-    public function transcribe(AudioRecording $recording): string
+    public function transcribe(AudioRecording $recording): TranscriptionResult
     {
-        return (string) Transcription::fromStorage($recording->path, $recording->disk)->generate();
+        $response = Transcription::fromStorage($recording->path, $recording->disk)
+            ->diarize()
+            // OpenAI's diarized transcription endpoint 400s without this — it's not implied by ->diarize().
+            ->withProviderOptions(['chunking_strategy' => 'auto'])
+            // The SDK's 30s default is too short for real recordings — keep this under
+            // the job's own $timeout (see ProcessAudioRecordingJob) with headroom to spare.
+            ->timeout(120)
+            ->generate();
+
+        return new TranscriptionResult(
+            text: $response->text,
+            segments: $response->segments
+                ->map(fn (TranscriptionSegment $segment): array => $segment->toArray())
+                ->all(),
+        );
     }
 }

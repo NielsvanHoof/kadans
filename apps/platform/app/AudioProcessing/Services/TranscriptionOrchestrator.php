@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Services;
 
 use App\AudioProcessing\Contracts\TranscribesAudio;
+use App\AudioProcessing\Data\TranscriptionResult;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\AudioRecording;
@@ -21,7 +22,7 @@ final readonly class TranscriptionOrchestrator
         private LogAuditActivityAction $logAuditActivity,
     ) {}
 
-    public function transcribe(AudioRecording $recording): string
+    public function transcribe(AudioRecording $recording): TranscriptionResult
     {
         Log::info('Transcription: orchestrator starting audio processing.', [
             'audio_recording_id' => $recording->id,
@@ -36,14 +37,14 @@ final readonly class TranscriptionOrchestrator
             includeRequestContext: false,
         );
 
-        $transcript = $this->transcriber->transcribe($recording);
+        $result = $this->transcriber->transcribe($recording);
 
         $this->logAuditActivity->handle(
             AuditEvent::AudioTranscriptionCompleted,
             $recording,
             [
                 'original_filename' => $recording->original_filename,
-                'transcript_length' => mb_strlen($transcript),
+                'transcript_length' => mb_strlen($result->text),
             ],
             includeRequestContext: false,
         );
@@ -51,9 +52,9 @@ final readonly class TranscriptionOrchestrator
         Log::info('Transcription: orchestrator completed.', [
             'audio_recording_id' => $recording->id,
             'tenant_id' => $recording->tenant_id,
-            'transcript_length' => mb_strlen($transcript),
+            'transcript_length' => mb_strlen($result->text),
         ]);
 
-        return $transcript;
+        return $result;
     }
 }

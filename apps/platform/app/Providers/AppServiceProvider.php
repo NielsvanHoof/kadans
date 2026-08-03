@@ -182,6 +182,10 @@ final class AppServiceProvider extends ServiceProvider
     {
         DevCommands::except('server');
 
+        // Runs alongside the default "queue" listener so long transcription
+        // jobs (see ProcessAudioRecordingJob) can't stall unrelated jobs.
+        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=transcription', 'transcription');
+
         if (config('broadcasting.default') !== 'reverb') {
             return;
         }

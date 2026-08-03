@@ -38,7 +38,9 @@ test('uploading an audio recording stores the file, creates a pipeline, and disp
     Queue::assertPushed(
         ProcessAudioRecordingJob::class,
         fn (ProcessAudioRecordingJob $job): bool => $job->audioRecordingId === $audioRecording->id
-            && $job->expectedPath === $audioRecording->path,
+            && $job->expectedPath === $audioRecording->path
+            // Off the default queue — a slow transcription must not stall unrelated jobs.
+            && $job->queue === 'transcription',
     );
 });
 

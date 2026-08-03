@@ -35,6 +35,7 @@ final class AudioRecordingFactory extends Factory
             // New uploads start waiting for the mock transcription job.
             'transcription_status' => TranscriptionStatus::Pending,
             'transcript' => null,
+            'segments' => null,
             'transcription_error' => null,
             'transcription_started_at' => null,
             'transcription_finished_at' => null,
@@ -42,13 +43,16 @@ final class AudioRecordingFactory extends Factory
     }
 
     /**
-     * Mark the recording as transcription-complete with optional transcript text.
+     * Mark the recording as transcription-complete with optional transcript text and segments.
+     *
+     * @param  array<int, array{text: string, speaker: string, start_seconds: float, end_seconds: float}>|null  $segments
      */
-    public function transcribed(?string $transcript = 'Mock transcript.'): static
+    public function transcribed(?string $transcript = 'Mock transcript.', ?array $segments = null): static
     {
         return $this->state(fn (): array => [
             'transcription_status' => TranscriptionStatus::Completed,
             'transcript' => $transcript,
+            'segments' => $segments,
             'transcription_error' => null,
             'transcription_started_at' => now()->subMinute(),
             'transcription_finished_at' => now(),

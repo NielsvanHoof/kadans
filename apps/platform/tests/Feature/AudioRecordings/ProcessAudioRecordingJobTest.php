@@ -39,6 +39,13 @@ test('processing job transcribes mock text and marks the recording completed', f
 
     expect($recording->transcription_status)->toBe(TranscriptionStatus::Completed)
         ->and($recording->transcript)->toContain($recording->original_filename)
+        // JSON round-trips whole-number floats as ints — expected, not a bug.
+        ->and($recording->segments)->toBe([[
+            'text' => $recording->transcript,
+            'speaker' => 'Speaker 1',
+            'start_seconds' => 0,
+            'end_seconds' => 3,
+        ]])
         ->and($recording->transcription_error)->toBeNull()
         ->and($recording->transcription_finished_at)->not->toBeNull();
 });
@@ -130,6 +137,27 @@ test('processing job does not restart a recording another worker already claimed
             ->where('subject_id', $recording->id)
             ->exists())
         ->toBeFalse();
+});
+
+test('processing job resets to pending on a retryable failure so a retry can reclaim it', function (): void {
+    $recording = createAudioRecordingForProcessingTest();
+
+    $transcriber = Mockery::mock(TranscribesAudio::class);
+    $transcriber->shouldReceive('transcribe')->once()->andThrow(new RuntimeException('Timed out.'));
+
+    $job = new ProcessAudioRecordingJob($recording->id, $recording->path);
+
+    expect(fn (): mixed => $job->handle(
+        new TranscriptionOrchestrator($transcriber, resolve(LogAuditActivityAction::class)),
+        resolve(LogAuditActivityAction::class),
+        resolve(PipelineStateAction::class),
+        resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
+    ))->toThrow(RuntimeException::class, 'Timed out.');
+
+    $recording->refresh();
+
+    // Not left stuck on "processing" — the next attempt must be able to reclaim it.
+    expect($recording->transcription_status)->toBe(TranscriptionStatus::Pending);
 });
 
 test('processing job ignores an upload revision that has been replaced', function (): void {

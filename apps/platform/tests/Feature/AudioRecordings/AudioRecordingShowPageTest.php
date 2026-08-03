@@ -26,7 +26,11 @@ test('staff can open the transcript page for an audio recording', function (): v
         'client_id' => $client->id,
         'title' => 'Client intake',
     ]);
-    $audioRecording = AudioRecording::factory()->transcribed('Hello, this is a test call.')->create([
+    $segments = [
+        ['text' => 'Hello,', 'speaker' => 'Speaker 1', 'start_seconds' => 0.0, 'end_seconds' => 0.6],
+        ['text' => 'this is a test call.', 'speaker' => 'Speaker 2', 'start_seconds' => 0.8, 'end_seconds' => 2.1],
+    ];
+    $audioRecording = AudioRecording::factory()->transcribed('Hello, this is a test call.', $segments)->create([
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
         'original_filename' => 'call.mp3',
@@ -46,6 +50,8 @@ test('staff can open the transcript page for an audio recording', function (): v
             ->where('audio_recording.original_filename', 'call.mp3')
             ->where('audio_recording.transcription_status', TranscriptionStatus::Completed->value)
             ->where('audio_recording.transcript', 'Hello, this is a test call.')
+            // JSON round-trips whole-number floats as ints — compare against the round-tripped shape.
+            ->where('audio_recording.segments', json_decode(json_encode($segments), true))
             ->where('dossier.id', $dossier->id)
             ->where('dossier.title', 'Client intake')
         );

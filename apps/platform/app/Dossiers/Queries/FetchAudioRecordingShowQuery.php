@@ -22,6 +22,7 @@ final class FetchAudioRecordingShowQuery
      *         transcription_status: string,
      *         transcription_error: string|null,
      *         transcript: string|null,
+     *         segments: array<int, array{text: string, speaker: string, start_seconds: float, end_seconds: float}>|null,
      *         pipeline: array<string, mixed>|null,
      *     },
      *     dossier: array{id: int, title: string}|null,
@@ -43,6 +44,7 @@ final class FetchAudioRecordingShowQuery
                 'transcription_status' => $audioRecording->transcription_status->value,
                 'transcription_error' => $audioRecording->transcription_error,
                 'transcript' => $audioRecording->transcript,
+                'segments' => $audioRecording->segments,
                 'pipeline' => $this->latestPipeline($audioRecording),
             ],
             'dossier' => $dossier === null ? null : [

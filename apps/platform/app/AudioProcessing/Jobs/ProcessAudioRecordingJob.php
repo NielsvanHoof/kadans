@@ -38,11 +38,20 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
 
     public const int MAX_TRIES = 3;
 
+    /**
+     * Must stay comfortably below the queue connection's retry_after
+     * (see .env's REDIS_QUEUE_RETRY_AFTER) or a slow transcription call
+     * can get picked up by a second worker before this one finishes.
+     */
+    public int $timeout = 150;
+
     public function __construct(
         public int $audioRecordingId,
         public ?string $expectedPath = null,
         public ?int $pipelineId = null
-    ) {}
+    ) {
+        $this->onQueue('transcription');
+    }
 
     public function uniqueId(): string
     {
@@ -114,14 +123,15 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
                 $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'transcribe');
             }
 
-            $transcript = $transcriptionOrchestrator->transcribe($claimed);
+            $transcription = $transcriptionOrchestrator->transcribe($claimed);
 
             $updated = AudioRecording::query()
                 ->whereKey($claimed->id)
                 ->where('path', $expectedPath)
                 ->update([
                     'transcription_status' => TranscriptionStatus::Completed->value,
-                    'transcript' => $transcript,
+                    'transcript' => $transcription->text,
+                    'segments' => json_encode($transcription->segments),
                     'transcription_error' => null,
                     'transcription_finished_at' => now(),
                 ]);
@@ -153,6 +163,11 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
                     'tries' => self::MAX_TRIES,
                     'error' => $exception->getMessage(),
                 ]);
+
+                AudioRecording::query()
+                    ->whereKey($claimed->id)
+                    ->where('path', $expectedPath)
+                    ->update(['transcription_status' => TranscriptionStatus::Pending->value]);
 
                 throw $exception;
             }
@@ -260,6 +275,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
                 'transcription_status' => TranscriptionStatus::Processing,
                 'transcription_error' => null,
                 'transcript' => null,
+                'segments' => null,
                 'transcription_started_at' => $locked->transcription_started_at ?? now(),
                 'transcription_finished_at' => null,
             ])->save();

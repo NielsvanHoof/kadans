@@ -6,6 +6,7 @@ import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants, LinkButton } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import TranscriptView from '@/features/audio-recordings/transcript-view';
 import type { AudioRecordingShowProps } from '@/features/audio-recordings/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -145,10 +146,11 @@ export default function AudioRecordingShowContent({
             )}
 
             {audioRecording.transcription_status === 'completed' && (
-                <div className="rounded-lg border p-4">
-                    <p className="text-sm whitespace-pre-wrap">
-                        {audioRecording.transcript}
-                    </p>
+                <div className="rounded-lg border p-4 md:p-6">
+                    <TranscriptView
+                        transcript={audioRecording.transcript}
+                        segments={audioRecording.segments}
+                    />
                 </div>
             )}
         </div>
