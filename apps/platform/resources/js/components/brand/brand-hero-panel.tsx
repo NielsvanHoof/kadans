@@ -8,12 +8,13 @@ type BrandHeroPanelProps = {
 };
 
 /**
- * Ink panel on ruled ledger paper — the brand surface for the signed-out half
- * of the app (auth, onboarding).
+ * Coral panel on ruled ledger paper — the brand surface for the signed-out
+ * half of the app (auth, onboarding).
  *
- * Uses `brand-panel` rather than `primary` on purpose: this is a printed ink
- * surface and has to stay dark in both themes. `--primary` inverts to bone in
- * dark mode, which would turn the panel inside out.
+ * Uses `brand-panel` rather than `primary` on purpose: this is a text-heavy
+ * printed surface that needs AA headroom. Display coral (#EF5734) is only
+ * 3.45:1 with white; the burnt panel depth keeps body copy readable in both
+ * themes.
  */
 export default function BrandHeroPanel({
     children,

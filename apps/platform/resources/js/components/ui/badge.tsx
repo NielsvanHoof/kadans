@@ -5,13 +5,12 @@ import { cn } from "@/lib/utils"
 /*
  * Deliberate divergence from the stock `mira` badge.
  *
- * Status badges are where the AuditMark lives, and it is the signature element
- * of the Ink & Brass direction — the tick-and-tie an accountant writes in the
- * margin. Stock mira renders a 20px pill with 10px text and forces icons to
- * 10px via `size-2.5!`, which shrinks that mark to an illegible speck.
+ * Status badges are where the AuditMark lives — the tick an accountant writes
+ * in the margin. Stock mira renders a 20px pill with 10px text and forces icons
+ * to 10px via `size-2.5!`, which shrinks that mark to an illegible speck.
  *
- * So: square-ish `rounded-md` (ledger chip, not pill), 11px text, and a 14px
- * mark. Keep these in sync if the badge is ever re-added from the registry —
+ * So: square-ish `rounded-md` (chip, not pill), 11px text, and a 14px mark.
+ * Keep these in sync if the badge is ever re-added from the registry —
  * `shadcn add badge --overwrite` will silently revert them.
  */
 const badgeVariants = cva(
@@ -28,7 +27,7 @@ const badgeVariants = cva(
           "border-border bg-input/20 text-foreground dark:bg-input/30 [a]:hover:bg-muted [a]:hover:text-muted-foreground",
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-        link: "text-primary underline-offset-4 hover:underline",
+        link: "text-brand-foreground underline-offset-4 hover:underline",
       },
     },
     defaultVariants: {

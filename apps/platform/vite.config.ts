@@ -12,14 +12,9 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
             fonts: [
-                // Body face — dense forms, tables, and everything under 20px.
-                bunny('Inter', {
-                    weights: [400, 500, 600],
-                    optimizedFallbacks: false,
-                }),
-                // Display face — headings and the wordmark only, hence 600/700.
-                bunny('Schibsted Grotesk', {
-                    weights: [600, 700],
+                // Brand face from qompose.nl — Poppins carries body and display.
+                bunny('Poppins', {
+                    weights: [400, 500, 600, 700],
                     optimizedFallbacks: false,
                 }),
                 // Data/meta face for timestamps, counters, and dense document metadata.

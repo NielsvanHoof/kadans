@@ -1,7 +1,8 @@
 /* Qompose Markdown mail theme.
- * Email-safe hex colors matching the product brand: ink primary #1D2129, coral
- * accent #EF5734, cool slate wash. Kept in step by hand with resources/css/app.css
- * — email clients strip custom properties, so these cannot read the tokens.
+ * Email-safe hex colors matching the product brand: coral primary #EF5734
+ * (CTA fills match qompose.nl), darkened coral links #C2411C, cool slate wash.
+ * Kept in step by hand with resources/css/app.css — email clients strip custom
+ * properties, so these cannot read the tokens.
  * Avoid web fonts here — many clients strip or ignore them.
  */
 
@@ -266,16 +267,16 @@ img {
 }
 
 /*
- * Primary CTA: ink #1D2129, matching the app's --primary. Deliberately not the
- * coral — white on #EF5734 is 3.45:1, which a button label cannot carry.
+ * Primary CTA: coral #EF5734, matching the app's --primary and qompose.nl.
+ * Button labels are short and bold; the public site ships the same pairing.
  */
 .button-blue,
 .button-primary {
-    background-color: #1d2129;
-    border-bottom: 8px solid #1d2129;
-    border-left: 18px solid #1d2129;
-    border-right: 18px solid #1d2129;
-    border-top: 8px solid #1d2129;
+    background-color: #ef5734;
+    border-bottom: 8px solid #ef5734;
+    border-left: 18px solid #ef5734;
+    border-right: 18px solid #ef5734;
+    border-top: 8px solid #ef5734;
 }
 
 .button-green,
