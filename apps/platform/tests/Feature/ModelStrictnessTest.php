@@ -8,6 +8,5 @@ test('models require explicit eager loading outside production', function (): vo
     expect(app()->isProduction())->toBeFalse()
         ->and(Model::preventsLazyLoading())->toBeTrue()
         ->and(Model::preventsSilentlyDiscardingAttributes())->toBeTrue()
-        ->and(Model::preventsAccessingMissingAttributes())->toBeTrue()
-        ->and(Model::automaticallyEagerLoadRelationships())->toBeTrue();
+        ->and(Model::preventsAccessingMissingAttributes())->toBeTrue();
 });

@@ -125,7 +125,10 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
                     return;
                 }
 
-                $this->applyWorkflowQueue($query, $value);
+                // Spatie's callback types the builder as Model; narrow for our Dossier query.
+                /** @var Builder<Dossier> $dossierQuery */
+                $dossierQuery = $query;
+                $this->applyWorkflowQueue($dossierQuery, $value);
             }),
         ];
     }

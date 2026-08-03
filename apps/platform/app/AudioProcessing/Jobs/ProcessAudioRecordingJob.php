@@ -42,14 +42,19 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
      * Must stay comfortably below the queue connection's retry_after
      * (see .env's REDIS_QUEUE_RETRY_AFTER) or a slow transcription call
      * can get picked up by a second worker before this one finishes.
+     *
+     * Default comes from config/transcription.php timeouts.job (900s) so
+     * multi-chunk ffmpeg + provider calls have room to finish.
      */
-    public int $timeout = 150;
+    public int $timeout;
 
     public function __construct(
         public int $audioRecordingId,
         public ?string $expectedPath = null,
         public ?int $pipelineId = null
     ) {
+        // Read at construction time — Octane workers must not cache this on the class.
+        $this->timeout = (int) config('transcription.timeouts.job', 900);
         $this->onQueue('transcription');
     }
 
