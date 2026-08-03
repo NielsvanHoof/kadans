@@ -1,13 +1,15 @@
-# Qompose OCR infrastructure (production only)
+# Qompose document / audio infrastructure (production only)
 
-This Pulumi project provisions **only** the AWS pieces needed for local/Sail OCR:
+This Pulumi project provisions **only** the AWS pieces needed for local/Sail OCR
+and Amazon Transcribe:
 
-- Private S3 documents bucket (KMS encrypted, versioned)
+- Private S3 documents bucket (KMS encrypted, versioned) — shared by uploads, OCR, and transcripts
 - Textract completion SNS topic → SQS results queue (+ DLQ)
-- IAM role Textract assumes to publish SNS
-- IAM user + access key for local Textract + Bedrock + S3/SQS (synced into `.env`)
+- Amazon Transcribe job state changes → EventBridge rule → SQS results queue (+ consumer DLQ and EventBridge delivery DLQ)
+- IAM role Textract assumes to publish SNS (trust pinned with SourceAccount / SourceArn)
+- IAM user + access key for local Textract + Transcribe + Bedrock + S3/SQS (synced into `.env`)
 - **ECS task role** carrying the same permissions, ready for when compute lands
-- Optional DLQ email alarm
+- Optional DLQ email alarms (Textract + Transcribe consumer/delivery DLQs), SNS encrypted with the OCR CMK
 
 No VPC, ECS, ALB, RDS, Redis, or ECR.
 
@@ -18,11 +20,14 @@ see [`bootstrap/`](bootstrap/README.md).
 flowchart LR
   Sail[Sail / local app] -->|upload| S3[Documents S3]
   Sail -->|StartDocumentAnalysis| Textract[Amazon Textract]
-  Textract --> Topic[SNS completion]
-  Topic --> Queue[SQS results]
-  Sail -->|textract:consume| Queue
+  Textract --> TTopic[Textract SNS]
+  TTopic --> TQueue[Textract SQS]
+  Sail -->|textract:consume| TQueue
+  Sail -->|StartTranscriptionJob| Transcribe[Amazon Transcribe]
+  Transcribe --> EB[EventBridge]
+  EB --> AQueue[Transcribe SQS]
+  Sail -->|transcribe:consume| AQueue
   Sail -->|Converse overview| Bedrock[Bedrock Claude]
-  Queue --> DLQ[SQS DLQ]
 ```
 
 ## Deploy
@@ -52,16 +57,18 @@ After `pulumi up`, copy stack outputs into `apps/platform/.env`:
 
 ```bash
 OCR_DRIVER=textract
+TRANSCRIPTION_DRIVER=transcribe
 FILESYSTEM_DISK=s3
 AWS_DEFAULT_REGION=eu-west-1
 AWS_BUCKET=<documentsBucketName>
 TEXTRACT_SNS_TOPIC_ARN=<textractSnsTopicArn>
 TEXTRACT_SNS_ROLE_ARN=<textractPublishRoleArn>
 TEXTRACT_RESULTS_QUEUE_URL=<textractResultsQueueUrl>
+TRANSCRIBE_RESULTS_QUEUE_URL=<transcribeResultsQueueUrl>
 OCR_BEDROCK_MODEL_ID=eu.anthropic.claude-sonnet-4-20250514-v1:0
 ```
 
-### Sync OCR IAM credentials
+### Sync OCR / Transcribe IAM credentials
 
 This stack creates an IAM user + long-lived access key for **local development only**.
 
@@ -71,11 +78,11 @@ an ECS task, an EC2 instance, a Lambda. A PHP process on your laptop is none of
 those, so there is nothing to attach a role to. Until the stack grows compute, a
 narrowly scoped IAM user is the honest option for local work.
 
-The key is acceptable *because* the policy is narrow: one bucket, one queue, one KMS
-key, and nothing else. It must never be how production runs — `src/application.ts`
-already holds the identical permissions as an **ECS task role**, and the deployed
-container will get credentials from the ECS agent instead, with no keys anywhere.
-Both credential paths in the app skip explicit credentials when
+The key is acceptable *because* the policy is narrow: one bucket, the OCR/Transcribe
+queues, one KMS key, and nothing else. It must never be how production runs —
+`src/application.ts` already holds the identical permissions as an **ECS task role**,
+and the deployed container will get credentials from the ECS agent instead, with no
+keys anywhere. Both credential paths in the app skip explicit credentials when
 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty, so that switch needs **no
 application code changes** — just stop setting those two variables.
 
@@ -83,7 +90,7 @@ application code changes** — just stop setting those two variables.
 > the point: the fix is not using root at all. Enable IAM Identity Center, give
 > yourself an admin user there, and `aws sso login` for short-lived credentials.
 
-Sync the local key into `.env`:
+Sync the local key and provider ARNs/URLs into `.env`:
 
 ```bash
 cd apps/platform/infra
@@ -91,27 +98,36 @@ chmod +x scripts/sync-ocr-credentials.sh
 ./scripts/sync-ocr-credentials.sh
 ```
 
-That sets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, clears `AWS_SESSION_TOKEN`, and clears MinIO endpoints.
+That sets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, clears `AWS_SESSION_TOKEN`,
+wires Textract SNS/SQS + Transcribe results queue outputs, and clears MinIO endpoints.
 
 ```bash
 vendor/bin/sail artisan config:clear
 vendor/bin/sail artisan textract:consume
+vendor/bin/sail artisan transcribe:consume
 ```
+
+(`composer run dev` / Sail already starts both consumers when the queue URLs are set.)
 
 ## Outputs
 
 | Output | Purpose |
 |--------|---------|
-| `documentsBucketName` | S3 bucket for uploads |
+| `documentsBucketName` | S3 bucket for uploads + Transcribe JSON output |
 | `textractSnsTopicArn` | Textract notification topic |
 | `textractPublishRoleArn` | Role Textract assumes for SNS |
-| `textractResultsQueueUrl` | Consumer queue URL |
-| `textractResultsDeadLetterQueueUrl` | Failed messages |
-| `ocrLocalUserName` | IAM user for local OCR |
+| `textractResultsQueueUrl` | Textract consumer queue URL |
+| `textractResultsDeadLetterQueueUrl` | Failed Textract messages |
+| `transcribeResultsQueueUrl` | Transcribe consumer queue URL (EventBridge target) |
+| `transcribeResultsDeadLetterQueueUrl` | Failed Transcribe consumer messages |
+| `transcribeDeliveryDeadLetterQueueUrl` | EventBridge FailedInvocations (could not deliver to results queue) |
+| `transcribeCompletionRuleName` | EventBridge rule for job COMPLETED/FAILED |
+| `ocrLocalUserName` | IAM user for local OCR / Transcribe |
 | `ocrAccessKeyId` | Access key id (also via sync script) |
 | `ocrSecretAccessKey` | Secret key (Pulumi secret; use sync script) |
 | `ocrEncryptionKeyArn` | KMS key for bucket/queues |
 | `appTaskRoleArn` | ECS task role — set as `taskRoleArn` on the task definition |
+| `appAccessPolicyArn` | Managed policy shared by Sail IAM user + ECS task role |
 
 ## Important
 

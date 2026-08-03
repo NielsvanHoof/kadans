@@ -7,11 +7,23 @@ export interface DocumentInfrastructure {
   resultsQueue: aws.sqs.Queue;
   resultsDeadLetterQueue: aws.sqs.Queue;
   textractPublishRole: aws.iam.Role;
+  transcribeResultsQueue: aws.sqs.Queue;
+  transcribeResultsDeadLetterQueue: aws.sqs.Queue;
+  /**
+   * EventBridge *delivery* DLQ — FailedInvocations when EventBridge cannot
+   * put onto the results queue (permissions/KMS). Distinct from the consumer
+   * redrive DLQ on `transcribeResultsQueue`.
+   */
+  transcribeDeliveryDeadLetterQueue: aws.sqs.Queue;
+  transcribeCompletionRule: aws.cloudwatch.EventRule;
 }
 
 /**
- * Async Textract AnalyzeDocument (FORMS + TABLES) plumbing: S3 documents + SNS → SQS.
- * App processes (Sail / local) poll the results queue — no ECS consumer.
+ * Async document + audio provider plumbing on one S3 bucket:
+ * - Textract AnalyzeDocument (FORMS + TABLES) → SNS → SQS
+ * - Amazon Transcribe jobs → EventBridge → SQS
+ *
+ * App processes (Sail / local) poll the results queues — no ECS consumer yet.
  */
 export function createDocumentInfrastructure(
   config: PlatformConfig,
@@ -129,11 +141,29 @@ export function createDocumentInfrastructure(
     rawMessageDelivery: false,
   });
 
+  // Confused-deputy guard: without SourceAccount/SourceArn, another account's
+  // Textract job could pass *this* role ARN and publish into our SNS topic.
+  // Matches https://docs.aws.amazon.com/textract/latest/dg/cross-service-confused-deputy-prevention.html
+  const account = aws.getCallerIdentityOutput();
   const textractAssumeRolePolicy = aws.iam.getPolicyDocumentOutput({
     statements: [{
+      sid: "AllowTextractAssumeWithAccountGuard",
       effect: "Allow",
       principals: [{ type: "Service", identifiers: ["textract.amazonaws.com"] }],
       actions: ["sts:AssumeRole"],
+      conditions: [{
+        test: "StringEquals",
+        variable: "aws:SourceAccount",
+        values: [account.accountId],
+      }, {
+        test: "ArnLike",
+        variable: "aws:SourceArn",
+        values: [
+          account.accountId.apply(
+            (accountId) => `arn:aws:textract:${config.region}:${accountId}:*`,
+          ),
+        ],
+      }],
     }],
   });
   const textractPublishRole = new aws.iam.Role(
@@ -155,11 +185,111 @@ export function createDocumentInfrastructure(
     }).json,
   });
 
+  // --- Amazon Transcribe (EventBridge job state → SQS) ---
+  const transcribeResultsDeadLetterQueue = new aws.sqs.Queue(
+    environment.resourceName("transcribe-results-dlq"),
+    {
+      name: environment.resourceName("transcribe-results-dlq"),
+      messageRetentionSeconds: 1_209_600,
+      kmsMasterKeyId: encryptionKey.arn,
+    },
+  );
+  const transcribeResultsQueue = new aws.sqs.Queue(
+    environment.resourceName("transcribe-results"),
+    {
+      name: environment.resourceName("transcribe-results"),
+      visibilityTimeoutSeconds: 300,
+      messageRetentionSeconds: 345_600,
+      kmsMasterKeyId: encryptionKey.arn,
+      redrivePolicy: transcribeResultsDeadLetterQueue.arn.apply((deadLetterTargetArn) => JSON.stringify({
+        deadLetterTargetArn,
+        maxReceiveCount: 5,
+      })),
+    },
+  );
+
+  const transcribeCompletionRule = new aws.cloudwatch.EventRule(
+    environment.resourceName("transcribe-complete"),
+    {
+      name: environment.resourceName("transcribe-complete"),
+      description: "Forward Amazon Transcribe job COMPLETED/FAILED to the results queue",
+      eventPattern: JSON.stringify({
+        source: ["aws.transcribe"],
+        "detail-type": ["Transcribe Job State Change"],
+        detail: {
+          TranscriptionJobStatus: ["COMPLETED", "FAILED"],
+        },
+      }),
+    },
+  );
+
+  // Delivery DLQ: EventBridge FailedInvocations (could not reach the target),
+  // not consumer processing failures (those use transcribeResultsDeadLetterQueue).
+  const transcribeDeliveryDeadLetterQueue = new aws.sqs.Queue(
+    environment.resourceName("transcribe-delivery-dlq"),
+    {
+      name: environment.resourceName("transcribe-delivery-dlq"),
+      messageRetentionSeconds: 1_209_600,
+      kmsMasterKeyId: encryptionKey.arn,
+    },
+  );
+
+  const transcribeQueuePolicy = aws.iam.getPolicyDocumentOutput({
+    statements: [{
+      sid: "AllowEventBridgeTranscribeRule",
+      effect: "Allow",
+      principals: [{ type: "Service", identifiers: ["events.amazonaws.com"] }],
+      actions: ["sqs:SendMessage"],
+      resources: [transcribeResultsQueue.arn],
+      conditions: [{
+        test: "ArnEquals",
+        variable: "aws:SourceArn",
+        values: [transcribeCompletionRule.arn],
+      }],
+    }],
+  });
+  new aws.sqs.QueuePolicy(environment.resourceName("transcribe-results-policy"), {
+    queueUrl: transcribeResultsQueue.id,
+    policy: transcribeQueuePolicy.json,
+  });
+
+  // Pulumi/API path does not auto-attach DLQ permissions the way the console does.
+  const transcribeDeliveryDlqPolicy = aws.iam.getPolicyDocumentOutput({
+    statements: [{
+      sid: "AllowEventBridgeDeliveryDlq",
+      effect: "Allow",
+      principals: [{ type: "Service", identifiers: ["events.amazonaws.com"] }],
+      actions: ["sqs:SendMessage"],
+      resources: [transcribeDeliveryDeadLetterQueue.arn],
+      conditions: [{
+        test: "ArnEquals",
+        variable: "aws:SourceArn",
+        values: [transcribeCompletionRule.arn],
+      }],
+    }],
+  });
+  new aws.sqs.QueuePolicy(environment.resourceName("transcribe-delivery-dlq-policy"), {
+    queueUrl: transcribeDeliveryDeadLetterQueue.id,
+    policy: transcribeDeliveryDlqPolicy.json,
+  });
+
+  new aws.cloudwatch.EventTarget(environment.resourceName("transcribe-results-target"), {
+    rule: transcribeCompletionRule.name,
+    arn: transcribeResultsQueue.arn,
+    deadLetterConfig: {
+      arn: transcribeDeliveryDeadLetterQueue.arn,
+    },
+  });
+
   return {
     bucket,
     textractTopic,
     resultsQueue,
     resultsDeadLetterQueue,
     textractPublishRole,
+    transcribeResultsQueue,
+    transcribeResultsDeadLetterQueue,
+    transcribeDeliveryDeadLetterQueue,
+    transcribeCompletionRule,
   };
 }

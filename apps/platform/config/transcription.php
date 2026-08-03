@@ -9,13 +9,10 @@ return [
     | Transcription Driver
     |--------------------------------------------------------------------------
     |
-    | mock — sync fake transcript (CI / offline). Completes inside the upload job.
-    | ai   — real speech-to-text via laravel/ai's Transcription class.
+    | mock       — sync fake transcript (CI / offline). Completes inside the job.
+    | transcribe — async Amazon Transcribe via EventBridge → SQS.
     |
-    | Which real provider (OpenAI, ElevenLabs, Mistral, Gemini) to use is not
-    | decided yet. Once it is, configure it via config/ai.php's
-    | `default_for_transcription` and the matching provider API key env var —
-    | this driver does not hardcode a provider.
+    | laravel/ai is not used for STT; keep the package for other AI features later.
     |
     */
 
@@ -23,47 +20,42 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Timeouts
+    | Job Timeout
     |--------------------------------------------------------------------------
     |
-    | http — seconds for the provider HTTP call (Laravel AI ->timeout()).
-    | job  — seconds for ProcessAudioRecordingJob::$timeout.
-    |
-    | Keep http < job, and REDIS_QUEUE_RETRY_AFTER > job, otherwise Redis can
-    | re-dispatch a still-running transcription to a second worker.
+    | Seconds for ProcessAudioRecordingJob::$timeout. The start job is fast
+    | (mock completes inline; Transcribe only starts the AWS job). Keep
+    | REDIS_QUEUE_RETRY_AFTER above this value.
     |
     */
 
     'timeouts' => [
-        'http' => (int) env('TRANSCRIPTION_HTTP_TIMEOUT', 270),
-        'job' => (int) env('TRANSCRIPTION_JOB_TIMEOUT', 900),
+        'job' => (int) env('TRANSCRIPTION_JOB_TIMEOUT', 120),
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Local Audio Chunking
+    | Amazon Transcribe (async)
     |--------------------------------------------------------------------------
     |
-    | Long recordings often exceed a single provider HTTP timeout. When enabled,
-    | we probe duration with ffprobe, normalize to mono 16 kHz mp3, and split
-    | into max_chunk_seconds pieces before calling the STT API.
-    |
-    | Speakers are remapped per chunk (cross-chunk identity is not preserved).
+    | Completions arrive via EventBridge → SQS.
+    | Credentials reuse AWS_* like OCR.
     |
     */
 
-    'chunking' => [
-        'enabled' => (bool) env('TRANSCRIPTION_CHUNKING_ENABLED', true),
-
-        // Split when the recording is longer than this many seconds.
-        'min_duration_seconds' => (int) env('TRANSCRIPTION_CHUNK_MIN_DURATION', 120),
-
-        // Maximum length of each local chunk sent to the provider.
-        'max_chunk_seconds' => (int) env('TRANSCRIPTION_MAX_CHUNK_SECONDS', 90),
-
-        // Binary paths — override only if ffmpeg/ffprobe are not on PATH.
-        'ffmpeg_binary' => env('TRANSCRIPTION_FFMPEG_BINARY', 'ffmpeg'),
-        'ffprobe_binary' => env('TRANSCRIPTION_FFPROBE_BINARY', 'ffprobe'),
+    'transcribe' => [
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'token' => env('AWS_SESSION_TOKEN'),
+        'region' => env('AWS_DEFAULT_REGION', 'eu-west-1'),
+        'bucket' => env('AWS_BUCKET'),
+        'results_queue_url' => env('TRANSCRIBE_RESULTS_QUEUE_URL'),
+        'output_prefix' => env('TRANSCRIBE_OUTPUT_PREFIX', 'transcriptions'),
+        'language_code' => env('TRANSCRIBE_LANGUAGE_CODE', 'nl-NL'),
+        'max_speaker_labels' => (int) env('TRANSCRIBE_MAX_SPEAKERS', 10),
+        'sqs_wait_time_seconds' => (int) env('TRANSCRIBE_SQS_WAIT_TIME', 20),
+        'sqs_max_messages' => (int) env('TRANSCRIBE_SQS_MAX_MESSAGES', 5),
+        'sqs_max_receive_count' => (int) env('TRANSCRIBE_SQS_MAX_RECEIVE_COUNT', 5),
     ],
 
 ];

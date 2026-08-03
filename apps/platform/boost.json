@@ -17,6 +17,7 @@
     ],
     "sail": true,
     "skills": [
+        "ai-sdk-development",
         "fortify-development",
         "laravel-best-practices",
         "octane-development",

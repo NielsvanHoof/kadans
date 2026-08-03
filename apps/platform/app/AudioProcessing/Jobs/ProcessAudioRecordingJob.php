@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Jobs;
 
 use App\AudioProcessing\Actions\NotifyUploaderOfTranscriptionCompletedAction;
+use App\AudioProcessing\Enums\TranscriptionProcessingOutcome;
 use App\AudioProcessing\Services\TranscriptionOrchestrator;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
@@ -26,8 +27,8 @@ use Throwable;
 use function hash;
 
 /**
- * Synchronous transcription pipeline for an audio recording.
- * Unlike Textract, the transcription call itself always completes within this job.
+ * Transcription pipeline for an audio recording.
+ * Mock completes in-process; Amazon Transcribe stays processing until EventBridge/SQS completion.
  */
 #[Backoff([10, 30, 60])]
 #[Tries(self::MAX_TRIES)]
@@ -40,11 +41,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
 
     /**
      * Must stay comfortably below the queue connection's retry_after
-     * (see .env's REDIS_QUEUE_RETRY_AFTER) or a slow transcription call
-     * can get picked up by a second worker before this one finishes.
-     *
-     * Default comes from config/transcription.php timeouts.job (900s) so
-     * multi-chunk ffmpeg + provider calls have room to finish.
+     * (see .env's REDIS_QUEUE_RETRY_AFTER). Start-only / mock is fast.
      */
     public int $timeout;
 
@@ -54,7 +51,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         public ?int $pipelineId = null
     ) {
         // Read at construction time — Octane workers must not cache this on the class.
-        $this->timeout = (int) config('transcription.timeouts.job', 900);
+        $this->timeout = (int) config('transcription.timeouts.job', 120);
         $this->onQueue('transcription');
     }
 
@@ -124,39 +121,16 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
 
             if ($pipeline instanceof Pipeline) {
                 $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'submit');
-                $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-                $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'transcribe');
             }
 
-            $transcription = $transcriptionOrchestrator->transcribe($claimed);
-
-            $updated = AudioRecording::query()
-                ->whereKey($claimed->id)
-                ->where('path', $expectedPath)
-                ->update([
-                    'transcription_status' => TranscriptionStatus::Completed->value,
-                    'transcript' => $transcription->text,
-                    'segments' => json_encode($transcription->segments),
-                    'transcription_error' => null,
-                    'transcription_finished_at' => now(),
-                ]);
-
-            if ($updated !== 1) {
-                Log::warning('Transcription: discarded completion for a stale upload revision.', [
-                    'audio_recording_id' => $claimed->id,
-                    'tenant_id' => $claimed->tenant_id,
-                    'expected_path' => $expectedPath,
-                ]);
-
-                return;
-            }
-
-            $notifyUploaderOfTranscriptionCompleted->handle($claimed);
+            $outcome = $transcriptionOrchestrator->startProcessing($claimed);
 
             if ($pipeline instanceof Pipeline) {
-                $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'transcribe');
-                $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
-                $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+                $this->recordOutcome($pipeline, $outcome, $claimed, $pipelineState);
+            }
+
+            if ($outcome === TranscriptionProcessingOutcome::Immediate) {
+                $notifyUploaderOfTranscriptionCompleted->handle($claimed);
             }
         } catch (Throwable $exception) {
             // Let the queue retry until tries are exhausted.
@@ -172,7 +146,10 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
                 AudioRecording::query()
                     ->whereKey($claimed->id)
                     ->where('path', $expectedPath)
-                    ->update(['transcription_status' => TranscriptionStatus::Pending->value]);
+                    ->update([
+                        'transcription_status' => TranscriptionStatus::Pending->value,
+                        'transcribe_job_id' => null,
+                    ]);
 
                 throw $exception;
             }
@@ -248,10 +225,35 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         return Pipeline::query()->find($this->pipelineId);
     }
 
+    private function recordOutcome(
+        Pipeline $pipeline,
+        TranscriptionProcessingOutcome $outcome,
+        AudioRecording $recording,
+        PipelineStateAction $pipelineState,
+    ): void {
+        $pipeline->forceFill([
+            'provider' => (string) config('transcription.driver'),
+            'provider_job_id' => $recording->transcribe_job_id,
+        ])->saveQuietly();
+
+        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
+
+        if ($outcome === TranscriptionProcessingOutcome::Deferred) {
+            $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'transcribe');
+
+            return;
+        }
+
+        $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'transcribe');
+        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'transcribe');
+        $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
+        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+    }
+
     /**
-     * Atomically move pending/failed → processing.
+     * Atomically move pending/failed/processing → processing.
      * Returns null when the recording cannot be claimed (stale path, already
-     * completed, or another worker already claimed it).
+     * completed, or an external Transcribe job already in flight).
      */
     private function claimForProcessing(
         AudioRecording $recording,
@@ -268,10 +270,13 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
                 return null;
             }
 
-            // Another worker already finished or is currently processing this revision.
+            // Another worker finished, or an external Transcribe job is already in flight.
             if (
                 $locked->transcription_status === TranscriptionStatus::Completed
-                || $locked->transcription_status === TranscriptionStatus::Processing
+                || (
+                    $locked->transcription_status === TranscriptionStatus::Processing
+                    && $locked->transcribe_job_id !== null
+                )
             ) {
                 return null;
             }
@@ -281,6 +286,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
                 'transcription_error' => null,
                 'transcript' => null,
                 'segments' => null,
+                'transcribe_job_id' => null,
                 'transcription_started_at' => $locked->transcription_started_at ?? now(),
                 'transcription_finished_at' => null,
             ])->save();

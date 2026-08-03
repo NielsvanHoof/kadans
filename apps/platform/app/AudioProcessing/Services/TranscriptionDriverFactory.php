@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Services;
 
-use App\AudioProcessing\Contracts\TranscribesAudio;
+use App\AudioProcessing\Contracts\StartsAudioTranscription;
 use App\AudioProcessing\Enums\TranscriptionDriver;
-use App\AudioProcessing\Services\Drivers\LaravelAiAudioTranscriber;
+use App\AudioProcessing\Services\Drivers\AmazonTranscribeAudioTranscriber;
 use App\AudioProcessing\Services\Drivers\MockAudioTranscriber;
 use Illuminate\Foundation\Application;
 use InvalidArgumentException;
@@ -17,10 +17,10 @@ final readonly class TranscriptionDriverFactory
     public function __construct(
         private Application $application,
         private MockAudioTranscriber $mockAudioTranscriber,
-        private LaravelAiAudioTranscriber $laravelAiAudioTranscriber,
+        private AmazonTranscribeAudioTranscriber $amazonTranscribeAudioTranscriber,
     ) {}
 
-    public function make(string $driver): TranscribesAudio
+    public function make(string $driver): StartsAudioTranscription
     {
         $transcriptionDriver = TranscriptionDriver::tryFrom($driver);
 
@@ -30,7 +30,7 @@ final readonly class TranscriptionDriverFactory
 
         return match ($transcriptionDriver) {
             TranscriptionDriver::Mock => $this->mockAudioTranscriber,
-            TranscriptionDriver::Ai => $this->laravelAiAudioTranscriber,
+            TranscriptionDriver::Transcribe => $this->amazonTranscribeAudioTranscriber,
         };
     }
 }

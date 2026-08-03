@@ -182,9 +182,20 @@ final class AppServiceProvider extends ServiceProvider
     {
         DevCommands::except('server');
 
-        // Runs alongside the default "queue" listener so long transcription
-        // jobs (see ProcessAudioRecordingJob) can't stall unrelated jobs.
+        // Runs alongside the default "queue" listener so transcription start
+        // jobs can't stall unrelated work. Completion for Amazon Transcribe
+        // arrives via artisan transcribe:consume (EventBridge → SQS), not this queue.
         DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=transcription', 'transcription');
+
+        if (is_string(config('transcription.transcribe.results_queue_url'))
+            && config('transcription.transcribe.results_queue_url') !== '') {
+            DevCommands::artisan('transcribe:consume', 'transcribe-consume');
+        }
+
+        if (is_string(config('ocr.textract.sns_topic_arn'))
+            && config('ocr.textract.sns_topic_arn') !== '') {
+            DevCommands::artisan('textract:consume', 'textract-consume');
+        }
 
         if (config('broadcasting.default') !== 'reverb') {
             return;

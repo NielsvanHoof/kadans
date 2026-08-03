@@ -7,5 +7,5 @@ namespace App\AudioProcessing\Enums;
 enum TranscriptionDriver: string
 {
     case Mock = 'mock';
-    case Ai = 'ai';
+    case Transcribe = 'transcribe';
 }

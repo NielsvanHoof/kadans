@@ -1,7 +1,5 @@
 import * as aws from "@pulumi/aws";
 import { PlatformConfig } from "./config.js";
-import { DocumentInfrastructure } from "./documents.js";
-import { applicationAccessPolicy } from "./policies.js";
 
 export interface ApplicationIdentity {
   taskRole: aws.iam.Role;
@@ -17,7 +15,7 @@ export interface ApplicationIdentity {
  *    pull the image from ECR, resolve Secrets Manager values, and write logs. It
  *    belongs with the ECS service definition and does not exist yet.
  *  - *task role* — assumed by the application code itself. This one. It carries
- *    exactly the permissions in `applicationAccessPolicy`.
+ *    exactly the permissions in the shared managed app-access policy.
  *
  * Created ahead of any ECS resources on purpose. An unattached IAM role costs
  * nothing, and it means the permission set is provisioned and reviewable now
@@ -32,8 +30,7 @@ export interface ApplicationIdentity {
  */
 export function createApplicationIdentity(
   config: PlatformConfig,
-  documents: DocumentInfrastructure,
-  encryptionKey: aws.kms.Key,
+  accessPolicy: aws.iam.Policy,
 ): ApplicationIdentity {
   const { environment } = config;
   const account = aws.getCallerIdentityOutput();
@@ -70,10 +67,10 @@ export function createApplicationIdentity(
     },
   });
 
-  new aws.iam.RolePolicy(environment.resourceName("app-task-policy"), {
-    role: taskRole.id,
-    // Same document as the local IAM user — see policies.ts.
-    policy: applicationAccessPolicy(config, documents, encryptionKey),
+  // Same managed policy as the local IAM user — see policies.ts.
+  new aws.iam.RolePolicyAttachment(environment.resourceName("app-task-policy"), {
+    role: taskRole.name,
+    policyArn: accessPolicy.arn,
   });
 
   return { taskRole };

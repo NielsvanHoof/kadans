@@ -2,11 +2,6 @@ FROM node:24-bookworm-slim AS node
 
 FROM dunglas/frankenphp:php8.5-bookworm AS php-base
 
-# ffmpeg/ffprobe split long recordings before the STT provider call.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
 RUN install-php-extensions bcmath intl pcntl pdo_pgsql redis zip
 
 FROM php-base AS build

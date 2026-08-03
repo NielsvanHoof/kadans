@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Actions\NotifyUploaderOfTranscriptionCompletedAction;
-use App\AudioProcessing\Contracts\TranscribesAudio;
+use App\AudioProcessing\Contracts\StartsAudioTranscription;
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
 use App\AudioProcessing\Services\TranscriptionOrchestrator;
@@ -113,14 +113,15 @@ test('processing job is idempotent when the recording is already completed', fun
         ->toBeFalse();
 });
 
-test('processing job does not restart a recording another worker already claimed', function (): void {
+test('processing job does not restart a recording with an in-flight Transcribe job', function (): void {
     $recording = createAudioRecordingForProcessingTest([
         'transcription_status' => TranscriptionStatus::Processing,
+        'transcribe_job_id' => 'audio-1-abc',
         'transcription_started_at' => now(),
     ]);
 
-    $transcriber = Mockery::mock(TranscribesAudio::class);
-    $transcriber->shouldNotReceive('transcribe');
+    $transcriber = Mockery::mock(StartsAudioTranscription::class);
+    $transcriber->shouldNotReceive('start');
 
     new ProcessAudioRecordingJob($recording->id, $recording->path)->handle(
         new TranscriptionOrchestrator($transcriber, resolve(LogAuditActivityAction::class)),
@@ -132,6 +133,7 @@ test('processing job does not restart a recording another worker already claimed
     $recording->refresh();
 
     expect($recording->transcription_status)->toBe(TranscriptionStatus::Processing)
+        ->and($recording->transcribe_job_id)->toBe('audio-1-abc')
         ->and(Activity::query()
             ->where('event', AuditEvent::AudioTranscriptionStarted->value)
             ->where('subject_id', $recording->id)
@@ -142,8 +144,8 @@ test('processing job does not restart a recording another worker already claimed
 test('processing job resets to pending on a retryable failure so a retry can reclaim it', function (): void {
     $recording = createAudioRecordingForProcessingTest();
 
-    $transcriber = Mockery::mock(TranscribesAudio::class);
-    $transcriber->shouldReceive('transcribe')->once()->andThrow(new RuntimeException('Timed out.'));
+    $transcriber = Mockery::mock(StartsAudioTranscription::class);
+    $transcriber->shouldReceive('start')->once()->andThrow(new RuntimeException('Timed out.'));
 
     $job = new ProcessAudioRecordingJob($recording->id, $recording->path);
 
@@ -166,8 +168,8 @@ test('processing job ignores an upload revision that has been replaced', functio
 
     $recording->forceFill(['path' => 'audio/replacement.mp3'])->save();
 
-    $transcriber = Mockery::mock(TranscribesAudio::class);
-    $transcriber->shouldNotReceive('transcribe');
+    $transcriber = Mockery::mock(StartsAudioTranscription::class);
+    $transcriber->shouldNotReceive('start');
 
     $staleJob->handle(
         new TranscriptionOrchestrator($transcriber, resolve(LogAuditActivityAction::class)),

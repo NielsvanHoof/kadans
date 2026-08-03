@@ -6,20 +6,23 @@ import { DocumentInfrastructure } from "./documents.js";
 /**
  * Everything the Qompose application needs from AWS at runtime.
  *
- * Deliberately defined once and shared by two principals:
+ * Deliberately defined once and attached to two principals via a managed policy:
  *
  *  - the local IAM user (`operator.ts`), used by Sail on a developer machine
  *  - the ECS task role (`application.ts`), used by the deployed container
  *
- * They must stay identical — if local and production diverge, OCR breaks in
- * production only, which is the worst place to find out. Sharing the document
- * makes that impossible by construction rather than by discipline.
+ * They must stay identical — if local and production diverge, OCR/Transcribe
+ * breaks in production only, which is the worst place to find out. Sharing one
+ * managed policy makes that impossible by construction rather than by discipline.
  *
- * Two `"*"` resources are intentional, not oversights:
+ * Managed (not inline) because IAM user inline policies cap at 2048 bytes; this
+ * document exceeds that once Textract + Transcribe + Bedrock statements land.
+ *
+ * `"*"` resources are intentional, not oversights:
  *
  *  - **Textract** does not support resource-level permissions for
- *    StartDocumentAnalysis / GetDocumentAnalysis. `"*"` is the only value AWS
- *    accepts for these actions.
+ *    StartDocumentAnalysis / GetDocumentAnalysis.
+ *  - **Transcribe** StartTranscriptionJob / GetTranscriptionJob are the same.
  *  - **Bedrock** model ARNs are configurable; see `defaultBedrockModelArns`.
  */
 export function applicationAccessPolicy(
@@ -47,6 +50,14 @@ export function applicationAccessPolicy(
       ],
       resources: ["*"],
     }, {
+      // Transcribe job APIs are similarly not resource-scoped.
+      sid: "RunAmazonTranscribe",
+      actions: [
+        "transcribe:StartTranscriptionJob",
+        "transcribe:GetTranscriptionJob",
+      ],
+      resources: ["*"],
+    }, {
       sid: "InvokeBedrockOverviewModels",
       actions: ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
       resources: config.bedrockModelArns,
@@ -70,9 +81,37 @@ export function applicationAccessPolicy(
       ],
       resources: [documents.resultsQueue.arn],
     }, {
+      // Transcribe completions arrive via EventBridge → SQS (no PassRole needed).
+      sid: "ConsumeTranscribeResults",
+      actions: [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:ChangeMessageVisibility",
+      ],
+      resources: [documents.transcribeResultsQueue.arn],
+    }, {
       sid: "UseDocumentEncryptionKey",
       actions: ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey"],
       resources: [encryptionKey.arn],
     }],
   }).json;
+}
+
+/**
+ * Customer managed policy shared by the local IAM user and the ECS task role.
+ */
+export function createApplicationAccessManagedPolicy(
+  config: PlatformConfig,
+  documents: DocumentInfrastructure,
+  encryptionKey: aws.kms.Key,
+): aws.iam.Policy {
+  const { environment } = config;
+
+  return new aws.iam.Policy(environment.resourceName("app-access"), {
+    name: environment.resourceName("app-access"),
+    path: "/qompose/",
+    description: "Shared Sail + ECS access for S3, Textract, Transcribe, Bedrock, SQS, KMS",
+    policy: applicationAccessPolicy(config, documents, encryptionKey),
+  });
 }

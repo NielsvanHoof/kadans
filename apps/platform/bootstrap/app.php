@@ -35,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withCommands([
+        __DIR__.'/../app/AudioProcessing/Console/Commands',
         __DIR__.'/../app/Dossiers/Console/Commands',
         __DIR__.'/../app/DocumentProcessing/Console/Commands',
         __DIR__.'/../app/Platform/Console/Commands',

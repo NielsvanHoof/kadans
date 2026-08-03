@@ -38,15 +38,20 @@ final readonly class TranscriptionConfigurationValidator
             ? TranscriptionDriver::tryFrom($configuredDriver)
             : null;
 
-        throw_if($driver !== TranscriptionDriver::Ai, LogicException::class, 'Production transcription requires TRANSCRIPTION_DRIVER=ai.');
+        throw_if($driver !== TranscriptionDriver::Transcribe, LogicException::class, 'Production transcription requires TRANSCRIPTION_DRIVER=transcribe.');
 
-        $provider = $this->config->get('ai.default_for_transcription');
+        foreach ([
+            'transcription.transcribe.bucket' => 'AWS_BUCKET',
+            'transcription.transcribe.results_queue_url' => 'TRANSCRIBE_RESULTS_QUEUE_URL',
+        ] as $configKey => $envName) {
+            $value = $this->config->get($configKey);
 
-        throw_unless(is_string($provider) && mb_trim($provider) !== '', LogicException::class, 'Production transcription requires ai.default_for_transcription to be set.');
-
-        $key = $this->config->get("ai.providers.{$provider}.key");
-
-        throw_unless(is_string($key) && mb_trim($key) !== '', LogicException::class, "Production transcription requires an API key configured for the [{$provider}] provider.");
+            throw_unless(
+                is_string($value) && mb_trim($value) !== '',
+                LogicException::class,
+                "Production Amazon Transcribe requires {$envName} to be set.",
+            );
+        }
     }
 
     /**

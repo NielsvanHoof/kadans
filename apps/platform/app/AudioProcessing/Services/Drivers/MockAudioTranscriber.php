@@ -4,17 +4,55 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Services\Drivers;
 
-use App\AudioProcessing\Contracts\TranscribesAudio;
+use App\AudioProcessing\Contracts\StartsAudioTranscription;
 use App\AudioProcessing\Data\TranscriptionResult;
+use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
+use Illuminate\Support\Facades\Log;
 
 /**
- * POC / CI stand-in for a real speech-to-text provider.
- * Returns a deterministic transcript so demos and tests stay stable offline.
+ * CI stand-in for Amazon Transcribe.
+ * Completes synchronously inside start() so demos and tests stay offline-stable.
  */
-final class MockAudioTranscriber implements TranscribesAudio
+final class MockAudioTranscriber implements StartsAudioTranscription
 {
-    public function transcribe(AudioRecording $recording): TranscriptionResult
+    public function start(AudioRecording $recording): void
+    {
+        $result = $this->buildResult($recording);
+
+        $updated = AudioRecording::query()
+            ->whereKey($recording->id)
+            ->where('path', $recording->path)
+            ->where('transcription_status', TranscriptionStatus::Processing->value)
+            ->update([
+                'transcription_status' => TranscriptionStatus::Completed->value,
+                'transcript' => $result->text,
+                'segments' => json_encode($result->segments),
+                'transcription_error' => null,
+                'transcribe_job_id' => null,
+                'transcription_finished_at' => now(),
+            ]);
+
+        if ($updated !== 1) {
+            Log::warning('Transcription: discarded mock result for a stale upload revision.', [
+                'audio_recording_id' => $recording->id,
+                'tenant_id' => $recording->tenant_id,
+                'expected_path' => $recording->path,
+            ]);
+
+            return;
+        }
+
+        $recording->refresh();
+
+        Log::info('Transcription: mock driver completed.', [
+            'audio_recording_id' => $recording->id,
+            'tenant_id' => $recording->tenant_id,
+            'original_filename' => $recording->original_filename,
+        ]);
+    }
+
+    private function buildResult(AudioRecording $recording): TranscriptionResult
     {
         $text = "Mock transcript for {$recording->original_filename}.";
 

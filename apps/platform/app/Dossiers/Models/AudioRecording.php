@@ -30,6 +30,7 @@ use Override;
  * @property CarbonImmutable $uploaded_at
  * @property int|null $uploaded_by
  * @property TranscriptionStatus $transcription_status
+ * @property string|null $transcribe_job_id
  * @property string|null $transcript
  * @property array<int, array{text: string, speaker: string, start_seconds: float, end_seconds: float}>|null $segments
  * @property string|null $transcription_error
@@ -87,6 +88,7 @@ final class AudioRecording extends TenantOwnedModel
         'uploaded_at',
         'uploaded_by',
         'transcription_status',
+        'transcribe_job_id',
         'transcript',
         'segments',
         'transcription_error',

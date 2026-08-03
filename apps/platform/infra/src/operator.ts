@@ -1,8 +1,6 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { PlatformConfig } from "./config.js";
-import { DocumentInfrastructure } from "./documents.js";
-import { applicationAccessPolicy } from "./policies.js";
 
 export interface OcrOperatorAccess {
   user: aws.iam.User;
@@ -21,18 +19,18 @@ export interface OcrOperatorAccess {
  * compute (see `application.ts` for the task role that is already waiting), a
  * scoped IAM user is the honest option for local work.
  *
- * The key is acceptable *because* the policy is narrow — it reaches one bucket, one
- * queue, and one KMS key, and nothing else. It is not acceptable in production, and
- * the deployed app must never use it: `application.ts` holds the same permissions
- * as a task role, and the container gets credentials from the ECS agent instead.
+ * The key is acceptable *because* the policy is narrow — it reaches one bucket,
+ * the OCR/Transcribe queues, and one KMS key, and nothing else. It is not
+ * acceptable in production, and the deployed app must never use it:
+ * `application.ts` attaches the same managed policy as a task role, and the
+ * container gets credentials from the ECS agent instead.
  *
  * (An earlier version of this comment said "root cannot assume roles". True, but
  * beside the point: the real fix is not using root at all — see infra/README.md.)
  */
 export function createOcrOperatorAccess(
   config: PlatformConfig,
-  documents: DocumentInfrastructure,
-  encryptionKey: aws.kms.Key,
+  accessPolicy: aws.iam.Policy,
 ): OcrOperatorAccess {
   const { environment } = config;
 
@@ -40,14 +38,14 @@ export function createOcrOperatorAccess(
     name: environment.resourceName("ocr-local"),
     path: "/qompose/",
     tags: {
-      Purpose: "Local Sail Textract + Bedrock OCR",
+      Purpose: "Local Sail Textract + Transcribe + Bedrock",
     },
   });
 
-  new aws.iam.UserPolicy(environment.resourceName("ocr-local-policy"), {
+  // Managed policy attachment — IAM user inline policies cap at 2048 bytes.
+  new aws.iam.UserPolicyAttachment(environment.resourceName("ocr-local-policy"), {
     user: user.name,
-    // Shared with the ECS task role so local and production cannot drift.
-    policy: applicationAccessPolicy(config, documents, encryptionKey),
+    policyArn: accessPolicy.arn,
   });
 
   // Access key secret is stored in Pulumi state — sync into .env with the helper script.

@@ -4,30 +4,32 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Services;
 
-use App\AudioProcessing\Contracts\TranscribesAudio;
-use App\AudioProcessing\Data\TranscriptionResult;
+use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Enums\TranscriptionProcessingOutcome;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Orchestrates transcription start and audit logging.
- * Always synchronous — no deferred/async provider outcome to track.
+ * Deferred adapters leave the recording processing until async completion.
  */
 final readonly class TranscriptionOrchestrator
 {
     public function __construct(
-        private TranscribesAudio $transcriber,
+        private StartsAudioTranscription $transcriber,
         private LogAuditActivityAction $logAuditActivity,
     ) {}
 
-    public function transcribe(AudioRecording $recording): TranscriptionResult
+    public function startProcessing(AudioRecording $recording): TranscriptionProcessingOutcome
     {
         Log::info('Transcription: orchestrator starting audio processing.', [
             'audio_recording_id' => $recording->id,
             'tenant_id' => $recording->tenant_id,
             'original_filename' => $recording->original_filename,
+            'transcription_status' => $recording->transcription_status->value,
         ]);
 
         $this->logAuditActivity->handle(
@@ -37,24 +39,38 @@ final readonly class TranscriptionOrchestrator
             includeRequestContext: false,
         );
 
-        $result = $this->transcriber->transcribe($recording);
+        $this->transcriber->start($recording);
+        $recording->refresh();
 
-        $this->logAuditActivity->handle(
-            AuditEvent::AudioTranscriptionCompleted,
-            $recording,
-            [
-                'original_filename' => $recording->original_filename,
-                'transcript_length' => mb_strlen($result->text),
-            ],
-            includeRequestContext: false,
-        );
+        if ($recording->transcription_status === TranscriptionStatus::Completed) {
+            $this->logAuditActivity->handle(
+                AuditEvent::AudioTranscriptionCompleted,
+                $recording,
+                [
+                    'original_filename' => $recording->original_filename,
+                    'transcript_length' => mb_strlen((string) $recording->transcript),
+                ],
+                includeRequestContext: false,
+            );
 
-        Log::info('Transcription: orchestrator completed.', [
+            Log::info('Transcription: orchestrator completed immediately (sync driver).', [
+                'audio_recording_id' => $recording->id,
+                'tenant_id' => $recording->tenant_id,
+                'outcome' => TranscriptionProcessingOutcome::Immediate->value,
+                'transcript_length' => mb_strlen((string) $recording->transcript),
+            ]);
+
+            return TranscriptionProcessingOutcome::Immediate;
+        }
+
+        Log::info('Transcription: orchestrator deferred — waiting for async provider completion.', [
             'audio_recording_id' => $recording->id,
             'tenant_id' => $recording->tenant_id,
-            'transcript_length' => mb_strlen($result->text),
+            'outcome' => TranscriptionProcessingOutcome::Deferred->value,
+            'transcribe_job_id' => $recording->transcribe_job_id,
+            'transcription_status' => $recording->transcription_status->value,
         ]);
 
-        return $result;
+        return TranscriptionProcessingOutcome::Deferred;
     }
 }

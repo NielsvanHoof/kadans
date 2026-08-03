@@ -5,12 +5,13 @@ import * as pulumi from "@pulumi/pulumi";
  * Permissions the GitHub Actions deploy role needs to run `pulumi up` against the
  * OCR stack, plus the guard that stops it escalating its own privileges.
  *
- * Scope reflects what `infra/src/` actually creates: an S3 bucket, a KMS key, an
- * SNS topic, two SQS queues, IAM identities under the `qompose` naming scheme, and
- * a CloudWatch alarm. **When the stack grows compute, this list has to grow with
- * it** (ecs:*, ec2:* for the VPC, elasticloadbalancing:*, rds:*, ecr:*) — a missing
- * permission surfaces as a Pulumi error mid-deploy, which fails safely but is
- * confusing if you are not expecting it.
+ * Scope reflects what `infra/src/` actually creates: an S3 bucket, a KMS key,
+ * Textract SNS + Transcribe EventBridge → SQS queues (+ DLQs), IAM identities under
+ * the `qompose` naming scheme, and CloudWatch alarms. **When the stack grows
+ * compute, this list has to grow with it** (ecs:*, ec2:* for the VPC,
+ * elasticloadbalancing:*, rds:*, ecr:*) — a missing permission surfaces as a
+ * Pulumi error mid-deploy, which fails safely but is confusing if you are not
+ * expecting it.
  */
 export function deployRolePolicy(
   accountId: pulumi.Input<string>,
@@ -79,6 +80,24 @@ export function deployRolePolicy(
         pulumi.output(accountId).apply((account) => `arn:aws:sqs:*:${account}:qompose-*`),
       ],
     }, {
+      // EventBridge rule that forwards Transcribe job state changes to SQS.
+      sid: "ManageTranscribeEventRules",
+      effect: "Allow",
+      actions: [
+        "events:PutRule",
+        "events:DeleteRule",
+        "events:DescribeRule",
+        "events:ListRules",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:ListTargetsByRule",
+        "events:TagResource",
+        "events:UntagResource",
+      ],
+      resources: [
+        pulumi.output(accountId).apply((account) => `arn:aws:events:*:${account}:rule/qompose-*`),
+      ],
+    }, {
       sid: "ManageOcrAlarms",
       effect: "Allow",
       actions: ["cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms", "cloudwatch:TagResource"],
@@ -93,6 +112,8 @@ export function deployRolePolicy(
         "iam:DeleteUser",
         "iam:PutUserPolicy",
         "iam:DeleteUserPolicy",
+        "iam:AttachUserPolicy",
+        "iam:DetachUserPolicy",
         "iam:TagUser",
         "iam:UntagUser",
         "iam:CreateAccessKey",
@@ -109,6 +130,14 @@ export function deployRolePolicy(
         "iam:TagRole",
         "iam:UntagRole",
         "iam:PassRole",
+        // Shared managed app-access policy (Sail user + ECS task role).
+        "iam:CreatePolicy",
+        "iam:DeletePolicy",
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicyVersion",
+        "iam:SetDefaultPolicyVersion",
+        "iam:TagPolicy",
+        "iam:UntagPolicy",
       ],
       resources: iamResources,
     }, {
