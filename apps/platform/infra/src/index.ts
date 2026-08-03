@@ -1,4 +1,5 @@
 import { createOcrAlarms } from "./alarms.js";
+import { createApplicationIdentity } from "./application.js";
 import { loadPlatformConfig } from "./config.js";
 import { createDocumentInfrastructure } from "./documents.js";
 import { createOcrEncryption } from "./encryption.js";
@@ -11,6 +12,7 @@ const config = loadPlatformConfig();
 const encryption = createOcrEncryption(config);
 const documents = createDocumentInfrastructure(config, encryption.encryptionKey);
 const operator = createOcrOperatorAccess(config, documents, encryption.encryptionKey);
+const application = createApplicationIdentity(config, documents, encryption.encryptionKey);
 createOcrAlarms(config, documents);
 
 const credentials = exportOcrOperatorCredentials(operator);
@@ -25,3 +27,5 @@ export const ocrEncryptionKeyArn = encryption.encryptionKey.arn;
 export const ocrLocalUserName = credentials.ocrLocalUserName;
 export const ocrAccessKeyId = credentials.ocrAccessKeyId;
 export const ocrSecretAccessKey = credentials.ocrSecretAccessKey;
+/** Attach to the ECS task definition as `taskRoleArn` when compute lands. */
+export const appTaskRoleArn = application.taskRole.arn;

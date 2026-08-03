@@ -4,6 +4,9 @@ import * as pulumi from "@pulumi/pulumi";
 
 test("the OCR stack provisions documents plumbing and a local IAM user", async () => {
   const resources: Array<{ type: string; name: string; inputs: Record<string, unknown> }> = [];
+  // Captured so the assertions below can inspect the requested statements rather
+  // than the mocked json, which is identical for every document by construction.
+  const policyDocuments: Array<Record<string, unknown>> = [];
 
   pulumi.runtime.setAllConfig({
     "aws:region": "eu-west-1",
@@ -16,6 +19,8 @@ test("the OCR stack provisions documents plumbing and a local IAM user", async (
       }
 
       if (args.token.includes("getPolicyDocument")) {
+        policyDocuments.push(args.inputs as Record<string, unknown>);
+
         return { json: JSON.stringify({ Version: "2012-10-17", Statement: [] }) };
       }
 
@@ -72,4 +77,38 @@ test("the OCR stack provisions documents plumbing and a local IAM user", async (
     resources.some((resource) => resource.name.includes("ocr-local-user")),
     true,
   );
+
+  // The ECS task role exists ahead of any compute, so the permission set is
+  // provisioned and reviewable before the service that will reference it.
+  assert.equal(
+    resources.some((resource) => resource.name.includes("app-task-role")),
+    true,
+  );
+
+  // The local IAM user and the ECS task role must carry byte-identical
+  // permissions. If they drift, OCR breaks in production only — the worst place
+  // to discover it — so assert the shared document rather than trusting review.
+  const applicationPolicies = policyDocuments.filter((document) =>
+    JSON.stringify(document).includes("ListDocumentsBucket")
+  );
+
+  assert.equal(
+    applicationPolicies.length,
+    2,
+    "expected the application policy to be built twice: local IAM user + ECS task role",
+  );
+  assert.deepEqual(
+    applicationPolicies[0],
+    applicationPolicies[1],
+    "the local user and the task role must share one policy document",
+  );
+
+  // Bedrock is scoped to configured ARNs, never a bare wildcard.
+  const bedrockStatement = applicationPolicies[0].statements as Array<Record<string, unknown>>;
+  const bedrock = bedrockStatement.find(
+    (statement) => statement.sid === "InvokeBedrockOverviewModels",
+  );
+
+  assert.ok(bedrock);
+  assert.equal((bedrock.resources as string[]).includes("*"), false);
 });

@@ -1,0 +1,3 @@
+name: qompose-bootstrap
+description: GitHub OIDC provider and per-environment deploy roles. Run locally with admin credentials; never from CI.
+runtime: nodejs

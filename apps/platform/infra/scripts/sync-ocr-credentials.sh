@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Pull OCR IAM user access keys from Pulumi secrets into apps/platform/.env
-# (Root cannot assume IAM roles — use this instead of sts:AssumeRole.)
+# Pull OCR IAM user access keys from Pulumi secrets into apps/platform/.env.
+#
+# Local development only. A process on a laptop is not something AWS can hand a
+# role to, so it uses a scoped IAM user instead. The deployed application uses the
+# ECS task role (infra/src/application.ts) and carries no keys at all.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

@@ -231,8 +231,14 @@ Tracked honestly, roughly in priority order:
 2. **No application compute in the Pulumi stack.** `infra/` provisions S3, SNS, SQS,
    and KMS only; there is no ECS service, queue worker, scheduler, or app deploy
    workflow. CI builds the image but nothing runs it.
-3. **Static IAM credentials for production.** Should be a task/instance role, not a
-   long-lived `AKIA…` key in an env file.
+3. **Static IAM credentials for local development** — narrowed, not yet eliminated.
+   The permission set now lives in one shared document (`infra/src/policies.ts`) used
+   by both the local IAM user and an **ECS task role** that is already provisioned
+   (`infra/src/application.ts`), so the deployed app will carry no keys at all. That
+   switch needs no application code changes — both credential paths skip explicit
+   credentials when `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty — but it
+   cannot happen until gap 2 is closed. CI already authenticates via GitHub OIDC with
+   no stored keys; see [`infra/bootstrap/`](../infra/bootstrap/README.md).
 4. **2FA not enforced** (see above).
 5. **No GDPR data-subject export/erasure flow** (see above).
 6. **No SAST or container scanning** (see above).

@@ -6,9 +6,13 @@ This Pulumi project provisions **only** the AWS pieces needed for local/Sail OCR
 - Textract completion SNS topic → SQS results queue (+ DLQ)
 - IAM role Textract assumes to publish SNS
 - IAM user + access key for local Textract + Bedrock + S3/SQS (synced into `.env`)
+- **ECS task role** carrying the same permissions, ready for when compute lands
 - Optional DLQ email alarm
 
 No VPC, ECS, ALB, RDS, Redis, or ECR.
+
+The GitHub OIDC provider and the CI deploy roles live in a separate project —
+see [`bootstrap/`](bootstrap/README.md).
 
 ```mermaid
 flowchart LR
@@ -59,8 +63,27 @@ OCR_BEDROCK_MODEL_ID=eu.anthropic.claude-sonnet-4-20250514-v1:0
 
 ### Sync OCR IAM credentials
 
-AWS **root cannot assume IAM roles**. This stack creates an IAM user + access key instead.
-Sync them into `.env` (requires a working root/admin CLI for `pulumi stack output`):
+This stack creates an IAM user + long-lived access key for **local development only**.
+
+The reason is worth stating accurately, because it is easy to draw the wrong lesson
+from it. IAM roles hand temporary credentials to something AWS already recognises —
+an ECS task, an EC2 instance, a Lambda. A PHP process on your laptop is none of
+those, so there is nothing to attach a role to. Until the stack grows compute, a
+narrowly scoped IAM user is the honest option for local work.
+
+The key is acceptable *because* the policy is narrow: one bucket, one queue, one KMS
+key, and nothing else. It must never be how production runs — `src/application.ts`
+already holds the identical permissions as an **ECS task role**, and the deployed
+container will get credentials from the ECS agent instead, with no keys anywhere.
+Both credential paths in the app skip explicit credentials when
+`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty, so that switch needs **no
+application code changes** — just stop setting those two variables.
+
+> An earlier version of this file said "root cannot assume roles." True, but beside
+> the point: the fix is not using root at all. Enable IAM Identity Center, give
+> yourself an admin user there, and `aws sso login` for short-lived credentials.
+
+Sync the local key into `.env`:
 
 ```bash
 cd apps/platform/infra
@@ -88,6 +111,7 @@ vendor/bin/sail artisan textract:consume
 | `ocrAccessKeyId` | Access key id (also via sync script) |
 | `ocrSecretAccessKey` | Secret key (Pulumi secret; use sync script) |
 | `ocrEncryptionKeyArn` | KMS key for bucket/queues |
+| `appTaskRoleArn` | ECS task role — set as `taskRoleArn` on the task definition |
 
 ## Important
 
