@@ -5,6 +5,11 @@ declare namespace App {
             export type PlatformRole = 'support';
         }
     }
+    namespace AudioProcessing {
+        namespace Enums {
+            export type TranscriptionDriver = 'mock' | 'ai';
+        }
+    }
     namespace Audit {
         namespace Enums {
             export type AuditEvent =
@@ -58,7 +63,12 @@ declare namespace App {
                 | 'user.deleted'
                 | 'support.session_started'
                 | 'support.session_ended'
-                | 'support.session_expired';
+                | 'support.session_expired'
+                | 'audio_recording.uploaded'
+                | 'audio_recording.downloaded'
+                | 'audio_recording.transcription_started'
+                | 'audio_recording.transcription_completed'
+                | 'audio_recording.transcription_failed';
             export type AuditPermission = 'audit.view';
         }
     }
@@ -266,7 +276,10 @@ declare namespace App {
                 | 'failed'
                 | 'stuck'
                 | 'skipped';
-            export type PipelineType = 'ocr_document' | 'dossier_export';
+            export type PipelineType =
+                'ocr_document' | 'dossier_export' | 'audio_transcription';
+            export type TranscriptionStatus =
+                'pending' | 'processing' | 'completed' | 'failed';
         }
     }
     namespace Dossiers {
@@ -355,6 +368,17 @@ declare namespace App {
                 readonly document_requests: App.Dossiers.Data.StaffDocumentRequestData[];
                 readonly access_grants: App.Dossiers.Data.DossierAccessGrantData[];
                 readonly exports: App.Dossiers.Data.DossierExportData[];
+                readonly audio_recordings: App.Dossiers.Data.StaffAudioRecordingData[];
+            };
+            export type StaffAudioRecordingData = {
+                readonly id: number;
+                readonly original_filename: string;
+                readonly size_bytes: number;
+                readonly uploaded_at: string;
+                readonly transcription_status: App.DocumentProcessing.Enums.TranscriptionStatus;
+                readonly transcription_error: string | null;
+                readonly pipeline: App.DocumentProcessing.Data.PipelineData | null;
+                readonly can_delete: boolean;
             };
             export type StaffDocumentRequestData = {
                 readonly id: number;
@@ -393,6 +417,11 @@ declare namespace App {
             };
         }
         namespace Enums {
+            export type AudioRecordingPermission =
+                | 'audio_recordings.view'
+                | 'audio_recordings.upload'
+                | 'audio_recordings.download'
+                | 'audio_recordings.delete';
             export type DocumentRequestPermission =
                 | 'document_requests.view'
                 | 'document_requests.create'
@@ -665,6 +694,7 @@ declare namespace App {
                 | 'dossiers'
                 | 'document_requests'
                 | 'documents'
+                | 'audio_recordings'
                 | 'clients'
                 | 'client_portal'
                 | 'templates'
@@ -697,12 +727,14 @@ declare namespace App {
                 readonly id: string;
                 readonly type: string;
                 readonly message: string;
-                readonly dossier_id: number;
-                readonly dossier_title: string;
-                readonly client_name: string;
-                readonly dossier_url: string;
+                readonly url: string;
                 readonly read_at: string | null;
                 readonly created_at: string;
+                readonly dossier_id: number | null;
+                readonly dossier_title: string | null;
+                readonly client_name: string | null;
+                readonly audio_recording_id: number | null;
+                readonly original_filename: string | null;
             };
             export type WorkspaceNotificationsData = {
                 readonly unread_count: number;

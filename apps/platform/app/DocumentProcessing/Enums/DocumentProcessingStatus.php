@@ -20,12 +20,4 @@ enum DocumentProcessingStatus: string
             self::Failed => __('Failed'),
         };
     }
-
-    /**
-     * Statuses that mean OCR is still in flight (UI should poll).
-     */
-    public function isInFlight(): bool
-    {
-        return $this === self::Pending || $this === self::Processing;
-    }
 }

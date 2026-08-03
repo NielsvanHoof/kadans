@@ -105,6 +105,9 @@ export default function ReviewDossier({
                 canDownload={canDownload}
                 canEditDetails={canEditDetails}
                 canSendReminder={canSendReminder}
+                // Audio recordings are not surfaced on the review queue.
+                canUploadAudio={false}
+                canDownloadAudio={false}
                 dossierStatus={dossier.status}
                 hasFormItems={documentRequests.length > 0}
             >

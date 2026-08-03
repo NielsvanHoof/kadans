@@ -37,6 +37,7 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="PERMISSION_TESTING" value="true"/>
         <env name="OCR_DRIVER" value="mock"/>
+        <env name="TRANSCRIPTION_DRIVER" value="mock"/>
         <env name="SCOUT_DRIVER" value="collection"/>
         <!-- Assert against the enforcing policy regardless of a developer's local
              SECURITY_CSP_* overrides; individual tests opt into report-only. -->

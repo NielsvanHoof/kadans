@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\WorkspaceNotifications\Queries;
 
 use App\Accounts\Models\User;
+use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
 use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use App\Tenancy\Models\Tenant;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationItemData;
@@ -19,14 +20,22 @@ final class FetchWorkspaceNotificationsForUserQuery
 {
     private const int Limit = 20;
 
+    /**
+     * @var list<string>
+     */
+    private const array SupportedTypes = [
+        ClientQuestionnaireCompletedNotification::DatabaseType,
+        AudioTranscriptionCompletedNotification::DatabaseType,
+    ];
+
     public function handle(User $user, Tenant $tenant): WorkspaceNotificationsData
     {
         $baseQuery = DatabaseNotification::query()
             ->where('notifiable_type', $user->getMorphClass())
-            ->where('notifiable_id', $user->getKey())
-            ->where('type', ClientQuestionnaireCompletedNotification::DatabaseType);
+            ->where('notifiable_id', $user->getKey());
 
-        // ->> returns text on pgsql; bind as string to avoid text = integer errors.
+        $baseQuery->getQuery()->whereIn('type', self::SupportedTypes);
+
         $baseQuery->getQuery()->whereRaw("data->>'tenant_id' = ?", [(string) $tenant->getKey()]);
 
         $unreadQuery = clone $baseQuery;
@@ -58,22 +67,73 @@ final class FetchWorkspaceNotificationsForUserQuery
         /** @var array<string, mixed> $data */
         $data = $notification->data;
 
+        $type = (string) ($data['type'] ?? ClientQuestionnaireCompletedNotification::DatabaseType);
+
+        [$message, $url, $extra] = match ($type) {
+            AudioTranscriptionCompletedNotification::DatabaseType => $this->mapAudioTranscriptionCompleted($data),
+            default => $this->mapClientQuestionnaireCompleted($data),
+        };
+
+        return new WorkspaceNotificationItemData(...[
+            'id' => $notification->id,
+            'type' => $type,
+            'message' => $message,
+            'url' => $url,
+            'readAt' => $notification->read_at?->toDateTimeString(),
+            'createdAt' => $notification->created_at?->toDateTimeString() ?? '',
+            ...$extra,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: string, 2: array<string, mixed>}
+     */
+    private function mapClientQuestionnaireCompleted(array $data): array
+    {
         $clientName = (string) ($data['client_name'] ?? '');
         $dossierTitle = (string) ($data['dossier_title'] ?? '');
 
-        return new WorkspaceNotificationItemData(
-            id: $notification->id,
-            type: (string) ($data['type'] ?? ClientQuestionnaireCompletedNotification::DatabaseType),
-            message: __(':client finished the questionnaire for “:dossier”.', [
-                'client' => $clientName,
-                'dossier' => $dossierTitle,
-            ]),
-            dossierId: (int) ($data['dossier_id'] ?? 0),
-            dossierTitle: $dossierTitle,
-            clientName: $clientName,
-            dossierUrl: (string) ($data['dossier_url'] ?? ''),
-            readAt: $notification->read_at?->toDateTimeString(),
-            createdAt: $notification->created_at?->toDateTimeString() ?? '',
-        );
+        // Rebuilt at read time (rather than trusting the stored message) so the
+        // bell always renders in the viewing user's current locale, not
+        // whichever locale happened to be active when the queue worker ran.
+        $message = __(':client finished the questionnaire for “:dossier”.', [
+            'client' => $clientName,
+            'dossier' => $dossierTitle,
+        ]);
+
+        return [
+            $message,
+            (string) ($data['dossier_url'] ?? ''),
+            [
+                'dossierId' => (int) ($data['dossier_id'] ?? 0),
+                'dossierTitle' => $dossierTitle,
+                'clientName' => $clientName,
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: string, 2: array<string, mixed>}
+     */
+    private function mapAudioTranscriptionCompleted(array $data): array
+    {
+        $originalFilename = (string) ($data['original_filename'] ?? '');
+
+        $message = __('Transcript ready for :file.', [
+            'file' => $originalFilename,
+        ]);
+
+        return [
+            $message,
+            (string) ($data['audio_recording_url'] ?? ''),
+            [
+                'dossierId' => isset($data['dossier_id']) ? (int) $data['dossier_id'] : null,
+                'dossierTitle' => isset($data['dossier_title']) ? (string) $data['dossier_title'] : null,
+                'audioRecordingId' => isset($data['audio_recording_id']) ? (int) $data['audio_recording_id'] : null,
+                'originalFilename' => $originalFilename,
+            ],
+        ];
     }
 }

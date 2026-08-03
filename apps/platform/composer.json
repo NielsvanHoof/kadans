@@ -12,6 +12,7 @@
         "php": "^8.5",
         "aws/aws-sdk-php": "^3.388",
         "inertiajs/inertia-laravel": "^3.0",
+        "laravel/ai": "^0.10.2",
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",
@@ -81,6 +82,12 @@
         ],
         "lint": [
             "pint --parallel"
+        ],
+        "generate-ide-helpers": [
+            "@php artisan ide-helper:generate --ansi",
+            "@php artisan ide-helper:meta --ansi",
+            "@php artisan ide-helper:models -W --ansi",
+            "@php artisan ide-helper:eloquent --ansi"
         ],
         "lint:check": [
             "pint --parallel --test"

@@ -34,6 +34,7 @@ Route::middleware([
         require __DIR__.'/tenant/questionnaires.php';
         require __DIR__.'/tenant/dossiers.php';
         require __DIR__.'/tenant/document-requests.php';
+        require __DIR__.'/tenant/audio-recordings.php';
         require __DIR__.'/tenant/access-grants.php';
         require __DIR__.'/tenant/notifications.php';
     });

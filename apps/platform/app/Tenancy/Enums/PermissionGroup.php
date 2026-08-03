@@ -12,6 +12,7 @@ enum PermissionGroup: string
     case Dossiers = 'dossiers';
     case DocumentRequests = 'document_requests';
     case Documents = 'documents';
+    case AudioRecordings = 'audio_recordings';
     case Clients = 'clients';
     case ClientPortal = 'client_portal';
     case Templates = 'templates';
@@ -26,6 +27,7 @@ enum PermissionGroup: string
             self::Dossiers => __('Dossiers'),
             self::DocumentRequests => __('Document requests'),
             self::Documents => __('Documents'),
+            self::AudioRecordings => __('Audio recordings'),
             self::Clients => __('Clients'),
             self::ClientPortal => __('Client portal'),
             self::Templates => __('Questionnaire templates'),
@@ -45,6 +47,7 @@ enum PermissionGroup: string
             self::Dossiers => 10,
             self::DocumentRequests => 20,
             self::Documents => 30,
+            self::AudioRecordings => 35,
             self::Clients => 40,
             self::ClientPortal => 50,
             self::Templates => 60,

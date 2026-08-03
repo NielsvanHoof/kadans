@@ -40,7 +40,7 @@ yarn-error.log
 /skills-lock.json
 
 **/caddy
-frankenphp
+/frankenphp
 frankenphp-worker.php
 
 .claude

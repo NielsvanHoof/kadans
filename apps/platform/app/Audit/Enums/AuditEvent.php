@@ -57,6 +57,11 @@ enum AuditEvent: string
     case SupportSessionStarted = 'support.session_started';
     case SupportSessionEnded = 'support.session_ended';
     case SupportSessionExpired = 'support.session_expired';
+    case AudioRecordingUploaded = 'audio_recording.uploaded';
+    case AudioRecordingDownloaded = 'audio_recording.downloaded';
+    case AudioTranscriptionStarted = 'audio_recording.transcription_started';
+    case AudioTranscriptionCompleted = 'audio_recording.transcription_completed';
+    case AudioTranscriptionFailed = 'audio_recording.transcription_failed';
 
     public function label(): string
     {
@@ -112,6 +117,11 @@ enum AuditEvent: string
             self::SupportSessionStarted => __('Support session started'),
             self::SupportSessionEnded => __('Support session ended'),
             self::SupportSessionExpired => __('Support session expired'),
+            self::AudioRecordingUploaded => __('Audio recording uploaded'),
+            self::AudioRecordingDownloaded => __('Audio recording downloaded'),
+            self::AudioTranscriptionStarted => __('Audio transcription started'),
+            self::AudioTranscriptionCompleted => __('Audio transcription completed'),
+            self::AudioTranscriptionFailed => __('Audio transcription failed'),
         };
     }
 }

@@ -20,7 +20,7 @@ services:
             OCTANE_WORKERS: '${OCTANE_WORKERS:-2}'
             OCTANE_MAX_REQUESTS: '${OCTANE_MAX_REQUESTS:-500}'
             OCTANE_MAX_EXECUTION_TIME: '${OCTANE_MAX_EXECUTION_TIME:-120}'
-            SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan octane:start --server=frankenphp --host=0.0.0.0 --port=80 --admin-port=2019 --watch --poll'
+            SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan octane:start --server=frankenphp --host=0.0.0.0 --port=80 --admin-port=2019 --watch --poll --caddyfile=/var/www/html/docker/frankenphp/Caddyfile'
             XDG_CONFIG_HOME: /tmp/caddy/config
             XDG_DATA_HOME: /tmp/caddy/data
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'

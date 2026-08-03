@@ -6,6 +6,7 @@ use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Actions\ProvisionTenantAction;
@@ -347,4 +348,29 @@ test('reviewer can view dossier surfaces with review permissions only', function
             ->where('can_review', true)
             ->has('can_download')
             ->missing('templates'));
+});
+
+test('dossier overview with multiple audio recordings resolves can_delete without lazy loading', function (): void {
+    [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+    ] = createDossierShowContext(DossierStatus::InReview);
+
+    // Two+ hydrated models enable preventsLazyLoading; automatic eager loading
+    // must still allow can_delete authorization against dossier.
+    AudioRecording::factory()->count(2)->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/show')
+            ->has('dossier.audio_recordings', 2)
+            ->where('dossier.audio_recordings.0.can_delete', true)
+            ->where('dossier.audio_recordings.1.can_delete', true));
 });

@@ -46,9 +46,6 @@ export default function AppSidebarLayout({
                     breadcrumbs={breadcrumbs}
                     actions={
                         <>
-                            {/* Theme + language sit beside the inbox bell. */}
-                            <AppearanceMenu />
-                            <LocaleMenu />
                             <Deferred
                                 data="notifications"
                                 fallback={
@@ -65,6 +62,8 @@ export default function AppSidebarLayout({
                             >
                                 <NotificationBell />
                             </Deferred>
+                            <AppearanceMenu />
+                            <LocaleMenu />
                         </>
                     }
                 />

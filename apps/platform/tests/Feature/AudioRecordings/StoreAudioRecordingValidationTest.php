@@ -1,0 +1,90 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Clients\Models\Client;
+use App\Dossiers\Models\AudioRecording;
+use App\Dossiers\Models\Dossier;
+use App\Tenancy\Models\Tenant;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+
+beforeEach(function (): void {
+    Storage::fake('local');
+    config()->set('filesystems.default', 'local');
+});
+
+test('uploading an unsupported file type shows a friendly error', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = createDossierForValidationTest($tenant);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.audio-recordings.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'audio' => UploadedFile::fake()->create('notes.pdf', 100, 'application/pdf'),
+        ])
+        ->assertSessionHasErrors([
+            'audio' => 'That file type is not supported. Upload an MP3, WAV, M4A, OGG, WebM, or MP4 file.',
+        ]);
+
+    expect(AudioRecording::query()->exists())->toBeFalse();
+});
+
+test('uploading an oversized file shows a friendly error', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = createDossierForValidationTest($tenant);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.audio-recordings.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'audio' => UploadedFile::fake()->create('call.mp3', 26_000, 'audio/mpeg'),
+        ])
+        ->assertSessionHasErrors([
+            'audio' => 'That file is too large. The maximum size is 25 MB.',
+        ]);
+
+    expect(AudioRecording::query()->exists())->toBeFalse();
+});
+
+test('an unexpected failure while storing the upload surfaces as a field error, not a crash', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $dossier = createDossierForValidationTest($tenant);
+
+    $event = 'eloquent.creating: '.AudioRecording::class;
+    Event::listen($event, static function (): never {
+        throw new RuntimeException('Simulated database failure.');
+    });
+
+    try {
+        $this->actingAs($owner)
+            ->withSession(['active_tenant_id' => $tenant->id])
+            ->post(workspaceRoute('workspaces.dossiers.audio-recordings.store', $tenant, [
+                'dossier' => $dossier,
+            ]), [
+                'audio' => UploadedFile::fake()->create('call.mp3', 100, 'audio/mpeg'),
+            ])
+            ->assertSessionHasErrors([
+                'audio' => 'Something went wrong while uploading the audio file. Please try again.',
+            ]);
+    } finally {
+        Event::forget($event);
+    }
+
+    expect(AudioRecording::query()->exists())->toBeFalse()
+        ->and(Storage::disk('local')->allFiles())->toBeEmpty();
+});
+
+function createDossierForValidationTest(Tenant $tenant): Dossier
+{
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    return Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+}

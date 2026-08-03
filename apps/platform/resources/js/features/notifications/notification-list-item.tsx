@@ -17,21 +17,18 @@ export default function NotificationListItem({
     notification: WorkspaceNotification;
     workspace: Firm;
 }) {
-    const { t, locale } = useTranslation();
+    const { locale } = useTranslation();
     const isUnread = notification.read_at === null;
 
-    const message = t(':client finished the questionnaire for “:dossier”.', {
-        client: notification.client_name,
-        dossier: notification.dossier_title,
-    });
+    const message = notification.message;
 
     const openNotification = (): void => {
-        const visitDossier = (): void => {
-            router.visit(notification.dossier_url);
+        const visitTarget = (): void => {
+            router.visit(notification.url);
         };
 
         if (!isUnread) {
-            visitDossier();
+            visitTarget();
 
             return;
         }
@@ -45,7 +42,7 @@ export default function NotificationListItem({
             {
                 preserveScroll: true,
                 only: ['notifications'],
-                onSuccess: visitDossier,
+                onSuccess: visitTarget,
             },
         );
     };

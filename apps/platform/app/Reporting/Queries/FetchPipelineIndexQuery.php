@@ -55,9 +55,7 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
                     'options' => array_map(
                         static fn (PipelineType $type): array => [
                             'value' => $type->value,
-                            'label' => $type === PipelineType::OcrDocument
-                                ? __('OCR document')
-                                : __('Dossier export'),
+                            'label' => $type->label(),
                         ],
                         PipelineType::cases(),
                     ),

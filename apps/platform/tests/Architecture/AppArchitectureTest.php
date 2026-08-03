@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 arch()->preset()->laravel()->ignoring([
     'App\Accounts',
+    'App\AudioProcessing',
     'App\Audit',
     'App\ClientPortal',
     'App\Clients',

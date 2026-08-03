@@ -10,6 +10,7 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Models\PipelineStep;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
@@ -91,6 +92,8 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict();
 
         Model::preventLazyLoading(! app()->isProduction());
+
+        Model::automaticallyEagerLoadRelationships();
     }
 
     /**
@@ -123,6 +126,7 @@ final class AppServiceProvider extends ServiceProvider
     {
         Relation::enforceMorphMap([
             'activity' => Activity::class,
+            'audio_recording' => AudioRecording::class,
             'client' => Client::class,
             'client_access_grant' => ClientAccessGrant::class,
             'document_request' => DocumentRequest::class,

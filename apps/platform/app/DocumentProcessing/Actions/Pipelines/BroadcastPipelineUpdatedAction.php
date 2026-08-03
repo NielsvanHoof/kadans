@@ -6,6 +6,7 @@ namespace App\DocumentProcessing\Actions\Pipelines;
 
 use App\DocumentProcessing\Events\PipelineUpdated;
 use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
@@ -35,7 +36,7 @@ final class BroadcastPipelineUpdatedAction
 
         $subject = $pipeline->pipelineable;
 
-        if ($subject instanceof DossierExport) {
+        if ($subject instanceof DossierExport || $subject instanceof AudioRecording) {
             return $subject->dossier_id;
         }
 

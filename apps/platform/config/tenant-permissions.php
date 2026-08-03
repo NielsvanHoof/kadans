@@ -6,6 +6,7 @@ use App\Audit\Enums\AuditPermission;
 use App\ClientPortal\Enums\ClientAccessGrantPermission;
 use App\Clients\Enums\ClientPermission;
 use App\DocumentProcessing\Enums\PipelinePermission;
+use App\Dossiers\Enums\AudioRecordingPermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
@@ -33,6 +34,7 @@ return [
         DossierPermission::class,
         DocumentRequestPermission::class,
         UploadedDocumentPermission::class,
+        AudioRecordingPermission::class,
         ClientPermission::class,
         ClientAccessGrantPermission::class,
         QuestionnaireTemplatePermission::class,

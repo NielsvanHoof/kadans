@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Clients\Http\Controllers\ClientController;
+use App\Dossiers\Http\Controllers\AudioRecordingController;
 use App\Dossiers\Http\Controllers\DocumentRequestController;
 use App\Dossiers\Http\Controllers\DocumentRequestReviewController;
 use App\Dossiers\Http\Controllers\DossierBuilderLockController;
@@ -78,6 +79,9 @@ const CONTROLLER_NON_REST_ACTIONS = [
     // Alternative representations / transports of one resource.
     UploadedDocumentController::class => [
         'download', 'live', 'preview',
+    ],
+    AudioRecordingController::class => [
+        'download', 'live',
     ],
     DossierExportController::class => ['download'],
     PipelineController::class => ['download'],

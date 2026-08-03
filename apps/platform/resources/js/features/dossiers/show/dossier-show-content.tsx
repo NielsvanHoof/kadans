@@ -6,6 +6,7 @@ import {
     DossierPermissionsProvider,
     useDossierCapabilities,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
+import AudioRecordingsCard from '@/features/dossiers/show/audio-recordings-card';
 import DossierActionsMenu from '@/features/dossiers/show/dossier-actions-menu';
 import DossierExportCard from '@/features/dossiers/show/dossier-export-card';
 import DossierWorkflowLinks from '@/features/dossiers/show/dossier-workflow-links';
@@ -31,6 +32,8 @@ type DossierShowContentProps = {
     canSendReminder: boolean;
     canReview: boolean;
     canDownload: boolean;
+    canUploadAudio: boolean;
+    canDownloadAudio: boolean;
 };
 
 type PrimaryAction =
@@ -49,6 +52,8 @@ export default function DossierShowContent({
     canSendReminder,
     canReview,
     canDownload,
+    canUploadAudio,
+    canDownloadAudio,
 }: DossierShowContentProps) {
     const hasFormItems = dossier.document_requests.length > 0;
 
@@ -59,6 +64,8 @@ export default function DossierShowContent({
             canDownload={canDownload}
             canEditDetails={canEditDetails}
             canSendReminder={canSendReminder}
+            canUploadAudio={canUploadAudio}
+            canDownloadAudio={canDownloadAudio}
             dossierStatus={dossier.status}
             hasFormItems={hasFormItems}
         >
@@ -136,6 +143,8 @@ function DossierShowBody({
         canDownload,
         canEditDetails,
         canCreateInvite,
+        canUploadAudio,
+        canDownloadAudio,
     } = useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
 
@@ -206,6 +215,14 @@ function DossierShowBody({
             <DossierWorkflowLinks dossier={dossier} />
 
             {canDownload ? <DossierExportCard dossier={dossier} /> : null}
+
+            {canUploadAudio || dossier.audio_recordings.length > 0 ? (
+                <AudioRecordingsCard
+                    dossier={dossier}
+                    canUpload={canUploadAudio}
+                    canDownload={canDownloadAudio}
+                />
+            ) : null}
 
             <section
                 id="dossier-invite"

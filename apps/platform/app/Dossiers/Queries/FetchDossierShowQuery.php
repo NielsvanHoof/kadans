@@ -10,8 +10,11 @@ use App\Dossiers\Data\DossierAccessGrantData;
 use App\Dossiers\Data\DossierClientSummaryData;
 use App\Dossiers\Data\DossierExportData;
 use App\Dossiers\Data\DossierShowData;
+use App\Dossiers\Data\StaffAudioRecordingData;
+use App\Dossiers\Enums\AudioRecordingPermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
@@ -43,6 +46,8 @@ final readonly class FetchDossierShowQuery
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
             'can_review' => $request->user()?->hasTenantPermission(DocumentRequestPermission::Review) ?? false,
             'can_download' => $request->user()?->hasTenantPermission(UploadedDocumentPermission::Download) ?? false,
+            'can_upload_audio' => $request->user()?->can('create', [AudioRecording::class, $dossier]) ?? false,
+            'can_download_audio' => $request->user()?->hasTenantPermission(AudioRecordingPermission::Download) ?? false,
             // Lazy so partial reloads skip the full graph when only flash/cans change.
             'dossier' => fn (): array => $this->dossierPayload(
                 $dossier,
@@ -62,6 +67,7 @@ final readonly class FetchDossierShowQuery
                 ->oldest('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
             'exports' => fn ($query) => $query->with('pipeline.steps')->latest(),
+            'audioRecordings' => fn ($query) => $query->with('pipelines.steps')->latest(),
         ]);
 
         $client = $this->resolveClient($dossier);
@@ -88,6 +94,11 @@ final readonly class FetchDossierShowQuery
         /** @var list<DossierExportData> $exports */
         $exports = $dossier->exports
             ->map(fn (DossierExport $export): DossierExportData => DossierExportData::fromModel($export, $canDownload))
+            ->all();
+
+        /** @var list<StaffAudioRecordingData> $audioRecordings */
+        $audioRecordings = $dossier->audioRecordings
+            ->map(fn (AudioRecording $recording): StaffAudioRecordingData => StaffAudioRecordingData::fromModel($recording))
             ->all();
 
         return new DossierShowData(
@@ -117,6 +128,7 @@ final readonly class FetchDossierShowQuery
             documentRequests: $mapped->rows,
             accessGrants: $accessGrants,
             exports: $exports,
+            audioRecordings: $audioRecordings,
         );
     }
 

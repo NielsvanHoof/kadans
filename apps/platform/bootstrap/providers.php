@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\AudioProcessing\AudioProcessingServiceProvider;
 use App\Audit\AuditServiceProvider;
 use App\ClientPortal\ClientPortalServiceProvider;
 use App\Clients\ClientsServiceProvider;
@@ -24,6 +25,7 @@ return [
     PlatformServiceProvider::class,
     TenancyServiceProvider::class,
     DocumentProcessingServiceProvider::class,
+    AudioProcessingServiceProvider::class,
     DossiersServiceProvider::class,
     AuditServiceProvider::class,
     ClientsServiceProvider::class,

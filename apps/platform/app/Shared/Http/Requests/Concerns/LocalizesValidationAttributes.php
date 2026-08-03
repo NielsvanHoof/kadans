@@ -29,6 +29,7 @@ trait LocalizesValidationAttributes
             'client_id' => __('Client'),
             'reference' => __('Reference (optional)'),
             'document' => __('Document'),
+            'audio' => __('Audio recording'),
             'decision' => __('Decision'),
             'rejection_reason' => __('Feedback for the client'),
             'answer_text' => __('Answer'),
