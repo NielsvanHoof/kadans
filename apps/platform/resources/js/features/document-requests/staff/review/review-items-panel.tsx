@@ -2,14 +2,14 @@ import { router } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestReviewController';
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
+import { getQuestionnaireItemTypeStaffContent } from '@/features/document-requests/questionnaire-item-type-registry';
 import DocumentRequestReview from '@/features/document-requests/staff/review/document-request-review';
-import { getQuestionnaireItemTypeStaffContent } from '@/features/document-requests/staff/review/questionnaire-item-type-renderers';
-import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
+import DocumentRequestStatusBadge from '@/features/document-requests/status/document-request-status-badge';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -229,7 +229,7 @@ function ReviewGroup({
                     <Button
                         type="button"
                         size="sm"
-                        disabled={bulkProcessing}
+                        isDisabled={bulkProcessing}
                         onClick={() => void approveSelected()}
                     >
                         <Check aria-hidden />
@@ -265,10 +265,10 @@ function ReviewGroup({
                                 <div className="flex flex-wrap items-center gap-2">
                                     {selectable ? (
                                         <Checkbox
-                                            checked={selectedIds.has(
+                                            isSelected={selectedIds.has(
                                                 documentRequest.id,
                                             )}
-                                            onCheckedChange={(checked) => {
+                                            onChange={(checked) => {
                                                 setSelectedIds((current) => {
                                                     const next = new Set(
                                                         current,
@@ -303,12 +303,9 @@ function ReviewGroup({
                                                 : t('Not applicable')}
                                         </Badge>
                                     ) : (
-                                        <Badge variant="secondary">
-                                            {documentRequestStatusLabel(
-                                                documentRequest.status,
-                                                t,
-                                            )}
-                                        </Badge>
+                                        <DocumentRequestStatusBadge
+                                            status={documentRequest.status}
+                                        />
                                     )}
                                 </div>
                                 <StaffContent
@@ -340,14 +337,9 @@ function ReviewGroup({
             {showBulk && items.length > 0 ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Checkbox
-                        checked={
-                            allSelected
-                                ? true
-                                : selectedIds.size > 0
-                                  ? 'indeterminate'
-                                  : false
-                        }
-                        onCheckedChange={(checked) => {
+                        isSelected={allSelected}
+                        isIndeterminate={!allSelected && selectedIds.size > 0}
+                        onChange={(checked) => {
                             if (checked) {
                                 setSelectedIds(
                                     new Set(items.map((item) => item.id)),

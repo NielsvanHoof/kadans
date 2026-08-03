@@ -33,6 +33,22 @@ final class ClientChangesRequestedNotification extends Notification implements S
         return ['mail'];
     }
 
+    /**
+     * Telescope tags for the queued notification job.
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return [
+            'notification',
+            'mail',
+            'client_changes_requested',
+            'document_request:'.$this->documentRequestId,
+            'dossier:'.$this->dossierId,
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
@@ -52,6 +68,9 @@ final class ClientChangesRequestedNotification extends Notification implements S
             ]))
             ->line(__('Open the secure portal using the link from your original invitation to read the feedback and submit the corrected information.'))
             ->line(__('For your security, the review feedback is only shown inside the portal.'))
-            ->line(__('If you did not expect this email, contact the firm directly.'));
+            ->line(__('If you did not expect this email, contact the firm directly.'))
+            ->tag('client_changes_requested')
+            ->metadata('document_request_id', (string) $this->documentRequestId)
+            ->metadata('dossier_id', (string) $this->dossierId);
     }
 }

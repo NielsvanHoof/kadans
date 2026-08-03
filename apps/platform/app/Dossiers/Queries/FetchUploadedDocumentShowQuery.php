@@ -32,7 +32,7 @@ final class FetchUploadedDocumentShowQuery
      *         uploaded_at: string,
      *         processing_status: string,
      *         processing_error: string|null,
-     *         pipeline: array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, steps: list<array{key: string, status: string, attempts: int, started_at: string|null, last_activity_at: string|null, completed_at: string|null, error_code: string|null, error_message: string|null}>}|null,
+     *         pipeline: array<string, mixed>|null,
      *         extraction: DocumentExtractionPayload|null,
      *         raw_json: string|null
      *     },
@@ -77,7 +77,9 @@ final class FetchUploadedDocumentShowQuery
     }
 
     /**
-     * @return array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, steps: list<array{key: string, status: string, attempts: int, started_at: string|null, last_activity_at: string|null, completed_at: string|null, error_code: string|null, error_message: string|null}>}|null
+     * Row shape is owned by PipelineData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>|null
      */
     private function latestPipeline(UploadedDocument $uploadedDocument): ?array
     {

@@ -1,47 +1,42 @@
-import type { QuestionnaireItemType } from '@/features/document-requests/types';
+/**
+ * Questionnaire template types.
+ *
+ * Payload shapes are generated from the PHP Data objects. Only the two
+ * apply-picker types are refined, because their `configuration` is a free-form
+ * JSON column in PHP while the builder needs its structure.
+ */
+import type { QuestionnaireItemConfiguration } from '@/features/document-requests/types';
 
 /** Category option for template forms. */
 export type TemplateCategoryOption = {
-    value: string;
+    value: App.Questionnaires.Enums.QuestionnaireTemplateCategory;
     label: string;
 };
 
 /** Compact template row for index / apply pickers. */
-export type TemplateSummary = {
-    id: number;
-    name: string;
-    description?: string | null;
-    category: string;
-    category_label: string;
-    items_count: number;
-    is_system: boolean;
-};
+export type TemplateSummary =
+    App.Questionnaires.Data.QuestionnaireTemplateRowData;
 
 /** One item inside a template editor. */
-export type TemplateItem = {
-    id: number;
-    type: QuestionnaireItemType;
-    title: string;
-    instructions: string | null;
-    sort_order: number;
-};
+export type TemplateItem =
+    App.Questionnaires.Data.QuestionnaireTemplateItemData;
 
 /** Full template payload for the show/editor page. */
-export type TemplateDetail = {
-    id: number;
-    name: string;
-    description: string | null;
-    category: string;
-    category_label: string;
-    is_system: boolean;
-    items: TemplateItem[];
+export type TemplateDetail =
+    App.Questionnaires.Data.QuestionnaireTemplateShowData;
+
+/** Template item payload embedded on the builder apply picker. */
+export type ApplyTemplateItem = Omit<
+    App.Questionnaires.Data.QuestionnaireTemplateItemOptionData,
+    'configuration'
+> & {
+    configuration: QuestionnaireItemConfiguration | null;
 };
 
 /** Template option on the dossier apply picker. */
-export type ApplyTemplateOption = {
-    id: number;
-    name: string;
-    category_label: string;
-    items_count: number;
-    is_system: boolean;
+export type ApplyTemplateOption = Omit<
+    App.Questionnaires.Data.QuestionnaireTemplateOptionData,
+    'items'
+> & {
+    items: ApplyTemplateItem[];
 };

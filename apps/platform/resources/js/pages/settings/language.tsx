@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import LocaleTabs from '@/features/settings/locale-tabs';
 import { useTranslation } from '@/hooks/use-translation';
 import { edit as editLanguage } from '@/routes/language';

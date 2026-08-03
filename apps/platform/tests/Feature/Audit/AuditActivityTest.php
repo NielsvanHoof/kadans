@@ -11,12 +11,8 @@ use App\Dossiers\Models\Dossier;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Support\Header;
 use Spatie\Activitylog\Enums\ActivityEvent;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

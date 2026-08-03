@@ -1,8 +1,7 @@
-import { Link } from '@inertiajs/react';
 import { RotateCcw } from 'lucide-react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import { Button } from '@/components/ui/button';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import { Button, LinkButton } from '@/components/ui/button';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { archived as archivedClients } from '@/routes/workspaces/clients';
@@ -23,11 +22,13 @@ export default function RestoreDossierButton({
         return (
             <div className="flex flex-col items-end gap-1">
                 {canRestoreClient ? (
-                    <Button size="sm" variant="outline" asChild>
-                        <Link href={archivedClients(currentWorkspace)}>
-                            {t('Restore client first')}
-                        </Link>
-                    </Button>
+                    <LinkButton
+                        size="sm"
+                        variant="outline"
+                        href={archivedClients(currentWorkspace).url}
+                    >
+                        {t('Restore client first')}
+                    </LinkButton>
                 ) : null}
                 <p className="max-w-52 text-right text-xs text-muted-foreground">
                     {canRestoreClient

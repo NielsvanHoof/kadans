@@ -4,36 +4,20 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Document-request status counts on dossier show.
  */
-final readonly class DossierReviewSummaryData
+#[TypeScript]
+final class DossierReviewSummaryData extends Data
 {
     public function __construct(
-        public int $total,
-        public int $pending,
-        public int $submitted,
-        public int $accepted,
-        public int $rejected,
+        public readonly int $total,
+        public readonly int $pending,
+        public readonly int $submitted,
+        public readonly int $accepted,
+        public readonly int $rejected,
     ) {}
-
-    /**
-     * @return array{
-     *     total: int,
-     *     pending: int,
-     *     submitted: int,
-     *     accepted: int,
-     *     rejected: int
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'total' => $this->total,
-            'pending' => $this->pending,
-            'submitted' => $this->submitted,
-            'accepted' => $this->accepted,
-            'rejected' => $this->rejected,
-        ];
-    }
 }

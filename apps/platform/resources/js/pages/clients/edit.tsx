@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import EditClientForm from '@/features/clients/manage/edit-client-form';
 import type { ClientDetails } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

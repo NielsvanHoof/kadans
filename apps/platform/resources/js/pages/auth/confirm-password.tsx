@@ -3,8 +3,10 @@ import {
     index as confirmOptions,
     store as confirmStore,
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
+import PasswordInput from '@/components/primitives/password-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
@@ -63,8 +65,9 @@ export default function ConfirmPassword() {
 
                         <Field>
                             <Button
+                                type="submit"
                                 className="w-full"
-                                disabled={processing}
+                                isDisabled={processing}
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}

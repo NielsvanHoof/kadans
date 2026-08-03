@@ -1,4 +1,4 @@
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { ItemGroup } from '@/components/ui/item';
 import NotificationListItem from '@/features/notifications/notification-list-item';
 import type { WorkspaceNotification } from '@/features/notifications/types';

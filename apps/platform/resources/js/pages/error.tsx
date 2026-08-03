@@ -2,7 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import { ShieldAlert, ShieldOff, TriangleAlert, Wrench } from 'lucide-react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard, login } from '@/routes';
 
@@ -93,13 +93,14 @@ export default function ErrorPage({ status }: Props) {
                         {copy.description}
                     </p>
 
-                    <Button asChild className="mt-8">
-                        <Link href={isAuthenticated ? dashboard() : login()}>
-                            {isAuthenticated
-                                ? t('Go to dashboard')
-                                : t('Go to login')}
-                        </Link>
-                    </Button>
+                    <LinkButton
+                        className="mt-8"
+                        href={isAuthenticated ? dashboard().url : login().url}
+                    >
+                        {isAuthenticated
+                            ? t('Go to dashboard')
+                            : t('Go to login')}
+                    </LinkButton>
                 </main>
             </div>
         </>

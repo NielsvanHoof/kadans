@@ -12,6 +12,7 @@ use App\Dossiers\Models\Dossier;
 use App\Reporting\Data\DashboardMetricsData;
 use App\Reporting\Data\DashboardRecentDossierData;
 use App\Reporting\Data\WorkspaceDashboardPageData;
+use App\Reporting\Support\WorkspaceDashboardCache;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder;
 use RuntimeException;
@@ -20,8 +21,13 @@ final class FetchWorkspaceDashboardQuery
 {
     public function handle(Tenant $tenant): WorkspaceDashboardPageData
     {
+        // Metrics are tenant-scoped and expensive (~14 aggregate queries).
+        // Recent dossiers stay live — one cheap query and expected to be fresh.
         return new WorkspaceDashboardPageData(
-            metrics: $this->getMetrics($tenant),
+            metrics: WorkspaceDashboardCache::rememberMetrics(
+                $tenant->id,
+                fn (): DashboardMetricsData => $this->getMetrics($tenant),
+            ),
             recentDossiers: $this->getRecentDossiers($tenant),
         );
     }
@@ -168,11 +174,11 @@ final class FetchWorkspaceDashboardQuery
                 id: $dossier->id,
                 title: $dossier->title,
                 reference: $dossier->reference,
-                status: $dossier->status->value,
+                status: $dossier->status,
                 clientName: $client->name,
                 dueDate: $dossier->due_date?->toDateString(),
                 responsibleName: $dossier->responsibleUser?->name,
-                updatedAt: $dossier->updated_at->toDateTimeString(),
+                updatedAt: $dossier->updated_at?->toDateTimeString() ?? '',
             );
         }
 

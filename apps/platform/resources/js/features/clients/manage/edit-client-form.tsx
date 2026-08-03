@@ -1,7 +1,7 @@
-import { Form, Link } from '@inertiajs/react';
+import { Form } from '@inertiajs/react';
 import ClientController from '@/actions/App/Clients/Http/Controllers/ClientController';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
+import InputError from '@/components/primitives/input-error';
+import { Button, LinkButton } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -57,20 +57,21 @@ export default function EditClientForm({
                     </Field>
 
                     <Field orientation="horizontal" className="gap-3">
-                        <Button disabled={processing}>
+                        <Button type="submit" isDisabled={processing}>
                             {processing && <Spinner />}
                             {t('Save changes')}
                         </Button>
-                        <Button variant="ghost" asChild>
-                            <Link
-                                href={showClient({
+                        <LinkButton
+                            variant="ghost"
+                            href={
+                                showClient({
                                     tenant: currentWorkspace,
                                     client: client.id,
-                                })}
-                            >
-                                {t('Cancel')}
-                            </Link>
-                        </Button>
+                                }).url
+                            }
+                        >
+                            {t('Cancel')}
+                        </LinkButton>
                     </Field>
                 </FieldGroup>
             )}

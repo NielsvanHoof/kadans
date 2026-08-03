@@ -21,6 +21,8 @@ final readonly class FetchDossierEditQuery
     ) {}
 
     /**
+     * PersonOptionData is passed through as a Data object; Inertia serialises it.
+     *
      * @return array{
      *     dossier: array{
      *         id: int,
@@ -31,7 +33,7 @@ final readonly class FetchDossierEditQuery
      *         reminder_interval_days: int|null,
      *         client: array{name: string, email: string}
      *     },
-     *     responsible_staff: list<array{id: int, name: string, email: string}>
+     *     responsible_staff: list<PersonOptionData>
      * }
      */
     public function handle(Tenant $tenant, Dossier $dossier): array
@@ -54,10 +56,7 @@ final readonly class FetchDossierEditQuery
                     'email' => $client->email,
                 ],
             ],
-            'responsible_staff' => array_map(
-                static fn (PersonOptionData $staff): array => $staff->toArray(),
-                $this->fetchResponsibleStaffOptions->handle($tenant),
-            ),
+            'responsible_staff' => $this->fetchResponsibleStaffOptions->handle($tenant),
         ];
     }
 }

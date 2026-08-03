@@ -42,8 +42,7 @@ final class DocumentRequestFactory extends Factory
                 return;
             }
 
-            $dossier = Dossier::query()
-                ->withoutGlobalScopes()
+            $dossier = Dossier::queryWithoutTenantScope()
                 ->find($documentRequest->dossier_id);
 
             if ($dossier instanceof Dossier) {

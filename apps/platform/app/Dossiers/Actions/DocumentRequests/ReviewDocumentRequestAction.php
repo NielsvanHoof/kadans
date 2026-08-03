@@ -7,8 +7,8 @@ namespace App\Dossiers\Actions\DocumentRequests;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Actions\SendClientChangesRequestedNotificationAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Events\DocumentRequestRejected;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
@@ -21,7 +21,6 @@ final readonly class ReviewDocumentRequestAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
-        private SendClientChangesRequestedNotificationAction $sendClientChangesRequestedNotification,
         private DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
@@ -76,17 +75,8 @@ final readonly class ReviewDocumentRequestAction
             );
 
             if ($decision === DocumentRequestStatus::Rejected) {
-                $this->sendClientChangesRequestedNotification->handle($lockedDocumentRequest);
-
-                $this->logAuditActivity->handle(
-                    AuditEvent::ClientChangesRequestedQueued,
-                    $lockedDocumentRequest,
-                    [
-                        'dossier_id' => $lockedDocumentRequest->dossier_id,
-                        'channel' => 'mail',
-                    ],
-                    $reviewer,
-                );
+                // ClientPortal listens and mails the client which item to redo.
+                event(new DocumentRequestRejected($lockedDocumentRequest, $reviewer));
             }
 
             return $lockedDocumentRequest->fresh() ?? $lockedDocumentRequest;

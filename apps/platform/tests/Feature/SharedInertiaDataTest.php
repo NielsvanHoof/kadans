@@ -5,14 +5,13 @@ declare(strict_types=1);
 use App\Accounts\Models\User;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Enums\Role;
+use App\Tenancy\Support\PermissionRegistry;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
 use Inertia\Support\Header;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 /**
  * @param  array<string, string>  $additionalHeaders
@@ -43,6 +42,65 @@ test('shared authenticated user data is explicitly projected', function (): void
                 'locale' => $user->getAttributes()['locale'] ?? null,
                 'is_platform_support' => false,
             ]));
+});
+
+/**
+ * Permission names contain dots, which collide with Inertia's fluent path
+ * syntax, so read the resolved props directly instead.
+ *
+ * @return array<string, bool>
+ */
+function sharedPermissionMap(TestResponse $response): array
+{
+    /** @var array{props: array{permissions?: array<string, bool>}} $page */
+    $page = $response->viewData('page');
+
+    return $page['props']['permissions'] ?? [];
+}
+
+test('the shared permission map resolves every registered permission for the firm', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $response = $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dossiers.index', $tenant))
+        ->assertOk();
+
+    $permissions = sharedPermissionMap($response);
+    $registered = resolve(PermissionRegistry::class)->values();
+
+    // The map covers the registry exactly, and owners hold everything in it.
+    expect(array_keys($permissions))->toEqualCanonicalizing($registered)
+        ->and(array_keys(array_filter($permissions)))->toEqualCanonicalizing($registered);
+
+    // The per-feature booleans this map replaced must be gone.
+    /** @var array{props: array<string, mixed>} $page */
+    $page = $response->viewData('page');
+
+    expect($page['props'])->not->toHaveKey('can_manage_members')
+        ->and($page['props'])->not->toHaveKey('can_view_roles')
+        ->and($page['props'])->not->toHaveKey('can_view_pipelines')
+        ->and($page['props'])->toHaveKey('sidebar_open');
+});
+
+test('the shared permission map denies what a restricted role cannot do', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $readOnly = workspaceMember($tenant, Role::ReadOnly);
+
+    $response = $this->actingAs($readOnly)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.dossiers.index', $tenant))
+        ->assertOk();
+
+    $permissions = sharedPermissionMap($response);
+
+    // members.view / roles.view / pipelines.view drive the sidebar and replaced
+    // the removed can_* props, so their denial is what keeps nav items hidden.
+    expect($permissions['members.view'])->toBeFalse()
+        ->and($permissions['roles.view'])->toBeFalse()
+        ->and($permissions['pipelines.view'])->toBeFalse()
+        ->and($permissions['dossiers.delete'])->toBeFalse()
+        ->and($permissions['dossiers.view'])->toBeTrue();
 });
 
 test('workspace navigation is remembered as a once prop', function (): void {

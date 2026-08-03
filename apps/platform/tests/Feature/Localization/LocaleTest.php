@@ -10,12 +10,8 @@ use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('locale is resolved from the authenticated user preference', function (): void {
     $user = User::factory()->create(['locale' => 'nl']);

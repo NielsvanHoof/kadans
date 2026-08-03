@@ -1,56 +1,62 @@
-import { Link, usePoll } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
-import ErrorState from '@/components/error-state';
-import Heading from '@/components/heading';
+import ErrorState from '@/components/primitives/error-state';
+import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants, LinkButton } from '@/components/ui/button';
 import DocumentExtractionView from '@/features/document-requests/staff/review/document-extraction-view';
 import DocumentPreviewPanel, {
     documentPreviewKind,
 } from '@/features/document-requests/staff/review/document-preview-panel';
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
+import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
+type UploadedDocumentDetail = UploadedDocumentShowProps['uploaded_document'];
+
 /**
  * OCR extraction body for a single uploaded document.
- * Polls while processing so results appear without a full page reload.
+ * Refreshes via Reverb + JSON island when the OCR pipeline advances.
  */
 export default function UploadedDocumentShowContent({
-    uploaded_document: uploadedDocument,
+    uploaded_document: initialUploadedDocument,
     document_request: documentRequest,
     dossier,
     can_download: canDownload,
 }: UploadedDocumentShowProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
+    const [uploadedDocument, setUploadedDocument] = useState(
+        initialUploadedDocument,
+    );
+
+    // Sync when Inertia replaces the page prop (navigation / password confirm).
+    useEffect(() => {
+        setUploadedDocument(initialUploadedDocument);
+    }, [initialUploadedDocument]);
 
     const isProcessing =
         uploadedDocument.processing_status === 'pending' ||
         uploadedDocument.processing_status === 'processing';
 
-    const { start, stop } = usePoll(
-        2000,
-        {
-            only: ['uploaded_document'],
+    useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocumentDetail }>({
+        enabled: isProcessing,
+        match: (event) =>
+            event.subject_type === 'uploaded_document' &&
+            event.subject_id === uploadedDocument.id,
+        urlForEvent: () =>
+            UploadedDocumentController.show.url({
+                tenant: currentWorkspace,
+                uploadedDocument: uploadedDocument.id,
+            }),
+        onData: ({ uploaded_document: next }) => {
+            setUploadedDocument(next);
         },
-        {
-            autoStart: false,
-            mode: 'rest',
-        },
-    );
-
-    useEffect(() => {
-        if (isProcessing) {
-            start();
-        } else {
-            stop();
-        }
-    }, [isProcessing, start, stop]);
+    });
 
     const downloadUrl = canDownload
         ? UploadedDocumentController.download.url({
@@ -94,21 +100,29 @@ export default function UploadedDocumentShowContent({
                         )}
                     </Badge>
                     {dossier && (
-                        <Button variant="outline" size="sm" asChild>
-                            <Link
-                                href={showDossier({
+                        <LinkButton
+                            variant="outline"
+                            size="sm"
+                            href={
+                                showDossier({
                                     tenant: currentWorkspace,
                                     dossier: dossier.id,
-                                })}
-                            >
-                                {t('Back to dossier')}
-                            </Link>
-                        </Button>
+                                }).url
+                            }
+                        >
+                            {t('Back to dossier')}
+                        </LinkButton>
                     )}
                     {canDownload && downloadUrl && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a href={downloadUrl}>{t('Download')}</a>
-                        </Button>
+                        <a
+                            className={buttonVariants({
+                                variant: 'outline',
+                                size: 'sm',
+                            })}
+                            href={downloadUrl}
+                        >
+                            {t('Download')}
+                        </a>
                     )}
                 </div>
             </div>

@@ -1,10 +1,10 @@
 import { Form, Link } from '@inertiajs/react';
 import { CopyIcon } from 'lucide-react';
 import QuestionnaireTemplateController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateController';
-import EmptyState from '@/components/empty-state';
-import IndexPagination from '@/components/index-query/index-pagination';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -88,22 +88,20 @@ export default function QuestionnaireTemplatesSection({
                                     </div>
 
                                     <div className="flex flex-wrap gap-2">
-                                        <Button
+                                        <LinkButton
                                             variant="outline"
                                             size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={showTemplate({
+                                            href={
+                                                showTemplate({
                                                     tenant: currentWorkspace,
                                                     template: template.id,
-                                                })}
-                                            >
-                                                {template.is_system
-                                                    ? t('View')
-                                                    : t('Edit')}
-                                            </Link>
-                                        </Button>
+                                                }).url
+                                            }
+                                        >
+                                            {template.is_system
+                                                ? t('View')
+                                                : t('Edit')}
+                                        </LinkButton>
                                         {canManage && (
                                             <Form
                                                 {...QuestionnaireTemplateController.copy.form(
@@ -118,7 +116,7 @@ export default function QuestionnaireTemplatesSection({
                                                         type="submit"
                                                         size="sm"
                                                         variant="secondary"
-                                                        disabled={processing}
+                                                        isDisabled={processing}
                                                     >
                                                         <CopyIcon className="h-4 w-4" />
                                                         {t('Copy to my firm')}

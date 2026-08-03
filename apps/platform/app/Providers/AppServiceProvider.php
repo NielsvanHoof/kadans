@@ -6,64 +6,41 @@ namespace App\Providers;
 
 use App\Accounts\Models\User;
 use App\Audit\Models\Activity;
-use App\Audit\Policies\ActivityPolicy;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Policies\ClientAccessGrantPolicy;
 use App\Clients\Models\Client;
-use App\Clients\Policies\ClientPolicy;
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
-use App\DocumentProcessing\Enums\OcrDriver;
 use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Models\PipelineStep;
-use App\DocumentProcessing\Policies\PipelinePolicy;
-use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
-use App\DocumentProcessing\Services\Ocr\Drivers\OcrDriverFactory;
-use App\DocumentProcessing\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Policies\DocumentRequestPolicy;
-use App\Dossiers\Policies\DossierPolicy;
-use App\Dossiers\Policies\UploadedDocumentPolicy;
-use App\Platform\Console\PruneModelsCommand;
-use App\Platform\Contracts\Production\ChecksReadiness;
-use App\Platform\Services\Production\InfrastructureReadinessCheck;
-use App\Platform\Services\Production\ProductionConfigurationValidator;
-use App\Platform\Support\SupportSession;
+use App\Platform\Support\DebugbarStorageOpen;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
-use App\Questionnaires\Policies\QuestionnaireTemplatePolicy;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Policies\TenantInvitationPolicy;
-use App\Tenancy\Policies\TenantMembershipPolicy;
-use App\Tenancy\Policies\TenantRolePolicy;
-use App\Tenancy\Support\PermissionRegistry;
-use Aws\BedrockRuntime\BedrockRuntimeClient;
-use Aws\Sqs\SqsClient;
-use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Telescope\TelescopeServiceProvider;
 use Override;
-use Symfony\Component\HttpFoundation\IpUtils;
+use RuntimeException;
 
 use function in_array;
 use function is_string;
 use function mb_strtolower;
 
+/**
+ * Application composition root for cross-cutting defaults.
+ * Domain bindings, policies, and OCR/AWS wiring live in domain *ServiceProvider classes.
+ */
 final class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -72,13 +49,7 @@ final class AppServiceProvider extends ServiceProvider
     #[Override]
     public function register(): void
     {
-        $this->commands([
-            PruneModelsCommand::class,
-        ]);
-        $this->registerPermissionRegistry();
-        $this->registerOcrBindings();
         $this->configureDebugbarStorageOpen();
-        $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
 
         if ($this->app->environment('local') && class_exists(TelescopeServiceProvider::class)) {
             $this->app->register(TelescopeServiceProvider::class);
@@ -88,16 +59,11 @@ final class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(
-        OcrConfigurationValidator $ocrConfigurationValidator,
-        ProductionConfigurationValidator $productionConfigurationValidator,
-    ): void {
+    public function boot(): void
+    {
         $this->configureMorphMap();
-        $ocrConfigurationValidator->validate();
-        $productionConfigurationValidator->validate();
-        $this->configurePolicies();
-        $this->configureSupportPermissionGate();
         $this->configureDefaults();
+        $this->configureFactoryDiscovery();
         $this->configureDevCommands();
     }
 
@@ -128,7 +94,30 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * Factories live flat under Database\Factories\{Model}Factory while models
+     * are grouped by domain (App\Accounts\Models\User, etc.).
+     */
+    private function configureFactoryDiscovery(): void
+    {
+        Factory::guessFactoryNamesUsing($this->guessFactoryForModel(...));
+    }
+
+    /**
+     * @param  class-string<Model>  $modelName
+     * @return class-string<Factory<Model>>
+     */
+    private function guessFactoryForModel(string $modelName): string
+    {
+        $factory = 'Database\\Factories\\'.class_basename($modelName).'Factory';
+
+        throw_unless(is_a($factory, Factory::class, true), RuntimeException::class, "Factory [{$factory}] does not exist.");
+
+        return $factory;
+    }
+
+    /**
      * Keep persisted polymorphic types independent from PHP namespaces.
+     * Cross-domain map stays here so aliases remain a single source of truth.
      */
     private function configureMorphMap(): void
     {
@@ -152,24 +141,12 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * The registry is derived purely from config, so a singleton holds no
-     * request state and stays safe across Octane requests.
-     */
-    private function registerPermissionRegistry(): void
-    {
-        $this->app->singleton(
-            PermissionRegistry::class,
-            static fn (): PermissionRegistry => new PermissionRegistry(
-                config()->array('tenant-permissions.enums'),
-            ),
-        );
-    }
-
-    /**
      * Debugbar's default storage.open=null uses IpUtils::isPrivateIp(clientIp).
      * FrankenPHP/Octane boots workers without a client IP, and Symfony throws
      * ValueError on "". That aborts the worker before frankenphp_handle_request().
-     * Cast env strings and use a null-safe private-IP check instead.
+     *
+     * Cast env strings to bools, and register a class name (not a Closure) so
+     * `config:cache` / `optimize` can serialize the config.
      */
     private function configureDebugbarStorageOpen(): void
     {
@@ -188,51 +165,10 @@ final class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        // Class string stays serializable; Debugbar calls ::resolve($request).
         config([
-            'debugbar.storage.open' => static function (Request $request): bool {
-                $ip = $request->getClientIp();
-
-                if (! is_string($ip) || $ip === '') {
-                    return false;
-                }
-
-                return IpUtils::isPrivateIp($ip);
-            },
+            'debugbar.storage.open' => DebugbarStorageOpen::class,
         ]);
-    }
-
-    /**
-     * Grant read-only abilities to platform support users in an active firm session.
-     * Hard-denies mutate abilities while a support session is active.
-     * Only intercepts Spatie permission strings — policy methods (viewAny, etc.) continue normally.
-     */
-    private function configureSupportPermissionGate(): void
-    {
-        Gate::before(function (mixed $user, string $ability): ?bool {
-            if (! $user instanceof User || ! $user->isPlatformSupport()) {
-                return null;
-            }
-
-            // Policy abilities like "viewAny" must not be short-circuited here.
-            if (! resolve(PermissionRegistry::class)->isRegistered($ability)) {
-                return null;
-            }
-
-            $tenant = Tenant::current();
-
-            if (! $tenant instanceof Tenant) {
-                return null;
-            }
-
-            $supportSession = resolve(SupportSession::class);
-
-            // Support session takes priority over firm membership (read-only overlay).
-            if (! $supportSession->isActiveFor($tenant)) {
-                return null;
-            }
-
-            return $supportSession->allowsPermission($ability);
-        });
     }
 
     /**
@@ -247,81 +183,5 @@ final class AppServiceProvider extends ServiceProvider
         }
 
         DevCommands::artisan('reverb:start', 'reverb');
-    }
-
-    /**
-     * Bind OCR driver + AWS clients used by Textract start/consume and Bedrock structuring.
-     */
-    private function registerOcrBindings(): void
-    {
-        $this->app->singleton(TextractClient::class, fn (): TextractClient => new TextractClient($this->awsClientConfig('ocr.textract.region')));
-
-        $this->app->singleton(SqsClient::class, fn (): SqsClient => new SqsClient($this->awsClientConfig('ocr.textract.region')));
-
-        // Bedrock may use a different region than Textract (inference profiles).
-        $this->app->singleton(BedrockRuntimeClient::class, fn (): BedrockRuntimeClient => new BedrockRuntimeClient($this->awsClientConfig('ocr.bedrock.region')));
-
-        $this->app->bind(DescribesDocumentOverview::class, BedrockDocumentOverviewNormalizer::class);
-
-        $this->app->bind(
-            StartsDocumentOcr::class,
-            fn ($app): StartsDocumentOcr => $app->make(OcrDriverFactory::class)->make(
-                (string) config('ocr.driver', OcrDriver::Mock->value),
-            ),
-        );
-    }
-
-    /**
-     * Shared AWS SDK client options. Credentials come from ocr.textract.* (IAM role in prod).
-     *
-     * @return array{
-     *     version: string,
-     *     region: string,
-     *     credentials?: array{key: string, secret: string, token?: string}
-     * }
-     */
-    private function awsClientConfig(string $regionConfigKey): array
-    {
-        $key = config('ocr.textract.key');
-        $secret = config('ocr.textract.secret');
-        $token = config('ocr.textract.token');
-        $region = config($regionConfigKey, 'eu-west-1');
-
-        /** @var array{version: string, region: string, credentials?: array{key: string, secret: string, token?: string}} $clientConfig */
-        $clientConfig = [
-            'version' => 'latest',
-            'region' => is_string($region) && $region !== '' ? $region : 'eu-west-1',
-        ];
-
-        if (is_string($key) && $key !== '' && is_string($secret) && $secret !== '') {
-            $credentials = [
-                'key' => $key,
-                'secret' => $secret,
-            ];
-
-            // Temporary STS credentials (assumed OCR operator role) include a session token.
-            if (is_string($token) && $token !== '') {
-                $credentials['token'] = $token;
-            }
-
-            $clientConfig['credentials'] = $credentials;
-        }
-
-        return $clientConfig;
-    }
-
-    private function configurePolicies(): void
-    {
-        Gate::policy(Activity::class, ActivityPolicy::class);
-        Gate::policy(Client::class, ClientPolicy::class);
-        Gate::policy(ClientAccessGrant::class, ClientAccessGrantPolicy::class);
-        Gate::policy(DocumentRequest::class, DocumentRequestPolicy::class);
-        Gate::policy(Dossier::class, DossierPolicy::class);
-        Gate::policy(QuestionnaireTemplate::class, QuestionnaireTemplatePolicy::class);
-        Gate::policy(Pipeline::class, PipelinePolicy::class);
-        Gate::policy(TenantInvitation::class, TenantInvitationPolicy::class);
-        Gate::policy(TenantMembership::class, TenantMembershipPolicy::class);
-        Gate::policy(TenantRole::class, TenantRolePolicy::class);
-        Gate::policy(UploadedDocument::class, UploadedDocumentPolicy::class);
     }
 }

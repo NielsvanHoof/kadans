@@ -141,31 +141,35 @@ export function FieldVisibilityEditor({
                     {t('Depends on')}
                 </FieldLabel>
                 <Select
-                    value={visibility?.source_field_key ?? NO_SOURCE}
-                    disabled={!canEdit || sourceFields.length === 0}
-                    onValueChange={changeSource}
+                    selectedKey={visibility?.source_field_key ?? NO_SOURCE}
+                    isDisabled={!canEdit || sourceFields.length === 0}
+                    onSelectionChange={(key) => changeSource(String(key))}
+                    placeholder={
+                        sourceFields.length === 0
+                            ? t('No earlier choice fields yet')
+                            : t('Always show')
+                    }
+                    aria-label={
+                        sourceFields.length === 0
+                            ? t('No earlier choice fields yet')
+                            : t('Always show')
+                    }
                 >
                     <SelectTrigger
                         id={`builder-visibility-source-${documentRequestId}`}
                         className="w-full"
                     >
-                        <SelectValue
-                            placeholder={
-                                sourceFields.length === 0
-                                    ? t('No earlier choice fields yet')
-                                    : t('Always show')
-                            }
-                        />
+                        <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-background">
                         <SelectGroup>
-                            <SelectItem value={NO_SOURCE}>
+                            <SelectItem id={NO_SOURCE}>
                                 {t('Always show')}
                             </SelectItem>
                             {sourceFields.map((field) => (
                                 <SelectItem
                                     key={field.field_key}
-                                    value={field.field_key}
+                                    id={field.field_key}
                                 >
                                     {field.title}
                                 </SelectItem>
@@ -190,11 +194,11 @@ export function FieldVisibilityEditor({
                             >
                                 <Checkbox
                                     id={optionElementId}
-                                    checked={visibility.option_ids.includes(
+                                    isSelected={visibility.option_ids.includes(
                                         option.id,
                                     )}
-                                    disabled={!canEdit}
-                                    onCheckedChange={(checked) =>
+                                    isDisabled={!canEdit}
+                                    onChange={(checked) =>
                                         toggleOption(
                                             option.id,
                                             checked === true,

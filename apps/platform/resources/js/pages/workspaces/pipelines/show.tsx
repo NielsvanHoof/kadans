@@ -1,10 +1,9 @@
-import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft, Download, Trash2 } from 'lucide-react';
-import { useEffect } from 'react';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import Heading from '@/components/heading';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -12,6 +11,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
 import PipelineStepTimeline from '@/features/pipelines/show/pipeline-step-timeline';
 import {
     pipelineIsInFlight,
@@ -44,24 +44,10 @@ export default function PipelineShow({
 
     // Keep the show page live while submit / provider / results are still moving.
     const isInFlight = pipelineIsInFlight(pipeline.status);
-    const { start, stop } = usePoll(
-        2000,
-        {
-            only: ['pipeline', 'can_delete', 'can_download'],
-        },
-        {
-            autoStart: false,
-            mode: 'rest',
-        },
-    );
-
-    useEffect(() => {
-        if (isInFlight) {
-            start();
-        } else {
-            stop();
-        }
-    }, [isInFlight, start, stop]);
+    useReloadOnPipelineUpdated(['pipeline', 'can_delete', 'can_download'], {
+        enabled: isInFlight,
+        match: (event) => event.pipeline_id === pipeline.id,
+    });
 
     setLayoutProps({
         breadcrumbs: [
@@ -110,18 +96,22 @@ export default function PipelineShow({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                        {/* Plain anchor, not LinkButton: RouterProvider hands
+                            every React Aria href to Inertia, which would
+                            swallow this file download. */}
                         {canDownload ? (
-                            <Button asChild variant="outline" type="button">
-                                <a
-                                    href={downloadPipeline.url({
-                                        tenant: currentWorkspace,
-                                        pipeline: pipeline.id,
-                                    })}
-                                >
-                                    <Download aria-hidden="true" />
-                                    {t('Download payload')}
-                                </a>
-                            </Button>
+                            <a
+                                className={buttonVariants({
+                                    variant: 'outline',
+                                })}
+                                href={downloadPipeline.url({
+                                    tenant: currentWorkspace,
+                                    pipeline: pipeline.id,
+                                })}
+                            >
+                                <Download aria-hidden="true" />
+                                {t('Download payload')}
+                            </a>
                         ) : null}
 
                         {canDelete ? (

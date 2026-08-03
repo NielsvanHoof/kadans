@@ -124,7 +124,7 @@ return [
     |
     | Theme and component paths for Markdown-based email rendering. Published
     | views live under resources/views/vendor/mail and use the "default" theme
-    | (restyled for Qompose branding: coral CTAs, shield header).
+    | (restyled for Qompose branding: ink CTAs, audit-mark header).
     |
     */
 

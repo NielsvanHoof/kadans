@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Http\Requests;
 
-use App\ClientPortal\Enums\SubmissionContext;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Transitions\DocumentRequestTransitions;

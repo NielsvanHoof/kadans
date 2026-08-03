@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 use App\Accounts\Enums\PlatformRole;
 use App\Accounts\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('platform grant-support assigns the support role', function (): void {
     $user = User::factory()->create(['email' => 'eng@example.com']);

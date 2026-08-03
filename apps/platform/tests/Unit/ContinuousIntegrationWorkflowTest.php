@@ -24,6 +24,31 @@ test('the TypeScript check generates ignored Wayfinder modules on a fresh checko
 
     expect($package['scripts']['wayfinder:generate'])
         ->toBe('php artisan wayfinder:generate --with-form --no-interaction')
+        ->and($package['scripts']['questionnaire:generate'])
+        ->toBe('php artisan questionnaire:generate-item-types --no-interaction')
         ->and($package['scripts']['types:check'])
-        ->toStartWith('npm run wayfinder:generate && ');
+        ->toStartWith('npm run wayfinder:generate && npm run questionnaire:generate && ');
+});
+
+test('the committed CI env avoids Sail Redis so Artisan generators can run on GitHub Actions', function (): void {
+    $envCiPath = dirname(__DIR__, 2).'/.env.ci';
+
+    expect(file_exists($envCiPath))->toBeTrue();
+
+    $envCi = (string) file_get_contents($envCiPath);
+
+    // These must stay array/sync/collection so typescript:transform and friends
+    // never try to resolve Sail hostnames (redis, pgsql, mailpit) on CI runners.
+    expect($envCi)
+        ->toContain('CACHE_STORE=array')
+        ->toContain('SESSION_DRIVER=array')
+        ->toContain('QUEUE_CONNECTION=sync')
+        ->toContain('MAIL_MAILER=array')
+        ->toContain('SCOUT_DRIVER=collection')
+        ->toContain('OCR_DRIVER=mock')
+        // Match production-shaped HSTS so SecurityHeadersTest can assert the
+        // HTTPS header without depending on .env / .env.ci alone.
+        ->toContain('SECURITY_HSTS_ENABLED=true')
+        ->not->toContain('REDIS_HOST=redis')
+        ->not->toContain('DB_HOST=pgsql');
 });

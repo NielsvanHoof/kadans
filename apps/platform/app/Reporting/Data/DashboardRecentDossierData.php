@@ -4,45 +4,24 @@ declare(strict_types=1);
 
 namespace App\Reporting\Data;
 
+use App\Dossiers\Enums\DossierStatus;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Recent dossier card on the workspace dashboard.
  */
-final readonly class DashboardRecentDossierData
+#[TypeScript]
+final class DashboardRecentDossierData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $title,
-        public ?string $reference,
-        public string $status,
-        public string $clientName,
-        public ?string $dueDate,
-        public ?string $responsibleName,
-        public string $updatedAt,
+        public readonly int $id,
+        public readonly string $title,
+        public readonly ?string $reference,
+        public readonly DossierStatus $status,
+        public readonly string $clientName,
+        public readonly ?string $dueDate,
+        public readonly ?string $responsibleName,
+        public readonly string $updatedAt,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     reference: string|null,
-     *     status: string,
-     *     client_name: string,
-     *     due_date: string|null,
-     *     responsible_name: string|null,
-     *     updated_at: string
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'reference' => $this->reference,
-            'status' => $this->status,
-            'client_name' => $this->clientName,
-            'due_date' => $this->dueDate,
-            'responsible_name' => $this->responsibleName,
-            'updated_at' => $this->updatedAt,
-        ];
-    }
 }

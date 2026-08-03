@@ -4,39 +4,21 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * One pending invitation row for the members Inertia page.
  */
-final readonly class WorkspaceInvitationData
+#[TypeScript]
+final class WorkspaceInvitationData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $email,
-        public string $role,
-        public string $roleLabel,
-        public string $invitedAt,
-        public string $expiresAt,
+        public readonly int $id,
+        public readonly string $email,
+        public readonly string $role,
+        public readonly string $roleLabel,
+        public readonly string $invitedAt,
+        public readonly string $expiresAt,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     email: string,
-     *     role: string,
-     *     role_label: string,
-     *     invited_at: string,
-     *     expires_at: string
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'email' => $this->email,
-            'role' => $this->role,
-            'role_label' => $this->roleLabel,
-            'invited_at' => $this->invitedAt,
-            'expires_at' => $this->expiresAt,
-        ];
-    }
 }

@@ -1,14 +1,13 @@
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Accounts/Http/Controllers/ProfileController';
-import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import SettingsSection from '@/components/settings-section';
+import InputError from '@/components/primitives/input-error';
+import PasswordInput from '@/components/primitives/password-input';
+import SettingsSection from '@/components/primitives/settings-section';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogTitle,
@@ -36,16 +35,14 @@ export default function DeleteUser() {
                     </p>
                 </div>
 
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button
-                            variant="destructive"
-                            data-test="delete-user-button"
-                        >
-                            {t('Delete account')}
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
+                <DialogTrigger>
+                    <Button
+                        variant="destructive"
+                        data-test="delete-user-button"
+                    >
+                        {t('Delete account')}
+                    </Button>
+                    <Dialog>
                         <DialogTitle>
                             {t('Are you sure you want to delete your account?')}
                         </DialogTitle>
@@ -91,21 +88,19 @@ export default function DeleteUser() {
 
                                     <Field>
                                         <DialogFooter className="gap-2">
-                                            <DialogClose asChild>
-                                                <Button
-                                                    variant="secondary"
-                                                    onClick={() =>
-                                                        resetAndClearErrors()
-                                                    }
-                                                >
-                                                    {t('Cancel')}
-                                                </Button>
+                                            <DialogClose
+                                                variant="secondary"
+                                                onClick={() =>
+                                                    resetAndClearErrors()
+                                                }
+                                            >
+                                                {t('Cancel')}
                                             </DialogClose>
 
                                             <Button
                                                 type="submit"
                                                 variant="destructive"
-                                                disabled={processing}
+                                                isDisabled={processing}
                                                 data-test="confirm-delete-user-button"
                                             >
                                                 {t('Delete account')}
@@ -115,8 +110,8 @@ export default function DeleteUser() {
                                 </FieldGroup>
                             )}
                         </Form>
-                    </DialogContent>
-                </Dialog>
+                    </Dialog>
+                </DialogTrigger>
             </div>
         </SettingsSection>
     );

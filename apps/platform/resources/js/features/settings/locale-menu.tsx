@@ -4,11 +4,9 @@ import LocaleController from '@/actions/App/Accounts/Http/Controllers/LocaleCont
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
+    DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/use-translation';
@@ -39,32 +37,37 @@ export default function LocaleMenu() {
     };
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-9"
-                    aria-label={t('Language')}
-                >
-                    <Languages className="size-5" aria-hidden="true" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-40">
+        <DropdownMenuTrigger>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="size-9"
+                aria-label={t('Language')}
+            >
+                <Languages className="size-5" aria-hidden="true" />
+            </Button>
+            <DropdownMenu
+                placement="bottom end"
+                className="min-w-40"
+                selectionMode="single"
+                selectedKeys={[locale]}
+                onSelectionChange={(keys) => {
+                    const [next] = Array.from(keys);
+                    if (next !== undefined) {
+                        updateLocale(String(next));
+                    }
+                }}
+            >
                 <DropdownMenuGroup>
                     <DropdownMenuLabel>{t('Language')}</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup
-                        value={locale}
-                        onValueChange={updateLocale}
-                    >
-                        {availableLocales.map(({ code, label }) => (
-                            <DropdownMenuRadioItem key={code} value={code}>
-                                {t(label)}
-                            </DropdownMenuRadioItem>
-                        ))}
-                    </DropdownMenuRadioGroup>
+
+                    {availableLocales.map(({ code, label }) => (
+                        <DropdownMenuItem key={code} id={code}>
+                            {t(label)}
+                        </DropdownMenuItem>
+                    ))}
                 </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenu>
+        </DropdownMenuTrigger>
     );
 }

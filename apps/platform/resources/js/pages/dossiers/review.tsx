@@ -1,15 +1,21 @@
-import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect } from 'react';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
+import Heading from '@/components/primitives/heading';
+import { LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import ReviewItemsPanel from '@/features/document-requests/staff/review/review-items-panel';
+import type {
+    DocumentRequest,
+    UploadedDocument,
+} from '@/features/document-requests/types';
 import { DossierPermissionsProvider } from '@/features/dossiers/permissions/dossier-permissions-context';
 import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
-import type { Dossier } from '@/features/dossiers/types';
+import type { DossierReview } from '@/features/dossiers/types';
+import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -19,6 +25,7 @@ import {
 
 /**
  * Focused review queue for a dossier's questionnaire items.
+ * OCR status refreshes via a live JSON island (not a full dossier reload).
  */
 export default function ReviewDossier({
     dossier,
@@ -28,10 +35,7 @@ export default function ReviewDossier({
     can_review: canReview,
     can_download: canDownload,
 }: {
-    dossier: Dossier;
-    templates?: unknown[];
-    access_grant_token?: string | null;
-    access_grant_portal_url?: string | null;
+    dossier: DossierReview;
     can_manage: boolean;
     can_edit: boolean;
     can_send_reminder: boolean;
@@ -40,6 +44,14 @@ export default function ReviewDossier({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const [documentRequests, setDocumentRequests] = useState(
+        dossier.document_requests,
+    );
+
+    // Sync when Inertia replaces props (review actions, uploads, navigation).
+    useEffect(() => {
+        setDocumentRequests(dossier.document_requests);
+    }, [dossier.document_requests]);
 
     setLayoutProps({
         breadcrumbs: [
@@ -61,26 +73,28 @@ export default function ReviewDossier({
         ],
     });
 
-    // Poll while OCR is still running so extracted JSON appears without a refresh.
-    const hasInFlightProcessing = dossier.document_requests.some((request) => {
+    const hasInFlightProcessing = documentRequests.some((request) => {
         const status = request.uploaded_document?.processing_status;
 
         return status === 'pending' || status === 'processing';
     });
 
-    const { start, stop } = usePoll(
-        2000,
-        { only: ['dossier'] },
-        { autoStart: false, mode: 'rest' },
-    );
-
-    useEffect(() => {
-        if (hasInFlightProcessing) {
-            start();
-        } else {
-            stop();
-        }
-    }, [hasInFlightProcessing, start, stop]);
+    useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocument }>({
+        enabled: hasInFlightProcessing,
+        match: (event) =>
+            event.dossier_id === dossier.id &&
+            event.subject_type === 'uploaded_document',
+        urlForEvent: (event) =>
+            UploadedDocumentController.live.url({
+                tenant: currentWorkspace,
+                uploadedDocument: event.subject_id,
+            }),
+        onData: ({ uploaded_document: uploadedDocument }) => {
+            setDocumentRequests((previous) =>
+                mergeUploadedDocument(previous, uploadedDocument),
+            );
+        },
+    });
 
     return (
         <>
@@ -92,27 +106,25 @@ export default function ReviewDossier({
                 canEditDetails={canEditDetails}
                 canSendReminder={canSendReminder}
                 dossierStatus={dossier.status}
-                hasFormItems={dossier.document_requests.length > 0}
+                hasFormItems={documentRequests.length > 0}
             >
                 <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="space-y-3">
-                            <Button
+                            <LinkButton
                                 variant="ghost"
                                 size="sm"
                                 className="px-0"
-                                asChild
-                            >
-                                <Link
-                                    href={showDossier({
+                                href={
+                                    showDossier({
                                         tenant: currentWorkspace,
                                         dossier: dossier.id,
-                                    })}
-                                >
-                                    <ArrowLeft aria-hidden="true" />
-                                    {t('Back to dossier')}
-                                </Link>
-                            </Button>
+                                    }).url
+                                }
+                            >
+                                <ArrowLeft aria-hidden="true" />
+                                {t('Back to dossier')}
+                            </LinkButton>
                             <Heading
                                 level={1}
                                 className="mb-0"
@@ -145,7 +157,7 @@ export default function ReviewDossier({
                     <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
                         <ReviewItemsPanel
                             dossierId={dossier.id}
-                            documentRequests={dossier.document_requests}
+                            documentRequests={documentRequests}
                         />
                         <DossierWorkflowCard dossier={dossier} />
                     </div>
@@ -153,4 +165,21 @@ export default function ReviewDossier({
             </DossierPermissionsProvider>
         </>
     );
+}
+
+/** Patch one uploaded document into the matching review-row without touching others. */
+function mergeUploadedDocument(
+    requests: DocumentRequest[],
+    uploadedDocument: UploadedDocument,
+): DocumentRequest[] {
+    return requests.map((request) => {
+        if (request.uploaded_document?.id !== uploadedDocument.id) {
+            return request;
+        }
+
+        return {
+            ...request,
+            uploaded_document: uploadedDocument,
+        };
+    });
 }

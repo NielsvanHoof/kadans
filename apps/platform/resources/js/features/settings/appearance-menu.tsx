@@ -2,11 +2,9 @@ import { Monitor, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
+    DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { Appearance } from '@/hooks/use-appearance';
@@ -25,41 +23,46 @@ export default function AppearanceMenu() {
     const TriggerIcon = resolvedAppearance === 'dark' ? Moon : Sun;
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-9"
-                    aria-label={t('Appearance')}
-                >
-                    <TriggerIcon className="size-5" aria-hidden="true" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-40">
+        <DropdownMenuTrigger>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="size-9"
+                aria-label={t('Appearance')}
+            >
+                <TriggerIcon className="size-5" aria-hidden="true" />
+            </Button>
+            <DropdownMenu
+                placement="bottom end"
+                className="min-w-40"
+                selectionMode="single"
+                selectedKeys={[appearance]}
+                onSelectionChange={(keys) => {
+                    const [next] = Array.from(keys);
+                    if (next !== undefined) {
+                        ((next) => updateAppearance(next as Appearance))(
+                            String(next),
+                        );
+                    }
+                }}
+            >
                 <DropdownMenuGroup>
                     <DropdownMenuLabel>{t('Appearance')}</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup
-                        value={appearance}
-                        onValueChange={(next) =>
-                            updateAppearance(next as Appearance)
-                        }
-                    >
-                        <DropdownMenuRadioItem value="light">
-                            <Sun aria-hidden="true" />
-                            {t('Light')}
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="dark">
-                            <Moon aria-hidden="true" />
-                            {t('Dark')}
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="system">
-                            <Monitor aria-hidden="true" />
-                            {t('System')}
-                        </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
+
+                    <DropdownMenuItem id="light">
+                        <Sun aria-hidden="true" />
+                        {t('Light')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem id="dark">
+                        <Moon aria-hidden="true" />
+                        {t('Dark')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem id="system">
+                        <Monitor aria-hidden="true" />
+                        {t('System')}
+                    </DropdownMenuItem>
                 </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenu>
+        </DropdownMenuTrigger>
     );
 }

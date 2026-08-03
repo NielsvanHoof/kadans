@@ -60,11 +60,69 @@ jobs:
 
       - name: Prepare the application
         run: |
-          cp .env.example .env
+          cp .env.ci .env
           php artisan key:generate --no-interaction
 
       - name: Run the complete quality gate
         run: composer ci:check
+
+      # ci:check regenerates these; any change means the committed output is stale.
+      # Uses status --porcelain rather than `diff` so a generated file that was
+      # never committed is caught too, not just a modified one.
+      - name: Fail on stale generated TypeScript
+        run: |
+          paths="resources/js/types/generated resources/js/features/document-requests/item-types/generated.ts"
+          changed=$(git status --porcelain -- $paths)
+          if [ -n "$changed" ]; then
+            echo "Generated TypeScript is out of date or uncommitted:"
+            echo "$changed"
+            git diff -- $paths
+            exit 1
+          fi
+
+  coverage:
+    name: Test coverage gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, intl, mbstring, pcntl, pdo_pgsql, redis, sqlite3, zip
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/platform/package-lock.json
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Prepare the application
+        run: |
+          cp .env.ci .env
+          php artisan key:generate --no-interaction
+
+      # Feature tests render Inertia pages against the built Vite manifest
+      # (see Tests\TestCase). Coverage runs outside ci:check, so build here.
+      - name: Build frontend assets
+        run: npm run build
+
+      # Fails under the --min threshold in composer.json (currently 85%).
+      - name: Enforce the coverage threshold
+        run: composer test:coverage:ci
 
   postgres-migrations:
     name: PostgreSQL migrations
@@ -129,6 +187,7 @@ jobs:
     name: Immutable deployment artifact
     needs:
       - quality
+      - coverage
       - postgres-migrations
     runs-on: ubuntu-latest
     timeout-minutes: 30

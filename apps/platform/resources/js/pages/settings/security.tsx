@@ -1,9 +1,11 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Accounts/Http/Controllers/SecurityController';
-import Heading from '@/components/heading';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
+import Heading from '@/components/primitives/heading';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
+import PasswordInput from '@/components/primitives/password-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
@@ -150,7 +152,8 @@ export default function Security(props: Props) {
 
                             <Field orientation="horizontal">
                                 <Button
-                                    disabled={processing}
+                                    type="submit"
+                                    isDisabled={processing}
                                     data-test="update-password-button"
                                 >
                                     {processing && <Spinner />}

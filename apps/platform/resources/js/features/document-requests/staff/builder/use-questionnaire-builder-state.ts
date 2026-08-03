@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useState } from 'react';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import {
     type BuilderSaveStatus,
@@ -9,17 +9,68 @@ import type {
     QuestionnaireItemConfiguration,
     QuestionnaireItemType,
 } from '@/features/document-requests/types';
+import { storesAnswerOptionIds } from '@/features/document-requests/types';
+import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { createUlid } from '@/lib/ulid';
 
-/** In-flight create shown as a ghost row on the canvas. */
-export type PendingInsert = {
-    index: number;
-    type: QuestionnaireItemType;
-    title: string;
-};
+let nextTempId = -1;
+
+function allocateTempId(): number {
+    const id = nextTempId;
+    nextTempId -= 1;
+
+    return id;
+}
+
+function defaultConfiguration(
+    type: QuestionnaireItemType,
+): QuestionnaireItemConfiguration {
+    if (!storesAnswerOptionIds(type)) {
+        return { is_required: true };
+    }
+
+    return {
+        is_required: true,
+        options: [
+            { id: crypto.randomUUID(), label: 'Option 1' },
+            { id: crypto.randomUUID(), label: 'Option 2' },
+        ],
+    };
+}
+
+function createDraftItem(
+    type: QuestionnaireItemType,
+    title: string,
+    sortOrder: number,
+    overrides?: Partial<
+        Pick<DocumentRequest, 'field_key' | 'instructions' | 'configuration'>
+    >,
+): DocumentRequest {
+    return {
+        id: allocateTempId(),
+        type,
+        field_key: overrides?.field_key ?? createUlid(),
+        title,
+        instructions: overrides?.instructions ?? null,
+        configuration: overrides?.configuration ?? defaultConfiguration(type),
+        status: 'pending',
+        answer_text: null,
+        answer_boolean: null,
+        answer_option_ids: null,
+        answered_at: null,
+        reviewed_at: null,
+        reviewed_by_name: null,
+        rejection_reason: null,
+        sort_order: sortOrder,
+        is_visible: true,
+        is_applicable: true,
+        uploaded_document: null,
+    };
+}
 
 /**
- * Local builder state: selection, autosave status, and create/reorder/update helpers.
+ * Client-owned builder draft. Mutations stay local until Save syncs to the server.
  */
 export function useQuestionnaireBuilderState({
     dossierId,
@@ -31,8 +82,7 @@ export function useQuestionnaireBuilderState({
     canEdit: boolean;
 }) {
     const { t } = useTranslation();
-    const { createComponent, reorderComponents, updateComponent } =
-        useQuestionnaireBuilderActions(dossierId);
+    const { syncDocumentRequests } = useQuestionnaireBuilderActions(dossierId);
 
     const [items, setItems] = useState(documentRequests);
     const [selectedId, setSelectedId] = useState<number | null>(
@@ -40,29 +90,12 @@ export function useQuestionnaireBuilderState({
     );
     const [saveStatus, setSaveStatus] = useState<BuilderSaveStatus>('idle');
     const [announcement, setAnnouncement] = useState('');
-    // Ghost row while create is in flight; pending flag comes from useTransition.
-    const [pendingInsert, setPendingInsert] = useState<PendingInsert | null>(
-        null,
-    );
-    const [isInsertPending, startInsertTransition] = useTransition();
+    const [isDirty, setIsDirty] = useState(false);
 
-    // Survives across the Inertia refresh so we can select the new field by position.
-    const pendingInsertAtRef = useRef<number | null>(null);
-
-    // Single sync path: refresh items, then resolve selection (pending insert or stale id).
+    // Sync when Inertia replaces page props (rare after draft+Save; e.g. revisit).
     useEffect(() => {
         setItems(documentRequests);
-
-        if (pendingInsertAtRef.current !== null) {
-            const next = documentRequests[pendingInsertAtRef.current];
-
-            if (next) {
-                setSelectedId(next.id);
-            }
-
-            return;
-        }
-
+        setIsDirty(false);
         setSelectedId((current) => {
             if (
                 current !== null &&
@@ -75,13 +108,17 @@ export function useQuestionnaireBuilderState({
         });
     }, [documentRequests]);
 
+    const markDirty = () => {
+        setIsDirty(true);
+        setSaveStatus('idle');
+    };
+
     const addAt = (type: QuestionnaireItemType, position?: number) => {
-        if (!canEdit || isInsertPending) {
+        if (!canEdit) {
             return;
         }
 
         const definition = getQuestionnaireItemTypeDefinition(type);
-        // Default: insert after the selected field so Add stays near the user's focus.
         const selectedIndex =
             selectedId === null
                 ? -1
@@ -89,74 +126,191 @@ export function useQuestionnaireBuilderState({
         const insertAt =
             position ?? (selectedIndex >= 0 ? selectedIndex + 1 : items.length);
         const title = t(definition.defaultTitle);
+        const created = createDraftItem(type, title, insertAt);
 
-        // Park the ghost row at the drop index before the transition starts.
-        pendingInsertAtRef.current = insertAt;
-        setPendingInsert({ index: insertAt, type, title });
-        setSaveStatus('saving');
-        setAnnouncement(t('Adding component…'));
+        setItems((previous) => {
+            const next = [...previous];
+            next.splice(insertAt, 0, created);
 
-        // Transition owns the async create — isInsertPending stays true until it settles.
-        startInsertTransition(async () => {
-            const ok = await createComponent({
-                type,
-                title,
-                position: insertAt,
-            });
-
-            if (!ok) {
-                pendingInsertAtRef.current = null;
-                setPendingInsert(null);
-                setSaveStatus('error');
-                setAnnouncement(t('Could not add the component. Try again.'));
-
-                return;
-            }
-
-            // Inertia usually refreshed during the await; the effect already selected the real id.
-            pendingInsertAtRef.current = null;
-            setPendingInsert(null);
-            setSaveStatus('saved');
-            setAnnouncement(t('Component added.'));
+            return next.map((item, index) => ({
+                ...item,
+                sort_order: index,
+            }));
         });
+        setSelectedId(created.id);
+        markDirty();
+        setAnnouncement(t('Component added.'));
     };
 
-    const handleReorder = async (orderedIds: number[]): Promise<boolean> => {
-        setSaveStatus('saving');
-        const ok = await reorderComponents(orderedIds);
-        setSaveStatus(ok ? 'saved' : 'error');
-        setAnnouncement(
-            ok ? t('Form order saved.') : t('Could not save the new order.'),
-        );
+    // DnD already applies the new order via setItems; this only marks dirty.
+    const handleReorder = (_orderedIds: number[]): boolean => {
+        if (!canEdit) {
+            return false;
+        }
 
-        return ok;
+        markDirty();
+        setAnnouncement(t('Form order updated.'));
+
+        return true;
     };
 
-    const selected =
-        items.find((item) => item.id === selectedId) ??
-        documentRequests.find((item) => item.id === selectedId) ??
-        null;
+    const selected = items.find((item) => item.id === selectedId) ?? null;
 
-    const handleSave = async (input: {
+    const handleSaveField = async (input: {
         type: QuestionnaireItemType;
         title: string;
         instructions: string | null;
         configuration: QuestionnaireItemConfiguration;
     }): Promise<boolean> => {
-        if (!selected) {
+        if (!selected || !canEdit) {
+            return false;
+        }
+
+        setItems((previous) =>
+            previous.map((item) =>
+                item.id === selected.id
+                    ? {
+                          ...item,
+                          type: input.type,
+                          title: input.title,
+                          instructions: input.instructions,
+                          configuration: input.configuration,
+                      }
+                    : item,
+            ),
+        );
+        markDirty();
+        setAnnouncement(t('Field settings updated.'));
+
+        return true;
+    };
+
+    const handleDestroy = async (
+        documentRequestId: number,
+    ): Promise<boolean> => {
+        if (!canEdit) {
+            return false;
+        }
+
+        const remaining = items
+            .filter((item) => item.id !== documentRequestId)
+            .map((item, index) => ({ ...item, sort_order: index }));
+
+        setItems(remaining);
+        setSelectedId((current) => {
+            if (current !== documentRequestId) {
+                return current;
+            }
+
+            return remaining[0]?.id ?? null;
+        });
+        markDirty();
+        setAnnouncement(t('Component deleted.'));
+
+        return true;
+    };
+
+    const applyTemplate = (template: ApplyTemplateOption) => {
+        if (!canEdit || template.items.length === 0) {
+            return;
+        }
+
+        // Fresh ULIDs per item; remap visibility sources like the server action.
+        const fieldKeysByTemplateKey = new Map<string, string>();
+
+        for (const item of template.items) {
+            if (item.field_key !== '') {
+                fieldKeysByTemplateKey.set(item.field_key, createUlid());
+            }
+        }
+
+        const appended = template.items.map((item, index) => {
+            const fieldKey =
+                fieldKeysByTemplateKey.get(item.field_key) ?? createUlid();
+            let configuration =
+                item.configuration ?? defaultConfiguration(item.type);
+
+            const visibility = configuration.visibility;
+            const sourceKey = visibility?.source_field_key;
+            const remappedSourceKey = sourceKey
+                ? fieldKeysByTemplateKey.get(sourceKey)
+                : undefined;
+
+            if (visibility && remappedSourceKey) {
+                configuration = {
+                    ...configuration,
+                    visibility: {
+                        ...visibility,
+                        source_field_key: remappedSourceKey,
+                    },
+                };
+            }
+
+            return createDraftItem(
+                item.type,
+                item.title,
+                items.length + index,
+                {
+                    field_key: fieldKey,
+                    instructions: item.instructions,
+                    configuration,
+                },
+            );
+        });
+
+        setItems((previous) =>
+            [...previous, ...appended].map((item, index) => ({
+                ...item,
+                sort_order: index,
+            })),
+        );
+        setSelectedId(appended[0]?.id ?? selectedId);
+        markDirty();
+        setAnnouncement(t('Template applied to draft.'));
+    };
+
+    const saveDraft = async (): Promise<boolean> => {
+        if (!canEdit) {
             return false;
         }
 
         setSaveStatus('saving');
-        const ok = await updateComponent(selected.id, input);
-        setSaveStatus(ok ? 'saved' : 'error');
-        setAnnouncement(
-            ok
-                ? t('Field settings saved.')
-                : t('Could not save field settings.'),
-        );
+        setAnnouncement(t('Saving form…'));
 
-        return ok;
+        const synced = await syncDocumentRequests(items);
+
+        if (!synced) {
+            setSaveStatus('error');
+            setAnnouncement(t('Could not save the form. Try again.'));
+
+            return false;
+        }
+
+        setItems(synced);
+        setIsDirty(false);
+        setSaveStatus('saved');
+        setAnnouncement(t('Form saved.'));
+
+        // Keep selection on the same field_key after ids become real.
+        setSelectedId((current) => {
+            if (current === null) {
+                return synced[0]?.id ?? null;
+            }
+
+            const previous = items.find((item) => item.id === current);
+            if (!previous) {
+                return synced[0]?.id ?? null;
+            }
+
+            return (
+                synced.find((item) => item.field_key === previous.field_key)
+                    ?.id ??
+                synced[0]?.id ??
+                null
+            );
+        });
+
+        return true;
     };
 
     return {
@@ -167,10 +321,12 @@ export function useQuestionnaireBuilderState({
         selected,
         saveStatus,
         announcement,
-        pendingInsert,
-        isInsertPending,
+        isDirty,
         addAt,
         handleReorder,
-        handleSave,
+        handleSaveField,
+        handleDestroy,
+        applyTemplate,
+        saveDraft,
     };
 }

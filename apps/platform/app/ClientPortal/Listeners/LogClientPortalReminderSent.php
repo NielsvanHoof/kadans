@@ -33,8 +33,7 @@ final readonly class LogClientPortalReminderSent
         }
 
         try {
-            $grant = ClientAccessGrant::query()
-                ->withoutGlobalScopes()
+            $grant = ClientAccessGrant::queryWithoutTenantScope()
                 ->whereKey($event->notification->grantId)
                 ->first();
 

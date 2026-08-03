@@ -6,60 +6,106 @@ namespace App\Dossiers\Models;
 
 use App\Accounts\Models\User;
 use App\Audit\Concerns\LogsTenantAuditableActivity;
+use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
-use App\Tenancy\Concerns\BelongsToTenant;
+use App\Shared\Concerns\InvalidatesTenantCaches;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantOwnedModel;
+use Carbon\CarbonImmutable;
 use Database\Factories\DossierFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Carbon;
 use Laravel\Scout\Builder as ScoutBuilder;
 use Laravel\Scout\Searchable;
 use Override;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
+use function is_string;
+
 /**
  * @property int $id
  * @property int $tenant_id
- * @property int $client_id
  * @property string $title
  * @property string|null $reference
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property int $client_id
  * @property DossierStatus $status
+ * @property CarbonImmutable|null $deleted_at
  * @property int|null $responsible_user_id
- * @property Carbon|null $due_date
+ * @property CarbonImmutable|null $due_date
  * @property int|null $reminder_interval_days
- * @property Carbon|null $next_reminder_at
- * @property Carbon|null $last_client_message_sent_at
- * @property Carbon|null $last_client_opened_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
- * @property Carbon|null $deleted_at
+ * @property CarbonImmutable|null $next_reminder_at
+ * @property CarbonImmutable|null $last_client_message_sent_at
+ * @property CarbonImmutable|null $last_client_opened_at
+ * @property int|null $builder_locked_by_user_id
+ * @property string|null $builder_lock_token
+ * @property CarbonImmutable|null $builder_lock_expires_at
+ * @property-read EloquentCollection<int, Activity> $activitiesAsSubject
+ * @property-read int|null $activities_as_subject_count
+ * @property-read User|null $builderLockedBy
+ * @property-read Client|null $client
+ * @property-read EloquentCollection<int, ClientAccessGrant> $clientAccessGrants
+ * @property-read int|null $client_access_grants_count
+ * @property-read EloquentCollection<int, DocumentRequest> $documentRequests
+ * @property-read int|null $document_requests_count
+ * @property-read EloquentCollection<int, DossierExport> $exports
+ * @property-read int|null $exports_count
+ * @property-read User|null $responsibleUser
+ * @property-read Tenant $tenant
+ *
+ * @method static DossierFactory factory($count = null, $state = [])
+ * @method static EloquentBuilder<static>|Dossier newModelQuery()
+ * @method static EloquentBuilder<static>|Dossier newQuery()
+ * @method static EloquentBuilder<static>|Dossier onlyTrashed()
+ * @method static EloquentBuilder<static>|Dossier query()
+ * @method static EloquentBuilder<static>|Dossier whereClientId($value)
+ * @method static EloquentBuilder<static>|Dossier whereCreatedAt($value)
+ * @method static EloquentBuilder<static>|Dossier whereDeletedAt($value)
+ * @method static EloquentBuilder<static>|Dossier whereDueDate($value)
+ * @method static EloquentBuilder<static>|Dossier whereId($value)
+ * @method static EloquentBuilder<static>|Dossier whereLastClientMessageSentAt($value)
+ * @method static EloquentBuilder<static>|Dossier whereLastClientOpenedAt($value)
+ * @method static EloquentBuilder<static>|Dossier whereNextReminderAt($value)
+ * @method static EloquentBuilder<static>|Dossier whereReference($value)
+ * @method static EloquentBuilder<static>|Dossier whereReminderIntervalDays($value)
+ * @method static EloquentBuilder<static>|Dossier whereResponsibleUserId($value)
+ * @method static EloquentBuilder<static>|Dossier whereStatus($value)
+ * @method static EloquentBuilder<static>|Dossier whereTenantId($value)
+ * @method static EloquentBuilder<static>|Dossier whereTitle($value)
+ * @method static EloquentBuilder<static>|Dossier whereUpdatedAt($value)
+ * @method static EloquentBuilder<static>|Dossier withTrashed(bool $withTrashed = true)
+ * @method static EloquentBuilder<static>|Dossier withoutTrashed()
+ *
+ * @mixin \Eloquent
  */
-#[Fillable([
-    'tenant_id',
-    'client_id',
-    'title',
-    'reference',
-    'status',
-    'responsible_user_id',
-    'due_date',
-    'reminder_interval_days',
-])]
-#[UseFactory(DossierFactory::class)]
-final class Dossier extends Model
+final class Dossier extends TenantOwnedModel
 {
     /** @use HasFactory<DossierFactory> */
-    use BelongsToTenant, HasFactory, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+    use HasFactory, InvalidatesTenantCaches, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'tenant_id',
+        'client_id',
+        'title',
+        'reference',
+        'status',
+        'responsible_user_id',
+        'due_date',
+        'reminder_interval_days',
+    ];
 
     /**
      * @var array<string, mixed>
@@ -133,6 +179,49 @@ final class Dossier extends Model
     }
 
     /**
+     * Staff member currently holding the exclusive builder edit lease.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function builderLockedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'builder_locked_by_user_id');
+    }
+
+    /**
+     * True when a non-expired builder lock is present.
+     */
+    public function hasActiveBuilderLock(): bool
+    {
+        return $this->builder_locked_by_user_id !== null
+            && is_string($this->builder_lock_token)
+            && $this->builder_lock_token !== ''
+            && $this->builder_lock_expires_at !== null
+            && $this->builder_lock_expires_at->isFuture();
+    }
+
+    /**
+     * True when the given user holds a still-valid builder lock.
+     */
+    public function isBuilderLockedBy(User $user): bool
+    {
+        return $this->hasActiveBuilderLock()
+            && (int) $this->builder_locked_by_user_id === (int) $user->getKey();
+    }
+
+    /**
+     * Clear builder lock columns without touching fillable / activity log.
+     */
+    public function clearBuilderLock(): void
+    {
+        $this->forceFill([
+            'builder_locked_by_user_id' => null,
+            'builder_lock_token' => null,
+            'builder_lock_expires_at' => null,
+        ])->save();
+    }
+
+    /**
      * @return HasMany<DocumentRequest, $this>
      */
     public function documentRequests(): HasMany
@@ -188,6 +277,7 @@ final class Dossier extends Model
             'next_reminder_at' => 'datetime',
             'last_client_message_sent_at' => 'datetime',
             'last_client_opened_at' => 'datetime',
+            'builder_lock_expires_at' => 'datetime',
         ];
     }
 

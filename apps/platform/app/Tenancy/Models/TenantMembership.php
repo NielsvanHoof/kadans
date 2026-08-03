@@ -6,14 +6,12 @@ namespace App\Tenancy\Models;
 
 use App\Accounts\Models\User;
 use App\Tenancy\Enums\TenantMembershipStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\TenantMembershipFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Override;
 
 /**
@@ -22,17 +20,60 @@ use Override;
  * @property int $user_id
  * @property string|null $job_title
  * @property TenantMembershipStatus $status
- * @property Carbon|null $invited_at
- * @property Carbon|null $joined_at
- * @property Carbon|null $last_accessed_at
+ * @property CarbonImmutable|null $invited_at
+ * @property CarbonImmutable|null $joined_at
+ * @property CarbonImmutable|null $last_accessed_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Tenant $tenant
+ * @property-read User $user
+ *
+ * @method static TenantMembershipFactory factory($count = null, $state = [])
+ * @method static Builder<static>|TenantMembership newModelQuery()
+ * @method static Builder<static>|TenantMembership newQuery()
+ * @method static Builder<static>|TenantMembership query()
+ * @method static Builder<static>|TenantMembership whereCreatedAt($value)
+ * @method static Builder<static>|TenantMembership whereId($value)
+ * @method static Builder<static>|TenantMembership whereInvitedAt($value)
+ * @method static Builder<static>|TenantMembership whereJobTitle($value)
+ * @method static Builder<static>|TenantMembership whereJoinedAt($value)
+ * @method static Builder<static>|TenantMembership whereLastAccessedAt($value)
+ * @method static Builder<static>|TenantMembership whereStatus($value)
+ * @method static Builder<static>|TenantMembership whereTenantId($value)
+ * @method static Builder<static>|TenantMembership whereUpdatedAt($value)
+ * @method static Builder<static>|TenantMembership whereUserId($value)
+ *
+ * @mixin \Eloquent
  */
-#[Fillable(['tenant_id', 'user_id', 'job_title', 'status', 'invited_at', 'joined_at', 'last_accessed_at'])]
-#[Hidden(['status', 'invited_at', 'joined_at', 'last_accessed_at'])]
-#[UseFactory(TenantMembershipFactory::class)]
 final class TenantMembership extends Model
 {
     /** @use HasFactory<TenantMembershipFactory> */
     use HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'tenant_id',
+        'user_id',
+        'job_title',
+        'status',
+        'invited_at',
+        'joined_at',
+        'last_accessed_at',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $hidden = [
+        'status',
+        'invited_at',
+        'joined_at',
+        'last_accessed_at',
+    ];
 
     /**
      * @return BelongsTo<Tenant, $this>

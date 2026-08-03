@@ -1,12 +1,10 @@
-import EmptyState from '@/components/empty-state';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+/*
+ * Plain semantic <table> rather than the React Aria Table primitive.
+ * This grid uses colSpan group-separator rows, which a React Aria collection
+ * cannot express, and it needs none of the collection behaviour (no selection,
+ * no row actions). Native table semantics are fully accessible here.
+ */
+import EmptyState from '@/components/primitives/empty-state';
 import {
     keyedCells,
     keyedRows,
@@ -48,26 +46,27 @@ export default function ExtractionTables({
                                     </h3>
                                 )}
                                 <div className="rounded-md border">
-                                    <Table className="min-w-md text-left">
+                                    <table className="w-full min-w-md caption-bottom text-left text-xs">
                                         {headers.length > 0 && (
-                                            <TableHeader>
-                                                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                                            <thead className="[&_tr]:border-b">
+                                                <tr className="border-b bg-muted/40 transition-colors hover:bg-muted/40 hover:bg-muted/50">
                                                     {headers.map(
                                                         ({
                                                             value: header,
                                                             key,
                                                         }) => (
-                                                            <TableHead
+                                                            <th
+                                                                className="p-2 text-left align-middle font-medium"
                                                                 key={`${tableId}|h|${key}`}
                                                             >
                                                                 {header}
-                                                            </TableHead>
+                                                            </th>
                                                         ),
                                                     )}
-                                                </TableRow>
-                                            </TableHeader>
+                                                </tr>
+                                            </thead>
                                         )}
-                                        <TableBody>
+                                        <tbody className="[&_tr:last-child]:border-0">
                                             {rows.map(
                                                 ({ row, key: rowKey }) => {
                                                     const rowId = `${tableId}|r|${rowKey}`;
@@ -75,26 +74,29 @@ export default function ExtractionTables({
                                                         keyedCells(row);
 
                                                     return (
-                                                        <TableRow key={rowId}>
+                                                        <tr
+                                                            className="border-b transition-colors hover:bg-muted/50"
+                                                            key={rowId}
+                                                        >
                                                             {cells.map(
                                                                 ({
                                                                     cell,
                                                                     key,
                                                                 }) => (
-                                                                    <TableCell
+                                                                    <td
+                                                                        className="p-2 align-top whitespace-pre-wrap"
                                                                         key={`${rowId}|${key}`}
-                                                                        className="align-top whitespace-pre-wrap"
                                                                     >
                                                                         {cell}
-                                                                    </TableCell>
+                                                                    </td>
                                                                 ),
                                                             )}
-                                                        </TableRow>
+                                                        </tr>
                                                     );
                                                 },
                                             )}
-                                        </TableBody>
-                                    </Table>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         );

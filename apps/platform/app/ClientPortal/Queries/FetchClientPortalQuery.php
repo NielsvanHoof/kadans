@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\ClientPortal\Queries;
 
 use App\ClientPortal\Data\ClientPortalPageData;
+use App\ClientPortal\Data\PortalClientData;
 use App\ClientPortal\Data\PortalDocumentRequestData;
 use App\ClientPortal\Data\PortalDossierData;
 use App\ClientPortal\Data\PortalFirmData;
 use App\ClientPortal\Data\PortalNextIncompleteData;
 use App\ClientPortal\Data\PortalProgressData;
 use App\ClientPortal\Data\PortalUploadedDocumentData;
-use App\ClientPortal\Enums\SubmissionContext;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
@@ -79,11 +80,11 @@ final readonly class FetchClientPortalQuery
 
             $documentRequests[] = new PortalDocumentRequestData(
                 id: $documentRequest->id,
-                type: $documentRequest->type->value,
+                type: $documentRequest->type,
                 fieldKey: $documentRequest->field_key,
                 title: $documentRequest->title,
                 instructions: $documentRequest->instructions,
-                status: $documentRequest->status->value,
+                status: $documentRequest->status,
                 answerText: $documentRequest->answer_text,
                 answerBoolean: $documentRequest->answer_boolean,
                 answerOptionIds: $documentRequest->answer_option_ids,
@@ -109,9 +110,9 @@ final readonly class FetchClientPortalQuery
             dossier: new PortalDossierData(
                 title: $dossier->title,
                 reference: $dossier->reference,
-                status: $dossier->status->value,
+                status: $dossier->status,
                 dueDate: $dossier->due_date?->toDateString(),
-                clientName: $client->name,
+                client: new PortalClientData(name: $client->name),
                 expiresAt: $grant->expires_at->toIso8601String(),
                 progress: new PortalProgressData(
                     total: $totalItemCount,

@@ -9,12 +9,19 @@ use App\Accounts\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Override;
 
 /**
  * @extends Factory<User>
  */
 final class UserFactory extends Factory
 {
+    /**
+     * @var class-string<User>
+     */
+    #[Override]
+    protected $model = User::class;
+
     /**
      * The current password being used by the factory.
      */

@@ -12,12 +12,8 @@ use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -44,6 +40,8 @@ test('document request routes 404 when the request belongs to another dossier', 
         'dossier_id' => $otherDossier->id,
         'title' => 'Foreign request',
     ]);
+
+    grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])

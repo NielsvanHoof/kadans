@@ -1,2 +1,5 @@
+# Qompose is a private workspace for accounting firms and their clients.
+# Nothing here is meant to be indexed; the client portal additionally sends
+# X-Robots-Tag: noindex on every response.
 User-agent: *
-Disallow:
+Disallow: /

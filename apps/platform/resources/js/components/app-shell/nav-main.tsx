@@ -1,4 +1,3 @@
-import { Link } from '@inertiajs/react';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -33,20 +32,28 @@ export function NavMain({
                         return (
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton
-                                    asChild
+                                    href={
+                                        typeof item.href === 'string'
+                                            ? item.href
+                                            : item.href.url
+                                    }
                                     isActive={isActive}
                                     tooltip={{ children: item.title }}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    /*
+                                     * Coral wash plus a hard coral rail down the
+                                     * left edge, overriding the vendored grey
+                                     * `data-active` styles. Set here rather than
+                                     * in ui/sidebar.tsx so `shadcn add sidebar
+                                     * --overwrite` cannot silently revert it.
+                                     *
+                                     * The rail is an inset shadow, not a border,
+                                     * so turning it on does not shift the label.
+                                     */
+                                    className="data-active:bg-brand-muted data-active:text-brand-foreground data-active:shadow-[inset_2px_0_0_0_var(--color-brand)]"
                                 >
-                                    <Link
-                                        href={item.href}
-                                        prefetch
-                                        aria-current={
-                                            isActive ? 'page' : undefined
-                                        }
-                                    >
-                                        {item.icon && <item.icon />}
-                                        <span>{item.title}</span>
-                                    </Link>
+                                    {item.icon && <item.icon />}
+                                    <span>{item.title}</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         );

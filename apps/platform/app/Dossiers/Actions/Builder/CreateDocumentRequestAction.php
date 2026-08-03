@@ -55,7 +55,7 @@ final readonly class CreateDocumentRequestAction
             if ($insertAt < $itemCount) {
                 DocumentRequest::query()
                     ->where('dossier_id', $lockedDossier->getKey())
-                    ->where('sort_order', '>=', $insertAt)
+                    ->where('sort_order', '>=', value: $insertAt)
                     ->increment('sort_order');
             }
 

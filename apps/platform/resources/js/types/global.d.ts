@@ -1,6 +1,7 @@
 import type { WorkspaceNotificationsSummary } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
 import type { Auth } from '@/types/auth';
+import type { TenantPermissionMap } from '@/types/generated/tenant-permissions';
 
 type AvailableLocale = {
     code: string;
@@ -29,12 +30,11 @@ declare module '@inertiajs/core' {
             auth: Auth;
             workspaces: Firm[];
             current_firm: Firm | null;
-            can_manage_members: boolean;
-            can_view_roles: boolean;
-            can_view_pipelines: boolean;
+            /** Every registered tenant permission, resolved for the current firm. */
+            permissions: Partial<TenantPermissionMap>;
             support_session: SupportSessionShared | null;
             notifications: WorkspaceNotificationsSummary | null | undefined;
-            sidebarOpen: boolean;
+            sidebar_open: boolean;
             [key: string]: unknown;
         };
     }

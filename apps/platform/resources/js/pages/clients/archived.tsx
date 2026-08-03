@@ -1,11 +1,11 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { Archive } from 'lucide-react';
-import Heading from '@/components/heading';
-import IndexPagination from '@/components/index-query/index-pagination';
-import IndexQueryResults from '@/components/index-query/index-query-results';
-import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import Heading from '@/components/primitives/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import ArchivedClientsCard from '@/features/clients/list/archived-clients-card';
 import type { ArchivedClientSummary } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -54,11 +54,12 @@ export default function ArchivedClients({
                             'Review retained client records and restore only the relationships you need.',
                         )}
                     />
-                    <Button variant="outline" asChild>
-                        <Link href={clientIndex(currentWorkspace)}>
-                            {t('Back to clients')}
-                        </Link>
-                    </Button>
+                    <LinkButton
+                        variant="outline"
+                        href={clientIndex(currentWorkspace).url}
+                    >
+                        {t('Back to clients')}
+                    </LinkButton>
                 </div>
 
                 <Alert>

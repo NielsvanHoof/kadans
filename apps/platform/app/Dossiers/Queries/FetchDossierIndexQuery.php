@@ -147,7 +147,9 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{id: int, client_name: string, title: string, reference: string|null, status: string, due_date: string|null, responsible_name: string|null}
+     * Row shape is owned by DossierIndexRowData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
      */
     protected function mapModel(Model $model): array
     {
@@ -161,7 +163,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             clientName: $client->name,
             title: $model->title,
             reference: $model->reference,
-            status: $model->status->value,
+            status: $model->status,
             dueDate: $model->due_date?->toDateString(),
             responsibleName: $model->responsibleUser?->name,
         )->toArray();

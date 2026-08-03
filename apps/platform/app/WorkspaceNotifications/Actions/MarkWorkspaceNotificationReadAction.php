@@ -17,13 +17,15 @@ final class MarkWorkspaceNotificationReadAction
 {
     public function handle(User $user, Tenant $tenant, string $notificationId): DatabaseNotification
     {
-        $notification = DatabaseNotification::query()
+        $query = DatabaseNotification::query()
             ->whereKey($notificationId)
             ->where('notifiable_type', $user->getMorphClass())
             ->where('notifiable_id', $user->getKey())
-            ->where('type', ClientQuestionnaireCompletedNotification::DatabaseType)
-            ->where('data->tenant_id', (string) $tenant->getKey())
-            ->first();
+            ->where('type', ClientQuestionnaireCompletedNotification::DatabaseType);
+
+        $query->getQuery()->whereRaw("data->>'tenant_id' = ?", [(string) $tenant->getKey()]);
+
+        $notification = $query->first();
 
         if (! $notification instanceof DatabaseNotification) {
             throw (new ModelNotFoundException)->setModel(

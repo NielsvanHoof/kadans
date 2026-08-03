@@ -4,24 +4,17 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Next incomplete portal item hint.
  */
-final readonly class PortalNextIncompleteData
+#[TypeScript]
+final class PortalNextIncompleteData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $title,
+        public readonly int $id,
+        public readonly string $title,
     ) {}
-
-    /**
-     * @return array{id: int, title: string}
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-        ];
-    }
 }

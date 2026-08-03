@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import DataTable, { type DataTableColumn } from '@/components/data-table';
-import DataTableBulkToolbar from '@/components/data-table-bulk-toolbar';
-import EmptyState from '@/components/empty-state';
-import { Badge } from '@/components/ui/badge';
+import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
+import EmptyState from '@/components/primitives/empty-state';
 import {
     Card,
     CardContent,
@@ -12,10 +11,7 @@ import {
 } from '@/components/ui/card';
 import BulkRestoreDossiersButton from '@/features/dossiers/list/bulk-restore-dossiers-button';
 import RestoreDossierButton from '@/features/dossiers/list/restore-dossier-button';
-import {
-    dossierStatusBadgeVariant,
-    dossierStatusLabel,
-} from '@/features/dossiers/status/dossier-status';
+import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { ArchivedDossierSummary } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
@@ -57,11 +53,7 @@ export default function ArchivedDossiersCard({
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium">{dossier.title}</p>
-                        <Badge
-                            variant={dossierStatusBadgeVariant(dossier.status)}
-                        >
-                            {dossierStatusLabel(dossier.status, t)}
-                        </Badge>
+                        <DossierStatusBadge status={dossier.status} />
                     </div>
                     <p className="text-sm text-muted-foreground">
                         {dossier.client_name}

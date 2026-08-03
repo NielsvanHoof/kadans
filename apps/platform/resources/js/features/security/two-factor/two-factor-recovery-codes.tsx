@@ -8,7 +8,7 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import AlertError from '@/components/alert-error';
+import AlertError from '@/components/primitives/alert-error';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -137,7 +137,7 @@ export default function TwoFactorRecoveryCodes({
                                 <Button
                                     variant="secondary"
                                     type="submit"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                     aria-describedby="regenerate-warning"
                                 >
                                     <RefreshCw /> {t('Regenerate codes')}

@@ -1,12 +1,12 @@
 import { Form } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import SettingsSection from '@/components/settings-section';
+import SettingsSection from '@/components/primitives/settings-section';
 import { Button } from '@/components/ui/button';
 import TwoFactorRecoveryCodes from '@/features/security/two-factor/two-factor-recovery-codes';
 import TwoFactorSetupModal from '@/features/security/two-factor/two-factor-setup-modal';
+import { useTwoFactorAuth } from '@/features/security/two-factor/use-two-factor-auth';
 import { useTranslation } from '@/hooks/use-translation';
-import { useTwoFactorAuth } from '@/hooks/use-two-factor-auth';
 import { disable, enable } from '@/routes/two-factor';
 
 export type Props = {
@@ -65,7 +65,7 @@ export default function ManageTwoFactor(props: Props) {
                                 <Button
                                     variant="destructive"
                                     type="submit"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                 >
                                     {t('Disable 2FA')}
                                 </Button>
@@ -99,7 +99,10 @@ export default function ManageTwoFactor(props: Props) {
                                 onSuccess={() => setShowSetupModal(true)}
                             >
                                 {({ processing }) => (
-                                    <Button type="submit" disabled={processing}>
+                                    <Button
+                                        type="submit"
+                                        isDisabled={processing}
+                                    >
                                         {t('Enable 2FA')}
                                     </Button>
                                 )}

@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('tenant context runs callbacks under the given tenant and restores afterward', function (): void {
     $tenantA = Tenant::factory()->create();
@@ -23,4 +19,24 @@ test('tenant context runs callbacks under the given tenant and restores afterwar
 
     expect($seenTenantId)->toBe($tenantB->id)
         ->and(Tenant::current()?->id)->toBe($tenantA->id);
+});
+
+test('tenant context strict flag is restored after runStrict', function (): void {
+    $context = resolve(TenantContext::class);
+
+    expect($context->isStrict())->toBeFalse();
+
+    $context->runStrict(function () use ($context): void {
+        expect($context->isStrict())->toBeTrue();
+    });
+
+    expect($context->isStrict())->toBeFalse();
+
+    $context->enableStrict();
+
+    $context->runStrict(function () use ($context): void {
+        expect($context->isStrict())->toBeTrue();
+    });
+
+    expect($context->isStrict())->toBeTrue();
 });

@@ -1,5 +1,7 @@
 /* Qompose Markdown mail theme.
- * Email-safe hex colors matching the product brand (coral primary, warm wash).
+ * Email-safe hex colors matching the product brand: ink primary #1D2129, coral
+ * accent #EF5734, cool slate wash. Kept in step by hand with resources/css/app.css
+ * — email clients strip custom properties, so these cannot read the tokens.
  * Avoid web fonts here — many clients strip or ignore them.
  */
 
@@ -35,8 +37,11 @@ blockquote {
 }
 
 a {
-    /* Coral primary for inline links */
-    color: #ef5734;
+    /*
+     * Darkened coral, not the #EF5734 display coral: the brand value is only
+     * 3.45:1 on white and links are body-sized. This is 5.16:1.
+     */
+    color: #c2411c;
 }
 
 a img {
@@ -46,7 +51,7 @@ a img {
 /* Typography */
 
 h1 {
-    color: #0f172a;
+    color: #1d2129;
     font-size: 18px;
     font-weight: bold;
     margin-top: 0;
@@ -88,8 +93,8 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    /* Warm off-white page wash ≈ app --secondary */
-    background-color: #faf8f5;
+    /* Cool slate page wash ≈ app --secondary */
+    background-color: #f1f5f9;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -112,13 +117,13 @@ img {
 }
 
 .header a {
-    color: #0f172a;
+    color: #1d2129;
     font-size: 19px;
     font-weight: bold;
     text-decoration: none;
 }
 
-/* Brand mark: compact shield next to the app name */
+/* Brand mark: the audit-tick tile next to the app name */
 
 .logo {
     height: 36px;
@@ -141,9 +146,9 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    background-color: #faf8f5;
-    border-bottom: 1px solid #faf8f5;
-    border-top: 1px solid #faf8f5;
+    background-color: #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+    border-top: 1px solid #f1f5f9;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -154,9 +159,9 @@ img {
     -premailer-cellspacing: 0;
     -premailer-width: 570px;
     background-color: #ffffff;
-    border-color: #e7e5e4;
-    /* Matches app --radius (0.75rem) */
-    border-radius: 0.75rem;
+    border-color: #e2e8f0;
+    /* Matches app --radius (0.5rem) */
+    border-radius: 0.5rem;
     border-width: 1px;
     box-shadow:
         0 1px 3px 0 rgba(0, 0, 0, 0.1),
@@ -173,7 +178,7 @@ img {
 /* Subcopy */
 
 .subcopy {
-    border-top: 1px solid #e7e5e4;
+    border-top: 1px solid #e2e8f0;
     margin-top: 25px;
     padding-top: 25px;
 }
@@ -194,14 +199,18 @@ img {
     width: 570px;
 }
 
+/*
+ * Slate-600, not slate-400: the footer used to sit at 2.34:1 on the wash, which
+ * is unreadable fine print rather than quiet fine print. This is 5.66:1.
+ */
 .footer p {
-    color: #94a3b8;
+    color: #556274;
     font-size: 12px;
     text-align: center;
 }
 
 .footer a {
-    color: #94a3b8;
+    color: #556274;
     text-decoration: underline;
 }
 
@@ -216,7 +225,7 @@ img {
 }
 
 .table th {
-    border-bottom: 1px solid #e7e5e4;
+    border-bottom: 1px solid #e2e8f0;
     margin: 0;
     padding-bottom: 8px;
 }
@@ -249,50 +258,57 @@ img {
 
 .button {
     -webkit-text-size-adjust: none;
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     color: #fff;
     display: inline-block;
     overflow: hidden;
     text-decoration: none;
 }
 
-/* Primary CTA: Qompose coral #ef5734 */
+/*
+ * Primary CTA: ink #1D2129, matching the app's --primary. Deliberately not the
+ * coral — white on #EF5734 is 3.45:1, which a button label cannot carry.
+ */
 .button-blue,
 .button-primary {
-    background-color: #ef5734;
-    border-bottom: 8px solid #ef5734;
-    border-left: 18px solid #ef5734;
-    border-right: 18px solid #ef5734;
-    border-top: 8px solid #ef5734;
+    background-color: #1d2129;
+    border-bottom: 8px solid #1d2129;
+    border-left: 18px solid #1d2129;
+    border-right: 18px solid #1d2129;
+    border-top: 8px solid #1d2129;
 }
 
 .button-green,
 .button-success {
-    background-color: #16a34a;
-    border-bottom: 8px solid #16a34a;
-    border-left: 18px solid #16a34a;
-    border-right: 18px solid #16a34a;
-    border-top: 8px solid #16a34a;
+    background-color: #2f6e52;
+    border-bottom: 8px solid #2f6e52;
+    border-left: 18px solid #2f6e52;
+    border-right: 18px solid #2f6e52;
+    border-top: 8px solid #2f6e52;
 }
 
 .button-red,
 .button-error {
-    background-color: #dc2626;
-    border-bottom: 8px solid #dc2626;
-    border-left: 18px solid #dc2626;
-    border-right: 18px solid #dc2626;
-    border-top: 8px solid #dc2626;
+    background-color: #a4142e;
+    border-bottom: 8px solid #a4142e;
+    border-left: 18px solid #a4142e;
+    border-right: 18px solid #a4142e;
+    border-top: 8px solid #a4142e;
 }
 
 /* Panels */
 
+/*
+ * The one place the display coral appears in email: a 4px decorative rule, so
+ * it carries brand without carrying text.
+ */
 .panel {
     border-left: #ef5734 solid 4px;
     margin: 21px 0;
 }
 
 .panel-content {
-    background-color: #faf8f5;
+    background-color: #f1f5f9;
     color: #334155;
     padding: 16px;
 }

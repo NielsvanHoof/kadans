@@ -1,8 +1,10 @@
 import { Form, Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Accounts/Http/Controllers/ProfileController';
-import Heading from '@/components/heading';
-import InputError, { fieldErrorAriaProps } from '@/components/input-error';
-import StatusMessage from '@/components/status-message';
+import Heading from '@/components/primitives/heading';
+import InputError, {
+    fieldErrorAriaProps,
+} from '@/components/primitives/input-error';
+import StatusMessage from '@/components/primitives/status-message';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -141,7 +143,8 @@ export default function Profile({
 
                             <Field orientation="horizontal">
                                 <Button
-                                    disabled={processing}
+                                    type="submit"
+                                    isDisabled={processing}
                                     data-test="update-profile-button"
                                 >
                                     {processing && <Spinner />}

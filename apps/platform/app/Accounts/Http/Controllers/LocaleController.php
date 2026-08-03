@@ -6,6 +6,7 @@ namespace App\Accounts\Http\Controllers;
 
 use App\Accounts\Http\Requests\LocaleUpdateRequest;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,7 +31,7 @@ final class LocaleController extends Controller
 
         $user->update(['locale' => $locale]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Language updated.')]);
+        Toast::success(__('Language updated.'));
 
         return back(fallback: route('language.edit'))
             ->cookie('locale', $locale, 60 * 24 * 365);

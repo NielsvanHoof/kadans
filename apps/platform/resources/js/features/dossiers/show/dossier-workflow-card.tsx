@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
 import DossierCompletionController from '@/actions/App/Dossiers/Http/Controllers/DossierCompletionController';
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -13,7 +13,6 @@ import {
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -22,12 +21,16 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup } from '@/components/ui/field';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
-import type { Dossier } from '@/features/dossiers/types';
+import type { DossierWorkflowProgress } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { inlineActionOptions } from '@/lib/inline-action-options';
 
-export default function DossierWorkflowCard({ dossier }: { dossier: Dossier }) {
+export default function DossierWorkflowCard({
+    dossier,
+}: {
+    dossier: DossierWorkflowProgress;
+}) {
     const { t } = useTranslation();
     const { canReview } = useDossierCapabilities();
     const summary = dossier.review_summary;
@@ -99,14 +102,12 @@ function CompleteDossierDialog({
     const { t } = useTranslation();
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button type="button" className="w-full" disabled={!ready}>
-                    <CheckCircle2 aria-hidden="true" />
-                    {t('Complete dossier')}
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
+        <DialogTrigger>
+            <Button type="button" className="w-full" isDisabled={!ready}>
+                <CheckCircle2 aria-hidden="true" />
+                {t('Complete dossier')}
+            </Button>
+            <Dialog>
                 <DialogHeader>
                     <DialogTitle>{t('Complete this dossier?')}</DialogTitle>
                     <DialogDescription>
@@ -129,15 +130,16 @@ function CompleteDossierDialog({
                             </Field>
                             <Field>
                                 <DialogFooter className="gap-2">
-                                    <DialogClose asChild>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
+                                    <DialogClose
+                                        type="button"
+                                        variant="secondary"
+                                    >
+                                        {t('Cancel')}
                                     </DialogClose>
-                                    <Button type="submit" disabled={processing}>
+                                    <Button
+                                        type="submit"
+                                        isDisabled={processing}
+                                    >
                                         {t('Complete dossier')}
                                     </Button>
                                 </DialogFooter>
@@ -145,8 +147,8 @@ function CompleteDossierDialog({
                         </FieldGroup>
                     )}
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </Dialog>
+        </DialogTrigger>
     );
 }
 

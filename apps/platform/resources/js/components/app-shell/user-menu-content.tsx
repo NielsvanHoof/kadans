@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
 import { UserInfo } from '@/components/app-shell/user-info';
 import {
@@ -24,6 +24,7 @@ export function UserMenuContent({ user }: Props) {
     const handleLogout = () => {
         cleanup();
         router.flushAll();
+        router.post(logout.url());
     };
 
     return (
@@ -37,31 +38,19 @@ export function UserMenuContent({ user }: Props) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                    <Link
-                        className="block w-full cursor-pointer"
-                        href={edit()}
-                        prefetch
-                        onClick={cleanup}
-                    >
-                        <Settings className="mr-2" />
-                        {t('Settings')}
-                    </Link>
+                <DropdownMenuItem href={edit().url} onAction={cleanup}>
+                    <Settings className="mr-2" />
+                    {t('Settings')}
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                    <Link
-                        className="block w-full cursor-pointer"
-                        href={logout()}
-                        as="button"
-                        onClick={handleLogout}
-                        data-test="logout-button"
-                    >
-                        <LogOut className="mr-2" />
-                        {t('Log out')}
-                    </Link>
+                <DropdownMenuItem
+                    onAction={handleLogout}
+                    data-test="logout-button"
+                >
+                    <LogOut className="mr-2" />
+                    {t('Log out')}
                 </DropdownMenuItem>
             </DropdownMenuGroup>
         </>

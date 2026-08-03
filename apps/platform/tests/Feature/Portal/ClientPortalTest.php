@@ -21,7 +21,6 @@ use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationFailed;
@@ -34,9 +33,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Pest\Expectation;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -79,7 +75,7 @@ test('guest exchanges a valid access token for a restricted portal session', fun
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
-    DocumentRequest::factory()->create([
+    DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'title' => 'Payslip January 2025',
@@ -103,7 +99,6 @@ test('guest exchanges a valid access token for a restricted portal session', fun
         ->assertHeader('Referrer-Policy', 'no-referrer')
         ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
         ->assertHeader('X-Frame-Options', 'DENY')
-        ->assertHeader('Content-Security-Policy', "frame-ancestors 'none'")
         ->assertInertia(fn (Assert $page) => $page
             ->component('portal/show')
             ->where('firm.name', 'Acme Accountants')
@@ -114,7 +109,14 @@ test('guest exchanges a valid access token for a restricted portal session', fun
             ->tap(fn (Assert $page): Expectation => expect($page->toArray())
                 ->toHaveKey('encryptHistory', true)));
 
-    expect($context['grant']->fresh()->last_used_at)->not->toBeNull();
+    // The portal inherits the app-wide policy; its own middleware only keeps the
+    // stricter Referrer-Policy asserted above. One header, not two.
+    expect($response->headers->all('Content-Security-Policy'))->toHaveCount(1);
+    expect($response->headers->get('Content-Security-Policy'))
+        ->toContain("frame-ancestors 'none'")
+        ->toContain("object-src 'none'")
+        ->toContain('script-src')
+        ->and($context['grant']->fresh()->last_used_at)->not->toBeNull();
 
     $activity = Activity::query()
         ->where('event', AuditEvent::ClientPortalAccessed->value)
@@ -172,7 +174,7 @@ test('guest can upload a document through the portal', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
-    $documentRequest = DocumentRequest::factory()->create([
+    $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'title' => 'Payslip January 2025',
@@ -192,7 +194,9 @@ test('guest can upload a document through the portal', function (): void {
 
     $context['tenant']->makeCurrent();
 
-    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Submitted)
+    $documentRequest->refresh();
+
+    expect($documentRequest->status)->toBe(DocumentRequestStatus::Submitted)
         ->and(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->exists())->toBeTrue()
         ->and($context['dossier']->fresh()->status)->toBe(DossierStatus::InReview);
 });
@@ -203,7 +207,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
-    $documentRequest = DocumentRequest::factory()->create([
+    $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'title' => 'Payslip January 2025',
@@ -228,7 +232,7 @@ test('portal cannot answer while a text item awaits review', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
-    $documentRequest = DocumentRequest::factory()->create([
+    $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'type' => QuestionnaireItemType::Text,
@@ -244,7 +248,9 @@ test('portal cannot answer while a text item awaits review', function (): void {
         'answer_text' => '221B Baker Street',
     ])->assertForbidden();
 
-    expect($documentRequest->fresh()->answer_text)->toBeNull();
+    $documentRequest->refresh();
+
+    expect($documentRequest->answer_text)->toBeNull();
 });
 
 test('a saved choice answer reveals the matching conditional field on the portal', function (): void {
@@ -256,7 +262,7 @@ test('a saved choice answer reveals the matching conditional field on the portal
     $yesOptionId = (string) Str::uuid();
     $noOptionId = (string) Str::uuid();
 
-    $choiceRequest = DocumentRequest::factory()->create([
+    $choiceRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'type' => QuestionnaireItemType::Choice,
@@ -271,7 +277,7 @@ test('a saved choice answer reveals the matching conditional field on the portal
             'is_required' => true,
         ],
     ]);
-    $dependentRequest = DocumentRequest::factory()->create([
+    $dependentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'type' => QuestionnaireItemType::Text,
@@ -301,7 +307,9 @@ test('a saved choice answer reveals the matching conditional field on the portal
         'answer_option_ids' => [$yesOptionId],
     ])->assertRedirect(route('portal.show'));
 
-    expect($choiceRequest->fresh())
+    $choiceRequest->refresh();
+
+    expect($choiceRequest)
         ->status->toBe(DocumentRequestStatus::Submitted)
         ->answer_option_ids->toBe([$yesOptionId]);
 
@@ -322,7 +330,7 @@ test('portal upload cannot target a document request from another dossier', func
         'tenant_id' => $context['tenant']->id,
         'client_id' => $context['client']->id,
     ]);
-    $foreignRequest = DocumentRequest::factory()->create([
+    $foreignRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $otherDossier->id,
         'title' => 'Foreign request',
@@ -344,7 +352,7 @@ test('portal upload rolls back database and storage when its audit record fails'
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
-    $documentRequest = DocumentRequest::factory()->create([
+    $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'title' => 'Payslip January 2025',
@@ -371,7 +379,9 @@ test('portal upload rolls back database and storage when its audit record fails'
 
     $context['tenant']->makeCurrent();
 
-    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Pending)
+    $documentRequest->refresh();
+
+    expect($documentRequest->status)->toBe(DocumentRequestStatus::Pending)
         ->and(UploadedDocument::query()->exists())->toBeFalse()
         ->and($context['dossier']->fresh()->status)->toBe(DossierStatus::AwaitingClient)
         ->and($context['grant']->fresh()->last_used_at)->toBeNull()
@@ -383,7 +393,7 @@ test('portal answer rolls back when its audit record fails', function (): void {
     $context = createPortalDossierWithGrant();
 
     $context['tenant']->makeCurrent();
-    $documentRequest = DocumentRequest::factory()->create([
+    $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
         'type' => QuestionnaireItemType::Text,
@@ -408,8 +418,10 @@ test('portal answer rolls back when its audit record fails', function (): void {
         Event::forget($event);
     }
 
-    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Pending)
-        ->and($documentRequest->fresh()->answer_text)->toBeNull()
+    $documentRequest->refresh();
+
+    expect($documentRequest->status)->toBe(DocumentRequestStatus::Pending)
+        ->and($documentRequest->answer_text)->toBeNull()
         ->and($context['dossier']->fresh()->status)->toBe(DossierStatus::AwaitingClient)
         ->and($context['grant']->fresh()->last_used_at)->toBeNull();
 });

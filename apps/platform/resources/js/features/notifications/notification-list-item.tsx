@@ -52,7 +52,6 @@ export default function NotificationListItem({
 
     return (
         <Item
-            asChild
             size="sm"
             className={cn(
                 'w-full flex-col items-stretch gap-1 rounded-none px-3 py-2.5 text-left hover:bg-accent',

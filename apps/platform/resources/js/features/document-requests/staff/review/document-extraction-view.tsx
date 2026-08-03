@@ -1,4 +1,4 @@
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import ExtractionFields from '@/features/document-requests/staff/review/extraction-fields';
 import ExtractionOverview from '@/features/document-requests/staff/review/extraction-overview';
 import ExtractionRawJson from '@/features/document-requests/staff/review/extraction-raw-json';

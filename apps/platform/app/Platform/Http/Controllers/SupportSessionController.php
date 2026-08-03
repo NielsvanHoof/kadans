@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Controllers;
 
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Platform\Actions\EndSupportSessionAction;
 use App\Platform\Actions\StartSupportSessionAction;
 use App\Platform\Http\Requests\StartSupportSessionRequest;
@@ -22,6 +23,8 @@ use function is_array;
  */
 final class SupportSessionController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function index(FetchPlatformSupportTenantsQuery $fetchPlatformSupportTenants): Response
     {
         $filters = request()->input('filter', []);
@@ -37,9 +40,7 @@ final class SupportSessionController extends Controller
         Tenant $tenant,
         StartSupportSessionAction $startSupportSession,
     ): RedirectResponse {
-        $user = $request->user();
-
-        abort_if($user === null, 403);
+        $user = $this->currentUser();
 
         $startSupportSession->handle(
             user: $user,

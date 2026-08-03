@@ -4,8 +4,8 @@ import { type ComponentType, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/item-types/definitions';
+import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/questionnaire-item-type-registry';
 import QuestionnaireBuilderTemplates from '@/features/document-requests/staff/builder/questionnaire-builder-templates';
-import { getQuestionnaireItemTypeBuilderRenderer } from '@/features/document-requests/staff/builder/questionnaire-item-type-renderers';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -15,18 +15,18 @@ import { cn } from '@/lib/utils';
  * Compact searchable palette of registered components plus optional templates.
  */
 export default function QuestionnaireBuilderPalette({
-    dossierId,
     templates,
     canEdit,
     insertAfterTitle,
     onAdd,
+    onApplyTemplate,
 }: {
-    dossierId: number;
     templates: ApplyTemplateOption[];
     canEdit: boolean;
     /** Label of the selected field — Add inserts after it. */
     insertAfterTitle?: string | null;
     onAdd: (type: QuestionnaireItemType) => void;
+    onApplyTemplate: (template: ApplyTemplateOption) => void;
 }) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
@@ -112,8 +112,9 @@ export default function QuestionnaireBuilderPalette({
 
             {canEdit ? (
                 <QuestionnaireBuilderTemplates
-                    dossierId={dossierId}
                     templates={templates}
+                    canEdit={canEdit}
+                    onApply={onApplyTemplate}
                 />
             ) : null}
         </aside>
@@ -178,7 +179,7 @@ function PaletteItem({
                     size="icon"
                     variant="outline"
                     className="size-8 shrink-0"
-                    disabled={disabled}
+                    isDisabled={disabled}
                     aria-label={t('Add :component', { component: label })}
                     onClick={onAdd}
                 >

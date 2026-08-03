@@ -1,8 +1,7 @@
 import { Link } from '@inertiajs/react';
-import EmptyState from '@/components/empty-state';
-import IndexList from '@/components/index-list';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import IndexList from '@/components/data/index-list';
+import EmptyState from '@/components/primitives/empty-state';
+import { LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -10,10 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    dossierStatusBadgeVariant,
-    dossierStatusLabel,
-} from '@/features/dossiers/status/dossier-status';
+import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -45,11 +41,13 @@ export default function RecentDossiersCard({
                         {t('The latest activity across your firm.')}
                     </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" asChild>
-                    <Link href={dossierIndex(currentWorkspace)}>
-                        {t('View all')}
-                    </Link>
-                </Button>
+                <LinkButton
+                    variant="ghost"
+                    size="sm"
+                    href={dossierIndex(currentWorkspace).url}
+                >
+                    {t('View all')}
+                </LinkButton>
             </CardHeader>
             <CardContent>
                 {dossiers.length === 0 ? (
@@ -58,11 +56,12 @@ export default function RecentDossiersCard({
                             'Create a dossier to start collecting documents.',
                         )}
                         action={
-                            <Button asChild size="sm">
-                                <Link href={createDossier(currentWorkspace)}>
-                                    {t('New dossier')}
-                                </Link>
-                            </Button>
+                            <LinkButton
+                                size="sm"
+                                href={createDossier(currentWorkspace).url}
+                            >
+                                {t('New dossier')}
+                            </LinkButton>
                         }
                     />
                 ) : (
@@ -102,13 +101,7 @@ export default function RecentDossiersCard({
                                         </p>
                                     )}
                                 </div>
-                                <Badge
-                                    variant={dossierStatusBadgeVariant(
-                                        dossier.status,
-                                    )}
-                                >
-                                    {dossierStatusLabel(dossier.status, t)}
-                                </Badge>
+                                <DossierStatusBadge status={dossier.status} />
                             </Link>
                         ))}
                     </IndexList>

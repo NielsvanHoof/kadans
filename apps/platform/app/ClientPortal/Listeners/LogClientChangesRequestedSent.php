@@ -33,8 +33,7 @@ final readonly class LogClientChangesRequestedSent
         }
 
         try {
-            $documentRequest = DocumentRequest::query()
-                ->withoutGlobalScopes()
+            $documentRequest = DocumentRequest::queryWithoutTenantScope()
                 ->whereKey($event->notification->documentRequestId)
                 ->first();
 

@@ -6,9 +6,9 @@ namespace App\ClientPortal\Actions;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Enums\SubmissionContext;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Actions\DocumentRequests\SubmitQuestionnaireAnswerAction;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Transitions\DossierTransitions;

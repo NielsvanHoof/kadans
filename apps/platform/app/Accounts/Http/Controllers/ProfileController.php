@@ -9,6 +9,7 @@ use App\Accounts\Http\Requests\ProfileUpdateRequest;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,7 @@ final class ProfileController extends Controller
 
         $user->save();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
+        Toast::success(__('Profile updated.'));
 
         return to_route('profile.edit');
     }

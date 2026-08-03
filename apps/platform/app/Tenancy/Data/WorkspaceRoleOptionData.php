@@ -4,24 +4,17 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Role select option shown when inviting or updating a member.
  */
-final readonly class WorkspaceRoleOptionData
+#[TypeScript]
+final class WorkspaceRoleOptionData extends Data
 {
     public function __construct(
-        public string $value,
-        public string $label,
+        public readonly string $value,
+        public readonly string $label,
     ) {}
-
-    /**
-     * @return array{value: string, label: string}
-     */
-    public function toArray(): array
-    {
-        return [
-            'value' => $this->value,
-            'label' => $this->label,
-        ];
-    }
 }

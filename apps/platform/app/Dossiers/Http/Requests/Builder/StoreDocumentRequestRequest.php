@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Dossiers\Http\Requests\Builder;
 
 use App\Dossiers\Http\Requests\Builder\Concerns\ValidatesQuestionnaireItemConfiguration;
+use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
 use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -16,24 +16,16 @@ use Illuminate\Validation\Validator;
 
 final class StoreDocumentRequestRequest extends FormRequest
 {
-    use LocalizesValidationAttributes, ValidatesQuestionnaireItemConfiguration;
+    use AuthorizesDossierBuilderMutation;
+    use LocalizesValidationAttributes;
+    use ValidatesQuestionnaireItemConfiguration;
 
     /**
-     * Require view access on the dossier plus permission to create document requests.
+     * Require an active builder lock plus permission to create document requests.
      */
     public function authorize(): bool
     {
-        $dossier = $this->route('dossier');
-
-        if (! $dossier instanceof Dossier) {
-            return false;
-        }
-
-        $user = $this->user();
-
-        return $user !== null
-            && $user->can('update', $dossier)
-            && $user->can('create', DocumentRequest::class);
+        return $this->userHoldsBuilderLockForMutation();
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

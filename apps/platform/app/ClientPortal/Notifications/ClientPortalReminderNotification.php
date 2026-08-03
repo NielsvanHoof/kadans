@@ -36,6 +36,23 @@ final class ClientPortalReminderNotification extends Notification implements Sho
         return ['mail'];
     }
 
+    /**
+     * Telescope tags for the queued notification job.
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return [
+            'notification',
+            'mail',
+            'client_portal_reminder',
+            'grant:'.$this->grantId,
+            'dossier:'.$this->dossier->id,
+            'reminder_source:'.$this->source->value,
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $client = $this->dossier->client;
@@ -64,6 +81,10 @@ final class ClientPortalReminderNotification extends Notification implements Sho
             ->line(__('This new secure link expires on :expires.', [
                 'expires' => $this->expiresAt->timezone(config('app.timezone'))->format('j F Y, H:i'),
             ]))
-            ->line(__('If you have already provided everything, no further action is needed.'));
+            ->line(__('If you have already provided everything, no further action is needed.'))
+            ->tag('client_portal_reminder')
+            ->metadata('grant_id', (string) $this->grantId)
+            ->metadata('dossier_id', (string) $this->dossier->id)
+            ->metadata('reminder_source', $this->source->value);
     }
 }

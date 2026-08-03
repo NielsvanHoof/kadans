@@ -6,10 +6,10 @@ namespace App\Questionnaires\Models;
 
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Tenancy\Models\Tenant;
+use Carbon\CarbonImmutable;
 use Database\Factories\QuestionnaireTemplateFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,19 +26,44 @@ use Override;
  * @property string|null $description
  * @property QuestionnaireTemplateCategory $category
  * @property int|null $source_template_id
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Collection<int, QuestionnaireTemplateItem> $items
+ * @property-read int|null $items_count
+ * @property-read QuestionnaireTemplate|null $sourceTemplate
+ * @property-read Tenant|null $tenant
+ *
+ * @method static QuestionnaireTemplateFactory factory($count = null, $state = [])
+ * @method static Builder<static>|QuestionnaireTemplate newModelQuery()
+ * @method static Builder<static>|QuestionnaireTemplate newQuery()
+ * @method static Builder<static>|QuestionnaireTemplate query()
+ * @method static Builder<static>|QuestionnaireTemplate whereCategory($value)
+ * @method static Builder<static>|QuestionnaireTemplate whereCreatedAt($value)
+ * @method static Builder<static>|QuestionnaireTemplate whereDescription($value)
+ * @method static Builder<static>|QuestionnaireTemplate whereId($value)
+ * @method static Builder<static>|QuestionnaireTemplate whereName($value)
+ * @method static Builder<static>|QuestionnaireTemplate whereSourceTemplateId($value)
+ * @method static Builder<static>|QuestionnaireTemplate whereTenantId($value)
+ * @method static Builder<static>|QuestionnaireTemplate whereUpdatedAt($value)
+ *
+ * @mixin \Eloquent
  */
-#[Fillable([
-    'tenant_id',
-    'name',
-    'description',
-    'category',
-    'source_template_id',
-])]
-#[UseFactory(QuestionnaireTemplateFactory::class)]
 final class QuestionnaireTemplate extends Model
 {
     /** @use HasFactory<QuestionnaireTemplateFactory> */
     use HasFactory, Searchable;
+
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'tenant_id',
+        'name',
+        'description',
+        'category',
+        'source_template_id',
+    ];
 
     /**
      * @var array<string, mixed>

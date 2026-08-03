@@ -10,8 +10,8 @@ use App\ClientPortal\Http\Requests\StorePortalQuestionnaireAnswerRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\DocumentRequest;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 
 use function array_key_exists;
 
@@ -43,10 +43,7 @@ final class ClientPortalAnswerController extends Controller
                 : null,
         );
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Answer saved. Thank you.'),
-        ]);
+        Toast::success(__('Answer saved. Thank you.'));
 
         return to_route('portal.show');
     }

@@ -4,24 +4,17 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Client name/email embedded on dossier show.
  */
-final readonly class DossierClientSummaryData
+#[TypeScript]
+final class DossierClientSummaryData extends Data
 {
     public function __construct(
-        public string $name,
-        public string $email,
+        public readonly string $name,
+        public readonly string $email,
     ) {}
-
-    /**
-     * @return array{name: string, email: string}
-     */
-    public function toArray(): array
-    {
-        return [
-            'name' => $this->name,
-            'email' => $this->email,
-        ];
-    }
 }

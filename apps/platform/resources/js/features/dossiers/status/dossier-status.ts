@@ -10,9 +10,6 @@ export const DOSSIER_STATUS_LABELS: Record<DossierStatus, string> = {
     completed: 'Completed',
 };
 
-export type DossierStatusBadgeVariant =
-    'default' | 'secondary' | 'destructive' | 'outline';
-
 /**
  * Resolve a translated label for a dossier status.
  */
@@ -21,19 +18,4 @@ export function dossierStatusLabel(
     t: (key: string) => string,
 ): string {
     return t(DOSSIER_STATUS_LABELS[status]);
-}
-
-export function dossierStatusBadgeVariant(
-    status: DossierStatus,
-): DossierStatusBadgeVariant {
-    switch (status) {
-        case 'completed':
-            return 'default';
-        case 'in_review':
-            return 'secondary';
-        case 'awaiting_client':
-            return 'outline';
-        default:
-            return 'secondary';
-    }
 }

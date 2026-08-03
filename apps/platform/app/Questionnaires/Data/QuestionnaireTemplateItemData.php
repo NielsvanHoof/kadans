@@ -4,36 +4,21 @@ declare(strict_types=1);
 
 namespace App\Questionnaires\Data;
 
+use App\Questionnaires\Enums\QuestionnaireItemType;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Template item on the questionnaire template show page.
  */
-final readonly class QuestionnaireTemplateItemData
+#[TypeScript]
+final class QuestionnaireTemplateItemData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $type,
-        public string $title,
-        public ?string $instructions,
-        public int $sortOrder,
+        public readonly int $id,
+        public readonly QuestionnaireItemType $type,
+        public readonly string $title,
+        public readonly ?string $instructions,
+        public readonly int $sortOrder,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     type: string,
-     *     title: string,
-     *     instructions: string|null,
-     *     sort_order: int
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'type' => $this->type,
-            'title' => $this->title,
-            'instructions' => $this->instructions,
-            'sort_order' => $this->sortOrder,
-        ];
-    }
 }

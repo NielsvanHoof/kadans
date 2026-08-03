@@ -1,8 +1,8 @@
 import { router } from '@inertiajs/react';
 import { KeyRound } from 'lucide-react';
 import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegistrationController';
-import EmptyState from '@/components/empty-state';
-import SettingsSection from '@/components/settings-section';
+import EmptyState from '@/components/primitives/empty-state';
+import SettingsSection from '@/components/primitives/settings-section';
 import PasskeyItem from '@/features/security/passkeys/passkey-item';
 import PasskeyRegistration from '@/features/security/passkeys/passkey-register';
 import { useTranslation } from '@/hooks/use-translation';

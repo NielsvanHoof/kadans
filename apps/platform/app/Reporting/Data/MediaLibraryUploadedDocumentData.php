@@ -4,33 +4,19 @@ declare(strict_types=1);
 
 namespace App\Reporting\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Uploaded document nested in a media library row.
  */
-final readonly class MediaLibraryUploadedDocumentData
+#[TypeScript]
+final class MediaLibraryUploadedDocumentData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $originalFilename,
-        public int $sizeBytes,
-        public string $uploadedAt,
+        public readonly int $id,
+        public readonly string $originalFilename,
+        public readonly int $sizeBytes,
+        public readonly string $uploadedAt,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     original_filename: string,
-     *     size_bytes: int,
-     *     uploaded_at: string
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'original_filename' => $this->originalFilename,
-            'size_bytes' => $this->sizeBytes,
-            'uploaded_at' => $this->uploadedAt,
-        ];
-    }
 }

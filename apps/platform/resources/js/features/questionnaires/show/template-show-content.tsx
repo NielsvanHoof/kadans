@@ -1,10 +1,10 @@
-import { Form, Link } from '@inertiajs/react';
+import { Form } from '@inertiajs/react';
 import QuestionnaireTemplateController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateController';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import Heading from '@/components/primitives/heading';
+import InputError from '@/components/primitives/input-error';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -81,7 +81,7 @@ export default function TemplateShowContent({
                                 <Button
                                     type="submit"
                                     variant="secondary"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                 >
                                     {t('Copy to my firm')}
                                 </Button>
@@ -106,11 +106,12 @@ export default function TemplateShowContent({
                             }
                         />
                     )}
-                    <Button variant="outline" asChild>
-                        <Link href={templateIndex(currentWorkspace)}>
-                            {t('Back')}
-                        </Link>
-                    </Button>
+                    <LinkButton
+                        variant="outline"
+                        href={templateIndex(currentWorkspace).url}
+                    >
+                        {t('Back')}
+                    </LinkButton>
                 </div>
             </div>
 
@@ -151,7 +152,7 @@ export default function TemplateShowContent({
                                             {t('Category')}
                                         </FieldLabel>
                                         <Select
-                                            required
+                                            isRequired
                                             defaultValue={template.category}
                                             name="category"
                                         >
@@ -172,7 +173,7 @@ export default function TemplateShowContent({
                                                                 key={
                                                                     category.value
                                                                 }
-                                                                value={
+                                                                id={
                                                                     category.value
                                                                 }
                                                             >
@@ -209,7 +210,10 @@ export default function TemplateShowContent({
                                         />
                                     </Field>
                                     <Field orientation="horizontal">
-                                        <Button disabled={processing}>
+                                        <Button
+                                            type="submit"
+                                            isDisabled={processing}
+                                        >
                                             {t('Save details')}
                                         </Button>
                                     </Field>

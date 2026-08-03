@@ -3,14 +3,10 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('security page is displayed', function (): void {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());

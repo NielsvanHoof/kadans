@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Clients\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Clients\Actions\BulkDeleteClientsAction;
 use App\Clients\Actions\BulkRestoreClientsAction;
 use App\Clients\Actions\CreateClientAction;
@@ -21,15 +21,17 @@ use App\Clients\Queries\FetchClientIndexQuery;
 use App\Clients\Queries\FetchClientShowQuery;
 use App\Dossiers\Queries\TenantHasAnyDossiersQuery;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class ClientController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function index(Tenant $tenant, FetchClientIndexQuery $fetchClientIndex, Request $request): Response
     {
         $this->authorize('viewAny', Client::class);
@@ -111,10 +113,7 @@ final class ClientController extends Controller
     ): RedirectResponse {
         $updateClient->handle($client, $request->validated());
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Client details updated.'),
-        ]);
+        Toast::success(__('Client details updated.'));
 
         return to_route(
             'workspaces.clients.show',
@@ -129,16 +128,11 @@ final class ClientController extends Controller
     ): RedirectResponse {
         $this->authorize('delete', $client);
 
-        $user = request()->user();
-
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $deleteClient->handle($client, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Client archived.'),
-        ]);
+        Toast::success(__('Client archived.'));
 
         return to_route(
             'workspaces.clients.index',
@@ -153,16 +147,11 @@ final class ClientController extends Controller
     ): RedirectResponse {
         $this->authorize('restore', $client);
 
-        $user = request()->user();
-
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $restoreClient->handle($client, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Client restored. Archived dossiers remain in the dossier archive.'),
-        ]);
+        Toast::success(__('Client restored. Archived dossiers remain in the dossier archive.'));
 
         return to_route(
             'workspaces.clients.show',
@@ -175,22 +164,13 @@ final class ClientController extends Controller
         BulkArchiveClientsRequest $request,
         BulkDeleteClientsAction $bulkDeleteClients,
     ): RedirectResponse {
-        $user = $request->user();
+        $user = $this->currentUser();
 
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $count = $bulkDeleteClients->handle($request->clientIds(), $user);
 
-        $clientsQuery = Client::query()->with('tenant');
-        $clientsQuery->getQuery()->whereIn('id', $request->clientIds());
-        $clients = $clientsQuery->get();
-
-        $count = $bulkDeleteClients->handle($clients, $user);
-
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => $count === 1
-                ? __('1 client archived.')
-                : __(':count clients archived.', ['count' => $count]),
-        ]);
+        Toast::success($count === 1
+            ? __('1 client archived.')
+            : __(':count clients archived.', ['count' => $count]));
 
         return to_route(
             'workspaces.clients.index',
@@ -203,22 +183,13 @@ final class ClientController extends Controller
         BulkRestoreClientsRequest $request,
         BulkRestoreClientsAction $bulkRestoreClients,
     ): RedirectResponse {
-        $user = $request->user();
+        $user = $this->currentUser();
 
-        abort_unless($user instanceof User, HttpResponse::HTTP_FORBIDDEN);
+        $count = $bulkRestoreClients->handle($request->clientIds(), $user);
 
-        $clientsQuery = Client::onlyTrashed()->with('tenant');
-        $clientsQuery->getQuery()->whereIn('id', $request->clientIds());
-        $clients = $clientsQuery->get();
-
-        $count = $bulkRestoreClients->handle($clients, $user);
-
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => $count === 1
-                ? __('1 client restored. Archived dossiers remain in the dossier archive.')
-                : __(':count clients restored. Archived dossiers remain in the dossier archive.', ['count' => $count]),
-        ]);
+        Toast::success($count === 1
+            ? __('1 client restored. Archived dossiers remain in the dossier archive.')
+            : __(':count clients restored. Archived dossiers remain in the dossier archive.', ['count' => $count]));
 
         return to_route(
             'workspaces.clients.archived',

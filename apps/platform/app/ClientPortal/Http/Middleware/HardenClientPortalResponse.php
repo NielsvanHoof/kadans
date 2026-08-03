@@ -11,6 +11,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class HardenClientPortalResponse
 {
+    /**
+     * Portal-only hardening on top of the app-wide baseline.
+     *
+     * These run *before* App\Shared\Http\Middleware\AddSecurityHeaders on the way
+     * out, and that middleware only fills in headers that are still absent — so
+     * the stricter `no-referrer` set here survives. The full Content-Security-Policy
+     * (including `frame-ancestors 'none'`) comes from the baseline middleware.
+     */
     public static function applyHeaders(Response $response): Response
     {
         $response->headers->set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
@@ -19,7 +27,6 @@ final class HardenClientPortalResponse
         $response->headers->set('Referrer-Policy', 'no-referrer');
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
         $response->headers->set('X-Frame-Options', 'DENY');
-        $response->headers->set('Content-Security-Policy', "frame-ancestors 'none'");
 
         return $response;
     }

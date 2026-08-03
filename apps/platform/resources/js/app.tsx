@@ -1,13 +1,14 @@
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { configureEcho } from '@laravel/echo-react';
+import { RouterProvider } from 'react-aria-components';
+import AriaLocaleProvider from '@/components/app-shell/aria-locale-provider';
 import { Toaster } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
-import AppLayout from '@/layouts/app-layout';
-import AuthLayout from '@/layouts/auth-layout';
+import AppLayout from '@/layouts/app/app-layout';
+import AuthLayout from '@/layouts/auth/auth-layout';
 import DossierBuilderLayout from '@/layouts/dossiers/dossier-builder-layout';
-import OnboardingLayout from '@/layouts/onboarding-layout';
-import SettingsLayout from '@/layouts/settings/layout';
+import OnboardingLayout from '@/layouts/onboarding/onboarding-layout';
+import SettingsLayout from '@/layouts/settings/settings-layout';
 
 // Reverb WebSocket client — keys come from VITE_REVERB_* (.env).
 configureEcho({
@@ -22,43 +23,76 @@ configureEcho({
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+/**
+ * Page chrome, before the locale provider is prepended.
+ * `null` means the page renders its own shell (portal, error).
+ */
+function pageLayout(name: string) {
+    switch (true) {
+        case name === 'error':
+            // Standalone HTTP errors — works for guests and signed-in users.
+            return null;
+        case name.startsWith('portal/'):
+            // Guest magic-link portal — no staff chrome.
+            return null;
+        case name === 'dossiers/builder':
+            // Full-bleed form builder without the app sidebar.
+            return DossierBuilderLayout;
+        case name.startsWith('auth/'):
+        case name.startsWith('invitations/'):
+            return AuthLayout;
+        case name.startsWith('onboarding/'):
+            // First-run firm setup — brand shell without the staff sidebar.
+            return OnboardingLayout;
+        case name.startsWith('settings/'):
+            return [AppLayout, SettingsLayout];
+        default:
+            return AppLayout;
+    }
+}
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
+    /*
+     * AriaLocaleProvider is prepended to every page's layout stack rather than
+     * living in `withApp`, because it reads the locale from Inertia page props
+     * — and `withApp` wraps *outside* the Inertia context, where `usePage`
+     * throws. Doing it here also means the locale follows a `router.reload()`
+     * from the language switcher, which the `<html lang>` attribute would not.
+     */
     layout: (name) => {
-        switch (true) {
-            case name === 'error':
-                // Standalone HTTP errors — works for guests and signed-in users.
-                return null;
-            case name.startsWith('portal/'):
-                // Guest magic-link portal — no staff chrome.
-                return null;
-            case name === 'dossiers/builder':
-                // Full-bleed form builder without the app sidebar.
-                return DossierBuilderLayout;
-            case name.startsWith('auth/'):
-            case name.startsWith('invitations/'):
-                return AuthLayout;
-            case name.startsWith('onboarding/'):
-                // First-run firm setup — brand shell without the staff sidebar.
-                return OnboardingLayout;
-            case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
-            default:
-                return AppLayout;
+        const layout = pageLayout(name);
+
+        if (layout === null) {
+            return AriaLocaleProvider;
         }
+
+        return [
+            AriaLocaleProvider,
+            ...(Array.isArray(layout) ? layout : [layout]),
+        ];
     },
     strictMode: true,
     withApp(app) {
         return (
-            <TooltipProvider delayDuration={0}>
+            /*
+             * React Aria's Link and any component given an `href` render a real
+             * anchor and navigate natively — which would turn every in-app link
+             * into a full page load. RouterProvider hands that navigation to
+             * Inertia instead, so `href` stays a client-side visit.
+             */
+            <RouterProvider
+                navigate={(href, options) => router.visit(href, options)}
+            >
                 {app}
                 <Toaster richColors />
-            </TooltipProvider>
+            </RouterProvider>
         );
     },
     progress: {
-        // Brand coral — matches --primary in app.css / qompose.nl.
-        color: '#ef5734',
+        // Coral — matches --brand in app.css. Inertia takes a static colour, so
+        // this cannot read the token; keep the two in step by hand.
+        color: '#EF5734',
     },
 });
 

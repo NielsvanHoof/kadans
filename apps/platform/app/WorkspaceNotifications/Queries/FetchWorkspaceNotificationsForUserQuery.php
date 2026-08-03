@@ -24,9 +24,10 @@ final class FetchWorkspaceNotificationsForUserQuery
         $baseQuery = DatabaseNotification::query()
             ->where('notifiable_type', $user->getMorphClass())
             ->where('notifiable_id', $user->getKey())
-            ->where('type', ClientQuestionnaireCompletedNotification::DatabaseType)
-            // ->> returns text on pgsql; bind as string to avoid text = integer errors.
-            ->where('data->tenant_id', (string) $tenant->getKey());
+            ->where('type', ClientQuestionnaireCompletedNotification::DatabaseType);
+
+        // ->> returns text on pgsql; bind as string to avoid text = integer errors.
+        $baseQuery->getQuery()->whereRaw("data->>'tenant_id' = ?", [(string) $tenant->getKey()]);
 
         $unreadQuery = clone $baseQuery;
         $unreadQuery->getQuery()->whereNull('read_at');

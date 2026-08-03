@@ -2,19 +2,41 @@
 
 @import 'tw-animate-css';
 
+/*
+ * shadcn's data-attribute variants (data-open, data-active, data-checked, …).
+ * Required by every component from the `radix-*` / `base-*` styles: each variant
+ * matches BOTH Radix's `data-state="open"` and Base UI's `data-open`, so the
+ * same component source works on either primitive library.
+ *
+ * The CLI adds this on `init` but not on `add` — without it Tailwind falls back
+ * to bare attribute-presence selectors, which silently breaks open/close
+ * animations and makes `data-active="false"` match as active.
+ */
+@import 'shadcn/tailwind.css';
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* UI sans for body and headings — hierarchy comes from size/weight. */
+    /*
+     * Three faces, three jobs.
+     * Inter carries body copy and dense form UI — it disappears, which is what
+     * you want under a table of forty document requests.
+     * Schibsted Grotesk is the display voice: a grotesk drawn for a publisher
+     * of record, so it reads editorial rather than startup. Used at headings
+     * and above only; never for body text.
+     * IBM Plex Mono is the data face — every date, count, reference, and
+     * amount, so figures always align down a column like a ledger.
+     */
     --font-sans:
-        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-display:
-        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Schibsted Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
     --font-data:
         'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
         'Liberation Mono', 'Courier New', monospace;
@@ -22,6 +44,17 @@
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+
+    --color-ledger-rule: var(--ledger-rule);
+    --color-ledger-stripe: var(--ledger-stripe);
+
+    --color-brand-panel: var(--brand-panel);
+    --color-brand-panel-foreground: var(--brand-panel-foreground);
+
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-muted: var(--brand-muted);
+    --color-brand-border: var(--brand-border);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -78,103 +111,176 @@
 }
 
 /*
- * brand coral #ef5734, slate muted #64748b, charcoal text #333, cool gray surfaces.
+ * "Ink & Coral" — the qompose.nl palette, retuned for a dense product UI.
+ *
+ * Coral #EF5734 is the brand: it is the marketing site's link, button, and
+ * full-bleed section colour. Here it stays the brand but not the primary.
+ * Primary is near-black ink #1D2129, so buttons and active nav are simply the
+ * strongest thing on the page, and coral is free to mean "this is Qompose"
+ * without also having to mean "submit". Coral carries links, focus rings, the
+ * active nav rail, and the brand panel; it never carries a status.
+ *
+ * Two things forced a retune rather than a straight lift:
+ *
+ * 1. #EF5734 is 3.45:1 on white — it fails AA as a link or as a white label on
+ *    a coral button. So --brand is the display coral for large surfaces, and
+ *    --brand-foreground is the darkened #C2411C (4.94:1) used for any coral
+ *    text or icon. Same split as --warning/--warning-foreground below.
+ * 2. Coral sits at OKLCH hue 34°, which is where the old oxblood destructive
+ *    lived. Destructive moved to crimson #A4142E (hue 19.5°) and warning moved
+ *    from brass to a yellower amber #B8830F (hue 79°), so brand, rejection,
+ *    and waiting stay three clearly separate hues.
+ *
+ * Neutrals are the cool slate ramp the marketing site already uses (#64748B
+ * body, #E2E8F0 rules) rather than the old warm bone. Warm coral against cool
+ * grey is qompose.nl's own pairing and it holds up at table density. The site's
+ * #64748B is demoted from body text to --muted-foreground; body text is
+ * slate-700, because 4.76:1 is too thin to read a whole dossier in.
+ *
+ * In dark mode the primary inverts to near-white rather than shifting hue:
+ * "primary" here means maximum contrast against the canvas, whichever way the
+ * canvas goes. Coral does not invert — it lifts slightly to #F4693F so it keeps
+ * its identity without vibrating against the dark slate.
+ *
+ * Colour never carries a status on its own. Every status also carries an
+ * AuditMark glyph with its own shape, so the review table stays readable in
+ * greyscale and to anyone who can't separate the coral from the green.
  */
 :root {
     color-scheme: light;
-    /* Clean white surfaces (uk-section-default) */
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.321 0 0);
+    /* Cool off-white canvas, white paper laid on top of it */
+    --background: oklch(0.9842 0.0034 247.9);
+    --foreground: oklch(0.2472 0.0164 264.2);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.321 0 0);
+    --card-foreground: oklch(0.2472 0.0164 264.2);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.321 0 0);
-    /* Brand coral — #ef5734 */
-    --primary: oklch(0.655 0.194 34.3);
-    --primary-foreground: oklch(1 0 0);
-    /* Cool muted wash — #e5e7eb / slate soft */
-    --secondary: oklch(0.968 0.007 247.9);
-    --secondary-foreground: oklch(0.321 0 0);
-    --muted: oklch(0.928 0.006 264.5);
-    --muted-foreground: oklch(0.554 0.041 257.4);
-    /* Soft coral tint — #fde8e4 */
-    --accent: oklch(0.947 0.024 30.5);
-    --accent-foreground: oklch(0.321 0 0);
-    /* Active brand shade — #de3812 */
-    --destructive: oklch(0.593 0.207 33.4);
-    --destructive-foreground: oklch(1 0 0);
-    --success: oklch(0.5 0.11 155);
-    --success-foreground: oklch(0.35 0.09 155);
-    --success-muted: oklch(0.5 0.11 155 / 0.08);
-    --success-border: oklch(0.5 0.11 155 / 0.28);
-    --warning: oklch(0.867 0.167 99);
-    --warning-foreground: oklch(0.45 0.1 75);
-    --warning-muted: oklch(0.867 0.167 99 / 0.12);
-    --warning-border: oklch(0.867 0.167 99 / 0.35);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.655 0.194 34.3);
-    /* Chart story: coral → slate → sage → gold → charcoal */
-    --chart-1: oklch(0.655 0.194 34.3);
-    --chart-2: oklch(0.554 0.041 257.4);
-    --chart-3: oklch(0.55 0.1 155);
-    --chart-4: oklch(0.867 0.167 99);
-    --chart-5: oklch(0.252 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.968 0.007 247.9);
-    --sidebar-foreground: oklch(0.321 0 0);
-    --sidebar-primary: oklch(0.655 0.194 34.3);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.928 0.006 264.5);
-    --sidebar-accent-foreground: oklch(0.321 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.655 0.194 34.3);
+    --popover-foreground: oklch(0.2472 0.0164 264.2);
+    /* Ink #1D2129 — 15.4:1 against the canvas */
+    --primary: oklch(0.2472 0.0164 264.2);
+    --primary-foreground: oklch(0.9842 0.0034 247.9);
+    /* Slate ramp, lifted from the marketing site's own greys */
+    --secondary: oklch(0.9683 0.0069 247.9);
+    --secondary-foreground: oklch(0.2472 0.0164 264.2);
+    --muted: oklch(0.9683 0.0069 247.9);
+    /* #64748B — the site's body colour, demoted to secondary text (4.55:1) */
+    --muted-foreground: oklch(0.5544 0.0407 257.4);
+    --accent: oklch(0.9288 0.0126 255.5);
+    --accent-foreground: oklch(0.2472 0.0164 264.2);
+    /* Crimson #A4142E — rejection. Pushed off coral's hue on purpose. */
+    --destructive: oklch(0.4631 0.1744 19.5);
+    --destructive-foreground: oklch(0.9574 0.0188 5.3);
+    /* Seal green #2F6E52 — accepted */
+    --success: oklch(0.4885 0.0798 162.1);
+    --success-foreground: oklch(0.4078 0.0668 162.7);
+    --success-muted: oklch(0.4885 0.0798 162.1 / 0.08);
+    --success-border: oklch(0.4885 0.0798 162.1 / 0.28);
+    /* Amber #B8830F — only ever means "waiting on someone" */
+    --warning: oklch(0.6462 0.1308 79.2);
+    --warning-foreground: oklch(0.5224 0.1059 78.9);
+    --warning-muted: oklch(0.6462 0.1308 79.2 / 0.12);
+    --warning-border: oklch(0.6462 0.1308 79.2 / 0.35);
+    /*
+     * Coral #EF5734 — the brand accent. --brand is the display value for fills
+     * and rings; --brand-foreground (#C2411C, 4.94:1) is the only one allowed
+     * to carry text or a small icon.
+     */
+    --brand: oklch(0.6551 0.1938 34.3);
+    --brand-foreground: oklch(0.5543 0.1716 35.9);
+    --brand-muted: oklch(0.6551 0.1938 34.3 / 0.1);
+    --brand-border: oklch(0.6551 0.1938 34.3 / 0.32);
+    --border: oklch(0.9288 0.0126 255.5);
+    --input: oklch(0.869 0.0198 252.9);
+    /*
+     * Coral, not ink: the focus ring has to stay visible on top of a primary
+     * button, and an ink ring on an ink button is invisible. Coral clears 3:1
+     * against both the canvas (3.30:1) and the ink button (4.67:1).
+     */
+    --ring: oklch(0.6551 0.1938 34.3);
+    /* Ledger paper: the hairline rule and the alternating row tint */
+    --ledger-rule: oklch(0.9288 0.0126 255.5);
+    --ledger-stripe: oklch(0.2472 0.0164 264.2 / 0.03);
+    /*
+     * The signed-out brand panel — auth, onboarding, and the client portal
+     * header. Fixed in both themes: it is a printed brand surface, so it must
+     * not follow --primary when the theme inverts.
+     *
+     * Burnt coral #B03A18 rather than the #EF5734 display value. The panel
+     * carries body copy, and white on #EF5734 is 3.45:1. At this depth white is
+     * 6.06:1, which leaves room for a second text tier — but only down to /85
+     * (4.80:1). Anything fainter than that on this surface fails AA.
+     */
+    --brand-panel: oklch(0.5153 0.1599 35.9);
+    --brand-panel-foreground: oklch(1 0 0);
+    /* Chart story: ink → coral → slate → seal green → amber */
+    --chart-1: oklch(0.2472 0.0164 264.2);
+    --chart-2: oklch(0.6551 0.1938 34.3);
+    --chart-3: oklch(0.5544 0.0407 257.4);
+    --chart-4: oklch(0.4885 0.0798 162.1);
+    --chart-5: oklch(0.6462 0.1308 79.2);
+    /* Tighter than the shadcn default — ledger precision, not friendly SaaS */
+    --radius: 0.5rem;
+    --sidebar: oklch(0.9683 0.0069 247.9);
+    --sidebar-foreground: oklch(0.2472 0.0164 264.2);
+    --sidebar-primary: oklch(0.2472 0.0164 264.2);
+    --sidebar-primary-foreground: oklch(0.9842 0.0034 247.9);
+    --sidebar-accent: oklch(0.9288 0.0126 255.5);
+    --sidebar-accent-foreground: oklch(0.2472 0.0164 264.2);
+    --sidebar-border: oklch(0.9288 0.0126 255.5);
+    --sidebar-ring: oklch(0.6551 0.1938 34.3);
 }
 
 .dark {
     color-scheme: dark;
-    /* Deep charcoal night — matches marketing secondary #222 */
-    --background: oklch(0.2 0.01 260);
-    --foreground: oklch(0.97 0.005 90);
-    --card: oklch(0.24 0.012 260);
-    --card-foreground: oklch(0.97 0.005 90);
-    --popover: oklch(0.24 0.012 260);
-    --popover-foreground: oklch(0.97 0.005 90);
-    /* Same brand coral for dark mode recognition */
-    --primary: oklch(0.655 0.194 34.3);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.3 0.015 260);
-    --secondary-foreground: oklch(0.97 0.005 90);
-    --muted: oklch(0.3 0.015 260);
-    --muted-foreground: oklch(0.72 0.03 257);
-    --accent: oklch(0.32 0.04 34);
-    --accent-foreground: oklch(0.97 0.005 90);
-    --destructive: oklch(0.593 0.207 33.4);
-    --destructive-foreground: oklch(1 0 0);
-    --success: oklch(0.7 0.11 155);
-    --success-foreground: oklch(0.86 0.07 155);
-    --success-muted: oklch(0.7 0.11 155 / 0.12);
-    --success-border: oklch(0.7 0.11 155 / 0.35);
-    --warning: oklch(0.867 0.167 99);
-    --warning-foreground: oklch(0.92 0.08 95);
-    --warning-muted: oklch(0.867 0.167 99 / 0.12);
-    --warning-border: oklch(0.867 0.167 99 / 0.35);
-    --border: oklch(0.35 0.015 260);
-    --input: oklch(0.35 0.015 260);
-    --ring: oklch(0.655 0.194 34.3);
-    --chart-1: oklch(0.655 0.194 34.3);
-    --chart-2: oklch(0.7 0.05 257);
-    --chart-3: oklch(0.7 0.11 155);
-    --chart-4: oklch(0.867 0.167 99);
-    --chart-5: oklch(0.75 0.02 260);
-    --sidebar: oklch(0.18 0.012 260);
-    --sidebar-foreground: oklch(0.97 0.005 90);
-    --sidebar-primary: oklch(0.655 0.194 34.3);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.3 0.015 260);
-    --sidebar-accent-foreground: oklch(0.97 0.005 90);
-    --sidebar-border: oklch(0.35 0.015 260);
-    --sidebar-ring: oklch(0.655 0.194 34.3);
+    --background: oklch(0.1889 0.0145 253.2);
+    --foreground: oklch(0.9288 0.0126 255.5);
+    --card: oklch(0.2289 0.0197 258.4);
+    --card-foreground: oklch(0.9288 0.0126 255.5);
+    --popover: oklch(0.2289 0.0197 258.4);
+    --popover-foreground: oklch(0.9288 0.0126 255.5);
+    /* Inverted: primary is still "the strongest thing against the canvas" */
+    --primary: oklch(0.944 0.0097 252.8);
+    --primary-foreground: oklch(0.2077 0.0177 259.7);
+    --secondary: oklch(0.2622 0.0214 257.3);
+    --secondary-foreground: oklch(0.9288 0.0126 255.5);
+    --muted: oklch(0.2622 0.0214 257.3);
+    --muted-foreground: oklch(0.7107 0.0351 256.8);
+    --accent: oklch(0.2989 0.0246 258.4);
+    --accent-foreground: oklch(0.9288 0.0126 255.5);
+    --destructive: oklch(0.6334 0.1797 10.5);
+    --destructive-foreground: oklch(0.2029 0.0538 7.9);
+    --success: oklch(0.6519 0.1017 161.5);
+    --success-foreground: oklch(0.7977 0.0767 163.1);
+    --success-muted: oklch(0.6519 0.1017 161.5 / 0.12);
+    --success-border: oklch(0.6519 0.1017 161.5 / 0.35);
+    --warning: oklch(0.7532 0.141 83.8);
+    --warning-foreground: oklch(0.8334 0.1158 87.8);
+    --warning-muted: oklch(0.7532 0.141 83.8 / 0.12);
+    --warning-border: oklch(0.7532 0.141 83.8 / 0.35);
+    /* Coral lifts rather than inverts — it is the one hue that stays itself */
+    --brand: oklch(0.6865 0.1805 37.3);
+    --brand-foreground: oklch(0.7752 0.1346 36.2);
+    --brand-muted: oklch(0.6865 0.1805 37.3 / 0.14);
+    --brand-border: oklch(0.6865 0.1805 37.3 / 0.38);
+    --border: oklch(0.3183 0.0264 257.5);
+    --input: oklch(0.3858 0.0265 252.8);
+    --ring: oklch(0.6865 0.1805 37.3);
+    --ledger-rule: oklch(0.3183 0.0264 257.5);
+    --ledger-stripe: oklch(0.9288 0.0126 255.5 / 0.035);
+    --brand-panel: oklch(0.5153 0.1599 35.9);
+    --brand-panel-foreground: oklch(1 0 0);
+    --chart-1: oklch(0.944 0.0097 252.8);
+    --chart-2: oklch(0.6865 0.1805 37.3);
+    --chart-3: oklch(0.7107 0.0351 256.8);
+    --chart-4: oklch(0.6519 0.1017 161.5);
+    --chart-5: oklch(0.7532 0.141 83.8);
+    --sidebar: oklch(0.1748 0.0131 248.6);
+    --sidebar-foreground: oklch(0.9288 0.0126 255.5);
+    --sidebar-primary: oklch(0.944 0.0097 252.8);
+    --sidebar-primary-foreground: oklch(0.2077 0.0177 259.7);
+    --sidebar-accent: oklch(0.2622 0.0214 257.3);
+    --sidebar-accent-foreground: oklch(0.9288 0.0126 255.5);
+    --sidebar-border: oklch(0.3183 0.0264 257.5);
+    --sidebar-ring: oklch(0.6865 0.1805 37.3);
 }
 
 @layer base {
@@ -195,13 +301,80 @@
         outline: none;
     }
 
-    /* Heading face — same stack as body; size/weight provide hierarchy. */
+    /*
+     * Display face — Schibsted Grotesk. Set tighter than the body face: at
+     * heading sizes its default tracking reads loose and the words stop
+     * holding together as a phrase.
+     */
     .font-display {
         font-family: var(--font-display);
+        letter-spacing: -0.018em;
     }
 
-    /* Utility/data typography for timestamps, counters, and document metadata. */
+    /*
+     * Data face for timestamps, counters, reference numbers, and document
+     * metadata. Tabular figures are the whole point — a column of counts has
+     * to line up on the decimal like a ledger column, and `slashed-zero`
+     * keeps 0 and O apart in reference codes.
+     */
     .font-data {
         font-family: var(--font-data);
+        font-variant-numeric: tabular-nums slashed-zero;
+    }
+
+    /*
+     * Figures inside tables align even when they're set in the body face —
+     * Inter's proportional digits make a column of counts wobble.
+     */
+    table {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/*
+ * Green-bar striping, lifted from ledger paper: alternate rows carry a very
+ * faint green tint so the eye can track across a wide row without a rule.
+ * Deliberately weaker than a hover state, which still has to win.
+ */
+@utility ledger-rows {
+    & tbody tr:nth-child(even of :not([hidden])) {
+        background-color: var(--ledger-stripe);
+    }
+}
+
+/*
+ * Text shimmer for Attachment uploading/processing titles.
+ * Mirrors shadcn's shimmer utility without pulling in the full `shadcn` package.
+ */
+@utility shimmer {
+    --shimmer-duration: 2s;
+    --shimmer-color: color-mix(in oklch, currentColor 35%, white);
+    background-image: linear-gradient(
+        90deg,
+        currentColor 0%,
+        var(--shimmer-color) 45%,
+        currentColor 90%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: tw-shimmer var(--shimmer-duration) linear infinite;
+}
+
+@keyframes tw-shimmer {
+    from {
+        background-position: 100% 0;
+    }
+
+    to {
+        background-position: -100% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shimmer {
+        animation: none;
+        background-image: none;
+        color: currentColor;
     }
 }

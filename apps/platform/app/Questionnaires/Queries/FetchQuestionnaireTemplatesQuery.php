@@ -133,15 +133,9 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{
-     *     id: int,
-     *     name: string,
-     *     description: string|null,
-     *     category: string,
-     *     category_label: string,
-     *     items_count: int,
-     *     is_system: bool
-     * }
+     * Row shape is owned by QuestionnaireTemplateRowData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
      */
     protected function mapModel(Model $model): array
     {
@@ -150,9 +144,9 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
             id: $model->id,
             name: $model->name,
             description: $model->description,
-            category: $model->category->value,
+            category: $model->category,
             categoryLabel: $model->category->label(),
-            itemsCount: $model->items_count,
+            itemsCount: (int) ($model->items_count ?? 0),
             isSystem: $model->isSystem(),
         )->toArray();
     }

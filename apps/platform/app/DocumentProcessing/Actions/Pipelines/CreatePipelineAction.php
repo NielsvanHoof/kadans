@@ -12,8 +12,12 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
 use RuntimeException;
 
-final class CreatePipelineAction
+final readonly class CreatePipelineAction
 {
+    public function __construct(
+        private BroadcastPipelineUpdatedAction $broadcastPipelineUpdated,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $metadata
      */
@@ -50,6 +54,11 @@ final class CreatePipelineAction
             ]);
         }
 
-        return $pipeline->load('steps');
+        $pipeline = $pipeline->load('steps');
+
+        // Let open pipeline index / dossier pages pick up the new run immediately.
+        $this->broadcastPipelineUpdated->handle($pipeline);
+
+        return $pipeline;
     }
 }

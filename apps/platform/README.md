@@ -15,6 +15,7 @@ Longer guides live under [`docs/`](docs/):
 - [Getting started](docs/getting-started.md) — Sail boot, first owner, day-to-day commands
 - [Architecture](docs/architecture.md) — domains, composition root, request flow
 - [Permissions](docs/permissions.md) — enum → registry → Spatie → policies
+- [Security](docs/security.md) — threat model, tenant isolation, portal tokens, response hardening
 - [Adding a domain](docs/adding-a-domain.md) — checklist for a new feature area
 
 [`CONTEXT.md`](CONTEXT.md) is the short domain glossary (entities and workflow terms).
@@ -56,7 +57,7 @@ Octane reloads its workers automatically when backend files change. After changi
 - **Questionnaire template** — reusable set of items (system-wide or firm-owned) that can be applied to a dossier.
 - **Client portal** — token-based magic-link page (no account) where clients answer requests.
 
-Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). There are no per-domain service providers — wiring lives in `bootstrap/` and `AppServiceProvider`. See [architecture](docs/architecture.md).
+Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). Domain bindings and policies live in each domain’s `*ServiceProvider`; `AppServiceProvider` keeps cross-cutting defaults. See [architecture](docs/architecture.md).
 
 ## Frontend architecture
 
@@ -66,9 +67,10 @@ Run `vendor/bin/sail npm run dev` (or `npm run build`) so Wayfinder generates th
 
 Key conventions (enforced by Biome; full rules in [`.cursor/rules/frontend-architecture.mdc`](.cursor/rules/frontend-architecture.mdc)):
 
-- Domain types live in `features/<domain>/types.ts`, not in the global `@/types` barrel.
-- Shared `components/` never import from `features/`.
-- Staff and portal document-request renderers never import each other; the item-type registry wires both sides.
+- Payload types are generated from the PHP `*Data` objects into `types/generated/` — `features/<domain>/types.ts` mostly aliases them.
+- Shared `components/` never import from `features/`, and are grouped by role (`ui/`, `primitives/`, `data/`, `forms/`, `feedback/`, `brand/`, `app-shell/`).
+- `hooks/` and `lib/` are app-wide only; domain hooks live in `features/<domain>/hooks/`.
+- Staff and portal document-request renderers never import each other; the item-type registries wire both sides.
 
 ## Testing
 

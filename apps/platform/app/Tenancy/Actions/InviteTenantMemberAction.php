@@ -12,7 +12,7 @@ use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 use App\Tenancy\Support\WorkspaceMemberRoles;
-use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -44,7 +44,9 @@ final readonly class InviteTenantMemberAction
         return DB::transaction(function () use ($tenant, $invitedBy, $email, $role): array {
             $existingMemberQuery = TenantMembership::query()
                 ->where('tenant_id', $tenant->id)
-                ->whereHas('user', fn (Builder $query) => $query->where('email', $email));
+                ->whereHas('user', function (Builder $query) use ($email): void {
+                    $query->getQuery()->where('email', $email);
+                });
 
             if ($existingMemberQuery->toBase()->exists()) {
                 throw ValidationException::withMessages([

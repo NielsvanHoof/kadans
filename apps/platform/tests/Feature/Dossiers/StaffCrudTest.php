@@ -18,15 +18,11 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -61,6 +57,7 @@ test('staff can create a client, dossier, and document request', function (): vo
     ])->assertRedirect();
 
     $dossier = Dossier::query()->sole();
+    grantDossierBuilderLock($dossier, $owner);
 
     $this->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
         'dossier' => $dossier,
@@ -108,6 +105,8 @@ test('staff can insert a document request at a canvas position', function (): vo
         'sort_order' => 1,
     ]);
 
+    grantDossierBuilderLock($dossier, $owner);
+
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
@@ -148,6 +147,8 @@ test('document request position is clamped to the end of the list', function ():
         'sort_order' => 0,
     ]);
 
+    grantDossierBuilderLock($dossier, $owner);
+
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
@@ -181,6 +182,8 @@ test('document request creation rolls back when auditing fails', function (): vo
     Event::listen($event, static function (Activity $activity): void {
         throw_if($activity->event === AuditEvent::DocumentRequestCreated->value, RuntimeException::class, 'Simulated audit failure.');
     });
+
+    grantDossierBuilderLock($dossier, $owner);
 
     try {
         $this->actingAs($owner)
@@ -228,6 +231,7 @@ test('staff can reorder every document request in a dossier', function (): void 
         'dossier_id' => $otherDossier->id,
     ]);
     $reorderedIds = $documentRequests->pluck('id')->reverse()->values()->all();
+    grantDossierBuilderLock($dossier, $owner);
     $builderRoute = workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]);
     $reorderRoute = workspaceRoute('workspaces.dossiers.document-requests.reorder', $tenant, [
         'dossier' => $dossier,
@@ -546,6 +550,8 @@ test('staff can create and answer textarea date and number requests', function (
         'tenant_id' => $tenant->id,
         'client_id' => $client->id,
     ]);
+
+    grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])

@@ -7,7 +7,7 @@ namespace App\Tenancy\Queries;
 use App\Accounts\Models\User;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
-use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -23,9 +23,11 @@ final class FetchActiveUsersForTenantQuery
         return User::query()
             ->whereHas(
                 'tenantMemberships',
-                fn (Builder $query) => $query
-                    ->where('tenant_id', $tenant->getKey())
-                    ->where('status', TenantMembershipStatus::Active),
+                function (Builder $query) use ($tenant): void {
+                    $query->getQuery()
+                        ->where('tenant_id', $tenant->getKey())
+                        ->where('status', TenantMembershipStatus::Active);
+                },
             )
             ->get();
     }

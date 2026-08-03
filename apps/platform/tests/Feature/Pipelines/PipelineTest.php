@@ -15,11 +15,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('a pipeline requires a polymorphic subject', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
@@ -33,8 +29,7 @@ test('a pipeline requires a polymorphic subject', function (): void {
 
 test('the pipeline factory creates a tenant-consistent subject', function (): void {
     $pipeline = Pipeline::factory()->create();
-    $subject = UploadedDocument::query()
-        ->withoutGlobalScopes()
+    $subject = UploadedDocument::queryWithoutTenantScope()
         ->findOrFail($pipeline->pipelineable_id);
 
     expect($pipeline->pipelineable_type)->toBe($subject->getMorphClass())

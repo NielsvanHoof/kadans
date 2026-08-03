@@ -14,13 +14,9 @@ use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -224,6 +220,8 @@ test('visibility cannot depend on a later field', function (): void {
         ],
     ]);
 
+    grantDossierBuilderLock($context['dossier'], $context['owner']);
+
     $this->actingAs($context['owner'])
         ->put(route('workspaces.dossiers.document-requests.update', [
             'tenant' => $context['tenant'],
@@ -268,6 +266,8 @@ test('a new field cannot be created with visibility depending on a later field',
             ],
         ],
     ]);
+
+    grantDossierBuilderLock($context['dossier'], $context['owner']);
 
     $this->actingAs($context['owner'])
         ->post(route('workspaces.dossiers.document-requests.store', [

@@ -3,11 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('confirm password screen can be rendered', function (): void {
     $user = User::factory()->create();

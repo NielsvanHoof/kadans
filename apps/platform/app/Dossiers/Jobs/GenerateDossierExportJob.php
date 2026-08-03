@@ -32,6 +32,19 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
         return (string) $this->pipelineId;
     }
 
+    /**
+     * Telescope / Horizon searchable tags (jobs carry IDs, not Eloquent models).
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return [
+            'export',
+            'pipeline:'.$this->pipelineId,
+        ];
+    }
+
     public function handle(GenerateDossierExportAction $generateDossierExport): void
     {
         $generateDossierExport->handle($this->pipelineId);

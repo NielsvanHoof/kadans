@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestReviewController';
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -53,7 +53,7 @@ export function StaffTextAnswerForm({
                         <InputError message={errors.answer_text} />
                     </Field>
                     <Field orientation="horizontal">
-                        <Button type="submit" size="sm" disabled={processing}>
+                        <Button type="submit" size="sm" isDisabled={processing}>
                             {processing
                                 ? t('Saving…')
                                 : t('Save client answer')}
@@ -100,7 +100,7 @@ export function StaffBooleanAnswerForm({
                                 <Button
                                     type="submit"
                                     size="sm"
-                                    disabled={processing}
+                                    isDisabled={processing}
                                     variant={
                                         documentRequest.answer_boolean === value
                                             ? 'default'

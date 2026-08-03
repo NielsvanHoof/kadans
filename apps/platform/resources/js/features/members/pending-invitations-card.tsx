@@ -1,8 +1,8 @@
 import { Form } from '@inertiajs/react';
 import TenantInvitationController from '@/actions/App/Tenancy/Http/Controllers/TenantInvitationController';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import EmptyState from '@/components/empty-state';
-import IndexList from '@/components/index-list';
+import IndexList from '@/components/data/index-list';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import EmptyState from '@/components/primitives/empty-state';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -90,7 +90,7 @@ export default function PendingInvitationsCard({
                                             type="submit"
                                             variant="outline"
                                             size="sm"
-                                            disabled={processing}
+                                            isDisabled={processing}
                                         >
                                             {t('Resend')}
                                         </Button>

@@ -123,20 +123,9 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     status: string,
-     *     updated_at: string|null,
-     *     dossier: array{id: int, title: string, reference: string|null},
-     *     client_name: string,
-     *     uploaded_document: array{
-     *         id: int,
-     *         original_filename: string,
-     *         size_bytes: int,
-     *         uploaded_at: string
-     *     }|null
-     * }
+     * Row shape is owned by MediaLibraryDocumentRowData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
      */
     protected function mapModel(Model $model): array
     {
@@ -148,7 +137,7 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
         return new MediaLibraryDocumentRowData(
             id: $model->id,
             title: $model->title,
-            status: $model->status->value,
+            status: $model->status,
             updatedAt: $model->updated_at?->toIso8601String(),
             dossier: new MediaLibraryDossierSummaryData(
                 id: $dossier->id,

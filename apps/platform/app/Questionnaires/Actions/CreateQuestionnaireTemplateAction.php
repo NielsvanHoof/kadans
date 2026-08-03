@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Questionnaires\Actions;
 
+use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Tenancy\Models\Tenant;
 
@@ -17,9 +18,15 @@ final class CreateQuestionnaireTemplateAction
      */
     public function handle(Tenant $tenant, array $attributes): QuestionnaireTemplate
     {
-        return QuestionnaireTemplate::query()->create([
-            ...$attributes,
-            'tenant_id' => $tenant->getKey(),
-        ]);
+        $template = QuestionnaireTemplate::query()->make();
+        $template->name = (string) $attributes['name'];
+        $template->description = isset($attributes['description'])
+            ? (string) $attributes['description']
+            : null;
+        $template->category = QuestionnaireTemplateCategory::from((string) $attributes['category']);
+        $template->tenant_id = $tenant->getKey();
+        $template->save();
+
+        return $template;
     }
 }

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Actions\DocumentRequests;
 
-use App\ClientPortal\Enums\SubmissionContext;
 use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Models\Pipeline;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;

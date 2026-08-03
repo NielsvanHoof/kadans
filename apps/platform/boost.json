@@ -1,7 +1,6 @@
 {
     "agents": [
-        "cursor",
-        "claude_code"
+        "cursor"
     ],
     "cloud": false,
     "guidelines": true,
@@ -12,7 +11,8 @@
         "spatie/laravel-multitenancy",
         "spatie/laravel-permission",
         "barryvdh/laravel-debugbar",
-        "spatie/laravel-query-builder"
+        "spatie/laravel-query-builder",
+        "pestphp/pest-plugin-agent"
     ],
     "sail": true,
     "skills": [
@@ -29,6 +29,7 @@
         "laravel-multitenancy-development",
         "laravel-permission-development",
         "laravel-query-builder",
-        "debug-using-debugbar"
+        "debug-using-debugbar",
+        "pest-plugin-agent"
     ]
 }

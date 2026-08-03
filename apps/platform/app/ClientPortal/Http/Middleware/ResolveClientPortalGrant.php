@@ -6,6 +6,7 @@ namespace App\ClientPortal\Http\Middleware;
 
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,13 +17,17 @@ use function is_int;
  * Resolves a short-lived portal session and makes the grant's tenant current
  * before route model binding runs (see bootstrap/app.php priority list).
  */
-final class ResolveClientPortalGrant
+final readonly class ResolveClientPortalGrant
 {
     public const string REQUEST_ATTRIBUTE = 'client_access_grant';
 
     public const string SESSION_EXPIRES_AT = 'portal.expires_at';
 
     public const string SESSION_GRANT_ID = 'portal.grant_id';
+
+    public function __construct(
+        private TenantContext $tenantContext,
+    ) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -42,8 +47,7 @@ final class ResolveClientPortalGrant
             abort(Response::HTTP_NOT_FOUND);
         }
 
-        $grant = ClientAccessGrant::query()
-            ->withoutGlobalScopes()
+        $grant = ClientAccessGrant::queryWithoutTenantScope()
             ->whereKey($grantId)
             ->where('revoked_at', null)
             ->where('expires_at', '>', now())
@@ -60,6 +64,8 @@ final class ResolveClientPortalGrant
 
         // Tenant must be current so BelongsToTenant scopes work for dossier queries.
         $tenant->makeCurrent();
+        // Fail fast if a later query runs without the portal tenant.
+        $this->tenantContext->enableStrict();
 
         $request->attributes->set(self::REQUEST_ATTRIBUTE, $grant);
 

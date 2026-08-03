@@ -4,42 +4,23 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
+use App\Dossiers\Enums\DossierStatus;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Archived dossier index table row.
  */
-final readonly class ArchivedDossierRowData
+#[TypeScript]
+final class ArchivedDossierRowData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $title,
-        public ?string $reference,
-        public string $status,
-        public string $clientName,
-        public bool $clientArchived,
-        public string $archivedAt,
+        public readonly int $id,
+        public readonly string $title,
+        public readonly ?string $reference,
+        public readonly DossierStatus $status,
+        public readonly string $clientName,
+        public readonly bool $clientArchived,
+        public readonly string $archivedAt,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     reference: string|null,
-     *     status: string,
-     *     client_name: string,
-     *     client_archived: bool,
-     *     archived_at: string
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'reference' => $this->reference,
-            'status' => $this->status,
-            'client_name' => $this->clientName,
-            'client_archived' => $this->clientArchived,
-            'archived_at' => $this->archivedAt,
-        ];
-    }
 }

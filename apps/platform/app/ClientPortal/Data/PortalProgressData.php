@@ -4,36 +4,20 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Progress summary for the client portal questionnaire.
  */
-final readonly class PortalProgressData
+#[TypeScript]
+final class PortalProgressData extends Data
 {
     public function __construct(
-        public int $total,
-        public int $completed,
-        public int $approved,
-        public int $remaining,
-        public ?PortalNextIncompleteData $nextIncomplete,
+        public readonly int $total,
+        public readonly int $completed,
+        public readonly int $approved,
+        public readonly int $remaining,
+        public readonly ?PortalNextIncompleteData $nextIncomplete,
     ) {}
-
-    /**
-     * @return array{
-     *     total: int,
-     *     completed: int,
-     *     approved: int,
-     *     remaining: int,
-     *     next_incomplete: array{id: int, title: string}|null
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'total' => $this->total,
-            'completed' => $this->completed,
-            'approved' => $this->approved,
-            'remaining' => $this->remaining,
-            'next_incomplete' => $this->nextIncomplete?->toArray(),
-        ];
-    }
 }

@@ -25,8 +25,7 @@ final readonly class AcceptTenantInvitationAction
     public function handle(TenantInvitation $invitation, User $user): TenantMembership
     {
         return DB::transaction(function () use ($invitation, $user): TenantMembership {
-            $lockQuery = TenantInvitation::query()
-                ->withoutGlobalScopes()
+            $lockQuery = TenantInvitation::queryWithoutTenantScope()
                 ->whereKey($invitation->getKey());
 
             // lockForUpdate lives on the base builder; call it there for strict-rules.
@@ -53,12 +52,6 @@ final readonly class AcceptTenantInvitationAction
             if (! $tenant instanceof Tenant) {
                 $locked->loadMissing('tenant');
                 $tenant = $locked->tenant;
-            }
-
-            if (! $tenant instanceof Tenant) {
-                throw ValidationException::withMessages([
-                    'invitation' => __('This invitation is no longer valid.'),
-                ]);
             }
 
             $this->memberRoles->lockMembershipPair($tenant->id, $user->id);

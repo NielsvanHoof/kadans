@@ -4,30 +4,20 @@ declare(strict_types=1);
 
 namespace App\Clients\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Archived client index row.
  */
-final readonly class ArchivedClientRowData
+#[TypeScript]
+final class ArchivedClientRowData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $name,
-        public string $email,
-        public int $dossiersCount,
-        public string $archivedAt,
+        public readonly int $id,
+        public readonly string $name,
+        public readonly string $email,
+        public readonly int $dossiersCount,
+        public readonly string $archivedAt,
     ) {}
-
-    /**
-     * @return array{id: int, name: string, email: string, dossiers_count: int, archived_at: string}
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'dossiers_count' => $this->dossiersCount,
-            'archived_at' => $this->archivedAt,
-        ];
-    }
 }

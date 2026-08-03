@@ -12,6 +12,7 @@
             "!resources/js/actions",
             "!resources/js/components/ui",
             "!resources/js/routes",
+            "!resources/js/types/generated",
             "!resources/js/wayfinder"
         ]
     },
@@ -64,6 +65,36 @@
                                     {
                                         "group": ["@/features/**"],
                                         "message": "Shared components must stay domain-agnostic. Move domain-aware code into the feature itself."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["resources/js/components/primitives/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noRestrictedImports": {
+                            "level": "error",
+                            "options": {
+                                "patterns": [
+                                    {
+                                        "group": ["@/pages/**", "@/features/**"],
+                                        "message": "Shared components must stay domain-agnostic."
+                                    },
+                                    {
+                                        "group": [
+                                            "@/components/data/**",
+                                            "@/components/forms/**",
+                                            "@/components/feedback/**",
+                                            "@/components/brand/**",
+                                            "@/components/app-shell/**"
+                                        ],
+                                        "message": "Primitives are the bottom layer: they may only use @/components/ui and each other. Composites belong in data/, forms/, or feedback/."
                                     }
                                 ]
                             }

@@ -24,7 +24,7 @@ final class FetchQuestionnaireTemplateShowQuery
         foreach ($template->items as $item) {
             $items[] = new QuestionnaireTemplateItemData(
                 id: $item->id,
-                type: $item->type->value,
+                type: $item->type,
                 title: $item->title,
                 instructions: $item->instructions,
                 sortOrder: $item->sort_order,
@@ -35,7 +35,7 @@ final class FetchQuestionnaireTemplateShowQuery
             id: $template->id,
             name: $template->name,
             description: $template->description,
-            category: $template->category->value,
+            category: $template->category,
             categoryLabel: $template->category->label(),
             isSystem: $template->isSystem(),
             items: $items,

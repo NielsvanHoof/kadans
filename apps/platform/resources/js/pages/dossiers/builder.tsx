@@ -1,6 +1,9 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import QuestionnaireBuilder from '@/features/document-requests/staff/builder/questionnaire-builder';
-import type { Dossier } from '@/features/dossiers/types';
+import type {
+    DossierBuilder,
+    DossierBuilderLock,
+} from '@/features/dossiers/types';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -13,18 +16,15 @@ export default function BuilderDossier({
     dossier,
     templates = [],
     can_manage: canManage,
+    builder_lock: builderLock,
 }: {
-    dossier: Dossier;
+    dossier: DossierBuilder;
     templates?: ApplyTemplateOption[];
     can_manage: boolean;
-    can_edit: boolean;
-    can_send_reminder: boolean;
-    can_review: boolean;
-    can_download: boolean;
+    builder_lock: DossierBuilderLock;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
-    const canEditStructure = canManage && dossier.status !== 'completed';
     const backHref = showDossier({
         tenant: currentWorkspace,
         dossier: dossier.id,
@@ -46,7 +46,8 @@ export default function BuilderDossier({
                     dossierStatus={dossier.status}
                     documentRequests={dossier.document_requests}
                     templates={templates}
-                    canEdit={canEditStructure}
+                    canManage={canManage}
+                    initialLock={builderLock}
                     backHref={backHref}
                 />
             </div>

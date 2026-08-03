@@ -36,6 +36,22 @@ final class ClientPortalInviteNotification extends Notification implements Shoul
         return ['mail'];
     }
 
+    /**
+     * Telescope tags for the queued notification job.
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return [
+            'notification',
+            'mail',
+            'client_portal_invite',
+            'grant:'.$this->grantId,
+            'dossier:'.$this->dossier->id,
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $client = $this->dossier->client;
@@ -59,6 +75,9 @@ final class ClientPortalInviteNotification extends Notification implements Shoul
             ->line(__('This link expires on :expires.', [
                 'expires' => $this->expiresAt->timezone(config('app.timezone'))->format('j F Y, H:i'),
             ]))
-            ->line(__('If you did not expect this email, you can ignore it.'));
+            ->line(__('If you did not expect this email, you can ignore it.'))
+            ->tag('client_portal_invite')
+            ->metadata('grant_id', (string) $this->grantId)
+            ->metadata('dossier_id', (string) $this->dossier->id);
     }
 }

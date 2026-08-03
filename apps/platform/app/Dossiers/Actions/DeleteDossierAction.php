@@ -7,8 +7,7 @@ namespace App\Dossiers\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Actions\RevokeClientPortalAccessAction;
-use App\ClientPortal\Models\ClientAccessGrant;
+use App\Dossiers\Events\DossierArchived;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +15,6 @@ final readonly class DeleteDossierAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
-        private RevokeClientPortalAccessAction $revokeClientPortalAccess,
     ) {}
 
     public function handle(Dossier $dossier, User $deletedBy): void
@@ -27,14 +25,8 @@ final readonly class DeleteDossierAction
             $lockedDossier = $dossierQuery->firstOrFail();
 
             if (! $lockedDossier->trashed()) {
-                ClientAccessGrant::query()
-                    ->where('dossier_id', $lockedDossier->id)
-                    ->where('revoked_at', null)
-                    ->where('expires_at', '>', now())
-                    ->get()
-                    ->each(function (ClientAccessGrant $grant) use ($deletedBy): void {
-                        $this->revokeClientPortalAccess->handle($grant, $deletedBy);
-                    });
+                // ClientPortal listens and revokes live magic-link grants.
+                event(new DossierArchived($lockedDossier, $deletedBy));
 
                 $this->logAuditActivity->handle(
                     AuditEvent::DossierDeleted,

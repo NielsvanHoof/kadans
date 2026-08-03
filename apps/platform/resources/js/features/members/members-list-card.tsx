@@ -1,9 +1,9 @@
 import { Form } from '@inertiajs/react';
 import { useState } from 'react';
 import WorkspaceMemberController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceMemberController';
-import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
-import EmptyState from '@/components/empty-state';
-import IndexList from '@/components/index-list';
+import IndexList from '@/components/data/index-list';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import EmptyState from '@/components/primitives/empty-state';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,7 +15,6 @@ import {
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -151,7 +150,7 @@ export default function MembersListCard({
                                                             type="button"
                                                             variant="outline"
                                                             size="sm"
-                                                            disabled={
+                                                            isDisabled={
                                                                 isLastActiveOwner
                                                             }
                                                         >
@@ -244,38 +243,40 @@ function MemberRoleSelect({
                     {t('Role for :name', { name: member.name })}
                 </FieldLabel>
                 <Select
-                    value={member.role ?? undefined}
-                    disabled={
+                    selectedKey={member.role ?? undefined}
+                    isDisabled={
                         member.status === 'suspended' || isLastActiveOwner
                     }
                     // Ask for confirmation before posting the role change.
-                    onValueChange={(value) => {
+                    onSelectionChange={(value) => {
                         if (value === member.role) {
                             return;
                         }
 
-                        setPendingRole(value);
+                        setPendingRole(value === null ? null : String(value));
                     }}
+                    placeholder={t('Role')}
+                    aria-label={t('Role')}
                 >
                     <SelectTrigger
                         id={roleSelectId}
                         aria-label={t('Role')}
                         className="min-w-40"
                     >
-                        <SelectValue placeholder={t('Role')} />
+                        <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-background">
                         <SelectGroup>
                             {assignableRoleOptions.map((option) => (
                                 <SelectItem
                                     key={option.value}
-                                    value={option.value}
+                                    id={option.value}
                                 >
                                     {option.label}
                                 </SelectItem>
                             ))}
                             {roleMissingFromOptions && member.role && (
-                                <SelectItem value={member.role}>
+                                <SelectItem id={member.role}>
                                     {member.role_label ?? member.role}
                                 </SelectItem>
                             )}
@@ -285,61 +286,54 @@ function MemberRoleSelect({
             </Field>
 
             <Dialog
-                open={pendingRole !== null}
+                isOpen={pendingRole !== null}
                 onOpenChange={(open) => {
                     if (!open) {
                         setPendingRole(null);
                     }
                 }}
             >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('Change role?')}</DialogTitle>
-                        <DialogDescription>
-                            {t(
-                                'Change the role of :name to :role? Their permissions will update immediately.',
-                                {
-                                    name: member.name,
-                                    role: pendingRoleLabel,
-                                },
-                            )}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <Form
-                        {...WorkspaceMemberController.update.form({
-                            tenant: currentWorkspace,
-                            membership: member.id,
-                        })}
-                        options={{ preserveScroll: true }}
-                        onSuccess={() => setPendingRole(null)}
-                    >
-                        {({ processing }) => (
-                            <>
-                                <input
-                                    type="hidden"
-                                    name="role"
-                                    value={pendingRole ?? ''}
-                                />
-                                <DialogFooter className="gap-2">
-                                    <DialogClose asChild>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
-                                    </DialogClose>
-                                    <Button
-                                        type="submit"
-                                        disabled={processing || !pendingRole}
-                                    >
-                                        {t('Change role')}
-                                    </Button>
-                                </DialogFooter>
-                            </>
+                <DialogHeader>
+                    <DialogTitle>{t('Change role?')}</DialogTitle>
+                    <DialogDescription>
+                        {t(
+                            'Change the role of :name to :role? Their permissions will update immediately.',
+                            {
+                                name: member.name,
+                                role: pendingRoleLabel,
+                            },
                         )}
-                    </Form>
-                </DialogContent>
+                    </DialogDescription>
+                </DialogHeader>
+                <Form
+                    {...WorkspaceMemberController.update.form({
+                        tenant: currentWorkspace,
+                        membership: member.id,
+                    })}
+                    options={{ preserveScroll: true }}
+                    onSuccess={() => setPendingRole(null)}
+                >
+                    {({ processing }) => (
+                        <>
+                            <input
+                                type="hidden"
+                                name="role"
+                                value={pendingRole ?? ''}
+                            />
+                            <DialogFooter className="gap-2">
+                                <DialogClose type="button" variant="secondary">
+                                    {t('Cancel')}
+                                </DialogClose>
+                                <Button
+                                    type="submit"
+                                    isDisabled={processing || !pendingRole}
+                                >
+                                    {t('Change role')}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </Form>
             </Dialog>
         </>
     );

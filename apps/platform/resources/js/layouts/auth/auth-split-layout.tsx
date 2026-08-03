@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
-import BrandHeroPanel from '@/components/brand-hero-panel';
+import BrandHeroPanel from '@/components/brand/brand-hero-panel';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -20,18 +20,18 @@ export default function AuthSplitLayout({
                     href={dashboard()}
                     className="flex items-center gap-3 text-lg font-semibold"
                 >
-                    <AppLogoIcon className="size-8 text-primary-foreground" />
+                    <AppLogoIcon className="size-8 text-brand-panel-foreground" />
                     {name}
                 </Link>
 
                 <div className="mt-auto max-w-md space-y-4 pb-4">
-                    <p className="text-sm font-medium tracking-wide text-primary-foreground/80 uppercase">
+                    <p className="text-sm font-medium tracking-wide text-brand-panel-foreground/85 uppercase">
                         {t('Secure document exchange')}
                     </p>
                     <h2 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">
                         {t('The smart, secure way to request client documents')}
                     </h2>
-                    <p className="text-sm leading-relaxed text-primary-foreground/85">
+                    <p className="text-sm leading-relaxed text-brand-panel-foreground/85">
                         {t(
                             'One professional environment for your team and clients to share documents with clarity, structure, and control.',
                         )}
@@ -46,8 +46,10 @@ export default function AuthSplitLayout({
                         aria-label={name}
                         className="relative z-20 flex items-center justify-center lg:hidden"
                     >
-                        <div className="flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground sm:size-14">
-                            <AppLogoIcon className="size-7 text-primary-foreground sm:size-8" />
+                        {/* Stands in for the coral panel below `lg`, so it
+                            carries the same coral rather than ink. */}
+                        <div className="flex size-12 items-center justify-center rounded-md bg-brand text-white sm:size-14">
+                            <AppLogoIcon className="size-7 sm:size-8" />
                         </div>
                     </Link>
                     <main

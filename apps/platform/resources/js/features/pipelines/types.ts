@@ -1,56 +1,20 @@
-export type PipelineStatus =
-    'pending' | 'running' | 'completed' | 'failed' | 'stuck' | 'cancelled';
+/**
+ * Pipeline domain types. Payload shapes are generated from the PHP Data objects.
+ */
+
+/** Wire payload of the workspace `pipeline.updated` broadcast. */
+export type PipelineUpdatedPayload =
+    App.DocumentProcessing.Data.PipelineUpdatedPayloadData;
+
+export type PipelineStatus = App.DocumentProcessing.Enums.PipelineStatus;
 
 export type PipelineStepStatus =
-    'pending' | 'running' | 'completed' | 'failed' | 'stuck' | 'skipped';
+    App.DocumentProcessing.Enums.PipelineStepStatus;
 
-export type PipelineIndexRow = {
-    id: number;
-    type: string;
-    status: PipelineStatus;
-    current_stage: string | null;
-    attempt_number: number;
-    last_activity_at: string | null;
-    created_at: string;
-    subject_type: string;
-    subject_id: number;
-};
+export type PipelineIndexRow = App.DocumentProcessing.Data.PipelineIndexRowData;
 
-export type PipelineSubject = {
-    type: string;
-    id: number;
-    label: string | null;
-    context: string | null;
-    href: string | null;
-};
+export type PipelineSubject = App.DocumentProcessing.Data.PipelineSubjectData;
 
-export type PipelineStepDetail = {
-    key: string;
-    status: PipelineStepStatus;
-    attempts: number;
-    started_at: string | null;
-    last_activity_at: string | null;
-    completed_at: string | null;
-    error_code: string | null;
-    error_message: string | null;
-};
+export type PipelineStepDetail = App.DocumentProcessing.Data.PipelineStepData;
 
-export type PipelineDetail = {
-    id: number;
-    type: string;
-    status: PipelineStatus;
-    current_stage: string | null;
-    provider: string | null;
-    provider_job_id: string | null;
-    attempt_number: number;
-    error_code: string | null;
-    error_message: string | null;
-    metadata: Record<string, unknown> | null;
-    started_at: string | null;
-    last_activity_at: string | null;
-    next_retry_at: string | null;
-    completed_at: string | null;
-    failed_at: string | null;
-    steps: PipelineStepDetail[];
-    subject: PipelineSubject;
-};
+export type PipelineDetail = App.DocumentProcessing.Data.PipelineShowData;

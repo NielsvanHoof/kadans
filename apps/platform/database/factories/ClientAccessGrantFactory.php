@@ -40,8 +40,7 @@ final class ClientAccessGrantFactory extends Factory
                 return;
             }
 
-            $dossier = Dossier::query()
-                ->withoutGlobalScopes()
+            $dossier = Dossier::queryWithoutTenantScope()
                 ->find($grant->dossier_id);
 
             if ($dossier instanceof Dossier) {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Dossiers\Http\Requests\Builder;
 
 use App\Dossiers\Http\Requests\Builder\Concerns\ValidatesQuestionnaireItemConfiguration;
+use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
 use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -16,19 +16,17 @@ use Illuminate\Validation\Validator;
 
 final class UpdateDocumentRequestRequest extends FormRequest
 {
-    use LocalizesValidationAttributes, ValidatesQuestionnaireItemConfiguration;
+    use AuthorizesDossierBuilderMutation;
+    use LocalizesValidationAttributes;
+    use ValidatesQuestionnaireItemConfiguration;
 
     public function authorize(): bool
     {
-        $dossier = $this->route('dossier');
         $documentRequest = $this->route('documentRequest');
-        $user = $this->user();
 
-        return $user !== null
-            && $dossier instanceof Dossier
+        return $this->userHoldsBuilderLockForMutation()
             && $documentRequest instanceof DocumentRequest
-            && $user->can('update', $dossier)
-            && $user->can('update', $documentRequest);
+            && $this->user()?->can('update', $documentRequest) === true;
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

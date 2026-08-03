@@ -16,7 +16,7 @@ export default function SupportSessionBanner() {
     return (
         <div
             role="status"
-            className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-600/30 bg-amber-50 px-4 py-2 text-sm text-amber-950 dark:border-amber-400/20 dark:bg-amber-950/40 dark:text-amber-50"
+            className="flex flex-wrap items-center justify-between gap-3 border-b border-warning-border bg-warning-muted px-4 py-2 text-sm text-warning-foreground"
         >
             <p>
                 {t('Support mode')}: {supportSession.tenant.name} —{' '}

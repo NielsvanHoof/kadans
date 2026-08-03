@@ -1,4 +1,4 @@
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import {
     Card,
     CardContent,

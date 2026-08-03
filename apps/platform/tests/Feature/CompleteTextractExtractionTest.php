@@ -15,12 +15,8 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Textract\TextractClient;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('complete textract extraction maps forms tables and asks bedrock for overview', function (): void {
     Event::fake([MessageLogged::class]);

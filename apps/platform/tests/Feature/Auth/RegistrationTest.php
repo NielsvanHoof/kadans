@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('public registration routes are unavailable', function (): void {
     expect(Route::has('register'))->toBeFalse()

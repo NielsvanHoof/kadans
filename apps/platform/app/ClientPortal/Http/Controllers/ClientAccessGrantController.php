@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\ClientPortal\Actions\IssueClientPortalAccessAction;
 use App\ClientPortal\Actions\RevokeClientPortalAccessAction;
 use App\ClientPortal\Http\Requests\StoreClientAccessGrantRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\URL;
-use Inertia\Inertia;
-use Symfony\Component\HttpFoundation\Response;
 
 final class ClientAccessGrantController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function store(
         Tenant $tenant,
         StoreClientAccessGrantRequest $request,
@@ -27,9 +28,7 @@ final class ClientAccessGrantController extends Controller
     ): RedirectResponse {
         $this->authorize('view', $dossier);
 
-        $user = $request->user();
-
-        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $sendInvite = (bool) ($request->validated('send_invite') ?? true);
 
@@ -48,15 +47,9 @@ final class ClientAccessGrantController extends Controller
         $request->session()->flash('access_grant_portal_url', $portalUrl);
 
         if ($sendInvite) {
-            Inertia::flash('toast', [
-                'type' => 'success',
-                'message' => __('Client invite queued. Copy the portal link now if you need it again.'),
-            ]);
+            Toast::success(__('Client invite queued. Copy the portal link now if you need it again.'));
         } else {
-            Inertia::flash('toast', [
-                'type' => 'success',
-                'message' => __('Client access link created. Copy it now — it will not be shown again.'),
-            ]);
+            Toast::success(__('Client access link created. Copy it now — it will not be shown again.'));
         }
 
         return to_route(
@@ -72,16 +65,11 @@ final class ClientAccessGrantController extends Controller
     ): RedirectResponse {
         $this->authorize('revoke', $grant);
 
-        $user = request()->user();
-
-        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $revokeClientPortalAccess->handle($grant, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Client access grant revoked.'),
-        ]);
+        Toast::success(__('Client access grant revoked.'));
 
         return to_route(
             'workspaces.dossiers.show',

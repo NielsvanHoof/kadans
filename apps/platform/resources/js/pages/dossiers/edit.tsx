@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import EditDossierForm from '@/features/dossiers/edit/edit-dossier-form';
 import type {
     EditableDossierWithResponsibility,

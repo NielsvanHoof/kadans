@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Middleware;
 
-use App\Accounts\Actions\Localization\LoadFrontendTranslationsAction;
-use App\Accounts\Enums\Locale;
 use App\Accounts\Models\User;
-use App\DocumentProcessing\Enums\PipelinePermission;
-use App\Platform\Support\SupportSession;
-use App\Platform\Support\SupportSessionData;
-use App\Tenancy\Data\WorkspaceNavItemData;
-use App\Tenancy\Enums\WorkspacePermission;
+use App\Platform\Http\SharedProps\LocaleProps;
+use App\Platform\Http\SharedProps\SupportSessionProps;
+use App\Platform\Http\SharedProps\TenantPermissionProps;
+use App\Platform\Http\SharedProps\WorkspaceProps;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\FetchWorkspaceNavigationForUserQuery;
 use App\WorkspaceNotifications\Queries\FetchWorkspaceNotificationsForUserQuery;
 use Closure;
 use Illuminate\Http\Request;
@@ -35,10 +31,11 @@ final class HandleInertiaRequests extends Middleware
     protected $rootView = 'app';
 
     public function __construct(
-        private readonly FetchWorkspaceNavigationForUserQuery $getWorkspaceNavigationForUser,
         private readonly FetchWorkspaceNotificationsForUserQuery $getWorkspaceNotificationsForUser,
-        private readonly LoadFrontendTranslationsAction $loadFrontendTranslations,
-        private readonly SupportSession $supportSession,
+        private readonly LocaleProps $localeProps,
+        private readonly SupportSessionProps $supportSessionProps,
+        private readonly TenantPermissionProps $tenantPermissionProps,
+        private readonly WorkspaceProps $workspaceProps,
     ) {}
 
     /**
@@ -90,15 +87,7 @@ final class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'locale' => $locale,
-            'available_locales' => array_map(
-                fn (Locale $availableLocale): array => [
-                    'code' => $availableLocale->value,
-                    'label' => $availableLocale->label(),
-                ],
-                Locale::cases(),
-            ),
-            'translations' => fn (): array => $this->loadFrontendTranslations->handle($locale),
+            ...($this->localeProps)($locale),
             'auth' => [
                 'user' => $user instanceof User
                     ? [
@@ -110,77 +99,11 @@ final class HandleInertiaRequests extends Middleware
                     ]
                     : null,
             ],
-            'support_session' => function () use ($user): ?array {
-                if (! $user instanceof User || ! $user->isPlatformSupport()) {
-                    return null;
-                }
-
-                $session = $this->supportSession->active();
-
-                if (! $session instanceof SupportSessionData) {
-                    return null;
-                }
-
-                $tenant = Tenant::query()->find($session->tenantId);
-
-                if (! $tenant instanceof Tenant) {
-                    return null;
-                }
-
-                return [
-                    'tenant' => [
-                        'name' => $tenant->name,
-                        'slug' => $tenant->slug,
-                    ],
-                    'reason' => $session->reason,
-                    'expires_at' => $session->expiresAt->toIso8601String(),
-                ];
-            },
-            'workspaces' => $user instanceof User
-                ? Inertia::once(
-                    fn (): array => array_map(
-                        static fn (WorkspaceNavItemData $item): array => $item->toArray(),
-                        $this->getWorkspaceNavigationForUser->handle($user),
-                    ),
-                )->fresh(
-                    $request->hasSession()
-                        ? $request->session()->pull('inertia.refresh.workspaces', false)
-                        : false,
-                )
-                : [],
-            'current_firm' => function (): ?array {
-                $tenant = Tenant::current();
-
-                if (! $tenant instanceof Tenant) {
-                    return null;
-                }
-
-                return [
-                    'name' => $tenant->name,
-                    'slug' => $tenant->slug,
-                ];
-            },
-            'can_manage_members' => function () use ($user): bool {
-                $tenant = Tenant::current();
-
-                return $user instanceof User
-                    && $tenant instanceof Tenant
-                    && $user->hasTenantPermission(WorkspacePermission::ViewMembers, $tenant);
-            },
-            'can_view_roles' => function () use ($user): bool {
-                $tenant = Tenant::current();
-
-                return $user instanceof User
-                    && $tenant instanceof Tenant
-                    && $user->hasTenantPermission(WorkspacePermission::ViewRoles, $tenant);
-            },
-            'can_view_pipelines' => function () use ($user): bool {
-                $tenant = Tenant::current();
-
-                return $user instanceof User
-                    && $tenant instanceof Tenant
-                    && $user->hasTenantPermission(PipelinePermission::View, $tenant);
-            },
+            'support_session' => fn (): ?array => ($this->supportSessionProps)($user),
+            ...($this->workspaceProps)($request, $user),
+            // Whole registered permission set for the current firm — the frontend
+            // gates on this rather than on per-feature booleans defined here.
+            'permissions' => fn (): array => ($this->tenantPermissionProps)($user),
             // Staff bell inbox — deferred so non-bell pages stay cheap.
             'notifications' => (function () use ($user) {
                 $tenant = Tenant::current();
@@ -193,7 +116,7 @@ final class HandleInertiaRequests extends Middleware
                     fn (): array => $this->getWorkspaceNotificationsForUser->handle($user, $tenant)->toArray(),
                 );
             })(),
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'sidebar_open' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
 }

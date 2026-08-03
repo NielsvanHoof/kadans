@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
+import Heading from '@/components/primitives/heading';
 import CreateFirmForm from '@/features/workspaces/create-firm-form';
 import { useTranslation } from '@/hooks/use-translation';
 import { create as createFirm, store as storeFirm } from '@/routes/firms';

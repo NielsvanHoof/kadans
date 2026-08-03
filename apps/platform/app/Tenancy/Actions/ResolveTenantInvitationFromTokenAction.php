@@ -10,9 +10,8 @@ final class ResolveTenantInvitationFromTokenAction
 {
     public function handle(string $plainTextToken): ?TenantInvitation
     {
-        // withoutGlobalScopes: accept links resolve before a tenant is current.
-        return TenantInvitation::query()
-            ->withoutGlobalScopes()
+        // queryWithoutTenantScope: accept links resolve before a tenant is current.
+        return TenantInvitation::queryWithoutTenantScope()
             ->where('token', TenantInvitation::hashToken($plainTextToken))
             ->first();
     }

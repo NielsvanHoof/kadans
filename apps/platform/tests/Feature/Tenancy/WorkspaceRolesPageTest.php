@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Dossiers\Enums\DossierPermission;
@@ -11,12 +12,8 @@ use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Support\PermissionRegistry;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 /**
  * Roles that hold a permission, as the page reports them.
@@ -256,15 +253,20 @@ test('the roles capability is shared with the frontend so the sidebar can gate o
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $readOnly = workspaceMember($tenant, Role::ReadOnly);
 
-    $this->actingAs($owner)
-        ->get(workspaceRoute('workspaces.dashboard', $tenant))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page): Assert => $page->where('can_view_roles', true));
+    // Read via the props array: permission names contain dots, which Inertia's
+    // fluent assertions would treat as a nested path.
+    $permissionsFor = function (User $user) use ($tenant): array {
+        /** @var array{props: array{permissions?: array<string, bool>}} $page */
+        $page = $this->actingAs($user)
+            ->get(workspaceRoute('workspaces.dashboard', $tenant))
+            ->assertOk()
+            ->viewData('page');
 
-    $this->actingAs($readOnly)
-        ->get(workspaceRoute('workspaces.dashboard', $tenant))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page): Assert => $page->where('can_view_roles', false));
+        return $page['props']['permissions'] ?? [];
+    };
+
+    expect($permissionsFor($owner)[WorkspacePermission::ViewRoles->value])->toBeTrue()
+        ->and($permissionsFor($readOnly)[WorkspacePermission::ViewRoles->value])->toBeFalse();
 });
 
 test('owners can create update and delete custom roles', function (): void {

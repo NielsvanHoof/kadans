@@ -1,10 +1,9 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
-import DataTable, { type DataTableColumn } from '@/components/data-table';
-import DataTableBulkToolbar from '@/components/data-table-bulk-toolbar';
-import EmptyState from '@/components/empty-state';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
+import EmptyState from '@/components/primitives/empty-state';
+import { LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -13,10 +12,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import BulkArchiveDossiersButton from '@/features/dossiers/list/bulk-archive-dossiers-button';
-import {
-    dossierStatusBadgeVariant,
-    dossierStatusLabel,
-} from '@/features/dossiers/status/dossier-status';
+import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -89,11 +85,7 @@ export default function DossiersListCard({
         {
             key: 'status',
             header: t('Status'),
-            cell: (dossier) => (
-                <Badge variant={dossierStatusBadgeVariant(dossier.status)}>
-                    {dossierStatusLabel(dossier.status, t)}
-                </Badge>
-            ),
+            cell: (dossier) => <DossierStatusBadge status={dossier.status} />,
         },
     ];
 
@@ -135,11 +127,12 @@ export default function DossiersListCard({
                                 'Create a dossier to start collecting documents.',
                             )}
                             action={
-                                <Button asChild size="sm">
-                                    <Link href={create(currentWorkspace)}>
-                                        {t('New dossier')}
-                                    </Link>
-                                </Button>
+                                <LinkButton
+                                    size="sm"
+                                    href={create(currentWorkspace).url}
+                                >
+                                    {t('New dossier')}
+                                </LinkButton>
                             }
                         />
                     }

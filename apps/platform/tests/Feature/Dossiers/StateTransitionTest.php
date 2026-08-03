@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\ClientPortal\Enums\SubmissionContext;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
@@ -14,11 +14,7 @@ use App\Dossiers\Transitions\DossierTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Models\Tenant;
 use Carbon\CarbonInterface;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create();

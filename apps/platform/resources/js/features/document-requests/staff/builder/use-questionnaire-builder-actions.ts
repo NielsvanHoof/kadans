@@ -2,143 +2,79 @@ import { router, useHttp } from '@inertiajs/react';
 import { useCallback } from 'react';
 import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController';
 import type {
+    DocumentRequest,
     QuestionnaireItemConfiguration,
     QuestionnaireItemType,
 } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { inlineActionOptions } from '@/lib/inline-action-options';
+import type { FlashToast } from '@/types/ui';
 
 export type BuilderSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
+export type BuilderSyncItem = {
+    /** Positive persisted id, or null for a new draft row. */
+    id: number | null;
+    field_key: string;
+    type: QuestionnaireItemType;
+    title: string;
+    instructions: string | null;
+    configuration: QuestionnaireItemConfiguration | null;
+};
+
+type SyncResponse = {
+    document_requests: DocumentRequest[];
+    flash?: {
+        toast?: FlashToast;
+    };
+};
+
 /**
- * Shared create / update / reorder helpers for the questionnaire builder.
+ * Persist the full builder draft via bulk sync (JSON).
  */
 export function useQuestionnaireBuilderActions(dossierId: number) {
     const currentWorkspace = useCurrentWorkspace();
-    const { post, setData } = useHttp({
-        document_request_ids: [] as number[],
+    const { put: syncPut, setData: setSyncData } = useHttp({
+        items: [] as BuilderSyncItem[],
     });
 
-    const createComponent = useCallback(
-        async (input: {
-            type: QuestionnaireItemType;
-            title: string;
-            position?: number;
-        }): Promise<boolean> => {
-            let failed = false;
+    const syncDocumentRequests = useCallback(
+        async (items: DocumentRequest[]): Promise<DocumentRequest[] | null> => {
+            const payload: BuilderSyncItem[] = items.map((item) => ({
+                id: item.id > 0 ? item.id : null,
+                field_key: item.field_key,
+                type: item.type,
+                title: item.title,
+                instructions: item.instructions,
+                configuration: item.configuration,
+            }));
+
+            setSyncData({ items: payload });
 
             try {
-                await new Promise<void>((resolve, reject) => {
-                    router.post(
-                        DocumentRequestController.store.url({
-                            tenant: currentWorkspace,
-                            dossier: dossierId,
-                        }),
-                        {
-                            type: input.type,
-                            title: input.title,
-                            ...(input.position !== undefined
-                                ? { position: input.position }
-                                : {}),
-                        },
-                        {
-                            ...inlineActionOptions,
-                            onError: () => {
-                                failed = true;
-                                resolve();
-                            },
-                            onSuccess: () => resolve(),
-                            onCancel: () => reject(new Error('cancelled')),
-                        },
-                    );
-                });
-
-                return !failed;
-            } catch {
-                return false;
-            }
-        },
-        [currentWorkspace, dossierId],
-    );
-
-    const reorderComponents = useCallback(
-        async (orderedIds: number[]): Promise<boolean> => {
-            setData('document_request_ids', orderedIds);
-
-            let failed = false;
-
-            try {
-                await post(
-                    DocumentRequestController.reorder.url({
+                const response = (await syncPut(
+                    DocumentRequestController.sync.url({
                         tenant: currentWorkspace,
                         dossier: dossierId,
                     }),
-                    {
-                        onError: () => {
-                            failed = true;
-                        },
-                    },
-                );
+                )) as SyncResponse | undefined;
 
-                return !failed;
+                const documentRequests = response?.document_requests ?? null;
+
+                // useHttp is not an Inertia visit, so server Inertia::flash() is not
+                // delivered automatically — re-apply the flash payload for toasts.
+                if (documentRequests !== null && response?.flash?.toast) {
+                    router.flash({ toast: response.flash.toast });
+                }
+
+                return documentRequests;
             } catch {
-                return false;
+                return null;
             }
         },
-        [currentWorkspace, dossierId, post, setData],
-    );
-
-    const updateComponent = useCallback(
-        async (
-            documentRequestId: number,
-            input: {
-                type: QuestionnaireItemType;
-                title: string;
-                instructions: string | null;
-                configuration?: QuestionnaireItemConfiguration;
-            },
-        ): Promise<boolean> => {
-            let failed = false;
-
-            try {
-                await new Promise<void>((resolve, reject) => {
-                    router.put(
-                        DocumentRequestController.update.url({
-                            tenant: currentWorkspace,
-                            dossier: dossierId,
-                            documentRequest: documentRequestId,
-                        }),
-                        {
-                            type: input.type,
-                            title: input.title,
-                            instructions: input.instructions,
-                            ...(input.configuration !== undefined
-                                ? { configuration: input.configuration }
-                                : {}),
-                        },
-                        {
-                            ...inlineActionOptions,
-                            onError: () => {
-                                failed = true;
-                                resolve();
-                            },
-                            onSuccess: () => resolve(),
-                            onCancel: () => reject(new Error('cancelled')),
-                        },
-                    );
-                });
-
-                return !failed;
-            } catch {
-                return false;
-            }
-        },
-        [currentWorkspace, dossierId],
+        [currentWorkspace, dossierId, setSyncData, syncPut],
     );
 
     return {
-        createComponent,
-        reorderComponents,
-        updateComponent,
+        syncDocumentRequests,
     };
 }

@@ -90,7 +90,9 @@ final class FetchClientIndexQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{id: int, name: string, email: string, dossiers_count: int}
+     * Row shape is owned by ClientIndexRowData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
      */
     protected function mapModel(Model $model): array
     {
@@ -99,7 +101,7 @@ final class FetchClientIndexQuery extends PaginatedIndexQuery
             id: $model->id,
             name: $model->name,
             email: $model->email,
-            dossiersCount: $model->dossiers_count,
+            dossiersCount: (int) ($model->dossiers_count ?? 0),
         )->toArray();
     }
 }

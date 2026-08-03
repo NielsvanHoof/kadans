@@ -4,28 +4,19 @@ declare(strict_types=1);
 
 namespace App\Clients\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Client index table row.
  */
-final readonly class ClientIndexRowData
+#[TypeScript]
+final class ClientIndexRowData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $name,
-        public string $email,
-        public int $dossiersCount,
+        public readonly int $id,
+        public readonly string $name,
+        public readonly string $email,
+        public readonly int $dossiersCount,
     ) {}
-
-    /**
-     * @return array{id: int, name: string, email: string, dossiers_count: int}
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'dossiers_count' => $this->dossiersCount,
-        ];
-    }
 }

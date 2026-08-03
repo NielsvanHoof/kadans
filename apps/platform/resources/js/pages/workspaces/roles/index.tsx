@@ -1,6 +1,6 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
+import { Head, setLayoutProps } from '@inertiajs/react';
+import Heading from '@/components/primitives/heading';
+import { LinkButton } from '@/components/ui/button';
 import RoleMatrixCard from '@/features/roles/role-matrix-card';
 import RolesOverviewSummaryCard from '@/features/roles/roles-overview-summary-card';
 import type {
@@ -53,11 +53,9 @@ export default function WorkspaceRolesIndex({
                         )}
                     />
                     {canManageRoles ? (
-                        <Button asChild>
-                            <Link href={manageRoles(currentWorkspace)}>
-                                {t('Manage custom roles')}
-                            </Link>
-                        </Button>
+                        <LinkButton href={manageRoles(currentWorkspace).url}>
+                            {t('Manage custom roles')}
+                        </LinkButton>
                     ) : null}
                 </div>
 

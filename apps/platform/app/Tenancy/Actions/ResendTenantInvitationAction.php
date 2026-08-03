@@ -37,12 +37,6 @@ final class ResendTenantInvitationAction
             $tenant = $invitation->tenant;
         }
 
-        if (! $tenant instanceof Tenant) {
-            throw ValidationException::withMessages([
-                'invitation' => __('This invitation is no longer valid.'),
-            ]);
-        }
-
         $plainTextToken = Str::random(64);
         $expiresAt = now()->addDays(7);
 

@@ -4,36 +4,20 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Data;
 
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * One role column on the roles Inertia page.
  */
-final readonly class WorkspaceRoleData
+#[TypeScript]
+final class WorkspaceRoleData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $value,
-        public string $label,
-        public bool $isSystem,
-        public int $memberCount,
+        public readonly int $id,
+        public readonly string $value,
+        public readonly string $label,
+        public readonly bool $isSystem,
+        public readonly int $memberCount,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     value: string,
-     *     label: string,
-     *     is_system: bool,
-     *     member_count: int
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'value' => $this->value,
-            'label' => $this->label,
-            'is_system' => $this->isSystem,
-            'member_count' => $this->memberCount,
-        ];
-    }
 }

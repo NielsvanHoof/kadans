@@ -4,39 +4,22 @@ declare(strict_types=1);
 
 namespace App\Clients\Data;
 
+use App\Dossiers\Enums\DossierStatus;
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
 /**
  * Dossier row nested under the client show page.
  */
-final readonly class ClientDossierRowData
+#[TypeScript]
+final class ClientDossierRowData extends Data
 {
     public function __construct(
-        public int $id,
-        public string $title,
-        public ?string $reference,
-        public string $status,
-        public string $clientName,
-        public string $updatedAt,
+        public readonly int $id,
+        public readonly string $title,
+        public readonly ?string $reference,
+        public readonly DossierStatus $status,
+        public readonly string $clientName,
+        public readonly string $updatedAt,
     ) {}
-
-    /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     reference: string|null,
-     *     status: string,
-     *     client_name: string,
-     *     updated_at: string
-     * }
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'reference' => $this->reference,
-            'status' => $this->status,
-            'client_name' => $this->clientName,
-            'updated_at' => $this->updatedAt,
-        ];
-    }
 }

@@ -1,5 +1,4 @@
-import { Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -59,11 +58,12 @@ export default function RolesOverviewSummaryCard({
                 </div>
 
                 {canManageRoles ? (
-                    <Button asChild size="sm">
-                        <Link href={manageRoles(currentWorkspace)}>
-                            {t('Open role management')}
-                        </Link>
-                    </Button>
+                    <LinkButton
+                        size="sm"
+                        href={manageRoles(currentWorkspace).url}
+                    >
+                        {t('Open role management')}
+                    </LinkButton>
                 ) : null}
             </CardContent>
         </Card>

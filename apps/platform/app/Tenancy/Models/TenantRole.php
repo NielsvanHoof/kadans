@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Models;
 
+use App\Accounts\Models\User;
 use App\Tenancy\Enums\Role as RoleEnum;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Override;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 /**
@@ -20,17 +24,51 @@ use Spatie\Permission\Models\Role as SpatieRole;
  * Registered as `permission.models.role`, so Spatie returns this class from
  * assignRole(), syncRoles(), and findByName() throughout the application.
  *
+ * These @property tags are the one set still maintained by hand: Spatie's
+ * migration creates the table as Schema::create($tableNames['roles'], ...),
+ * a config lookup larastan cannot resolve statically, so the columns never
+ * enter its scanned schema. Every other model relies on that scan instead.
+ *
  * @property int $id
  * @property int|null $tenant_id
  * @property string $name
  * @property string $guard_name
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property bool $is_system
+ * @property-read Collection<int, Permission> $permissions
+ * @property-read int|null $permissions_count
+ * @property-read Collection<int, User> $users
+ * @property-read int|null $users_count
+ *
+ * @method static Builder<static>|TenantRole newModelQuery()
+ * @method static Builder<static>|TenantRole newQuery()
+ * @method static Builder<static>|TenantRole permission($permissions, bool $without = false)
+ * @method static Builder<static>|TenantRole query()
+ * @method static Builder<static>|TenantRole whereCreatedAt($value)
+ * @method static Builder<static>|TenantRole whereGuardName($value)
+ * @method static Builder<static>|TenantRole whereId($value)
+ * @method static Builder<static>|TenantRole whereIsSystem($value)
+ * @method static Builder<static>|TenantRole whereName($value)
+ * @method static Builder<static>|TenantRole whereTenantId($value)
+ * @method static Builder<static>|TenantRole whereUpdatedAt($value)
+ * @method static Builder<static>|TenantRole withoutPermission($permissions)
+ *
+ * @mixin \Eloquent
  */
-#[Fillable(
-    ['name', 'guard_name', 'is_system', 'tenant_id'],
-)]
 final class TenantRole extends SpatieRole
 {
+    /**
+     * @var list<string>
+     */
+    #[Override]
+    protected $fillable = [
+        'name',
+        'guard_name',
+        'is_system',
+        'tenant_id',
+    ];
+
     /**
      * The code-defined preset this row represents, or null for a firm-authored role.
      */

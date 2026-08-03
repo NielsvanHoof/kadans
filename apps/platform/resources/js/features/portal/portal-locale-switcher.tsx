@@ -23,7 +23,7 @@ export default function PortalLocaleSwitcher({
     variant = 'default',
 }: {
     className?: string;
-    variant?: 'default' | 'onPrimary';
+    variant?: 'default' | 'onPanel';
 }) {
     const { t, locale, availableLocales } = useTranslation();
 
@@ -38,13 +38,13 @@ export default function PortalLocaleSwitcher({
         });
     };
 
-    const isOnPrimary = variant === 'onPrimary';
+    const isOnPanel = variant === 'onPanel';
 
     return (
         <fieldset
             className={cn(
                 'm-0 inline-flex items-center gap-1 rounded-md border-0 p-1',
-                isOnPrimary ? 'bg-primary-foreground/15' : 'bg-muted',
+                isOnPanel ? 'bg-brand-panel-foreground/15' : 'bg-muted',
                 className,
             )}
             aria-label={t('Language')}
@@ -59,10 +59,10 @@ export default function PortalLocaleSwitcher({
                         onClick={() => selectLocale(code)}
                         className={cn(
                             'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-                            isOnPrimary
+                            isOnPanel
                                 ? isActive
-                                    ? 'bg-primary-foreground/25 text-primary-foreground'
-                                    : 'text-primary-foreground/75 hover:text-primary-foreground'
+                                    ? 'bg-brand-panel-foreground text-brand-panel'
+                                    : 'text-brand-panel-foreground/85 hover:text-brand-panel-foreground'
                                 : isActive
                                   ? 'bg-background text-foreground shadow-xs'
                                   : 'text-muted-foreground hover:text-foreground',

@@ -1,9 +1,9 @@
-import { Head, setLayoutProps, usePoll } from '@inertiajs/react';
-import { useEffect } from 'react';
-import Heading from '@/components/heading';
-import IndexPagination from '@/components/index-query/index-pagination';
-import IndexQueryResults from '@/components/index-query/index-query-results';
-import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
+import { Head, setLayoutProps } from '@inertiajs/react';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import Heading from '@/components/primitives/heading';
+import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
 import PipelinesListCard from '@/features/pipelines/list/pipelines-list-card';
 import { pipelineIsInFlight } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineIndexRow } from '@/features/pipelines/types';
@@ -27,24 +27,10 @@ export default function PipelineIndex({
     const hasInFlightPipeline = pipelines.data.some((pipeline) =>
         pipelineIsInFlight(pipeline.status),
     );
-    const { start, stop } = usePoll(
-        2000,
-        {
-            only: ['pipelines', 'filters', 'sort', 'indexQuery', 'flash'],
-        },
-        {
-            autoStart: false,
-            mode: 'rest',
-        },
+    useReloadOnPipelineUpdated(
+        ['pipelines', 'filters', 'sort', 'indexQuery', 'flash'],
+        { enabled: hasInFlightPipeline },
     );
-
-    useEffect(() => {
-        if (hasInFlightPipeline) {
-            start();
-        } else {
-            stop();
-        }
-    }, [hasInFlightPipeline, start, stop]);
 
     setLayoutProps({
         breadcrumbs: [

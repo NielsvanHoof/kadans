@@ -1,4 +1,4 @@
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Field,
@@ -79,7 +79,9 @@ export default function QuestionnaireBuilderSettings({
                         {t('Field settings')}
                     </h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        {t('Changes save automatically.')}
+                        {t(
+                            'Edits update your draft. Save the form to persist.',
+                        )}
                     </p>
                 </div>
                 <p
@@ -96,9 +98,9 @@ export default function QuestionnaireBuilderSettings({
                         {t('Type')}
                     </FieldLabel>
                     <Select
-                        value={form.type}
-                        disabled={!canEdit}
-                        onValueChange={(value) =>
+                        selectedKey={form.type}
+                        isDisabled={!canEdit}
+                        onSelectionChange={(value) =>
                             form.changeType(
                                 value as QuestionnaireItemType,
                                 buildDefaultOptions(t),
@@ -116,7 +118,7 @@ export default function QuestionnaireBuilderSettings({
                                 {definitions.map((definition) => (
                                     <SelectItem
                                         key={definition.value}
-                                        value={definition.value}
+                                        id={definition.value}
                                     >
                                         {definition.label}
                                     </SelectItem>
@@ -178,9 +180,9 @@ export default function QuestionnaireBuilderSettings({
                 >
                     <Checkbox
                         id={`builder-required-${documentRequest.id}`}
-                        checked={form.configuration.is_required !== false}
-                        disabled={!canEdit}
-                        onCheckedChange={(checked) =>
+                        isSelected={form.configuration.is_required !== false}
+                        isDisabled={!canEdit}
+                        onChange={(checked) =>
                             form.updateConfiguration(
                                 {
                                     ...form.configuration,

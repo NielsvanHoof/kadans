@@ -1,5 +1,4 @@
 import { type ReactNode, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
     Collapsible,
     CollapsibleContent,
@@ -102,16 +101,18 @@ function StaffUploadOnBehalfFallback({
         : t('Upload on behalf of client');
 
     return (
-        <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
-            <CollapsibleTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="px-0"
-                >
-                    {open ? t('Hide staff upload') : triggerLabel}
-                </Button>
+        <Collapsible
+            isExpanded={open}
+            onExpandedChange={setOpen}
+            className="mt-2"
+        >
+            <CollapsibleTrigger
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="px-0"
+            >
+                {open ? t('Hide staff upload') : triggerLabel}
             </CollapsibleTrigger>
             <CollapsibleContent>
                 <DocumentRequestUpload

@@ -1,18 +1,15 @@
-import type { Pipeline } from '@/features/dossiers/types';
+import {
+    type QuestionnaireItemType,
+    questionnaireItemTypeCapabilities,
+} from '@/features/document-requests/item-types/generated';
 
-/**
- * Frontend mirror of the backend QuestionnaireItemType enum.
- * Keeping this union explicit makes every type-specific UI exhaustive.
- */
-export type QuestionnaireItemType =
-    | 'file'
-    | 'text'
-    | 'textarea'
-    | 'date'
-    | 'number'
-    | 'boolean'
-    | 'choice'
-    | 'multi_select';
+export type { QuestionnaireItemType } from '@/features/document-requests/item-types/generated';
+export {
+    BOOLEAN_NO_OPTION_ID,
+    BOOLEAN_YES_OPTION_ID,
+    QUESTIONNAIRE_ITEM_TYPES,
+    questionnaireItemTypeCapabilities,
+} from '@/features/document-requests/item-types/generated';
 
 export type QuestionnaireOption = { id: string; label: string };
 
@@ -25,53 +22,32 @@ export type QuestionnaireItemConfiguration = {
     };
 };
 
-/** Types whose answers are stored in answer_text (mirrors PHP storesAnswerText()). */
+/** Types whose answers are stored in answer_text (from generated PHP capabilities). */
 export function storesAnswerText(type: QuestionnaireItemType): boolean {
-    return (
-        type === 'text' ||
-        type === 'textarea' ||
-        type === 'date' ||
-        type === 'number'
-    );
+    return questionnaireItemTypeCapabilities[type].storesAnswerText;
 }
 
 /** Types whose answers are stored as selected option ids. */
 export function storesAnswerOptionIds(type: QuestionnaireItemType): boolean {
-    return type === 'choice' || type === 'multi_select';
+    return questionnaireItemTypeCapabilities[type].storesAnswerOptionIds;
 }
 
 /**
  * Types whose answer can drive another field's visibility rule
- * (mirrors PHP QuestionnaireItemType::canDriveVisibility()).
+ * (from generated PHP capabilities).
  */
 export function canDriveVisibility(type: QuestionnaireItemType): boolean {
-    return type === 'boolean' || storesAnswerOptionIds(type);
+    return questionnaireItemTypeCapabilities[type].canDriveVisibility;
 }
 
-/**
- * Yes/no fields have no stored options, so visibility rules match them against
- * these fixed ids. Mirrors QuestionnaireItemType::BooleanYesOptionId / BooleanNoOptionId.
- */
-export const BOOLEAN_YES_OPTION_ID = 'true';
-
-export const BOOLEAN_NO_OPTION_ID = 'false';
-export type DocumentRequestStatus =
-    'pending' | 'submitted' | 'accepted' | 'rejected';
+export type DocumentRequestStatus = App.Dossiers.Enums.DocumentRequestStatus;
 
 /** Parallel OCR lifecycle on the uploaded file (independent of review status). */
 export type DocumentProcessingStatus =
-    'pending' | 'processing' | 'completed' | 'failed';
+    App.DocumentProcessing.Enums.DocumentProcessingStatus;
 
 /** Uploaded file on a staff dossier document request (list payload — no OCR body). */
-export type UploadedDocument = {
-    id: number;
-    original_filename: string;
-    size_bytes: number;
-    uploaded_at: string;
-    processing_status: DocumentProcessingStatus;
-    processing_error: string | null;
-    pipeline: Pipeline | null;
-};
+export type UploadedDocument = App.Dossiers.Data.StaffUploadedDocumentData;
 
 /** Parsed Bedrock-structured OCR payload on the extraction page. */
 export type ExtractionFieldSensitivity =
@@ -108,28 +84,18 @@ export type DocumentExtraction = {
     confidence: number | null;
 };
 
-/** Document request as shown on the staff dossier page. */
-export type DocumentRequest = {
-    id: number;
-    type: QuestionnaireItemType;
-    field_key: string;
-    title: string;
-    instructions: string | null;
+/**
+ * Document request as shown on the staff dossier page.
+ *
+ * The generated Data shape is the source of truth for every field; only
+ * `configuration` is refined, because PHP stores it as a free-form JSON column
+ * (`array<string, mixed>`) while the builder needs its structure.
+ */
+export type DocumentRequest = Omit<
+    App.Dossiers.Data.StaffDocumentRequestData,
+    'configuration'
+> & {
     configuration: QuestionnaireItemConfiguration | null;
-    status: DocumentRequestStatus;
-    answer_text: string | null;
-    answer_boolean: boolean | null;
-    answer_option_ids: string[] | null;
-    answered_at: string | null;
-    reviewed_at: string | null;
-    reviewed_by_name: string | null;
-    rejection_reason: string | null;
-    sort_order: number;
-    /** False when a visibility rule currently hides this field from the client. */
-    is_visible: boolean;
-    /** False when the field does not count toward progress, review, or completion. */
-    is_applicable: boolean;
-    uploaded_document: UploadedDocument | null;
 };
 
 /**
@@ -149,27 +115,15 @@ export function isOrderedBefore(
 }
 
 /** Uploaded file as shown on the client portal (no download id). */
-export type PortalUploadedDocument = {
-    original_filename: string;
-    size_bytes: number;
-    uploaded_at: string | null;
-};
+export type PortalUploadedDocument =
+    App.ClientPortal.Data.PortalUploadedDocumentData;
 
-/** Document request as shown on the client portal. */
-export type PortalDocumentRequest = {
-    id: number;
-    type: QuestionnaireItemType;
-    field_key: string;
-    title: string;
-    instructions: string | null;
+/** Document request as shown on the client portal. See DocumentRequest re configuration. */
+export type PortalDocumentRequest = Omit<
+    App.ClientPortal.Data.PortalDocumentRequestData,
+    'configuration'
+> & {
     configuration: QuestionnaireItemConfiguration | null;
-    status: DocumentRequestStatus;
-    answer_text: string | null;
-    answer_boolean: boolean | null;
-    answer_option_ids: string[] | null;
-    rejection_reason: string | null;
-    can_respond: boolean;
-    uploaded_document: PortalUploadedDocument | null;
 };
 
 /** Dedicated OCR extraction page props (staff). */

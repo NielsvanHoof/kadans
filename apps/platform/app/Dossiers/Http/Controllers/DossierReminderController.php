@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\SendDossierReminderAction;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
-use Symfony\Component\HttpFoundation\Response;
 
 final class DossierReminderController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function store(
         Tenant $tenant,
         Dossier $dossier,
@@ -23,9 +24,7 @@ final class DossierReminderController extends Controller
     ): RedirectResponse {
         $this->authorize('sendReminder', $dossier);
 
-        $user = request()->user();
-
-        abort_unless($user instanceof User, Response::HTTP_FORBIDDEN);
+        $user = $this->currentUser();
 
         $sendDossierReminder->handle(
             $dossier,
@@ -34,10 +33,7 @@ final class DossierReminderController extends Controller
             $user,
         );
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Client reminder queued with a fresh secure link.'),
-        ]);
+        Toast::success(__('Client reminder queued with a fresh secure link.'));
 
         return to_route(
             'workspaces.dossiers.show',

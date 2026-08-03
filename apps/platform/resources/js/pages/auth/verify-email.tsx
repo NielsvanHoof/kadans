@@ -1,6 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import StatusMessage from '@/components/status-message';
-import TextLink from '@/components/text-link';
+import StatusMessage from '@/components/primitives/status-message';
+import TextLink from '@/components/primitives/text-link';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
@@ -32,7 +32,11 @@ export default function VerifyEmail({ status }: { status?: string }) {
             <Form {...send.form()} className="space-y-6 text-center">
                 {({ processing }) => (
                     <>
-                        <Button disabled={processing} variant="secondary">
+                        <Button
+                            type="submit"
+                            isDisabled={processing}
+                            variant="secondary"
+                        >
                             {processing && <Spinner />}
                             {t('Resend verification email')}
                         </Button>

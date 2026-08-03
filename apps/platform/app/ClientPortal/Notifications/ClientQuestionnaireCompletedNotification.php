@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Notifications;
 
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 /**
  * Persist a workspace inbox item when a client finishes every questionnaire item.
  * Real-time push stays on ClientQuestionnaireCompleted (Reverb); this is the DB source of truth.
  */
-final class ClientQuestionnaireCompletedNotification extends Notification
+final class ClientQuestionnaireCompletedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public const string DatabaseType = 'client_questionnaire_completed';
 
     public function __construct(
@@ -21,7 +25,9 @@ final class ClientQuestionnaireCompletedNotification extends Notification
         public readonly string $clientName,
         public readonly string $message,
         public readonly string $dossierUrl,
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     /**
      * @return list<string>
@@ -29,6 +35,21 @@ final class ClientQuestionnaireCompletedNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['database'];
+    }
+
+    /**
+     * Telescope tags for the queued notification job.
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return [
+            'notification',
+            self::DatabaseType,
+            'tenant:'.$this->tenantId,
+            'dossier:'.$this->dossierId,
+        ];
     }
 
     public function databaseType(object $notifiable): string

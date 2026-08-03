@@ -1,17 +1,29 @@
 import type { SVGAttributes } from 'react';
 
+/**
+ * The Qompose mark: a ledger ring whose Q-tail is a full audit tick.
+ *
+ * The same tick an accountant writes in the margin next to an item they have
+ * checked off — so the logo and the accepted-status glyph are one gesture at
+ * two sizes. See `components/brand/audit-mark.tsx`.
+ *
+ * Drawn on a 32 grid with round caps so it holds together down to 16px.
+ */
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
     return (
         <svg
             {...props}
-            viewBox="0 0 306 306"
+            viewBox="0 0 32 32"
             xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3.85}
+            strokeLinecap="round"
+            strokeLinejoin="round"
             aria-hidden="true"
         >
-            <path
-                fill="currentColor"
-                d="M290.81,247.66c-6.67-5.37-15.88-8.22-26.63-8.22-14.11,0-23.81-4.27-29.65-13.05-6.09-9.16-9.49-22.67-10.14-40.16v-6.44c0-4.08-.15-8.05-.4-11.95v-.61h-.04c-2.04-30.82-11.78-56.24-29.04-75.71-19.86-22.42-46.9-33.77-80.4-33.77s-62.46,11.12-82.08,33.07C15.37,109.91,5.74,135.5,3.74,167.02h-.42v25.5h.42c2.06,30.82,11.78,56.24,29.04,75.71,19.88,22.42,46.92,33.77,80.42,33.77,31.31,0,56.79-8.97,75.85-26.72,19.08,17.73,44.56,26.72,75.85,26.72,18.03,0,36.7-11.98,36.7-32.05,0-8.6-3.94-16.73-10.81-22.27l.02-.02ZM84.12,133.34c5.84-8.79,15.54-13.05,29.65-13.05,17.89,0,38.3,6.24,39.97,53.25v6.43c0,1.48.04,2.92.07,4.36v.07c-.47,18.39-3.9,32.53-10.19,42.01-5.84,8.79-15.54,13.05-29.65,13.05-18.66,0-40.08-6.76-40.08-59.49v-.5c.04-20.4,3.49-35.91,10.24-46.11l-.02-.02Z"
-            />
+            <circle cx="12.6" cy="14.54" r="9.27" />
+            <path d="M16.95 22.73L21.71 26.73L28.68 17.82" />
         </svg>
     );
 }

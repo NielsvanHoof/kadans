@@ -90,15 +90,9 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     reference: string|null,
-     *     status: string,
-     *     client_name: string,
-     *     client_archived: bool,
-     *     archived_at: string
-     * }
+     * Row shape is owned by ArchivedDossierRowData; see its generated TypeScript.
+     *
+     * @return array<string, mixed>
      */
     protected function mapModel(Model $model): array
     {
@@ -111,7 +105,7 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
             id: $model->id,
             title: $model->title,
             reference: $model->reference,
-            status: $model->status->value,
+            status: $model->status,
             clientName: $client->name,
             clientArchived: $client->trashed(),
             archivedAt: $model->deleted_at?->toIso8601String() ?? '',

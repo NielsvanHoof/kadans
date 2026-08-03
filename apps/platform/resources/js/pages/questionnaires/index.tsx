@@ -1,15 +1,15 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import Heading from '@/components/heading';
-import IndexQueryResults from '@/components/index-query/index-query-results';
-import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
-import { Button } from '@/components/ui/button';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import Heading from '@/components/primitives/heading';
+import { LinkButton } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import QuestionnaireTemplatesSection from '@/features/questionnaires/list/questionnaire-templates-section';
 import type { TemplateLibraryTab } from '@/features/questionnaires/list/template-library-tab';
 import type { TemplateSummary } from '@/features/questionnaires/types';
+import { useTemplateLibraryTab } from '@/features/questionnaires/use-template-library-tab';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { useTemplateLibraryTab } from '@/hooks/use-template-library-tab';
 import { useTranslation } from '@/hooks/use-translation';
 import {
     create as createTemplate,
@@ -64,12 +64,10 @@ export default function TemplateIndex({
 
                     {/* Shared create action — visible on both System and Custom tabs. */}
                     {canManage && (
-                        <Button asChild>
-                            <Link href={createTemplate(currentWorkspace)}>
-                                <Plus />
-                                {t('New template')}
-                            </Link>
-                        </Button>
+                        <LinkButton href={createTemplate(currentWorkspace).url}>
+                            <Plus />
+                            {t('New template')}
+                        </LinkButton>
                     )}
                 </div>
 
@@ -78,21 +76,21 @@ export default function TemplateIndex({
 
                 <IndexQueryResults>
                     <Tabs
-                        value={tab}
-                        onValueChange={(value) =>
-                            setTab(value as TemplateLibraryTab)
+                        selectedKey={tab}
+                        onSelectionChange={(key) =>
+                            setTab(String(key) as TemplateLibraryTab)
                         }
                     >
                         <TabsList>
-                            <TabsTrigger value="system">
+                            <TabsTrigger id="system">
                                 {t('System templates')}
                             </TabsTrigger>
-                            <TabsTrigger value="custom">
+                            <TabsTrigger id="custom">
                                 {t('Custom templates')}
                             </TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="system">
+                        <TabsContent id="system">
                             <QuestionnaireTemplatesSection
                                 description={t(
                                     'Read-only starter packs. Copy one to edit for your firm.',
@@ -103,7 +101,7 @@ export default function TemplateIndex({
                             />
                         </TabsContent>
 
-                        <TabsContent value="custom">
+                        <TabsContent id="custom">
                             <QuestionnaireTemplatesSection
                                 description={t(
                                     'Firm-owned templates you can edit and apply to dossiers.',

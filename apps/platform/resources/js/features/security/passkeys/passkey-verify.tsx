@@ -2,8 +2,8 @@ import type { UrlMethodPair } from '@inertiajs/core';
 import { router } from '@inertiajs/react';
 import { usePasskeyVerify } from '@laravel/passkeys/react';
 import { KeyRound } from 'lucide-react';
-import InputError from '@/components/input-error';
-import OrDivider from '@/components/or-divider';
+import InputError from '@/components/primitives/input-error';
+import OrDivider from '@/components/primitives/or-divider';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
@@ -51,7 +51,7 @@ export default function PasskeyVerify({
                         variant="outline"
                         className="w-full"
                         onClick={verify}
-                        disabled={isLoading}
+                        isDisabled={isLoading}
                         aria-invalid={Boolean(error)}
                     >
                         {isLoading ? (

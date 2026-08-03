@@ -1,8 +1,8 @@
-import { Form, Link } from '@inertiajs/react';
+import { Form } from '@inertiajs/react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
-import EmptyState from '@/components/empty-state';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
+import EmptyState from '@/components/primitives/empty-state';
+import InputError from '@/components/primitives/input-error';
+import { Button, LinkButton } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -45,11 +45,9 @@ export default function CreateDossierForm({
                 variant="panel"
                 bordered
                 action={
-                    <Button asChild>
-                        <Link href={clientIndex(currentWorkspace)}>
-                            {t('Go to clients')}
-                        </Link>
-                    </Button>
+                    <LinkButton href={clientIndex(currentWorkspace).url}>
+                        {t('Go to clients')}
+                    </LinkButton>
                 }
             />
         );
@@ -63,22 +61,27 @@ export default function CreateDossierForm({
                         <FieldLabel htmlFor="client_id">
                             {t('Client')}
                         </FieldLabel>
-                        <Select required defaultValue="" name="client_id">
+                        <Select
+                            isRequired
+                            defaultValue=""
+                            name="client_id"
+                            placeholder={t('Select a client')}
+                            aria-label={t('Select a client')}
+                        >
                             <SelectTrigger
                                 id="client_id"
                                 className="w-full"
                                 aria-invalid={Boolean(errors.client_id)}
                             >
-                                <SelectValue
-                                    placeholder={t('Select a client')}
-                                />
+                                <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="space-y-1 bg-background p-1">
                                 <SelectGroup>
                                     {clients.map((client) => (
                                         <SelectItem
                                             key={client.id}
-                                            value={client.id.toString()}
+                                            id={client.id.toString()}
+                                            textValue={client.name}
                                             className="flex flex-col"
                                         >
                                             <span className="font-medium">
@@ -128,15 +131,16 @@ export default function CreateDossierForm({
                     />
 
                     <Field orientation="horizontal" className="gap-3">
-                        <Button disabled={processing}>
+                        <Button type="submit" isDisabled={processing}>
                             {processing && <Spinner />}
                             {t('Create dossier')}
                         </Button>
-                        <Button variant="ghost" asChild>
-                            <Link href={dossierIndex(currentWorkspace)}>
-                                {t('Cancel')}
-                            </Link>
-                        </Button>
+                        <LinkButton
+                            variant="ghost"
+                            href={dossierIndex(currentWorkspace).url}
+                        >
+                            {t('Cancel')}
+                        </LinkButton>
                     </Field>
                 </FieldGroup>
             )}

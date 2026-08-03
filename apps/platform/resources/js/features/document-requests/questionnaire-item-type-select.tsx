@@ -1,4 +1,4 @@
-import InputError from '@/components/input-error';
+import InputError from '@/components/primitives/input-error';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
     Select,
@@ -30,7 +30,7 @@ export default function QuestionnaireItemTypeSelect({
     return (
         <Field data-invalid={Boolean(error)}>
             <FieldLabel htmlFor={id}>{t('Type')}</FieldLabel>
-            <Select required defaultValue={defaultValue} name="type">
+            <Select isRequired defaultValue={defaultValue} name="type">
                 <SelectTrigger
                     id={id}
                     className="w-full"
@@ -41,7 +41,7 @@ export default function QuestionnaireItemTypeSelect({
                 <SelectContent className="bg-background">
                     <SelectGroup>
                         {typeDefinitions.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
+                            <SelectItem key={type.value} id={type.value}>
                                 {type.label}
                             </SelectItem>
                         ))}

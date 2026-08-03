@@ -1,6 +1,6 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import EmptyState from '@/components/empty-state';
+import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

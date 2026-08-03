@@ -1,7 +1,6 @@
 import { KeyRound, Trash2 } from 'lucide-react';
-import { type MouseEvent, useState } from 'react';
+import { useState } from 'react';
 import {
-    AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
@@ -25,8 +24,7 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
     const [isDeleting, setIsDeleting] = useState(false);
     const { t } = useTranslation();
 
-    const handleDelete = (event: MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
+    const handleDelete = () => {
         setIsDeleting(true);
         onDelete(passkey.id, () => setIsDeleting(false));
     };
@@ -69,17 +67,15 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                 </div>
             </div>
 
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">{t('Remove')}</span>
-                    </Button>
-                </AlertDialogTrigger>
+            <AlertDialogTrigger>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">{t('Remove')}</span>
+                </Button>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
@@ -98,14 +94,14 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                         </AlertDialogCancel>
                         <AlertDialogAction
                             variant="destructive"
-                            onClick={handleDelete}
-                            disabled={isDeleting}
+                            onPress={handleDelete}
+                            isDisabled={isDeleting}
                         >
                             {isDeleting ? t('Removing…') : t('Remove passkey')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
-            </AlertDialog>
+            </AlertDialogTrigger>
         </div>
     );
 }

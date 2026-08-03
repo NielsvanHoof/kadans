@@ -1,10 +1,12 @@
+import { DateFormatter, parseDate } from '@internationalized/date';
+
 /**
  * Format an ISO timestamp the same on SSR and in the browser.
  * Uses UTC so server/client timezones cannot diverge during hydration.
  * Pass the current Inertia locale (from useTranslation) for language.
  */
 export function formatDateTime(iso: string, locale: string): string {
-    return new Intl.DateTimeFormat(locale, {
+    return new DateFormatter(locale, {
         dateStyle: 'short',
         timeStyle: 'medium',
         timeZone: 'UTC',
@@ -12,12 +14,23 @@ export function formatDateTime(iso: string, locale: string): string {
 }
 
 /**
- * Format a calendar date (YYYY-MM-DD or ISO) without a time component.
- * Same locale/UTC rules as formatDateTime so due dates match the rest of the UI.
+ * Format a calendar date without a time component.
+ *
+ * Accepts `YYYY-MM-DD` or a longer ISO string — only the date part is used.
+ * Parsed via `@internationalized/date` so the day never shifts across a
+ * timezone boundary the way `new Date('YYYY-MM-DD')` can.
  */
-export function formatDate(iso: string, locale: string): string {
-    return new Intl.DateTimeFormat(locale, {
-        dateStyle: 'short',
+export function formatDate(
+    iso: string,
+    locale: string,
+    options: Intl.DateTimeFormatOptions = { dateStyle: 'short' },
+): string {
+    // Calendar day only — ignore any time / offset suffix.
+    const date = parseDate(iso.slice(0, 10));
+
+    return new DateFormatter(locale, {
+        ...options,
+        // Anchor at UTC midnight so SSR and the browser agree.
         timeZone: 'UTC',
-    }).format(new Date(iso));
+    }).format(date.toDate('UTC'));
 }

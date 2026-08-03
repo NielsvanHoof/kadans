@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Tenancy\Http\Controllers;
 
-use App\Accounts\Models\User;
+use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Shared\Http\Controllers\Controller;
+use App\Shared\Http\Toast;
 use App\Tenancy\Actions\ResendTenantInvitationAction;
 use App\Tenancy\Actions\RevokeTenantInvitationAction;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 
 final class TenantInvitationController extends Controller
 {
+    use ResolvesCurrentUser;
+
     public function resend(
         Tenant $tenant,
         TenantInvitation $invitation,
@@ -26,10 +27,7 @@ final class TenantInvitationController extends Controller
 
         $resendTenantInvitation->handle($invitation);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Invitation resent.'),
-        ]);
+        Toast::success(__('Invitation resent.'));
 
         return to_route('workspaces.members.index', $this->workspaceRouteParameters());
     }
@@ -37,22 +35,16 @@ final class TenantInvitationController extends Controller
     public function destroy(
         Tenant $tenant,
         TenantInvitation $invitation,
-        Request $request,
         RevokeTenantInvitationAction $revokeTenantInvitation,
     ): RedirectResponse {
         $this->ensureInvitationBelongsToTenant($invitation, $tenant);
         $this->authorize('revoke', $invitation);
 
-        $user = $request->user();
-
-        abort_unless($user instanceof User, 403);
+        $user = $this->currentUser();
 
         $revokeTenantInvitation->handle($invitation, $user);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Invitation revoked.'),
-        ]);
+        Toast::success(__('Invitation revoked.'));
 
         return to_route('workspaces.members.index', $this->workspaceRouteParameters());
     }

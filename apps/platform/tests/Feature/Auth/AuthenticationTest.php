@@ -3,12 +3,8 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 test('login screen can be rendered', function (): void {
     $response = $this->get(route('login'));

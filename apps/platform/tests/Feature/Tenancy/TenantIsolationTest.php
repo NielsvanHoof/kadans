@@ -9,19 +9,16 @@ use App\Dossiers\Models\Dossier;
 use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Http\Middleware\EnforceStrictTenantScope;
 use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession;
-
-pest()
-    ->use(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -184,6 +181,7 @@ test('tenant routes are registered with the expected middleware', function (): v
         ->and($route->middleware())
         ->toContain('auth')
         ->toContain(InitializeTenantFromRoute::class)
+        ->toContain(EnforceStrictTenantScope::class)
         ->toContain(EnsureValidTenantMembership::class)
         ->toContain(SetPermissionTeamContext::class)->not->toContain(EnsureValidTenantSession::class)
         ->and($route->uri())

@@ -1,11 +1,11 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { Archive } from 'lucide-react';
-import Heading from '@/components/heading';
-import IndexPagination from '@/components/index-query/index-pagination';
-import IndexQueryResults from '@/components/index-query/index-query-results';
-import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import Heading from '@/components/primitives/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import ArchivedDossiersCard from '@/features/dossiers/list/archived-dossiers-card';
 import type { ArchivedDossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -56,11 +56,12 @@ export default function ArchivedDossiers({
                             'Review retained dossier records without mixing them into active client work.',
                         )}
                     />
-                    <Button variant="outline" asChild>
-                        <Link href={dossierIndex(currentWorkspace)}>
-                            {t('Back to dossiers')}
-                        </Link>
-                    </Button>
+                    <LinkButton
+                        variant="outline"
+                        href={dossierIndex(currentWorkspace).url}
+                    >
+                        {t('Back to dossiers')}
+                    </LinkButton>
                 </div>
 
                 <Alert>

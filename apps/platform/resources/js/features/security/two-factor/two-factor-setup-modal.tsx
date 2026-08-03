@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Dialog,
-    DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
@@ -112,33 +111,35 @@ export default function TwoFactorSetupModal({
     }, [isOpen, qrCodeSvg]);
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader className="flex items-center justify-center">
-                    <GridScanIcon />
-                    <DialogTitle>{modalConfig.title}</DialogTitle>
-                    <DialogDescription className="text-center">
-                        {modalConfig.description}
-                    </DialogDescription>
-                </DialogHeader>
+        <Dialog
+            className="sm:max-w-md"
+            isOpen={isOpen}
+            onOpenChange={(open) => !open && handleClose()}
+        >
+            <DialogHeader className="flex items-center justify-center">
+                <GridScanIcon />
+                <DialogTitle>{modalConfig.title}</DialogTitle>
+                <DialogDescription className="text-center">
+                    {modalConfig.description}
+                </DialogDescription>
+            </DialogHeader>
 
-                <div className="flex flex-col items-center space-y-5">
-                    {showVerificationStep ? (
-                        <TwoFactorVerificationStep
-                            onClose={handleClose}
-                            onBack={() => setShowVerificationStep(false)}
-                        />
-                    ) : (
-                        <TwoFactorSetupStep
-                            qrCodeSvg={qrCodeSvg}
-                            manualSetupKey={manualSetupKey}
-                            buttonText={modalConfig.buttonText}
-                            onNextStep={handleModalNextStep}
-                            errors={errors}
-                        />
-                    )}
-                </div>
-            </DialogContent>
+            <div className="flex flex-col items-center space-y-5">
+                {showVerificationStep ? (
+                    <TwoFactorVerificationStep
+                        onClose={handleClose}
+                        onBack={() => setShowVerificationStep(false)}
+                    />
+                ) : (
+                    <TwoFactorSetupStep
+                        qrCodeSvg={qrCodeSvg}
+                        manualSetupKey={manualSetupKey}
+                        buttonText={modalConfig.buttonText}
+                        onNextStep={handleModalNextStep}
+                        errors={errors}
+                    />
+                )}
+            </div>
         </Dialog>
     );
 }

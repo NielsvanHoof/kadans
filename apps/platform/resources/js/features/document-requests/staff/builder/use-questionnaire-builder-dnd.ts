@@ -66,7 +66,7 @@ export function useQuestionnaireBuilderDnD({
     setItems: (items: DocumentRequest[]) => void;
     canEdit: boolean;
     onInsert: (type: QuestionnaireItemType, position: number) => void;
-    onReorder: (orderedIds: number[]) => Promise<boolean>;
+    onReorder: (orderedIds: number[]) => boolean;
 }) {
     const [activeDrag, setActiveDrag] = useState<ActiveBuilderDrag>(null);
 
@@ -95,7 +95,7 @@ export function useQuestionnaireBuilderDnD({
         setActiveDrag({ kind: 'canvas', id: Number(event.active.id) });
     };
 
-    const handleDragEnd = async (event: DragEndEvent) => {
+    const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveDrag(null);
 
@@ -137,13 +137,9 @@ export function useQuestionnaireBuilderDnD({
             return;
         }
 
-        const previous = items;
-        setItems(applyIdOrder(previous, nextIds));
-        const persisted = await onReorder(nextIds);
-
-        if (!persisted) {
-            setItems(previous);
-        }
+        setItems(applyIdOrder(items, nextIds));
+        // Draft mode: order is local until Save.
+        onReorder(nextIds);
     };
 
     return {
