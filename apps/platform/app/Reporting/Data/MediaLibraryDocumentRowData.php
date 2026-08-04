@@ -14,6 +14,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class MediaLibraryDocumentRowData extends Data
 {
+    /**
+     * @param  list<MediaLibraryUploadedDocumentData>  $uploadedDocuments
+     */
     public function __construct(
         public readonly int $id,
         public readonly string $title,
@@ -21,6 +24,6 @@ final class MediaLibraryDocumentRowData extends Data
         public readonly ?string $updatedAt,
         public readonly MediaLibraryDossierSummaryData $dossier,
         public readonly string $clientName,
-        public readonly ?MediaLibraryUploadedDocumentData $uploadedDocument,
+        public readonly array $uploadedDocuments,
     ) {}
 }

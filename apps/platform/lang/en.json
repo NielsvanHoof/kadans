@@ -343,6 +343,8 @@
     "Answer saved. Thank you.": "Answer saved. Thank you.",
     "Document uploaded. Thank you.": "Document uploaded. Thank you.",
     "A document file is required.": "A document file is required.",
+    "At least one file is required.": "At least one file is required.",
+    "Document removed.": "Document removed.",
     "Log in": "Log in",
     "Log in to your account": "Log in to your account",
     "Enter your email and password below to log in": "Enter your email and password below to log in",
@@ -1170,5 +1172,16 @@
     "Use": "Use",
     "Dismiss": "Dismiss",
     ":count suggestions": ":count suggestions",
-    "Add all": "Add all"
+    "Add all": "Add all",
+    "Add more files": "Add more files",
+    "Upload files": "Upload files",
+    "Drop more files here or click to add": "Drop more files here or click to add",
+    "Drop files here or click to browse": "Drop files here or click to browse",
+    "max :size per file": "max :size per file",
+    "You can add up to :count files.": "You can add up to :count files.",
+    "Remove file": "Remove file",
+    "This file will be permanently removed from your submission.": "This file will be permanently removed from your submission.",
+    "This file will be permanently removed from the request.": "This file will be permanently removed from the request.",
+    "Allow multiple files": "Allow multiple files",
+    "+:count more": "+:count more"
 }

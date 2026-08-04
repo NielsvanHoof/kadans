@@ -44,6 +44,7 @@ final class SyncDocumentRequestsRequest extends FormRequest
             'items.*.instructions' => ['nullable', 'string', 'max:2000'],
             'items.*.configuration' => ['nullable', 'array'],
             'items.*.configuration.is_required' => ['sometimes', 'boolean'],
+            'items.*.configuration.allow_multiple' => ['sometimes', 'boolean'],
             'items.*.configuration.options' => ['sometimes', 'array', 'max:50'],
             'items.*.configuration.options.*.id' => ['required_with:items.*.configuration.options', 'uuid', 'distinct'],
             'items.*.configuration.options.*.label' => ['required_with:items.*.configuration.options', 'string', 'max:255'],

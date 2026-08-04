@@ -1,6 +1,10 @@
 import { Upload, X } from 'lucide-react';
 import type { DragEvent } from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+    fileTypeLabel,
+    validateFileSize,
+} from '@/components/forms/validate-upload-file';
 import InputError from '@/components/primitives/input-error';
 import {
     Attachment,
@@ -62,13 +66,6 @@ function resolveAttachmentState(
     return 'idle';
 }
 
-/** Short type label for the attachment description (e.g. PDF · 1.2 MB). */
-function fileTypeLabel(file: File): string {
-    const extension = file.name.split('.').pop()?.toUpperCase();
-
-    return extension && extension.length <= 5 ? extension : 'FILE';
-}
-
 /**
  * Drag-and-drop file picker with client-side size validation.
  * Empty state is a dashed browse target; a selected file becomes an Attachment window.
@@ -127,12 +124,10 @@ export default function FileDropzone({
                 return;
             }
 
-            if (nextFile.size > maxBytes) {
-                setLocalError(
-                    t('File is too large. Maximum size is :size.', {
-                        size: formatBytes(maxBytes),
-                    }),
-                );
+            const sizeError = validateFileSize(nextFile, maxBytes, t);
+
+            if (sizeError) {
+                setLocalError(sizeError);
                 onFileChange(null);
                 return;
             }

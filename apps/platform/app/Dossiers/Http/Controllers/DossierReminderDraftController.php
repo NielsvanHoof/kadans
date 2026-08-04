@@ -65,7 +65,7 @@ final class DossierReminderDraftController extends Controller
         $message = $draftDossierReminderMessage->handle(
             new ReminderDraftContextData(
                 dossierTitle: $dossier->title,
-                clientName: $dossier->client?->name ?? '',
+                clientName: $dossier->client->name ?? '',
                 dueDate: $dossier->due_date?->format('j F Y'),
                 outstandingItemTitles: $outstandingItemTitles,
             ),

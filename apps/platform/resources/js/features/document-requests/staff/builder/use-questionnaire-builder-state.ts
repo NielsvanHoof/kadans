@@ -65,7 +65,7 @@ function createDraftItem(
         sort_order: sortOrder,
         is_visible: true,
         is_applicable: true,
-        uploaded_document: null,
+        uploaded_documents: [],
     };
 }
 

@@ -58,7 +58,7 @@ test('document request routes 404 when the request belongs to another dossier', 
         'dossier' => $dossier,
         'documentRequest' => $foreignRequest,
     ]), [
-        'document' => UploadedFile::fake()->create('x.pdf', 10, 'application/pdf'),
+        'documents' => [UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')],
     ])->assertNotFound();
 
     $this->post(workspaceRoute('workspaces.dossiers.document-requests.review', $tenant, [

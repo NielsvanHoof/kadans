@@ -189,7 +189,7 @@ test('guest can upload a document through the portal', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['document' => $file],
+        ['documents' => [$file]],
     )->assertRedirect(route('portal.show'));
 
     $context['tenant']->makeCurrent();
@@ -220,7 +220,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
+        ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
     )->assertForbidden();
 
     $context['tenant']->makeCurrent();
@@ -342,7 +342,7 @@ test('portal upload cannot target a document request from another dossier', func
         route('portal.document-requests.upload', [
             'documentRequest' => $foreignRequest->id,
         ]),
-        ['document' => UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')],
+        ['documents' => [UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')]],
     )->assertNotFound();
 });
 
@@ -371,7 +371,7 @@ test('portal upload rolls back database and storage when its audit record fails'
             route('portal.document-requests.upload', [
                 'documentRequest' => $documentRequest->id,
             ]),
-            ['document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
+            ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
         )->assertServerError();
     } finally {
         Event::forget($event);

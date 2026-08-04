@@ -31,6 +31,7 @@ trait ValidatesQuestionnaireItemConfiguration
         return [
             'configuration' => ['nullable', 'array'],
             'configuration.is_required' => ['sometimes', 'boolean'],
+            'configuration.allow_multiple' => ['sometimes', 'boolean'],
             'configuration.options' => ['sometimes', 'array', 'max:50'],
             'configuration.options.*.id' => ['required_with:configuration.options', 'uuid', 'distinct'],
             'configuration.options.*.label' => ['required_with:configuration.options', 'string', 'max:255'],

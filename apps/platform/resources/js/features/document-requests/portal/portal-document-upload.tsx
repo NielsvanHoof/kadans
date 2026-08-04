@@ -12,10 +12,14 @@ export default function PortalDocumentUpload({
 }: {
     documentRequest: PortalDocumentRequest;
 }) {
+    const allowMultiple =
+        documentRequest.configuration?.allow_multiple ?? false;
+
     return (
         <DocumentFileUploadForm
             inputId={`document-${documentRequest.id}`}
-            hasExistingUpload={documentRequest.uploaded_document !== null}
+            hasExistingUpload={documentRequest.uploaded_documents.length > 0}
+            allowMultiple={allowMultiple}
             actionUrl={ClientPortalUploadController.store.url({
                 documentRequest: documentRequest.id,
             })}

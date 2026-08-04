@@ -200,6 +200,37 @@ export default function QuestionnaireBuilderSettings({
                     </FieldLabel>
                 </Field>
 
+                {form.type === 'file' ? (
+                    <Field
+                        orientation="horizontal"
+                        data-disabled={!canEdit}
+                        className="items-center"
+                    >
+                        <Checkbox
+                            id={`builder-allow-multiple-${documentRequest.id}`}
+                            isSelected={
+                                form.configuration.allow_multiple === true
+                            }
+                            isDisabled={!canEdit}
+                            onChange={(checked) =>
+                                form.updateConfiguration(
+                                    {
+                                        ...form.configuration,
+                                        allow_multiple: checked === true,
+                                    },
+                                    true,
+                                )
+                            }
+                        />
+                        <FieldLabel
+                            htmlFor={`builder-allow-multiple-${documentRequest.id}`}
+                            className="font-normal"
+                        >
+                            {t('Allow multiple files')}
+                        </FieldLabel>
+                    </Field>
+                ) : null}
+
                 {storesAnswerOptionIds(form.type) ? (
                     <FieldOptionsEditor
                         options={

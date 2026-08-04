@@ -16,11 +16,14 @@ export default function DocumentRequestUpload({
     documentRequest: DocumentRequest;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const allowMultiple =
+        documentRequest.configuration?.allow_multiple ?? false;
 
     return (
         <DocumentFileUploadForm
             inputId={`document-${documentRequest.id}`}
-            hasExistingUpload={documentRequest.uploaded_document !== null}
+            hasExistingUpload={documentRequest.uploaded_documents.length > 0}
+            allowMultiple={allowMultiple}
             actionUrl={UploadedDocumentController.store.url({
                 tenant: currentWorkspace,
                 dossier: dossierId,

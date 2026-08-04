@@ -62,7 +62,7 @@ test('staff can create the phase one document collection graph', function (): vo
     expect($client->dossiers)->toHaveCount(1)
         ->and($dossier->client->is($client))->toBeTrue()
         ->and($dossier->documentRequests)->toHaveCount(1)
-        ->and($documentRequest->uploadedDocument->is($uploadedDocument))->toBeTrue()
+        ->and($documentRequest->uploadedDocuments->first()?->is($uploadedDocument))->toBeTrue()
         ->and($dossier->clientAccessGrants)->toHaveCount(1)
         ->and($grant->isValid())->toBeTrue()
         ->and($grant->dossier->is($dossier))->toBeTrue();

@@ -1,5 +1,6 @@
 /.phpunit.cache
 /coverage
+/tests/Browser/Screenshots
 
 # barryvdh/laravel-ide-helper (generated locally; model PHPDocs are written into models)
 /_ide_helper.php

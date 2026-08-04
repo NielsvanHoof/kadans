@@ -57,3 +57,5 @@ Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentCo
         passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
     ))
     ->name('uploaded-documents.download');
+Route::delete('uploaded-documents/{uploadedDocument}', [UploadedDocumentController::class, 'destroy'])
+    ->name('uploaded-documents.destroy');

@@ -410,7 +410,7 @@ test('staff can upload a document for a document request', function (): void {
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [
-            'document' => $file,
+            'documents' => [$file],
         ])
         ->assertRedirect(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]));
 
@@ -474,7 +474,7 @@ test('read only staff cannot upload documents', function (): void {
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [
-            'document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf'),
+            'documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
         ])
         ->assertForbidden();
 

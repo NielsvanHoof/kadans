@@ -69,14 +69,14 @@ test('staff can view the media library with pending and uploaded documents', fun
             ->where('documents.data', fn ($documents) => collect($documents)->contains(
                 fn (array $document): bool => $document['title'] === 'Pending payslip'
                     && $document['status'] === 'pending'
-                    && $document['uploaded_document'] === null
+                    && $document['uploaded_documents'] === []
                     && $document['client_name'] === $client->name
                     && $document['dossier']['id'] === $dossier->id,
             ))
             ->where('documents.data', fn ($documents) => collect($documents)->contains(
                 fn (array $document): bool => $document['title'] === 'Uploaded ID'
                     && $document['status'] === 'submitted'
-                    && $document['uploaded_document']['original_filename'] === 'passport.pdf',
+                    && $document['uploaded_documents'][0]['original_filename'] === 'passport.pdf',
             )));
 });
 

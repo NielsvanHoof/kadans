@@ -6,6 +6,7 @@ namespace App\Dossiers\Http\Controllers;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Actions\DocumentRequests\UploadStaffDocumentAction;
 use App\Dossiers\Data\StaffUploadedDocumentData;
@@ -20,6 +21,7 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -62,13 +64,16 @@ final class UploadedDocumentController extends Controller
         // (dossier → documentRequest). Tenant scope is already applied.
         $this->authorize('view', $dossier);
 
-        $file = $request->file('document');
+        /** @var list<UploadedFile> $files */
+        $files = $request->file('documents', []);
 
-        if ($file === null) {
-            return back()->withErrors(['document' => __('A document file is required.')]);
+        if ($files === []) {
+            return back()->withErrors(['documents' => __('At least one file is required.')]);
         }
 
-        $uploadStaffDocument->handle($documentRequest, $file);
+        foreach ($files as $file) {
+            $uploadStaffDocument->handle($documentRequest, $file);
+        }
 
         Toast::success(__('Document uploaded.'));
 
@@ -155,6 +160,23 @@ final class UploadedDocumentController extends Controller
             $resolveDocumentTemporaryUrl,
             disposition: 'inline',
         );
+    }
+
+    /**
+     * Remove one file from a multi-file document request.
+     */
+    public function destroy(
+        Tenant $tenant,
+        UploadedDocument $uploadedDocument,
+        DeleteUploadedDocumentAction $deleteUploadedDocument,
+    ): RedirectResponse {
+        $this->authorize('delete', $uploadedDocument);
+
+        $deleteUploadedDocument->handle($uploadedDocument);
+
+        Toast::success(__('Document removed.'));
+
+        return back();
     }
 
     /**

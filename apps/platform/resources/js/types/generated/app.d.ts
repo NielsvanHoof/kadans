@@ -96,7 +96,7 @@ declare namespace App {
                 readonly configuration: Record<string, any> | null;
                 readonly rejection_reason: string | null;
                 readonly can_respond: boolean;
-                readonly uploaded_document: App.ClientPortal.Data.PortalUploadedDocumentData | null;
+                readonly uploaded_documents: App.ClientPortal.Data.PortalUploadedDocumentData[];
             };
             export type PortalDossierData = {
                 readonly title: string;
@@ -123,6 +123,7 @@ declare namespace App {
                 readonly next_incomplete: App.ClientPortal.Data.PortalNextIncompleteData | null;
             };
             export type PortalUploadedDocumentData = {
+                readonly id: number;
                 readonly original_filename: string;
                 readonly size_bytes: number;
                 readonly uploaded_at: string;
@@ -400,7 +401,7 @@ declare namespace App {
                 readonly sort_order: number;
                 readonly is_visible: boolean;
                 readonly is_applicable: boolean;
-                readonly uploaded_document: App.Dossiers.Data.StaffUploadedDocumentData | null;
+                readonly uploaded_documents: App.Dossiers.Data.StaffUploadedDocumentData[];
             };
             export type StaffDocumentRequestRowsData = {
                 readonly rows: App.Dossiers.Data.StaffDocumentRequestData[];
@@ -416,6 +417,7 @@ declare namespace App {
                 readonly processing_status: App.DocumentProcessing.Enums.DocumentProcessingStatus;
                 readonly processing_error: string | null;
                 readonly pipeline: App.DocumentProcessing.Data.PipelineData | null;
+                readonly can_delete: boolean;
             };
         }
         namespace Enums {
@@ -602,7 +604,7 @@ declare namespace App {
                 readonly updated_at: string | null;
                 readonly dossier: App.Reporting.Data.MediaLibraryDossierSummaryData;
                 readonly client_name: string;
-                readonly uploaded_document: App.Reporting.Data.MediaLibraryUploadedDocumentData | null;
+                readonly uploaded_documents: App.Reporting.Data.MediaLibraryUploadedDocumentData[];
             };
             export type MediaLibraryDossierSummaryData = {
                 readonly id: number;

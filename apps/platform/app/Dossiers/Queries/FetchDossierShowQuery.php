@@ -62,8 +62,8 @@ final readonly class FetchDossierShowQuery
             'client:id,name,email',
             'responsibleUser:id,name,email',
             'documentRequests' => fn ($query) => $query
-                ->with(['uploadedDocument', 'reviewedBy:id,name'])
-                ->with('uploadedDocument.pipelines.steps')
+                ->with(['uploadedDocuments', 'reviewedBy:id,name'])
+                ->with('uploadedDocuments.pipelines.steps')
                 ->oldest('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
             'exports' => fn ($query) => $query->with('pipeline.steps')->latest(),

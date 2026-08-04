@@ -10,7 +10,6 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Events\DocumentRequestRejected;
 use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -52,9 +51,7 @@ final readonly class ReviewDocumentRequestAction
                 );
             }
 
-            $uploadedDocument = $lockedDocumentRequest->uploadedDocument;
-
-            if ($uploadedDocument instanceof UploadedDocument) {
+            foreach ($lockedDocumentRequest->uploadedDocuments as $uploadedDocument) {
                 $uploadedDocument->update([
                     'reviewed_by' => $reviewer->id,
                     'reviewed_at' => $lockedDocumentRequest->reviewed_at,

@@ -73,11 +73,13 @@ export default function ReviewDossier({
         ],
     });
 
-    const hasInFlightProcessing = documentRequests.some((request) => {
-        const status = request.uploaded_document?.processing_status;
-
-        return status === 'pending' || status === 'processing';
-    });
+    const hasInFlightProcessing = documentRequests.some((request) =>
+        request.uploaded_documents.some(
+            (uploadedDocument) =>
+                uploadedDocument.processing_status === 'pending' ||
+                uploadedDocument.processing_status === 'processing',
+        ),
+    );
 
     useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocument }>({
         enabled: hasInFlightProcessing,
@@ -176,13 +178,21 @@ function mergeUploadedDocument(
     uploadedDocument: UploadedDocument,
 ): DocumentRequest[] {
     return requests.map((request) => {
-        if (request.uploaded_document?.id !== uploadedDocument.id) {
+        if (
+            !request.uploaded_documents.some(
+                (existing) => existing.id === uploadedDocument.id,
+            )
+        ) {
             return request;
         }
 
         return {
             ...request,
-            uploaded_document: uploadedDocument,
+            uploaded_documents: request.uploaded_documents.map((existing) =>
+                existing.id === uploadedDocument.id
+                    ? uploadedDocument
+                    : existing,
+            ),
         };
     });
 }

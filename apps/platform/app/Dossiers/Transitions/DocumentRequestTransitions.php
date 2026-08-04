@@ -42,10 +42,19 @@ final class DocumentRequestTransitions
                 return false;
             }
 
-            return in_array($documentRequest->status, [
+            $allowedStatuses = [
                 DocumentRequestStatus::Pending,
                 DocumentRequestStatus::Rejected,
-            ], true);
+            ];
+
+            // A request accepting multiple files stays open for further
+            // uploads while awaiting review, instead of locking after the
+            // first file like a single-file request does.
+            if (($documentRequest->configuration['allow_multiple'] ?? false) === true) {
+                $allowedStatuses[] = DocumentRequestStatus::Submitted;
+            }
+
+            return in_array($documentRequest->status, $allowedStatuses, true);
         }
 
         return in_array($documentRequest->status, [

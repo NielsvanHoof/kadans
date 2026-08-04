@@ -103,7 +103,7 @@ test('the export job creates a ZIP manifest and copies uploaded documents', func
     unlink($archivePath);
 
     expect($manifest['dossier']['id'])->toBe($dossier->id)
-        ->and($manifest['documents'][0]['archive_path'])->toBe('documents/001-payslip-january.pdf')
+        ->and($manifest['documents'][0]['files'][0]['archive_path'])->toBe('documents/001-payslip-january.pdf')
         ->and(Activity::query()
             ->where('event', AuditEvent::DossierExportCompleted->value)
             ->where('subject_id', $export->id)

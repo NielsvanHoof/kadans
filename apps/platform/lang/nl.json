@@ -343,6 +343,8 @@
     "Answer saved. Thank you.": "Antwoord opgeslagen. Bedankt.",
     "Document uploaded. Thank you.": "Document geüpload. Bedankt.",
     "A document file is required.": "Een documentbestand is verplicht.",
+    "At least one file is required.": "Er is minstens één bestand vereist.",
+    "Document removed.": "Document verwijderd.",
     "Log in": "Inloggen",
     "Log in to your account": "Log in op je account",
     "Enter your email and password below to log in": "Vul hieronder je e-mailadres en wachtwoord in om in te loggen",
@@ -1170,5 +1172,16 @@
     "Use": "Gebruiken",
     "Dismiss": "Negeren",
     ":count suggestions": ":count suggesties",
-    "Add all": "Alles toevoegen"
+    "Add all": "Alles toevoegen",
+    "Add more files": "Meer bestanden toevoegen",
+    "Upload files": "Bestanden uploaden",
+    "Drop more files here or click to add": "Sleep meer bestanden hierheen of klik om toe te voegen",
+    "Drop files here or click to browse": "Sleep bestanden hierheen of klik om te bladeren",
+    "max :size per file": "max. :size per bestand",
+    "You can add up to :count files.": "Je kunt maximaal :count bestanden toevoegen.",
+    "Remove file": "Bestand verwijderen",
+    "This file will be permanently removed from your submission.": "Dit bestand wordt permanent verwijderd uit je indiening.",
+    "This file will be permanently removed from the request.": "Dit bestand wordt permanent verwijderd uit het verzoek.",
+    "Allow multiple files": "Meerdere bestanden toestaan",
+    "+:count more": "+:count meer"
 }

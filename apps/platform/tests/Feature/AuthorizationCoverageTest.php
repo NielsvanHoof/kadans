@@ -58,6 +58,7 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     'portal.show' => 'portal-grant: ResolveClientPortalGrant middleware.',
     'portal.document-requests.answer' => 'portal-grant: grant + dossier match + canSubmit + field visibility.',
     'portal.document-requests.upload' => 'portal-grant: grant + dossier match + canSubmit.',
+    'portal.document-requests.uploaded-documents.destroy' => 'portal-grant: grant + dossier match + allow_multiple + status check.',
 
     // token-credential — a hashed/signed token is the credential, for guests.
     'invitations.show' => 'token-credential: invitation token.',

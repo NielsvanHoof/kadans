@@ -37,7 +37,9 @@ final readonly class UploadDocumentForRequestAction
 
     /**
      * Store a file for a document request and mark the request as submitted.
-     * Replaces any previous upload for the same request.
+     * Replaces any previous upload for the same request, unless the request's
+     * `allow_multiple` configuration is enabled, in which case the file is
+     * appended alongside any existing uploads instead.
      *
      * @param  (Closure(UploadedDocument, DocumentRequest): void)|null  $afterPersist
      */
@@ -87,9 +89,12 @@ final readonly class UploadDocumentForRequestAction
                 $documentRequestQuery->getQuery()->lockForUpdate();
 
                 $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
-                $existing = UploadedDocument::query()
-                    ->where('document_request_id', $lockedDocumentRequest->id)
-                    ->first();
+                $allowMultiple = ($lockedDocumentRequest->configuration['allow_multiple'] ?? false) === true;
+                $existing = $allowMultiple
+                    ? null
+                    : UploadedDocument::query()
+                        ->where('document_request_id', $lockedDocumentRequest->id)
+                        ->first();
 
                 $attributes = [
                     'disk' => $disk,
@@ -119,7 +124,7 @@ final readonly class UploadDocumentForRequestAction
                     $uploadedDocument = $existing;
                 } else {
                     $uploadedDocument = $lockedDocumentRequest
-                        ->uploadedDocument()
+                        ->uploadedDocuments()
                         ->create($attributes);
                 }
 

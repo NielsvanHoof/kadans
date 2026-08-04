@@ -27,6 +27,10 @@ final class NormalizeQuestionnaireItemConfigurationAction
             'is_required' => ($configuration['is_required'] ?? true) !== false,
         ];
 
+        if ($type === QuestionnaireItemType::File) {
+            $normalized['allow_multiple'] = ($configuration['allow_multiple'] ?? false) === true;
+        }
+
         if ($type->storesAnswerOptionIds()) {
             $normalized['options'] = $this->options($configuration['options'] ?? []);
         }

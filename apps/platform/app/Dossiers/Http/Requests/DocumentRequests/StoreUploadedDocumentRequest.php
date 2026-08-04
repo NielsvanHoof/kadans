@@ -15,6 +15,11 @@ final class StoreUploadedDocumentRequest extends FormRequest
     use LocalizesValidationAttributes;
 
     /**
+     * Requests accepting multiple files still need a sane upper bound per submission.
+     */
+    private const int MAX_FILES_WHEN_MULTIPLE = 10;
+
+    /**
      * Staff who can create dossiers may upload files onto document requests.
      */
     public function authorize(): bool
@@ -31,9 +36,18 @@ final class StoreUploadedDocumentRequest extends FormRequest
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
+        $documentRequest = $this->route('documentRequest');
+        $allowMultiple = $documentRequest instanceof DocumentRequest
+            && ($documentRequest->configuration['allow_multiple'] ?? false) === true;
+
         return [
-            'document' => [
+            'documents' => [
                 'required',
+                'array',
+                'min:1',
+                'max:'.($allowMultiple ? self::MAX_FILES_WHEN_MULTIPLE : 1),
+            ],
+            'documents.*' => [
                 File::types(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx'])
                     ->max('20mb'),
             ],

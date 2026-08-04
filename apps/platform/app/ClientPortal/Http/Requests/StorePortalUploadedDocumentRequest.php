@@ -20,6 +20,11 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
 
+    /**
+     * Requests accepting multiple files still need a sane upper bound per submission.
+     */
+    private const int MAX_FILES_WHEN_MULTIPLE = 10;
+
     public function __construct(
         private readonly DocumentRequestTransitions $documentRequestTransitions,
     ) {
@@ -57,9 +62,21 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
+        $documentRequestId = $this->route('documentRequest');
+        $documentRequest = is_numeric($documentRequestId)
+            ? DocumentRequest::query()->find((int) $documentRequestId)
+            : null;
+        $allowMultiple = $documentRequest instanceof DocumentRequest
+            && ($documentRequest->configuration['allow_multiple'] ?? false) === true;
+
         return [
-            'document' => [
+            'documents' => [
                 'required',
+                'array',
+                'min:1',
+                'max:'.($allowMultiple ? self::MAX_FILES_WHEN_MULTIPLE : 1),
+            ],
+            'documents.*' => [
                 File::types(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx'])
                     ->max('20mb'),
             ],

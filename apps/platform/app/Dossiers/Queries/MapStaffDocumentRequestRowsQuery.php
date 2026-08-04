@@ -65,16 +65,16 @@ final readonly class MapStaffDocumentRequestRowsQuery
             $isApplicable = in_array($documentRequest->id, $applicableIds, true);
 
             $uploaded = $includeUploadedDocuments
-                ? $documentRequest->uploadedDocument
-                : null;
+                ? $documentRequest->uploadedDocuments
+                : collect();
 
             $rows[] = StaffDocumentRequestData::fromModel(
                 $documentRequest,
                 $isVisible,
                 $isApplicable,
-                $uploaded instanceof UploadedDocument
-                    ? StaffUploadedDocumentData::fromModel($uploaded)
-                    : null,
+                array_values($uploaded
+                    ->map(fn (UploadedDocument $uploadedDocument): StaffUploadedDocumentData => StaffUploadedDocumentData::fromModel($uploadedDocument))
+                    ->all()),
             );
         }
 

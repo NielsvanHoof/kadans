@@ -31,7 +31,7 @@ final readonly class GenerateDossierExportAction
     {
         $pipeline = Pipeline::query()->with([
             'pipelineable.dossier.client',
-            'pipelineable.dossier.documentRequests.uploadedDocument',
+            'pipelineable.dossier.documentRequests.uploadedDocuments',
             'pipelineable.dossier.documentRequests.reviewedBy',
         ])->findOrFail($pipelineId);
         $export = $pipeline->pipelineable;
@@ -133,7 +133,6 @@ final readonly class GenerateDossierExportAction
         $documentNumber = 0;
 
         foreach ($dossier->documentRequests as $documentRequest) {
-            $uploadedDocument = $documentRequest->uploadedDocument;
             $document = [
                 'id' => $documentRequest->id,
                 'type' => $documentRequest->type->value,
@@ -146,9 +145,10 @@ final readonly class GenerateDossierExportAction
                 'reviewed_at' => $documentRequest->reviewed_at?->toIso8601String(),
                 'reviewed_by' => $documentRequest->reviewedBy?->name,
                 'rejection_reason' => $documentRequest->rejection_reason,
+                'files' => [],
             ];
 
-            if ($uploadedDocument !== null) {
+            foreach ($documentRequest->uploadedDocuments as $uploadedDocument) {
                 $documentNumber++;
                 $filename = $this->archiveFilename($documentNumber, $uploadedDocument->original_filename);
                 $contents = Storage::disk($uploadedDocument->disk)->get($uploadedDocument->path);
@@ -163,12 +163,14 @@ final readonly class GenerateDossierExportAction
                     throw new RuntimeException('Unable to add an uploaded document to the export.');
                 }
 
-                $document['archive_path'] = $filename;
-                $document['original_filename'] = $uploadedDocument->original_filename;
-                $document['mime_type'] = $uploadedDocument->mime_type;
-                $document['size_bytes'] = $uploadedDocument->size_bytes;
-                $document['uploaded_at'] = $uploadedDocument->uploaded_at->toIso8601String();
-                $document['processing_status'] = $uploadedDocument->processing_status->value;
+                $document['files'][] = [
+                    'archive_path' => $filename,
+                    'original_filename' => $uploadedDocument->original_filename,
+                    'mime_type' => $uploadedDocument->mime_type,
+                    'size_bytes' => $uploadedDocument->size_bytes,
+                    'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
+                    'processing_status' => $uploadedDocument->processing_status->value,
+                ];
             }
 
             $documents[] = $document;
