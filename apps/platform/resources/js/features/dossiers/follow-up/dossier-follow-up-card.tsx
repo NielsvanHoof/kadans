@@ -1,22 +1,9 @@
-import { Form } from '@inertiajs/react';
-import {
-    CalendarClock,
-    MailCheck,
-    MousePointerClick,
-    Send,
-} from 'lucide-react';
-import { useId } from 'react';
-import DossierReminderController from '@/actions/App/Dossiers/Http/Controllers/DossierReminderController';
-import InputError, {
-    fieldErrorAriaProps,
-} from '@/components/primitives/input-error';
-import { Button } from '@/components/ui/button';
+import { CalendarClock, MailCheck, MousePointerClick } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Field, FieldLegend, FieldSet } from '@/components/ui/field';
-import { Spinner } from '@/components/ui/spinner';
+import { FieldLegend, FieldSet } from '@/components/ui/field';
+import DossierReminderComposeDialog from '@/features/dossiers/follow-up/dossier-reminder-compose-dialog';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
-import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatDateTime } from '@/lib/format-date-time';
 
@@ -26,9 +13,7 @@ import { formatDate, formatDateTime } from '@/lib/format-date-time';
  */
 export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
     const { canSendReminder } = useDossierCapabilities();
-    const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
-    const reminderErrorId = useId();
     const canRemind = canSendReminder && dossier.has_outstanding_client_items;
 
     return (
@@ -104,39 +89,11 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                     </p>
 
                     {canRemind ? (
-                        <Form
-                            {...DossierReminderController.store.form({
-                                tenant: currentWorkspace,
-                                dossier: dossier.id,
-                            })}
-                            className="shrink-0"
-                        >
-                            {({ errors, processing }) => (
-                                <Field className="gap-1 sm:items-end">
-                                    <Button
-                                        type="submit"
-                                        isDisabled={processing}
-                                        {...fieldErrorAriaProps(
-                                            reminderErrorId,
-                                            errors.dossier,
-                                        )}
-                                    >
-                                        {processing ? (
-                                            <Spinner />
-                                        ) : (
-                                            <Send aria-hidden="true" />
-                                        )}
-                                        {processing
-                                            ? t('Sending…')
-                                            : t('Send reminder')}
-                                    </Button>
-                                    <InputError
-                                        id={reminderErrorId}
-                                        message={errors.dossier}
-                                    />
-                                </Field>
-                            )}
-                        </Form>
+                        <div className="shrink-0">
+                            <DossierReminderComposeDialog
+                                dossierId={dossier.id}
+                            />
+                        </div>
                     ) : null}
                 </div>
             </CardContent>

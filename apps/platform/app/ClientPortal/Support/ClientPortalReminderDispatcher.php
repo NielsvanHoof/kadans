@@ -35,6 +35,7 @@ final readonly class ClientPortalReminderDispatcher implements ClientPortalRemin
         Dossier $dossier,
         User $grantCreator,
         DossierReminderSource $source,
+        ?string $customMessage = null,
     ): int {
         $dossier->loadMissing(['client', 'tenant']);
 
@@ -65,6 +66,7 @@ final readonly class ClientPortalReminderDispatcher implements ClientPortalRemin
                     expiresAt: $result['grant']->expires_at,
                     firmName: $firmName,
                     source: $source,
+                    customMessage: $customMessage,
                 )->locale($grantCreator->preferredLocale()),
             );
 

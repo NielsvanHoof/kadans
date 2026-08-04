@@ -71,7 +71,7 @@ return [
 
         'bedrock' => [
             'driver' => 'bedrock',
-            'region' => env('AWS_BEDROCK_REGION', 'us-east-1'),
+            'region' => env('AWS_BEDROCK_REGION', env('AWS_DEFAULT_REGION', 'eu-west-1')),
             'key' => env('AWS_BEARER_TOKEN_BEDROCK'),
             'access_key_id' => env('AWS_ACCESS_KEY_ID'),
             'secret_access_key' => env('AWS_SECRET_ACCESS_KEY'),
@@ -82,6 +82,14 @@ return [
                 'session_name' => env('AWS_BEDROCK_ASSUME_ROLE_SESSION_NAME'),
                 'duration_seconds' => env('AWS_BEDROCK_ASSUME_ROLE_DURATION_SECONDS'),
                 'external_id' => env('AWS_BEDROCK_ASSUME_ROLE_EXTERNAL_ID'),
+            ],
+            // Amazon Nova Lite: allowlisted in infra/src/config.ts
+            // (defaultBedrockModelArns) — requires a `pulumi up` deploy of that
+            // change before this actually works against real AWS.
+            'models' => [
+                'text' => [
+                    'default' => env('AI_BEDROCK_MODEL_ID', 'eu.amazon.nova-lite-v1:0'),
+                ],
             ],
         ],
 

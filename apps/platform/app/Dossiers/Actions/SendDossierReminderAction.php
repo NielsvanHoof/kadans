@@ -28,8 +28,9 @@ final readonly class SendDossierReminderAction
         User $grantCreator,
         DossierReminderSource $source,
         ?User $auditCauser = null,
+        ?string $customMessage = null,
     ): bool {
-        return DB::transaction(function () use ($dossier, $grantCreator, $source, $auditCauser): bool {
+        return DB::transaction(function () use ($dossier, $grantCreator, $source, $auditCauser, $customMessage): bool {
             $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
             $dossierQuery->getQuery()->lockForUpdate();
             $lockedDossier = $dossierQuery->firstOrFail();
@@ -60,6 +61,7 @@ final readonly class SendDossierReminderAction
                 $lockedDossier,
                 $grantCreator,
                 $source,
+                $customMessage,
             );
 
             $nextReminderAt = $lockedDossier->reminder_interval_days === null
@@ -77,6 +79,7 @@ final readonly class SendDossierReminderAction
                     'source' => $source->value,
                     'channel' => 'mail',
                     'next_reminder_at' => $nextReminderAt?->toIso8601String(),
+                    'custom_message' => $customMessage !== null,
                 ],
                 $auditCauser,
             );

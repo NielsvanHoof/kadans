@@ -53,6 +53,7 @@ export function defaultBedrockModelArns(region: string): string[] {
   return [
     "arn:aws:bedrock:*::foundation-model/anthropic.*",
     "arn:aws:bedrock:*::foundation-model/openai.*",
+    "arn:aws:bedrock:*::foundation-model/amazon.*",
     `arn:aws:bedrock:${region}:*:inference-profile/*`,
   ];
 }

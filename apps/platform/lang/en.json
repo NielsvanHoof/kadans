@@ -1155,5 +1155,20 @@
     "Remove :filename": "Remove :filename",
     "Upload a call recording or voice note to have it transcribed automatically.": "Upload a call recording or voice note to have it transcribed automatically.",
     "Transcript ready for :file.": "Transcript ready for :file.",
-    "Loading audio stream...": "Loading audio stream..."
+    "Loading audio stream...": "Loading audio stream...",
+    "Compose reminder": "Compose reminder",
+    "Generate a friendly draft, then edit it before sending.": "Generate a friendly draft, then edit it before sending.",
+    "Message": "Message",
+    "Generate a draft, or write your own message…": "Generate a draft, or write your own message…",
+    "Generating…": "Generating…",
+    "Regenerate draft": "Regenerate draft",
+    "Generate draft": "Generate draft",
+    "Suggest items with AI": "Suggest items with AI",
+    "e.g. Onboarding a new freelance client for their first tax return": "e.g. Onboarding a new freelance client for their first tax return",
+    "Suggesting…": "Suggesting…",
+    "Suggest items": "Suggest items",
+    "Use": "Use",
+    "Dismiss": "Dismiss",
+    ":count suggestions": ":count suggestions",
+    "Add all": "Add all"
 }

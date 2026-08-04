@@ -7,6 +7,7 @@ namespace App\Dossiers\Http\Controllers;
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\SendDossierReminderAction;
 use App\Dossiers\Enums\DossierReminderSource;
+use App\Dossiers\Http\Requests\StoreDossierReminderRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
@@ -20,10 +21,9 @@ final class DossierReminderController extends Controller
     public function store(
         Tenant $tenant,
         Dossier $dossier,
+        StoreDossierReminderRequest $request,
         SendDossierReminderAction $sendDossierReminder,
     ): RedirectResponse {
-        $this->authorize('sendReminder', $dossier);
-
         $user = $this->currentUser();
 
         $sendDossierReminder->handle(
@@ -31,6 +31,7 @@ final class DossierReminderController extends Controller
             $user,
             DossierReminderSource::Manual,
             $user,
+            $request->validated('message'),
         );
 
         Toast::success(__('Client reminder queued with a fresh secure link.'));

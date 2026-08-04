@@ -1155,5 +1155,20 @@
     "Remove :filename": "Verwijder :filename",
     "Upload a call recording or voice note to have it transcribed automatically.": "Upload een gespreksopname of voicenote om deze automatisch te laten transcriberen.",
     "Transcript ready for :file.": "Transcript gereed voor :file.",
-    "Loading audio stream...": "Audiostream laden..."
+    "Loading audio stream...": "Audiostream laden...",
+    "Compose reminder": "Herinnering opstellen",
+    "Generate a friendly draft, then edit it before sending.": "Genereer een vriendelijk concept en pas het aan voordat je het verstuurt.",
+    "Message": "Bericht",
+    "Generate a draft, or write your own message…": "Genereer een concept, of schrijf je eigen bericht…",
+    "Generating…": "Genereren…",
+    "Regenerate draft": "Nieuw concept genereren",
+    "Generate draft": "Concept genereren",
+    "Suggest items with AI": "Items voorstellen met AI",
+    "e.g. Onboarding a new freelance client for their first tax return": "bijv. Een nieuwe zzp-klant onboarden voor hun eerste belastingaangifte",
+    "Suggesting…": "Voorstellen genereren…",
+    "Suggest items": "Items voorstellen",
+    "Use": "Gebruiken",
+    "Dismiss": "Negeren",
+    ":count suggestions": ":count suggesties",
+    "Add all": "Alles toevoegen"
 }

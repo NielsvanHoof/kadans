@@ -1,6 +1,7 @@
-import { Form, useHttp } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
-import { useCallback } from 'react';
+import { Form, router, useHttp } from '@inertiajs/react';
+import { Sparkles, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import QuestionnaireChecklistDraftController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireChecklistDraftController';
 import QuestionnaireTemplateItemController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateItemController';
 import SortableList from '@/components/data/sortable/sortable-list';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
@@ -15,13 +16,29 @@ import {
     FieldTitle,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import QuestionnaireItemTypeSelect from '@/features/document-requests/questionnaire-item-type-select';
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
-import type { TemplateItem } from '@/features/questionnaires/types';
+import type {
+    DraftedChecklistItem,
+    TemplateItem,
+} from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+
+type NewItemDefaults = {
+    type: QuestionnaireItemType;
+    title: string;
+    instructions: string;
+};
+
+const blankNewItem: NewItemDefaults = {
+    type: 'file',
+    title: '',
+    instructions: '',
+};
 
 /**
  * Add, edit, reorder, and delete items on a firm-owned template.
@@ -67,6 +84,77 @@ export default function TemplateItemEditor({
         },
         [currentWorkspace, post, setData, templateId],
     );
+
+    const [draftDescription, setDraftDescription] = useState('');
+    const [suggestions, setSuggestions] = useState<DraftedChecklistItem[]>([]);
+    const [addingSuggestion, setAddingSuggestion] =
+        useState<DraftedChecklistItem | null>(null);
+    const [addingAll, setAddingAll] = useState(false);
+    const {
+        post: postDraft,
+        setData: setDraftData,
+        processing: drafting,
+    } = useHttp<{ description: string }, { items: DraftedChecklistItem[] }>({
+        description: '',
+    });
+
+    async function generateSuggestions() {
+        setDraftData('description', draftDescription);
+
+        const response = await postDraft(
+            QuestionnaireChecklistDraftController.store.url({
+                tenant: currentWorkspace,
+                template: templateId,
+            }),
+        );
+
+        setSuggestions(response.items);
+    }
+
+    function addSuggestion(item: DraftedChecklistItem): Promise<void> {
+        return new Promise((resolve) => {
+            router.post(
+                QuestionnaireTemplateItemController.store.url({
+                    tenant: currentWorkspace,
+                    template: templateId,
+                }),
+                {
+                    type: item.type,
+                    title: item.title,
+                    instructions: item.instructions,
+                },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setSuggestions((current) =>
+                            current.filter((s) => s !== item),
+                        );
+                    },
+                    onFinish: () => resolve(),
+                },
+            );
+        });
+    }
+
+    async function applySuggestion(item: DraftedChecklistItem) {
+        setAddingSuggestion(item);
+        await addSuggestion(item);
+        setAddingSuggestion(null);
+    }
+
+    async function applyAllSuggestions() {
+        setAddingAll(true);
+
+        for (const item of suggestions) {
+            await addSuggestion(item);
+        }
+
+        setAddingAll(false);
+    }
+
+    function dismissSuggestion(item: DraftedChecklistItem) {
+        setSuggestions((current) => current.filter((s) => s !== item));
+    }
 
     return (
         <div className="space-y-6">
@@ -170,6 +258,128 @@ export default function TemplateItemEditor({
             )}
 
             {canManage && (
+                <div className="space-y-3 rounded-md border border-dashed p-4">
+                    <Field>
+                        <FieldLabel htmlFor="checklist-draft-description">
+                            {t('Suggest items with AI')}
+                        </FieldLabel>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <Input
+                                id="checklist-draft-description"
+                                value={draftDescription}
+                                onChange={(event) =>
+                                    setDraftDescription(event.target.value)
+                                }
+                                placeholder={t(
+                                    'e.g. Onboarding a new freelance client for their first tax return',
+                                )}
+                                className="flex-1"
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                isDisabled={
+                                    drafting || draftDescription.trim() === ''
+                                }
+                                onClick={generateSuggestions}
+                            >
+                                {drafting ? (
+                                    <Spinner />
+                                ) : (
+                                    <Sparkles aria-hidden="true" />
+                                )}
+                                {drafting
+                                    ? t('Suggesting…')
+                                    : t('Suggest items')}
+                            </Button>
+                        </div>
+                    </Field>
+
+                    {suggestions.length > 0 && (
+                        <>
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm text-muted-foreground">
+                                    {t(':count suggestions', {
+                                        count: suggestions.length,
+                                    })}
+                                </p>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="secondary"
+                                    isDisabled={
+                                        addingSuggestion !== null || addingAll
+                                    }
+                                    onClick={applyAllSuggestions}
+                                >
+                                    {addingAll && <Spinner />}
+                                    {t('Add all')}
+                                </Button>
+                            </div>
+                            <ul className="space-y-2">
+                                {suggestions.map((item) => (
+                                    <li
+                                        key={`${item.type}:${item.title}:${item.instructions}`}
+                                        className="flex items-start justify-between gap-3 rounded-md border bg-muted/20 p-3"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline">
+                                                    {t(
+                                                        getQuestionnaireItemTypeDefinition(
+                                                            item.type,
+                                                        ).label,
+                                                    )}
+                                                </Badge>
+                                                <p className="truncate font-medium">
+                                                    {item.title}
+                                                </p>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                {item.instructions}
+                                            </p>
+                                        </div>
+                                        <div className="flex shrink-0 gap-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                isDisabled={
+                                                    addingSuggestion !== null ||
+                                                    addingAll
+                                                }
+                                                onClick={() =>
+                                                    applySuggestion(item)
+                                                }
+                                            >
+                                                {addingSuggestion === item && (
+                                                    <Spinner />
+                                                )}
+                                                {t('Use')}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                isDisabled={
+                                                    addingSuggestion !== null ||
+                                                    addingAll
+                                                }
+                                                onClick={() =>
+                                                    dismissSuggestion(item)
+                                                }
+                                            >
+                                                {t('Dismiss')}
+                                            </Button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+                </div>
+            )}
+
+            {canManage && (
                 <Form
                     {...QuestionnaireTemplateItemController.store.form({
                         tenant: currentWorkspace,
@@ -185,11 +395,7 @@ export default function TemplateItemEditor({
                             </Field>
                             <ItemFields
                                 idPrefix="new-item"
-                                defaults={{
-                                    type: 'file',
-                                    title: '',
-                                    instructions: '',
-                                }}
+                                defaults={blankNewItem}
                                 errors={errors}
                             />
                             <Field orientation="horizontal">

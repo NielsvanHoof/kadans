@@ -8,6 +8,7 @@ use App\Dossiers\Http\Controllers\DossierCompletionController;
 use App\Dossiers\Http\Controllers\DossierController;
 use App\Dossiers\Http\Controllers\DossierExportController;
 use App\Dossiers\Http\Controllers\DossierReminderController;
+use App\Dossiers\Http\Controllers\DossierReminderDraftController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,9 @@ Route::get('dossiers/{dossier}/edit', [DossierController::class, 'edit'])->name(
 Route::patch('dossiers/{dossier}', [DossierController::class, 'update'])->name('dossiers.update');
 Route::post('dossiers/{dossier}/reminders', [DossierReminderController::class, 'store'])
     ->name('dossiers.reminders.store');
+Route::post('dossiers/{dossier}/reminders/draft', [DossierReminderDraftController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('dossiers.reminders.draft');
 Route::delete('dossiers/{dossier}', [DossierController::class, 'destroy'])->name('dossiers.destroy');
 Route::patch('dossiers/{dossier}/restore', [DossierController::class, 'restore'])
     ->withTrashed()

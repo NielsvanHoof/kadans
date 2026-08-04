@@ -179,6 +179,60 @@ test('staff can queue an audited reminder with a fresh portal grant', function (
             ->exists())->toBeTrue();
 });
 
+test('a custom reminder message replaces the default notification body', function (): void {
+    Notification::fake();
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $client = Client::factory()->create([
+        'tenant_id' => $tenant->id,
+        'email' => 'jane@example.com',
+    ]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'status' => DossierStatus::AwaitingClient,
+    ]);
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'status' => DocumentRequestStatus::Pending,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.reminders.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'message' => 'Hi Jane, quick nudge about your paperwork.',
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, [
+            'dossier' => $dossier,
+        ]));
+
+    Notification::assertSentOnDemand(
+        ClientPortalReminderNotification::class,
+        function (
+            ClientPortalReminderNotification $notification,
+            array $channels,
+            AnonymousNotifiable $notifiable,
+        ): bool {
+            $mail = $notification->toMail($notifiable);
+
+            expect((string) json_encode($mail->introLines))
+                ->toContain('Hi Jane, quick nudge about your paperwork.')
+                ->not->toContain('is still waiting for information');
+
+            return true;
+        },
+    );
+
+    $queuedActivity = Activity::query()
+        ->where('event', AuditEvent::DossierReminderQueued->value)
+        ->sole();
+
+    expect($queuedActivity->getProperty('custom_message'))->toBeTrue();
+});
+
 test('scheduled reminders process only due dossiers with client work remaining', function (): void {
     Notification::fake();
 

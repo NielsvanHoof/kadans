@@ -23,6 +23,7 @@ trait LocalizesValidationAttributes
             'locale' => __('Language'),
             'title' => __('Title'),
             'description' => __('Description'),
+            'message' => __('Message'),
             'category' => __('Category'),
             'type' => __('Type'),
             'instructions' => __('Instructions'),

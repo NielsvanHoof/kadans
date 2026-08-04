@@ -26,6 +26,7 @@ final class ClientPortalReminderNotification extends Notification implements Sho
         public CarbonInterface $expiresAt,
         public string $firmName,
         public DossierReminderSource $source,
+        public ?string $customMessage = null,
     ) {
         $this->afterCommit();
     }
@@ -64,16 +65,21 @@ final class ClientPortalReminderNotification extends Notification implements Sho
                 'firm' => $this->firmName,
                 'title' => $this->dossier->title,
             ]))
-            ->greeting(__('Hello :name,', ['name' => $client->name]))
-            ->line(__(':firm is still waiting for information for “:title”.', [
+            ->greeting(__('Hello :name,', ['name' => $client->name]));
+
+        if ($this->customMessage !== null) {
+            $message->line($this->customMessage);
+        } else {
+            $message->line(__(':firm is still waiting for information for “:title”.', [
                 'firm' => $this->firmName,
                 'title' => $this->dossier->title,
             ]));
 
-        if ($this->dossier->due_date !== null) {
-            $message->line(__('Please complete the remaining items by :date.', [
-                'date' => $this->dossier->due_date->format('j F Y'),
-            ]));
+            if ($this->dossier->due_date !== null) {
+                $message->line(__('Please complete the remaining items by :date.', [
+                    'date' => $this->dossier->due_date->format('j F Y'),
+                ]));
+            }
         }
 
         return $message
