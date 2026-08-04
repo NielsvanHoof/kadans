@@ -11,13 +11,12 @@ use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\TranscribeService\TranscribeServiceClient;
-use Mockery;
 
 test('amazon transcribe driver starts a job and stores the job name', function (): void {
     config([
         'transcription.driver' => 'transcribe',
         'transcription.transcribe.bucket' => 'qompose-docs',
-        'transcription.transcribe.language_code' => 'nl-NL',
+        'transcription.transcribe.language_options' => ['nl-NL', 'en-US'],
         'transcription.transcribe.max_speaker_labels' => 4,
         'transcription.transcribe.output_prefix' => 'transcriptions',
     ]);
@@ -41,7 +40,8 @@ test('amazon transcribe driver starts a job and stores the job name', function (
     $clientMock = Mockery::mock(TranscribeServiceClient::class);
     $clientMock->shouldReceive('startTranscriptionJob')
         ->once()
-        ->with(Mockery::on(fn(array $args): bool => ($args['LanguageCode'] ?? null) === 'nl-NL'
+        ->with(Mockery::on(fn (array $args): bool => ($args['IdentifyLanguage'] ?? null) === true
+            && ($args['LanguageOptions'] ?? null) === ['nl-NL', 'en-US']
             && ($args['Media']['MediaFileUri'] ?? null) === 's3://qompose-docs/'.$recording->path
             && ($args['Settings']['ShowSpeakerLabels'] ?? null) === true
             && ! array_key_exists('NotificationChannel', $args)

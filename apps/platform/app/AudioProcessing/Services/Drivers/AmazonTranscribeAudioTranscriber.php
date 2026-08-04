@@ -13,7 +13,10 @@ use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use RuntimeException;
 
+use function array_filter;
+use function array_values;
 use function hash;
+use function is_array;
 use function is_string;
 
 /**
@@ -30,12 +33,14 @@ final readonly class AmazonTranscribeAudioTranscriber implements StartsAudioTran
     public function start(AudioRecording $recording): void
     {
         $bucket = $this->config->get('transcription.transcribe.bucket');
-        $languageCode = $this->config->get('transcription.transcribe.language_code', 'nl-NL');
+        $languageOptions = $this->config->get('transcription.transcribe.language_options', ['nl-NL', 'en-US']);
         $maxSpeakers = max(2, (int) $this->config->get('transcription.transcribe.max_speaker_labels', 10));
         $outputPrefix = mb_trim((string) $this->config->get('transcription.transcribe.output_prefix', 'transcriptions'), '/');
 
         throw_if(! is_string($bucket) || $bucket === '', InvalidArgumentException::class, 'Amazon Transcribe bucket is not configured.');
-        throw_if(! is_string($languageCode) || $languageCode === '', InvalidArgumentException::class, 'Amazon Transcribe language code is not configured.');
+        throw_if(! is_array($languageOptions), InvalidArgumentException::class, 'Amazon Transcribe language options are not configured.');
+        $languageOptions = array_values(array_filter($languageOptions, static fn (mixed $language): bool => is_string($language) && $language !== ''));
+        throw_if($languageOptions === [], InvalidArgumentException::class, 'Amazon Transcribe language options are empty.');
 
         // Job name must be unique per StartTranscriptionJob; include path hash for revisions.
         $jobName = "audio-{$recording->id}-".mb_substr(hash('sha256', $recording->path), 0, 16);
@@ -47,12 +52,13 @@ final readonly class AmazonTranscribeAudioTranscriber implements StartsAudioTran
             'bucket' => $bucket,
             's3_key' => $recording->path,
             'job_name' => $jobName,
-            'language_code' => $languageCode,
+            'language_options' => $languageOptions,
         ]);
 
         $this->transcribe->startTranscriptionJob([
             'TranscriptionJobName' => $jobName,
-            'LanguageCode' => $languageCode,
+            'IdentifyLanguage' => true,
+            'LanguageOptions' => $languageOptions,
             'Media' => [
                 'MediaFileUri' => "s3://{$bucket}/{$recording->path}",
             ],

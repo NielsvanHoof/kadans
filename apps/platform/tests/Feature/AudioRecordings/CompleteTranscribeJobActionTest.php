@@ -14,7 +14,6 @@ use Aws\Result;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use Mockery;
 
 test('complete action persists transcript segments and notifies the uploader', function (): void {
     Notification::fake();

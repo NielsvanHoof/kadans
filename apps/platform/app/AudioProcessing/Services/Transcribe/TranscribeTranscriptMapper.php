@@ -6,6 +6,7 @@ namespace App\AudioProcessing\Services\Transcribe;
 
 use App\AudioProcessing\Data\TranscriptionResult;
 
+use function in_array;
 use function is_array;
 use function is_numeric;
 use function is_string;
@@ -35,6 +36,12 @@ final class TranscribeTranscriptMapper
         }
 
         $segments = $this->mapSpeakerSegments($results);
+
+        // Speaker diarization is optional; fall back to timed word items so
+        // the UI can still highlight progress from real start/end times.
+        if ($segments === []) {
+            $segments = $this->mapTimedItemSegments($results);
+        }
 
         if ($segments === [] && $text !== '') {
             $segments = [[
@@ -105,6 +112,111 @@ final class TranscribeTranscriptMapper
         }
 
         return $segments;
+    }
+
+    /**
+     * Build sentence-sized segments from word timings when speaker labels are missing.
+     *
+     * @param  array<string, mixed>  $results
+     * @return list<array{text: string, speaker: string, start_seconds: float, end_seconds: float}>
+     */
+    private function mapTimedItemSegments(array $results): array
+    {
+        $items = $results['items'] ?? null;
+
+        if (! is_array($items) || $items === []) {
+            return [];
+        }
+
+        $segments = [];
+        $parts = [];
+        $sentenceStart = null;
+        $sentenceEnd = 0.0;
+
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $content = $this->itemContent($item);
+
+            if ($content === null) {
+                continue;
+            }
+
+            $type = $item['type'] ?? 'pronunciation';
+
+            if ($type === 'punctuation') {
+                $parts[] = $content;
+                if (! in_array($content, ['.', '!', '?'], true)) {
+                    continue;
+                }
+
+                $text = mb_trim(implode('', $parts));
+
+                if ($text !== '') {
+                    $segments[] = [
+                        'text' => $text,
+                        'speaker' => 'Speaker 1',
+                        'start_seconds' => $sentenceStart ?? 0.0,
+                        'end_seconds' => $sentenceEnd,
+                    ];
+                }
+
+                $parts = [];
+                $sentenceStart = null;
+
+                continue;
+            }
+
+            $start = $this->toFloat($item['start_time'] ?? 0);
+            $end = $this->toFloat($item['end_time'] ?? 0);
+
+            if ($sentenceStart === null) {
+                $sentenceStart = $start;
+            }
+
+            $sentenceEnd = max($sentenceEnd, $end);
+
+            if ($parts !== []) {
+                $parts[] = ' ';
+            }
+
+            $parts[] = $content;
+        }
+
+        $remaining = mb_trim(implode('', $parts));
+
+        if ($remaining !== '') {
+            $segments[] = [
+                'text' => $remaining,
+                'speaker' => 'Speaker 1',
+                'start_seconds' => $sentenceStart ?? 0.0,
+                'end_seconds' => $sentenceEnd,
+            ];
+        }
+
+        return $segments;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    private function itemContent(array $item): ?string
+    {
+        $alternatives = $item['alternatives'] ?? null;
+
+        if (! is_array($alternatives) || ! isset($alternatives[0]) || ! is_array($alternatives[0])) {
+            return null;
+        }
+
+        $content = $alternatives[0]['content'] ?? null;
+
+        if (! is_string($content) || $content === '') {
+            return null;
+        }
+
+        return $content;
     }
 
     /**

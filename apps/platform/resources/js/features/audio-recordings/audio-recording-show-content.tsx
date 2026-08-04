@@ -6,7 +6,7 @@ import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants, LinkButton } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import TranscriptView from '@/features/audio-recordings/transcript-view';
+import TranscriptView from '@/features/audio-recordings/transcript-view/transcript-view';
 import type { AudioRecordingShowProps } from '@/features/audio-recordings/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -29,6 +29,8 @@ export default function AudioRecordingShowContent({
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
     const [audioRecording, setAudioRecording] = useState(initialAudioRecording);
+    const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
+    const [isAudioLoading, setIsAudioLoading] = useState(false);
 
     // Sync when Inertia replaces the page prop (navigation / password confirm).
     useEffect(() => {
@@ -71,6 +73,10 @@ export default function AudioRecordingShowContent({
               audioRecording: audioRecording.id,
           })
         : null;
+
+    useEffect(() => {
+        setIsAudioLoading(downloadUrl !== null);
+    }, [downloadUrl]);
 
     return (
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 md:p-8">
@@ -121,10 +127,30 @@ export default function AudioRecordingShowContent({
             </p>
 
             {downloadUrl && (
-                // biome-ignore lint/a11y/useMediaCaption: no caption track for staff-uploaded audio
-                <audio controls className="w-full" src={downloadUrl}>
-                    {t('Your browser does not support audio playback.')}
-                </audio>
+                <div className="flex flex-col gap-2">
+                    {isAudioLoading && (
+                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Spinner className="size-4 shrink-0" />
+                            {t('Loading audio stream...')}
+                        </p>
+                    )}
+                    {/* biome-ignore lint/a11y/useMediaCaption: no caption track for staff-uploaded audio */}
+                    <audio
+                        controls
+                        className="w-full"
+                        src={downloadUrl}
+                        onLoadStart={() => setIsAudioLoading(true)}
+                        onCanPlay={() => setIsAudioLoading(false)}
+                        onError={() => setIsAudioLoading(false)}
+                        onTimeUpdate={(event) =>
+                            setCurrentTimeSeconds(
+                                event.currentTarget.currentTime,
+                            )
+                        }
+                    >
+                        {t('Your browser does not support audio playback.')}
+                    </audio>
+                </div>
             )}
 
             {audioRecording.transcription_status === 'failed' &&
@@ -150,6 +176,7 @@ export default function AudioRecordingShowContent({
                     <TranscriptView
                         transcript={audioRecording.transcript}
                         segments={audioRecording.segments}
+                        currentTimeSeconds={currentTimeSeconds}
                     />
                 </div>
             )}

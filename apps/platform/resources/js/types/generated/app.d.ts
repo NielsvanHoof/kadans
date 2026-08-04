@@ -7,7 +7,9 @@ declare namespace App {
     }
     namespace AudioProcessing {
         namespace Enums {
-            export type TranscriptionDriver = 'mock' | 'ai';
+            export type TranscriptionDriver = 'mock' | 'transcribe';
+            export type TranscriptionProcessingOutcome =
+                'immediate' | 'deferred';
         }
     }
     namespace Audit {

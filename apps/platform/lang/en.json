@@ -1154,5 +1154,6 @@
     "Remove recording": "Remove recording",
     "Remove :filename": "Remove :filename",
     "Upload a call recording or voice note to have it transcribed automatically.": "Upload a call recording or voice note to have it transcribed automatically.",
-    "Transcript ready for :file.": "Transcript ready for :file."
+    "Transcript ready for :file.": "Transcript ready for :file.",
+    "Loading audio stream...": "Loading audio stream..."
 }

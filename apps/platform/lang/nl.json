@@ -1154,5 +1154,6 @@
     "Remove recording": "Opname verwijderen",
     "Remove :filename": "Verwijder :filename",
     "Upload a call recording or voice note to have it transcribed automatically.": "Upload een gespreksopname of voicenote om deze automatisch te laten transcriberen.",
-    "Transcript ready for :file.": "Transcript gereed voor :file."
+    "Transcript ready for :file.": "Transcript gereed voor :file.",
+    "Loading audio stream...": "Audiostream laden..."
 }

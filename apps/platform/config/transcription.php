@@ -51,7 +51,11 @@ return [
         'bucket' => env('AWS_BUCKET'),
         'results_queue_url' => env('TRANSCRIBE_RESULTS_QUEUE_URL'),
         'output_prefix' => env('TRANSCRIBE_OUTPUT_PREFIX', 'transcriptions'),
-        'language_code' => env('TRANSCRIBE_LANGUAGE_CODE', 'nl-NL'),
+        // Restrict auto-language detection to expected locales.
+        'language_options' => array_values(array_filter(array_map(
+            mb_trim(...),
+            explode(',', (string) env('TRANSCRIBE_LANGUAGE_OPTIONS', 'nl-NL,en-US')),
+        ))),
         'max_speaker_labels' => (int) env('TRANSCRIBE_MAX_SPEAKERS', 10),
         'sqs_wait_time_seconds' => (int) env('TRANSCRIBE_SQS_WAIT_TIME', 20),
         'sqs_max_messages' => (int) env('TRANSCRIBE_SQS_MAX_MESSAGES', 5),
