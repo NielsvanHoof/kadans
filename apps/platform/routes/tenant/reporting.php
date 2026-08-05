@@ -25,4 +25,9 @@ Route::get('pipelines/{pipeline}/download', [PipelineController::class, 'downloa
         ),
     ])
     ->name('pipelines.download');
+// No RequirePassword here, unlike the download above: a retry streams no
+// document content, it only re-queues work the user can already see.
+Route::post('pipelines/{pipeline}/retry', [PipelineController::class, 'retry'])
+    ->middleware(['throttle:10,1'])
+    ->name('pipelines.retry');
 Route::delete('pipelines/{pipeline}', [PipelineController::class, 'destroy'])->name('pipelines.destroy');

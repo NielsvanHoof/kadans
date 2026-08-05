@@ -8,6 +8,7 @@ use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Actions\Pipelines\DeletePipelineAction;
+use App\DocumentProcessing\Actions\Pipelines\RetryPipelineAction;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\DownloadDossierExportAction;
 use App\Dossiers\Models\DossierExport;
@@ -53,6 +54,7 @@ final class PipelineController extends Controller
                 ...$fetchPipelineShow->handle($pipeline),
                 'can_delete' => $request->user()?->can('delete', $pipeline) ?? false,
                 'can_download' => $request->user()?->can('download', $pipeline) ?? false,
+                'can_retry' => $request->user()?->can('retry', $pipeline) ?? false,
             ],
         );
     }
@@ -84,6 +86,27 @@ final class PipelineController extends Controller
         );
 
         return $downloadDossierExport->handle($export);
+    }
+
+    /**
+     * Re-queue a failed or stuck run. The user stays on the detail page so they
+     * can watch the reopened run progress over the pipeline.updated broadcast.
+     */
+    public function retry(
+        Tenant $tenant,
+        Pipeline $pipeline,
+        RetryPipelineAction $retryPipeline,
+    ): RedirectResponse {
+        $this->authorize('retry', $pipeline);
+
+        $retryPipeline->handle($pipeline, $this->currentUser());
+
+        Toast::success(__('Pipeline retry queued.'));
+
+        return to_route(
+            'workspaces.pipelines.show',
+            $this->workspaceRouteParameters(['pipeline' => $pipeline->id]),
+        );
     }
 
     public function destroy(

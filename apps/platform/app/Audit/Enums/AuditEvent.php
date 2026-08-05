@@ -52,6 +52,7 @@ enum AuditEvent: string
     case DocumentRequestDeleted = 'document_request.deleted';
     case QuestionnaireTemplateDeleted = 'questionnaire_template.deleted';
     case QuestionnaireTemplateItemDeleted = 'questionnaire_template_item.deleted';
+    case PipelineRetried = 'pipeline.retried';
     case PipelineDeleted = 'pipeline.deleted';
     case UserDeleted = 'user.deleted';
     case SupportSessionStarted = 'support.session_started';
@@ -112,6 +113,7 @@ enum AuditEvent: string
             self::DocumentRequestDeleted => __('Document request deleted'),
             self::QuestionnaireTemplateDeleted => __('Questionnaire template deleted'),
             self::QuestionnaireTemplateItemDeleted => __('Questionnaire template item deleted'),
+            self::PipelineRetried => __('Pipeline retried'),
             self::PipelineDeleted => __('Pipeline deleted'),
             self::UserDeleted => __('User account deleted'),
             self::SupportSessionStarted => __('Support session started'),

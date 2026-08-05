@@ -78,4 +78,23 @@ final class PipelineFactory extends Factory
     {
         return $this->state(['type' => PipelineType::DossierExport]);
     }
+
+    /**
+     * A run that exhausted its queue attempts, with the diagnostic columns a
+     * real failure leaves behind.
+     */
+    public function failed(): static
+    {
+        return $this->state([
+            'status' => PipelineStatus::Failed,
+            'current_stage' => 'submit',
+            'provider' => 'textract',
+            'provider_job_id' => 'textract-job-1',
+            'error_code' => 'ocr_job_failed',
+            'error_message' => 'The processing job failed.',
+            'started_at' => now()->subMinutes(10),
+            'last_activity_at' => now()->subMinutes(5),
+            'failed_at' => now()->subMinutes(5),
+        ]);
+    }
 }

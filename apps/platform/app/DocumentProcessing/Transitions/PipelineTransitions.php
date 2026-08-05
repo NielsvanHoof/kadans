@@ -147,6 +147,50 @@ final class PipelineTransitions
         return $step;
     }
 
+    /**
+     * Restart a failed or stuck run on the same row, replaying it from its
+     * first step. Step `attempts` stays cumulative so the timeline keeps a
+     * record of how often each stage has been tried.
+     */
+    public function retry(Pipeline $pipeline): Pipeline
+    {
+        if (! in_array($pipeline->status, [PipelineStatus::Failed, PipelineStatus::Stuck], true)) {
+            throw ValidationException::withMessages([
+                'pipeline' => 'Only a failed or stuck pipeline can be retried.',
+            ]);
+        }
+
+        $pipeline->steps()->get()->each(function (PipelineStep $step): void {
+            $step->forceFill([
+                'status' => PipelineStepStatus::Pending,
+                'error_code' => null,
+                'error_message' => null,
+                'started_at' => null,
+                'last_activity_at' => null,
+                'completed_at' => null,
+                'failed_at' => null,
+            ])->saveQuietly();
+        });
+
+        $pipeline->forceFill([
+            'status' => PipelineStatus::Pending,
+            'current_stage' => null,
+            'attempt_number' => $pipeline->attempt_number + 1,
+            // A late provider result must not be able to claim this run by its
+            // previous job id — see ResolveProviderPipelineForSubjectAction.
+            'provider_job_id' => null,
+            'error_code' => null,
+            'error_message' => null,
+            'started_at' => null,
+            'last_activity_at' => now(),
+            'next_retry_at' => null,
+            'completed_at' => null,
+            'failed_at' => null,
+        ])->saveQuietly();
+
+        return $pipeline;
+    }
+
     public function heartbeat(Pipeline $pipeline, PipelineStep $step): PipelineStep
     {
         if (in_array($step->status, [PipelineStepStatus::Completed, PipelineStepStatus::Skipped], true)) {

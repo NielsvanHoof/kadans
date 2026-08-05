@@ -8,14 +8,17 @@ use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
+use App\DocumentProcessing\Enums\PipelineStatus;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
 use App\DocumentProcessing\Enums\PipelineType;
+use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Enums\Role;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -192,6 +195,129 @@ test('members without download permission cannot download an export payload', fu
         ->get(workspaceRoute('workspaces.pipelines.download', $tenant, ['pipeline' => $pipeline]))
         ->assertForbidden();
 });
+
+test('an authorized member can retry a failed run and it is re-queued', function (): void {
+    Queue::fake();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $pipeline = failedPipelineForController($tenant->id);
+
+    $this->actingAs($owner)
+        ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
+        ->assertRedirect(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]))
+        ->assertInertiaFlash('toast.type', 'success')
+        ->assertInertiaFlash('toast.message', __('Pipeline retry queued.'));
+
+    actingInWorkspace($tenant);
+
+    expect($pipeline->fresh())
+        ->status->toBe(PipelineStatus::Pending)
+        ->attempt_number->toBe(2);
+
+    Queue::assertPushed(
+        ProcessUploadedDocumentJob::class,
+        fn (ProcessUploadedDocumentJob $job): bool => $job->pipelineId === $pipeline->id,
+    );
+});
+
+test('a stuck run is retryable too', function (): void {
+    Queue::fake();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $pipeline = failedPipelineForController($tenant->id, PipelineStepOperation::Stuck);
+
+    $this->actingAs($owner)
+        ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
+        ->assertRedirect(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]));
+
+    Queue::assertPushed(ProcessUploadedDocumentJob::class);
+});
+
+test('members without the retry permission cannot retry a run', function (): void {
+    Queue::fake();
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reviewer = workspaceMember($tenant, Role::Reviewer);
+    $pipeline = failedPipelineForController($tenant->id);
+
+    $this->actingAs($reviewer)
+        ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
+        ->assertForbidden();
+
+    Queue::assertNotPushed(ProcessUploadedDocumentJob::class);
+});
+
+test('a run that is not failed or stuck cannot be retried', function (): void {
+    Queue::fake();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $document = pipelineDocument($tenant->id);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+
+    $this->actingAs($owner)
+        ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
+        ->assertForbidden();
+
+    Queue::assertNotPushed(ProcessUploadedDocumentJob::class);
+});
+
+test('a run belonging to another workspace cannot be retried', function (): void {
+    Queue::fake();
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('First Workspace');
+    ['tenant' => $tenantB] = provisionWorkspace('Second Workspace');
+    $pipelineB = failedPipelineForController($tenantB->id);
+
+    $this->actingAs($ownerA)
+        ->post(workspaceRoute('workspaces.pipelines.retry', $tenantA, ['pipeline' => $pipelineB->id]))
+        ->assertNotFound();
+
+    Queue::assertNotPushed(ProcessUploadedDocumentJob::class);
+});
+
+test('the show page reports whether the run may be retried', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $failed = failedPipelineForController($tenant->id);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $failed]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page->where('can_retry', true));
+
+    actingInWorkspace($tenant);
+    $running = resolve(CreatePipelineAction::class)->handle(pipelineDocument($tenant->id), PipelineType::OcrDocument);
+    resolve(PipelineStateAction::class)->handle($running, PipelineStepOperation::Start, 'submit');
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $running]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page->where('can_retry', false));
+
+    $reviewer = workspaceMember($tenant, Role::Reviewer);
+
+    $this->actingAs($reviewer)
+        ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $failed]))
+        ->assertForbidden();
+});
+
+/**
+ * Drive a real pipeline into a closed state through the state machine rather
+ * than force-writing columns, so the fixture matches what production leaves.
+ */
+function failedPipelineForController(
+    int $tenantId,
+    PipelineStepOperation $operation = PipelineStepOperation::Fail,
+): Pipeline {
+    $document = pipelineDocument($tenantId);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    $state = resolve(PipelineStateAction::class);
+    $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    $state->handle(
+        $pipeline,
+        $operation,
+        'submit',
+        errorCode: 'test_failure',
+        errorMessage: 'Test failure.',
+    );
+
+    return $pipeline->fresh();
+}
 
 function pipelineExport(int $tenantId, string $dossierTitle = 'Test dossier'): DossierExport
 {

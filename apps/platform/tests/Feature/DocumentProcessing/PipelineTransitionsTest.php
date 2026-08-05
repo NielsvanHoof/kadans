@@ -296,6 +296,117 @@ describe('stuck', function (): void {
     ]);
 });
 
+describe('retry', function (): void {
+    it('reopens a closed run and counts the attempt', function (PipelineStatus $status): void {
+        $pipeline = Pipeline::factory()->failed()->create([
+            'tenant_id' => $this->tenant->id,
+            'status' => $status,
+        ]);
+
+        $this->transitions->retry($pipeline);
+
+        expect($pipeline->fresh())
+            ->status->toBe(PipelineStatus::Pending)
+            ->attempt_number->toBe(2);
+    })->with([
+        'failed' => [PipelineStatus::Failed],
+        'stuck' => [PipelineStatus::Stuck],
+    ]);
+
+    it('clears the diagnostics left behind by the previous attempt', function (): void {
+        $pipeline = Pipeline::factory()->failed()->create([
+            'tenant_id' => $this->tenant->id,
+            'next_retry_at' => now()->addMinute(),
+            'completed_at' => now()->subMinute(),
+        ]);
+
+        $this->transitions->retry($pipeline);
+
+        expect($pipeline->fresh())
+            ->current_stage->toBeNull()
+            ->error_code->toBeNull()
+            ->error_message->toBeNull()
+            ->started_at->toBeNull()
+            ->next_retry_at->toBeNull()
+            ->completed_at->toBeNull()
+            ->failed_at->toBeNull();
+    });
+
+    it('drops the provider job id so a late provider result cannot claim the run', function (): void {
+        $pipeline = Pipeline::factory()->failed()->create(['tenant_id' => $this->tenant->id]);
+
+        expect($pipeline->provider_job_id)->not->toBeNull();
+
+        $this->transitions->retry($pipeline);
+
+        expect($pipeline->fresh()->provider_job_id)->toBeNull();
+    });
+
+    it('resets every step to pending regardless of how it ended', function (): void {
+        $pipeline = Pipeline::factory()->failed()->create(['tenant_id' => $this->tenant->id]);
+        stepFor($pipeline, PipelineStepStatus::Completed, 'submit', 0);
+        stepFor($pipeline, PipelineStepStatus::Failed, 'provider_processing', 1);
+        stepFor($pipeline, PipelineStepStatus::Skipped, 'process_results', 2);
+
+        $this->transitions->retry($pipeline);
+
+        $statuses = $pipeline->fresh()->steps->pluck('status')->all();
+
+        expect($statuses)
+            ->toHaveCount(3)
+            ->each->toBe(PipelineStepStatus::Pending);
+    });
+
+    it('clears step diagnostics but keeps attempts cumulative', function (): void {
+        $pipeline = Pipeline::factory()->failed()->create(['tenant_id' => $this->tenant->id]);
+        $step = stepFor($pipeline, PipelineStepStatus::Failed, 'submit', 0);
+        $step->forceFill([
+            'attempts' => 3,
+            'error_code' => 'E_BOOM',
+            'error_message' => 'boom',
+            'started_at' => now()->subMinutes(9),
+            'last_activity_at' => now()->subMinutes(5),
+            'completed_at' => now()->subMinutes(5),
+            'failed_at' => now()->subMinutes(5),
+        ])->saveQuietly();
+
+        $this->transitions->retry($pipeline);
+
+        expect($step->fresh())
+            ->status->toBe(PipelineStepStatus::Pending)
+            ->attempts->toBe(3)
+            ->error_code->toBeNull()
+            ->error_message->toBeNull()
+            ->started_at->toBeNull()
+            ->last_activity_at->toBeNull()
+            ->completed_at->toBeNull()
+            ->failed_at->toBeNull();
+    });
+
+    it('refuses to retry a run that is not failed or stuck', function (PipelineStatus $status): void {
+        $pipeline = pipelineWith($status);
+
+        expect(fn () => $this->transitions->retry($pipeline))
+            ->toThrow(ValidationException::class);
+    })->with([
+        'pending' => [PipelineStatus::Pending],
+        'running' => [PipelineStatus::Running],
+        'completed' => [PipelineStatus::Completed],
+        'cancelled' => [PipelineStatus::Cancelled],
+    ]);
+
+    it('leaves a rejected run completely untouched', function (): void {
+        $pipeline = pipelineWith(PipelineStatus::Completed);
+        $step = stepFor($pipeline, PipelineStepStatus::Completed);
+
+        expect(fn () => $this->transitions->retry($pipeline))
+            ->toThrow(ValidationException::class)
+            ->and($pipeline->fresh())->status->toBe(PipelineStatus::Completed)->attempt_number->toBe(1)
+            ->and($step->fresh()->status)
+            ->toBe(PipelineStepStatus::Completed);
+    });
+});
+
 describe('heartbeat', function (): void {
     it('touches last activity on the step and pipeline', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Running);

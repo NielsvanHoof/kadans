@@ -262,7 +262,7 @@ declare namespace App {
             export type OcrDriver = 'mock' | 'textract';
             export type OcrProcessingOutcome = 'immediate' | 'deferred';
             export type PipelinePermission =
-                'pipelines.view' | 'pipelines.delete';
+                'pipelines.view' | 'pipelines.retry' | 'pipelines.delete';
             export type PipelineStatus =
                 | 'pending'
                 | 'running'

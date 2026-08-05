@@ -39,6 +39,7 @@ export const TENANT_PERMISSIONS = [
     'templates.copy',
     'templates.apply',
     'pipelines.view',
+    'pipelines.retry',
     'pipelines.delete',
     'audit.view',
     'members.view',

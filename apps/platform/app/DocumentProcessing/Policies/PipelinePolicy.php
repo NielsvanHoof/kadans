@@ -6,11 +6,14 @@ namespace App\DocumentProcessing\Policies;
 
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\PipelinePermission;
+use App\DocumentProcessing\Enums\PipelineStatus;
 use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Models\DossierExport;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
+
+use function in_array;
 
 final class PipelinePolicy
 {
@@ -43,6 +46,17 @@ final class PipelinePolicy
         return $export instanceof DossierExport
             && $export->isDownloadable()
             && $this->userHasPermissionInTenant($user, $pipeline->tenant, DossierPermission::Export);
+    }
+
+    /**
+     * Only a failed or stuck run may be restarted. This deliberately does not
+     * use `isTerminal()` like `delete()` does: that also covers completed and
+     * cancelled runs, which stay closed.
+     */
+    public function retry(User $user, Pipeline $pipeline): bool
+    {
+        return in_array($pipeline->status, [PipelineStatus::Failed, PipelineStatus::Stuck], true)
+            && $this->userHasPermissionInTenant($user, $pipeline->tenant, PipelinePermission::Retry);
     }
 
     public function delete(User $user, Pipeline $pipeline): bool

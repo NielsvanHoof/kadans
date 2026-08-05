@@ -56,3 +56,5 @@ frankenphp-worker.php
 AGENTS.md
 CLAUDE.md
 boost.json
+
+backlog/*

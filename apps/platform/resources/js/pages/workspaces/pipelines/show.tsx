@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
 import PipelineStepTimeline from '@/features/pipelines/show/pipeline-step-timeline';
+import RetryPipelineButton from '@/features/pipelines/show/retry-pipeline-button';
 import {
     pipelineIsInFlight,
     pipelineStatusBadgeVariant,
@@ -34,20 +35,25 @@ export default function PipelineShow({
     pipeline,
     can_delete: canDelete = false,
     can_download: canDownload = false,
+    can_retry: canRetry = false,
 }: {
     pipeline: PipelineDetail;
     can_delete?: boolean;
     can_download?: boolean;
+    can_retry?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t, locale } = useTranslation();
 
     // Keep the show page live while submit / provider / results are still moving.
     const isInFlight = pipelineIsInFlight(pipeline.status);
-    useReloadOnPipelineUpdated(['pipeline', 'can_delete', 'can_download'], {
-        enabled: isInFlight,
-        match: (event) => event.pipeline_id === pipeline.id,
-    });
+    useReloadOnPipelineUpdated(
+        ['pipeline', 'can_delete', 'can_download', 'can_retry', 'flash'],
+        {
+            enabled: isInFlight,
+            match: (event) => event.pipeline_id === pipeline.id,
+        },
+    );
 
     setLayoutProps({
         breadcrumbs: [
@@ -113,6 +119,11 @@ export default function PipelineShow({
                                 {t('Download payload')}
                             </a>
                         ) : null}
+
+                        <RetryPipelineButton
+                            pipelineId={pipeline.id}
+                            canRetry={canRetry}
+                        />
 
                         {canDelete ? (
                             <ConfirmDestroyDialog
