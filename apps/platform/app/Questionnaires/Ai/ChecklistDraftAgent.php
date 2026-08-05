@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace App\Questionnaires\Ai;
 
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Shared\Concerns\AppliesGptOssReasoningEffort;
+use App\Shared\Concerns\ResolvesConfiguredModel;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 
-final readonly class ChecklistDraftAgent implements Agent, HasProviderOptions, HasStructuredOutput
+final readonly class ChecklistDraftAgent implements Agent, HasStructuredOutput
 {
-    use AppliesGptOssReasoningEffort;
     use Promptable;
+    use ResolvesConfiguredModel;
 
     public function __construct(
         private string $languageLabel,
@@ -60,5 +59,10 @@ final readonly class ChecklistDraftAgent implements Agent, HasProviderOptions, H
                 ->max(15)
                 ->required(),
         ];
+    }
+
+    protected function agentConfigKey(): string
+    {
+        return 'checklist_draft';
     }
 }

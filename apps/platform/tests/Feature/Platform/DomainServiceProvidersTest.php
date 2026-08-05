@@ -17,7 +17,7 @@ use App\DocumentProcessing\DocumentProcessingServiceProvider;
 use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Policies\PipelinePolicy;
 use App\DocumentProcessing\Services\Ocr\Drivers\MockOcrExtractor;
-use App\DocumentProcessing\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
+use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
 use App\Dossiers\DossiersServiceProvider;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -39,7 +39,6 @@ use App\Tenancy\Policies\TenantMembershipPolicy;
 use App\Tenancy\Policies\TenantRolePolicy;
 use App\Tenancy\Support\PermissionRegistry;
 use App\Tenancy\TenancyServiceProvider;
-use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Illuminate\Support\Facades\Gate;
@@ -58,8 +57,7 @@ it('registers domain service providers in the application', function (): void {
 it('binds OCR and AWS clients from DocumentProcessingServiceProvider', function (): void {
     expect(resolve(TextractClient::class))->toBeInstanceOf(TextractClient::class)
         ->and(resolve(SqsClient::class))->toBeInstanceOf(SqsClient::class)
-        ->and(resolve(BedrockRuntimeClient::class))->toBeInstanceOf(BedrockRuntimeClient::class)
-        ->and(resolve(DescribesDocumentOverview::class))->toBeInstanceOf(BedrockDocumentOverviewNormalizer::class)
+        ->and(resolve(DescribesDocumentOverview::class))->toBeInstanceOf(AgentDocumentOverviewNormalizer::class)
         ->and(resolve(StartsDocumentOcr::class))->toBeInstanceOf(MockOcrExtractor::class);
 });
 

@@ -18,7 +18,7 @@ use Aws\Textract\TextractClient;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
 
-test('complete textract extraction maps forms tables and asks bedrock for overview', function (): void {
+test('complete textract extraction maps forms tables and asks the overview agent', function (): void {
     Event::fake([MessageLogged::class]);
 
     $uploaded = createProcessingDocumentWithTextractJob('job-success-1');

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Ai;
 
-use App\Shared\Concerns\AppliesGptOssReasoningEffort;
+use App\Shared\Concerns\ResolvesConfiguredModel;
 use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Promptable;
 
-final readonly class DossierReminderDraftAgent implements Agent, HasProviderOptions
+final readonly class DossierReminderDraftAgent implements Agent
 {
-    use AppliesGptOssReasoningEffort;
     use Promptable;
+    use ResolvesConfiguredModel;
 
     public function __construct(
         private string $languageLabel,
@@ -35,5 +34,10 @@ final readonly class DossierReminderDraftAgent implements Agent, HasProviderOpti
             - Do not add a greeting or sign-off; those are added separately.
             - Do not use markdown formatting.
             PROMPT;
+    }
+
+    protected function agentConfigKey(): string
+    {
+        return 'dossier_reminder';
     }
 }

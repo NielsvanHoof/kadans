@@ -164,4 +164,34 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Agent Provider & Model Selection
+    |--------------------------------------------------------------------------
+    |
+    | Each agent resolves its provider and model from the slot below via the
+    | ResolvesConfiguredModel concern, so a quality-critical task (OCR
+    | document classification) can run on a stronger model than
+    | routine text generation. A null model falls back to the
+    | provider's models.text.default configured above.
+    |
+    */
+
+    'agents' => [
+        'document_overview' => [
+            'provider' => env('AI_DOCUMENT_OVERVIEW_PROVIDER', 'bedrock'),
+            'model' => env('AI_DOCUMENT_OVERVIEW_MODEL', 'eu.anthropic.claude-sonnet-4-20250514-v1:0'),
+        ],
+
+        'checklist_draft' => [
+            'provider' => env('AI_CHECKLIST_DRAFT_PROVIDER', 'bedrock'),
+            'model' => env('AI_CHECKLIST_DRAFT_MODEL'),
+        ],
+
+        'dossier_reminder' => [
+            'provider' => env('AI_DOSSIER_REMINDER_PROVIDER', 'bedrock'),
+            'model' => env('AI_DOSSIER_REMINDER_MODEL'),
+        ],
+    ],
+
 ];

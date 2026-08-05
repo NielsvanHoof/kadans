@@ -14,7 +14,7 @@ export interface PlatformConfig {
    * Bedrock resources the application may invoke.
    *
    * Override with `pulumi config set --path bedrockModelArns[0] <arn>` to narrow
-   * this to the single model in OCR_BEDROCK_MODEL_ID once it stops changing.
+   * this to the single model in AI_DOCUMENT_OVERVIEW_MODEL once it stops changing.
    */
   bedrockModelArns: string[];
 }
@@ -39,8 +39,8 @@ export function loadPlatformConfig(): PlatformConfig {
  * Deliberately still family-wide, for two reasons worth stating rather than
  * quietly "tightening" into an outage:
  *
- *  - The app uses different models per environment today (openai.gpt-oss in
- *    .env.prod.example, an Anthropic inference profile in .env.example).
+ *  - The app selects models per environment and per agent today (config/ai.php
+ *    → agents.*), so the set in use is not fixed at deploy time.
  *  - Foundation-model ARNs keep a wildcard **region** on purpose: a cross-region
  *    inference profile such as `eu.anthropic.*` routes to several regions and
  *    requires InvokeModel on the underlying model in each one. Pinning the region

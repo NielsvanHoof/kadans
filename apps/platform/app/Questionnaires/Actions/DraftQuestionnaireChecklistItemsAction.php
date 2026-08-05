@@ -19,7 +19,7 @@ final readonly class DraftQuestionnaireChecklistItemsAction
     {
         $agent = new ChecklistDraftAgent($languageLabel);
 
-        $response = $agent->prompt($description, provider: 'bedrock');
+        $response = $agent->prompt($description);
 
         $structured = $response instanceof StructuredAgentResponse ? $response->toArray() : [];
 

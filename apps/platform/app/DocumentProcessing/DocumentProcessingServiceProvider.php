@@ -11,8 +11,7 @@ use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Policies\PipelinePolicy;
 use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\DocumentProcessing\Services\Ocr\Drivers\OcrDriverFactory;
-use App\DocumentProcessing\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
-use Aws\BedrockRuntime\BedrockRuntimeClient;
+use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Illuminate\Support\Facades\Gate;
@@ -33,10 +32,7 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
 
         $this->app->singleton(SqsClient::class, fn (): SqsClient => new SqsClient($this->awsClientConfig('ocr.textract.region')));
 
-        // Bedrock may use a different region than Textract (inference profiles).
-        $this->app->singleton(BedrockRuntimeClient::class, fn (): BedrockRuntimeClient => new BedrockRuntimeClient($this->awsClientConfig('ocr.bedrock.region')));
-
-        $this->app->bind(DescribesDocumentOverview::class, BedrockDocumentOverviewNormalizer::class);
+        $this->app->bind(DescribesDocumentOverview::class, AgentDocumentOverviewNormalizer::class);
 
         $this->app->bind(
             StartsDocumentOcr::class,

@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use App\AudioProcessing\Services\Transcribe\TranscribeExtractionPipeline;
+use App\AudioProcessing\Services\Transcribe\TranscribeTranscriptMapper;
 use Aws\Result;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Filesystem\FilesystemManager;
 use Tests\TestCase;
 
 pest()
@@ -54,7 +55,7 @@ test('transcribe extraction pipeline downloads from configured s3 bucket and map
 
     $result = new TranscribeExtractionPipeline(
         $clientMock,
-        resolve(\App\AudioProcessing\Services\Transcribe\TranscribeTranscriptMapper::class),
+        resolve(TranscribeTranscriptMapper::class),
         $filesystemsMock,
         $configMock,
     )->run($jobId);

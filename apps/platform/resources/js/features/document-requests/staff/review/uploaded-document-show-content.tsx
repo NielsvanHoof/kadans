@@ -3,7 +3,7 @@ import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/
 import ErrorState from '@/components/primitives/error-state';
 import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants, LinkButton } from '@/components/ui/button';
+import { Button, buttonVariants, LinkButton } from '@/components/ui/button';
 import DocumentExtractionView from '@/features/document-requests/staff/review/document-extraction-view';
 import DocumentPreviewPanel, {
     documentPreviewKind,
@@ -72,10 +72,15 @@ export default function UploadedDocumentShowContent({
           })
         : null;
 
-    const showPreview =
+    const canShowPreview =
         previewUrl !== null &&
         documentPreviewKind(uploadedDocument.original_filename) !==
             'unsupported';
+
+    // Collapsing hands the full width back to the extraction panel, which is
+    // otherwise squeezed into half a column.
+    const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(false);
+    const showPreview = canShowPreview && !isPreviewCollapsed;
 
     return (
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
@@ -99,6 +104,20 @@ export default function UploadedDocumentShowContent({
                             ' ',
                         )}
                     </Badge>
+                    {canShowPreview && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                setIsPreviewCollapsed(!isPreviewCollapsed)
+                            }
+                        >
+                            {isPreviewCollapsed
+                                ? t('Show preview')
+                                : t('Hide preview')}
+                        </Button>
+                    )}
                     {dossier && (
                         <LinkButton
                             variant="outline"

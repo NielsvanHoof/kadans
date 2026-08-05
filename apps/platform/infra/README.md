@@ -65,7 +65,7 @@ TEXTRACT_SNS_TOPIC_ARN=<textractSnsTopicArn>
 TEXTRACT_SNS_ROLE_ARN=<textractPublishRoleArn>
 TEXTRACT_RESULTS_QUEUE_URL=<textractResultsQueueUrl>
 TRANSCRIBE_RESULTS_QUEUE_URL=<transcribeResultsQueueUrl>
-OCR_BEDROCK_MODEL_ID=eu.anthropic.claude-sonnet-4-20250514-v1:0
+AI_DOCUMENT_OVERVIEW_MODEL=eu.anthropic.claude-sonnet-4-20250514-v1:0
 ```
 
 ### Sync OCR / Transcribe IAM credentials

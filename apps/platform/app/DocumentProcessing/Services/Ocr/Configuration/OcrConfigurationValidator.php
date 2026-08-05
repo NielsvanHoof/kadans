@@ -116,18 +116,10 @@ final readonly class OcrConfigurationValidator
             $invalidKeys[] = 'ocr.textract.sqs_max_receive_count';
         }
 
-        if (! $this->isConfiguredString('ocr.bedrock.model_id')) {
-            $invalidKeys[] = 'ocr.bedrock.model_id';
-        }
-
-        if (! $this->isValidRegion($this->config->get('ocr.bedrock.region'))) {
-            $invalidKeys[] = 'ocr.bedrock.region';
-        }
-
-        $maxTokens = $this->config->get('ocr.bedrock.max_tokens');
-
-        if (! is_int($maxTokens) || $maxTokens < 256) {
-            $invalidKeys[] = 'ocr.bedrock.max_tokens';
+        // The overview agent's model lives in config/ai.php, but a blank value
+        // breaks this pipeline, so it is guarded here with the rest of OCR config.
+        if (! $this->isConfiguredString('ai.agents.document_overview.model')) {
+            $invalidKeys[] = 'ai.agents.document_overview.model';
         }
 
         $hasKey = $this->isConfiguredString('ocr.textract.key');

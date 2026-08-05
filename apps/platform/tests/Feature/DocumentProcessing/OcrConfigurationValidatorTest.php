@@ -17,9 +17,7 @@ beforeEach(function (): void {
         'ocr.textract.sqs_wait_time_seconds' => 20,
         'ocr.textract.sqs_max_messages' => 5,
         'ocr.textract.sqs_max_receive_count' => 5,
-        'ocr.bedrock.model_id' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
-        'ocr.bedrock.region' => 'eu-west-1',
-        'ocr.bedrock.max_tokens' => 4096,
+        'ai.agents.document_overview.model' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
     ]);
 });
 
@@ -88,9 +86,8 @@ test('production rejects invalid textract settings', function (string $key, mixe
     'max messages below range' => ['ocr.textract.sqs_max_messages', 0],
     'max messages above range' => ['ocr.textract.sqs_max_messages', 11],
     'max receive count below range' => ['ocr.textract.sqs_max_receive_count', 0],
-    'missing bedrock model' => ['ocr.bedrock.model_id', null],
-    'invalid bedrock region' => ['ocr.bedrock.region', 'invalid'],
-    'bedrock max tokens too low' => ['ocr.bedrock.max_tokens', 128],
+    'missing document overview model' => ['ai.agents.document_overview.model', null],
+    'blank document overview model' => ['ai.agents.document_overview.model', '  '],
 ]);
 
 test('production requires static AWS credentials to be configured as a pair', function (string $key, mixed $value): void {

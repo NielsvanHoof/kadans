@@ -14,7 +14,7 @@ final readonly class DraftDossierReminderMessageAction
     {
         $agent = new DossierReminderDraftAgent($languageLabel);
 
-        $response = $agent->prompt($this->buildPrompt($context), provider: 'bedrock');
+        $response = $agent->prompt($this->buildPrompt($context));
 
         return Str::of($response->text)->trim()->limit(1000)->toString();
     }
