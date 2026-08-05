@@ -2,33 +2,37 @@
 
 declare(strict_types=1);
 
-namespace App\AudioProcessing\Actions;
+namespace App\DocumentProcessing\Actions\Pipelines;
 
 use App\DocumentProcessing\Enums\PipelineStatus;
 use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Models\Pipeline;
-use App\Dossiers\Models\AudioRecording;
+use Illuminate\Database\Eloquent\Model;
 
 use function is_numeric;
 use function is_string;
 
 /**
- * Find the audio transcription pipeline during Amazon Transcribe completion/failure.
+ * Find a provider pipeline for a pipelineable subject during async completion/failure.
+ * Prefers a run already tagged with the provider job id, then the latest open run.
  */
-final class ResolveTranscriptionPipelineForRecordingAction
+final class ResolveProviderPipelineForSubjectAction
 {
-    public function handle(AudioRecording $recording, ?string $providerJobId = null): ?Pipeline
-    {
-        $recordingId = $recording->getKey();
+    public function handle(
+        Model $subject,
+        PipelineType $type,
+        ?string $providerJobId = null,
+    ): ?Pipeline {
+        $subjectId = $subject->getKey();
 
-        if (! is_numeric($recordingId)) {
+        if (! is_numeric($subjectId)) {
             return null;
         }
 
         $query = Pipeline::query()
-            ->where('pipelineable_type', $recording->getMorphClass())
-            ->where('pipelineable_id', (int) $recordingId)
-            ->where('type', PipelineType::AudioTranscription->value);
+            ->where('pipelineable_type', $subject->getMorphClass())
+            ->where('pipelineable_id', (int) $subjectId)
+            ->where('type', $type->value);
         $query->getQuery()->orderByDesc('id');
 
         if (is_string($providerJobId) && $providerJobId !== '') {

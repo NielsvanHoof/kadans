@@ -2,26 +2,29 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Actions\Ocr;
+namespace App\DocumentProcessing\Actions\Pipelines;
 
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
 use App\DocumentProcessing\Enums\PipelineStepStatus;
 use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Models\PipelineStep;
 
 /**
- * Catch up OCR pipeline steps so Textract completion can advance from provider_processing.
+ * Catch up provider pipeline steps so async completion can advance from the provider step.
  * Covers runs where submit never recorded progress.
  */
-final readonly class PrepareOcrPipelineForProviderResultAction
+final readonly class PrepareProviderPipelineForProviderResultAction
 {
     public function __construct(
         private PipelineStateAction $pipelineState,
     ) {}
 
-    public function handle(Pipeline $pipeline, ?string $provider, ?string $providerJobId): Pipeline
-    {
+    public function handle(
+        Pipeline $pipeline,
+        ?string $provider,
+        ?string $providerJobId,
+        string $providerStepKey,
+    ): Pipeline {
         if ($provider !== null || $providerJobId !== null) {
             $pipeline->forceFill([
                 'provider' => $provider ?? $pipeline->provider,
@@ -40,10 +43,10 @@ final readonly class PrepareOcrPipelineForProviderResultAction
             }
         }
 
-        $providerStep = $this->step($pipeline, 'provider_processing');
+        $providerStep = $this->step($pipeline, $providerStepKey);
 
         if ($providerStep instanceof PipelineStep && $providerStep->status === PipelineStepStatus::Pending) {
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'provider_processing');
+            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, $providerStepKey);
         }
 
         return $pipeline->refresh();

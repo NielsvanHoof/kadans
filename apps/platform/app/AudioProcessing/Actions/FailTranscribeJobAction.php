@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Actions;
 
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
+use App\DocumentProcessing\Actions\Pipelines\PrepareProviderPipelineForProviderResultAction;
+use App\DocumentProcessing\Actions\Pipelines\ResolveProviderPipelineForSubjectAction;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
+use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\AudioRecording;
@@ -24,8 +27,8 @@ final readonly class FailTranscribeJobAction
     public function __construct(
         private MarkTranscribeJobFailedAction $markTranscribeJobFailed,
         private PipelineStateAction $pipelineState,
-        private ResolveTranscriptionPipelineForRecordingAction $resolveTranscriptionPipeline,
-        private PrepareTranscriptionPipelineForProviderResultAction $prepareTranscriptionPipeline,
+        private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
+        private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
     ) {}
 
@@ -56,7 +59,11 @@ final readonly class FailTranscribeJobAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($recording, $exception, $jobId): bool {
-            $pipeline = $this->resolveTranscriptionPipeline->handle($recording, $jobId);
+            $pipeline = $this->resolveProviderPipeline->handle(
+                $recording,
+                PipelineType::AudioTranscription,
+                $jobId,
+            );
 
             if (in_array($recording->transcription_status, [
                 TranscriptionStatus::Completed,
@@ -79,10 +86,11 @@ final readonly class FailTranscribeJobAction
             );
 
             if ($pipeline instanceof Pipeline) {
-                $pipeline = $this->prepareTranscriptionPipeline->handle(
+                $pipeline = $this->prepareProviderPipeline->handle(
                     $pipeline,
                     (string) config('transcription.driver'),
                     $jobId,
+                    'transcribe',
                 );
                 $this->pipelineState->handle(
                     $pipeline,

@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\DocumentProcessing\Actions\Ocr;
 
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
+use App\DocumentProcessing\Actions\Pipelines\PrepareProviderPipelineForProviderResultAction;
+use App\DocumentProcessing\Actions\Pipelines\ResolveProviderPipelineForSubjectAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
+use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
@@ -24,8 +27,8 @@ final readonly class FailTextractExtractionAction
     public function __construct(
         private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
         private PipelineStateAction $pipelineState,
-        private ResolveOcrPipelineForDocumentAction $resolveOcrPipeline,
-        private PrepareOcrPipelineForProviderResultAction $prepareOcrPipeline,
+        private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
+        private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
     ) {}
 
@@ -56,7 +59,11 @@ final readonly class FailTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $exception, $jobId): bool {
-            $pipeline = $this->resolveOcrPipeline->handle($document, $jobId);
+            $pipeline = $this->resolveProviderPipeline->handle(
+                $document,
+                PipelineType::OcrDocument,
+                $jobId,
+            );
 
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
@@ -79,10 +86,11 @@ final readonly class FailTextractExtractionAction
             );
 
             if ($pipeline instanceof Pipeline) {
-                $pipeline = $this->prepareOcrPipeline->handle(
+                $pipeline = $this->prepareProviderPipeline->handle(
                     $pipeline,
                     (string) config('ocr.driver'),
                     $jobId,
+                    'provider_processing',
                 );
                 $this->pipelineState->handle(
                     $pipeline,

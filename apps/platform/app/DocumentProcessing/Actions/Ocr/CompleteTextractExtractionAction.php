@@ -7,8 +7,11 @@ namespace App\DocumentProcessing\Actions\Ocr;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
+use App\DocumentProcessing\Actions\Pipelines\PrepareProviderPipelineForProviderResultAction;
+use App\DocumentProcessing\Actions\Pipelines\ResolveProviderPipelineForSubjectAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
+use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Services\Ocr\TextractExtractionPipeline;
 use App\Dossiers\Models\UploadedDocument;
@@ -30,8 +33,8 @@ final readonly class CompleteTextractExtractionAction
         private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
         private LogAuditActivityAction $logAuditActivity,
         private PipelineStateAction $pipelineState,
-        private ResolveOcrPipelineForDocumentAction $resolveOcrPipeline,
-        private PrepareOcrPipelineForProviderResultAction $prepareOcrPipeline,
+        private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
+        private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
     ) {}
 
@@ -96,22 +99,27 @@ final readonly class CompleteTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
-            $pipeline = $this->resolveOcrPipeline->handle($document, $jobId);
+            $pipeline = $this->resolveProviderPipeline->handle(
+                $document,
+                PipelineType::OcrDocument,
+                $jobId,
+            );
 
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
                 DocumentProcessingStatus::Failed,
             ], true)) {
-                // Document may already be done while the pipeline stayed pending (nullable DI bug).
+                // Document may already be done while the pipeline stayed pending
                 if (
                     $document->processing_status === DocumentProcessingStatus::Completed
                     && $pipeline instanceof Pipeline
                     && ! $pipeline->status->isTerminal()
                 ) {
-                    $pipeline = $this->prepareOcrPipeline->handle(
+                    $pipeline = $this->prepareProviderPipeline->handle(
                         $pipeline,
                         (string) config('ocr.driver'),
                         $jobId,
+                        'provider_processing',
                     );
                     $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
                     $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
@@ -138,10 +146,11 @@ final readonly class CompleteTextractExtractionAction
             if ($status === 'SUCCEEDED') {
                 if ($pipeline instanceof Pipeline) {
                     // Catch up submit/provider_processing when the submit job never recorded them.
-                    $pipeline = $this->prepareOcrPipeline->handle(
+                    $pipeline = $this->prepareProviderPipeline->handle(
                         $pipeline,
                         (string) config('ocr.driver'),
                         $jobId,
+                        'provider_processing',
                     );
                     $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
                     $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
