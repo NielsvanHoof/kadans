@@ -65,6 +65,8 @@ use Override;
  * @method static Builder<static> whereUpdatedAt($value)
  * @method static Builder<static> whereUploadedAt($value)
  * @method static Builder<static> whereUploadedBy($value)
+ * @method static Builder<static>|AudioRecording whereSegments($value)
+ * @method static Builder<static>|AudioRecording whereTranscribeJobId($value)
  *
  * @mixin \Eloquent
  */
