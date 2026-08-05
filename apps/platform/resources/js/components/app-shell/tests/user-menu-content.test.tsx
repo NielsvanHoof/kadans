@@ -6,6 +6,7 @@ import {
     DropdownMenu,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
 
 const routerPost = vi.fn();
 const routerFlushAll = vi.fn();
@@ -16,26 +17,19 @@ vi.mock('@inertiajs/react', () => ({
         post: routerPost,
         flushAll: routerFlushAll,
     },
-    usePage: () => ({
-        props: {
+    usePage: () =>
+        mockInertiaPage({
             translations: {},
             locale: 'en',
             available_locales: [],
-        },
-    }),
+        }),
 }));
 
 vi.mock('@/hooks/use-mobile-navigation', () => ({
     useMobileNavigation: () => cleanup,
 }));
 
-vi.mock('@/hooks/use-translation', () => ({
-    useTranslation: () => ({
-        t: (key: string) => key,
-        locale: 'en',
-        availableLocales: [],
-    }),
-}));
+vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock('@/routes', () => ({
     logout: Object.assign(() => ({ url: '/logout', method: 'post' as const }), {

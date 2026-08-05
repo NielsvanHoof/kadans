@@ -3,14 +3,10 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
-use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
     // phpunit boots with BROADCAST_CONNECTION=null; channel auth needs a signing driver.
     // Switching the default broadcaster creates a fresh instance without routes/channels.php.
     config([
@@ -30,8 +26,7 @@ beforeEach(function (): void {
 });
 
 test('tenant member can authorize the workspace private channel', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner)
         ->postJson('/broadcasting/auth', [
@@ -43,9 +38,8 @@ test('tenant member can authorize the workspace private channel', function (): v
 });
 
 test('non-member cannot authorize the workspace private channel', function (): void {
-    $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($outsider)
         ->postJson('/broadcasting/auth', [
@@ -56,9 +50,8 @@ test('non-member cannot authorize the workspace private channel', function (): v
 });
 
 test('suspended member cannot authorize the workspace private channel', function (): void {
-    $owner = User::factory()->create();
     $member = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['tenant' => $tenant] = provisionWorkspace();
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

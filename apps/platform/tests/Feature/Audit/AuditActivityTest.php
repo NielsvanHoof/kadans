@@ -2,28 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Support\Header;
 use Spatie\Activitylog\Enums\ActivityEvent;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 test('viewing a dossier writes a tenant scoped audit entry', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -34,7 +23,6 @@ test('viewing a dossier writes a tenant scoped audit entry', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk();
 
@@ -49,11 +37,7 @@ test('viewing a dossier writes a tenant scoped audit entry', function (): void {
 });
 
 test('partially reloading a dossier does not write another view audit entry', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -63,7 +47,6 @@ test('partially reloading a dossier does not write another view audit entry', fu
     $url = workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get($url)
         ->assertOk();
 
@@ -82,11 +65,7 @@ test('partially reloading a dossier does not write another view audit entry', fu
 });
 
 test('creating a dossier logs attribute changes for the tenant', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner);
 
@@ -114,11 +93,7 @@ test('creating a dossier logs attribute changes for the tenant', function (): vo
 });
 
 test('audit log records cannot be updated', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -137,11 +112,7 @@ test('audit log records cannot be updated', function (): void {
 });
 
 test('audit properties discard secrets and truncate untrusted request metadata', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

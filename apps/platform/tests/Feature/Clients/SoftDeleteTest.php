@@ -38,7 +38,6 @@ test('owner can archive a dossier and it disappears from the index', function ()
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.dossiers.destroy', $context['tenant'], [
             'dossier' => $context['dossier'],
         ]))
@@ -61,7 +60,6 @@ test('archiving a dossier logs a tenant scoped audit entry', function (): void {
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.dossiers.destroy', $context['tenant'], [
             'dossier' => $context['dossier'],
         ]));
@@ -87,7 +85,6 @@ test('archiving a dossier revokes active portal grants', function (): void {
     $grant = $result['grant'];
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.dossiers.destroy', $context['tenant'], [
             'dossier' => $context['dossier'],
         ]));
@@ -106,7 +103,6 @@ test('owner can archive a client and cascade soft delete to dossiers', function 
     ]);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.clients.destroy', $context['tenant'], [
             'client' => $context['client'],
         ]))
@@ -127,7 +123,6 @@ test('archiving a client logs audit entries for the client and each dossier', fu
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.clients.destroy', $context['tenant'], [
             'client' => $context['client'],
         ]));
@@ -141,7 +136,6 @@ test('users outside the tenant cannot archive a dossier', function (): void {
     $outsider = User::factory()->create();
 
     $this->actingAs($outsider)
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.dossiers.destroy', $context['tenant'], [
             'dossier' => $context['dossier'],
         ]))
@@ -155,7 +149,6 @@ test('read-only members cannot archive clients', function (): void {
     $reader = workspaceMember($context['tenant'], Role::ReadOnly);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.clients.destroy', $context['tenant'], [
             'client' => $context['client'],
         ]))
@@ -168,7 +161,6 @@ test('archived dossier subjects remain resolvable in the activity log', function
     $context = softDeleteContext();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.dossiers.destroy', $context['tenant'], [
             'dossier' => $context['dossier'],
         ]));
@@ -178,7 +170,6 @@ test('archived dossier subjects remain resolvable in the activity log', function
         ->firstOrFail();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->get(workspaceRoute('workspaces.activity.index', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page

@@ -190,7 +190,7 @@ test('processing job ignores an upload revision that has been replaced', functio
 function createAudioRecordingForProcessingTest(array $overrides = []): AudioRecording
 {
     $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

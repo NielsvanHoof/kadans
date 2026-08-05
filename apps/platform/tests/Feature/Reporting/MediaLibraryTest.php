@@ -2,16 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use App\Tenancy\Enums\TenantMembershipStatus;
-use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -20,10 +16,7 @@ beforeEach(function (): void {
 });
 
 test('staff can view the media library with pending and uploaded documents', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -53,7 +46,6 @@ test('staff can view the media library with pending and uploaded documents', fun
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.media.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -81,10 +73,7 @@ test('staff can view the media library with pending and uploaded documents', fun
 });
 
 test('media library excludes document requests from archived dossiers', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $activeDossier = Dossier::factory()->create([
@@ -113,7 +102,6 @@ test('media library excludes document requests from archived dossiers', function
     $archivedDossier->delete();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.media.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -124,12 +112,9 @@ test('media library excludes document requests from archived dossiers', function
 });
 
 test('media library does not include document requests from another tenant', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    $tenantB->makeCurrent();
     $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
     $dossierB = Dossier::factory()->create([
         'tenant_id' => $tenantB->id,
@@ -141,7 +126,7 @@ test('media library does not include document requests from another tenant', fun
         'title' => 'Foreign request',
     ]);
 
-    $tenantA->makeCurrent();
+    actingInWorkspace($tenantA);
     $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
     $dossierA = Dossier::factory()->create([
         'tenant_id' => $tenantA->id,
@@ -154,7 +139,6 @@ test('media library does not include document requests from another tenant', fun
     ]);
 
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.media.index', $tenantA))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -165,21 +149,8 @@ test('media library does not include document requests from another tenant', fun
 });
 
 test('reviewer can browse the media library but cannot download', function (): void {
-    $owner = User::factory()->create();
-    $reviewer = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reviewer->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
-    $reviewer->unsetRelation('roles');
-    $reviewer->assignRole(Role::Reviewer->value);
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reviewer = workspaceMember($tenant, Role::Reviewer);
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -196,10 +167,7 @@ test('reviewer can browse the media library but cannot download', function (): v
     ]);
 
     $this->actingAs($reviewer)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.media.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page

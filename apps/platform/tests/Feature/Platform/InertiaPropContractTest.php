@@ -105,7 +105,7 @@ test('dossier page props keep their contract', function (): void {
         'answered_at' => now(),
     ]);
 
-    $this->actingAs($owner)->withSession(['active_tenant_id' => $tenant->id]);
+    $this->actingAs($owner);
 
     $shapes = [
         'dossiers/index' => pageShape(workspaceRoute('workspaces.dossiers.index', $tenant)),
@@ -116,7 +116,7 @@ test('dossier page props keep their contract', function (): void {
         'clients/index' => pageShape(workspaceRoute('workspaces.clients.index', $tenant)),
     ];
 
-    $fixture = __DIR__.'/../fixtures/inertia-prop-contract.json';
+    $fixture = __DIR__.'/../../fixtures/inertia-prop-contract.json';
 
     if (env('REBUILD_INERTIA_CONTRACT') === '1') {
         file_put_contents(

@@ -12,10 +12,10 @@ Copy this and tick as you go.
   - `Models/`, `Policies/`, `Enums/`
   - `Actions/`, `Queries/`, `Data/`
   - `Http/Controllers/`, `Http/Requests/`
-  - Optional: `Jobs/`, `Transitions/`, `Console/Commands/`, `Listeners/`
+  - Optional: `Jobs/`, `Transitions/`, `Services/`, `Ai/`, `Console/Commands/`, `Listeners/`
 - [ ] Namespace everything under `App\{Domain}\...`
-- [ ] Tenant-owned models use `BelongsToTenant` (and other existing Tenancy concerns as needed)
-- [ ] Keep controllers thin: authorize → Action/Query → Inertia response
+- [ ] Tenant-owned models extend `TenantOwnedModel` (or use `BelongsToTenant` and related Tenancy concerns)
+- [ ] Keep controllers thin: authorize → Action/Query → Inertia response (see [Backend](backend.md))
 
 ### Permissions
 
@@ -53,12 +53,13 @@ Copy this and tick as you go.
 - [ ] Feature UI + `types.ts`: `resources/js/features/{slug}/`
 - [ ] Do not put domain types in `@/types`
 - [ ] Shared `components/` must not import from `features/`
-- [ ] Follow [`.cursor/rules/frontend-architecture.mdc`](../.cursor/rules/frontend-architecture.mdc)
+- [ ] Follow [Frontend](frontend.md) and import rules in [`biome.json`](../biome.json)
 
 ### Tests
 
 - [ ] Feature tests under `tests/Feature/{Domain}/`
-- [ ] Use factories; cover authorization (allowed + forbidden roles) and happy paths
+- [ ] Use `provisionWorkspace()` and other helpers from `tests/Pest.php` (see [Testing](testing.md))
+- [ ] Cover authorization (allowed + forbidden roles) and happy paths
 - [ ] Run:
 
 ```bash

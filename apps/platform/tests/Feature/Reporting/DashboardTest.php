@@ -8,7 +8,6 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
@@ -41,10 +40,7 @@ test('users without firm memberships can view firm setup', function (): void {
 });
 
 test('users with one firm see its dashboard', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    $user = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    ['owner' => $user, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -57,11 +53,7 @@ test('users with one firm see its dashboard', function (): void {
 });
 
 test('firm dashboard shows tenant-scoped operational metrics', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $awaitingClient = Dossier::factory()->create([
@@ -109,10 +101,9 @@ test('firm dashboard shows tenant-scoped operational metrics', function (): void
         'status' => DocumentRequestStatus::Rejected,
     ]);
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -135,17 +126,12 @@ test('firm dashboard shows tenant-scoped operational metrics', function (): void
 });
 
 test('dashboard metrics cache is used across requests', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     Client::factory()->create(['tenant_id' => $tenant->id]);
 
     // Warm the cache with clients = 1.
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -170,16 +156,11 @@ test('dashboard metrics cache is used across requests', function (): void {
 });
 
 test('dashboard metrics cache is forgotten when a dossier is created', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -201,22 +182,15 @@ test('dashboard metrics cache is forgotten when a dossier is created', function 
 });
 
 test('dashboard metrics cache keys are tenant-scoped', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    $ownerA = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $ownerA);
-    $tenantA->makeCurrent();
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace();
     Client::factory()->create(['tenant_id' => $tenantA->id]);
 
-    $ownerB = User::factory()->create();
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Beta Tax', $ownerB);
-    $tenantB->makeCurrent();
+    ['owner' => $ownerB, 'tenant' => $tenantB] = provisionWorkspace('Beta Tax');
     Client::factory()->count(2)->create(['tenant_id' => $tenantB->id]);
 
     // Warm tenant A's cache first.
-    $tenantA->makeCurrent();
+    actingInWorkspace($tenantA);
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenantA))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -224,9 +198,8 @@ test('dashboard metrics cache keys are tenant-scoped', function (): void {
             ->where('metrics.clients', 1));
 
     // Tenant B must see its own counts, not A's cached value.
-    $tenantB->makeCurrent();
+    actingInWorkspace($tenantB);
     $this->actingAs($ownerB)
-        ->withSession(['active_tenant_id' => $tenantB->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenantB))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page

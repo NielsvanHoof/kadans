@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
@@ -21,8 +19,7 @@ test('guests are redirected to the login page', function (): void {
 });
 
 test('a user with an existing firm can view the create firm page', function (): void {
-    $user = User::factory()->create();
-    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    ['owner' => $user] = provisionWorkspace('Acme Accountants');
 
     $this->actingAs($user)
         ->get(route('firms.create'))
@@ -32,8 +29,7 @@ test('a user with an existing firm can view the create firm page', function (): 
 });
 
 test('a user can create an additional firm and is switched to it', function (): void {
-    $user = User::factory()->create();
-    $firstTenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    ['owner' => $user, 'tenant' => $firstTenant] = provisionWorkspace('Acme Accountants');
 
     $response = $this->actingAs($user)
         ->withSession(['active_tenant_id' => $firstTenant->id])
@@ -68,8 +64,7 @@ test('a user can create an additional firm and is switched to it', function (): 
 });
 
 test('creating a firm requires a name', function (): void {
-    $user = User::factory()->create();
-    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    ['owner' => $user] = provisionWorkspace('Acme Accountants');
 
     $this->actingAs($user)
         ->post(route('firms.store'), ['name' => ''])

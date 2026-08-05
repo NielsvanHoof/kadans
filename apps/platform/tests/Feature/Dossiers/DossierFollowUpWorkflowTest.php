@@ -17,15 +17,10 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 test('dossier follow up details can be assigned only to active workspace staff', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -38,7 +33,6 @@ test('dossier follow up details can be assigned only to active workspace staff',
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->patch(workspaceRoute('workspaces.dossiers.update', $tenant, ['dossier' => $dossier]), [
             'title' => $dossier->title,
             'reference' => $dossier->reference,
@@ -98,7 +92,6 @@ test('dashboard and dossier index expose operational workflow queues', function 
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -134,7 +127,6 @@ test('staff can queue an audited reminder with a fresh portal grant', function (
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.reminders.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -199,7 +191,6 @@ test('a custom reminder message replaces the default notification body', functio
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.reminders.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -329,7 +320,6 @@ test('read only members cannot send client reminders', function (): void {
     ]);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.reminders.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -347,7 +337,6 @@ test('archiving a dossier cancels its scheduled reminder', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->delete(workspaceRoute('workspaces.dossiers.destroy', $tenant, [
             'dossier' => $dossier,
         ]))

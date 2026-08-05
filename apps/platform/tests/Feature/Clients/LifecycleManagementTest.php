@@ -37,7 +37,6 @@ test('owner can view a client record with active and archived dossier context', 
     $archivedDossier->delete();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.show', $tenant, ['client' => $client]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -64,7 +63,6 @@ test('owner can open the client and dossier edit screens', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.edit', $tenant, ['client' => $client]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -90,7 +88,6 @@ test('owner can update client details and the change is audited', function (): v
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->patch(workspaceRoute('workspaces.clients.update', $tenant, ['client' => $client]), [
             'name' => 'Jane Updated',
             'email' => 'jane.updated@example.com',
@@ -124,7 +121,6 @@ test('client updates keep email addresses unique within the workspace', function
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->from(workspaceRoute('workspaces.clients.edit', $tenant, ['client' => $client]))
         ->patch(workspaceRoute('workspaces.clients.update', $tenant, ['client' => $client]), [
             'name' => $client->name,
@@ -146,7 +142,6 @@ test('owner can update an open dossier but not a completed dossier', function ()
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->patch(workspaceRoute('workspaces.dossiers.update', $tenant, ['dossier' => $dossier]), [
             'title' => 'Annual accounts 2026',
             'reference' => 'AA-2026',
@@ -182,7 +177,6 @@ test('archived indexes separate retained records from active work', function ():
     $client->delete();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.archived', $tenant).'?filter[q]=Archived')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -217,7 +211,6 @@ test('restoring a client leaves its dossiers archived and records the action', f
     $client->delete();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->patch(workspaceRoute('workspaces.clients.restore', $tenant, ['client' => $client]))
         ->assertRedirect(workspaceRoute('workspaces.clients.show', $tenant, ['client' => $client]));
 
@@ -241,7 +234,6 @@ test('dossier restore requires an active client and keeps portal access revoked'
         ->handle($dossier, $owner, 7)['grant'];
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->delete(workspaceRoute('workspaces.clients.destroy', $tenant, ['client' => $client]));
 
     $this->from(workspaceRoute('workspaces.dossiers.archived', $tenant))
@@ -273,7 +265,6 @@ test('read only members can inspect the dossier archive but cannot restore recor
     $dossier->delete();
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.archived', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -294,7 +285,6 @@ test('archived records cannot be restored through another workspace', function (
     ['owner' => $otherOwner, 'tenant' => $otherTenant] = provisionWorkspace();
 
     $this->actingAs($otherOwner)
-        ->withSession(['active_tenant_id' => $otherTenant->id])
         ->patch(workspaceRoute('workspaces.clients.restore', $otherTenant, ['client' => $client]))
         ->assertNotFound();
 

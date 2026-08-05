@@ -2,23 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 test('staff can open the transcript page for an audio recording', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -37,10 +28,7 @@ test('staff can open the transcript page for an audio recording', function (): v
     ]);
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.audio-recordings.show', $tenant, [
             'audioRecording' => $audioRecording,
         ]))
@@ -58,12 +46,10 @@ test('staff can open the transcript page for an audio recording', function (): v
 });
 
 test('staff from another tenant cannot open a transcript page', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Firm A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Firm B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Firm A');
+    ['owner' => $ownerB, 'tenant' => $tenantB] = provisionWorkspace('Firm B');
 
-    $tenantA->makeCurrent();
+    actingInWorkspace($tenantA);
     $client = Client::factory()->create(['tenant_id' => $tenantA->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenantA->id,
@@ -75,10 +61,7 @@ test('staff from another tenant cannot open a transcript page', function (): voi
     ]);
 
     $this->actingAs($ownerB)
-        ->withSession([
-            'active_tenant_id' => $tenantB->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.audio-recordings.show', $tenantA, [
             'audioRecording' => $audioRecording,
         ]))
@@ -86,9 +69,7 @@ test('staff from another tenant cannot open a transcript page', function (): voi
 });
 
 test('staff must recently confirm their password before opening a transcript page', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -101,7 +82,6 @@ test('staff must recently confirm their password before opening a transcript pag
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.audio-recordings.show', $tenant, [
             'audioRecording' => $audioRecording,
         ]))
@@ -109,9 +89,7 @@ test('staff must recently confirm their password before opening a transcript pag
 });
 
 test('guest cannot open the transcript page', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -129,9 +107,7 @@ test('guest cannot open the transcript page', function (): void {
 });
 
 test('transcript page island returns json for the audio recording', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -144,10 +120,7 @@ test('transcript page island returns json for the audio recording', function ():
     ]);
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->getJson(workspaceRoute('workspaces.audio-recordings.show', $tenant, [
             'audioRecording' => $audioRecording,
         ]))
@@ -158,9 +131,7 @@ test('transcript page island returns json for the audio recording', function ():
 });
 
 test('live audio recording island returns processing status without password confirm', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -174,7 +145,6 @@ test('live audio recording island returns processing status without password con
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->getJson(workspaceRoute('workspaces.audio-recordings.live', $tenant, [
             'audioRecording' => $audioRecording,
         ]))

@@ -17,13 +17,11 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
     Storage::fake('local');
     config(['exports.disk' => 'local']);
 });
@@ -34,7 +32,6 @@ test('a permitted staff member can queue a dossier export and it is audited', fu
     Queue::fake();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.exports.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -121,10 +118,7 @@ test('reviewers cannot request or download dossier exports', function (): void {
     Storage::disk('local')->put($export->path, 'archive');
 
     $this->actingAs($reviewer)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->post(workspaceRoute('workspaces.dossiers.exports.store', $tenant, ['dossier' => $dossier]))
         ->assertForbidden();
 
@@ -153,10 +147,7 @@ test('a signed export download is tenant-scoped, password-protected, and audited
     );
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get($url)
         ->assertOk()
         ->assertHeader('content-disposition', 'attachment; filename=confidential-dossier-export.zip')
@@ -169,7 +160,6 @@ test('a signed export download is tenant-scoped, password-protected, and audited
 
     $otherWorkspace = provisionWorkspace('Other Accountants');
     $this->actingAs($otherWorkspace['owner'])
-        ->withSession(['active_tenant_id' => $otherWorkspace['tenant']->id])
         ->get($url)
         ->assertNotFound();
 });
@@ -241,7 +231,6 @@ test('export status island returns json for a dossier export', function (): void
     resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->getJson(workspaceRoute('workspaces.dossiers.exports.show', $tenant, [
             'dossier' => $dossier,
             'export' => $export,

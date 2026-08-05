@@ -9,14 +9,8 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 /**
  * @return array{owner: User, tenant: mixed, dossier: Dossier}
@@ -25,11 +19,7 @@ function createDossierShowContext(
     DossierStatus $status,
     bool $withDocumentRequest = true,
 ): array {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -68,7 +58,6 @@ test('dossier overview page renders props for each workflow status', function (D
     ] = createDossierShowContext($status);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -99,7 +88,6 @@ test('dossier builder page renders lean builder props', function (): void {
     ] = createDossierShowContext(DossierStatus::Draft);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -133,7 +121,6 @@ test('builder mutations redirect back to the builder instead of the overview', f
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -171,7 +158,6 @@ test('builder island mutations return json for the touched document request', fu
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -228,7 +214,6 @@ test('builder island reorder still returns no content for json clients', functio
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.document-requests.reorder', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -251,7 +236,6 @@ test('dossier review page renders lean review props', function (): void {
     ] = createDossierShowContext(DossierStatus::InReview);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -278,7 +262,6 @@ test('empty dossier overview exposes zero form items for invite gating', functio
     ] = createDossierShowContext(DossierStatus::Draft, withDocumentRequest: false);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -298,7 +281,6 @@ test('read-only member can view overview builder and review with restricted acti
     $reader = workspaceMember($tenant, Role::ReadOnly);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -308,7 +290,6 @@ test('read-only member can view overview builder and review with restricted acti
             ->where('can_review', false));
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -319,7 +300,6 @@ test('read-only member can view overview builder and review with restricted acti
             ->missing('can_review'));
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -338,7 +318,6 @@ test('reviewer can view dossier surfaces with review permissions only', function
     $reviewer = workspaceMember($tenant, Role::Reviewer);
 
     $this->actingAs($reviewer)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -365,7 +344,6 @@ test('dossier overview with multiple audio recordings resolves can_delete withou
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page

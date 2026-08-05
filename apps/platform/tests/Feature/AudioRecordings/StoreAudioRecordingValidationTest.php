@@ -20,7 +20,6 @@ test('uploading an unsupported file type shows a friendly error', function (): v
     $dossier = createDossierForValidationTest($tenant);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.audio-recordings.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -38,7 +37,6 @@ test('uploading an oversized file shows a friendly error', function (): void {
     $dossier = createDossierForValidationTest($tenant);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.audio-recordings.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -62,7 +60,6 @@ test('an unexpected failure while storing the upload surfaces as a field error, 
 
     try {
         $this->actingAs($owner)
-            ->withSession(['active_tenant_id' => $tenant->id])
             ->post(workspaceRoute('workspaces.dossiers.audio-recordings.store', $tenant, [
                 'dossier' => $dossier,
             ]), [

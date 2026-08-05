@@ -9,26 +9,16 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Illuminate\Support\Str;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 /**
  * @return array{owner: User, tenant: mixed, dossier: Dossier}
  */
 function createSyncContext(): array
 {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -72,7 +62,6 @@ test('sync creates updates deletes and reorders document requests in one request
     $newFieldKey = (string) Str::ulid();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->putJson(workspaceRoute('workspaces.dossiers.document-requests.sync', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -123,7 +112,6 @@ test('sync can clear the canvas with an empty items array', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->putJson(workspaceRoute('workspaces.dossiers.document-requests.sync', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -146,7 +134,6 @@ test('sync rejects visibility rules that point at a later field in the payload',
     $laterKey = (string) Str::ulid();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->putJson(workspaceRoute('workspaces.dossiers.document-requests.sync', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -188,7 +175,6 @@ test('read only members cannot sync the builder draft', function (): void {
     $reader = workspaceMember($tenant, Role::ReadOnly);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->putJson(workspaceRoute('workspaces.dossiers.document-requests.sync', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -207,7 +193,6 @@ test('builder page embeds template items when templates exist', function (): voi
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page

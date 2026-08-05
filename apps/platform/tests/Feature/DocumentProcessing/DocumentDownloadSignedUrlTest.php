@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
@@ -10,22 +9,14 @@ use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\Storage;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 test('local disk downloads stream through the application', function (): void {
     Storage::fake('local');
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -49,10 +40,7 @@ test('local disk downloads stream through the application', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.uploaded-documents.download', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))
@@ -75,9 +63,7 @@ test('local disk downloads stream through the application', function (): void {
 test('local disk previews stream inline without recording a download audit', function (): void {
     Storage::fake('local');
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -102,10 +88,7 @@ test('local disk previews stream inline without recording a download audit', fun
     ]);
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.uploaded-documents.preview', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))
@@ -122,9 +105,7 @@ test('local disk previews stream inline without recording a download audit', fun
 test('inline previews of client-supplied bytes cannot execute script', function (): void {
     Storage::fake('local');
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -150,10 +131,7 @@ test('inline previews of client-supplied bytes cannot execute script', function 
     ]);
 
     $response = $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.uploaded-documents.preview', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))

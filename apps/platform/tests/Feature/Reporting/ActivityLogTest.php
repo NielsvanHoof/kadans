@@ -9,10 +9,7 @@ use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\CreateClientAccessGrantAction;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use App\Tenancy\Enums\TenantMembershipStatus;
-use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -21,11 +18,7 @@ beforeEach(function (): void {
 });
 
 test('owner can view the activity log with structured audit entries', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -45,7 +38,6 @@ test('owner can view the activity log with structured audit entries', function (
     );
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.activity.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -62,13 +54,9 @@ test('owner can view the activity log with structured audit entries', function (
 });
 
 test('activity log does not include entries from another tenant', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['owner' => $ownerB, 'tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    $tenantB->makeCurrent();
-    setPermissionsTeamId($tenantB->id);
     $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
     $dossierB = Dossier::factory()->create([
         'tenant_id' => $tenantB->id,
@@ -83,8 +71,7 @@ test('activity log does not include entries from another tenant', function (): v
         includeRequestContext: false,
     );
 
-    $tenantA->makeCurrent();
-    setPermissionsTeamId($tenantA->id);
+    actingInWorkspace($tenantA);
     $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
     $dossierA = Dossier::factory()->create([
         'tenant_id' => $tenantA->id,
@@ -100,7 +87,6 @@ test('activity log does not include entries from another tenant', function (): v
     );
 
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.activity.index', $tenantA))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -111,11 +97,7 @@ test('activity log does not include entries from another tenant', function (): v
 });
 
 test('activity log resolves client access grant subjects using the dossier title', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -136,7 +118,6 @@ test('activity log resolves client access grant subjects using the dossier title
     );
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.activity.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -149,27 +130,11 @@ test('activity log resolves client access grant subjects using the dossier title
 });
 
 test('reviewer cannot view the activity log', function (): void {
-    $owner = User::factory()->create();
-    $reviewer = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reviewer->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
-    $reviewer->unsetRelation('roles');
-    $reviewer->assignRole(Role::Reviewer->value);
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reviewer = workspaceMember($tenant, Role::Reviewer);
 
     $this->actingAs($reviewer)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.activity.index', $tenant))
         ->assertForbidden();
 });
@@ -182,10 +147,7 @@ test('guests cannot view the activity log', function (): void {
 test('activity log can be filtered by actor and date range', function (): void {
     $owner = User::factory()->create(['name' => 'Owner User']);
     $other = User::factory()->create(['name' => 'Other User']);
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['tenant' => $tenant] = provisionWorkspace(owner: $owner);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -213,7 +175,6 @@ test('activity log can be filtered by actor and date range', function (): void {
     );
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(
             workspaceRoute('workspaces.activity.index', $tenant)
             .'?'.http_build_query(['filter' => ['causer_id' => (string) $owner->id]]),
@@ -229,7 +190,6 @@ test('activity log can be filtered by actor and date range', function (): void {
     $to = now()->addDay()->toDateString();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(
             workspaceRoute('workspaces.activity.index', $tenant)
             .'?'.http_build_query([

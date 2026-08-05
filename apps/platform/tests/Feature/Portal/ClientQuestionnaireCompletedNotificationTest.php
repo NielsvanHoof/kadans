@@ -13,16 +13,10 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 /**
  * @return array{
@@ -35,10 +29,7 @@ beforeEach(function (): void {
  */
 function createQuestionnaireNotificationContext(): array
 {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,

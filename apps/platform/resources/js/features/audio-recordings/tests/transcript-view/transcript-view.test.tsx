@@ -28,4 +28,32 @@ describe('TranscriptView', () => {
         expect(activeSentence.className).toContain('bg-primary');
         expect(inactiveSentence.className).not.toContain('bg-primary');
     });
+
+    it('renders the raw transcript when segments are unavailable', () => {
+        render(
+            <TranscriptView
+                transcript={'Line one\nLine two'}
+                segments={null}
+                currentTimeSeconds={0}
+            />,
+        );
+
+        expect(screen.getByText(/Line one/)).toBeInTheDocument();
+        expect(screen.getByText(/Line two/)).toBeInTheDocument();
+        expect(
+            screen.queryByText('Live transcript progress'),
+        ).not.toBeInTheDocument();
+    });
+
+    it('renders nothing when there is no transcript and no segments', () => {
+        const { container } = render(
+            <TranscriptView
+                transcript={null}
+                segments={null}
+                currentTimeSeconds={0}
+            />,
+        );
+
+        expect(container).toBeEmptyDOMElement();
+    });
 });

@@ -57,7 +57,7 @@ Octane reloads its workers automatically when backend files change. After changi
 - **Questionnaire template** — reusable set of items (system-wide or firm-owned) that can be applied to a dossier.
 - **Client portal** — token-based magic-link page (no account) where clients answer requests.
 
-Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). Domain bindings and policies live in each domain’s `*ServiceProvider`; `AppServiceProvider` keeps cross-cutting defaults. See [architecture](docs/architecture.md).
+Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). Domain bindings and policies live in each domain’s `*ServiceProvider`; `AppServiceProvider` keeps cross-cutting defaults. See [architecture](docs/architecture.md) and [backend conventions](docs/backend.md).
 
 ## Frontend architecture
 
@@ -65,7 +65,7 @@ Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, �
 
 Run `vendor/bin/sail npm run dev` (or `npm run build`) so Wayfinder generates those folders — required for IDE type resolution and `npm run types:check`.
 
-Key conventions (enforced by Biome; full rules in [`.cursor/rules/frontend-architecture.mdc`](.cursor/rules/frontend-architecture.mdc)):
+Key conventions (enforced by Biome; see [Frontend](docs/frontend.md) and [`biome.json`](biome.json)):
 
 - Payload types are generated from the PHP `*Data` objects into `types/generated/` — `features/<domain>/types.ts` mostly aliases them.
 - Shared `components/` never import from `features/`, and are grouped by role (`ui/`, `primitives/`, `data/`, `forms/`, `feedback/`, `brand/`, `app-shell/`).
@@ -74,7 +74,7 @@ Key conventions (enforced by Biome; full rules in [`.cursor/rules/frontend-archi
 
 ## Testing
 
-Feature tests live in `tests/Feature` (Pest). Run the ones near your change:
+Feature tests live in `tests/Feature` (Pest). See [testing conventions](docs/testing.md). Run the ones near your change:
 
 ```bash
 vendor/bin/sail artisan test --compact tests/Feature/Dossiers/

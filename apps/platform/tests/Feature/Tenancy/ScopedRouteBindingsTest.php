@@ -2,14 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Illuminate\Http\UploadedFile;
@@ -22,10 +20,8 @@ beforeEach(function (): void {
 test('document request routes 404 when the request belongs to another dossier', function (): void {
     Storage::fake('local');
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace('Acme Accountants');
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -44,7 +40,6 @@ test('document request routes 404 when the request belongs to another dossier', 
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->put(workspaceRoute('workspaces.dossiers.document-requests.update', $tenant, [
             'dossier' => $dossier,
             'documentRequest' => $foreignRequest,
@@ -72,10 +67,8 @@ test('document request routes 404 when the request belongs to another dossier', 
 });
 
 test('template item routes 404 when the item belongs to another template', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace('Acme Accountants');
 
-    $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenant->id,
         'name' => 'Custom pack',
@@ -90,7 +83,6 @@ test('template item routes 404 when the item belongs to another template', funct
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->put(workspaceRoute('workspaces.templates.items.update', $tenant, [
             'template' => $template,
             'item' => $foreignItem,
@@ -111,8 +103,7 @@ test('template item routes 404 when the item belongs to another template', funct
 });
 
 test('scoped template item routes still resolve system templates as the parent', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace('Acme Accountants');
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -121,7 +112,6 @@ test('scoped template item routes still resolve system templates as the parent',
 
     // Binding must succeed for the system template; policy then forbids mutation.
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->put(workspaceRoute('workspaces.templates.items.update', $tenant, [
             'template' => $system,
             'item' => $item,

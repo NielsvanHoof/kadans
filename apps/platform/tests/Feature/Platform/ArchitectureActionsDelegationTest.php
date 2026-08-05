@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\RecordClientPortalAccessAction;
@@ -21,7 +20,6 @@ use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function (): void {
@@ -29,9 +27,7 @@ beforeEach(function (): void {
 });
 
 test('update client action persists profile attributes', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -50,9 +46,7 @@ test('update client action persists profile attributes', function (): void {
 });
 
 test('tenant has any dossiers query reports emptiness for a fresh workspace', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     expect(resolve(TenantHasAnyDossiersQuery::class)->handle())->toBeFalse();
 
@@ -66,9 +60,7 @@ test('tenant has any dossiers query reports emptiness for a fresh workspace', fu
 });
 
 test('record client portal access stamps grant dossier and audit', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -94,9 +86,7 @@ test('record client portal access stamps grant dossier and audit', function (): 
 });
 
 test('update document request action persists builder attributes', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -122,9 +112,7 @@ test('update document request action persists builder attributes', function (): 
 });
 
 test('questionnaire template update and delete actions persist and audit', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $template = QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenant->id,
@@ -150,9 +138,7 @@ test('questionnaire template update and delete actions persist and audit', funct
 });
 
 test('questionnaire template item update and delete actions persist and audit', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $template = QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenant->id,

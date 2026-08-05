@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\CreateClientAccessGrantAction;
@@ -15,26 +14,16 @@ use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use App\Tenancy\Enums\TenantMembershipStatus;
-use App\Tenancy\Models\TenantMembership;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 test('staff can view system and firm templates', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
-    $tenant->makeCurrent();
     QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenant->id,
         'name' => 'Firm KYC copy',
@@ -42,7 +31,6 @@ test('staff can view system and firm templates', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -56,15 +44,13 @@ test('staff can view system and firm templates', function (): void {
 });
 
 test('system templates cannot be updated or deleted', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
     $system = QuestionnaireTemplate::query()->whereNull('tenant_id')->firstOrFail();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->put(workspaceRoute('workspaces.templates.update', $tenant, ['template' => $system]), [
             'name' => 'Hacked',
             'description' => 'Nope',
@@ -79,8 +65,7 @@ test('system templates cannot be updated or deleted', function (): void {
 });
 
 test('owner can copy a system template into the firm', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -92,7 +77,6 @@ test('owner can copy a system template into the firm', function (): void {
     $itemCount = $system->items()->count();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.templates.copy', $tenant, ['template' => $system]))
         ->assertRedirect();
 
@@ -117,47 +101,23 @@ test('owner can copy a system template into the firm', function (): void {
 });
 
 test('read only staff cannot copy templates', function (): void {
-    $owner = User::factory()->create();
-    $reader = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reader->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    setPermissionsTeamId($tenant->id);
-    $reader->assignRole(Role::ReadOnly->value);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $reader = workspaceMember($tenant, Role::ReadOnly);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
     $system = QuestionnaireTemplate::query()->whereNull('tenant_id')->firstOrFail();
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.templates.copy', $tenant, ['template' => $system]))
         ->assertForbidden();
 });
 
 test('adviser can apply a template and edit dossier items', function (): void {
-    $owner = User::factory()->create();
-    $adviser = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $adviser->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    setPermissionsTeamId($tenant->id);
-    $adviser->assignRole(Role::Adviser->value);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $adviser = workspaceMember($tenant, Role::Adviser);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -179,7 +139,6 @@ test('adviser can apply a template and edit dossier items', function (): void {
     grantDossierBuilderLock($dossier, $adviser);
 
     $this->actingAs($adviser)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.apply-template', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -228,10 +187,8 @@ test('adviser can apply a template and edit dossier items', function (): void {
 });
 
 test('applying a template assigns unique field keys when template items have null keys', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -265,7 +222,6 @@ test('applying a template assigns unique field keys when template items have nul
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.apply-template', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -298,35 +254,29 @@ test('system questionnaire seeder assigns unique field keys without model events
 });
 
 test('firm templates are isolated between tenants', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['owner' => $ownerB, 'tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    $tenantA->makeCurrent();
+    actingInWorkspace($tenantA);
     $templateA = QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenantA->id,
         'name' => 'Secret A',
     ]);
 
     $this->actingAs($ownerB)
-        ->withSession(['active_tenant_id' => $tenantB->id])
         ->get(workspaceRoute('workspaces.templates.show', $tenantB, ['template' => $templateA]))
         ->assertNotFound();
 });
 
 test('owner can manage firm template items', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenant->id,
         'name' => 'Custom pack',
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.templates.items.store', $tenant, ['template' => $template]), [
             'type' => QuestionnaireItemType::Boolean->value,
             'title' => 'Confirm completeness',
@@ -341,10 +291,8 @@ test('owner can manage firm template items', function (): void {
 });
 
 test('owner can reorder every firm template item', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenant->id,
         'name' => 'Custom pack',
@@ -366,7 +314,6 @@ test('owner can reorder every firm template item', function (): void {
     $reorderRoute = workspaceRoute('workspaces.templates.items.reorder', $tenant, ['template' => $template]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post($reorderRoute, ['item_ids' => $reorderedIds])
         ->assertRedirect($showRoute);
 
@@ -395,10 +342,8 @@ test('owner can reorder every firm template item', function (): void {
 });
 
 test('guest can submit text, date, and boolean answers through the portal', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,

@@ -18,8 +18,6 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
@@ -34,19 +32,12 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Pest\Expectation;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 /**
  * @return array{owner: User, tenant: mixed, client: Client, dossier: Dossier, plainTextToken: string, grant: ClientAccessGrant}
  */
 function createPortalDossierWithGrant(): array
 {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -429,10 +420,8 @@ test('portal answer rolls back when its audit record fails', function (): void {
 test('staff can email a portal invite when creating an access grant', function (): void {
     Notification::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
         'email' => 'jane@example.com',
@@ -443,7 +432,6 @@ test('staff can email a portal invite when creating an access grant', function (
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -507,10 +495,8 @@ test('staff can email a portal invite when creating an access grant', function (
 test('staff can create a portal link without emailing', function (): void {
     Notification::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -518,7 +504,6 @@ test('staff can create a portal link without emailing', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -541,7 +526,6 @@ test('revoking portal access is audited atomically', function (): void {
     $context = createPortalDossierWithGrant();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.access-grants.destroy', $context['tenant'], [
             'grant' => $context['grant'],
         ]))
@@ -632,10 +616,8 @@ test('delivery audit failures are reported without retrying a delivered invitati
 test('grant issuance rolls back when its audit transaction fails', function (): void {
     Notification::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
         'email' => 'jane@example.com',
@@ -653,7 +635,6 @@ test('grant issuance rolls back when its audit transaction fails', function (): 
 
     try {
         $this->actingAs($owner)
-            ->withSession(['active_tenant_id' => $tenant->id])
             ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
                 'dossier' => $dossier,
             ]), [

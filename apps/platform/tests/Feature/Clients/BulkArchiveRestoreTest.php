@@ -25,7 +25,6 @@ test('owner can bulk archive clients and cascade their dossiers', function (): v
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.clients.bulk-archive', $tenant), [
             'ids' => [$clientA->id, $clientB->id],
         ])
@@ -55,7 +54,6 @@ test('owner can bulk restore clients without restoring dossiers', function (): v
     $clientB->delete();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.clients.bulk-restore', $tenant), [
             'ids' => [$clientA->id, $clientB->id],
         ])
@@ -80,7 +78,6 @@ test('owner can bulk archive dossiers', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.bulk-archive', $tenant), [
             'ids' => [$dossierA->id, $dossierB->id],
         ])
@@ -106,7 +103,6 @@ test('owner can bulk restore dossiers when clients are active', function (): voi
     $dossierB->delete();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.bulk-restore', $tenant), [
             'ids' => [$dossierA->id, $dossierB->id],
         ])
@@ -127,7 +123,6 @@ test('bulk restore dossiers fails when a selected dossier client is archived', f
     $client->delete();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->from(workspaceRoute('workspaces.dossiers.archived', $tenant))
         ->post(workspaceRoute('workspaces.dossiers.bulk-restore', $tenant), [
             'ids' => [$dossier->id],
@@ -143,7 +138,6 @@ test('bulk archive rejects ids from another workspace', function (): void {
     ['owner' => $otherOwner, 'tenant' => $otherTenant] = provisionWorkspace();
 
     $this->actingAs($otherOwner)
-        ->withSession(['active_tenant_id' => $otherTenant->id])
         ->post(workspaceRoute('workspaces.clients.bulk-archive', $otherTenant), [
             'ids' => [$foreignClient->id],
         ])
@@ -165,7 +159,6 @@ test('read only members cannot bulk archive or restore', function (): void {
     $client->delete();
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.clients.bulk-archive', $tenant), [
             'ids' => [$client->id],
         ])

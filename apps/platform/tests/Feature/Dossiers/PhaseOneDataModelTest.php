@@ -10,20 +10,11 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\TenantContext;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\QueryException;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 test('staff can create the phase one document collection graph', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -81,10 +72,7 @@ test('tenant owned records throw without a tenant when strict scope is enabled',
 
 test('phase one models are isolated per tenant', function (): void {
     $owner = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $owner);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $owner);
-
-    $tenantA->makeCurrent();
+    ['tenant' => $tenantA] = provisionWorkspace('Tenant A', $owner);
 
     $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
     $dossierA = Dossier::factory()->create([
@@ -92,7 +80,7 @@ test('phase one models are isolated per tenant', function (): void {
         'client_id' => $clientA->id,
     ]);
 
-    $tenantB->makeCurrent();
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B', $owner);
 
     expect(Client::query()->whereKey($clientA->id)->exists())->toBeFalse()
         ->and(Dossier::query()->whereKey($dossierA->id)->exists())->toBeFalse();
@@ -100,17 +88,14 @@ test('phase one models are isolated per tenant', function (): void {
 
 test('composite tenant foreign keys reject cross tenant dossier links', function (): void {
     $owner = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $owner);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $owner);
-
-    $tenantA->makeCurrent();
+    ['tenant' => $tenantA] = provisionWorkspace('Tenant A', $owner);
     $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
     $dossierA = Dossier::factory()->create([
         'tenant_id' => $tenantA->id,
         'client_id' => $clientA->id,
     ]);
 
-    $tenantB->makeCurrent();
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B', $owner);
     $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
     $dossierB = Dossier::factory()->create([
         'tenant_id' => $tenantB->id,
@@ -125,10 +110,7 @@ test('composite tenant foreign keys reject cross tenant dossier links', function
 });
 
 test('client access grant validity reflects expiry and revocation', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

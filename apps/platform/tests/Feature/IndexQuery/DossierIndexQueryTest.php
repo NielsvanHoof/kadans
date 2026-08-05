@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Dossiers\Queries\FetchDossierIndexQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -14,11 +13,21 @@ beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('dossiers index filters by status and search', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+test('dossier index toolbar metadata includes workflow filters and due date sorts', function (): void {
+    $toolbar = resolve(FetchDossierIndexQuery::class)->toolbarMetadata();
 
-    $tenant->makeCurrent();
+    expect($toolbar['defaults']['sort'])->toBe('-updated_at')
+        ->and(collect($toolbar['filters'])->pluck('key')->all())->toBe(['q', 'status', 'client', 'queue'])
+        ->and(collect($toolbar['filters'])->firstWhere('key', 'status')['options'] ?? [])
+        ->toHaveCount(4)
+        ->and(collect($toolbar['filters'])->firstWhere('key', 'queue')['options'] ?? [])
+        ->toHaveCount(3)
+        ->and(collect($toolbar['sorts'])->pluck('key')->all())
+        ->toContain('-updated_at', 'title', 'status', 'due_date');
+});
+
+test('dossiers index filters by status and search', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -41,7 +50,6 @@ test('dossiers index filters by status and search', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[status]=draft')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -52,7 +60,6 @@ test('dossiers index filters by status and search', function (): void {
             ->has('indexQuery'));
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[q]=Payroll')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -61,10 +68,7 @@ test('dossiers index filters by status and search', function (): void {
 });
 
 test('dossiers index sorts by title ascending', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
     Dossier::factory()->create([
@@ -79,7 +83,6 @@ test('dossiers index sorts by title ascending', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?sort=title')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -88,11 +91,9 @@ test('dossiers index sorts by title ascending', function (): void {
 });
 
 test('dossiers index rejects invalid sort', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?sort=password')
         ->assertStatus(400);
 });

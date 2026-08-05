@@ -6,14 +6,11 @@ use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Http\Middleware\EnforceStrictTenantScope;
 use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
-use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -25,11 +22,7 @@ beforeEach(function (): void {
 });
 
 test('tenant member can view dossiers in their workspace', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace('Acme Accountants');
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -40,7 +33,6 @@ test('tenant member can view dossiers in their workspace', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -49,12 +41,8 @@ test('tenant member can view dossiers in their workspace', function (): void {
 });
 
 test('users cannot access workspaces they do not belong to', function (): void {
-    $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['tenant' => $tenant] = provisionWorkspace('Acme Accountants');
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -63,20 +51,14 @@ test('users cannot access workspaces they do not belong to', function (): void {
     ]);
 
     $this->actingAs($outsider)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertNotFound();
 });
 
 test('users cannot read dossiers from another tenant via id guessing', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
-
-    $tenantB->makeCurrent();
-    setPermissionsTeamId($tenantB->id);
     $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
     $foreignDossier = Dossier::factory()->create([
         'tenant_id' => $tenantB->id,
@@ -85,7 +67,6 @@ test('users cannot read dossiers from another tenant via id guessing', function 
     ]);
 
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.dossiers.show', $tenantA, ['dossier' => $foreignDossier]))
         ->assertNotFound();
 });
@@ -93,19 +74,10 @@ test('users cannot read dossiers from another tenant via id guessing', function 
 test('the workspace in the url takes precedence over the session tenant', function (): void {
     $user = User::factory()->create();
 
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
+    ['tenant' => $tenantA] = provisionWorkspace('Tenant A', $user);
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    TenantMembership::query()->create([
-        'tenant_id' => $tenantB->id,
-        'user_id' => $user->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    setPermissionsTeamId($tenantB->id);
-    $user->unsetRelation('roles');
-    $user->assignRole(Role::ReadOnly->value);
+    $user = workspaceMember($tenantB, Role::ReadOnly, $user);
 
     $this->actingAs($user)
         ->withSession(['active_tenant_id' => $tenantA->id])
@@ -119,22 +91,17 @@ test('the workspace in the url takes precedence over the session tenant', functi
 test('members can switch their active firm', function (): void {
     $user = User::factory()->create();
 
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
+    ['tenant' => $tenantA] = provisionWorkspace('Tenant A', $user);
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    TenantMembership::query()->create([
-        'tenant_id' => $tenantB->id,
-        'user_id' => $user->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
+    $user = workspaceMember($tenantB, Role::ReadOnly, $user);
 
-    setPermissionsTeamId($tenantB->id);
-    $user->unsetRelation('roles');
-    $user->assignRole(Role::ReadOnly->value);
+    // firms.activate resolves the "current" tenant from the session
+    // (InitializeTenantFromSession), so make tenant A active first to prove
+    // the switch overrides it, rather than relying on membership fallback.
+    actingInWorkspace($tenantA);
 
     $this->actingAs($user)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->post(route('firms.activate', $tenantB))
         ->assertRedirect(workspaceRoute('workspaces.dashboard', $tenantB));
 
@@ -145,31 +112,17 @@ test('members can switch their active firm', function (): void {
 });
 
 test('users cannot activate a firm they do not belong to', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Tenant A', $owner);
-    $foreignTenant = resolve(ProvisionTenantAction::class)->handle('Tenant B', User::factory()->create());
+    ['owner' => $owner] = provisionWorkspace('Tenant A');
+    ['tenant' => $foreignTenant] = provisionWorkspace('Tenant B');
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(route('firms.activate', $foreignTenant))
         ->assertForbidden();
 });
 
 test('read only members cannot create dossiers', function (): void {
-    $owner = User::factory()->create();
-    $reader = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reader->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    setPermissionsTeamId($tenant->id);
-    $reader->unsetRelation('roles');
-    $reader->assignRole(Role::ReadOnly->value);
+    ['tenant' => $tenant] = provisionWorkspace('Acme Accountants');
+    $reader = workspaceMember($tenant, Role::ReadOnly);
 
     expect($reader->can(DossierPermission::Create->value))->toBeFalse();
 });
@@ -189,14 +142,12 @@ test('tenant routes are registered with the expected middleware', function (): v
 });
 
 test('workspace pages load tenant memberships only once', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace('Acme Accountants');
 
     DB::flushQueryLog();
     DB::enableQueryLog();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant))
         ->assertOk();
 

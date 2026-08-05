@@ -2,18 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Questionnaires\Ai\ChecklistDraftAgent;
 use App\Questionnaires\Models\QuestionnaireTemplate;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Laravel\Ai\Prompts\AgentPrompt;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 test('owner can generate checklist suggestions for a firm template', function (): void {
     ChecklistDraftAgent::fake([[
@@ -31,7 +24,6 @@ test('owner can generate checklist suggestions for a firm template', function ()
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $template]), [
             'description' => 'Onboarding a new freelance client for their first tax return',
         ])
@@ -60,7 +52,6 @@ test('an invalid type hint is normalized to file', function (): void {
     $template = QuestionnaireTemplate::factory()->create(['tenant_id' => $tenant->id]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $template]), [
             'description' => 'Anything',
         ])
@@ -73,13 +64,11 @@ test('an invalid type hint is normalized to file', function (): void {
 test('system templates cannot be used to generate suggestions', function (): void {
     ChecklistDraftAgent::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
     $system = QuestionnaireTemplate::query()->whereNull('tenant_id')->firstOrFail();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $system]), [
             'description' => 'Anything',
         ])
@@ -91,19 +80,16 @@ test('system templates cannot be used to generate suggestions', function (): voi
 test('firm templates are isolated between tenants for suggestions', function (): void {
     ChecklistDraftAgent::fake();
 
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['owner' => $ownerB, 'tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    $tenantA->makeCurrent();
+    actingInWorkspace($tenantA);
     $templateA = QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenantA->id,
         'name' => 'Secret A',
     ]);
 
     $this->actingAs($ownerB)
-        ->withSession(['active_tenant_id' => $tenantB->id])
         ->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenantB, ['template' => $templateA]), [
             'description' => 'Anything',
         ])
@@ -120,7 +106,6 @@ test('read only members cannot generate checklist suggestions', function (): voi
     $template = QuestionnaireTemplate::factory()->create(['tenant_id' => $tenant->id]);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $template]), [
             'description' => 'Anything',
         ])
@@ -137,7 +122,7 @@ test('checklist draft endpoint is rate limited', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $template = QuestionnaireTemplate::factory()->create(['tenant_id' => $tenant->id]);
 
-    $this->actingAs($owner)->withSession(['active_tenant_id' => $tenant->id]);
+    $this->actingAs($owner);
 
     for ($i = 0; $i < 10; $i++) {
         $this->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $template]), [

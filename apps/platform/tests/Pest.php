@@ -35,13 +35,10 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
-// Policy and Query unit tests need the Laravel app + database.
-pest()->extend(TestCase::class)
-    ->use(RefreshDatabase::class)
-    ->in('Unit/Policies', 'Unit/Queries', 'Unit/Transitions');
-
 // Model unit tests need the Laravel app for Eloquent, but not the database.
-// The rest of Unit/ stays pure PHP (file inspection, mappers, config checks).
+// The rest of Unit/ stays pure PHP (file inspection, mappers, config checks) — Unit tests
+// must never touch the database, cache, or HTTP; Policy/Query/Transition coverage lives
+// in Feature/{Domain} instead, since those need RefreshDatabase.
 pest()->extend(TestCase::class)
     ->in('Unit/Models');
 

@@ -7,28 +7,18 @@ use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
 use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use App\Tenancy\Enums\TenantMembershipStatus;
-use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Enums\Role;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationItemData;
 use App\WorkspaceNotifications\Queries\FetchWorkspaceNotificationsForUserQuery;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 /**
  * @return array{owner: User, outsider: User, tenant: mixed, dossier: Dossier}
  */
 function createWorkspaceNotificationContext(): array
 {
-    $owner = User::factory()->create();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $outsider = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -83,7 +73,6 @@ test('shared notifications prop returns tenant-scoped inbox items', function ():
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->get(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -123,7 +112,6 @@ test('staff can mark an audio transcription notification as read', function (): 
     $notification = $context['owner']->notifications()->sole();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->from(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->post(workspaceRoute('workspaces.notifications.read', $context['tenant'], [
             'notification' => $notification->id,
@@ -141,7 +129,6 @@ test('staff can mark all workspace notifications as read across both types', fun
     expect($context['owner']->unreadNotifications()->count())->toBe(2);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->from(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->post(workspaceRoute('workspaces.notifications.read-all', $context['tenant']))
         ->assertRedirect(workspaceRoute('workspaces.dashboard', $context['tenant']));
@@ -155,7 +142,6 @@ test('shared notifications message uses the viewing users locale', function (): 
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->get(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -172,7 +158,6 @@ test('staff can mark one workspace notification as read', function (): void {
     $notification = $context['owner']->notifications()->sole();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->from(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->post(workspaceRoute('workspaces.notifications.read', $context['tenant'], [
             'notification' => $notification->id,
@@ -190,7 +175,6 @@ test('staff can mark all workspace notifications as read', function (): void {
     expect($context['owner']->unreadNotifications()->count())->toBe(2);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->from(workspaceRoute('workspaces.dashboard', $context['tenant']))
         ->post(workspaceRoute('workspaces.notifications.read-all', $context['tenant']))
         ->assertRedirect(workspaceRoute('workspaces.dashboard', $context['tenant']));
@@ -204,15 +188,9 @@ test('staff cannot mark another users notification as read', function (): void {
 
     $notification = $context['owner']->notifications()->sole();
 
-    TenantMembership::query()->create([
-        'tenant_id' => $context['tenant']->id,
-        'user_id' => $context['outsider']->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
+    workspaceMember($context['tenant'], Role::ReadOnly, $context['outsider']);
 
     $this->actingAs($context['outsider'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post(workspaceRoute('workspaces.notifications.read', $context['tenant'], [
             'notification' => $notification->id,
         ]))

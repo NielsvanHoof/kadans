@@ -2,25 +2,16 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 test('staff can open the OCR extraction page for an uploaded document', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -63,10 +54,7 @@ test('staff can open the OCR extraction page for an uploaded document', function
     ]);
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.uploaded-documents.show', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))
@@ -87,12 +75,9 @@ test('staff can open the OCR extraction page for an uploaded document', function
 });
 
 test('staff from another tenant cannot open an extraction page', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Firm A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Firm B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Firm A');
+    ['owner' => $ownerB] = provisionWorkspace('Firm B');
 
-    $tenantA->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenantA->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenantA->id,
@@ -108,10 +93,7 @@ test('staff from another tenant cannot open an extraction page', function (): vo
     ]);
 
     $this->actingAs($ownerB)
-        ->withSession([
-            'active_tenant_id' => $tenantB->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.uploaded-documents.show', $tenantA, [
             'uploadedDocument' => $uploaded,
         ]))
@@ -119,9 +101,7 @@ test('staff from another tenant cannot open an extraction page', function (): vo
 });
 
 test('staff must recently confirm their password before opening an extraction page', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -138,7 +118,6 @@ test('staff must recently confirm their password before opening an extraction pa
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.uploaded-documents.show', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))
@@ -146,9 +125,7 @@ test('staff must recently confirm their password before opening an extraction pa
 });
 
 test('guest cannot open the OCR extraction page', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -170,9 +147,7 @@ test('guest cannot open the OCR extraction page', function (): void {
 });
 
 test('extraction page island returns json for the uploaded document', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -200,10 +175,7 @@ test('extraction page island returns json for the uploaded document', function (
     ]);
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->getJson(workspaceRoute('workspaces.uploaded-documents.show', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))
@@ -215,9 +187,7 @@ test('extraction page island returns json for the uploaded document', function (
 });
 
 test('live uploaded document island returns processing status without password confirm', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -236,7 +206,6 @@ test('live uploaded document island returns processing status without password c
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->getJson(workspaceRoute('workspaces.uploaded-documents.live', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))

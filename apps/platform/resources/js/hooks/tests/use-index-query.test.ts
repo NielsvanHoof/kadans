@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockInertiaPage } from '@/test/mocks';
 
 const routerGet = vi.fn();
 const routerOn = vi.fn(() => () => {});
@@ -11,7 +12,7 @@ vi.mock('@inertiajs/react', () => ({
         get: routerGet,
         on: routerOn,
     },
-    usePage: () => ({ props: pageProps, url: pageUrl }),
+    usePage: () => mockInertiaPage(pageProps, pageUrl),
 }));
 
 const { useIndexQuery } = await import('@/hooks/use-index-query');

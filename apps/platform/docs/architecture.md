@@ -2,11 +2,14 @@
 
 This application is a multi-tenant Laravel app with **folder-based domains** under `app/`. Cross-cutting defaults live in `AppServiceProvider`; domain bindings and policies live in each domain’s `*ServiceProvider`.
 
+Convention guides: [Backend](backend.md) · [Frontend](frontend.md) · [Testing](testing.md)
+
 ## Domains
 
 | Domain | Responsibility |
 |--------|----------------|
 | **Accounts** | Users, Fortify hooks, profile, locale, security |
+| **AudioProcessing** | Audio transcription drivers, jobs, and configuration |
 | **Audit** | Activity log model, audit permissions, tenant audit helpers |
 | **ClientPortal** | Magic-link grants, portal middleware, guest session |
 | **Clients** | Firm CRM clients |
@@ -109,7 +112,9 @@ flowchart LR
 
 Controllers stay thin: authorize → call an Action or Query → return `Inertia::render()` (or a redirect/download).
 
-### Backend patterns
+For detailed backend conventions (Actions, Queries, validation, models, persistence), see [Backend](backend.md).
+
+### Backend patterns (summary)
 
 - **Actions** — mutations and multi-step writes (`CreateDossierAction`, …)
 - **Queries** — read models / index / show payloads (`FetchDossierIndexQuery`, …)
@@ -150,7 +155,11 @@ Migrations and factories stay under `database/` — not inside `app/{Domain}`.
 
 ## Frontend
 
-`resources/js` mirrors domains:
+`resources/js` mirrors domains. Pages are thin entry points; domain UI lives in `features/<domain>/`; shared pieces live in `components/` by role.
+
+For directory layout, import rules, Wayfinder, forms, types, permissions UI, i18n, and Vitest, see [Frontend](frontend.md).
+
+### Summary
 
 | Area | Role |
 |------|------|
@@ -192,12 +201,13 @@ Rough backend → frontend map:
 | Tenancy | firms, onboarding, members, invitations |
 | Reporting | dashboard / activity / media under workspaces |
 | DocumentProcessing | pipelines under workspaces |
+| AudioProcessing | audio recordings, transcript UI |
 | Accounts | settings, auth, security |
 
-Import boundaries and nesting rules are enforced by Biome — see [`.cursor/rules/frontend-architecture.mdc`](../.cursor/rules/frontend-architecture.mdc).
+Import boundaries and nesting rules are enforced by Biome — see [`biome.json`](../biome.json) and [Frontend](frontend.md).
 
-Questionnaire item types are defined once in PHP (`QuestionnaireItemType`), codegen’d to `features/document-requests/item-types/generated.ts`, and wired in staff (`questionnaire-item-type-registry.tsx`) and portal (`item-types/portal-registry.ts`) registries.
+Questionnaire item types are defined once in PHP (`QuestionnaireItemType`), codegen'd to `features/document-requests/item-types/generated.ts`, and wired in staff (`questionnaire-item-type-registry.tsx`) and portal (`item-types/portal-registry.ts`) registries.
 
 ## Tests
 
-Feature tests live under `tests/Feature/{Domain}/` (and related folders such as `Portal`). Prefer factories from `database/factories/`. Run the suite near your change with Sail + Pest.
+Feature tests live under `tests/Feature/{Domain}/`. For Pest helpers, factories, assertions, and the Vitest split, see [Testing](testing.md).

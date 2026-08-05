@@ -155,3 +155,5 @@ added without a second permission-sync deploy.
 | After any of the above | Run `tenancy:sync-roles` (and cover with feature tests) |
 
 Adding a permission alone does not expose UI or routes — still wire policies, controllers, and frontend capability checks as needed.
+
+On the frontend, pass `can_*` boolean props from controllers and gate UI with those props. Use `usePermissions()` only for shell/navigation. See [Frontend](frontend.md#permissions-in-the-ui).

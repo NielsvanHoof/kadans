@@ -22,7 +22,7 @@ test('amazon transcribe driver starts a job and stores the job name', function (
     ]);
 
     $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,

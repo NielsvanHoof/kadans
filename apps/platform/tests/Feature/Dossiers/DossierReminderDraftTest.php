@@ -9,12 +9,7 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Laravel\Ai\Prompts\AgentPrompt;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 test('staff can generate a reminder draft mentioning outstanding items', function (): void {
     DossierReminderDraftAgent::fake(['Hi Jane, just checking in on your outstanding documents.']);
@@ -37,7 +32,6 @@ test('staff can generate a reminder draft mentioning outstanding items', functio
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertJson(['message' => 'Hi Jane, just checking in on your outstanding documents.']);
@@ -58,7 +52,6 @@ test('draft endpoint rejects a dossier with no outstanding items', function (): 
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))
         ->assertUnprocessable()
         ->assertJsonValidationErrors('dossier');
@@ -83,7 +76,6 @@ test('draft endpoint is forbidden for a completed dossier', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))
         ->assertForbidden();
 
@@ -107,7 +99,6 @@ test('read only members cannot generate reminder drafts', function (): void {
     ]);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))
         ->assertForbidden();
 
@@ -129,7 +120,7 @@ test('reminder draft endpoint is rate limited', function (): void {
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $this->actingAs($owner)->withSession(['active_tenant_id' => $tenant->id]);
+    $this->actingAs($owner);
 
     for ($i = 0; $i < 10; $i++) {
         $this->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))

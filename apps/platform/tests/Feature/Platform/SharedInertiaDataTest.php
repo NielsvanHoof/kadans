@@ -62,7 +62,6 @@ test('the shared permission map resolves every registered permission for the fir
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $response = $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant))
         ->assertOk();
 
@@ -88,7 +87,6 @@ test('the shared permission map denies what a restricted role cannot do', functi
     $readOnly = workspaceMember($tenant, Role::ReadOnly);
 
     $response = $this->actingAs($readOnly)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant))
         ->assertOk();
 

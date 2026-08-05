@@ -48,7 +48,7 @@ test('complete action persists transcript segments and notifies the uploader', f
     ]);
 
     $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     $uploader = User::factory()->create();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

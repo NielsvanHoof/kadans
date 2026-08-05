@@ -69,7 +69,7 @@ test('a failed upload removes the newly stored file', function (): void {
 function createDossierForAudioLifecycleTest(): Dossier
 {
     $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 

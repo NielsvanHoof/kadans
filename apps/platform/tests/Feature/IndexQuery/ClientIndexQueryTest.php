@@ -2,27 +2,55 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Clients\Models\Client;
-use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Clients\Queries\FetchClientIndexQuery;
+use App\Dossiers\Models\Dossier;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Http\Request;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('clients index paginates results and exposes indexQuery config', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+test('fetch client index maps rows and exposes toolbar metadata', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
+    $client = Client::factory()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Jane Client',
+        'email' => 'jane@example.com',
+    ]);
+    Dossier::factory()->count(2)->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    // Bind an empty request so Spatie Query Builder can read filters/sorts.
+    app()->instance('request', Request::create('/clients', 'GET'));
+
+    $paginator = resolve(FetchClientIndexQuery::class)->handle();
+    $toolbar = resolve(FetchClientIndexQuery::class)->toolbarMetadata();
+
+    expect($paginator->total())->toBe(1)
+        ->and($paginator->items()[0])->toMatchArray([
+            'id' => $client->id,
+            'name' => 'Jane Client',
+            'email' => 'jane@example.com',
+            'dossiers_count' => 2,
+        ])
+        ->and($toolbar['defaults']['sort'])->toBe('name')
+        ->and($toolbar['filters'][0]['key'])->toBe('q')
+        ->and(collect($toolbar['sorts'])->pluck('key')->all())->toContain('name', '-name');
+});
+
+test('clients index paginates results and exposes indexQuery config', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     // Create more than one page (default per_page = 15).
     Client::factory()->count(16)->create(['tenant_id' => $tenant->id]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -38,7 +66,6 @@ test('clients index paginates results and exposes indexQuery config', function (
             ->where('sort', null));
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?page=2')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -47,10 +74,7 @@ test('clients index paginates results and exposes indexQuery config', function (
 });
 
 test('clients index filters by search query across name and email', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -69,7 +93,6 @@ test('clients index filters by search query across name and email', function ():
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?filter[q]=acme')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -82,10 +105,7 @@ test('clients index filters by search query across name and email', function ():
 });
 
 test('clients index inertia page url keeps readable filter brackets', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -94,7 +114,6 @@ test('clients index inertia page url keeps readable filter brackets', function (
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?filter[q]=acme&sort=-name')
         ->assertOk()
         ->assertInertia(function (Assert $page): void {
@@ -114,10 +133,7 @@ test('clients index inertia page url keeps readable filter brackets', function (
 });
 
 test('clients index sorts by name descending', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -131,7 +147,6 @@ test('clients index sorts by name descending', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?sort=-name')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -141,29 +156,24 @@ test('clients index sorts by name descending', function (): void {
 });
 
 test('clients index rejects invalid filters', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?filter[unknown]=x')
         ->assertStatus(400);
 });
 
 test('clients index does not leak another tenants clients', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    $tenantB->makeCurrent();
     Client::factory()->create([
         'tenant_id' => $tenantB->id,
         'name' => 'Foreign Client',
         'email' => 'foreign@example.com',
     ]);
 
-    $tenantA->makeCurrent();
+    actingInWorkspace($tenantA);
     Client::factory()->create([
         'tenant_id' => $tenantA->id,
         'name' => 'Own Client',
@@ -171,7 +181,6 @@ test('clients index does not leak another tenants clients', function (): void {
     ]);
 
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenantA).'?filter[q]=Client')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page

@@ -3,14 +3,11 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 
 test('without a tenant soft scope returns no rows instead of throwing', function (): void {
-    $owner = provisionWorkspace()['owner'];
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Scoped Firm', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace('Scoped Firm');
 
     Client::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -27,9 +24,7 @@ test('strict mode throws when querying without a current tenant', function (): v
 });
 
 test('queryWithoutTenantScope allows intentional cross-tenant lookups', function (): void {
-    $owner = provisionWorkspace()['owner'];
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Lookup Firm', $owner);
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace('Lookup Firm');
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 

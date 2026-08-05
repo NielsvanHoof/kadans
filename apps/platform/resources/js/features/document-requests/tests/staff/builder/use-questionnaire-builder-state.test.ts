@@ -5,14 +5,13 @@ import type {
     QuestionnaireItemConfiguration,
 } from '@/features/document-requests/types';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
+import { mockUseTranslation } from '@/test/mocks';
 
 const syncDocumentRequests = vi.fn();
 
 // The hook's collaborators reach for Inertia page props / HTTP; neither is under
 // test here. Translation is identity so assertions read as the source strings.
-vi.mock('@/hooks/use-translation', () => ({
-    useTranslation: () => ({ t: (key: string) => key }),
-}));
+vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock(
     '@/features/document-requests/staff/builder/use-questionnaire-builder-actions',

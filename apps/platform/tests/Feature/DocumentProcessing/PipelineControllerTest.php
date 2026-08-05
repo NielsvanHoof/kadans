@@ -26,7 +26,6 @@ test('an authorized workspace member can view pipeline index and details', funct
     resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -37,7 +36,6 @@ test('an authorized workspace member can view pipeline index and details', funct
             ->has('indexQuery.filters'));
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -61,7 +59,6 @@ test('pipeline index is tenant isolated', function (): void {
     expect($pipelineA->tenant_id)->not->toBe($pipelineB->tenant_id);
 
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.pipelines.index', $tenantA))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -69,7 +66,6 @@ test('pipeline index is tenant isolated', function (): void {
             ->where('pipelines.data.0.id', $pipelineA->id));
 
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->get(workspaceRoute('workspaces.pipelines.show', $tenantA, ['pipeline' => $pipelineB->id]))
         ->assertNotFound();
 });
@@ -79,7 +75,6 @@ test('reviewers cannot view pipeline operations', function (): void {
     $reviewer = workspaceMember($tenant, Role::Reviewer);
 
     $this->actingAs($reviewer)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.index', $tenant))
         ->assertForbidden();
 
@@ -95,7 +90,6 @@ test('owners can delete terminal pipelines and the deletion is audited', functio
     $state->handle($pipeline, PipelineStepOperation::Fail, 'submit', errorCode: 'test_failure', errorMessage: 'Test failure.');
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->delete(workspaceRoute('workspaces.pipelines.destroy', $tenant, ['pipeline' => $pipeline]))
         ->assertRedirect(workspaceRoute('workspaces.pipelines.index', $tenant));
 
@@ -115,7 +109,6 @@ test('active pipelines cannot be deleted', function (): void {
     resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->delete(workspaceRoute('workspaces.pipelines.destroy', $tenant, ['pipeline' => $pipeline]))
         ->assertForbidden();
 });
@@ -128,16 +121,12 @@ test('an export pipeline payload can be downloaded and is audited', function ():
     Storage::disk('local')->put((string) $export->path, 'archive');
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page->where('can_download', true));
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.pipelines.download', $tenant, ['pipeline' => $pipeline]))
         ->assertOk()
         ->assertHeader('content-disposition', 'attachment; filename=confidential-dossier-export.zip')
@@ -157,7 +146,6 @@ test('the export payload download requires a confirmed password', function (): v
     Storage::disk('local')->put((string) $export->path, 'archive');
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.pipelines.download', $tenant, ['pipeline' => $pipeline]))
         ->assertRedirect(route('password.confirm'));
 });
@@ -172,10 +160,7 @@ test('ocr pipelines and expired exports have no downloadable payload', function 
     $expiredExport->update(['expires_at' => now()->subMinute()]);
     $expiredPipeline = resolve(CreatePipelineAction::class)->handle($expiredExport, PipelineType::DossierExport, $owner);
 
-    $session = [
-        'active_tenant_id' => $tenant->id,
-        'auth.password_confirmed_at' => now()->getTimestamp(),
-    ];
+    $session = ['auth.password_confirmed_at' => now()->getTimestamp()];
 
     $this->actingAs($owner)
         ->withSession($session)
@@ -203,10 +188,7 @@ test('members without download permission cannot download an export payload', fu
     Storage::disk('local')->put((string) $export->path, 'archive');
 
     $this->actingAs($reviewer)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get(workspaceRoute('workspaces.pipelines.download', $tenant, ['pipeline' => $pipeline]))
         ->assertForbidden();
 });

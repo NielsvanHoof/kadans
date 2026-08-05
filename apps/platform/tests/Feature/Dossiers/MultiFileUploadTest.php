@@ -54,7 +54,6 @@ test('staff can upload multiple files to a request that allows multiple', functi
     $documentRequest = makeMultiFileDocumentRequest($context['tenant'], $context['dossier']);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.upload', $context['tenant'], [
             'dossier' => $context['dossier'],
             'documentRequest' => $documentRequest,
@@ -77,7 +76,6 @@ test('staff upload is capped at one file when a request does not allow multiple'
     $documentRequest = makeMultiFileDocumentRequest($context['tenant'], $context['dossier'], allowMultiple: false);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.upload', $context['tenant'], [
             'dossier' => $context['dossier'],
             'documentRequest' => $documentRequest,
@@ -108,7 +106,6 @@ test('staff can remove one uploaded file from a multi-file request', function ()
     Storage::disk('local')->put($removed->path, 'contents');
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.uploaded-documents.destroy', $context['tenant'], [
             'uploadedDocument' => $removed,
         ]))
@@ -132,7 +129,6 @@ test('removing the last uploaded file reopens a multi-file request for submissio
     ]);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.uploaded-documents.destroy', $context['tenant'], [
             'uploadedDocument' => $onlyFile,
         ]))
@@ -158,7 +154,6 @@ test('reviewing a multi-file request stamps every uploaded file', function (): v
     ]);
 
     $this->actingAs($reviewer)
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.review', $context['tenant'], [
             'dossier' => $context['dossier'],
             'documentRequest' => $documentRequest,
@@ -180,7 +175,6 @@ test('staff can toggle allow_multiple for a document request in the builder', fu
     grantDossierBuilderLock($context['dossier'], $context['owner']);
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->putJson(workspaceRoute('workspaces.dossiers.document-requests.update', $context['tenant'], [
             'dossier' => $context['dossier'],
             'documentRequest' => $documentRequest,
