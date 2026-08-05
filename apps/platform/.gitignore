@@ -19,8 +19,6 @@
 /resources/js/routes
 /resources/js/wayfinder
 /vendor
-.agents/
-.cursor/skills/
 .DS_Store
 /.env
 /.env.*
@@ -38,11 +36,23 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/skills-lock.json
 
 **/caddy
 /frankenphp
 frankenphp-worker.php
 
-.claude
+# Agent / AI coding tools (local, machine-specific)
+.ai/
+.agents/
+.claude/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.github/copilot-instructions.md
+.mcp.json
+.windsurf/
+/skills-lock.json
+AGENTS.md
 CLAUDE.md
+boost.json

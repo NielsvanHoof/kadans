@@ -115,11 +115,3 @@ export function useDossierCapabilities(): DossierCapabilities {
 
     return value;
 }
-
-/** @deprecated Prefer useDossierCapabilities. */
-export function useDossierPermissions(): DossierCapabilities {
-    return useDossierCapabilities();
-}
-
-/** @deprecated Prefer DossierCapabilities. */
-export type DossierPermissions = DossierCapabilities;
