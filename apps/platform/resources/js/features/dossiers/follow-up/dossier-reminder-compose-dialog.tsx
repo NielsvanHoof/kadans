@@ -1,6 +1,7 @@
 import { Form, useHttp } from '@inertiajs/react';
 import { Send, Sparkles } from 'lucide-react';
 import { useId, useState } from 'react';
+import { toast } from 'sonner';
 import DossierReminderController from '@/actions/App/Dossiers/Http/Controllers/DossierReminderController';
 import DossierReminderDraftController from '@/actions/App/Dossiers/Http/Controllers/DossierReminderDraftController';
 import InputError, {
@@ -44,14 +45,18 @@ export default function DossierReminderComposeDialog({
     >({});
 
     async function generateDraft() {
-        const response = await postDraft(
-            DossierReminderDraftController.store.url({
-                tenant: currentWorkspace,
-                dossier: dossierId,
-            }),
-        );
+        try {
+            const response = await postDraft(
+                DossierReminderDraftController.store.url({
+                    tenant: currentWorkspace,
+                    dossier: dossierId,
+                }),
+            );
 
-        setMessage(response.message);
+            setMessage(response.message);
+        } catch {
+            toast.error(t('Could not generate a draft. Please try again.'));
+        }
     }
 
     return (

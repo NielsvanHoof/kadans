@@ -14,16 +14,25 @@ import { mockUseTranslation } from '@/test/mocks';
  */
 const reorderPost = vi.fn();
 const draftPost = vi.fn();
+const toastError = vi.fn();
 const routerPost = vi.fn(
     (
         _url: string,
         _data: unknown,
-        options?: { onSuccess?: () => void; onFinish?: () => void },
+        options?: {
+            onSuccess?: () => void;
+            onError?: () => void;
+            onFinish?: () => void;
+        },
     ) => {
         options?.onSuccess?.();
         options?.onFinish?.();
     },
 );
+
+vi.mock('sonner', () => ({
+    toast: { error: (...args: unknown[]) => toastError(...args) },
+}));
 
 vi.mock('@inertiajs/react', () => ({
     Form: ({
@@ -67,6 +76,7 @@ function suggestion(
 beforeEach(() => {
     reorderPost.mockReset();
     draftPost.mockReset();
+    toastError.mockReset();
     routerPost.mockClear();
 });
 
@@ -169,5 +179,55 @@ describe('TemplateItemEditor — AI suggestions', () => {
         expect(
             screen.queryByText(':count suggestions'),
         ).not.toBeInTheDocument();
+    });
+
+    it('toasts when the draft endpoint fails and leaves the trigger actionable', async () => {
+        const user = userEvent.setup();
+        draftPost.mockRejectedValueOnce(new Error('llm down'));
+        render(<TemplateItemEditor templateId={1} items={[]} canManage />);
+
+        await user.type(
+            screen.getByLabelText('Suggest items with AI'),
+            'Onboarding a new client',
+        );
+        await user.click(screen.getByRole('button', { name: 'Suggest items' }));
+
+        await waitFor(() =>
+            expect(toastError).toHaveBeenCalledWith(
+                'Could not generate suggestions. Please try again.',
+            ),
+        );
+        expect(
+            screen.getByRole('button', { name: 'Suggest items' }),
+        ).toBeEnabled();
+        expect(screen.queryByText(':count suggestions')).not.toBeInTheDocument();
+    });
+
+    it('toasts partial failure when Add all hits an error mid-sequence', async () => {
+        const user = userEvent.setup();
+        render(<TemplateItemEditor templateId={1} items={[]} canManage />);
+
+        await generateSuggestions(user, [
+            suggestion({ title: 'Proof of address' }),
+            suggestion({ title: 'Passport copy' }),
+        ]);
+
+        routerPost
+            .mockImplementationOnce((_url, _data, options) => {
+                options?.onSuccess?.();
+            })
+            .mockImplementationOnce((_url, _data, options) => {
+                options?.onError?.();
+            });
+
+        await user.click(screen.getByRole('button', { name: 'Add all' }));
+
+        await waitFor(() =>
+            expect(toastError).toHaveBeenCalledWith(
+                'Could not add :count of the suggestions. The rest were applied.',
+            ),
+        );
+        expect(routerPost).toHaveBeenCalledTimes(2);
+        expect(screen.getByText('Passport copy')).toBeInTheDocument();
     });
 });

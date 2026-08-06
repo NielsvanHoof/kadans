@@ -1,5 +1,6 @@
 import { useHttp } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
 import { qrCode, recoveryCodes, secretKey } from '@/routes/two-factor';
 
 export type UseTwoFactorAuthReturn = {
@@ -30,6 +31,7 @@ export const OTP_SLOTS = [
 
 export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
     const { submit } = useHttp();
+    const { t } = useTranslation();
 
     const [qrCodeSvg, setQrCodeSvg] = useState<string | null>(null);
     const [manualSetupKey, setManualSetupKey] = useState<string | null>(null);
@@ -64,10 +66,11 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
             setQrCodeSvg(svg);
         } catch {
-            setErrors((prev) => [...prev, 'Failed to fetch QR code']);
+            // Replace rather than append — retries must not stack the same alert.
+            setErrors([t('Failed to fetch QR code')]);
             setQrCodeSvg(null);
         }
-    }, [submit]);
+    }, [submit, t]);
 
     const fetchSetupKey = useCallback(async (): Promise<void> => {
         try {
@@ -77,10 +80,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
             setManualSetupKey(key);
         } catch {
-            setErrors((prev) => [...prev, 'Failed to fetch a setup key']);
+            setErrors([t('Failed to fetch a setup key')]);
             setManualSetupKey(null);
         }
-    }, [submit]);
+    }, [submit, t]);
 
     const fetchRecoveryCodes = useCallback(async (): Promise<void> => {
         try {
@@ -88,10 +91,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
             const codes = (await submit(recoveryCodes())) as string[];
             setRecoveryCodesList(codes);
         } catch {
-            setErrors((prev) => [...prev, 'Failed to fetch recovery codes']);
+            setErrors([t('Failed to fetch recovery codes')]);
             setRecoveryCodesList([]);
         }
-    }, [submit]);
+    }, [submit, t]);
 
     const fetchSetupData = useCallback(async (): Promise<void> => {
         try {

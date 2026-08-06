@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockUseTranslation } from '@/test/mocks';
 
 const submit = vi.fn();
 
@@ -8,6 +9,8 @@ const submit = vi.fn();
 vi.mock('@inertiajs/react', () => ({
     useHttp: () => ({ submit }),
 }));
+
+vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 const { useTwoFactorAuth } =
     await import('@/features/security/two-factor/use-two-factor-auth');
@@ -44,7 +47,7 @@ describe('useTwoFactorAuth', () => {
             expect(result.current.errors).toEqual([]);
         });
 
-        it('records one error per failed request but keeps the successful half', async () => {
+        it('records a translated error for a failed request but keeps the successful half', async () => {
             submit
                 .mockRejectedValueOnce(new Error('qr failed'))
                 .mockResolvedValueOnce({ secretKey: 'ABCD1234' });
@@ -58,6 +61,24 @@ describe('useTwoFactorAuth', () => {
             expect(result.current.manualSetupKey).toBe('ABCD1234');
             expect(result.current.errors).toEqual(['Failed to fetch QR code']);
             expect(result.current.hasSetupData).toBe(false);
+        });
+
+        it('replaces previous errors on retry instead of stacking them', async () => {
+            submit
+                .mockRejectedValueOnce(new Error('qr failed'))
+                .mockResolvedValueOnce({ secretKey: 'ABCD1234' })
+                .mockRejectedValueOnce(new Error('qr failed again'))
+                .mockResolvedValueOnce({ secretKey: 'ABCD1234' });
+            const { result } = renderHook(() => useTwoFactorAuth());
+
+            await act(async () => {
+                await result.current.fetchSetupData();
+            });
+            await act(async () => {
+                await result.current.fetchSetupData();
+            });
+
+            expect(result.current.errors).toEqual(['Failed to fetch QR code']);
         });
     });
 

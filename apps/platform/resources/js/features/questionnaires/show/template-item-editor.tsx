@@ -1,6 +1,7 @@
 import { Form, router, useHttp } from '@inertiajs/react';
 import { Sparkles, Trash2 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import QuestionnaireChecklistDraftController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireChecklistDraftController';
 import QuestionnaireTemplateItemController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateItemController';
 import SortableList from '@/components/data/sortable/sortable-list';
@@ -90,6 +91,7 @@ export default function TemplateItemEditor({
     const [addingSuggestion, setAddingSuggestion] =
         useState<DraftedChecklistItem | null>(null);
     const [addingAll, setAddingAll] = useState(false);
+    const applyAllAbortRef = useRef<AbortController | null>(null);
     const {
         post: postDraft,
         setData: setDraftData,
@@ -101,18 +103,26 @@ export default function TemplateItemEditor({
     async function generateSuggestions() {
         setDraftData('description', draftDescription);
 
-        const response = await postDraft(
-            QuestionnaireChecklistDraftController.store.url({
-                tenant: currentWorkspace,
-                template: templateId,
-            }),
-        );
+        try {
+            const response = await postDraft(
+                QuestionnaireChecklistDraftController.store.url({
+                    tenant: currentWorkspace,
+                    template: templateId,
+                }),
+            );
 
-        setSuggestions(response.items);
+            setSuggestions(response.items);
+        } catch {
+            // LLM draft endpoints fail often — surface it and leave the
+            // button actionable (useHttp clears processing on settle).
+            toast.error(
+                t('Could not generate suggestions. Please try again.'),
+            );
+        }
     }
 
     function addSuggestion(item: DraftedChecklistItem): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             router.post(
                 QuestionnaireTemplateItemController.store.url({
                     tenant: currentWorkspace,
@@ -129,8 +139,14 @@ export default function TemplateItemEditor({
                         setSuggestions((current) =>
                             current.filter((s) => s !== item),
                         );
+                        resolve();
                     },
-                    onFinish: () => resolve(),
+                    onError: () => {
+                        reject(new Error('Failed to add suggestion'));
+                    },
+                    onCancel: () => {
+                        reject(new Error('Cancelled'));
+                    },
                 },
             );
         });
@@ -138,18 +154,54 @@ export default function TemplateItemEditor({
 
     async function applySuggestion(item: DraftedChecklistItem) {
         setAddingSuggestion(item);
-        await addSuggestion(item);
-        setAddingSuggestion(null);
+
+        try {
+            await addSuggestion(item);
+        } catch {
+            toast.error(t('Could not add this suggestion. Please try again.'));
+        } finally {
+            setAddingSuggestion(null);
+        }
     }
 
     async function applyAllSuggestions() {
+        const controller = new AbortController();
+        applyAllAbortRef.current = controller;
         setAddingAll(true);
 
-        for (const item of suggestions) {
-            await addSuggestion(item);
-        }
+        let failed = 0;
+        // Snapshot so removals during the loop do not skip items.
+        const pending = [...suggestions];
 
-        setAddingAll(false);
+        try {
+            for (const item of pending) {
+                if (controller.signal.aborted) {
+                    break;
+                }
+
+                try {
+                    await addSuggestion(item);
+                } catch {
+                    failed += 1;
+                }
+            }
+
+            if (failed > 0) {
+                toast.error(
+                    t(
+                        'Could not add :count of the suggestions. The rest were applied.',
+                        { count: failed },
+                    ),
+                );
+            }
+        } finally {
+            setAddingAll(false);
+            applyAllAbortRef.current = null;
+        }
+    }
+
+    function cancelApplyAll() {
+        applyAllAbortRef.current?.abort();
     }
 
     function dismissSuggestion(item: DraftedChecklistItem) {
@@ -303,18 +355,26 @@ export default function TemplateItemEditor({
                                         count: suggestions.length,
                                     })}
                                 </p>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="secondary"
-                                    isDisabled={
-                                        addingSuggestion !== null || addingAll
-                                    }
-                                    onClick={applyAllSuggestions}
-                                >
-                                    {addingAll && <Spinner />}
-                                    {t('Add all')}
-                                </Button>
+                                {addingAll ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={cancelApplyAll}
+                                    >
+                                        {t('Cancel')}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="secondary"
+                                        isDisabled={addingSuggestion !== null}
+                                        onClick={applyAllSuggestions}
+                                    >
+                                        {t('Add all')}
+                                    </Button>
+                                )}
                             </div>
                             <ul className="space-y-2">
                                 {suggestions.map((item) => (
