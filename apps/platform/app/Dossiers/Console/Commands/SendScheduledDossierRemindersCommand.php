@@ -18,6 +18,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 use function Laravel\Prompts\info;
@@ -98,9 +99,21 @@ final class SendScheduledDossierRemindersCommand extends Command
                         if ($wasQueued) {
                             $sentCount++;
                         }
-                    } catch (ValidationException) {
+                    } catch (ValidationException $exception) {
+                        // Disable further scheduled sends for this dossier so
+                        // the command does not loop forever, but make the
+                        // disable visible (interval + next cleared) and logged.
+                        Log::warning('Scheduled dossier reminder disabled after validation failure.', [
+                            'dossier_id' => $dossier->id,
+                            'tenant_id' => $dossier->tenant_id,
+                            'errors' => $exception->errors(),
+                        ]);
+
                         $dossier->disableLogging();
-                        $dossier->forceFill(['next_reminder_at' => null])->save();
+                        $dossier->forceFill([
+                            'next_reminder_at' => null,
+                            'reminder_interval_days' => null,
+                        ])->save();
                     }
                 }
             },

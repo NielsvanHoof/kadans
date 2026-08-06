@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Tenancy\Support\WorkspaceMemberRoles;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantMembership;
@@ -67,7 +68,7 @@ test('an administrator cannot patch their own membership onto a role carrying ro
         ])
         ->assertForbidden();
 
-    expect(resolve(App\Tenancy\Support\WorkspaceMemberRoles::class)
+    expect(resolve(WorkspaceMemberRoles::class)
         ->roleFor($admin->fresh(), $tenant))
         ->toBe(Role::Administrator->value);
 });

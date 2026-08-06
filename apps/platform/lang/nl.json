@@ -1,4 +1,6 @@
 {
+    "Enter a valid from date.": "Voer een geldige begindatum in.",
+    "Enter a valid to date.": "Voer een geldige einddatum in.",
     "Settings": "Instellingen",
     "Manage your profile and account settings": "Beheer je profiel- en accountinstellingen",
     "Profile": "Profiel",
@@ -446,7 +448,7 @@
     "1 event": "1 gebeurtenis",
     ":count events": ":count gebeurtenissen",
     "Add, edit, or remove items. Drag the grip to reorder.": "Voeg items toe, bewerk ze of verwijder ze. Sleep aan de greep om te herschikken.",
-    "All": "Alle",
+    "All": "Alles",
     "Back to dossier": "Terug naar dossier",
     "Category": "Categorie",
     "Choose a firm": "Kies een kantoor",
@@ -1126,7 +1128,6 @@
     "Open role management": "Rolbeheer openen",
     "Select all": "Alles selecteren",
     "Clear all": "Alles wissen",
-    "All": "Alles",
     "None": "Geen",
     "Choose at least one permission before saving this role.": "Kies minstens één recht voordat je deze rol opslaat.",
     "Duplicate": "Dupliceren",

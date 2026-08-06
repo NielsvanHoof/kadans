@@ -9,6 +9,7 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 final readonly class PurgeExpiredDossierAction
@@ -21,6 +22,12 @@ final readonly class PurgeExpiredDossierAction
     ) {}
 
     /**
+     * Permanently remove a soft-deleted dossier past legal retention.
+     *
+     * Database rows are removed in a transaction first. Storage blobs are
+     * deleted only after commit so a rolled-back purge cannot destroy files
+     * for a dossier that still exists.
+     *
      * @return array{purged: bool, activity_rows_deleted: int, files_deleted: int}
      */
     public function handle(Dossier $dossier): array
@@ -40,34 +47,41 @@ final readonly class PurgeExpiredDossierAction
         $uploadedDocuments = $uploadedDocumentsQuery->get();
         $dossierExports = DossierExport::query()->where('dossier_id', $dossier->id)->get();
 
+        $filesDeleted = $uploadedDocuments->count() + $dossierExports->filter(
+            static fn (DossierExport $export): bool => $export->path !== null,
+        )->count();
+
         try {
+            $activityRowsDeleted = DB::transaction(function () use ($dossier, $uploadedDocuments, $dossierExports): int {
+                $activityRowsDeleted = $this->purgeSubjectActivityLog->handle($dossier);
+                $this->deletePipelinesForSubjects->handle([
+                    ...$uploadedDocuments->all(),
+                    ...$dossierExports->all(),
+                ]);
+
+                $dossier->disableLogging();
+                $dossier->forceDelete();
+
+                return $activityRowsDeleted;
+            });
+
+            // Blobs only after a successful commit — mirrors document delete ordering.
             $this->deleteStoredDocumentFiles->handle($uploadedDocuments);
             $this->deleteStoredDossierExportFiles->handle($dossierExports);
-        } catch (Throwable) {
-            return [
-                'purged' => false,
-                'activity_rows_deleted' => 0,
-                'files_deleted' => 0,
-            ];
-        }
-
-        return DB::transaction(function () use ($dossier, $uploadedDocuments, $dossierExports): array {
-            $activityRowsDeleted = $this->purgeSubjectActivityLog->handle($dossier);
-            $this->deletePipelinesForSubjects->handle([
-                ...$uploadedDocuments->all(),
-                ...$dossierExports->all(),
+        } catch (Throwable $exception) {
+            report($exception);
+            Log::error('Legal retention dossier purge failed.', [
+                'dossier_id' => $dossier->id,
+                'message' => $exception->getMessage(),
             ]);
 
-            $dossier->disableLogging();
-            $dossier->forceDelete();
+            throw $exception;
+        }
 
-            return [
-                'purged' => true,
-                'activity_rows_deleted' => $activityRowsDeleted,
-                'files_deleted' => $uploadedDocuments->count() + $dossierExports->filter(
-                    static fn (DossierExport $export): bool => $export->path !== null,
-                )->count(),
-            ];
-        });
+        return [
+            'purged' => true,
+            'activity_rows_deleted' => $activityRowsDeleted,
+            'files_deleted' => $filesDeleted,
+        ];
     }
 }

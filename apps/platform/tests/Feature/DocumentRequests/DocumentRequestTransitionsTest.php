@@ -9,6 +9,7 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Validation\ValidationException;
@@ -331,6 +332,51 @@ describe('submitUpload', function (): void {
         ]);
 
         expect(fn () => $this->transitions->submitUpload($documentRequest, SubmissionContext::Portal))
+            ->toThrow(ValidationException::class);
+    });
+});
+
+describe('reopenForSubmission', function (): void {
+    it('moves a submitted item with no uploads back to pending', function (): void {
+        $documentRequest = transitionItem([
+            'type' => QuestionnaireItemType::File,
+            'status' => DocumentRequestStatus::Submitted,
+            'answered_at' => now(),
+        ]);
+
+        $this->transitions->reopenForSubmission($documentRequest);
+
+        expect($documentRequest->fresh())
+            ->status->toBe(DocumentRequestStatus::Pending)
+            ->answered_at->toBeNull();
+    });
+
+    it('rejects reopen when the item is not submitted', function (DocumentRequestStatus $status): void {
+        $documentRequest = transitionItem([
+            'type' => QuestionnaireItemType::File,
+            'status' => $status,
+        ]);
+
+        expect(fn () => $this->transitions->reopenForSubmission($documentRequest))
+            ->toThrow(ValidationException::class);
+    })->with([
+        'pending' => [DocumentRequestStatus::Pending],
+        'rejected' => [DocumentRequestStatus::Rejected],
+        'accepted' => [DocumentRequestStatus::Accepted],
+    ]);
+
+    it('rejects reopen while uploads still exist', function (): void {
+        $documentRequest = transitionItem([
+            'type' => QuestionnaireItemType::File,
+            'status' => DocumentRequestStatus::Submitted,
+        ]);
+
+        UploadedDocument::factory()->create([
+            'tenant_id' => $documentRequest->tenant_id,
+            'document_request_id' => $documentRequest->id,
+        ]);
+
+        expect(fn () => $this->transitions->reopenForSubmission($documentRequest))
             ->toThrow(ValidationException::class);
     });
 });

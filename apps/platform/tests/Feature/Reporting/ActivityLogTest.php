@@ -205,3 +205,20 @@ test('activity log can be filtered by actor and date range', function (): void {
             ->has('activities.data', 1)
             ->where('activities.data.0.event', AuditEvent::DossierCompleted->value));
 });
+
+test('unparseable activity log date filters return a validation error', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $this->actingAs($owner)
+        ->from(workspaceRoute('workspaces.activity.index', $tenant))
+        ->get(
+            workspaceRoute('workspaces.activity.index', $tenant)
+            .'?'.http_build_query([
+                'filter' => [
+                    'created_from' => 'not-a-date',
+                ],
+            ]),
+        )
+        ->assertRedirect(workspaceRoute('workspaces.activity.index', $tenant))
+        ->assertSessionHasErrors('filter.created_from');
+});

@@ -1,4 +1,6 @@
 {
+    "Enter a valid from date.": "Enter a valid from date.",
+    "Enter a valid to date.": "Enter a valid to date.",
     "Settings": "Settings",
     "Manage your profile and account settings": "Manage your profile and account settings",
     "Profile": "Profile",
@@ -1126,7 +1128,6 @@
     "Open role management": "Open role management",
     "Select all": "Select all",
     "Clear all": "Clear all",
-    "All": "All",
     "None": "None",
     "Choose at least one permission before saving this role.": "Choose at least one permission before saving this role.",
     "Duplicate": "Duplicate",

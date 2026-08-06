@@ -19,6 +19,7 @@ use App\Dossiers\Models\Dossier;
 use App\Tenancy\Enums\Role;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -262,6 +263,46 @@ test('scheduled reminders process only due dossiers with client work remaining',
             ->where('subject_id', $dueDossier->id)
             ->whereNull('causer_id')
             ->exists())->toBeTrue();
+});
+
+test('scheduled reminders that fail validation disable further sends and log the reason', function (): void {
+    Notification::fake();
+
+    ['tenant' => $tenant] = provisionWorkspace();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'status' => DossierStatus::AwaitingClient,
+        'reminder_interval_days' => 2,
+        'next_reminder_at' => now()->subMinute(),
+    ]);
+
+    // Optional pending items match the schedule query but are not "outstanding",
+    // so SendDossierReminderAction rejects with ValidationException.
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'status' => DocumentRequestStatus::Pending,
+        'configuration' => ['is_required' => false],
+    ]);
+
+    Log::spy();
+
+    $this->artisan('dossiers:send-reminders')->assertSuccessful();
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(fn (string $message, array $context): bool => $message === 'Scheduled dossier reminder disabled after validation failure.'
+            && ($context['dossier_id'] ?? null) === $dossier->id);
+
+    $dossier->refresh();
+
+    expect($dossier->next_reminder_at)->toBeNull()
+        ->and($dossier->reminder_interval_days)->toBeNull();
+
+    Notification::assertNothingSent();
 });
 
 test('portal reports progress and records the latest client open', function (): void {

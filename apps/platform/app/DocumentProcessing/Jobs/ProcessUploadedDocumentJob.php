@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Jobs;
 
+use Illuminate\Queue\Attributes\Timeout;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
@@ -29,14 +30,18 @@ use function hash;
  * Async OCR pipeline for an uploaded document.
  * Mock driver completes in-process; Textract stays processing until SNS/SQS completion.
  */
-#[Backoff([10, 30, 60])]
+#[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
+#[Timeout(120)]
 final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
     use Queueable;
 
     public const int MAX_TRIES = 3;
+
+    /** @var list<int> */
+    public const array BACKOFF_SECONDS = [10, 30, 60];
 
     public function __construct(
         public int $uploadedDocumentId,
@@ -47,6 +52,15 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
     public function uniqueId(): string
     {
         return "{$this->uploadedDocumentId}:{$this->pipelineId}:".hash('sha256', $this->expectedPath ?? 'legacy');
+    }
+
+    /**
+     * Auto-release the unique lock after worst-case attempts + backoff so a
+     * SIGKILL / OOM cannot wedge the subject forever
+     */
+    public function uniqueFor(): int
+    {
+        return ($this->timeout * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     /**

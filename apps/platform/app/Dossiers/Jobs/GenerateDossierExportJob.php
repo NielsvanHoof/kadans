@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Jobs;
 
+use Illuminate\Queue\Attributes\Timeout;
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\PipelineStepOperation;
 use App\DocumentProcessing\Models\Pipeline;
@@ -18,18 +19,33 @@ use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 
-#[Backoff([10, 30, 60])]
-#[Tries(3)]
+#[Backoff(self::BACKOFF_SECONDS)]
+#[Tries(self::MAX_TRIES)]
+#[Timeout(120)]
 final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
     use Queueable;
+
+    public const int MAX_TRIES = 3;
+
+    /** @var list<int> */
+    public const array BACKOFF_SECONDS = [10, 30, 60];
 
     public function __construct(public int $pipelineId) {}
 
     public function uniqueId(): string
     {
         return (string) $this->pipelineId;
+    }
+
+    /**
+     * Auto-release the unique lock after worst-case attempts + backoff so a
+     * SIGKILL / OOM cannot wedge the export forever
+     */
+    public function uniqueFor(): int
+    {
+        return ($this->timeout * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     /**

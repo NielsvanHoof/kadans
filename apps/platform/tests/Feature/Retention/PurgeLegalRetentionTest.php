@@ -9,8 +9,12 @@ use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Platform\Actions\Retention\PurgeExpiredDossierAction;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 beforeEach(function (): void {
     Storage::fake('local');
@@ -158,4 +162,52 @@ test('archived client is not purged while dossiers still exist', function (): vo
 
     expect(Dossier::onlyTrashed()->find($dossier->id))->not->toBeNull()
         ->and(Client::onlyTrashed()->find($client->id))->not->toBeNull();
+});
+
+test('a failing dossier purge is reported and does not present as success', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $uploadedDocument = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'disk' => 'local',
+        'path' => 'uploads/retention-failure.pdf',
+    ]);
+
+    Storage::disk('local')->put($uploadedDocument->path, 'must-survive-rollback');
+
+    $dossier->delete();
+
+    Exceptions::fake();
+    Log::spy();
+
+    Dossier::forceDeleting(function (): void {
+        throw new RuntimeException('forced purge failure');
+    });
+
+    $trashed = Dossier::onlyTrashed()->findOrFail($dossier->id);
+
+    expect(fn () => resolve(PurgeExpiredDossierAction::class)->handle($trashed))
+        ->toThrow(RuntimeException::class, 'forced purge failure');
+
+    Exceptions::assertReported(
+        fn (RuntimeException $exception): bool => $exception->getMessage() === 'forced purge failure',
+    );
+
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->withArgs(fn (string $message, array $context): bool => $message === 'Legal retention dossier purge failed.'
+            && ($context['dossier_id'] ?? null) === $dossier->id);
+
+    expect(Dossier::onlyTrashed()->find($dossier->id))->not->toBeNull()
+        ->and(Storage::disk('local')->exists($uploadedDocument->path))->toBeTrue();
 });

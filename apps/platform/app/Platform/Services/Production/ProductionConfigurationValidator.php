@@ -141,7 +141,8 @@ final readonly class ProductionConfigurationValidator
         if ($entries === []) {
             return false;
         }
-        return array_all($entries, fn(string $entry): bool => !in_array($entry, ['REMOTE_ADDR', '*', '**', '0.0.0.0/0', '::/0'], true));
+
+        return array_all($entries, fn (string $entry): bool => ! in_array($entry, ['REMOTE_ADDR', '*', '**', '0.0.0.0/0', '::/0'], true));
     }
 
     private function hasAllowedHosts(): bool

@@ -22,6 +22,7 @@ use function in_array;
  * Guarded status transitions for questionnaire items on a dossier.
  *
  * Allowed flow: pending/rejected/submitted → submitted → accepted|rejected.
+ * Submitted → pending when the last multi-file upload is removed (reopenForSubmission).
  * Accepted items cannot be submitted again.
  * Portal submissions are locked while an item awaits review; staff may replace submitted uploads.
  */
@@ -158,6 +159,31 @@ final class DocumentRequestTransitions
             'reviewed_by' => $reviewer->id,
             'reviewed_at' => now(),
             'rejection_reason' => $normalizedRejectionReason,
+        ]);
+    }
+
+    /**
+     * Reopen a submitted file request after its last upload was removed.
+     * Clears answered_at so the item is ready for a new submission.
+     */
+    public function reopenForSubmission(DocumentRequest $documentRequest): void
+    {
+        if ($documentRequest->status !== DocumentRequestStatus::Submitted) {
+            throw ValidationException::withMessages([
+                'document_request' => 'Only a submitted item can be reopened for submission.',
+            ]);
+        }
+
+        // Callers delete the last upload first; refuse if files still remain.
+        if ($documentRequest->uploadedDocuments()->toBase()->exists()) {
+            throw ValidationException::withMessages([
+                'document_request' => 'Remove all uploaded files before reopening the request.',
+            ]);
+        }
+
+        $documentRequest->update([
+            'status' => DocumentRequestStatus::Pending,
+            'answered_at' => null,
         ]);
     }
 

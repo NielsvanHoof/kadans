@@ -160,9 +160,12 @@ final readonly class SyncTenantRolesAction
         foreach ($stale as $permission) {
             try {
                 $permission->delete();
-            } catch (Throwable) {
+            } catch (Throwable $exception) {
                 // A permission still referenced by an unexpected constraint is
-                // left in place rather than failing the whole sync.
+                // left in place rather than failing the whole sync — but report
+                // so permission-sync drift is not invisible.
+                report($exception);
+
                 continue;
             }
         }

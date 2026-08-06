@@ -30,7 +30,7 @@ use function hash;
  * Transcription pipeline for an audio recording.
  * Mock completes in-process; Amazon Transcribe stays processing until EventBridge/SQS completion.
  */
-#[Backoff([10, 30, 60])]
+#[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
 final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
 {
@@ -38,6 +38,9 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
     use Queueable;
 
     public const int MAX_TRIES = 3;
+
+    /** @var list<int> */
+    public const array BACKOFF_SECONDS = [10, 30, 60];
 
     /**
      * Must stay comfortably below the queue connection's retry_after
@@ -58,6 +61,15 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
     public function uniqueId(): string
     {
         return "{$this->audioRecordingId}:{$this->pipelineId}:".hash('sha256', $this->expectedPath ?? 'legacy');
+    }
+
+    /**
+     * Auto-release the unique lock after worst-case attempts + backoff so a
+     * SIGKILL / OOM cannot wedge the subject forever
+     */
+    public function uniqueFor(): int
+    {
+        return ($this->timeout * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     /**

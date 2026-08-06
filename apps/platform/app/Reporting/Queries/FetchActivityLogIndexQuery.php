@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Throwable;
@@ -145,7 +146,11 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                 try {
                     $date = Date::parse($value)->startOfDay();
                 } catch (Throwable) {
-                    return;
+                    // Surface a validation error so the UI does not keep a
+                    // filter chip while returning an unfiltered result set.
+                    throw ValidationException::withMessages([
+                        'filter.created_from' => __('Enter a valid from date.'),
+                    ]);
                 }
 
                 $query->getQuery()->where('created_at', '>=', $date);
@@ -158,7 +163,9 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                 try {
                     $date = Date::parse($value)->endOfDay();
                 } catch (Throwable) {
-                    return;
+                    throw ValidationException::withMessages([
+                        'filter.created_to' => __('Enter a valid to date.'),
+                    ]);
                 }
 
                 $query->getQuery()->where('created_at', '<=', $date);

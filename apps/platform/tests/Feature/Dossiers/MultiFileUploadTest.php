@@ -134,7 +134,8 @@ test('removing the last uploaded file reopens a multi-file request for submissio
         ]))
         ->assertRedirect();
 
-    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Pending);
+    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Pending)
+        ->and($documentRequest->fresh()->answered_at)->toBeNull();
 });
 
 test('reviewing a multi-file request stamps every uploaded file', function (): void {
