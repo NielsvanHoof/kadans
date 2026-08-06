@@ -142,8 +142,11 @@ discriminator that keeps `tenancy:sync-roles` off those rows.
 
 `WorkspacePermission::ManageRoles` (`roles.manage`) exists with
 `defaultRoles() => []`, making it owner-only by the same convention as
-`ManageSettings`. It gates no endpoint yet; it is registered so writes can be
-added without a second permission-sync deploy.
+`ManageSettings`. Firm-authored (non-system) roles may only include permissions
+that are not owner-only and that the actor already holds — see
+`PermissionRegistry::firmAssignableValues()` and the store/update role requests.
+That blocks the path where an Administrator is assigned a custom role carrying
+`roles.manage` and then escalates further.
 
 ## Adding permissions
 

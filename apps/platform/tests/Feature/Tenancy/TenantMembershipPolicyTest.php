@@ -74,3 +74,20 @@ test('the last owner cannot remove themselves', function (): void {
     expect($policy->remove($owner, $membership))->toBeFalse()
         ->and($membership->status)->toBe(TenantMembershipStatus::Active);
 });
+
+test('members cannot update or assign a role on their own membership', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $admin = workspaceMember($tenant, Role::Administrator);
+    $membership = TenantMembership::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $admin->id)
+        ->firstOrFail();
+
+    $policy = resolve(TenantMembershipPolicy::class);
+
+    actingInWorkspace($tenant);
+
+    expect($policy->update($admin, $membership))->toBeFalse()
+        ->and($policy->assignRole($admin, $membership, Role::Reviewer))->toBeFalse()
+        ->and($policy->suspend($admin, $membership))->toBeFalse();
+});

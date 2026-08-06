@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Tenancy\Http\Requests;
 
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
+use App\Tenancy\Http\Requests\Concerns\ValidatesAssignableRolePermissions;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Support\PermissionRegistry;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,6 +15,7 @@ use Illuminate\Validation\Rule;
 final class StoreTenantRoleRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+    use ValidatesAssignableRolePermissions;
 
     public function authorize(): bool
     {
@@ -40,7 +41,7 @@ final class StoreTenantRoleRequest extends FormRequest
             'permissions.*' => [
                 'required',
                 'string',
-                Rule::in(resolve(PermissionRegistry::class)->values()),
+                Rule::in($this->assignablePermissionValues()),
             ],
         ];
     }

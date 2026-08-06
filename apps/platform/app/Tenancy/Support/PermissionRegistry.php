@@ -119,6 +119,32 @@ final class PermissionRegistry
     }
 
     /**
+     * Owner-only permissions use empty defaultRoles(); owners still receive
+     * them via Role::grantsAllPermissions(). They must never appear on
+     * firm-authored (non-system) roles — that is the escalation path.
+     */
+    public function isOwnerOnly(TenantPermission $permission): bool
+    {
+        return $permission->defaultRoles() === [];
+    }
+
+    /**
+     * Spatie names that may be granted on a firm-authored role.
+     *
+     * @return list<string>
+     */
+    public function firmAssignableValues(): array
+    {
+        return array_map(
+            static fn (TenantPermission $permission): string => $permission->value,
+            array_values(array_filter(
+                $this->all(),
+                fn (TenantPermission $permission): bool => ! $this->isOwnerOnly($permission),
+            )),
+        );
+    }
+
+    /**
      * Spatie permission names a role holds by default.
      *
      * @return list<string>
