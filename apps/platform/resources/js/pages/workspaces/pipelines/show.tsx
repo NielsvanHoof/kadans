@@ -2,7 +2,6 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft, Download, Trash2 } from 'lucide-react';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import Heading from '@/components/primitives/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
     Card,
@@ -14,10 +13,9 @@ import {
 import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
 import PipelineStepTimeline from '@/features/pipelines/show/pipeline-step-timeline';
 import RetryPipelineButton from '@/features/pipelines/show/retry-pipeline-button';
+import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import {
     pipelineIsInFlight,
-    pipelineStatusBadgeVariant,
-    pipelineStatusLabel,
     pipelineStepLabel,
     pipelineTypeLabel,
 } from '@/features/pipelines/status/pipeline-status';
@@ -90,13 +88,9 @@ export default function PipelineShow({
                                 'A detailed execution trace for this long-running process.',
                             )}
                             badge={
-                                <Badge
-                                    variant={pipelineStatusBadgeVariant(
-                                        pipeline.status,
-                                    )}
-                                >
-                                    {pipelineStatusLabel(pipeline.status, t)}
-                                </Badge>
+                                <PipelineStatusBadge
+                                    status={pipeline.status}
+                                />
                             }
                         />
                     </div>

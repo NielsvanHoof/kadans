@@ -1,18 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { Activity, ArrowRight } from 'lucide-react';
-import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import type { DataTableColumn } from '@/components/data/data-table';
+import IndexDataCard from '@/components/data/index-data-card';
 import EmptyState from '@/components/primitives/empty-state';
-import { Badge } from '@/components/ui/badge';
+import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    pipelineStatusBadgeVariant,
-    pipelineStatusLabel,
     pipelineStepLabel,
     pipelineTypeLabel,
 } from '@/features/pipelines/status/pipeline-status';
@@ -72,9 +64,7 @@ export default function PipelinesListCard({
             key: 'status',
             header: t('Status'),
             cell: (pipeline) => (
-                <Badge variant={pipelineStatusBadgeVariant(pipeline.status)}>
-                    {pipelineStatusLabel(pipeline.status, t)}
-                </Badge>
+                <PipelineStatusBadge status={pipeline.status} />
             ),
         },
         {
@@ -121,31 +111,25 @@ export default function PipelinesListCard({
     ];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('Pipeline runs')}</CardTitle>
-                <CardDescription>
-                    {pipelines.total === 1
-                        ? t('1 pipeline run')
-                        : t(':count pipeline runs', { count: pipelines.total })}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DataTable
-                    columns={columns}
-                    rows={pipelines.data}
-                    rowKey={(pipeline) => pipeline.id}
-                    emptyState={
-                        <EmptyState
-                            icon={Activity}
-                            title={t('No pipeline runs found.')}
-                            description={t(
-                                'Long-running OCR and export processes will appear here as they run.',
-                            )}
-                        />
-                    }
+        <IndexDataCard
+            title={t('Pipeline runs')}
+            description={
+                pipelines.total === 1
+                    ? t('1 pipeline run')
+                    : t(':count pipeline runs', { count: pipelines.total })
+            }
+            columns={columns}
+            rows={pipelines.data}
+            rowKey={(pipeline) => pipeline.id}
+            emptyState={
+                <EmptyState
+                    icon={Activity}
+                    title={t('No pipeline runs found.')}
+                    description={t(
+                        'Long-running OCR and export processes will appear here as they run.',
+                    )}
                 />
-            </CardContent>
-        </Card>
+            }
+        />
     );
 }

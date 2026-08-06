@@ -53,6 +53,7 @@ export default function AuditMark({
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
+            data-audit-mark={variant}
             className={cn(
                 'size-4 shrink-0',
                 tone === 'status' && TONE_CLASSES[variant],

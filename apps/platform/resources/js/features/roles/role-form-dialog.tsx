@@ -21,17 +21,34 @@ import type {
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 
-export default function EditRoleDialog({
-    role,
-    permissionGroups,
-    onOpenChange,
-}: {
-    role: WorkspaceRole | null;
+export type RoleFormMode = 'create' | 'edit' | 'duplicate';
+
+export type RoleFormDialogState =
+    | { mode: 'create' }
+    | { mode: 'edit'; role: WorkspaceRole }
+    | { mode: 'duplicate'; role: WorkspaceRole };
+
+type RoleFormDialogProps = {
+    state: RoleFormDialogState | null;
     permissionGroups: WorkspacePermissionGroup[];
     onOpenChange: (open: boolean) => void;
-}) {
+};
+
+/**
+ * Shared create / edit / duplicate role dialog.
+ * One form shape so validation guidance cannot drift between modes.
+ */
+export default function RoleFormDialog({
+    state,
+    permissionGroups,
+    onOpenChange,
+}: RoleFormDialogProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const mode = state?.mode ?? null;
+    const role =
+        state && state.mode !== 'create' ? state.role : null;
+
     const allPermissionValues = useMemo(
         () =>
             permissionGroups.flatMap((group) =>
@@ -44,7 +61,12 @@ export default function EditRoleDialog({
     );
 
     useEffect(() => {
-        if (!role) {
+        if (!state) {
+            return;
+        }
+
+        if (state.mode === 'create') {
+            setSelectedPermissions([]);
             return;
         }
 
@@ -52,44 +74,55 @@ export default function EditRoleDialog({
             permissionGroups
                 .flatMap((group) => group.permissions)
                 .filter((permission) =>
-                    permission.granted_to.includes(role.value),
+                    permission.granted_to.includes(state.role.value),
                 )
                 .map((permission) => permission.value),
         );
-    }, [permissionGroups, role]);
+    }, [permissionGroups, state]);
+
+    const copy = modeCopy(mode, t);
+    const formProps = formPropsForMode(mode, role, currentWorkspace);
+    // Remount when mode/role changes so uncontrolled name defaultValue refreshes.
+    const formKey =
+        mode === 'create'
+            ? 'create'
+            : mode && role
+              ? `${mode}-${role.id}`
+              : 'closed';
 
     return (
-        <Dialog isOpen={role !== null} onOpenChange={onOpenChange}>
+        <Dialog isOpen={state !== null} onOpenChange={onOpenChange}>
             <DialogHeader>
-                <DialogTitle>{t('Edit role')}</DialogTitle>
-                <DialogDescription>
-                    {t('Update role name and permissions.')}
-                </DialogDescription>
+                <DialogTitle>{copy.title}</DialogTitle>
+                <DialogDescription>{copy.description}</DialogDescription>
             </DialogHeader>
-            {role ? (
-                // Remount per role: the name input is uncontrolled, so its
-                // defaultValue only refreshes when the subtree is recreated.
+            {state && formProps ? (
                 <Form
-                    key={role.id}
-                    {...WorkspaceRoleController.update.form({
-                        tenant: currentWorkspace,
-                        role: role.id,
-                    })}
+                    key={formKey}
+                    {...formProps}
                     options={{ preserveScroll: true }}
                     onSuccess={() => onOpenChange(false)}
                 >
                     {({ processing, errors }) => (
                         <div className="space-y-4">
                             <Field data-invalid={Boolean(errors.name)}>
-                                <FieldLabel htmlFor="edit-role-name">
+                                <FieldLabel htmlFor="role-form-name">
                                     {t('Role name')}
                                 </FieldLabel>
                                 <Input
-                                    id="edit-role-name"
+                                    id="role-form-name"
                                     name="name"
-                                    defaultValue={role.label}
+                                    defaultValue={defaultNameForMode(
+                                        state,
+                                        t,
+                                    )}
                                     required
                                     maxLength={255}
+                                    placeholder={
+                                        mode === 'create'
+                                            ? t('e.g. Operations manager')
+                                            : undefined
+                                    }
                                 />
                                 <InputError message={errors.name} />
                             </Field>
@@ -123,7 +156,7 @@ export default function EditRoleDialog({
                                         selectedPermissions.length === 0
                                     }
                                 >
-                                    {t('Save role')}
+                                    {copy.submit}
                                 </Button>
                             </DialogFooter>
                         </div>
@@ -132,4 +165,67 @@ export default function EditRoleDialog({
             ) : null}
         </Dialog>
     );
+}
+
+function modeCopy(
+    mode: RoleFormMode | null,
+    t: (key: string) => string,
+): { title: string; description: string; submit: string } {
+    switch (mode) {
+        case 'edit':
+            return {
+                title: t('Edit role'),
+                description: t('Update role name and permissions.'),
+                submit: t('Save role'),
+            };
+        case 'duplicate':
+            return {
+                title: t('Duplicate role'),
+                description: t('Create a new role based on this role.'),
+                submit: t('Create role'),
+            };
+        case 'create':
+        default:
+            return {
+                title: t('Create role'),
+                description: t(
+                    'Create custom roles for your workspace and choose exactly which permissions they include.',
+                ),
+                submit: t('Create role'),
+            };
+    }
+}
+
+function defaultNameForMode(
+    state: RoleFormDialogState,
+    t: (key: string, replacements?: Record<string, string | number>) => string,
+): string {
+    if (state.mode === 'create') {
+        return '';
+    }
+
+    if (state.mode === 'duplicate') {
+        return t(':name copy', { name: state.role.label });
+    }
+
+    return state.role.label;
+}
+
+function formPropsForMode(
+    mode: RoleFormMode | null,
+    role: WorkspaceRole | null,
+    currentWorkspace: { slug: string },
+) {
+    if (mode === 'edit' && role) {
+        return WorkspaceRoleController.update.form({
+            tenant: currentWorkspace,
+            role: role.id,
+        });
+    }
+
+    if (mode === 'create' || mode === 'duplicate') {
+        return WorkspaceRoleController.store.form(currentWorkspace);
+    }
+
+    return null;
 }

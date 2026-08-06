@@ -1,11 +1,8 @@
-import AuditMark, {
-    type AuditMarkVariant,
-} from '@/components/brand/audit-mark';
-import { Badge } from '@/components/ui/badge';
+import type { AuditMarkVariant } from '@/components/brand/audit-mark';
+import StatusBadge from '@/components/primitives/status-badge';
 import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import type { DocumentRequestStatus } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { cn } from '@/lib/utils';
 
 /**
  * Each status gets its own margin mark, the way an accountant annotates a
@@ -31,7 +28,6 @@ const STATUS_CLASSES: Record<DocumentRequestStatus, string> = {
  *
  * Staff review and the client portal both render this, so an item that reads
  * "Approved" with a tick to a reviewer reads exactly the same to the client.
- * Keeping it in one component is what makes that promise hold.
  */
 export default function DocumentRequestStatusBadge({
     status,
@@ -43,18 +39,11 @@ export default function DocumentRequestStatusBadge({
     const { t } = useTranslation();
 
     return (
-        <Badge
-            variant="outline"
-            className={cn(
-                'shrink-0 gap-1.5',
-                STATUS_CLASSES[status],
-                className,
-            )}
-        >
-            {/* `inherit` so the mark takes the badge's own colour rather than
-                setting a second, competing one. */}
-            <AuditMark variant={STATUS_MARKS[status]} tone="inherit" />
-            {documentRequestStatusLabel(status, t)}
-        </Badge>
+        <StatusBadge
+            mark={STATUS_MARKS[status]}
+            statusClassName={STATUS_CLASSES[status]}
+            label={documentRequestStatusLabel(status, t)}
+            className={className}
+        />
     );
 }

@@ -35,22 +35,6 @@ export function pipelineStepStatusLabel(
     return t(PIPELINE_STEP_STATUS_LABELS[status]);
 }
 
-export function pipelineStatusBadgeVariant(
-    status: PipelineStatus,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
-    switch (status) {
-        case 'completed':
-            return 'default';
-        case 'failed':
-        case 'stuck':
-            return 'destructive';
-        case 'running':
-            return 'secondary';
-        default:
-            return 'outline';
-    }
-}
-
 /** True while the run is still active and should be polled on the show page. */
 export function pipelineIsInFlight(status: PipelineStatus): boolean {
     return status === 'pending' || status === 'running';

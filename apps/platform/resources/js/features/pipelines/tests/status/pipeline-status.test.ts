@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
     pipelineIsInFlight,
-    pipelineStatusBadgeVariant,
     pipelineStatusLabel,
     pipelineStepLabel,
     pipelineStepStatusLabel,
@@ -38,20 +37,6 @@ describe('pipelineStepStatusLabel', () => {
         ['skipped', 'Skipped'],
     ] as [PipelineStepStatus, string][])('resolves %s', (status, label) => {
         expect(pipelineStepStatusLabel(status, identity)).toBe(label);
-    });
-});
-
-describe('pipelineStatusBadgeVariant', () => {
-    it('maps terminal failure states to destructive', () => {
-        expect(pipelineStatusBadgeVariant('failed')).toBe('destructive');
-        expect(pipelineStatusBadgeVariant('stuck')).toBe('destructive');
-    });
-
-    it('maps active and success states distinctly', () => {
-        expect(pipelineStatusBadgeVariant('completed')).toBe('default');
-        expect(pipelineStatusBadgeVariant('running')).toBe('secondary');
-        expect(pipelineStatusBadgeVariant('pending')).toBe('outline');
-        expect(pipelineStatusBadgeVariant('cancelled')).toBe('outline');
     });
 });
 

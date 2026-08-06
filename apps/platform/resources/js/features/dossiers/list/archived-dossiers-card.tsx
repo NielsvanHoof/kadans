@@ -1,14 +1,7 @@
-import { useState } from 'react';
-import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import type { DataTableColumn } from '@/components/data/data-table';
 import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
+import IndexDataCard from '@/components/data/index-data-card';
 import EmptyState from '@/components/primitives/empty-state';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import BulkRestoreDossiersButton from '@/features/dossiers/list/bulk-restore-dossiers-button';
 import RestoreDossierButton from '@/features/dossiers/list/restore-dossier-button';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
@@ -28,21 +21,6 @@ export default function ArchivedDossiersCard({
 }) {
     const { t, locale } = useTranslation();
     const rows = dossiers.data;
-    const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
-        new Set(),
-    );
-
-    // Bulk restore only submits dossiers whose client is already active.
-    const restorableSelectedIds = rows
-        .filter(
-            (dossier) =>
-                selectedKeys.has(dossier.id) && !dossier.client_archived,
-        )
-        .map((dossier) => dossier.id);
-
-    const selectedBlockedCount = rows.filter(
-        (dossier) => selectedKeys.has(dossier.id) && dossier.client_archived,
-    ).length;
 
     const columns: DataTableColumn<ArchivedDossierSummary>[] = [
         {
@@ -89,70 +67,79 @@ export default function ArchivedDossiersCard({
     ];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('Archived dossiers')}</CardTitle>
-                <CardDescription>
-                    {dossiers.total === 1
-                        ? t('1 archived dossier')
-                        : t(':count archived dossiers', {
-                              count: dossiers.total,
-                          })}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DataTable
-                    columns={columns}
-                    rows={rows}
-                    rowKey={(dossier) => dossier.id}
-                    selectedKeys={canRestore ? selectedKeys : undefined}
-                    onSelectionChange={canRestore ? setSelectedKeys : undefined}
-                    toolbar={
-                        canRestore &&
-                        (restorableSelectedIds.length > 0 ||
-                            selectedBlockedCount > 0) ? (
-                            <DataTableBulkToolbar
-                                selectedCount={
-                                    restorableSelectedIds.length +
-                                    selectedBlockedCount
-                                }
-                                actions={
-                                    <>
-                                        {selectedBlockedCount > 0 ? (
-                                            <p className="max-w-64 text-right text-xs text-muted-foreground">
-                                                {selectedBlockedCount === 1
-                                                    ? t(
-                                                          '1 selected dossier needs its client restored first.',
-                                                      )
-                                                    : t(
-                                                          ':count selected dossiers need their client restored first.',
-                                                          {
-                                                              count: selectedBlockedCount,
-                                                          },
-                                                      )}
-                                            </p>
-                                        ) : null}
-                                        <BulkRestoreDossiersButton
-                                            selectedIds={restorableSelectedIds}
-                                            onSuccess={() =>
-                                                setSelectedKeys(new Set())
-                                            }
-                                        />
-                                    </>
-                                }
-                            />
-                        ) : undefined
-                    }
-                    emptyState={
-                        <EmptyState
-                            title={t('No archived dossiers.')}
-                            description={t(
-                                'Dossiers you archive will remain available here during the retention period.',
-                            )}
-                        />
-                    }
+        <IndexDataCard
+            title={t('Archived dossiers')}
+            description={
+                dossiers.total === 1
+                    ? t('1 archived dossier')
+                    : t(':count archived dossiers', {
+                          count: dossiers.total,
+                      })
+            }
+            columns={columns}
+            rows={rows}
+            rowKey={(dossier) => dossier.id}
+            bulkActions={
+                canRestore
+                    ? ({ selectedRows, clearSelection }) => {
+                          // Bulk restore only submits dossiers whose client is active.
+                          const restorableSelectedIds = selectedRows
+                              .filter((dossier) => !dossier.client_archived)
+                              .map((dossier) => dossier.id);
+                          const selectedBlockedCount = selectedRows.filter(
+                              (dossier) => dossier.client_archived,
+                          ).length;
+
+                          if (
+                              restorableSelectedIds.length === 0 &&
+                              selectedBlockedCount === 0
+                          ) {
+                              return null;
+                          }
+
+                          return (
+                              <DataTableBulkToolbar
+                                  selectedCount={
+                                      restorableSelectedIds.length +
+                                      selectedBlockedCount
+                                  }
+                                  actions={
+                                      <>
+                                          {selectedBlockedCount > 0 ? (
+                                              <p className="max-w-64 text-right text-xs text-muted-foreground">
+                                                  {selectedBlockedCount === 1
+                                                      ? t(
+                                                            '1 selected dossier needs its client restored first.',
+                                                        )
+                                                      : t(
+                                                            ':count selected dossiers need their client restored first.',
+                                                            {
+                                                                count: selectedBlockedCount,
+                                                            },
+                                                        )}
+                                              </p>
+                                          ) : null}
+                                          <BulkRestoreDossiersButton
+                                              selectedIds={
+                                                  restorableSelectedIds
+                                              }
+                                              onSuccess={clearSelection}
+                                          />
+                                      </>
+                                  }
+                              />
+                          );
+                      }
+                    : undefined
+            }
+            emptyState={
+                <EmptyState
+                    title={t('No archived dossiers.')}
+                    description={t(
+                        'Dossiers you archive will remain available here during the retention period.',
+                    )}
                 />
-            </CardContent>
-        </Card>
+            }
+        />
     );
 }
