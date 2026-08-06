@@ -11,8 +11,14 @@ use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 use function is_string;
+use function mb_ord;
+use function mb_str_split;
+use function mb_strlen;
+use function mb_substr;
+use function pathinfo;
 
 /**
  * Build a short-lived signed URL for a private stored document.
@@ -24,6 +30,21 @@ use function is_string;
  */
 final readonly class ResolveDocumentTemporaryUrlAction
 {
+    /**
+     * Starting point for how much of the filename is kept; walked down
+     * further below if the encoded header still comes out too long.
+     */
+    private const int MAX_FILENAME_LENGTH = 150;
+
+    /**
+     * Hard ceiling on the built Content-Disposition value itself. A fixed
+     * filename-character bound isn't enough on its own: the RFC 5987
+     * `filename*=UTF-8''...` form percent-encodes every non-ASCII byte, so a
+     * filename of emoji or CJK characters can still expand to several times
+     * MAX_FILENAME_LENGTH once encoded.
+     */
+    private const int MAX_CONTENT_DISPOSITION_LENGTH = 512;
+
     public function __construct(private FilesystemManager $filesystems) {}
 
     /**
@@ -56,7 +77,7 @@ final readonly class ResolveDocumentTemporaryUrlAction
             $document->path,
             $expiresAt,
             [
-                'ResponseContentDisposition' => $disposition.'; filename="'.$document->original_filename.'"',
+                'ResponseContentDisposition' => $this->contentDisposition($disposition, $document->original_filename),
                 'ResponseContentType' => $document->mime_type,
             ],
         );
@@ -100,10 +121,72 @@ final readonly class ResolveDocumentTemporaryUrlAction
         $command = $publicClient->getCommand('GetObject', [
             'Bucket' => config('filesystems.disks.s3.bucket'),
             'Key' => $document->path,
-            'ResponseContentDisposition' => $disposition.'; filename="'.$document->original_filename.'"',
+            'ResponseContentDisposition' => $this->contentDisposition($disposition, $document->original_filename),
             'ResponseContentType' => $document->mime_type,
         ]);
 
         return (string) $publicClient->createPresignedRequest($command, $expiresAt)->getUri();
+    }
+
+    /**
+     * Build a well-formed, single Content-Disposition value from a fully
+     * client-controlled filename (`getClientOriginalName()`, unvalidated).
+     *
+     * HeaderUtils::makeDisposition() — the same RFC 6266 builder Symfony's
+     * own BinaryFileResponse uses for the (already-safe) local disk download
+     * path — quoted-string-escapes the ASCII fallback, so a filename cannot
+     * close the quoted parameter early and inject a second one. The real
+     * filename still travels in full via the `filename*=UTF-8''...` form for
+     * clients that support it.
+     */
+    private function contentDisposition(string $disposition, string $originalFilename): string
+    {
+        $filename = $this->boundedFilename($originalFilename);
+        $value = HeaderUtils::makeDisposition($disposition, $filename, $this->asciiFallback($filename));
+
+        // A fixed character bound can't predict the percent-encoded size up
+        // front, so halve the filename until the built value actually fits.
+        while (mb_strlen($value) > self::MAX_CONTENT_DISPOSITION_LENGTH && mb_strlen($filename) > 1) {
+            $filename = mb_substr($filename, 0, (int) (mb_strlen($filename) / 2));
+            $value = HeaderUtils::makeDisposition($disposition, $filename, $this->asciiFallback($filename));
+        }
+
+        return $value;
+    }
+
+    /**
+     * Bounds filename length and strips path separators HeaderUtils rejects
+     * outright, preserving the extension where the truncation allows it.
+     */
+    private function boundedFilename(string $filename): string
+    {
+        $filename = str_replace(['/', '\\'], '_', $filename);
+
+        if (mb_strlen($filename) <= self::MAX_FILENAME_LENGTH) {
+            return $filename;
+        }
+
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $suffix = $extension !== '' ? '.'.$extension : '';
+        $base = mb_substr(pathinfo($filename, PATHINFO_FILENAME), 0, max(self::MAX_FILENAME_LENGTH - mb_strlen($suffix), 1));
+
+        return $base.$suffix;
+    }
+
+    /**
+     * Mirrors Symfony\Component\HttpFoundation\BinaryFileResponse's own
+     * fallback derivation: replace every non-printable-ASCII byte (and any
+     * literal "%", which HeaderUtils also rejects in a fallback) with "_".
+     */
+    private function asciiFallback(string $filename): string
+    {
+        $fallback = '';
+
+        foreach (mb_str_split($filename) as $char) {
+            $codepoint = mb_ord($char);
+            $fallback .= ($char === '%' || $codepoint < 32 || $codepoint > 126) ? '_' : $char;
+        }
+
+        return $fallback;
     }
 }

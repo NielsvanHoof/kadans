@@ -123,8 +123,16 @@ noncurrent-version expiry, and a bucket policy denying non-TLS transport.
 
 Headers are only written when **absent**, so a route may harden further first — the
 portal's `no-referrer` survives this middleware. Tuning lives in `config/security.php`
-(`SECURITY_CSP_ENABLED`, `SECURITY_CSP_REPORT_ONLY`, the HSTS keys). Caddy also sets
-`nosniff` and `Referrer-Policy` at the edge in `docker/production/Caddyfile`.
+(`SECURITY_CSP_ENABLED`, `SECURITY_CSP_REPORT_ONLY`, the HSTS keys).
+
+**Referrer-Policy ownership:** the application owns this header exclusively
+(`AddSecurityHeaders` for the baseline, `HardenClientPortalResponse` for
+`no-referrer` on portal routes). The production Caddyfile must not set
+`Referrer-Policy` — Caddy's bare `header` directive *replaces* the field and would
+downgrade portal responses back to `strict-origin-when-cross-origin`. Caddy may
+still set `X-Content-Type-Options: nosniff` (idempotent) and strip `Server`.
+A regression test in `tests/Feature/Security/ProductionCaddyfileTest.php` guards
+the Caddyfile.
 
 ### The Content Security Policy
 
@@ -172,9 +180,14 @@ optionally `SECURITY_CSP_REPORT_URI`), watch reports, then flip it back.
 ## Authentication
 
 Laravel Fortify with 2FA (TOTP + recovery codes) and passkeys. Rate limiters in
-`FortifyServiceProvider`: login (per email + IP), two-factor challenge (5/min), and
-passkeys. Sessions are Redis-backed, encrypted, and `secure` in production.
-Invitation tokens follow the same hashed-and-expiring pattern as portal grants.
+`FortifyServiceProvider`: login (5/min per email + IP), two-factor challenge (5/min),
+passkeys (10/min), password reset request (3/min per email, 10/min per IP), and
+password reset submission (10/min per IP). Fortify itself only wires the first three
+through `config/fortify.php`'s `limiters` array — it has no config hook for the
+password reset routes, so those two are throttled by attaching `throttle:` middleware
+directly to the named routes once Fortify has registered them. Sessions are
+Redis-backed, encrypted, and `secure` in production. Invitation tokens follow the
+same hashed-and-expiring pattern as portal grants.
 
 **Known gap:** 2FA is available but not *enforced*. For a platform holding client
 financial records, requiring it for every staff member — or at minimum for roles with
@@ -207,8 +220,9 @@ demand. That is required, not optional, once real client data is in the system.
 production if any of these is wrong: `app.debug` on, non-HTTPS `APP_URL`, cache or
 queue not Redis, Redis not on TLS, sessions not Redis/encrypted/secure/domain-scoped,
 filesystem not S3 (with throw + report on), broadcasting not Reverb, OCR driver not
-Textract, no delivering mailer, or unset trusted proxies. Misconfiguration cannot
-reach traffic.
+Textract, no delivering mailer, or trusted proxies unset / set to `REMOTE_ADDR` /
+`*` (must be LB/VPC CIDRs or `PRIVATE_SUBNETS`). Misconfiguration cannot reach
+traffic.
 
 ## Supply chain
 

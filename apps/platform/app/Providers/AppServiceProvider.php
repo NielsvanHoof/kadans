@@ -26,8 +26,10 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Telescope\TelescopeServiceProvider;
@@ -62,10 +64,27 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureTrustedProxies();
         $this->configureMorphMap();
         $this->configureDefaults();
         $this->configureFactoryDiscovery();
         $this->configureDevCommands();
+    }
+
+    /**
+     * Apply TRUSTED_PROXIES after config is loaded. trustProxies(at:) cannot
+     * take a deferred closure (unlike trustHosts), so bootstrap only sets
+     * forwarded headers and this boots the concrete proxy list.
+     *
+     * Production must use LB/VPC CIDRs or PRIVATE_SUBNETS — never REMOTE_ADDR.
+     */
+    private function configureTrustedProxies(): void
+    {
+        $proxies = config('production.trusted_proxies');
+
+        if (is_string($proxies) && $proxies !== '') {
+            TrustProxies::at($proxies);
+        }
     }
 
     /**
@@ -74,6 +93,17 @@ final class AppServiceProvider extends ServiceProvider
     private function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        // Reset links and other absolute URLs must ignore the request Host
+        // header in production: a spoofed header must never redirect a
+        // legitimate user's email link to an attacker-controlled domain.
+        // forceRootUrl() alone leaves the scheme derived from the request
+        // (UrlGenerator::formatScheme falls back to $request->getScheme()),
+        // so it must be paired with forceScheme().
+        if (app()->isProduction()) {
+            URL::useOrigin((string) config('app.url'));
+            URL::forceScheme('https');
+        }
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),

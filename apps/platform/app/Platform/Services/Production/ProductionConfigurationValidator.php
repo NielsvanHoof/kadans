@@ -17,6 +17,28 @@ use function str_starts_with;
 
 final readonly class ProductionConfigurationValidator
 {
+    /**
+     * Hosts an `allowed_hosts` pattern must never match. Catches overly
+     * broad regressions (e.g. a pattern matching any IPv4 address) that
+     * would let a spoofed Host header pass trusted-host validation.
+     *
+     * @var list<string>
+     */
+    private const array UNTRUSTED_CANARY_HOSTS = [
+        '169.254.169.254',
+        '203.0.113.10',
+        'evil.attacker.example',
+    ];
+
+    /**
+     * Checked-in development Reverb credentials (.env / .env.example). A
+     * known secret lets an attacker self-sign a private-channel subscribe
+     * for any origin, bypassing routes/channels.php entirely.
+     */
+    private const string DEV_REVERB_APP_KEY = 'local-reverb-key';
+
+    private const string DEV_REVERB_APP_SECRET = 'local-reverb-secret';
+
     public function __construct(
         private Application $application,
         private Repository $config,
@@ -48,6 +70,11 @@ final readonly class ProductionConfigurationValidator
             $this->hasValidMailFromAddress() ? null : 'mail.from.address',
             $this->hasTrustedProxies() ? null : 'production.trusted_proxies',
             $this->hasAllowedHosts() ? null : 'production.allowed_hosts',
+            $this->hasProductionReverbKey() ? null : 'reverb.apps.apps.0.key',
+            $this->hasProductionReverbSecret() ? null : 'reverb.apps.apps.0.secret',
+            $this->hasHttpsReverbScheme() ? null : 'reverb.apps.apps.0.options.scheme',
+            $this->hasReverbTlsEnabled() ? null : 'reverb.apps.apps.0.options.useTLS',
+            $this->hasRestrictedReverbOrigins() ? null : 'reverb.apps.apps.0.allowed_origins',
         ], static fn (?string $key): bool => $key !== null));
 
         if ($invalidKeys !== []) {
@@ -93,16 +120,86 @@ final readonly class ProductionConfigurationValidator
             && $this->config->get('session.domain') === $applicationHost;
     }
 
+    /**
+     * Production must name specific proxy IPs/CIDRs (or Symfony's
+     * PRIVATE_SUBNETS). REMOTE_ADDR / * trust whoever opened the TCP
+     * connection and let clients spoof X-Forwarded-For.
+     */
     private function hasTrustedProxies(): bool
     {
-        return $this->config->get('production.trusted_proxies') === 'REMOTE_ADDR';
+        $proxies = $this->config->get('production.trusted_proxies');
+
+        if (! is_string($proxies) || mb_trim($proxies) === '') {
+            return false;
+        }
+
+        $entries = array_values(array_filter(
+            array_map(trim(...), explode(',', $proxies)),
+            static fn (string $entry): bool => $entry !== '',
+        ));
+
+        if ($entries === []) {
+            return false;
+        }
+        return array_all($entries, fn(string $entry): bool => !in_array($entry, ['REMOTE_ADDR', '*', '**', '0.0.0.0/0', '::/0'], true));
     }
 
     private function hasAllowedHosts(): bool
     {
         $hosts = $this->config->get('production.allowed_hosts');
 
-        return is_array($hosts) && $hosts !== [];
+        return is_array($hosts) && $hosts !== [] && ! $this->allowsUntrustedHost($hosts);
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $hostPatterns
+     */
+    private function allowsUntrustedHost(array $hostPatterns): bool
+    {
+        foreach ($hostPatterns as $pattern) {
+            if (! is_string($pattern)) {
+                continue;
+            }
+
+            foreach (self::UNTRUSTED_CANARY_HOSTS as $canary) {
+                if (@preg_match('{'.$pattern.'}i', $canary) === 1) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function hasProductionReverbKey(): bool
+    {
+        $key = $this->config->get('reverb.apps.apps.0.key');
+
+        return is_string($key) && $key !== '' && $key !== self::DEV_REVERB_APP_KEY;
+    }
+
+    private function hasProductionReverbSecret(): bool
+    {
+        $secret = $this->config->get('reverb.apps.apps.0.secret');
+
+        return is_string($secret) && $secret !== '' && $secret !== self::DEV_REVERB_APP_SECRET;
+    }
+
+    private function hasHttpsReverbScheme(): bool
+    {
+        return $this->config->get('reverb.apps.apps.0.options.scheme') === 'https';
+    }
+
+    private function hasReverbTlsEnabled(): bool
+    {
+        return $this->config->get('reverb.apps.apps.0.options.useTLS') === true;
+    }
+
+    private function hasRestrictedReverbOrigins(): bool
+    {
+        $origins = $this->config->get('reverb.apps.apps.0.allowed_origins');
+
+        return is_array($origins) && $origins !== [] && ! in_array('*', $origins, true);
     }
 
     private function isPackageDiscovery(): bool

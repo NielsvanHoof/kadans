@@ -51,8 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             subdomains: false,
         );
         $middleware->trustProxies(
-            at: 'REMOTE_ADDR',
-            headers: Request::HEADER_X_FORWARDED_AWS_ELB,
+            headers: Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_AWS_ELB,
         );
         $middleware->encryptCookies(except: ['appearance', 'locale', 'sidebar_state']);
 

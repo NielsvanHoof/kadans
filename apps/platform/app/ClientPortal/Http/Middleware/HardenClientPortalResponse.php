@@ -16,8 +16,10 @@ final class HardenClientPortalResponse
      *
      * These run *before* App\Shared\Http\Middleware\AddSecurityHeaders on the way
      * out, and that middleware only fills in headers that are still absent — so
-     * the stricter `no-referrer` set here survives. The full Content-Security-Policy
-     * (including `frame-ancestors 'none'`) comes from the baseline middleware.
+     * the stricter `no-referrer` set here survives. The production Caddyfile must
+     * not set Referrer-Policy (bare `header` replaces the field). The full
+     * Content-Security-Policy (including `frame-ancestors 'none'`) comes from the
+     * baseline middleware.
      */
     public static function applyHeaders(Response $response): Response
     {

@@ -9,6 +9,7 @@ use App\Accounts\Actions\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -38,6 +39,7 @@ final class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configurePasswordResetThrottling();
     }
 
     /**
@@ -99,5 +101,43 @@ final class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(10)->by($rateLimitKey.'|'.$request->ip());
         });
+
+        RateLimiter::for('reset-password-email', function (Request $request): array {
+            $email = Str::transliterate(Str::lower((string) $request->input(Fortify::email())));
+
+            // Two limits stacked: a per-email cap stops one address being
+            // mail-bombed, a per-IP cap stops one attacker spraying reset
+            // emails across every address in a firm.
+            return [
+                Limit::perMinute(3)->by('reset-password-email|email|'.$email),
+                Limit::perMinute(10)->by('reset-password-email|ip|'.$request->ip()),
+            ];
+        });
+
+        RateLimiter::for(
+            'reset-password-update',
+            fn (Request $request) => Limit::perMinute(10)->by('reset-password-update|'.$request->ip()),
+        );
+    }
+
+    /**
+     * Fortify has no config-driven limiter hook for the password reset
+     * routes (only login/two-factor/passkeys read fortify.limiters.*), so
+     * the throttle middleware is attached directly to the already-registered
+     * routes here, after the package's own service provider has booted.
+     *
+     * Route names are only indexed lazily — RouteCollection::nameList is
+     * rebuilt from Route::name() the first time routes are matched against
+     * a real request (toSymfonyRouteCollection()), not at registration
+     * time — so getByName() would miss these routes without an explicit
+     * refresh this early in the boot cycle.
+     */
+    private function configurePasswordResetThrottling(): void
+    {
+        $routes = Route::getRoutes();
+        $routes->refreshNameLookups();
+
+        $routes->getByName('password.email')?->middleware('throttle:reset-password-email');
+        $routes->getByName('password.update')?->middleware('throttle:reset-password-update');
     }
 }

@@ -33,8 +33,11 @@
 		encode zstd br gzip
 
 		header {
+			# nosniff is safe to set at the edge (idempotent with PHP).
+			# Do NOT set Referrer-Policy here — Caddy's bare `header` replaces
+			# the field and would overwrite HardenClientPortalResponse's
+			# no-referrer. PHP owns Referrer-Policy exclusively.
 			X-Content-Type-Options nosniff
-			Referrer-Policy strict-origin-when-cross-origin
 			-Server
 		}
 
