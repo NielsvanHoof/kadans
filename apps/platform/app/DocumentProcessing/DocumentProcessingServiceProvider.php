@@ -12,6 +12,7 @@ use App\DocumentProcessing\Policies\PipelinePolicy;
 use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\DocumentProcessing\Services\Ocr\Drivers\OcrDriverFactory;
 use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
+use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Illuminate\Support\Facades\Gate;
@@ -31,6 +32,9 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
         $this->app->singleton(TextractClient::class, fn (): TextractClient => new TextractClient($this->awsClientConfig('ocr.textract.region')));
 
         $this->app->singleton(SqsClient::class, fn (): SqsClient => new SqsClient($this->awsClientConfig('ocr.textract.region')));
+
+        // Stateless — safe to share across Octane workers / long-running consume loops.
+        $this->app->singleton(MessageValidator::class);
 
         $this->app->bind(DescribesDocumentOverview::class, AgentDocumentOverviewNormalizer::class);
 

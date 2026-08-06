@@ -14,8 +14,12 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 use Aws\Result;
+use Aws\Sns\Exception\InvalidSnsMessageException;
+use Aws\Sns\Message;
+use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
+use RuntimeException;
 
 test('textract consume command applies sns envelope and deletes the message', function (): void {
     $tenant = Tenant::factory()->create();
@@ -46,11 +50,18 @@ test('textract consume command applies sns envelope and deletes the message', fu
 
     $snsBody = json_encode([
         'Type' => 'Notification',
+        'MessageId' => 'sns-msg-1',
+        'TopicArn' => 'arn:aws:sns:eu-west-1:123:textract',
         'Message' => json_encode([
             'JobId' => 'job-from-sqs',
             'Status' => 'SUCCEEDED',
             'API' => 'StartDocumentAnalysis',
         ], JSON_THROW_ON_ERROR),
+        'Timestamp' => '2026-01-01T00:00:00.000Z',
+        'SignatureVersion' => '1',
+        'Signature' => 'dGVzdA==',
+        'SigningCertURL' => 'https://sns.eu-west-1.amazonaws.com/SimpleNotificationService.pem',
+        'UnsubscribeURL' => 'https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe',
     ], JSON_THROW_ON_ERROR);
 
     $sqs = Mockery::mock(SqsClient::class);
@@ -71,6 +82,11 @@ test('textract consume command applies sns envelope and deletes the message', fu
             'ReceiptHandle' => 'receipt-1',
         ])
         ->andReturn(new Result([]));
+
+    $snsValidator = Mockery::mock(MessageValidator::class);
+    $snsValidator->shouldReceive('validate')
+        ->once()
+        ->with(Mockery::type(Message::class));
 
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldReceive('getDocumentAnalysis')
@@ -112,6 +128,7 @@ test('textract consume command applies sns envelope and deletes the message', fu
         ]);
 
     $this->app->instance(SqsClient::class, $sqs);
+    $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
     $this->app->instance(DescribesDocumentOverview::class, $overview);
 
@@ -168,11 +185,19 @@ test('textract consume command marks a document failed after the final receive a
     ]);
 
     $snsBody = json_encode([
+        'Type' => 'Notification',
+        'MessageId' => 'sns-msg-final',
+        'TopicArn' => 'arn:aws:sns:eu-west-1:123:textract',
         'Message' => json_encode([
             'JobId' => 'job-final-attempt',
             'Status' => 'SUCCEEDED',
             'API' => 'StartDocumentAnalysis',
         ], JSON_THROW_ON_ERROR),
+        'Timestamp' => '2026-01-01T00:00:00.000Z',
+        'SignatureVersion' => '1',
+        'Signature' => 'dGVzdA==',
+        'SigningCertURL' => 'https://sns.eu-west-1.amazonaws.com/SimpleNotificationService.pem',
+        'UnsubscribeURL' => 'https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe',
     ], JSON_THROW_ON_ERROR);
 
     $sqs = Mockery::mock(SqsClient::class);
@@ -194,6 +219,11 @@ test('textract consume command marks a document failed after the final receive a
         ])
         ->andReturn(new Result([]));
 
+    $snsValidator = Mockery::mock(MessageValidator::class);
+    $snsValidator->shouldReceive('validate')
+        ->once()
+        ->with(Mockery::type(Message::class));
+
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldReceive('getDocumentAnalysis')
         ->once()
@@ -203,6 +233,7 @@ test('textract consume command marks a document failed after the final receive a
     $overview->shouldNotReceive('describe');
 
     $this->app->instance(SqsClient::class, $sqs);
+    $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
     $this->app->instance(DescribesDocumentOverview::class, $overview);
 
@@ -214,4 +245,88 @@ test('textract consume command marks a document failed after the final receive a
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Failed)
         ->and($uploaded->processing_error)->toBe('Persistent Textract result failure.')
         ->and($uploaded->processing_finished_at)->not->toBeNull();
+});
+
+test('textract consume command rejects an SNS envelope with an invalid signature', function (): void {
+    $tenant = Tenant::factory()->create();
+    $tenant->makeCurrent();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $uploaded = UploadedDocument::factory()->processing()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'textract_job_id' => 'job-forged',
+    ]);
+
+    config([
+        'ocr.textract.results_queue_url' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
+        'ocr.textract.sqs_wait_time_seconds' => 0,
+        'ocr.textract.sqs_max_messages' => 1,
+    ]);
+
+    $snsBody = json_encode([
+        'Type' => 'Notification',
+        'MessageId' => 'sns-msg-forged',
+        'TopicArn' => 'arn:aws:sns:eu-west-1:123:textract',
+        'Message' => json_encode([
+            'JobId' => 'job-forged',
+            'Status' => 'SUCCEEDED',
+            'API' => 'StartDocumentAnalysis',
+        ], JSON_THROW_ON_ERROR),
+        'Timestamp' => '2026-01-01T00:00:00.000Z',
+        'SignatureVersion' => '1',
+        'Signature' => 'Zm9yZ2Vk',
+        'SigningCertURL' => 'https://sns.eu-west-1.amazonaws.com/SimpleNotificationService.pem',
+        'UnsubscribeURL' => 'https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe',
+    ], JSON_THROW_ON_ERROR);
+
+    $sqs = Mockery::mock(SqsClient::class);
+    $sqs->shouldReceive('receiveMessage')
+        ->once()
+        ->andReturn(new Result([
+            'Messages' => [[
+                'Body' => $snsBody,
+                'ReceiptHandle' => 'receipt-forged',
+                'MessageId' => 'sqs-forged',
+            ]],
+        ]));
+    $sqs->shouldReceive('deleteMessage')
+        ->once()
+        ->with([
+            'QueueUrl' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
+            'ReceiptHandle' => 'receipt-forged',
+        ])
+        ->andReturn(new Result([]));
+
+    $snsValidator = Mockery::mock(MessageValidator::class);
+    $snsValidator->shouldReceive('validate')
+        ->once()
+        ->andThrow(new InvalidSnsMessageException('The message signature is invalid.'));
+
+    $textract = Mockery::mock(TextractClient::class);
+    $textract->shouldNotReceive('getDocumentAnalysis');
+
+    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview->shouldNotReceive('describe');
+
+    $this->app->instance(SqsClient::class, $sqs);
+    $this->app->instance(MessageValidator::class, $snsValidator);
+    $this->app->instance(TextractClient::class, $textract);
+    $this->app->instance(DescribesDocumentOverview::class, $overview);
+
+    $this->artisan('textract:consume', ['--once' => true])
+        ->assertSuccessful();
+
+    $uploaded->refresh();
+
+    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Processing)
+        ->and($uploaded->extracted_text)->toBeNull();
 });

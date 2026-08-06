@@ -6,6 +6,9 @@ namespace App\DocumentProcessing\Console\Commands\Ocr;
 
 use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
 use App\DocumentProcessing\Actions\Ocr\FailTextractExtractionAction;
+use Aws\Sns\Exception\InvalidSnsMessageException;
+use Aws\Sns\Message;
+use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -36,6 +39,7 @@ final class ConsumeTextractResultsCommand extends Command
         SqsClient $sqs,
         CompleteTextractExtractionAction $completeTextractExtraction,
         FailTextractExtractionAction $failTextractExtraction,
+        MessageValidator $snsMessageValidator,
         Repository $config,
     ): int {
         $queueUrl = $config->get('ocr.textract.results_queue_url');
@@ -111,7 +115,7 @@ final class ConsumeTextractResultsCommand extends Command
                 $notification = null;
 
                 try {
-                    $notification = $this->parseSnsEnvelope($body);
+                    $notification = $this->parseSnsEnvelope($body, $snsMessageValidator);
                     $applied = $completeTextractExtraction->handle($notification);
 
                     if ($applied) {
@@ -140,6 +144,14 @@ final class ConsumeTextractResultsCommand extends Command
                                 : null,
                         ]);
                     }
+                } catch (InvalidSnsMessageException $exception) {
+                    // Unsigned / forged envelopes will never become valid — drop them.
+                    warning('Rejected Textract SQS message with an invalid SNS signature.');
+                    Log::warning('OCR: textract:consume rejected SNS envelope with invalid signature.', [
+                        'sqs_message_id' => $messageId,
+                        'error' => $exception->getMessage(),
+                    ]);
+                    $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
                 } catch (Throwable $exception) {
                     error('Failed to apply Textract message: '.$exception->getMessage());
                     Log::error('OCR: textract:consume failed to apply SQS message.', [
@@ -175,10 +187,11 @@ final class ConsumeTextractResultsCommand extends Command
 
     /**
      * SNS → SQS wraps the Textract payload in a Message string.
+     * Signature is verified before the inner JSON is trusted.
      *
      * @return array{JobId?: mixed, Status?: mixed, StatusMessage?: mixed, API?: mixed}
      */
-    private function parseSnsEnvelope(string $body): array
+    private function parseSnsEnvelope(string $body, MessageValidator $snsMessageValidator): array
     {
         try {
             /** @var mixed $decoded */
@@ -188,6 +201,26 @@ final class ConsumeTextractResultsCommand extends Command
         }
 
         throw_unless(is_array($decoded), JsonException::class, 'SQS body must be a JSON object.');
+
+        // SNS→SQS notifications carry Type + Signature. Unsigned SNS-shaped
+        // bodies (string Message without a verifiable signature) are rejected.
+        $looksLikeSnsEnvelope = isset($decoded['Type'])
+            || isset($decoded['Signature'])
+            || is_string($decoded['Message'] ?? null);
+
+        if ($looksLikeSnsEnvelope) {
+            try {
+                $snsMessageValidator->validate(Message::fromJsonString($body));
+            } catch (InvalidSnsMessageException $exception) {
+                throw $exception;
+            } catch (Throwable $exception) {
+                // Incomplete SNS fields fail before openssl verification.
+                throw new InvalidSnsMessageException(
+                    'SNS envelope could not be verified: '.$exception->getMessage(),
+                    previous: $exception,
+                );
+            }
+        }
 
         $inner = $decoded['Message'] ?? $decoded;
 
