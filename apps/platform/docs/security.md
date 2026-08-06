@@ -69,6 +69,10 @@ Clients never hold an account. Access is a `ClientAccessGrant` scoped to one dos
   Inertia history encryption is on.
 - Grants are revocable, prunable, and record `last_used_at` under a row lock.
 - Rate limits: 30 req/min on the portal, 10 req/min on token exchange.
+- **Per-dossier portal upload quota:** cumulative uploaded bytes across all
+  document requests on the dossier are capped at 500 MB
+  (`DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER`). Exceeding it returns a
+  clear validation error on `documents` rather than accepting more files.
 
 **Known tradeoff:** a grant token can be re-exchanged until it expires (operator
 choice, up to 90 days) rather than being single-use. Clients lose emails and

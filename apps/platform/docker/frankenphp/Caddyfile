@@ -4,8 +4,8 @@
 	admin {$CADDY_SERVER_ADMIN_HOST}:{$CADDY_SERVER_ADMIN_PORT}
 
 	frankenphp {
-		php_ini upload_max_filesize 40M
-		php_ini post_max_size 42M
+		php_ini upload_max_filesize 20M
+		php_ini post_max_size 210M
 
 		worker {
 			file "{$APP_PUBLIC_PATH}/frankenphp-worker.php"

@@ -48,7 +48,6 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
             ],
             'defaults' => [
                 'sort' => '-deleted_at',
-                'per_page' => 15,
             ],
         ];
     }

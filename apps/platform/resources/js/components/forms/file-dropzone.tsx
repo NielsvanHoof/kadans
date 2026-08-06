@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 export const DEFAULT_FILE_ACCEPT =
     '.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx';
 
-export const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
+export const DEFAULT_MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 type FileDropzoneProps = {
     inputId: string;

@@ -42,6 +42,7 @@ export default function ClientsListCard({
                             tenant: currentWorkspace,
                             client: client.id,
                         })}
+                        prefetch
                         className="font-medium hover:underline"
                     >
                         {client.name}

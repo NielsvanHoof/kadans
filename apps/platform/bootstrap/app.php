@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Accounts\Http\Middleware\SetLocale;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
+use App\Dossiers\Support\DocumentUploadLimits;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\HandleAppearance;
@@ -14,6 +15,7 @@ use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
@@ -86,6 +88,34 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request): bool => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Oversized POSTs never reach FormRequest validation — PHP empties the
+        // body — so name the limit explicitly instead of a CSRF/missing-file error.
+        $exceptions->render(function (PostTooLargeException $exception, Request $request) {
+            $message = __('The upload is too large. The maximum total size is :size.', [
+                'size' => DocumentUploadLimits::MAX_POST_SIZE_LABEL,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 413);
+            }
+
+            // ValidatePostSize runs in the global stack before StartSession.
+            // Re-bind the existing session cookie so flashed errors persist for
+            // the follow-up GET (the browser already holds the cookie).
+            if (! $request->hasSession()) {
+                $session = app('session')->driver();
+                $session->setId($request->cookies->get($session->getName()));
+                $session->setRequestOnHandler($request);
+                $session->start();
+                $request->setLaravelSession($session);
+            }
+
+            $redirect = back()->withErrors(['documents' => $message]);
+            $request->session()->save();
+
+            return $redirect;
+        });
 
         // Register once here: Laravel keeps a single finalizeResponseCallback.
         // Resolving the handler from the container fails under Collision (dev),

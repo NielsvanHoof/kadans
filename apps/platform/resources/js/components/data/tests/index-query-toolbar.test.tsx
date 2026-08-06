@@ -43,7 +43,7 @@ const config: IndexQueryConfig = {
         { key: 'name', label: 'Name' },
         { key: '-created_at', label: 'Newest' },
     ],
-    defaults: { sort: 'name', per_page: 15 },
+    defaults: { sort: 'name' },
 };
 
 describe('IndexQueryToolbar', () => {

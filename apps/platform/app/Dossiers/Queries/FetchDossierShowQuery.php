@@ -20,6 +20,7 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Shared\Data\PersonOptionData;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use RuntimeException;
 
 use function is_string;
@@ -38,6 +39,8 @@ final readonly class FetchDossierShowQuery
      */
     public function handle(Request $request, Dossier $dossier): array
     {
+        $canDownload = $request->user()?->can('export', $dossier) ?? false;
+
         return [
             'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
             'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
@@ -48,15 +51,18 @@ final readonly class FetchDossierShowQuery
             'can_download' => $request->user()?->hasTenantPermission(UploadedDocumentPermission::Download) ?? false,
             'can_upload_audio' => $request->user()?->can('create', [AudioRecording::class, $dossier]) ?? false,
             'can_download_audio' => $request->user()?->hasTenantPermission(AudioRecordingPermission::Download) ?? false,
-            // Lazy so partial reloads skip the full graph when only flash/cans change.
-            'dossier' => fn (): array => $this->dossierPayload(
-                $dossier,
-                $request->user()?->can('export', $dossier) ?? false,
-            )->toArray(),
+            // Core overview first; exports + audio load after paint (below the fold).
+            'dossier' => fn (): array => $this->dossierPayload($dossier)->toArray(),
+            'exports' => Inertia::defer(
+                fn (): array => $this->exportRows($dossier, $canDownload),
+            ),
+            'audio_recordings' => Inertia::defer(
+                fn (): array => $this->audioRecordingRows($dossier),
+            ),
         ];
     }
 
-    private function dossierPayload(Dossier $dossier, bool $canDownload): DossierShowData
+    private function dossierPayload(Dossier $dossier): DossierShowData
     {
         $dossier->load([
             'client:id,name,email',
@@ -66,8 +72,6 @@ final readonly class FetchDossierShowQuery
                 ->with('uploadedDocuments.pipelines.steps')
                 ->oldest('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
-            'exports' => fn ($query) => $query->with('pipeline.steps')->latest(),
-            'audioRecordings' => fn ($query) => $query->with('pipelines.steps')->latest(),
         ]);
 
         $client = $this->resolveClient($dossier);
@@ -90,16 +94,6 @@ final readonly class FetchDossierShowQuery
                 isValid: $grant->isValid(),
             );
         }
-
-        /** @var list<DossierExportData> $exports */
-        $exports = $dossier->exports
-            ->map(fn (DossierExport $export): DossierExportData => DossierExportData::fromModel($export, $canDownload))
-            ->all();
-
-        /** @var list<StaffAudioRecordingData> $audioRecordings */
-        $audioRecordings = $dossier->audioRecordings
-            ->map(fn (AudioRecording $recording): StaffAudioRecordingData => StaffAudioRecordingData::fromModel($recording))
-            ->all();
 
         return new DossierShowData(
             id: $dossier->id,
@@ -127,9 +121,38 @@ final readonly class FetchDossierShowQuery
             ),
             documentRequests: $mapped->rows,
             accessGrants: $accessGrants,
-            exports: $exports,
-            audioRecordings: $audioRecordings,
+            // Filled by deferred top-level props after first paint.
+            exports: [],
+            audioRecordings: [],
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function exportRows(Dossier $dossier, bool $canDownload): array
+    {
+        $dossier->load([
+            'exports' => fn ($query) => $query->with('pipeline.steps')->latest(),
+        ]);
+
+        return $dossier->exports
+            ->map(fn (DossierExport $export): array => DossierExportData::fromModel($export, $canDownload)->toArray())
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function audioRecordingRows(Dossier $dossier): array
+    {
+        $dossier->load([
+            'audioRecordings' => fn ($query) => $query->with('pipelines.steps')->latest(),
+        ]);
+
+        return $dossier->audioRecordings
+            ->map(fn (AudioRecording $recording): array => StaffAudioRecordingData::fromModel($recording)->toArray())
+            ->all();
     }
 
     private function resolveClient(Dossier $dossier): Client

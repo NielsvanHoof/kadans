@@ -38,11 +38,20 @@ final readonly class WorkspaceProps
                         : false,
                 )
                 : [],
-            'current_firm' => function (): ?array {
+            'current_firm' => function () use ($request): ?array {
                 $tenant = Tenant::current();
 
                 if (! $tenant instanceof Tenant) {
                     return null;
+                }
+
+                // Portal sessions make the tenant current for scoping, but the
+                // workspace slug is a staff URL segment — omit it to avoid
+                // leaking enumeration material into the client portal.
+                if ($request->routeIs('portal.*')) {
+                    return [
+                        'name' => $tenant->name,
+                    ];
                 }
 
                 return [

@@ -6,9 +6,8 @@ import {
     DossierPermissionsProvider,
     useDossierCapabilities,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
-import AudioRecordingsCard from '@/features/dossiers/show/audio-recordings-card';
 import DossierActionsMenu from '@/features/dossiers/show/dossier-actions-menu';
-import DossierExportCard from '@/features/dossiers/show/dossier-export-card';
+import DossierShowDeferredSections from '@/features/dossiers/show/dossier-show-deferred-sections';
 import DossierWorkflowLinks from '@/features/dossiers/show/dossier-workflow-links';
 import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
@@ -214,15 +213,12 @@ function DossierShowBody({
 
             <DossierWorkflowLinks dossier={dossier} />
 
-            {canDownload ? <DossierExportCard dossier={dossier} /> : null}
-
-            {canUploadAudio || dossier.audio_recordings.length > 0 ? (
-                <AudioRecordingsCard
-                    dossier={dossier}
-                    canUpload={canUploadAudio}
-                    canDownload={canDownloadAudio}
-                />
-            ) : null}
+            <DossierShowDeferredSections
+                dossier={dossier}
+                canDownload={canDownload}
+                canUploadAudio={canUploadAudio}
+                canDownloadAudio={canDownloadAudio}
+            />
 
             <section
                 id="dossier-invite"

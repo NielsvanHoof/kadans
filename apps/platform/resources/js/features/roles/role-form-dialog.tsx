@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import WorkspaceRoleController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceRoleController';
 import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
@@ -48,40 +48,10 @@ export default function RoleFormDialog({
     const mode = state?.mode ?? null;
     const role = state && state.mode !== 'create' ? state.role : null;
 
-    const allPermissionValues = useMemo(
-        () =>
-            permissionGroups.flatMap((group) =>
-                group.permissions.map((permission) => permission.value),
-            ),
-        [permissionGroups],
-    );
-    const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
-        [],
-    );
-
-    useEffect(() => {
-        if (!state) {
-            return;
-        }
-
-        if (state.mode === 'create') {
-            setSelectedPermissions([]);
-            return;
-        }
-
-        setSelectedPermissions(
-            permissionGroups
-                .flatMap((group) => group.permissions)
-                .filter((permission) =>
-                    permission.granted_to.includes(state.role.value),
-                )
-                .map((permission) => permission.value),
-        );
-    }, [permissionGroups, state]);
-
     const copy = modeCopy(mode, t);
     const formProps = formPropsForMode(mode, role, currentWorkspace);
-    // Remount when mode/role changes so uncontrolled name defaultValue refreshes.
+    // Remount when mode/role changes so uncontrolled name defaultValue and
+    // permission selection refresh without a props→state effect.
     const formKey =
         mode === 'create'
             ? 'create'
@@ -96,71 +66,124 @@ export default function RoleFormDialog({
                 <DialogDescription>{copy.description}</DialogDescription>
             </DialogHeader>
             {state && formProps ? (
-                <Form
+                <RoleFormFields
                     key={formKey}
-                    {...formProps}
-                    options={{ preserveScroll: true }}
+                    state={state}
+                    permissionGroups={permissionGroups}
+                    formProps={formProps}
+                    submitLabel={copy.submit}
                     onSuccess={() => onOpenChange(false)}
-                >
-                    {({ processing, errors }) => (
-                        <div className="space-y-4">
-                            <Field data-invalid={Boolean(errors.name)}>
-                                <FieldLabel htmlFor="role-form-name">
-                                    {t('Role name')}
-                                </FieldLabel>
-                                <Input
-                                    id="role-form-name"
-                                    name="name"
-                                    defaultValue={defaultNameForMode(state, t)}
-                                    required
-                                    maxLength={255}
-                                    placeholder={
-                                        mode === 'create'
-                                            ? t('e.g. Operations manager')
-                                            : undefined
-                                    }
-                                />
-                                <InputError message={errors.name} />
-                            </Field>
-                            <PermissionChecklist
-                                permissionGroups={permissionGroups}
-                                selectedPermissions={selectedPermissions}
-                                onSelectedPermissionsChange={
-                                    setSelectedPermissions
-                                }
-                                onSelectAll={() =>
-                                    setSelectedPermissions(allPermissionValues)
-                                }
-                                onClearAll={() => setSelectedPermissions([])}
-                            />
-                            <InputError message={errors.permissions} />
-                            {selectedPermissions.length === 0 ? (
-                                <p className="text-xs text-muted-foreground">
-                                    {t(
-                                        'Choose at least one permission before saving this role.',
-                                    )}
-                                </p>
-                            ) : null}
-                            <DialogFooter>
-                                <DialogClose type="button" variant="secondary">
-                                    {t('Cancel')}
-                                </DialogClose>
-                                <Button
-                                    type="submit"
-                                    isDisabled={
-                                        processing ||
-                                        selectedPermissions.length === 0
-                                    }
-                                >
-                                    {copy.submit}
-                                </Button>
-                            </DialogFooter>
-                        </div>
-                    )}
-                </Form>
+                />
             ) : null}
         </Dialog>
     );
+}
+
+function RoleFormFields({
+    state,
+    permissionGroups,
+    formProps,
+    submitLabel,
+    onSuccess,
+}: {
+    state: RoleFormDialogState;
+    permissionGroups: WorkspacePermissionGroup[];
+    formProps: NonNullable<ReturnType<typeof formPropsForMode>>;
+    submitLabel: string;
+    onSuccess: () => void;
+}) {
+    const { t } = useTranslation();
+    const mode = state.mode;
+
+    const allPermissionValues = useMemo(
+        () =>
+            permissionGroups.flatMap((group) =>
+                group.permissions.map((permission) => permission.value),
+            ),
+        [permissionGroups],
+    );
+
+    // Initialized once per formKey remount — no effect sync from props.
+    const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
+        () => initialPermissionsForState(state, permissionGroups),
+    );
+
+    return (
+        <Form
+            {...formProps}
+            options={{ preserveScroll: true }}
+            onSuccess={onSuccess}
+        >
+            {({ processing, errors }) => (
+                <div className="space-y-4">
+                    <Field data-invalid={Boolean(errors.name)}>
+                        <FieldLabel htmlFor="role-form-name">
+                            {t('Role name')}
+                        </FieldLabel>
+                        <Input
+                            id="role-form-name"
+                            name="name"
+                            defaultValue={defaultNameForMode(state, t)}
+                            required
+                            maxLength={255}
+                            placeholder={
+                                mode === 'create'
+                                    ? t('e.g. Operations manager')
+                                    : undefined
+                            }
+                        />
+                        <InputError message={errors.name} />
+                    </Field>
+                    <PermissionChecklist
+                        permissionGroups={permissionGroups}
+                        selectedPermissions={selectedPermissions}
+                        onSelectedPermissionsChange={setSelectedPermissions}
+                        onSelectAll={() =>
+                            setSelectedPermissions(allPermissionValues)
+                        }
+                        onClearAll={() => setSelectedPermissions([])}
+                    />
+                    <InputError message={errors.permissions} />
+                    {selectedPermissions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                            {t(
+                                'Choose at least one permission before saving this role.',
+                            )}
+                        </p>
+                    ) : null}
+                    <DialogFooter>
+                        <DialogClose type="button" variant="secondary">
+                            {t('Cancel')}
+                        </DialogClose>
+                        <Button
+                            type="submit"
+                            isDisabled={
+                                processing || selectedPermissions.length === 0
+                            }
+                        >
+                            {submitLabel}
+                        </Button>
+                    </DialogFooter>
+                </div>
+            )}
+        </Form>
+    );
+}
+
+function initialPermissionsForState(
+    state: RoleFormDialogState,
+    permissionGroups: WorkspacePermissionGroup[],
+): string[] {
+    if (state.mode === 'create') {
+        return [];
+    }
+
+    return permissionGroups
+        .flatMap((group) => group.permissions)
+        .filter((permission) =>
+            permission.granted_to.includes(state.role.value),
+        )
+        .map((permission) => permission.value);
 }
 
 function modeCopy(

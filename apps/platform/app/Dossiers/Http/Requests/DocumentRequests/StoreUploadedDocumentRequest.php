@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Dossiers\Http\Requests\DocumentRequests;
 
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Support\DocumentUploadLimits;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,11 +14,6 @@ use Illuminate\Validation\Rules\File;
 final class StoreUploadedDocumentRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
-
-    /**
-     * Requests accepting multiple files still need a sane upper bound per submission.
-     */
-    private const int MAX_FILES_WHEN_MULTIPLE = 10;
 
     /**
      * Staff who can create dossiers may upload files onto document requests.
@@ -45,11 +41,11 @@ final class StoreUploadedDocumentRequest extends FormRequest
                 'required',
                 'array',
                 'min:1',
-                'max:'.($allowMultiple ? self::MAX_FILES_WHEN_MULTIPLE : 1),
+                'max:'.($allowMultiple ? DocumentUploadLimits::MAX_FILES_WHEN_MULTIPLE : 1),
             ],
             'documents.*' => [
                 File::types(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx'])
-                    ->max('20mb'),
+                    ->max(DocumentUploadLimits::MAX_FILE_SIZE),
             ],
         ];
     }

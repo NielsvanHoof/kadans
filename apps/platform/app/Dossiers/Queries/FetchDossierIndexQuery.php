@@ -47,7 +47,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
      * @return array{
      *     filters: list<array<string, mixed>>,
      *     sorts: list<array{key: string, label: string}>,
-     *     defaults: array{sort: string, per_page: int}
+     *     defaults: array{sort: string}
      * }
      */
     public function toolbarMetadata(): array
@@ -91,7 +91,6 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             ],
             'defaults' => [
                 'sort' => '-updated_at',
-                'per_page' => 15,
             ],
         ];
     }

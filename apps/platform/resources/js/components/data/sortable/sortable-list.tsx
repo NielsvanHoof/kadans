@@ -87,14 +87,17 @@ export default function SortableList<T extends { id: number }>({
     const { t } = useTranslation();
 
     // Local order for snappy UI while Inertia reloads props.
+    // Adjust during render when items change — avoids a wasted effect pass.
     const [orderedItems, setOrderedItems] = useState(items);
+    const [itemsProp, setItemsProp] = useState(items);
     const [isPersisting, setIsPersisting] = useState(false);
     // false on SSR + first client paint so markup matches, then enable DnD.
     const [isClient, setIsClient] = useState(false);
 
-    useEffect(() => {
+    if (items !== itemsProp) {
+        setItemsProp(items);
         setOrderedItems(items);
-    }, [items]);
+    }
 
     useEffect(() => {
         setIsClient(true);

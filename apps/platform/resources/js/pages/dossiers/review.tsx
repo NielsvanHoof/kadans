@@ -1,6 +1,6 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import Heading from '@/components/primitives/heading';
 import { LinkButton } from '@/components/ui/button';
@@ -44,14 +44,20 @@ export default function ReviewDossier({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+
+    // Local list so Echo OCR patches can merge without waiting for Inertia.
+    // Adjust during render when props change — avoids a wasted effect pass.
     const [documentRequests, setDocumentRequests] = useState(
         dossier.document_requests,
     );
+    const [documentRequestsProp, setDocumentRequestsProp] = useState(
+        dossier.document_requests,
+    );
 
-    // Sync when Inertia replaces props (review actions, uploads, navigation).
-    useEffect(() => {
+    if (dossier.document_requests !== documentRequestsProp) {
+        setDocumentRequestsProp(dossier.document_requests);
         setDocumentRequests(dossier.document_requests);
-    }, [dossier.document_requests]);
+    }
 
     setLayoutProps({
         breadcrumbs: [

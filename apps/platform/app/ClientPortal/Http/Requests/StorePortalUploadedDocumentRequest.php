@@ -9,21 +9,20 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DocumentUploadLimits;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\Validator;
 
 final class StorePortalUploadedDocumentRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
-
-    /**
-     * Requests accepting multiple files still need a sane upper bound per submission.
-     */
-    private const int MAX_FILES_WHEN_MULTIPLE = 10;
 
     public function __construct(
         private readonly DocumentRequestTransitions $documentRequestTransitions,
@@ -74,12 +73,54 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
                 'required',
                 'array',
                 'min:1',
-                'max:'.($allowMultiple ? self::MAX_FILES_WHEN_MULTIPLE : 1),
+                'max:'.($allowMultiple ? DocumentUploadLimits::MAX_FILES_WHEN_MULTIPLE : 1),
             ],
             'documents.*' => [
                 File::types(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx'])
-                    ->max('20mb'),
+                    ->max(DocumentUploadLimits::MAX_FILE_SIZE),
             ],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $grant = $this->attributes->get(ResolveClientPortalGrant::REQUEST_ATTRIBUTE);
+
+            if (! $grant instanceof ClientAccessGrant) {
+                return;
+            }
+
+            $usedBytes = (int) UploadedDocument::query()
+                ->whereIn(
+                    'document_request_id',
+                    DocumentRequest::query()
+                        ->where('dossier_id', $grant->dossier_id)
+                        ->select('id'),
+                )
+                ->sum('size_bytes');
+
+            $incomingBytes = collect($this->file('documents', []))
+                ->filter(static fn (mixed $file): bool => $file instanceof UploadedFile)
+                ->sum(static fn (UploadedFile $file): int => $file->getSize());
+
+            $totalBytes = $usedBytes + (int) $incomingBytes;
+            $maxBytes = DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER;
+
+            if ($totalBytes <= $maxBytes) {
+                return;
+            }
+
+            $validator->errors()->add(
+                'documents',
+                __('This dossier has reached its portal upload limit of :max. Remove a file or contact your advisor.', [
+                    'max' => DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER_LABEL,
+                ]),
+            );
+        });
     }
 }

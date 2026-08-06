@@ -348,7 +348,9 @@ test('dossier overview with multiple audio recordings resolves can_delete withou
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/show')
-            ->has('dossier.audio_recordings', 2)
-            ->where('dossier.audio_recordings.0.can_delete', true)
-            ->where('dossier.audio_recordings.1.can_delete', true));
+            ->missing('audio_recordings')
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->has('audio_recordings', 2)
+                ->where('audio_recordings.0.can_delete', true)
+                ->where('audio_recordings.1.can_delete', true)));
 });

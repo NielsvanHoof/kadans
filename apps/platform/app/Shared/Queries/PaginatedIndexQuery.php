@@ -54,7 +54,7 @@ abstract class PaginatedIndexQuery
      * @return array{
      *     filters: list<array<string, mixed>>,
      *     sorts: list<array{key: string, label: string}>,
-     *     defaults: array{sort: string, per_page: int}
+     *     defaults: array{sort: string}
      * }
      */
     abstract public function toolbarMetadata(): array;
@@ -68,7 +68,7 @@ abstract class PaginatedIndexQuery
      *     indexQuery: array{
      *         filters: list<array<string, mixed>>,
      *         sorts: list<array{key: string, label: string}>,
-     *         defaults: array{sort: string, per_page: int}
+     *         defaults: array{sort: string}
      *     }
      * }
      */

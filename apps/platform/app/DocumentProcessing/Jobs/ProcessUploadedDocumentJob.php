@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Jobs;
 
-use Illuminate\Queue\Attributes\Timeout;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
@@ -18,6 +17,7 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
@@ -32,13 +32,15 @@ use function hash;
  */
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
-#[Timeout(120)]
+#[Timeout(self::TIMEOUT_SECONDS)]
 final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
     use Queueable;
 
     public const int MAX_TRIES = 3;
+
+    public const int TIMEOUT_SECONDS = 120;
 
     /** @var list<int> */
     public const array BACKOFF_SECONDS = [10, 30, 60];
@@ -60,7 +62,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueFor(): int
     {
-        return ($this->timeout * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+        return (self::TIMEOUT_SECONDS * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     /**

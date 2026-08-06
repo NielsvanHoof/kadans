@@ -45,6 +45,5 @@ export type IndexQueryConfig = {
     sorts: IndexQuerySort[];
     defaults: {
         sort: string;
-        per_page: number;
     };
 };

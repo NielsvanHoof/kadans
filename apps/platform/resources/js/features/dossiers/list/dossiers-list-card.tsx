@@ -39,6 +39,7 @@ export default function DossiersListCard({
                         tenant: currentWorkspace,
                         dossier: dossier.id,
                     })}
+                    prefetch
                     className="font-medium hover:underline"
                 >
                     {dossier.title}

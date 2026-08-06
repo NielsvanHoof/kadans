@@ -61,7 +61,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
      * @return array{
      *     filters: list<array<string, mixed>>,
      *     sorts: list<array{key: string, label: string}>,
-     *     defaults: array{sort: string, per_page: int}
+     *     defaults: array{sort: string}
      * }
      */
     public function toolbarMetadata(): array
@@ -106,7 +106,6 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
             ],
             'defaults' => [
                 'sort' => '-created_at',
-                'per_page' => 15,
             ],
         ];
     }
