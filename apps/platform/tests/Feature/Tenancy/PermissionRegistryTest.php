@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use App\Audit\Enums\AuditPermission;
 use App\Clients\Enums\ClientPermission;
-use App\DocumentProcessing\Enums\PipelinePermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
+use App\Pipelines\Enums\PipelinePermission;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Queries;
 
-use App\DocumentProcessing\Data\PipelineData;
 use App\Dossiers\Models\AudioRecording;
+use App\Pipelines\Data\PipelineData;
 
 /**
  * Shape the transcript page props for Inertia.

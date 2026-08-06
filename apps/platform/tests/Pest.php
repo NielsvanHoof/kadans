@@ -135,20 +135,29 @@ pest()->presets()->custom('qompose', fn (): array => [
     |   L1  Accounts
     |   L2  Tenancy
     |   L3  Questionnaires
-    |   L4  Clients, Dossiers, DocumentProcessing
+    |   L4  Clients, Dossiers, DocumentProcessing, AudioProcessing, Pipelines
     |   L5  ClientPortal
     |   L6  Reporting, Platform, WorkspaceNotifications
     |
     |   Cross-cutting: Audit — any domain may log activity; Audit itself may
     |   only reach Accounts and Tenancy (enforced separately below).
     |
-    | Three pairs share a layer because their dependency really is mutual, and
+    | Several pairs share a layer because their dependency really is mutual, and
     | pretending otherwise only produced permanent "debt" entries:
     |
-    |   Clients <-> Dossiers            a dossier is a case FOR a client; deleting
-    |                                   a client cascades to its dossiers
-    |   Dossiers <-> DocumentProcessing OCR/export pipelines act on uploads and
-    |                                   dossiers, and are part of their lifecycle
+    |   Clients <-> Dossiers             a dossier is a case FOR a client; deleting
+    |                                    a client cascades to its dossiers
+    |   Dossiers <-> DocumentProcessing  uploads carry OCR state that is part of
+    |                                    their lifecycle
+    |   Dossiers <-> AudioProcessing     audio recordings carry transcription state
+    |                                    the same way
+    |   Dossiers <-> Pipelines           export runs are pipelines owned by a
+    |                                    dossier; PipelinePolicy::download also
+    |                                    gates on DossierPermission
+    |
+    | DocumentProcessing and AudioProcessing each depend on Pipelines one-way (run
+    | tracking), registering a PipelineRetryRunner into Pipelines' registry rather
+    | than Pipelines knowing about OCR/transcription specifics.
     |
     | Audit was likewise modelled as a layer (L3) and generated ~20 violations,
     | because logging is genuinely cross-cutting: every domain writes activity,
@@ -166,10 +175,12 @@ pest()->presets()->custom('qompose', fn (): array => [
         ->not->toUse([
             'App\Accounts',
             'App\Audit',
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\WorkspaceNotifications',
             'App\Platform',
             'App\Questionnaires',
@@ -181,10 +192,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // separately below. Audit is cross-cutting and deliberately absent.
     expect('App\Accounts')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -198,10 +211,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // User above would let any upward dependency hide inside the hub.
     expect(User::class)
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -212,10 +227,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // standing exception; Platform is inverted behind SupportSessionState.
     expect('App\Tenancy')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\DocumentProcessing',
             'App\Dossiers',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -227,10 +244,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // Audit itself may only reach Accounts and Tenancy.
     expect('App\Audit')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -249,17 +268,20 @@ pest()->presets()->custom('qompose', fn (): array => [
 
     expect('App\Questionnaires')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\DocumentProcessing',
             'App\Dossiers',
+            'App\Pipelines',
             'App\Platform',
             'App\Reporting',
             'App\WorkspaceNotifications',
         ]),
 
-    // Clients and DocumentProcessing are layer siblings (mutual by design).
-    // ClientPortal is reached only through DossierArchived / DocumentRequestRejected
-    // events and the ClientPortalReminders contract; the Dossier model keeps its
+    // Clients, DocumentProcessing, AudioProcessing, and Pipelines are layer
+    // siblings (mutual by design). ClientPortal is reached only through
+    // DossierArchived / DocumentRequestRejected events and the
+    // ClientPortalReminders contract; the Dossier model keeps its
     // ClientAccessGrant relation under the standing exception.
     expect('App\Dossiers')
         ->not->toUse([
@@ -278,9 +300,31 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\WorkspaceNotifications',
         ]),
 
+    // Registers a PipelineRetryRunner into Pipelines' registry; otherwise
+    // unremarkable as an L4 sibling.
+    expect('App\AudioProcessing')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Platform',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    // Depends on Dossiers only for PipelinePolicy::download's DossierPermission
+    // check; OCR/transcription specifics stay inverted behind PipelineRetryRunner.
+    expect('App\Pipelines')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Platform',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
     expect('App\ClientPortal')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Reporting',
             'App\WorkspaceNotifications',

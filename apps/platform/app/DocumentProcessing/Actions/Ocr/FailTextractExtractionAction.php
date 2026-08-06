@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Actions\Ocr;
 
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
-use App\DocumentProcessing\Actions\Pipelines\PrepareProviderPipelineForProviderResultAction;
-use App\DocumentProcessing\Actions\Pipelines\ResolveProviderPipelineForSubjectAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Enums\PipelineType;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\PipelineStateAction;
+use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
+use App\Pipelines\Actions\ResolveProviderPipelineForSubjectAction;
+use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Log;

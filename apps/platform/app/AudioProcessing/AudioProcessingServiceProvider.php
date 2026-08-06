@@ -6,8 +6,10 @@ namespace App\AudioProcessing;
 
 use App\AudioProcessing\Contracts\StartsAudioTranscription;
 use App\AudioProcessing\Enums\TranscriptionDriver;
+use App\AudioProcessing\Retry\AudioTranscriptionPipelineRetryRunner;
 use App\AudioProcessing\Services\Configuration\TranscriptionConfigurationValidator;
 use App\AudioProcessing\Services\TranscriptionDriverFactory;
+use App\Pipelines\Support\PipelineRetryRunnerRegistry;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Support\ServiceProvider;
 use Override;
@@ -35,9 +37,13 @@ final class AudioProcessingServiceProvider extends ServiceProvider
         );
     }
 
-    public function boot(TranscriptionConfigurationValidator $transcriptionConfigurationValidator): void
-    {
+    public function boot(
+        TranscriptionConfigurationValidator $transcriptionConfigurationValidator,
+        PipelineRetryRunnerRegistry $retryRunners,
+    ): void {
         $transcriptionConfigurationValidator->validate();
+
+        $retryRunners->register(new AudioTranscriptionPipelineRetryRunner());
     }
 
     /**

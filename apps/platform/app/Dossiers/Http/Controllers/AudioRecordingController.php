@@ -6,13 +6,13 @@ namespace App\Dossiers\Http\Controllers;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\DeletePipelinesForSubjectsAction;
 use App\Dossiers\Actions\AudioRecordings\UploadAudioRecordingAction;
 use App\Dossiers\Data\StaffAudioRecordingData;
 use App\Dossiers\Http\Requests\AudioRecordings\StoreAudioRecordingRequest;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\FetchAudioRecordingShowQuery;
+use App\Pipelines\Actions\DeletePipelinesForSubjectsAction;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;

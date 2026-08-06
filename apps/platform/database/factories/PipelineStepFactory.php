@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\DocumentProcessing\Enums\PipelineStepStatus;
-use App\DocumentProcessing\Models\Pipeline;
-use App\DocumentProcessing\Models\PipelineStep;
+use App\Pipelines\Enums\PipelineStepStatus;
+use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Models\PipelineStep;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Override;
 

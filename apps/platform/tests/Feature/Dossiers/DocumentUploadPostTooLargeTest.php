@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DocumentUploadLimits;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 
 test('an oversized document upload reports the configured post size limit', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

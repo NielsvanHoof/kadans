@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Dossiers\Queries;
 
 use App\DocumentProcessing\Contracts\Ocr\DocumentExtraction;
-use App\DocumentProcessing\Data\PipelineData;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Data\PipelineData;
 use JsonException;
 
 use function is_array;

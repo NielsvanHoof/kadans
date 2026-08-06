@@ -6,11 +6,11 @@ namespace App\Dossiers\Actions;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\DossierExport;
+use App\Pipelines\Actions\PipelineStateAction;
+use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Models\Pipeline;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;

@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
 use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Enums\PipelineStatus;
-use App\DocumentProcessing\Enums\PipelineStepStatus;
-use App\DocumentProcessing\Enums\PipelineType;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepStatus;
+use App\Pipelines\Enums\PipelineType;
 use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Sns\Exception\InvalidSnsMessageException;

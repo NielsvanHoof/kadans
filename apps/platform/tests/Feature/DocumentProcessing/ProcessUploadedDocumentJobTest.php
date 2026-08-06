@@ -6,7 +6,6 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
@@ -14,6 +13,7 @@ use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\PipelineStateAction;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
 

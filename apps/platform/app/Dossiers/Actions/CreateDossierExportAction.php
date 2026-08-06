@@ -7,10 +7,10 @@ namespace App\Dossiers\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
-use App\DocumentProcessing\Enums\PipelineType;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
+use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Enums\PipelineType;
 use Illuminate\Support\Facades\DB;
 
 final readonly class CreateDossierExportAction

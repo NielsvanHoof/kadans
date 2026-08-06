@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Platform\Actions\Retention;
 
 use App\Audit\Models\Activity;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Models\Pipeline;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Model;
 

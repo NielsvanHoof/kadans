@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
-use App\DocumentProcessing\Data\PipelineShowData;
-use App\DocumentProcessing\Data\PipelineSubjectData;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Data\PipelineShowData;
+use App\Pipelines\Data\PipelineSubjectData;
+use App\Pipelines\Models\Pipeline;
 use App\Shared\Database\MorphType;
 use App\Tenancy\Models\Tenant;
 

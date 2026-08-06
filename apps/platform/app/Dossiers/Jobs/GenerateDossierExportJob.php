@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Jobs;
 
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\GenerateDossierExportAction;
 use App\Dossiers\Actions\MarkDossierExportFailedAction;
 use App\Dossiers\Models\DossierExport;
+use App\Pipelines\Actions\PipelineStateAction;
+use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Models\Pipeline;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -24,7 +24,6 @@ use Throwable;
 #[Timeout(120)]
 final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
 {
-    public $timeout;
     use InteractsWithQueue;
     use Queueable;
 
@@ -32,6 +31,8 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
 
     /** @var list<int> */
     public const array BACKOFF_SECONDS = [10, 30, 60];
+
+    public $timeout;
 
     public function __construct(public int $pipelineId) {}
 

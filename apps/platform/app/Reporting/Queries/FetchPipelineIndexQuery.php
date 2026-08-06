@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
-use App\DocumentProcessing\Data\PipelineIndexRowData;
-use App\DocumentProcessing\Enums\PipelineStatus;
-use App\DocumentProcessing\Enums\PipelineType;
-use App\DocumentProcessing\Models\Pipeline;
+use App\Pipelines\Data\PipelineIndexRowData;
+use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use App\Shared\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;

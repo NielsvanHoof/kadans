@@ -6,13 +6,13 @@ namespace App\DocumentProcessing\Jobs;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\OcrProcessingOutcome;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\PipelineStateAction;
+use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Models\Pipeline;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;

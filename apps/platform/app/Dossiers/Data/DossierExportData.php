@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
-use App\DocumentProcessing\Data\PipelineData;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\DossierExport;
+use App\Pipelines\Data\PipelineData;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;

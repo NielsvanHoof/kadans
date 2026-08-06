@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
-use App\DocumentProcessing\Data\PipelineData;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
+use App\Pipelines\Data\PipelineData;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Actions\DocumentRequests;
 
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Closure;
 use Illuminate\Filesystem\FilesystemManager;

@@ -20,6 +20,7 @@ arch()->preset()->laravel()->ignoring([
     'App\Clients',
     'App\Dossiers',
     'App\DocumentProcessing',
+    'App\Pipelines',
     'App\Platform',
     'App\Questionnaires',
     'App\Reporting',

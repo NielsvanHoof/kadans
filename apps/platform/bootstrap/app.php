@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Session\SessionManager;
 use App\Accounts\Http\Middleware\SetLocale;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
@@ -21,6 +20,7 @@ use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Router;
+use Illuminate\Session\SessionManager;
 use Inertia\ExceptionResponse;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
@@ -41,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/AudioProcessing/Console/Commands',
         __DIR__.'/../app/Dossiers/Console/Commands',
         __DIR__.'/../app/DocumentProcessing/Console/Commands',
+        __DIR__.'/../app/Pipelines/Console/Commands',
         __DIR__.'/../app/Platform/Console/Commands',
         __DIR__.'/../app/Questionnaires/Console/Commands',
         __DIR__.'/../app/Tenancy/Console/Commands',

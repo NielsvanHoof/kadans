@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Actions\DocumentRequests;
 
-use App\DocumentProcessing\Actions\Pipelines\DeletePipelinesForSubjectsAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Pipelines\Actions\DeletePipelinesForSubjectsAction;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;

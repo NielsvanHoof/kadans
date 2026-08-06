@@ -6,7 +6,7 @@ namespace App\Dossiers\Models;
 
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
-use App\DocumentProcessing\Models\Pipeline;
+use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;

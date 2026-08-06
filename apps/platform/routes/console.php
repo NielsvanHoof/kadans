@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\DocumentProcessing\Console\Commands\Pipelines\MonitorPipelinesCommand;
 use App\Dossiers\Console\Commands\SendScheduledDossierRemindersCommand;
+use App\Pipelines\Console\Commands\MonitorPipelinesCommand;
 use Illuminate\Support\Facades\Schedule;
 use Spatie\Health\Commands\DispatchQueueCheckJobsCommand;
 use Spatie\Health\Commands\RunHealthChecksCommand;

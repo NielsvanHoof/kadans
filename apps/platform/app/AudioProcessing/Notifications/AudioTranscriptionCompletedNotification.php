@@ -11,7 +11,7 @@ use Illuminate\Notifications\Notification;
 /**
  * Persist a workspace inbox item for the staff member who uploaded a recording,
  * once its transcript is ready. Real-time push reuses the existing
- * pipeline.updated broadcast (App\DocumentProcessing\Events\PipelineUpdated);
+ * pipeline.updated broadcast (App\Pipelines\Events\PipelineUpdated);
  * this is the DB source of truth for the bell.
  */
 final class AudioTranscriptionCompletedNotification extends Notification implements ShouldQueue

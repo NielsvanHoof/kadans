@@ -6,12 +6,12 @@ namespace App\Dossiers\Actions\AudioRecordings;
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
-use App\DocumentProcessing\Enums\PipelineType;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
+use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;

@@ -13,8 +13,9 @@ Convention guides: [Backend](backend.md) · [Frontend](frontend.md) · [Testing]
 | **Audit** | Activity log model, audit permissions, tenant audit helpers |
 | **ClientPortal** | Magic-link grants, portal middleware, guest session |
 | **Clients** | Firm CRM clients |
-| **DocumentProcessing** | OCR drivers, pipelines, related jobs/commands |
+| **DocumentProcessing** | OCR drivers, config, and related jobs/commands |
 | **Dossiers** | Cases, document requests, uploads, exports, reminders |
+| **Pipelines** | Run tracking for long-running processes (OCR, transcription, export): model, retry, monitoring |
 | **Platform** | Support sessions, Inertia shared props, retention, readiness |
 | **Questionnaires** | Reusable questionnaire templates |
 | **Reporting** | Dashboards / activity / media UI over other domains’ models |
@@ -61,11 +62,12 @@ Domains are PHP namespaces with their own service providers for bindings and pol
 | Container bindings | Domain `*ServiceProvider::register()` (e.g. OCR/AWS in `DocumentProcessingServiceProvider`) |
 | Morph map | `Relation::enforceMorphMap()` in [`AppServiceProvider`](../app/Providers/AppServiceProvider.php) |
 | Permissions | Enums listed in [`config/tenant-permissions.php`](../config/tenant-permissions.php) |
+| Pipeline retry runners | `PipelineRetryRunnerRegistry::register()` in each owning domain's `*ServiceProvider::boot()` (OCR, AudioProcessing, Dossiers export) |
 
 Providers registered in [`bootstrap/providers.php`](../bootstrap/providers.php):
 
 - App-level: `AppServiceProvider`, `FortifyServiceProvider`, `HealthServiceProvider`
-- Domain: `Platform`, `Tenancy`, `DocumentProcessing`, `Dossiers`, `Audit`, `Clients`, `ClientPortal`, `Questionnaires`, `Reporting`
+- Domain: `Platform`, `Tenancy`, `Pipelines`, `DocumentProcessing`, `AudioProcessing`, `Dossiers`, `Audit`, `Clients`, `ClientPortal`, `Questionnaires`, `Reporting`
 
 `AppServiceProvider` stays thin — defaults, factory discovery, morph map, and local tooling. Domain wiring (AWS/OCR, gates, policies) belongs in the matching domain provider.
 
@@ -133,7 +135,7 @@ L0  Shared
 L1  Accounts
 L2  Tenancy
 L3  Questionnaires
-L4  Clients, Dossiers, DocumentProcessing
+L4  Clients, Dossiers, DocumentProcessing, AudioProcessing, Pipelines
 L5  ClientPortal
 L6  Reporting, Platform, WorkspaceNotifications
 ```
@@ -141,15 +143,20 @@ L6  Reporting, Platform, WorkspaceNotifications
 **Audit is cross-cutting**, not a layer: any domain may log activity, and Audit
 itself may only reach Accounts and Tenancy.
 
-Three pairs deliberately share a layer because the dependency really is mutual —
-`Clients`/`Dossiers` (a dossier is a case *for* a client, and deleting a client
-cascades) and `Dossiers`/`DocumentProcessing` (OCR and export pipelines are part
-of the upload and dossier lifecycle).
+Several pairs deliberately share a layer because the dependency really is
+mutual — `Clients`/`Dossiers` (a dossier is a case *for* a client, and deleting
+a client cascades), `Dossiers`/`DocumentProcessing` and `Dossiers`/`AudioProcessing`
+(uploads and audio recordings carry OCR/transcription state that is part of
+their lifecycle), and `Dossiers`/`Pipelines` (export runs are pipelines owned
+by a dossier; `PipelinePolicy::download` also gates on `DossierPermission`).
+`DocumentProcessing` and `AudioProcessing` each depend on `Pipelines` one-way
+for run tracking, registering a `PipelineRetryRunner` into its registry rather
+than `Pipelines` knowing OCR/transcription specifics.
 
 When a lower layer needs something from a higher one, invert it with a contract
 the lower layer owns and the higher one binds — see
 `Tenancy\Contracts\SupportSessionState`, `Dossiers\Contracts\ClientPortalReminders`,
-and `Shared\Cache\TenantCacheInvalidator`.
+`Pipelines\Contracts\PipelineRetryRunner`, and `Shared\Cache\TenantCacheInvalidator`.
 
 Migrations and factories stay under `database/` — not inside `app/{Domain}`.
 
@@ -200,7 +207,8 @@ Rough backend → frontend map:
 | ClientPortal | `pages/portal`, `features/portal` (shell) + `features/document-requests/portal` (renderers) |
 | Tenancy | firms, onboarding, members, invitations |
 | Reporting | dashboard / activity / media under workspaces |
-| DocumentProcessing | pipelines under workspaces |
+| Pipelines | pipelines under workspaces (surfaced through Reporting's `PipelineController`) |
+| DocumentProcessing | no dedicated UI — OCR runs surface via Pipelines |
 | AudioProcessing | audio recordings, transcript UI |
 | Accounts | settings, auth, security |
 

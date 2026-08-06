@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Platform\Actions\Retention;
 
-use App\DocumentProcessing\Actions\Pipelines\DeletePipelinesForSubjectsAction;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\DeletePipelinesForSubjectsAction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;

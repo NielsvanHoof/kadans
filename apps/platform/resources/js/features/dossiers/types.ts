@@ -41,9 +41,9 @@ export type DossierWorkflowProgress = Pick<
 
 export type DossierExport = App.Dossiers.Data.DossierExportData;
 
-export type Pipeline = App.DocumentProcessing.Data.PipelineData;
+export type Pipeline = App.Pipelines.Data.PipelineData;
 
-export type PipelineStep = App.DocumentProcessing.Data.PipelineStepData;
+export type PipelineStep = App.Pipelines.Data.PipelineStepData;
 
 /** Compact dossier row for index / dashboard lists. */
 export type DossierSummary = App.Dossiers.Data.DossierIndexRowData;
