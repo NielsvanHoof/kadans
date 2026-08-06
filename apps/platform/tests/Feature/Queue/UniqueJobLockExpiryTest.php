@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Sleep;
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\Dossiers\Jobs\GenerateDossierExportJob;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Sleep;
 
 /**
  * @return array{0: object, 1: int}

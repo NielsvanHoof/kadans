@@ -215,10 +215,7 @@ final class ConsumeTextractResultsCommand extends Command
                 throw $exception;
             } catch (Throwable $exception) {
                 // Incomplete SNS fields fail before openssl verification.
-                throw new InvalidSnsMessageException(
-                    'SNS envelope could not be verified: '.$exception->getMessage(),
-                    previous: $exception,
-                );
+                throw new InvalidSnsMessageException('SNS envelope could not be verified: '.$exception->getMessage(), $exception->getCode(), previous: $exception);
             }
         }
 

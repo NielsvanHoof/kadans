@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DocumentUploadLimits;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 
 test('an oversized document upload reports the configured post size limit', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -31,7 +31,7 @@ test('an oversized document upload reports the configured post size limit', func
     // ValidatePostSize compares CONTENT_LENGTH to post_max_size before the body is read.
     // Visit the form first so the session cookie exists (mirrors a real oversized POST).
     $this->actingAs($owner)
-        ->withoutMiddleware(ValidateCsrfToken::class)
+        ->withoutMiddleware(PreventRequestForgery::class)
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk();
 

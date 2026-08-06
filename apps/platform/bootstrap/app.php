@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Session\SessionManager;
 use App\Accounts\Http\Middleware\SetLocale;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
@@ -104,7 +105,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // Re-bind the existing session cookie so flashed errors persist for
             // the follow-up GET (the browser already holds the cookie).
             if (! $request->hasSession()) {
-                $session = app('session')->driver();
+                $session = resolve(SessionManager::class)->driver();
                 $session->setId($request->cookies->get($session->getName()));
                 $session->setRequestOnHandler($request);
                 $session->start();

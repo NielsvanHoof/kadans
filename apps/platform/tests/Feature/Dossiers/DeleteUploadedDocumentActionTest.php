@@ -80,7 +80,7 @@ test('rolls back database work and keeps the storage object when a mid-delete fa
     expect(fn () => resolve(DeleteUploadedDocumentAction::class)->handle($fixture['uploadedDocument']))
         ->toThrow(RuntimeException::class, 'forced model delete failure')
         ->and(UploadedDocument::query()->whereKey($fixture['uploadedDocument']->id)
-        ->exists())
+            ->exists())
         ->toBeTrue()
         ->and($fixture['documentRequest']->fresh()->status)
         ->toBe(DocumentRequestStatus::Submitted);

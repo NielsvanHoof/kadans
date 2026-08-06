@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Tenancy\Actions\CreateTenantRoleAction;
 use App\Tenancy\Actions\RegisterAndAcceptTenantInvitationAction;
@@ -12,6 +11,7 @@ use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Models\TenantRole;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
