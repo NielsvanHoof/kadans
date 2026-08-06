@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { Selection } from 'react-aria-components';
+import type { Selection, SortDescriptor } from 'react-aria-components';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Table,
@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 export type DataTableColumn<T> = {
     key: string;
     header: ReactNode;
-    /** When set, the header renders as a sort button calling onSort(key). */
+    /** When set, the header uses React Aria column sorting (aria-sort). */
     sortable?: boolean;
     className?: string;
     cell: (row: T) => ReactNode;
@@ -49,6 +49,9 @@ type DataTableProps<T> = {
  * checkboxes are `slot="selection"` and read their state from the table's
  * collection. Rendering a controlled Checkbox inside a Row instead throws
  * ("A slot prop is required"), because the row already provides the context.
+ *
+ * Sorting also goes through React Aria (`allowsSorting` + `sortDescriptor`)
+ * so column headers expose `aria-sort` instead of a hand-rolled button.
  */
 export default function DataTable<T>({
     columns,
@@ -68,6 +71,16 @@ export default function DataTable<T>({
     const selectionEnabled =
         selectedKeys !== undefined && onSelectionChange !== undefined;
 
+    // Map our asc/desc API onto React Aria's ascending/descending descriptor.
+    const sortDescriptor: SortDescriptor | undefined =
+        sortKey && sortDirection
+            ? {
+                  column: sortKey,
+                  direction:
+                      sortDirection === 'asc' ? 'ascending' : 'descending',
+              }
+            : undefined;
+
     /**
      * React Aria reports "select all" as the literal string `all` rather than
      * enumerating keys, so expand it before handing it back to callers that
@@ -84,6 +97,15 @@ export default function DataTable<T>({
         }
 
         onSelectionChange(new Set(selection as Set<string | number>));
+    }
+
+    function handleSortChange(descriptor: SortDescriptor): void {
+        if (!onSort || descriptor.column == null) {
+            return;
+        }
+
+        // Callers own the toggle / URL sync; they only need the column key.
+        onSort(String(descriptor.column));
     }
 
     if (rows.length === 0 && emptyState !== null) {
@@ -107,6 +129,8 @@ export default function DataTable<T>({
                     selectionMode={selectionEnabled ? 'multiple' : 'none'}
                     selectedKeys={selectedKeys}
                     onSelectionChange={handleSelectionChange}
+                    sortDescriptor={sortDescriptor}
+                    onSortChange={onSort ? handleSortChange : undefined}
                 >
                     <TableHeader>
                         {selectionEnabled ? (
@@ -115,34 +139,42 @@ export default function DataTable<T>({
                             </TableHead>
                         ) : null}
 
-                        {columns.map((column, index) => (
-                            <TableHead
-                                key={column.key}
-                                id={column.key}
-                                isRowHeader={index === 0}
-                                className={column.className}
-                            >
-                                {column.sortable && onSort ? (
-                                    <button
-                                        type="button"
-                                        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
-                                        onClick={() => onSort(column.key)}
-                                    >
-                                        {column.header}
-                                        <SortIcon
-                                            active={sortKey === column.key}
-                                            direction={
-                                                sortKey === column.key
-                                                    ? sortDirection
-                                                    : null
-                                            }
-                                        />
-                                    </button>
-                                ) : (
-                                    column.header
-                                )}
-                            </TableHead>
-                        ))}
+                        {columns.map((column, index) => {
+                            const isSortable = Boolean(
+                                column.sortable && onSort,
+                            );
+                            const isActiveSort = sortKey === column.key;
+
+                            return (
+                                <TableHead
+                                    key={column.key}
+                                    id={column.key}
+                                    isRowHeader={index === 0}
+                                    allowsSorting={isSortable}
+                                    className={cn(
+                                        column.className,
+                                        isSortable &&
+                                            'cursor-pointer font-medium hover:text-foreground',
+                                    )}
+                                >
+                                    {isSortable ? (
+                                        <span className="inline-flex items-center gap-1">
+                                            {column.header}
+                                            <SortIcon
+                                                active={isActiveSort}
+                                                direction={
+                                                    isActiveSort
+                                                        ? sortDirection
+                                                        : null
+                                                }
+                                            />
+                                        </span>
+                                    ) : (
+                                        column.header
+                                    )}
+                                </TableHead>
+                            );
+                        })}
                     </TableHeader>
 
                     <TableBody>

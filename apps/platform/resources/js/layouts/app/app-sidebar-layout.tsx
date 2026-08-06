@@ -4,6 +4,7 @@ import { AppContent } from '@/components/app-shell/app-content';
 import { AppShell } from '@/components/app-shell/app-shell';
 import { AppSidebar } from '@/components/app-shell/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-shell/app-sidebar-header';
+import SkipToMainContent from '@/components/primitives/skip-to-main-content';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/features/notifications/notification-bell';
 import { WorkspaceNotifications } from '@/features/notifications/use-workspace-notifications';
@@ -32,6 +33,8 @@ export default function AppSidebarLayout({
 
     return (
         <AppShell variant="sidebar">
+            {/* First tab stop on first load — navigate hook only helps after client visits. */}
+            <SkipToMainContent />
             <NavigationEffects />
             <WorkspaceNotifications />
             <AppSidebar />

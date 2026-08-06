@@ -223,6 +223,7 @@ function MemberRoleSelect({
     const { t } = useTranslation();
     const [pendingRole, setPendingRole] = useState<string | null>(null);
     const roleSelectId = `member-role-${member.id}`;
+    const roleLabelId = `member-role-label-${member.id}`;
 
     const pendingRoleLabel =
         assignableRoleOptions.find((option) => option.value === pendingRole)
@@ -239,7 +240,13 @@ function MemberRoleSelect({
                     member.status === 'suspended' || isLastActiveOwner
                 }
             >
-                <FieldLabel htmlFor={roleSelectId} className="sr-only">
+                {/* React Aria Select names the trigger via aria-labelledby, not
+                    htmlFor — keep this label as the single accessible name. */}
+                <FieldLabel
+                    id={roleLabelId}
+                    htmlFor={roleSelectId}
+                    className="sr-only"
+                >
                     {t('Role for :name', { name: member.name })}
                 </FieldLabel>
                 <Select
@@ -256,13 +263,9 @@ function MemberRoleSelect({
                         setPendingRole(value === null ? null : String(value));
                     }}
                     placeholder={t('Role')}
-                    aria-label={t('Role')}
+                    aria-labelledby={roleLabelId}
                 >
-                    <SelectTrigger
-                        id={roleSelectId}
-                        aria-label={t('Role')}
-                        className="min-w-40"
-                    >
+                    <SelectTrigger id={roleSelectId} className="min-w-40">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-background">

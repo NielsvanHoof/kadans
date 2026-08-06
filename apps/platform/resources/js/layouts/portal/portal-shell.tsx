@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import LedgerField from '@/components/brand/ledger-field';
+import SkipToMainContent from '@/components/primitives/skip-to-main-content';
 import PortalLocaleSwitcher from '@/features/portal/portal-locale-switcher';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -28,6 +29,8 @@ export default function PortalShell({
 
     return (
         <div className="min-h-svh bg-secondary pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
+            {/* First tab stop before portal chrome on first load. */}
+            <SkipToMainContent />
             <header className="relative isolate overflow-hidden bg-brand-panel pt-[env(safe-area-inset-top)] text-brand-panel-foreground">
                 <LedgerField tone="onPanel" />
                 <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-8 md:px-8 md:py-10">
