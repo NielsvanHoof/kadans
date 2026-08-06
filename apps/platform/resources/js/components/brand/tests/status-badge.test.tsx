@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import StatusBadge from '@/components/primitives/status-badge';
+import StatusBadge from '@/components/brand/status-badge';
 
 describe('StatusBadge', () => {
     it('renders the label with an audit mark shape cue', () => {

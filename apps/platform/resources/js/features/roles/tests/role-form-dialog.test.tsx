@@ -123,9 +123,7 @@ describe('RoleFormDialog', () => {
                 'Choose at least one permission before saving this role.',
             ),
         ).not.toBeInTheDocument();
-        expect(
-            screen.getByRole('button', { name: 'Save role' }),
-        ).toBeEnabled();
+        expect(screen.getByRole('button', { name: 'Save role' })).toBeEnabled();
     });
 
     it('shows duplicate mode with copy name and the same permission hint when empty', async () => {

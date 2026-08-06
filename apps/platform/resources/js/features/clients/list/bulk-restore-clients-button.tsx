@@ -39,17 +39,12 @@ export default function BulkRestoreClientsButton({
                     : t('Restore :count clients', { count })
             }
             confirmVariant="default"
-            confirmTestId="confirm-bulk-restore-clients-button"
             form={{
                 ...ClientController.bulkRestore.form(currentWorkspace),
                 onSuccess,
             }}
             trigger={
-                <Button
-                    type="button"
-                    size="sm"
-                    data-test="bulk-restore-clients-button"
-                >
+                <Button type="button" size="sm">
                     <RotateCcw aria-hidden="true" />
                     {t('Restore')}
                 </Button>

@@ -93,6 +93,8 @@ $response->assertJsonPath('data.id', $dossier->id);
 
 Vitest tests live in a `tests/` subfolder next to what they cover, mirroring the tested file's path rather than sitting beside it — `features/<domain>/tests/...`, `hooks/tests/...`, `lib/tests/...`, `components/<group>/tests/...`. Run with `npm test`.
 
+CI runs `npm run test:coverage`, which enforces the line-coverage floor in `vitest.config.ts`. Generated Wayfinder/transformer output and vendored `components/ui` primitives are excluded from the measurement. Raise the threshold when coverage improves; do not lower it to greenwash a drop.
+
 Vitest covers hooks, formatters, and isolated components. HTTP and Inertia contracts belong in Pest Feature tests, not Vitest.
 
 Use the shared mock factories in `resources/js/test/mocks.ts` instead of hand-rolling `usePage()`/`useTranslation()` mocks per file:
@@ -120,6 +122,9 @@ vendor/bin/sail artisan test --compact --filter=creates_dossier
 
 # Frontend unit
 npm test
+
+# Frontend unit + coverage floor (same gate as CI)
+npm run test:coverage
 ```
 
 After PHP changes, run Pint on dirty files:

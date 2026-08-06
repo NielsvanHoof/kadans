@@ -1,5 +1,5 @@
 import type { AuditMarkVariant } from '@/components/brand/audit-mark';
-import StatusBadge from '@/components/primitives/status-badge';
+import StatusBadge from '@/components/brand/status-badge';
 import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import type { DocumentRequestStatus } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';

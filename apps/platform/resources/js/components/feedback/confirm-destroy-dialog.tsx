@@ -26,7 +26,6 @@ type ConfirmDestroyDialogBase = {
      */
     trigger?: ReactNode;
     children?: ReactNode;
-    confirmTestId?: string;
     confirmVariant?: 'destructive' | 'default';
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -60,14 +59,14 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
         confirmLabel,
         trigger,
         children,
-        confirmTestId,
         confirmVariant = 'destructive',
         open,
         onOpenChange,
     } = props;
     const { t } = useTranslation();
     const [callbackProcessing, setCallbackProcessing] = useState(false);
-    // Uncontrolled callback mode still needs a closer after async confirm.
+    // Both form and callback modes need a closer after success — always drive
+    // open state (controlled via props, or uncontrolled via this flag).
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
     const isControlled = open !== undefined;
     const dialogOpen = isControlled ? open : uncontrolledOpen;
@@ -87,14 +86,7 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
          * the Radix shape — mounts two nested modals, which renders an empty
          * outer panel and warns that the dialog has no title.
          */
-        <AlertDialogTrigger
-            isOpen={isControlled || 'onConfirm' in props ? dialogOpen : open}
-            onOpenChange={
-                isControlled || 'onConfirm' in props
-                    ? setDialogOpen
-                    : onOpenChange
-            }
-        >
+        <AlertDialogTrigger isOpen={dialogOpen} onOpenChange={setDialogOpen}>
             {trigger}
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -115,7 +107,6 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
                                 type="button"
                                 variant={confirmVariant}
                                 isDisabled={callbackProcessing}
-                                data-test={confirmTestId}
                                 onPress={async () => {
                                     // AlertDialogAction does not auto-close;
                                     // wait for the island mutation, then dismiss.
@@ -153,7 +144,6 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
                                         type="submit"
                                         variant={confirmVariant}
                                         isDisabled={processing}
-                                        data-test={confirmTestId}
                                     >
                                         {confirmLabel}
                                     </AlertDialogAction>

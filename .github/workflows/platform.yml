@@ -120,9 +120,13 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
-      # Fails under the --min threshold in composer.json (currently 85%).
-      - name: Enforce the coverage threshold
+      # Fails under the --min threshold in composer.json (currently 87%).
+      - name: Enforce the PHP coverage threshold
         run: composer test:coverage:ci
+
+      # Line floor lives in vitest.config.ts (excludes generated + shadcn ui).
+      - name: Enforce the frontend coverage threshold
+        run: npm run test:coverage
 
   postgres-migrations:
     name: PostgreSQL migrations

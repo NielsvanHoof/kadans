@@ -4,7 +4,7 @@ import { ShieldAlert, ShieldOff, TriangleAlert, Wrench } from 'lucide-react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import { LinkButton } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
-import { errorPageHomeRoute } from '@/pages/error-home-route';
+import { errorPageHomeRoute } from '@/lib/error-page-home-route';
 
 type ErrorStatus = 403 | 404 | 500 | 503;
 

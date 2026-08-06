@@ -47,15 +47,15 @@ describe('DossierReminderComposeDialog — AI draft', () => {
 
         render(<DossierReminderComposeDialog dossierId={7} />);
 
-        await user.click(
-            screen.getByRole('button', { name: 'Send reminder' }),
-        );
+        await user.click(screen.getByRole('button', { name: 'Send reminder' }));
         await user.click(
             screen.getByRole('button', { name: 'Generate draft' }),
         );
 
         await waitFor(() =>
-            expect(screen.getByDisplayValue('Please upload your ID.')).toBeInTheDocument(),
+            expect(
+                screen.getByDisplayValue('Please upload your ID.'),
+            ).toBeInTheDocument(),
         );
         expect(toastError).not.toHaveBeenCalled();
     });
@@ -66,9 +66,7 @@ describe('DossierReminderComposeDialog — AI draft', () => {
 
         render(<DossierReminderComposeDialog dossierId={7} />);
 
-        await user.click(
-            screen.getByRole('button', { name: 'Send reminder' }),
-        );
+        await user.click(screen.getByRole('button', { name: 'Send reminder' }));
         await user.click(
             screen.getByRole('button', { name: 'Generate draft' }),
         );

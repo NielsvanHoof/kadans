@@ -7,12 +7,13 @@ vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 vi.mock('@inertiajs/react', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@inertiajs/react')>()),
     usePage: () =>
-        mockInertiaPage({ current_firm: { id: 1, slug: 'acme', name: 'Acme' } }),
+        mockInertiaPage({
+            current_firm: { id: 1, slug: 'acme', name: 'Acme' },
+        }),
 }));
 
-const { default: RetryPipelineButton } = await import(
-    '@/features/pipelines/show/retry-pipeline-button'
-);
+const { default: RetryPipelineButton } =
+    await import('@/features/pipelines/show/retry-pipeline-button');
 
 describe('RetryPipelineButton', () => {
     it('renders nothing when the server says the run may not be retried', () => {

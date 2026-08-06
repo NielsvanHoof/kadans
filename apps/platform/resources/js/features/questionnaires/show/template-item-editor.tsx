@@ -115,9 +115,7 @@ export default function TemplateItemEditor({
         } catch {
             // LLM draft endpoints fail often — surface it and leave the
             // button actionable (useHttp clears processing on settle).
-            toast.error(
-                t('Could not generate suggestions. Please try again.'),
-            );
+            toast.error(t('Could not generate suggestions. Please try again.'));
         }
     }
 

@@ -83,3 +83,23 @@ test('read-only users cannot view or manage roles', function (): void {
         ->and($policy->update($reader, $customRole))->toBeFalse()
         ->and($policy->delete($reader, $customRole))->toBeFalse();
 });
+
+test('owners cannot manage custom roles that belong to another tenant', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    ['tenant' => $otherTenant] = provisionWorkspace('Other firm');
+
+    $foreignRole = TenantRole::query()->create([
+        'name' => 'operations',
+        'guard_name' => 'web',
+        'tenant_id' => $otherTenant->id,
+        'is_system' => false,
+    ]);
+
+    $policy = resolve(TenantRolePolicy::class);
+
+    // Stay in the owner's firm so ManageRoles is present — denial must be cross-tenant.
+    actingInWorkspace($tenant);
+
+    expect($policy->update($owner, $foreignRole))->toBeFalse()
+        ->and($policy->delete($owner, $foreignRole))->toBeFalse();
+});

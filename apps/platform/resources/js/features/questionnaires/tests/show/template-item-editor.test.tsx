@@ -200,7 +200,9 @@ describe('TemplateItemEditor — AI suggestions', () => {
         expect(
             screen.getByRole('button', { name: 'Suggest items' }),
         ).toBeEnabled();
-        expect(screen.queryByText(':count suggestions')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(':count suggestions'),
+        ).not.toBeInTheDocument();
     });
 
     it('toasts partial failure when Add all hits an error mid-sequence', async () => {

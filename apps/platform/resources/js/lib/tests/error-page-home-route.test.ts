@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { errorPageHomeRoute } from '@/pages/error-home-route';
+import { errorPageHomeRoute } from '@/lib/error-page-home-route';
 
 describe('errorPageHomeRoute', () => {
     it('sends authenticated users to the dashboard', () => {

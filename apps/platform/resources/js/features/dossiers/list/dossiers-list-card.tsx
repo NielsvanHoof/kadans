@@ -105,9 +105,7 @@ export default function DossiersListCard({
             }
             emptyState={
                 <EmptyState
-                    title={t(
-                        'Create a dossier to start collecting documents.',
-                    )}
+                    title={t('Create a dossier to start collecting documents.')}
                     action={
                         <LinkButton
                             size="sm"

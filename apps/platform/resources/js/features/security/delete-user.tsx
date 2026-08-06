@@ -36,12 +36,7 @@ export default function DeleteUser() {
                 </div>
 
                 <DialogTrigger>
-                    <Button
-                        variant="destructive"
-                        data-test="delete-user-button"
-                    >
-                        {t('Delete account')}
-                    </Button>
+                    <Button variant="destructive">{t('Delete account')}</Button>
                     <Dialog>
                         <DialogTitle>
                             {t('Are you sure you want to delete your account?')}
@@ -101,7 +96,6 @@ export default function DeleteUser() {
                                                 type="submit"
                                                 variant="destructive"
                                                 isDisabled={processing}
-                                                data-test="confirm-delete-user-button"
                                             >
                                                 {t('Delete account')}
                                             </Button>

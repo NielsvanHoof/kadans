@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import DataTable, { type DataTableColumn } from '@/components/data/data-table';
 import {
     Card,
@@ -64,9 +64,7 @@ export default function IndexDataCard<T>({
                     rows={rows}
                     rowKey={rowKey}
                     ariaLabel={ariaLabel}
-                    selectedKeys={
-                        selectionEnabled ? selectedKeys : undefined
-                    }
+                    selectedKeys={selectionEnabled ? selectedKeys : undefined}
                     onSelectionChange={
                         selectionEnabled ? setSelectedKeys : undefined
                     }

@@ -19,9 +19,7 @@ describe('PipelineStatusBadge', () => {
     ] as [PipelineStatus, string, string][])(
         'renders %s with label and shape mark %s',
         (status, label, mark) => {
-            const { unmount } = render(
-                <PipelineStatusBadge status={status} />,
-            );
+            const { unmount } = render(<PipelineStatusBadge status={status} />);
 
             expect(screen.getByText(label)).toBeInTheDocument();
             expect(

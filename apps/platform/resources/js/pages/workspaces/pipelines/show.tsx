@@ -13,12 +13,12 @@ import {
 import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
 import PipelineStepTimeline from '@/features/pipelines/show/pipeline-step-timeline';
 import RetryPipelineButton from '@/features/pipelines/show/retry-pipeline-button';
-import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import {
     pipelineIsInFlight,
     pipelineStepLabel,
     pipelineTypeLabel,
 } from '@/features/pipelines/status/pipeline-status';
+import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import type { PipelineDetail } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -88,9 +88,7 @@ export default function PipelineShow({
                                 'A detailed execution trace for this long-running process.',
                             )}
                             badge={
-                                <PipelineStatusBadge
-                                    status={pipeline.status}
-                                />
+                                <PipelineStatusBadge status={pipeline.status} />
                             }
                         />
                     </div>

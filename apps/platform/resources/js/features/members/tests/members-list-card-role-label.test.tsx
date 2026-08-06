@@ -76,8 +76,8 @@ describe('MembersListCard role select labels', () => {
 
         expect(roleSelect).toBeInTheDocument();
         expect(roleSelect).not.toHaveAttribute('aria-label');
-        expect(document.getElementById('member-role-label-42')).toHaveTextContent(
-            'Role for Ada Lovelace',
-        );
+        expect(
+            document.getElementById('member-role-label-42'),
+        ).toHaveTextContent('Role for Ada Lovelace');
     });
 });

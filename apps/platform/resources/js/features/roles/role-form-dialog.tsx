@@ -46,8 +46,7 @@ export default function RoleFormDialog({
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
     const mode = state?.mode ?? null;
-    const role =
-        state && state.mode !== 'create' ? state.role : null;
+    const role = state && state.mode !== 'create' ? state.role : null;
 
     const allPermissionValues = useMemo(
         () =>
@@ -112,10 +111,7 @@ export default function RoleFormDialog({
                                 <Input
                                     id="role-form-name"
                                     name="name"
-                                    defaultValue={defaultNameForMode(
-                                        state,
-                                        t,
-                                    )}
+                                    defaultValue={defaultNameForMode(state, t)}
                                     required
                                     maxLength={255}
                                     placeholder={
@@ -184,7 +180,6 @@ function modeCopy(
                 description: t('Create a new role based on this role.'),
                 submit: t('Create role'),
             };
-        case 'create':
         default:
             return {
                 title: t('Create role'),

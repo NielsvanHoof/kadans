@@ -45,10 +45,7 @@ export function UserMenuContent({ user }: Props) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuItem
-                    onAction={handleLogout}
-                    data-test="logout-button"
-                >
+                <DropdownMenuItem onAction={handleLogout}>
                     <LogOut className="mr-2" />
                     {t('Log out')}
                 </DropdownMenuItem>

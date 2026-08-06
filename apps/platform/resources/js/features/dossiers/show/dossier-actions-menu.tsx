@@ -51,7 +51,6 @@ export default function DossierActionsMenu({
                     variant="outline"
                     size="icon"
                     aria-label={t('Actions')}
-                    data-test="dossier-actions-menu"
                 >
                     <MoreHorizontal aria-hidden="true" />
                 </Button>
@@ -71,7 +70,6 @@ export default function DossierActionsMenu({
                         <DropdownMenuGroup>
                             <DropdownMenuItem
                                 variant="destructive"
-                                data-test="archive-dossier-button"
                                 onAction={() => setArchiveOpen(true)}
                             >
                                 <Archive aria-hidden="true" />
@@ -90,7 +88,6 @@ export default function DossierActionsMenu({
                     'The dossier will be hidden from lists and cannot be opened again. Document requests and files are kept for audit purposes.',
                 )}
                 confirmLabel={t('Archive dossier')}
-                confirmTestId="confirm-archive-dossier-button"
                 form={DossierController.destroy.form({
                     tenant: currentWorkspace,
                     dossier: dossierId,

@@ -35,7 +35,9 @@ describe('IndexDataCard', () => {
         );
 
         expect(screen.getByText('Nothing here')).toBeInTheDocument();
-        expect(screen.getByRole('heading', { name: 'People' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: 'People' }),
+        ).toBeInTheDocument();
     });
 
     it('enables selection and renders bulk actions from selected rows', async () => {
@@ -67,7 +69,13 @@ describe('IndexDataCard', () => {
 
         const checkboxes = screen.getAllByRole('checkbox');
         // First checkbox is select-all; pick a row checkbox.
-        await user.click(checkboxes[1]!);
+        const rowCheckbox = checkboxes[1];
+
+        if (!rowCheckbox) {
+            throw new Error('Expected a row checkbox after select-all');
+        }
+
+        await user.click(rowCheckbox);
 
         expect(
             screen.getByRole('button', { name: 'Archive 1' }),

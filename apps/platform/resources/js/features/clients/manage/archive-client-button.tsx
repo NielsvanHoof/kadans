@@ -33,18 +33,12 @@ export default function ArchiveClientButton({
                       )
             }
             confirmLabel={t('Archive client')}
-            confirmTestId={`confirm-archive-client-button-${clientId}`}
             form={ClientController.destroy.form({
                 tenant: currentWorkspace,
                 client: clientId,
             })}
             trigger={
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    data-test={`archive-client-button-${clientId}`}
-                >
+                <Button type="button" size="sm" variant="destructive">
                     {t('Archive')}
                 </Button>
             }

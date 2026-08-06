@@ -1,5 +1,5 @@
 import type { AuditMarkVariant } from '@/components/brand/audit-mark';
-import StatusBadge from '@/components/primitives/status-badge';
+import StatusBadge from '@/components/brand/status-badge';
 import { pipelineStatusLabel } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineStatus } from '@/features/pipelines/types';
 import { useTranslation } from '@/hooks/use-translation';

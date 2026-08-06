@@ -3,11 +3,11 @@ import { Activity, ArrowRight } from 'lucide-react';
 import type { DataTableColumn } from '@/components/data/data-table';
 import IndexDataCard from '@/components/data/index-data-card';
 import EmptyState from '@/components/primitives/empty-state';
-import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import {
     pipelineStepLabel,
     pipelineTypeLabel,
 } from '@/features/pipelines/status/pipeline-status';
+import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import type { PipelineIndexRow } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

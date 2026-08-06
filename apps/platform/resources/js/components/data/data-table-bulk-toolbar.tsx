@@ -19,10 +19,7 @@ export default function DataTableBulkToolbar({
     }
 
     return (
-        <div
-            className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2"
-            data-test="data-table-bulk-toolbar"
-        >
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
             <p className="text-sm font-medium">
                 {selectedCount === 1
                     ? t('1 selected')
