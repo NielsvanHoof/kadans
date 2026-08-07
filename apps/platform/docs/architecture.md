@@ -121,9 +121,25 @@ For detailed backend conventions (Actions, Queries, validation, models, persiste
 - **Actions** — mutations and multi-step writes (`CreateDossierAction`, …)
 - **Queries** — read models / index / show payloads (`FetchDossierIndexQuery`, …)
 - **Data** — readonly DTOs shaped for the frontend
-- **Transitions** — status rules (`DossierTransitions`, `DocumentRequestTransitions`)
+- **Transitions** — status rules (`DossierTransitions`, `DocumentRequestTransitions`, `UploadedDocumentProcessingTransitions`, `AudioTranscriptionTransitions`)
 - **BelongsToTenant** — tenant-scoped Eloquent models ([`app/Tenancy/Concerns/BelongsToTenant.php`](../app/Tenancy/Concerns/BelongsToTenant.php)). Soft by default (no current tenant → empty results); workspace/portal opt into strict throw via `TenantContext`. Cross-tenant lookups use `queryWithoutTenantScope()`, not `withoutGlobalScopes()`.
 - **TenantContext** — `runForTenant()` for console/async code; opt-in `enableStrict()` / `runStrict()` for fail-fast scoping (Octane-safe via Laravel Context)
+
+### Async provider processing (OCR & transcription)
+
+OCR and Amazon Transcribe follow the same shape: claim → start driver → complete or fail when the provider finishes (sync mock, or async SNS/EventBridge → SQS). Keep that narrative in the owning domain so call sites stay linear and scannable.
+
+| Concern | Where | Why |
+|---------|--------|-----|
+| Status transitions (claim, complete, fail, retry reset) | Domain `Transitions/` | Same pattern as dossier exports / document requests; path- and job-id guards stay next to the model |
+| Start + immediate audit | Domain orchestrators (`OcrOrchestrator`, `TranscriptionOrchestrator`) | Short linear methods — not Shared multi-callback runners |
+| Terminal fail / complete from SQS | Domain `Actions/` (`Mark*`, `Complete*`, `Fail*`) | Domain-specific models, pipelines, and audit events |
+| Driver selection | Domain `*DriverFactory` | Two drivers each; eager DI is enough |
+| SQS long-poll + envelope parse | Domain `Console/Commands` | SNS (Textract) vs EventBridge (Transcribe) parsers differ; duplicate the small poll loop rather than a Shared Closure bag |
+
+**Shared stays infrastructure-only** (pagination, CSP, tenant cache invalidation, …). Do not reintroduce Shared “async provider” façades that take five+ Closures for start/fail/claim. Prefer typed domain collaborators or deliberate duplication of tiny sequences when onboarding another provider.
+
+`DocumentProcessing` and `AudioProcessing` may use `Pipelines` one-way for run tracking; Shared must not import either domain (enforced in [`tests/Pest.php`](../tests/Pest.php)).
 
 ### Domain layering
 

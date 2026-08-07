@@ -51,9 +51,9 @@ Prefer implicit route model binding (type-hinted models in controller signatures
 
 For filterable workspace index lists, extend `Shared\Queries\PaginatedIndexQuery` and use length-aware `paginate()`.
 
-**Services** are for infrastructure drivers and orchestrators (OCR, transcription, readiness probes). Do not use Services as a substitute for HTTP use-case Actions.
+**Services** are for infrastructure drivers and orchestrators (OCR, transcription, readiness probes). Do not use Services as a substitute for HTTP use-case Actions. Keep orchestrators linear in the owning domain — do not push start/fail narrative into Shared multi-callback runners.
 
-**Transitions** encode guarded status changes (dossiers, document requests, pipelines). Put status rules there instead of scattering updates across controllers.
+**Transitions** encode guarded status changes (dossiers, document requests, pipelines, uploaded-document OCR, audio transcription). Put status rules there instead of scattering updates across controllers or jobs.
 
 ## Data objects
 
