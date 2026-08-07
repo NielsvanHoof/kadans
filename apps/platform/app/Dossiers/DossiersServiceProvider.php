@@ -29,6 +29,6 @@ final class DossiersServiceProvider extends ServiceProvider
         Gate::policy(UploadedDocument::class, UploadedDocumentPolicy::class);
         Gate::policy(AudioRecording::class, AudioRecordingPolicy::class);
 
-        $retryRunners->register(new DossierExportPipelineRetryRunner());
+        $retryRunners->register($this->app->make(DossierExportPipelineRetryRunner::class));
     }
 }

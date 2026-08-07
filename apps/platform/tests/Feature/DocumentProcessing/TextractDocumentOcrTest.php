@@ -8,6 +8,7 @@ use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Services\Ocr\Drivers\TextractDocumentOcr;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
@@ -51,6 +52,7 @@ test('textract start persists job id and leaves document processing', function (
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
         resolve(PipelineStateAction::class),
+        resolve(UploadedDocumentProcessingTransitions::class),
     );
 
     $uploaded->refresh();

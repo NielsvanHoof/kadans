@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Actions;
 
 use App\AudioProcessing\Services\Transcribe\TranscribeExtractionPipeline;
+use App\AudioProcessing\Transitions\AudioTranscriptionTransitions;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
@@ -39,6 +40,7 @@ final readonly class CompleteTranscribeJobAction
         private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
         private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
+        private AudioTranscriptionTransitions $transcriptionTransitions,
     ) {}
 
     /**
@@ -187,20 +189,14 @@ final readonly class CompleteTranscribeJobAction
         $result = $this->extractionPipeline->run($jobId);
         $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
 
-        $updated = AudioRecording::query()
-            ->whereKey($recording->id)
-            ->where('path', $recording->path)
-            ->where('transcribe_job_id', $jobId)
-            ->where('transcription_status', TranscriptionStatus::Processing->value)
-            ->update([
-                'transcription_status' => TranscriptionStatus::Completed->value,
-                'transcript' => $result->text,
-                'segments' => json_encode($result->segments),
-                'transcription_error' => null,
-                'transcription_finished_at' => now(),
-            ]);
+        $updated = $this->transcriptionTransitions->complete(
+            $recording,
+            $jobId,
+            $result->text,
+            json_encode($result->segments, JSON_THROW_ON_ERROR),
+        );
 
-        if ($updated !== 1) {
+        if (! $updated) {
             Log::warning('Transcription: discarded stale Transcribe completion.', [
                 'audio_recording_id' => $recording->id,
                 'tenant_id' => $recording->tenant_id,

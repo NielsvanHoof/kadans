@@ -99,7 +99,7 @@ test('pipeline transitions guard step ordering and closed pipelines', function (
     $state->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
 
     expect($pipeline->fresh()->status)->toBe(PipelineStatus::Completed)
-        ->and(fn () => resolve(PipelineTransitions::class)->failPipeline(
+        ->and(fn () => resolve(PipelineTransitions::class)->fail(
             $pipeline->fresh(),
             'late failure',
             'late_failure',

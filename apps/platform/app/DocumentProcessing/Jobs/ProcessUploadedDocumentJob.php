@@ -9,6 +9,7 @@ use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\OcrProcessingOutcome;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Enums\PipelineStepOperation;
@@ -20,7 +21,6 @@ use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -88,6 +88,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         OcrOrchestrator $ocrOrchestrator,
         LogAuditActivityAction $logAuditActivity,
         PipelineStateAction $pipelineState,
+        UploadedDocumentProcessingTransitions $processingTransitions,
     ): void {
         $document = UploadedDocument::query()->findOrFail($this->uploadedDocumentId);
 
@@ -102,7 +103,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $claimed = $this->claimForProcessing($document, $expectedPath);
+        $claimed = $processingTransitions->claim($document, $expectedPath);
 
         if (! $claimed instanceof UploadedDocument) {
             Log::info('OCR: skipped ProcessUploadedDocumentJob — could not claim document.', [
@@ -147,16 +148,9 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             }
 
             $error = mb_substr($exception->getMessage(), 0, 500);
-            $updated = UploadedDocument::query()
-                ->whereKey($claimed->id)
-                ->where('path', $expectedPath)
-                ->update([
-                    'processing_status' => DocumentProcessingStatus::Failed->value,
-                    'processing_error' => $error,
-                    'processing_finished_at' => now(),
-                ]);
+            $updated = $processingTransitions->failForPath($claimed, $expectedPath, $error);
 
-            if ($updated !== 1) {
+            if (! $updated) {
                 Log::warning('OCR: discarded permanent failure for a stale upload revision.', [
                     'uploaded_document_id' => $claimed->id,
                     'tenant_id' => $claimed->tenant_id,
@@ -239,49 +233,5 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         $pipelineState->handle($pipeline, PipelineStepOperation::Skip, 'provider_processing');
         $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
         $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
-    }
-
-    /**
-     * Atomically move pending/failed/processing → processing.
-     * Returns null when the document cannot be claimed (stale path, already
-     * completed, or an external OCR job already in flight).
-     */
-    private function claimForProcessing(
-        UploadedDocument $document,
-        string $expectedPath,
-    ): ?UploadedDocument {
-        return DB::transaction(function () use ($document, $expectedPath): ?UploadedDocument {
-            $query = UploadedDocument::query()->whereKey($document->getKey());
-            $query->getQuery()->lockForUpdate();
-
-            $locked = $query->firstOrFail();
-
-            // Stale job for a replaced upload revision — skip without failing the queue.
-            if ($locked->path !== $expectedPath) {
-                return null;
-            }
-
-            // Another worker finished, or an external OCR job is already in flight.
-            if (
-                $locked->processing_status === DocumentProcessingStatus::Completed
-                || (
-                    $locked->processing_status === DocumentProcessingStatus::Processing
-                    && $locked->textract_job_id !== null
-                )
-            ) {
-                return null;
-            }
-
-            $locked->forceFill([
-                'processing_status' => DocumentProcessingStatus::Processing,
-                'processing_error' => null,
-                'extracted_text' => null,
-                'textract_job_id' => null,
-                'processing_started_at' => $locked->processing_started_at ?? now(),
-                'processing_finished_at' => null,
-            ])->save();
-
-            return $locked;
-        });
     }
 }

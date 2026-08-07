@@ -6,12 +6,13 @@ use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
+use App\Pipelines\Transitions\PipelineStepTransitions;
 use App\Pipelines\Transitions\PipelineTransitions;
 use Illuminate\Validation\ValidationException;
 
 /*
 |--------------------------------------------------------------------------
-| PipelineTransitions
+| PipelineTransitions / PipelineStepTransitions
 |--------------------------------------------------------------------------
 |
 | Feature tests drive OCR and export pipelines along their happy paths, which
@@ -24,6 +25,7 @@ beforeEach(function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $this->tenant = $tenant;
     $this->transitions = resolve(PipelineTransitions::class);
+    $this->stepTransitions = resolve(PipelineStepTransitions::class);
 });
 
 function pipelineWith(PipelineStatus $status = PipelineStatus::Pending): Pipeline
@@ -54,7 +56,7 @@ describe('start', function (): void {
         $pipeline = pipelineWith();
         $step = stepFor($pipeline);
 
-        $this->transitions->start($pipeline, $step);
+        $this->stepTransitions->start($pipeline, $step);
 
         expect($step->fresh())
             ->status->toBe(PipelineStepStatus::Running)
@@ -69,7 +71,7 @@ describe('start', function (): void {
         $step = stepFor($pipeline, PipelineStepStatus::Failed);
         $step->forceFill(['error_code' => 'E_BOOM', 'error_message' => 'boom'])->saveQuietly();
 
-        $this->transitions->start($pipeline, $step);
+        $this->stepTransitions->start($pipeline, $step);
 
         expect($step->fresh())
             ->error_code->toBeNull()
@@ -82,7 +84,7 @@ describe('start', function (): void {
         $pipeline = pipelineWith();
         $step = stepFor($pipeline, $status);
 
-        $this->transitions->start($pipeline, $step);
+        $this->stepTransitions->start($pipeline, $step);
 
         expect($step->fresh()->status)->toBe($status)
             ->and($step->fresh()->attempts)->toBe(0);
@@ -95,8 +97,8 @@ describe('start', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Running);
         $step = stepFor($pipeline);
 
-        $this->transitions->start($pipeline, $step);
-        $this->transitions->start($pipeline, $step->fresh());
+        $this->stepTransitions->start($pipeline, $step);
+        $this->stepTransitions->start($pipeline, $step->fresh());
 
         expect($step->fresh()->attempts)->toBe(1);
     });
@@ -105,7 +107,7 @@ describe('start', function (): void {
         $pipeline = pipelineWith($status);
         $step = stepFor($pipeline);
 
-        expect(fn () => $this->transitions->start($pipeline, $step))
+        expect(fn () => $this->stepTransitions->start($pipeline, $step))
             ->toThrow(ValidationException::class);
     })->with([
         'completed' => [PipelineStatus::Completed],
@@ -116,12 +118,12 @@ describe('start', function (): void {
         $pipeline = pipelineWith();
         $first = stepFor($pipeline, key: 'first', position: 0);
 
-        $this->transitions->start($pipeline, $first);
+        $this->stepTransitions->start($pipeline, $first);
         $startedAt = $pipeline->fresh()->started_at;
 
         $this->travel(1)->minutes();
         $second = stepFor($pipeline, key: 'second', position: 1);
-        $this->transitions->start($pipeline->fresh(), $second);
+        $this->stepTransitions->start($pipeline->fresh(), $second);
 
         expect($pipeline->fresh()->started_at->timestamp)->toBe($startedAt->timestamp);
     });
@@ -133,8 +135,8 @@ describe('complete', function (): void {
         $first = stepFor($pipeline, key: 'first', position: 0);
         stepFor($pipeline, key: 'second', position: 1);
 
-        $this->transitions->start($pipeline, $first);
-        $this->transitions->complete($pipeline->fresh(), $first->fresh());
+        $this->stepTransitions->start($pipeline, $first);
+        $this->stepTransitions->complete($pipeline->fresh(), $first->fresh());
 
         expect($pipeline->fresh())
             ->status->toBe(PipelineStatus::Running)
@@ -146,8 +148,8 @@ describe('complete', function (): void {
         $pipeline = pipelineWith();
         $only = stepFor($pipeline);
 
-        $this->transitions->start($pipeline, $only);
-        $this->transitions->complete($pipeline->fresh(), $only->fresh());
+        $this->stepTransitions->start($pipeline, $only);
+        $this->stepTransitions->complete($pipeline->fresh(), $only->fresh());
 
         expect($pipeline->fresh())
             ->status->toBe(PipelineStatus::Completed)
@@ -162,8 +164,8 @@ describe('complete', function (): void {
         $sooner = stepFor($pipeline, key: 'sooner', position: 1);
         $first = stepFor($pipeline, key: 'first', position: 0);
 
-        $this->transitions->start($pipeline, $first);
-        $this->transitions->complete($pipeline->fresh(), $first->fresh());
+        $this->stepTransitions->start($pipeline, $first);
+        $this->stepTransitions->complete($pipeline->fresh(), $first->fresh());
 
         expect($pipeline->fresh()->current_stage)->toBe($sooner->key)
             ->and($later->fresh()->status)->toBe(PipelineStepStatus::Pending);
@@ -173,7 +175,7 @@ describe('complete', function (): void {
         $pipeline = pipelineWith();
         $step = stepFor($pipeline, PipelineStepStatus::Completed);
 
-        $this->transitions->complete($pipeline, $step);
+        $this->stepTransitions->complete($pipeline, $step);
 
         expect($step->fresh()->status)->toBe(PipelineStepStatus::Completed);
     });
@@ -182,7 +184,7 @@ describe('complete', function (): void {
         $pipeline = pipelineWith();
         $step = stepFor($pipeline);
 
-        expect(fn () => $this->transitions->complete($pipeline, $step))
+        expect(fn () => $this->stepTransitions->complete($pipeline, $step))
             ->toThrow(ValidationException::class);
     });
 });
@@ -193,7 +195,7 @@ describe('skip', function (): void {
         $skipped = stepFor($pipeline, key: 'skipped', position: 0);
         stepFor($pipeline, key: 'next', position: 1);
 
-        $this->transitions->skip($pipeline, $skipped);
+        $this->stepTransitions->skip($pipeline, $skipped);
 
         expect($skipped->fresh())
             ->status->toBe(PipelineStepStatus::Skipped)
@@ -205,7 +207,7 @@ describe('skip', function (): void {
         $pipeline = pipelineWith();
         $step = stepFor($pipeline, $status);
 
-        $this->transitions->skip($pipeline, $step);
+        $this->stepTransitions->skip($pipeline, $step);
 
         expect($step->fresh()->status)->toBe($status);
     })->with([
@@ -217,7 +219,7 @@ describe('skip', function (): void {
         $pipeline = pipelineWith();
         $step = stepFor($pipeline, $status);
 
-        expect(fn () => $this->transitions->skip($pipeline, $step))
+        expect(fn () => $this->stepTransitions->skip($pipeline, $step))
             ->toThrow(ValidationException::class);
     })->with([
         'failed' => [PipelineStepStatus::Failed],
@@ -230,7 +232,7 @@ describe('fail', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Running);
         $step = stepFor($pipeline, PipelineStepStatus::Running);
 
-        $this->transitions->fail($pipeline, $step, 'Textract timed out', 'E_TIMEOUT');
+        $this->stepTransitions->fail($pipeline, $step, 'Textract timed out', 'E_TIMEOUT');
 
         expect($step->fresh())
             ->status->toBe(PipelineStepStatus::Failed)
@@ -245,7 +247,7 @@ describe('fail', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Running);
         $step = stepFor($pipeline, PipelineStepStatus::Completed);
 
-        $this->transitions->fail($pipeline, $step, 'late failure', 'E_LATE');
+        $this->stepTransitions->fail($pipeline, $step, 'late failure', 'E_LATE');
 
         expect($step->fresh()->status)->toBe(PipelineStepStatus::Completed)
             // Crucially the pipeline is not dragged down with it.
@@ -256,7 +258,14 @@ describe('fail', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Completed);
         $step = stepFor($pipeline, PipelineStepStatus::Running);
 
-        expect(fn () => $this->transitions->fail($pipeline, $step, 'too late', 'E_LATE'))
+        expect(fn () => $this->stepTransitions->fail($pipeline, $step, 'too late', 'E_LATE'))
+            ->toThrow(ValidationException::class);
+    });
+
+    it('refuses to fail a completed pipeline directly', function (): void {
+        $pipeline = pipelineWith(PipelineStatus::Completed);
+
+        expect(fn () => $this->transitions->fail($pipeline, 'too late', 'E_LATE'))
             ->toThrow(ValidationException::class);
     });
 });
@@ -266,7 +275,7 @@ describe('stuck', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Running);
         $step = stepFor($pipeline, PipelineStepStatus::Running);
 
-        $this->transitions->stuck($pipeline, $step, 'No heartbeat', 'E_STALE');
+        $this->stepTransitions->stuck($pipeline, $step, 'No heartbeat', 'E_STALE');
 
         expect($step->fresh())
             ->status->toBe(PipelineStepStatus::Stuck)
@@ -280,7 +289,7 @@ describe('stuck', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Running);
         $step = stepFor($pipeline, PipelineStepStatus::Skipped);
 
-        $this->transitions->stuck($pipeline, $step, 'stale', 'E_STALE');
+        $this->stepTransitions->stuck($pipeline, $step, 'stale', 'E_STALE');
 
         expect($step->fresh()->status)->toBe(PipelineStepStatus::Skipped);
     });
@@ -288,7 +297,7 @@ describe('stuck', function (): void {
     it('refuses to mark a closed pipeline stuck', function (PipelineStatus $status): void {
         $pipeline = pipelineWith($status);
 
-        expect(fn () => $this->transitions->stuckPipeline($pipeline, 'stale', 'E_STALE'))
+        expect(fn () => $this->transitions->stuck($pipeline, 'stale', 'E_STALE'))
             ->toThrow(ValidationException::class);
     })->with([
         'completed' => [PipelineStatus::Completed],
@@ -413,7 +422,7 @@ describe('heartbeat', function (): void {
         $step = stepFor($pipeline, PipelineStepStatus::Running);
         $pipeline->forceFill(['last_activity_at' => now()->subHour()])->saveQuietly();
 
-        $this->transitions->heartbeat($pipeline, $step);
+        $this->stepTransitions->heartbeat($pipeline, $step);
 
         expect($pipeline->fresh()->last_activity_at->timestamp)
             ->toBe(now()->timestamp);
@@ -424,7 +433,7 @@ describe('heartbeat', function (): void {
         $step = stepFor($pipeline, PipelineStepStatus::Completed);
         $step->forceFill(['last_activity_at' => now()->subHour()])->saveQuietly();
 
-        $this->transitions->heartbeat($pipeline, $step);
+        $this->stepTransitions->heartbeat($pipeline, $step);
 
         expect($step->fresh()->last_activity_at->timestamp)
             ->toBe(now()->subHour()->timestamp);
@@ -434,7 +443,7 @@ describe('heartbeat', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Cancelled);
         $step = stepFor($pipeline, PipelineStepStatus::Running);
 
-        expect(fn () => $this->transitions->heartbeat($pipeline, $step))
+        expect(fn () => $this->stepTransitions->heartbeat($pipeline, $step))
             ->toThrow(ValidationException::class);
     });
 
@@ -442,7 +451,7 @@ describe('heartbeat', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Completed);
         $pipeline->forceFill(['last_activity_at' => now()->subHour()])->saveQuietly();
 
-        $this->transitions->heartbeatPipeline($pipeline);
+        $this->transitions->heartbeat($pipeline);
 
         expect($pipeline->fresh()->last_activity_at->timestamp)
             ->toBe(now()->subHour()->timestamp);
@@ -452,7 +461,7 @@ describe('heartbeat', function (): void {
         $pipeline = pipelineWith(PipelineStatus::Running);
         $pipeline->forceFill(['last_activity_at' => now()->subHour()])->saveQuietly();
 
-        $this->transitions->heartbeatPipeline($pipeline);
+        $this->transitions->heartbeat($pipeline);
 
         expect($pipeline->fresh()->last_activity_at->timestamp)->toBe(now()->timestamp);
     });

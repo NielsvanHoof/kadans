@@ -11,6 +11,7 @@ use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Jobs\GenerateDossierExportJob;
 use App\Dossiers\Models\AudioRecording;
@@ -184,6 +185,7 @@ describe('regression: the run actually restarts', function (): void {
             resolve(OcrOrchestrator::class),
             resolve(LogAuditActivityAction::class),
             resolve(PipelineStateAction::class),
+            resolve(UploadedDocumentProcessingTransitions::class),
         );
 
         expect($document->fresh())
@@ -204,6 +206,7 @@ describe('regression: the run actually restarts', function (): void {
             resolve(OcrOrchestrator::class),
             resolve(LogAuditActivityAction::class),
             resolve(PipelineStateAction::class),
+            resolve(UploadedDocumentProcessingTransitions::class),
         );
 
         expect($document->fresh())

@@ -7,6 +7,7 @@ namespace App\Pipelines\Actions;
 use App\Pipelines\Enums\PipelineStepOperation;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
+use App\Pipelines\Transitions\PipelineStepTransitions;
 use App\Pipelines\Transitions\PipelineTransitions;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -16,6 +17,7 @@ final readonly class PipelineStateAction
 {
     public function __construct(
         private PipelineTransitions $transitions,
+        private PipelineStepTransitions $stepTransitions,
         private BroadcastPipelineUpdatedAction $broadcastPipelineUpdated,
     ) {}
 
@@ -42,7 +44,7 @@ final readonly class PipelineStateAction
 
             // Heartbeats only touch last_activity_at — skip noisy live reloads.
             if ($operation === PipelineStepOperation::Heartbeat && $stepKey === null) {
-                return $this->transitions->heartbeatPipeline($lockedPipeline);
+                return $this->transitions->heartbeat($lockedPipeline);
             }
 
             $step = $stepKey === null
@@ -50,14 +52,14 @@ final readonly class PipelineStateAction
                 : $this->lockStep($lockedPipeline, $stepKey);
 
             if ($operation === PipelineStepOperation::Fail && ! $step instanceof PipelineStep) {
-                $result = $this->transitions->failPipeline($lockedPipeline, $message, $errorCode);
+                $result = $this->transitions->fail($lockedPipeline, $message, $errorCode);
                 $this->broadcastPipelineUpdated->handle($lockedPipeline->fresh() ?? $lockedPipeline);
 
                 return $result;
             }
 
             if ($operation === PipelineStepOperation::Stuck && ! $step instanceof PipelineStep) {
-                $result = $this->transitions->stuckPipeline($lockedPipeline, $message, $errorCode);
+                $result = $this->transitions->stuck($lockedPipeline, $message, $errorCode);
                 $this->broadcastPipelineUpdated->handle($lockedPipeline->fresh() ?? $lockedPipeline);
 
                 return $result;
@@ -66,15 +68,15 @@ final readonly class PipelineStateAction
             throw_unless($step instanceof PipelineStep, InvalidArgumentException::class, 'A pipeline step is required for this operation.');
 
             if ($operation === PipelineStepOperation::Heartbeat) {
-                return $this->transitions->heartbeat($lockedPipeline, $step);
+                return $this->stepTransitions->heartbeat($lockedPipeline, $step);
             }
 
             $result = match ($operation) {
-                PipelineStepOperation::Start => $this->transitions->start($lockedPipeline, $step),
-                PipelineStepOperation::Complete => $this->transitions->complete($lockedPipeline, $step),
-                PipelineStepOperation::Fail => $this->transitions->fail($lockedPipeline, $step, $message, $errorCode),
-                PipelineStepOperation::Skip => $this->transitions->skip($lockedPipeline, $step),
-                PipelineStepOperation::Stuck => $this->transitions->stuck($lockedPipeline, $step, $message, $errorCode),
+                PipelineStepOperation::Start => $this->stepTransitions->start($lockedPipeline, $step),
+                PipelineStepOperation::Complete => $this->stepTransitions->complete($lockedPipeline, $step),
+                PipelineStepOperation::Fail => $this->stepTransitions->fail($lockedPipeline, $step, $message, $errorCode),
+                PipelineStepOperation::Skip => $this->stepTransitions->skip($lockedPipeline, $step),
+                PipelineStepOperation::Stuck => $this->stepTransitions->stuck($lockedPipeline, $step, $message, $errorCode),
             };
 
             // Notify open workspace pages

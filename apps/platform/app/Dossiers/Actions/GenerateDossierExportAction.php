@@ -6,8 +6,8 @@ namespace App\Dossiers\Actions;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Transitions\DossierExportTransitions;
 use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Enums\PipelineStepOperation;
 use App\Pipelines\Models\Pipeline;
@@ -25,6 +25,7 @@ final readonly class GenerateDossierExportAction
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
         private PipelineStateAction $pipelineState,
+        private DossierExportTransitions $transitions,
     ) {}
 
     public function handle(int $pipelineId): void
@@ -38,7 +39,7 @@ final readonly class GenerateDossierExportAction
 
         throw_unless($export instanceof DossierExport, RuntimeException::class, 'Dossier export pipeline subject is invalid.');
 
-        if ($export->status === DossierExportStatus::Completed) {
+        if (! $this->transitions->canStart($export)) {
             return;
         }
 
@@ -47,15 +48,11 @@ final readonly class GenerateDossierExportAction
             $query->getQuery()->lockForUpdate();
             $locked = $query->firstOrFail();
 
-            if ($locked->status === DossierExportStatus::Completed) {
+            if (! $this->transitions->canStart($locked)) {
                 return null;
             }
 
-            $locked->forceFill([
-                'status' => DossierExportStatus::Processing,
-                'error' => null,
-                'failed_at' => null,
-            ])->saveQuietly();
+            $this->transitions->start($locked);
 
             return $locked;
         });
@@ -88,13 +85,7 @@ final readonly class GenerateDossierExportAction
             $completedAt = now();
             $expiresAt = $completedAt->copy()->addMinutes((int) config('exports.expires_in_minutes'));
 
-            $claimed->forceFill([
-                'status' => DossierExportStatus::Completed,
-                'disk' => $disk,
-                'path' => $archivePath,
-                'expires_at' => $expiresAt,
-                'completed_at' => $completedAt,
-            ])->saveQuietly();
+            $this->transitions->complete($claimed, $disk, $archivePath, $completedAt, $expiresAt);
 
             $this->logAuditActivity->handle(
                 AuditEvent::DossierExportCompleted,

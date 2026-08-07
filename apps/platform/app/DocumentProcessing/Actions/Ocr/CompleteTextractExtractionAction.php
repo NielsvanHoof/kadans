@@ -8,6 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Services\Ocr\TextractExtractionPipeline;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
@@ -36,6 +37,7 @@ final readonly class CompleteTextractExtractionAction
         private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
         private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
+        private UploadedDocumentProcessingTransitions $processingTransitions,
     ) {}
 
     /**
@@ -160,19 +162,9 @@ final readonly class CompleteTextractExtractionAction
                 $extractedJson = $this->extractionPipeline->run($jobId, $document);
                 $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
 
-                $updated = UploadedDocument::query()
-                    ->whereKey($document->id)
-                    ->where('path', $document->path)
-                    ->where('textract_job_id', $jobId)
-                    ->where('processing_status', DocumentProcessingStatus::Processing->value)
-                    ->update([
-                        'processing_status' => DocumentProcessingStatus::Completed->value,
-                        'extracted_text' => $extractedJson,
-                        'processing_error' => null,
-                        'processing_finished_at' => now(),
-                    ]);
+                $updated = $this->processingTransitions->complete($document, $jobId, $extractedJson);
 
-                if ($updated !== 1) {
+                if (! $updated) {
                     Log::warning('OCR: discarded stale Textract completion.', [
                         'uploaded_document_id' => $document->id,
                         'tenant_id' => $document->tenant_id,

@@ -10,6 +10,7 @@ use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
@@ -29,6 +30,7 @@ test('processing job extracts mock text and marks the document completed', funct
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
         resolve(PipelineStateAction::class),
+        resolve(UploadedDocumentProcessingTransitions::class),
     );
 
     $uploaded->refresh();
@@ -61,6 +63,7 @@ test('processing job is idempotent when the document is already completed', func
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
         resolve(PipelineStateAction::class),
+        resolve(UploadedDocumentProcessingTransitions::class),
     );
 
     $uploaded->refresh();
@@ -88,6 +91,7 @@ test('processing job does not restart an active external OCR job', function (): 
         new OcrOrchestrator($ocr, resolve(LogAuditActivityAction::class)),
         resolve(LogAuditActivityAction::class),
         resolve(PipelineStateAction::class),
+        resolve(UploadedDocumentProcessingTransitions::class),
     );
 
     $uploaded->refresh();
@@ -114,6 +118,7 @@ test('processing job ignores an upload revision that has been replaced', functio
         new OcrOrchestrator($ocr, resolve(LogAuditActivityAction::class)),
         resolve(LogAuditActivityAction::class),
         resolve(PipelineStateAction::class),
+        resolve(UploadedDocumentProcessingTransitions::class),
     );
 
     $uploaded->refresh();
@@ -132,6 +137,7 @@ test('processing audit events stay tenant-scoped', function (): void {
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
         resolve(PipelineStateAction::class),
+        resolve(UploadedDocumentProcessingTransitions::class),
     );
 
     expect(Activity::query()

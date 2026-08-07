@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Actions;
 
+use App\AudioProcessing\Transitions\AudioTranscriptionTransitions;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use Illuminate\Support\Facades\Log;
 
@@ -17,6 +17,7 @@ final readonly class MarkTranscribeJobFailedAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
+        private AudioTranscriptionTransitions $transcriptionTransitions,
     ) {}
 
     public function handle(
@@ -25,18 +26,9 @@ final readonly class MarkTranscribeJobFailedAction
         string $error,
         string $status,
     ): void {
-        $updated = AudioRecording::query()
-            ->whereKey($recording->id)
-            ->where('path', $recording->path)
-            ->where('transcribe_job_id', $jobId)
-            ->where('transcription_status', TranscriptionStatus::Processing->value)
-            ->update([
-                'transcription_status' => TranscriptionStatus::Failed->value,
-                'transcription_error' => $error,
-                'transcription_finished_at' => now(),
-            ]);
+        $updated = $this->transcriptionTransitions->failWhileProcessing($recording, $jobId, $error);
 
-        if ($updated !== 1) {
+        if (! $updated) {
             Log::warning('Transcription: discarded stale Transcribe failure.', [
                 'audio_recording_id' => $recording->id,
                 'tenant_id' => $recording->tenant_id,
