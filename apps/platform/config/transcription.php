@@ -48,6 +48,8 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'token' => env('AWS_SESSION_TOKEN'),
         'region' => env('AWS_DEFAULT_REGION', 'eu-west-1'),
+        // Local Floci/Sail only. Leave empty in production so the SDK uses real AWS.
+        'endpoint' => env('AWS_ENDPOINT'),
         'bucket' => env('AWS_BUCKET'),
         'results_queue_url' => env('TRANSCRIBE_RESULTS_QUEUE_URL'),
         'output_prefix' => env('TRANSCRIBE_OUTPUT_PREFIX', 'transcriptions'),

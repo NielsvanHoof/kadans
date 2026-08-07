@@ -24,6 +24,8 @@
 /.env.*
 !/.env.example
 !/.env.ci
+# Cached real-AWS overlay (secrets); Floci profile under env/profiles/ is committed.
+/env/profiles/aws.env
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

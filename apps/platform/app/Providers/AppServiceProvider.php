@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Accounts\Models\User;
+use App\AudioProcessing\Enums\TranscriptionDriver;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
+use App\DocumentProcessing\Enums\OcrDriver;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -217,13 +219,13 @@ final class AppServiceProvider extends ServiceProvider
         // arrives via artisan transcribe:consume (EventBridge → SQS), not this queue.
         DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=transcription', 'transcription');
 
-        if (is_string(config('transcription.transcribe.results_queue_url'))
-            && config('transcription.transcribe.results_queue_url') !== '') {
+        // Only when the real drivers are on. Leftover Pulumi queue URLs with
+        // OCR_DRIVER=mock + Floci must not start consumers against missing queues.
+        if ($this->shouldRunTranscribeConsume()) {
             DevCommands::artisan('transcribe:consume', 'transcribe-consume');
         }
 
-        if (is_string(config('ocr.textract.sns_topic_arn'))
-            && config('ocr.textract.sns_topic_arn') !== '') {
+        if ($this->shouldRunTextractConsume()) {
             DevCommands::artisan('textract:consume', 'textract-consume');
         }
 
@@ -232,5 +234,33 @@ final class AppServiceProvider extends ServiceProvider
         }
 
         DevCommands::artisan('reverb:start', 'reverb');
+    }
+
+    /**
+     * Amazon Transcribe completion listener for `php artisan dev`.
+     */
+    private function shouldRunTranscribeConsume(): bool
+    {
+        if ((string) config('transcription.driver') !== TranscriptionDriver::Transcribe->value) {
+            return false;
+        }
+
+        $queueUrl = config('transcription.transcribe.results_queue_url');
+
+        return is_string($queueUrl) && $queueUrl !== '';
+    }
+
+    /**
+     * Textract SNS→SQS completion listener for `php artisan dev`.
+     */
+    private function shouldRunTextractConsume(): bool
+    {
+        if ((string) config('ocr.driver') !== OcrDriver::Textract->value) {
+            return false;
+        }
+
+        $queueUrl = config('ocr.textract.results_queue_url');
+
+        return is_string($queueUrl) && $queueUrl !== '';
     }
 }

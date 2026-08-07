@@ -8,9 +8,11 @@ Multi-tenant platform for accounting and advisory firms to collect documents and
 - **Frontend:** Inertia v3 + React 19, Tailwind CSS 4, shadcn/ui, Wayfinder (typed routes)
 - **Tooling:** Laravel Sail, Pest 4, Pint, Larastan, Biome + Prettier, Vite 8
 
+
+
 ## Documentation
 
-Longer guides live under [`docs/`](docs/):
+Longer guides live under `[docs/](docs/)`:
 
 - [Getting started](docs/getting-started.md) — Sail boot, first owner, day-to-day commands
 - [Architecture](docs/architecture.md) — domains, composition root, request flow
@@ -18,7 +20,7 @@ Longer guides live under [`docs/`](docs/):
 - [Security](docs/security.md) — threat model, tenant isolation, portal tokens, response hardening
 - [Adding a domain](docs/adding-a-domain.md) — checklist for a new feature area
 
-[`CONTEXT.md`](CONTEXT.md) is the short domain glossary (entities and workflow terms).
+`[CONTEXT.md](CONTEXT.md)` is the short domain glossary (entities and workflow terms).
 
 ## Getting started
 
@@ -65,12 +67,14 @@ Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, �
 
 Run `vendor/bin/sail npm run dev` (or `npm run build`) so Wayfinder generates those folders — required for IDE type resolution and `npm run types:check`.
 
-Key conventions (enforced by Biome; see [Frontend](docs/frontend.md) and [`biome.json`](biome.json)):
+Key conventions (enforced by Biome; see [Frontend](docs/frontend.md) and `[biome.json](biome.json)`):
 
 - Payload types are generated from the PHP `*Data` objects into `types/generated/` — `features/<domain>/types.ts` mostly aliases them.
 - Shared `components/` never import from `features/`, and are grouped by role (`ui/`, `primitives/`, `data/`, `forms/`, `feedback/`, `brand/`, `app-shell/`).
 - `hooks/` and `lib/` are app-wide only; domain hooks live in `features/<domain>/hooks/`.
 - Staff and portal document-request renderers never import each other; the item-type registries wire both sides.
+
+
 
 ## Testing
 
@@ -80,3 +84,4 @@ Feature tests live in `tests/Feature` (Pest). See [testing conventions](docs/tes
 vendor/bin/sail artisan test --compact tests/Feature/Dossiers/
 vendor/bin/sail artisan test --compact --filter='portal'
 ```
+

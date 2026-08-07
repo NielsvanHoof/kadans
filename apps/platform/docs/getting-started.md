@@ -14,7 +14,7 @@ Everything runs through [Laravel Sail](https://laravel.com/docs/sail). Prefix PH
 ```bash
 composer install
 cp .env.example .env          # skip if .env already exists
-vendor/bin/sail up -d         # Postgres, Redis, Mailpit, MinIO, Octane
+vendor/bin/sail up -d         # Postgres, Redis, Mailpit, Floci, Octane
 vendor/bin/sail artisan key:generate
 vendor/bin/sail artisan migrate --force
 vendor/bin/sail npm install
@@ -62,9 +62,43 @@ vendor/bin/sail artisan tenancy:sync-roles --prune
 |---------|-----|
 | App | http://localhost |
 | Mailpit | http://localhost:8025 |
-| MinIO console | http://localhost:8900 |
+| Floci (local AWS) | http://localhost:4566 |
+| Floci UI | http://localhost:4566/_floci/ui |
 
-Default filesystem is local. If you switch to S3/MinIO, create the bucket named in `.env` (see comments in `.env.example`).
+Default filesystem is local. For S3 against Sail's Floci emulator, run `composer env:floci` (sets `FILESYSTEM_DISK=s3`, bucket `local`, path-style endpoint). Keep mock OCR/transcription unless you intentionally use real AWS — see [Storage profiles](#storage-profiles) and [infra/README](../infra/README.md).
+
+### Storage profiles
+
+Flip only the AWS/storage-related keys in `.env` without replacing the whole file:
+
+```bash
+composer env:floci   # Sail Floci S3 + mock OCR/transcription (committed overlay)
+composer env:aws     # real AWS from cached Pulumi profile (or sync if missing)
+```
+
+- **floci** — applies [`env/profiles/floci.env`](../env/profiles/floci.env) (dummy creds, safe to commit). Safe via Sail: `vendor/bin/sail composer env:floci`.
+- **aws** — applies gitignored `env/profiles/aws.env`. Run on the **host** (not Sail): Pulumi CLI + stack credentials are outside the container. First time (or after infra changes): `composer env:aws`, which refreshes the cache via `infra/scripts/sync-ocr-credentials.sh` when needed.
+
+After either command:
+
+```bash
+vendor/bin/sail artisan config:clear
+# restart vendor/bin/sail artisan dev if it is already running
+```
+
+### Local AWS via Floci (optional)
+
+[Floci](https://github.com/floci-io/floci) emulates S3 plus stub Textract/Transcribe/SQS/SNS on one endpoint. Prefer `composer env:floci` over hand-editing `AWS_*` so you do not mix a Floci endpoint with a Pulumi bucket name.
+
+Fidelity limits — do not treat Floci as a full OCR/STT substitute:
+
+- Textract/Transcribe return fixed stub payloads (no real OCR or speech-to-text).
+- Floci does **not** publish Textract `NotificationChannel` completions onto SNS→SQS, so `textract:consume` never sees a job finish.
+- Floci Transcribe does **not** write transcript JSON to S3 or emit EventBridge→SQS completion events for `transcribe:consume`.
+
+For Start-only SDK smoke tests against Floci you can set `OCR_DRIVER=textract` / `TRANSCRIPTION_DRIVER=transcribe` with Floci ARNs/queue URLs you create yourself. For an end-to-end completion path, use `composer env:aws` (or keep mock drivers).
+
+`php artisan dev` only starts `textract:consume` / `transcribe:consume` when those drivers are enabled **and** the matching results queue URL is set.
 
 ## Day-to-day commands
 
@@ -91,4 +125,4 @@ vendor/bin/sail artisan test --compact --filter='portal'
 
 - **Shared database tenancy** — one Postgres database; tenants are rows, not separate DBs. HTTP middleware sets the current tenant; console/async code uses `TenantContext::runForTenant()`.
 - **Octane** — the app boots once and serves many requests. Do not store request-specific state in singletons or static properties.
-- **OCR** — default driver is `mock` (see `OCR_DRIVER` in `.env`). Real Textract/Bedrock setup is optional; see [infra/README](../infra/README.md).
+- **OCR** — default driver is `mock` (see `OCR_DRIVER` in `.env`). Floci can stub Textract Start* locally; completion still needs mock or real AWS — see the Floci section above and [infra/README](../infra/README.md).

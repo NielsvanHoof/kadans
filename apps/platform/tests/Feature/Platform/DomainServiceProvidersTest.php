@@ -41,6 +41,7 @@ use App\Tenancy\Support\PermissionRegistry;
 use App\Tenancy\TenancyServiceProvider;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
+use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Support\Facades\Gate;
 
 it('registers domain service providers in the application', function (): void {
@@ -59,6 +60,45 @@ it('binds OCR and AWS clients from DocumentProcessingServiceProvider', function 
         ->and(resolve(SqsClient::class))->toBeInstanceOf(SqsClient::class)
         ->and(resolve(DescribesDocumentOverview::class))->toBeInstanceOf(AgentDocumentOverviewNormalizer::class)
         ->and(resolve(StartsDocumentOcr::class))->toBeInstanceOf(MockOcrExtractor::class);
+});
+
+it('points Textract, SQS, and Transcribe clients at a configured local AWS endpoint', function (): void {
+    config([
+        'ocr.textract.endpoint' => 'http://floci:4566',
+        'transcription.transcribe.endpoint' => 'http://floci:4566',
+    ]);
+
+    // Singletons capture config at first resolve — rebuild after endpoint is set.
+    app()->forgetInstance(TextractClient::class);
+    app()->forgetInstance(SqsClient::class);
+    app()->forgetInstance(TranscribeServiceClient::class);
+
+    expect((string) resolve(TextractClient::class)->getEndpoint())
+        ->toBe('http://floci:4566')
+        ->and((string) resolve(SqsClient::class)->getEndpoint())
+        ->toBe('http://floci:4566')
+        ->and((string) resolve(TranscribeServiceClient::class)->getEndpoint())
+        ->toBe('http://floci:4566');
+});
+
+it('leaves AWS clients on regional endpoints when no local endpoint is configured', function (): void {
+    config([
+        'ocr.textract.endpoint' => null,
+        'ocr.textract.region' => 'eu-west-1',
+        'transcription.transcribe.endpoint' => null,
+        'transcription.transcribe.region' => 'eu-west-1',
+    ]);
+
+    app()->forgetInstance(TextractClient::class);
+    app()->forgetInstance(SqsClient::class);
+    app()->forgetInstance(TranscribeServiceClient::class);
+
+    expect((string) resolve(TextractClient::class)->getEndpoint())
+        ->not->toContain('floci')
+        ->and((string) resolve(SqsClient::class)->getEndpoint())
+        ->not->toContain('floci')
+        ->and((string) resolve(TranscribeServiceClient::class)->getEndpoint())
+        ->not->toContain('floci');
 });
 
 it('binds tenancy and platform services from their domain providers', function (): void {

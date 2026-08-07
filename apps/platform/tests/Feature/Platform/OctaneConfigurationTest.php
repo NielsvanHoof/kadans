@@ -23,6 +23,20 @@ it('lets the Sail supervisor own the local HTTP server', function (): void {
         ->toContain('queue', 'vite', 'reverb');
 });
 
+it('skips AWS result consumers while OCR and transcription stay on mock drivers', function (): void {
+    // phpunit/.env.testing keep mock drivers even if Pulumi queue URLs exist locally.
+    expect(config('ocr.driver'))
+        ->toBe('mock')
+        ->and(config('transcription.driver'))
+        ->toBe('mock');
+
+    $commandNames = collect(DevCommands::commands())->pluck('name');
+
+    expect($commandNames)
+        ->not->toContain('textract-consume')
+        ->not->toContain('transcribe-consume');
+});
+
 it('keeps Debugbar storage.open safe when Octane boots without a client IP', function (): void {
     // Class string (not a Closure) so config:cache / optimize can serialize it.
     expect(config('debugbar.storage.open'))->toBe(DebugbarStorageOpen::class);

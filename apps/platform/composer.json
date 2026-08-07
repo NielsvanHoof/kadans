@@ -82,6 +82,8 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
+        "env:floci": "bash scripts/use-aws-profile.sh floci",
+        "env:aws": "bash scripts/use-aws-profile.sh aws",
         "lint": [
             "pint --parallel"
         ],

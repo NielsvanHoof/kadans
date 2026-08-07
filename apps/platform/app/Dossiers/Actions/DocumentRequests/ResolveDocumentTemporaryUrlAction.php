@@ -23,8 +23,8 @@ use function pathinfo;
 /**
  * Build a short-lived signed URL for a private stored document.
  *
- * When the internal S3 endpoint (e.g. http://minio:9000 inside Docker)
- * differs from the public URL browsers use (e.g. http://localhost:9000),
+ * When the internal S3 endpoint (e.g. http://floci:4566 inside Docker)
+ * differs from the public URL browsers use (e.g. http://localhost:4566),
  * we create a dedicated S3 presigner with the public endpoint so the
  * signature matches the host the browser actually hits.
  */
@@ -87,8 +87,8 @@ final readonly class ResolveDocumentTemporaryUrlAction
      * Create a presigned URL using the public-facing endpoint directly.
      *
      * This avoids the signature mismatch that happens when the SDK signs
-     * for the internal Docker hostname (minio:9000) but the browser
-     * sends the request to localhost:9000.
+     * for the internal Docker hostname (floci:4566) but the browser
+     * sends the request to localhost:4566.
      */
     private function generatePublicPresignedUrl(
         FilesystemAdapter $disk,

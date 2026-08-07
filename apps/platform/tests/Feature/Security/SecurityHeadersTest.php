@@ -139,11 +139,11 @@ describe('policy assembly', function (): void {
             'driver' => 's3',
             'bucket' => 'local',
             'region' => 'eu-west-1',
-            'url' => 'http://localhost:9000',
+            'url' => 'http://localhost:4566',
         ]);
 
         expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
-            ->toContain('http://localhost:9000')
+            ->toContain('http://localhost:4566')
             ->not->toContain('amazonaws.com');
     });
 

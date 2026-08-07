@@ -53,18 +53,31 @@ Confirm the SNS email subscription after the first deploy if you set that.
 
 ## Wire Sail / `.env`
 
-After `pulumi up`, copy stack outputs into `apps/platform/.env`:
+After `pulumi up`, sync stack outputs into a cached AWS profile and apply it **on the host** (not via Sail — Pulumi is not in the container):
 
 ```bash
-OCR_DRIVER=textract
-TRANSCRIPTION_DRIVER=transcribe
-FILESYSTEM_DISK=s3
-AWS_DEFAULT_REGION=eu-west-1
-AWS_BUCKET=<documentsBucketName>
-TEXTRACT_SNS_TOPIC_ARN=<textractSnsTopicArn>
-TEXTRACT_SNS_ROLE_ARN=<textractPublishRoleArn>
-TEXTRACT_RESULTS_QUEUE_URL=<textractResultsQueueUrl>
-TRANSCRIBE_RESULTS_QUEUE_URL=<transcribeResultsQueueUrl>
+cd apps/platform
+composer env:aws
+# equivalent first-time path:
+#   cd infra && ./scripts/sync-ocr-credentials.sh
+```
+
+That writes gitignored `env/profiles/aws.env`, then upserts into `.env`:
+
+- `FILESYSTEM_DISK=s3`, `OCR_DRIVER=textract`, `TRANSCRIPTION_DRIVER=transcribe`
+- IAM access keys, documents bucket, Textract SNS/SQS + Transcribe queue URLs
+- clears `AWS_ENDPOINT` / `AWS_URL` / path-style (real AWS, not Floci)
+
+To flip back to Sail Floci without losing the cached Pulumi profile:
+
+```bash
+composer env:floci
+composer env:aws    # re-applies the cached profile; re-run sync after infra changes
+```
+
+Optional Bedrock overview model (not part of the profile overlay):
+
+```bash
 AI_DOCUMENT_OVERVIEW_MODEL=eu.anthropic.claude-sonnet-4-20250514-v1:0
 ```
 
@@ -90,7 +103,7 @@ application code changes** — just stop setting those two variables.
 > the point: the fix is not using root at all. Enable IAM Identity Center, give
 > yourself an admin user there, and `aws sso login` for short-lived credentials.
 
-Sync the local key and provider ARNs/URLs into `.env`:
+Refresh the cached profile from Pulumi (then apply):
 
 ```bash
 cd apps/platform/infra
@@ -98,8 +111,7 @@ chmod +x scripts/sync-ocr-credentials.sh
 ./scripts/sync-ocr-credentials.sh
 ```
 
-That sets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, clears `AWS_SESSION_TOKEN`,
-wires Textract SNS/SQS + Transcribe results queue outputs, and clears MinIO endpoints.
+That regenerates `env/profiles/aws.env`, applies it onto `.env`, and clears Floci endpoints.
 
 ```bash
 vendor/bin/sail artisan config:clear
@@ -107,7 +119,7 @@ vendor/bin/sail artisan textract:consume
 vendor/bin/sail artisan transcribe:consume
 ```
 
-(`composer run dev` / Sail already starts both consumers when the queue URLs are set.)
+(`composer run dev` / Sail already starts both consumers when the real drivers and queue URLs are set.)
 
 ## Outputs
 

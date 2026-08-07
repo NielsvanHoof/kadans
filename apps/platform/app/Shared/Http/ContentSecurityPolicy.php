@@ -261,7 +261,7 @@ final readonly class ContentSecurityPolicy
             return null;
         }
 
-        // A public URL or custom endpoint (MinIO) wins — that is what the browser hits.
+        // A public URL or custom endpoint (Floci) wins — that is what the browser hits.
         foreach (['url', 'endpoint'] as $key) {
             if (! array_key_exists($key, $disk)) {
                 continue;

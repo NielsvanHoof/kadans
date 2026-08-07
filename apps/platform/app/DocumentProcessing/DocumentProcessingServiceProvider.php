@@ -54,10 +54,12 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
 
     /**
      * Shared AWS SDK client options. Credentials come from ocr.textract.* (IAM role in prod).
+     * When ocr.textract.endpoint is set (local Floci), all OCR AWS clients share that base URL.
      *
      * @return array{
      *     version: string,
      *     region: string,
+     *     endpoint?: string,
      *     credentials?: array{key: string, secret: string, token?: string}
      * }
      */
@@ -67,12 +69,18 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
         $secret = config('ocr.textract.secret');
         $token = config('ocr.textract.token');
         $region = config($regionConfigKey, 'eu-west-1');
+        $endpoint = config('ocr.textract.endpoint');
 
-        /** @var array{version: string, region: string, credentials?: array{key: string, secret: string, token?: string}} $clientConfig */
+        /** @var array{version: string, region: string, endpoint?: string, credentials?: array{key: string, secret: string, token?: string}} $clientConfig */
         $clientConfig = [
             'version' => 'latest',
             'region' => is_string($region) && $region !== '' ? $region : 'eu-west-1',
         ];
+
+        // Empty in production so the SDK talks to real AWS regional endpoints.
+        if (is_string($endpoint) && $endpoint !== '') {
+            $clientConfig['endpoint'] = $endpoint;
+        }
 
         if (is_string($key) && $key !== '' && is_string($secret) && $secret !== '') {
             $credentials = [

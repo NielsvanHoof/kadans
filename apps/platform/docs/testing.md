@@ -88,6 +88,7 @@ $response->assertJsonPath('data.id', $dossier->id);
 - **Mockery** — mock third-party SDK and HTTP clients (AWS, OCR, transcription). Do not mock your own Action or Query classes in Feature tests.
 - **Facade fakes** — use `Storage::fake()`, `Queue::fake()`, `Notification::fake()`, `Event::fake()` to isolate framework side effects.
 - **Integration by default** — Feature tests hit real routes, middleware, and database unless an external service must be stubbed.
+- **Floci** — Sail's local AWS emulator is optional for demos. Pest keeps `OCR_DRIVER=mock` / `TRANSCRIPTION_DRIVER=mock` and does not require Floci.
 
 ## Frontend unit tests
 

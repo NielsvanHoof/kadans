@@ -25,6 +25,8 @@ return [
         // Set when using temporary credentials from sts:AssumeRole (ocr operator).
         'token' => env('AWS_SESSION_TOKEN'),
         'region' => env('AWS_DEFAULT_REGION', 'eu-west-1'),
+        // Local Floci/Sail only. Leave empty in production so the SDK uses real AWS.
+        'endpoint' => env('AWS_ENDPOINT'),
         'bucket' => env('AWS_BUCKET'),
         // SNS topic Textract publishes completion events to.
         'sns_topic_arn' => env('TEXTRACT_SNS_TOPIC_ARN'),
