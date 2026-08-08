@@ -6,6 +6,8 @@ namespace App\Dossiers\Actions\AudioRecordings;
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
+use App\Audit\Actions\LogAuditActivityAction;
+use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
@@ -28,6 +30,7 @@ final readonly class UploadAudioRecordingAction
     public function __construct(
         private FilesystemManager $filesystems,
         private CreatePipelineAction $createPipeline,
+        private LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(
@@ -85,6 +88,13 @@ final readonly class UploadAudioRecordingAction
                     metadata: [
                         'original_filename' => $audioRecording->original_filename,
                     ],
+                );
+
+                $this->logAuditActivity->handle(
+                    AuditEvent::AudioRecordingUploaded,
+                    $audioRecording,
+                    ['original_filename' => $audioRecording->original_filename],
+                    $uploadedBy,
                 );
 
                 return $audioRecording;

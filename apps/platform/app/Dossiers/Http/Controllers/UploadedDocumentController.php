@@ -93,6 +93,7 @@ final class UploadedDocumentController extends Controller
         Request $request,
         UploadedDocument $uploadedDocument,
         FetchUploadedDocumentShowQuery $fetchUploadedDocumentShow,
+        LogAuditActivityAction $logAuditActivity,
     ): Response|JsonResponse {
         $this->authorize('view', $uploadedDocument);
 
@@ -103,6 +104,15 @@ final class UploadedDocumentController extends Controller
                 'uploaded_document' => $props['uploaded_document'],
             ]);
         }
+
+        $logAuditActivity->handle(
+            AuditEvent::DocumentViewed,
+            $uploadedDocument,
+            [
+                'surface' => 'extraction',
+                'original_filename' => $uploadedDocument->original_filename,
+            ],
+        );
 
         return Inertia::render('uploaded-documents/show', $props);
     }
@@ -146,14 +156,24 @@ final class UploadedDocumentController extends Controller
     }
 
     /**
-     * Inline file response for in-page PDF/image previews (no download audit).
+     * Inline file response for in-page PDF/image previews.
      */
     public function preview(
         Tenant $tenant,
         UploadedDocument $uploadedDocument,
+        LogAuditActivityAction $logAuditActivity,
         ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
     ): RedirectResponse|StreamedResponse {
         $this->authorize('download', $uploadedDocument);
+
+        $logAuditActivity->handle(
+            AuditEvent::DocumentViewed,
+            $uploadedDocument,
+            [
+                'surface' => 'preview',
+                'original_filename' => $uploadedDocument->original_filename,
+            ],
+        );
 
         return $this->serveDocument(
             $uploadedDocument,

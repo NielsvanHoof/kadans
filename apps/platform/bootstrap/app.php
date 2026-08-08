@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Http\Middleware\SetLocale;
+use App\Audit\Actions\LogAccessDeniedAction;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\Dossiers\Support\DocumentUploadLimits;
@@ -11,6 +12,7 @@ use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\HandleAppearance;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +26,7 @@ use Illuminate\Session\SessionManager;
 use Inertia\ExceptionResponse;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -90,6 +93,39 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request): bool => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Audit refused authorization attempts. A render hook (not Gate::after)
+        // because only an AuthorizationException means an attempt was actually
+        // refused rather than a capability probed for a `can_*` prop — see
+        // LogAccessDeniedAction. $exceptions->report() cannot be used either:
+        // AuthorizationException is in the framework's internalDontReport.
+        //
+        // Typed on Symfony's HttpException, not AuthorizationException, because
+        // Handler::render() runs prepareException() *before* the render callbacks:
+        // by this point a policy denial is already an AccessDeniedHttpException
+        // (or a plain HttpException when the policy set an explicit status), with
+        // the original as its previous. Callbacks typed on AuthorizationException
+        // are never reached. abort()/abort_unless() throw HttpException with no
+        // previous, so they fall through the instanceof below and stay unlogged —
+        // deliberate: they are not policy checks, and the portal conceals
+        // cross-dossier probes as 404s that must not fill the trail.
+        $exceptions->render(function (HttpException $exception, Request $request): null {
+            $denial = $exception->getPrevious();
+
+            if (! $denial instanceof AuthorizationException) {
+                return null;
+            }
+
+            try {
+                resolve(LogAccessDeniedAction::class)->handle($denial, $request);
+            } catch (Throwable $auditFailure) {
+                // Already on a degraded path; surface the failed trail write
+                // without turning the user's 403 into a 500.
+                report($auditFailure);
+            }
+
+            return null;
+        });
 
         // Oversized POSTs never reach FormRequest validation — PHP empties the
         // body — so name the limit explicitly instead of a CSRF/missing-file error.
