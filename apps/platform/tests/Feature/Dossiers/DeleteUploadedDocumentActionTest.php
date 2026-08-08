@@ -10,7 +10,6 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 
 beforeEach(function (): void {
     Storage::fake('local');

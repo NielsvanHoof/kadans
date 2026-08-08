@@ -15,7 +15,6 @@ use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use RuntimeException;
 
 test('register-and-accept rolls back the user when membership creation fails', function (): void {
     Notification::fake();

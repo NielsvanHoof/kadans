@@ -14,7 +14,6 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 
 beforeEach(function (): void {
     Storage::fake('local');
