@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Pipelines\Data;
 
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Models\PipelineStep;
 use Spatie\LaravelData\Data;
@@ -13,7 +14,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 final class PipelineStepData extends Data
 {
     public function __construct(
-        public readonly string $key,
+        public readonly PipelineStepKey $key,
         public readonly PipelineStepStatus $status,
         public readonly int $attempts,
         public readonly ?string $startedAt,

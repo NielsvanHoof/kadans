@@ -8,9 +8,9 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Transitions\DossierExportTransitions;
-use App\Pipelines\Actions\PipelineStateAction;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -24,7 +24,7 @@ final readonly class GenerateDossierExportAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
-        private PipelineStateAction $pipelineState,
+        private PipelineState $pipelineState,
         private DossierExportTransitions $transitions,
     ) {}
 
@@ -68,10 +68,10 @@ final readonly class GenerateDossierExportAction
         );
 
         try {
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'build_archive');
+            $this->pipelineState->start($pipeline, PipelineStepKey::BuildArchive);
             $this->buildArchive($temporaryPath, $export);
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'build_archive');
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'store_archive');
+            $this->pipelineState->complete($pipeline, PipelineStepKey::BuildArchive);
+            $this->pipelineState->start($pipeline, PipelineStepKey::StoreArchive);
 
             $stream = fopen($temporaryPath, 'rb');
 
@@ -97,7 +97,7 @@ final readonly class GenerateDossierExportAction
                 includeRequestContext: false,
             );
 
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'store_archive');
+            $this->pipelineState->complete($pipeline, PipelineStepKey::StoreArchive);
         } catch (Throwable $exception) {
             if (Storage::disk($disk)->exists($archivePath)) {
                 Storage::disk($disk)->delete($archivePath);

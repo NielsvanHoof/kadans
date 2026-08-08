@@ -12,11 +12,11 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Actions\CreatePipelineAction;
-use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Enums\PipelineStatus;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Enums\Role;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +26,7 @@ test('an authorized workspace member can view pipeline index and details', funct
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
 
     $this->actingAs($owner)
         ->get(workspaceRoute('workspaces.pipelines.index', $tenant))
@@ -88,9 +88,9 @@ test('owners can delete terminal pipelines and the deletion is audited', functio
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = resolve(PipelineStateAction::class);
-    $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
-    $state->handle($pipeline, PipelineStepOperation::Fail, 'submit', errorCode: 'test_failure', errorMessage: 'Test failure.');
+    $state = resolve(PipelineState::class);
+    $state->start($pipeline, PipelineStepKey::Submit);
+    $state->fail($pipeline, PipelineStepKey::Submit, errorCode: 'test_failure', errorMessage: 'Test failure.');
 
     $this->actingAs($owner)
         ->delete(workspaceRoute('workspaces.pipelines.destroy', $tenant, ['pipeline' => $pipeline]))
@@ -109,7 +109,7 @@ test('active pipelines cannot be deleted', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
 
     $this->actingAs($owner)
         ->delete(workspaceRoute('workspaces.pipelines.destroy', $tenant, ['pipeline' => $pipeline]))
@@ -222,7 +222,7 @@ test('an authorized member can retry a failed run and it is re-queued', function
 test('a stuck run is retryable too', function (): void {
     Queue::fake();
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
-    $pipeline = failedPipelineForController($tenant->id, PipelineStepOperation::Stuck);
+    $pipeline = failedPipelineForController($tenant->id, PipelineStatus::Stuck);
 
     $this->actingAs($owner)
         ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
@@ -249,7 +249,7 @@ test('a run that is not failed or stuck cannot be retried', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
 
     $this->actingAs($owner)
         ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
@@ -282,7 +282,7 @@ test('the show page reports whether the run may be retried', function (): void {
 
     actingInWorkspace($tenant);
     $running = resolve(CreatePipelineAction::class)->handle(pipelineDocument($tenant->id), PipelineType::OcrDocument);
-    resolve(PipelineStateAction::class)->handle($running, PipelineStepOperation::Start, 'submit');
+    resolve(PipelineState::class)->start($running, PipelineStepKey::Submit);
 
     $this->actingAs($owner)
         ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $running]))
@@ -302,19 +302,15 @@ test('the show page reports whether the run may be retried', function (): void {
  */
 function failedPipelineForController(
     int $tenantId,
-    PipelineStepOperation $operation = PipelineStepOperation::Fail,
+    PipelineStatus $endState = PipelineStatus::Failed,
 ): Pipeline {
     $document = pipelineDocument($tenantId);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = resolve(PipelineStateAction::class);
-    $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
-    $state->handle(
-        $pipeline,
-        $operation,
-        'submit',
-        errorCode: 'test_failure',
-        errorMessage: 'Test failure.',
-    );
+    $state = resolve(PipelineState::class);
+    $state->start($pipeline, PipelineStepKey::Submit);
+    $endState === PipelineStatus::Stuck
+        ? $state->stuck($pipeline, PipelineStepKey::Submit, errorCode: 'test_failure', errorMessage: 'Test failure.')
+        : $state->fail($pipeline, PipelineStepKey::Submit, errorCode: 'test_failure', errorMessage: 'Test failure.');
 
     return $pipeline->fresh();
 }

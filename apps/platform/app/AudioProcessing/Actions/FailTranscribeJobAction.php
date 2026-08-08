@@ -6,12 +6,12 @@ namespace App\AudioProcessing\Actions;
 
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
-use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
 use App\Pipelines\Actions\ResolveProviderPipelineForSubjectAction;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Log;
@@ -26,7 +26,7 @@ final readonly class FailTranscribeJobAction
 {
     public function __construct(
         private MarkTranscribeJobFailedAction $markTranscribeJobFailed,
-        private PipelineStateAction $pipelineState,
+        private PipelineState $pipelineState,
         private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
         private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
@@ -90,11 +90,10 @@ final readonly class FailTranscribeJobAction
                     $pipeline,
                     (string) config('transcription.driver'),
                     $jobId,
-                    'transcribe',
+                    PipelineStepKey::Transcribe,
                 );
-                $this->pipelineState->handle(
+                $this->pipelineState->fail(
                     $pipeline,
-                    PipelineStepOperation::Fail,
                     $pipeline->current_stage,
                     errorCode: 'result_processing_failed',
                     errorMessage: $error,

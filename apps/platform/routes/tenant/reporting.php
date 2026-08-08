@@ -30,4 +30,8 @@ Route::get('pipelines/{pipeline}/download', [PipelineController::class, 'downloa
 Route::post('pipelines/{pipeline}/retry', [PipelineController::class, 'retry'])
     ->middleware(['throttle:10,1'])
     ->name('pipelines.retry');
+// Cancelling closes a run the user can already see; same reasoning as retry.
+Route::post('pipelines/{pipeline}/cancel', [PipelineController::class, 'cancel'])
+    ->middleware(['throttle:10,1'])
+    ->name('pipelines.cancel');
 Route::delete('pipelines/{pipeline}', [PipelineController::class, 'destroy'])->name('pipelines.destroy');

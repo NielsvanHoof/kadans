@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Pipelines\Data;
 
 use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
@@ -21,7 +22,7 @@ final class PipelineData extends Data
         public readonly int $id,
         public readonly PipelineType $type,
         public readonly PipelineStatus $status,
-        public readonly ?string $currentStage,
+        public readonly ?PipelineStepKey $currentStage,
         public readonly int $attemptNumber,
         public readonly ?string $lastActivityAt,
         public readonly array $steps,

@@ -11,9 +11,10 @@ use App\DocumentProcessing\Enums\OcrProcessingOutcome;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
 use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
-use App\Pipelines\Actions\PipelineStateAction;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
+use App\Pipelines\Support\PipelineStepSequence;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -87,7 +88,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         OcrOrchestrator $ocrOrchestrator,
         LogAuditActivityAction $logAuditActivity,
-        PipelineStateAction $pipelineState,
+        PipelineState $pipelineState,
         UploadedDocumentProcessingTransitions $processingTransitions,
     ): void {
         $document = UploadedDocument::query()->findOrFail($this->uploadedDocumentId);
@@ -125,7 +126,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             $pipeline = $this->resolvePipeline();
 
             if ($pipeline instanceof Pipeline) {
-                $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'submit');
+                $pipelineState->start($pipeline, PipelineStepKey::Submit);
             }
 
             $outcome = $ocrOrchestrator->startProcessing($claimed);
@@ -193,9 +194,8 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        resolve(PipelineStateAction::class)->handle(
+        resolve(PipelineState::class)->fail(
             $pipeline,
-            PipelineStepOperation::Fail,
             $pipeline->current_stage,
             $exception,
             errorCode: 'ocr_job_failed',
@@ -215,23 +215,27 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         Pipeline $pipeline,
         OcrProcessingOutcome $outcome,
         UploadedDocument $document,
-        PipelineStateAction $pipelineState,
+        PipelineState $pipelineState,
     ): void {
         $pipeline->forceFill([
             'provider' => (string) config('ocr.driver'),
             'provider_job_id' => $document->textract_job_id,
         ])->saveQuietly();
 
-        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-
         if ($outcome === OcrProcessingOutcome::Deferred) {
-            $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'provider_processing');
+            $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                ->complete(PipelineStepKey::Submit)
+                ->start(PipelineStepKey::ProviderProcessing));
 
             return;
         }
 
-        $pipelineState->handle($pipeline, PipelineStepOperation::Skip, 'provider_processing');
-        $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
-        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+        // The driver returned text inline, so nothing is deferred to a provider
+        // callback — the rest is bookkeeping under one lock and one broadcast.
+        $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+            ->complete(PipelineStepKey::Submit)
+            ->skip(PipelineStepKey::ProviderProcessing)
+            ->start(PipelineStepKey::ProcessResults)
+            ->complete(PipelineStepKey::ProcessResults));
     }
 }

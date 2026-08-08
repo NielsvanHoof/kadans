@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace App\Pipelines\Actions;
 
-use App\Dossiers\Models\AudioRecording;
-use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Models\DossierExport;
-use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Contracts\PipelineSubjectPresenter;
 use App\Pipelines\Events\PipelineUpdated;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Push a workspace pipeline.updated broadcast for live JSON / Inertia islands.
+ *
+ * The dossier a run belongs to is per-subject knowledge, so it comes from the
+ * owning domain's presenter rather than from Pipelines branching on model class.
  */
-final class BroadcastPipelineUpdatedAction
+final readonly class BroadcastPipelineUpdatedAction
 {
+    public function __construct(
+        private PipelineSubjectPresenterRegistry $subjectPresenters,
+    ) {}
+
     public function handle(Pipeline $pipeline): void
     {
         $pipeline->loadMissing('tenant');
@@ -32,22 +38,16 @@ final class BroadcastPipelineUpdatedAction
 
     private function resolveDossierId(Pipeline $pipeline): ?int
     {
-        $pipeline->loadMissing('pipelineable');
+        $presenter = $this->subjectPresenters->for($pipeline->type);
 
+        if (! $presenter instanceof PipelineSubjectPresenter) {
+            return null;
+        }
+
+        $pipeline->loadMissing('pipelineable');
         $subject = $pipeline->pipelineable;
 
-        if ($subject instanceof DossierExport || $subject instanceof AudioRecording) {
-            return $subject->dossier_id;
-        }
-
-        if ($subject instanceof UploadedDocument) {
-            $dossierId = DocumentRequest::query()
-                ->whereKey($subject->document_request_id)
-                ->value('dossier_id');
-
-            return is_numeric($dossierId) ? (int) $dossierId : null;
-        }
-
-        return null;
+        // A purged subject still broadcasts; it just carries no dossier tag.
+        return $subject instanceof Model ? $presenter->dossierId($subject) : null;
     }
 }

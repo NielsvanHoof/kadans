@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
@@ -39,7 +40,7 @@ function pipelineWith(PipelineStatus $status = PipelineStatus::Pending): Pipelin
 function stepFor(
     Pipeline $pipeline,
     PipelineStepStatus $status = PipelineStepStatus::Pending,
-    string $key = 'process',
+    PipelineStepKey $key = PipelineStepKey::Submit,
     int $position = 0,
 ): PipelineStep {
     return PipelineStep::factory()->create([
@@ -63,7 +64,7 @@ describe('start', function (): void {
             ->attempts->toBe(1)
             ->and($pipeline->fresh())
             ->status->toBe(PipelineStatus::Running)
-            ->current_stage->toBe('process');
+            ->current_stage->toBe(PipelineStepKey::Submit);
     });
 
     it('clears a previous error when retried', function (): void {
@@ -116,13 +117,13 @@ describe('start', function (): void {
 
     it('preserves the original started_at across retries', function (): void {
         $pipeline = pipelineWith();
-        $first = stepFor($pipeline, key: 'first', position: 0);
+        $first = stepFor($pipeline, key: PipelineStepKey::Submit, position: 0);
 
         $this->stepTransitions->start($pipeline, $first);
         $startedAt = $pipeline->fresh()->started_at;
 
         $this->travel(1)->minutes();
-        $second = stepFor($pipeline, key: 'second', position: 1);
+        $second = stepFor($pipeline, key: PipelineStepKey::ProcessResults, position: 1);
         $this->stepTransitions->start($pipeline->fresh(), $second);
 
         expect($pipeline->fresh()->started_at->timestamp)->toBe($startedAt->timestamp);
@@ -132,15 +133,15 @@ describe('start', function (): void {
 describe('complete', function (): void {
     it('advances to the next pending step', function (): void {
         $pipeline = pipelineWith();
-        $first = stepFor($pipeline, key: 'first', position: 0);
-        stepFor($pipeline, key: 'second', position: 1);
+        $first = stepFor($pipeline, key: PipelineStepKey::Submit, position: 0);
+        stepFor($pipeline, key: PipelineStepKey::ProcessResults, position: 1);
 
         $this->stepTransitions->start($pipeline, $first);
         $this->stepTransitions->complete($pipeline->fresh(), $first->fresh());
 
         expect($pipeline->fresh())
             ->status->toBe(PipelineStatus::Running)
-            ->current_stage->toBe('second')
+            ->current_stage->toBe(PipelineStepKey::ProcessResults)
             ->completed_at->toBeNull();
     });
 
@@ -160,9 +161,9 @@ describe('complete', function (): void {
     it('picks the next step by position, not by id', function (): void {
         $pipeline = pipelineWith();
         // Created out of order on purpose.
-        $later = stepFor($pipeline, key: 'later', position: 5);
-        $sooner = stepFor($pipeline, key: 'sooner', position: 1);
-        $first = stepFor($pipeline, key: 'first', position: 0);
+        $later = stepFor($pipeline, key: PipelineStepKey::ProcessResults, position: 5);
+        $sooner = stepFor($pipeline, key: PipelineStepKey::ProviderProcessing, position: 1);
+        $first = stepFor($pipeline, key: PipelineStepKey::Submit, position: 0);
 
         $this->stepTransitions->start($pipeline, $first);
         $this->stepTransitions->complete($pipeline->fresh(), $first->fresh());
@@ -192,15 +193,15 @@ describe('complete', function (): void {
 describe('skip', function (): void {
     it('skips a pending step and advances', function (): void {
         $pipeline = pipelineWith();
-        $skipped = stepFor($pipeline, key: 'skipped', position: 0);
-        stepFor($pipeline, key: 'next', position: 1);
+        $skipped = stepFor($pipeline, key: PipelineStepKey::ProviderProcessing, position: 0);
+        stepFor($pipeline, key: PipelineStepKey::ProcessResults, position: 1);
 
         $this->stepTransitions->skip($pipeline, $skipped);
 
         expect($skipped->fresh())
             ->status->toBe(PipelineStepStatus::Skipped)
             ->completed_at->not->toBeNull()
-            ->and($pipeline->fresh()->current_stage)->toBe('next');
+            ->and($pipeline->fresh()->current_stage)->toBe(PipelineStepKey::ProcessResults);
     });
 
     it('is a no-op for a step that already finished', function (PipelineStepStatus $status): void {
@@ -353,9 +354,9 @@ describe('retry', function (): void {
 
     it('resets every step to pending regardless of how it ended', function (): void {
         $pipeline = Pipeline::factory()->failed()->create(['tenant_id' => $this->tenant->id]);
-        stepFor($pipeline, PipelineStepStatus::Completed, 'submit', 0);
-        stepFor($pipeline, PipelineStepStatus::Failed, 'provider_processing', 1);
-        stepFor($pipeline, PipelineStepStatus::Skipped, 'process_results', 2);
+        stepFor($pipeline, PipelineStepStatus::Completed, PipelineStepKey::Submit, 0);
+        stepFor($pipeline, PipelineStepStatus::Failed, PipelineStepKey::ProviderProcessing, 1);
+        stepFor($pipeline, PipelineStepStatus::Skipped, PipelineStepKey::ProcessResults, 2);
 
         $this->transitions->retry($pipeline);
 
@@ -368,7 +369,7 @@ describe('retry', function (): void {
 
     it('clears step diagnostics but keeps attempts cumulative', function (): void {
         $pipeline = Pipeline::factory()->failed()->create(['tenant_id' => $this->tenant->id]);
-        $step = stepFor($pipeline, PipelineStepStatus::Failed, 'submit', 0);
+        $step = stepFor($pipeline, PipelineStepStatus::Failed, PipelineStepKey::Submit, 0);
         $step->forceFill([
             'attempts' => 3,
             'error_code' => 'E_BOOM',

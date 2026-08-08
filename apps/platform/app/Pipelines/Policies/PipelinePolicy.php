@@ -59,6 +59,15 @@ final class PipelinePolicy
             && $this->userHasPermissionInTenant($user, $pipeline->tenant, PipelinePermission::Retry);
     }
 
+    /**
+     * The mirror of retry(): only a run that is still open can be stopped.
+     */
+    public function cancel(User $user, Pipeline $pipeline): bool
+    {
+        return ! $pipeline->status->isTerminal()
+            && $this->userHasPermissionInTenant($user, $pipeline->tenant, PipelinePermission::Cancel);
+    }
+
     public function delete(User $user, Pipeline $pipeline): bool
     {
         return $pipeline->status->isTerminal()

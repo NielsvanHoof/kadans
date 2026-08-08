@@ -1,9 +1,5 @@
 import { Deferred, usePage } from '@inertiajs/react';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { AudioRecording } from '@/features/audio-recordings/types';
 import AudioRecordingsCard from '@/features/dossiers/show/audio-recordings-card';
@@ -61,9 +57,7 @@ export default function DossierShowDeferredSections({
             <Deferred
                 data="audio_recordings"
                 fallback={
-                    <BelowFoldSkeleton
-                        label={t('Loading audio recordings')}
-                    />
+                    <BelowFoldSkeleton label={t('Loading audio recordings')} />
                 }
             >
                 <DeferredAudioCard

@@ -19,12 +19,12 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
-use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Actions\RetryPipelineAction;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Events\PipelineUpdated;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
@@ -184,7 +184,7 @@ describe('regression: the run actually restarts', function (): void {
         new ProcessUploadedDocumentJob($document->id, $document->path, $pipeline->id)->handle(
             resolve(OcrOrchestrator::class),
             resolve(LogAuditActivityAction::class),
-            resolve(PipelineStateAction::class),
+            resolve(PipelineState::class),
             resolve(UploadedDocumentProcessingTransitions::class),
         );
 
@@ -205,7 +205,7 @@ describe('regression: the run actually restarts', function (): void {
         new ProcessUploadedDocumentJob($document->id, $document->path)->handle(
             resolve(OcrOrchestrator::class),
             resolve(LogAuditActivityAction::class),
-            resolve(PipelineStateAction::class),
+            resolve(PipelineState::class),
             resolve(UploadedDocumentProcessingTransitions::class),
         );
 

@@ -16,7 +16,7 @@ use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use App\Pipelines\Actions\PipelineStateAction;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -32,7 +32,7 @@ test('processing job transcribes mock text and marks the recording completed', f
     new ProcessAudioRecordingJob($recording->id, $recording->path)->handle(
         resolve(TranscriptionOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
         resolve(AudioTranscriptionTransitions::class),
     );
@@ -63,7 +63,7 @@ test('processing job notifies the uploader when the transcript is ready', functi
     new ProcessAudioRecordingJob($recording->id, $recording->path)->handle(
         resolve(TranscriptionOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
         resolve(AudioTranscriptionTransitions::class),
     );
@@ -84,7 +84,7 @@ test('processing job does not notify when the recording has no known uploader', 
     new ProcessAudioRecordingJob($recording->id, $recording->path)->handle(
         resolve(TranscriptionOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
         resolve(AudioTranscriptionTransitions::class),
     );
@@ -102,7 +102,7 @@ test('processing job is idempotent when the recording is already completed', fun
     new ProcessAudioRecordingJob($recording->id, $recording->path)->handle(
         resolve(TranscriptionOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
         resolve(AudioTranscriptionTransitions::class),
     );
@@ -131,7 +131,7 @@ test('processing job does not restart a recording with an in-flight Transcribe j
     new ProcessAudioRecordingJob($recording->id, $recording->path)->handle(
         new TranscriptionOrchestrator($transcriber, resolve(LogAuditActivityAction::class)),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
         resolve(AudioTranscriptionTransitions::class),
     );
@@ -158,7 +158,7 @@ test('processing job resets to pending on a retryable failure so a retry can rec
     expect(fn (): mixed => $job->handle(
         new TranscriptionOrchestrator($transcriber, resolve(LogAuditActivityAction::class)),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
         resolve(AudioTranscriptionTransitions::class),
     ))->toThrow(RuntimeException::class, 'Timed out.');
@@ -181,7 +181,7 @@ test('processing job ignores an upload revision that has been replaced', functio
     $staleJob->handle(
         new TranscriptionOrchestrator($transcriber, resolve(LogAuditActivityAction::class)),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(NotifyUploaderOfTranscriptionCompletedAction::class),
         resolve(AudioTranscriptionTransitions::class),
     );

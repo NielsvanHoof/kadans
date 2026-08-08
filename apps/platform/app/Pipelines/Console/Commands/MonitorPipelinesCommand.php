@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Pipelines\Console\Commands;
 
-use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Enums\PipelineStatus;
-use App\Pipelines\Enums\PipelineStepOperation;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Console\Attributes\Description;
@@ -25,7 +24,7 @@ final class MonitorPipelinesCommand extends Command
 {
     public function handle(
         TenantContext $tenantContext,
-        PipelineStateAction $pipelineState,
+        PipelineState $pipelineState,
     ): int {
         $stuckAfter = max(1, (int) $this->option('stuck-after'));
         $repeatAfter = max(1, (int) $this->option('repeat-after'));
@@ -53,7 +52,10 @@ final class MonitorPipelinesCommand extends Command
             ): void {
                 $activeQuery = Pipeline::query();
                 $activeQuery->getQuery()->whereIn('status', [PipelineStatus::Pending->value, PipelineStatus::Running->value]);
-                $active += $activeQuery->getQuery()->count();
+                // toBase() applies global scopes before dropping to the query
+                // builder; getQuery() does not, and would report every tenant's
+                // total once per tenant.
+                $active += $activeQuery->toBase()->count();
 
                 $stuckQuery = Pipeline::query();
                 $stuckQuery->getQuery()
@@ -69,9 +71,8 @@ final class MonitorPipelinesCommand extends Command
                     });
 
                 $stuckQuery->get()->each(function (Pipeline $pipeline) use ($pipelineState, &$markedStuck): void {
-                    $pipelineState->handle(
+                    $pipelineState->stuck(
                         $pipeline,
-                        PipelineStepOperation::Stuck,
                         $pipeline->current_stage,
                         errorCode: 'pipeline_inactive',
                         errorMessage: 'No activity was recorded within the monitoring window.',
@@ -83,7 +84,7 @@ final class MonitorPipelinesCommand extends Command
                 $failedQuery->getQuery()
                     ->where('status', PipelineStatus::Failed->value)
                     ->where('attempt_number', '>=', $repeatAfter);
-                $repeatedlyFailing += $failedQuery->getQuery()->count();
+                $repeatedlyFailing += $failedQuery->toBase()->count();
             });
         });
 

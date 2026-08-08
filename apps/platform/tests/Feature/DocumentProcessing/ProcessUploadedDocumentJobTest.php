@@ -14,7 +14,7 @@ use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Pipelines\Actions\PipelineStateAction;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
 
@@ -29,7 +29,7 @@ test('processing job extracts mock text and marks the document completed', funct
     new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path)->handle(
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(UploadedDocumentProcessingTransitions::class),
     );
 
@@ -62,7 +62,7 @@ test('processing job is idempotent when the document is already completed', func
     new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path)->handle(
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(UploadedDocumentProcessingTransitions::class),
     );
 
@@ -90,7 +90,7 @@ test('processing job does not restart an active external OCR job', function (): 
     new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path)->handle(
         new OcrOrchestrator($ocr, resolve(LogAuditActivityAction::class)),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(UploadedDocumentProcessingTransitions::class),
     );
 
@@ -117,7 +117,7 @@ test('processing job ignores an upload revision that has been replaced', functio
     $staleJob->handle(
         new OcrOrchestrator($ocr, resolve(LogAuditActivityAction::class)),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(UploadedDocumentProcessingTransitions::class),
     );
 
@@ -136,7 +136,7 @@ test('processing audit events stay tenant-scoped', function (): void {
     new ProcessUploadedDocumentJob($uploadedA->id, $uploadedA->path)->handle(
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(UploadedDocumentProcessingTransitions::class),
     );
 

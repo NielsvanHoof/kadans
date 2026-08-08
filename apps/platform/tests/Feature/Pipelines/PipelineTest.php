@@ -7,12 +7,12 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Actions\CreatePipelineAction;
-use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Enums\PipelineStatus;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use App\Pipelines\Transitions\PipelineTransitions;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
@@ -49,7 +49,7 @@ test('a pipeline creates ordered steps for its polymorphic subject', function ()
     expect($pipeline->pipelineable)->toBeInstanceOf(UploadedDocument::class)
         ->and($pipeline->status)->toBe(PipelineStatus::Pending)
         ->and($pipeline->steps->pluck('key')->all())
-        ->toBe(['submit', 'provider_processing', 'process_results'])
+        ->toBe([PipelineStepKey::Submit, PipelineStepKey::ProviderProcessing, PipelineStepKey::ProcessResults])
         ->and($pipeline->steps->pluck('position')->all())->toBe([0, 1, 2]);
 });
 
@@ -57,25 +57,24 @@ test('pipeline steps record progress, heartbeats, and terminal failures', functi
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForPipeline($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = resolve(PipelineStateAction::class);
+    $state = resolve(PipelineState::class);
 
-    $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
-    $state->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-    $state->handle($pipeline, PipelineStepOperation::Start, 'provider_processing');
-    $state->handle($pipeline, PipelineStepOperation::Heartbeat, 'provider_processing');
-    $state->handle(
+    $state->start($pipeline, PipelineStepKey::Submit);
+    $state->complete($pipeline, PipelineStepKey::Submit);
+    $state->start($pipeline, PipelineStepKey::ProviderProcessing);
+    $state->heartbeatStep($pipeline, PipelineStepKey::ProviderProcessing);
+    $state->fail(
         $pipeline,
-        PipelineStepOperation::Fail,
-        'provider_processing',
+        PipelineStepKey::ProviderProcessing,
         errorCode: 'provider_timeout',
         errorMessage: 'Provider did not complete in time.',
     );
 
     $pipeline->refresh();
-    $providerStep = $pipeline->steps()->where('key', 'provider_processing')->firstOrFail();
+    $providerStep = $pipeline->steps()->where('key', PipelineStepKey::ProviderProcessing->value)->firstOrFail();
 
     expect($pipeline->status)->toBe(PipelineStatus::Failed)
-        ->and($pipeline->current_stage)->toBe('provider_processing')
+        ->and($pipeline->current_stage)->toBe(PipelineStepKey::ProviderProcessing)
         ->and($providerStep->status)->toBe(PipelineStepStatus::Failed)
         ->and($providerStep->attempts)->toBe(1)
         ->and($providerStep->error_code)->toBe('provider_timeout')
@@ -86,17 +85,17 @@ test('pipeline transitions guard step ordering and closed pipelines', function (
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForPipeline($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = resolve(PipelineStateAction::class);
+    $state = resolve(PipelineState::class);
 
-    expect(fn () => $state->handle($pipeline, PipelineStepOperation::Complete, 'submit'))
+    expect(fn () => $state->complete($pipeline, PipelineStepKey::Submit))
         ->toThrow(ValidationException::class, 'Only a running pipeline step can be completed.');
 
-    $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
-    $state->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-    $state->handle($pipeline, PipelineStepOperation::Start, 'provider_processing');
-    $state->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
-    $state->handle($pipeline, PipelineStepOperation::Start, 'process_results');
-    $state->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+    $state->start($pipeline, PipelineStepKey::Submit);
+    $state->complete($pipeline, PipelineStepKey::Submit);
+    $state->start($pipeline, PipelineStepKey::ProviderProcessing);
+    $state->complete($pipeline, PipelineStepKey::ProviderProcessing);
+    $state->start($pipeline, PipelineStepKey::ProcessResults);
+    $state->complete($pipeline, PipelineStepKey::ProcessResults);
 
     expect($pipeline->fresh()->status)->toBe(PipelineStatus::Completed)
         ->and(fn () => resolve(PipelineTransitions::class)->fail(
@@ -127,7 +126,7 @@ test('the monitor marks inactive pipelines stuck and reports them', function ():
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForPipeline($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
 
     $this->travel(31)->minutes();
 

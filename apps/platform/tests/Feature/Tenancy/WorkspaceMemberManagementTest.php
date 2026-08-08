@@ -253,13 +253,14 @@ test('the last owner cannot be demoted or removed', function (): void {
         ->where('user_id', $owner->id)
         ->firstOrFail();
 
+    // Self role changes are forbidden at the policy layer (not validation).
     $this->actingAs($owner)
         ->patch(workspaceRoute('workspaces.members.update', $tenant, [
             'membership' => $membership,
         ]), [
             'role' => Role::Administrator->value,
         ])
-        ->assertSessionHasErrors('role');
+        ->assertForbidden();
 
     $this->actingAs($owner)
         ->delete(workspaceRoute('workspaces.members.destroy', $tenant, [

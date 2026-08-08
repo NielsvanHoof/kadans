@@ -95,14 +95,18 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
                 return;
             }
 
-            $usedBytes = (int) UploadedDocument::query()
-                ->whereIn(
-                    'document_request_id',
-                    DocumentRequest::query()
-                        ->where('dossier_id', $grant->dossier_id)
-                        ->select('id'),
-                )
-                ->sum('size_bytes');
+            // Build on getQuery(), terminate on toBase() so TenantScope is applied
+            // to both the outer sum and the document-request subquery.
+            $dossierDocumentRequests = DocumentRequest::query();
+            $dossierDocumentRequests->getQuery()
+                ->where('dossier_id', $grant->dossier_id)
+                ->select('id');
+
+            $dossierUploads = UploadedDocument::query();
+            $dossierUploads->getQuery()
+                ->whereIn('document_request_id', $dossierDocumentRequests->toBase());
+
+            $usedBytes = (int) $dossierUploads->toBase()->sum('size_bytes');
 
             $incomingBytes = collect($this->file('documents', []))
                 ->filter(static fn (mixed $file): bool => $file instanceof UploadedFile)

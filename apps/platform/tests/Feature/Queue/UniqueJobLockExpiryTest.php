@@ -36,7 +36,17 @@ function uniqueJobFixture(string $jobClass): array
         default => throw new InvalidArgumentException($jobClass),
     };
 
-    $expected = ($job->timeout * $tries) + array_sum($backoff);
+    // Each job sources its timeout differently: OCR and export from a constant
+    // feeding #[Timeout], transcription from config at construction time so
+    // Octane workers cannot cache it on the class.
+    $timeout = match ($jobClass) {
+        ProcessUploadedDocumentJob::class => ProcessUploadedDocumentJob::TIMEOUT_SECONDS,
+        ProcessAudioRecordingJob::class => $job->timeout,
+        GenerateDossierExportJob::class => GenerateDossierExportJob::TIMEOUT_SECONDS,
+        default => throw new InvalidArgumentException($jobClass),
+    };
+
+    $expected = ($timeout * $tries) + array_sum($backoff);
 
     return [$job, $expected];
 }

@@ -11,14 +11,25 @@ enum PipelineType: string
     case AudioTranscription = 'audio_transcription';
 
     /**
-     * @return list<string>
+     * @return list<PipelineStepKey>
      */
     public function stepKeys(): array
     {
         return match ($this) {
-            self::OcrDocument => ['submit', 'provider_processing', 'process_results'],
-            self::DossierExport => ['build_archive', 'store_archive'],
-            self::AudioTranscription => ['submit', 'transcribe', 'process_results'],
+            self::OcrDocument => [
+                PipelineStepKey::Submit,
+                PipelineStepKey::ProviderProcessing,
+                PipelineStepKey::ProcessResults,
+            ],
+            self::DossierExport => [
+                PipelineStepKey::BuildArchive,
+                PipelineStepKey::StoreArchive,
+            ],
+            self::AudioTranscription => [
+                PipelineStepKey::Submit,
+                PipelineStepKey::Transcribe,
+                PipelineStepKey::ProcessResults,
+            ],
         };
     }
 

@@ -87,7 +87,7 @@ const CONTROLLER_NON_REST_ACTIONS = [
 
     // A processing run is not a REST resource: `download` streams its payload
     // and `retry` re-queues the run in place rather than creating a new one.
-    PipelineController::class => ['download', 'retry'],
+    PipelineController::class => ['cancel', 'download', 'retry'],
 
     // Staff answering on the client's behalf, alongside the review decision.
     DocumentRequestReviewController::class => ['answer'],

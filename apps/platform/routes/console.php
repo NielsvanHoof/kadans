@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Dossiers\Console\Commands\SendScheduledDossierRemindersCommand;
 use App\Pipelines\Console\Commands\MonitorPipelinesCommand;
+use App\Pipelines\Console\Commands\RetryDuePipelinesCommand;
 use Illuminate\Support\Facades\Schedule;
 use Spatie\Health\Commands\DispatchQueueCheckJobsCommand;
 use Spatie\Health\Commands\RunHealthChecksCommand;
@@ -19,6 +20,10 @@ Schedule::command(SendScheduledDossierRemindersCommand::class)
     ->withoutOverlapping();
 
 Schedule::command(MonitorPipelinesCommand::class)
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+Schedule::command(RetryDuePipelinesCommand::class)
     ->everyFiveMinutes()
     ->withoutOverlapping();
 

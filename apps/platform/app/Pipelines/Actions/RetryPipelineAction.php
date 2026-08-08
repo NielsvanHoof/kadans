@@ -32,7 +32,12 @@ final readonly class RetryPipelineAction
         private PipelineRetryRunnerRegistry $retryRunners,
     ) {}
 
-    public function handle(Pipeline $pipeline, User $user): Pipeline
+    /**
+     * A null $user means the scheduler retried this, not a person. The audit
+     * entry is then causer-less, which is how automatic attempts are told apart
+     * from ones somebody asked for.
+     */
+    public function handle(Pipeline $pipeline, ?User $user = null): Pipeline
     {
         $runner = $this->retryRunners->for($pipeline->type);
 
@@ -55,8 +60,10 @@ final readonly class RetryPipelineAction
                     'pipeline_type' => $lockedPipeline->type->value,
                     'previous_status' => $previousStatus->value,
                     'attempt_number' => $lockedPipeline->attempt_number,
+                    'automatic' => ! $user instanceof User,
                 ],
                 causer: $user,
+                includeRequestContext: $user instanceof User,
             );
 
             return [$lockedPipeline, $subject];

@@ -62,6 +62,7 @@ declare namespace App {
                 | 'questionnaire_template.deleted'
                 | 'questionnaire_template_item.deleted'
                 | 'pipeline.retried'
+                | 'pipeline.cancelled'
                 | 'pipeline.deleted'
                 | 'user.deleted'
                 | 'support.session_started'
@@ -375,7 +376,7 @@ declare namespace App {
                 readonly id: number;
                 readonly type: App.Pipelines.Enums.PipelineType;
                 readonly status: App.Pipelines.Enums.PipelineStatus;
-                readonly current_stage: string | null;
+                readonly current_stage: App.Pipelines.Enums.PipelineStepKey | null;
                 readonly attempt_number: number;
                 readonly last_activity_at: string | null;
                 readonly steps: App.Pipelines.Data.PipelineStepData[];
@@ -384,7 +385,7 @@ declare namespace App {
                 readonly id: number;
                 readonly type: App.Pipelines.Enums.PipelineType;
                 readonly status: App.Pipelines.Enums.PipelineStatus;
-                readonly current_stage: string | null;
+                readonly current_stage: App.Pipelines.Enums.PipelineStepKey | null;
                 readonly attempt_number: number;
                 readonly last_activity_at: string | null;
                 readonly created_at: string;
@@ -395,7 +396,7 @@ declare namespace App {
                 readonly id: number;
                 readonly type: App.Pipelines.Enums.PipelineType;
                 readonly status: App.Pipelines.Enums.PipelineStatus;
-                readonly current_stage: string | null;
+                readonly current_stage: App.Pipelines.Enums.PipelineStepKey | null;
                 readonly provider: string | null;
                 readonly provider_job_id: string | null;
                 readonly attempt_number: number;
@@ -411,7 +412,7 @@ declare namespace App {
                 readonly subject: App.Pipelines.Data.PipelineSubjectData;
             };
             export type PipelineStepData = {
-                readonly key: string;
+                readonly key: App.Pipelines.Enums.PipelineStepKey;
                 readonly status: App.Pipelines.Enums.PipelineStepStatus;
                 readonly attempts: number;
                 readonly started_at: string | null;
@@ -438,7 +439,10 @@ declare namespace App {
         }
         namespace Enums {
             export type PipelinePermission =
-                'pipelines.view' | 'pipelines.retry' | 'pipelines.delete';
+                | 'pipelines.view'
+                | 'pipelines.retry'
+                | 'pipelines.cancel'
+                | 'pipelines.delete';
             export type PipelineStatus =
                 | 'pending'
                 | 'running'
@@ -446,8 +450,13 @@ declare namespace App {
                 | 'failed'
                 | 'stuck'
                 | 'cancelled';
-            export type PipelineStepOperation =
-                'start' | 'complete' | 'fail' | 'skip' | 'stuck' | 'heartbeat';
+            export type PipelineStepKey =
+                | 'submit'
+                | 'provider_processing'
+                | 'process_results'
+                | 'transcribe'
+                | 'build_archive'
+                | 'store_archive';
             export type PipelineStepStatus =
                 | 'pending'
                 | 'running'

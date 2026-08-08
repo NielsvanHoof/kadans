@@ -10,12 +10,13 @@ use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Services\Ocr\TextractExtractionPipeline;
 use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
-use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
 use App\Pipelines\Actions\ResolveProviderPipelineForSubjectAction;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
+use App\Pipelines\Support\PipelineStepSequence;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Log;
@@ -33,7 +34,7 @@ final readonly class CompleteTextractExtractionAction
         private TextractExtractionPipeline $extractionPipeline,
         private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
         private LogAuditActivityAction $logAuditActivity,
-        private PipelineStateAction $pipelineState,
+        private PipelineState $pipelineState,
         private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
         private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
@@ -121,11 +122,12 @@ final readonly class CompleteTextractExtractionAction
                         $pipeline,
                         (string) config('ocr.driver'),
                         $jobId,
-                        'provider_processing',
+                        PipelineStepKey::ProviderProcessing,
                     );
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+                    $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                        ->complete(PipelineStepKey::ProviderProcessing)
+                        ->start(PipelineStepKey::ProcessResults)
+                        ->complete(PipelineStepKey::ProcessResults));
                 }
 
                 Log::info('OCR: Textract completion already applied — skipping.', [
@@ -152,10 +154,11 @@ final readonly class CompleteTextractExtractionAction
                         $pipeline,
                         (string) config('ocr.driver'),
                         $jobId,
-                        'provider_processing',
+                        PipelineStepKey::ProviderProcessing,
                     );
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
+                    $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                        ->complete(PipelineStepKey::ProviderProcessing)
+                        ->start(PipelineStepKey::ProcessResults));
                 }
 
                 $startedAt = hrtime(true);
@@ -178,7 +181,7 @@ final readonly class CompleteTextractExtractionAction
                 $document->refresh();
 
                 if ($pipeline instanceof Pipeline) {
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+                    $this->pipelineState->complete($pipeline, PipelineStepKey::ProcessResults);
                 }
 
                 $this->logAuditActivity->handle(
@@ -212,10 +215,9 @@ final readonly class CompleteTextractExtractionAction
                 $this->markTextractExtractionFailed->handle($document, $jobId, $error, $status);
 
                 if ($pipeline instanceof Pipeline) {
-                    $this->pipelineState->handle(
+                    $this->pipelineState->fail(
                         $pipeline,
-                        PipelineStepOperation::Fail,
-                        'provider_processing',
+                        PipelineStepKey::ProviderProcessing,
                         errorCode: 'textract_'.$status,
                         errorMessage: $error,
                     );

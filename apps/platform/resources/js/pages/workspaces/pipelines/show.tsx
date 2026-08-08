@@ -22,11 +22,13 @@ export default function PipelineShow({
     can_delete: canDelete = false,
     can_download: canDownload = false,
     can_retry: canRetry = false,
+    can_cancel: canCancel = false,
 }: {
     pipeline: PipelineDetail;
     can_delete?: boolean;
     can_download?: boolean;
     can_retry?: boolean;
+    can_cancel?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -34,7 +36,14 @@ export default function PipelineShow({
     // Keep the show page live while submit / provider / results are still moving.
     const isInFlight = pipelineIsInFlight(pipeline.status);
     useReloadOnPipelineUpdated(
-        ['pipeline', 'can_delete', 'can_download', 'can_retry', 'flash'],
+        [
+            'pipeline',
+            'can_delete',
+            'can_download',
+            'can_retry',
+            'can_cancel',
+            'flash',
+        ],
         {
             enabled: isInFlight,
             match: (event) => event.pipeline_id === pipeline.id,
@@ -64,6 +73,7 @@ export default function PipelineShow({
                     canDelete={canDelete}
                     canDownload={canDownload}
                     canRetry={canRetry}
+                    canCancel={canCancel}
                 />
 
                 <PipelineShowSummary pipeline={pipeline} />

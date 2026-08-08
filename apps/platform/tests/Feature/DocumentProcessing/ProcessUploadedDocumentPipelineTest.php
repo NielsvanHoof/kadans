@@ -13,6 +13,7 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Actions\CreatePipelineAction;
 use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Tenancy\Models\Tenant;
@@ -45,10 +46,10 @@ test('deferred OCR job advances the pipeline through provider processing', funct
     app()->call($job->handle(...));
 
     $pipeline->refresh();
-    $providerStep = $pipeline->steps()->where('key', 'provider_processing')->firstOrFail();
+    $providerStep = $pipeline->steps()->where('key', PipelineStepKey::ProviderProcessing->value)->firstOrFail();
 
     expect($pipeline->status)->toBe(PipelineStatus::Running)
-        ->and($pipeline->current_stage)->toBe('provider_processing')
+        ->and($pipeline->current_stage)->toBe(PipelineStepKey::ProviderProcessing)
         ->and($pipeline->provider)->toBe('textract')
         ->and($pipeline->provider_job_id)->toBe('textract-deferred-1')
         ->and($providerStep->status)->toBe(PipelineStepStatus::Running)

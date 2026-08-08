@@ -6,6 +6,7 @@ namespace App\Pipelines\Models;
 
 use App\Accounts\Models\User;
 use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineType;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
@@ -30,7 +31,7 @@ use Override;
  * @property int $tenant_id
  * @property PipelineType $type
  * @property PipelineStatus $status
- * @property string|null $current_stage
+ * @property PipelineStepKey|null $current_stage
  * @property string|null $provider
  * @property string|null $provider_job_id
  * @property string $pipelineable_type
@@ -150,6 +151,7 @@ final class Pipeline extends TenantOwnedModel
         return [
             'type' => PipelineType::class,
             'status' => PipelineStatus::class,
+            'current_stage' => PipelineStepKey::class,
             'attempt_number' => 'integer',
             'metadata' => 'array',
             'started_at' => 'datetime',

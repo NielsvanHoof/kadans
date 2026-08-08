@@ -17,7 +17,6 @@ use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Models\DossierExport;
 use App\Shared\Data\PersonOptionData;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -128,7 +127,7 @@ final readonly class FetchDossierShowQuery
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return list<array<array-key, mixed>>
      */
     private function exportRows(Dossier $dossier, bool $canDownload): array
     {
@@ -136,13 +135,19 @@ final readonly class FetchDossierShowQuery
             'exports' => fn ($query) => $query->with('pipeline.steps')->latest(),
         ]);
 
-        return $dossier->exports
-            ->map(fn (DossierExport $export): array => DossierExportData::fromModel($export, $canDownload)->toArray())
-            ->all();
+        // Built by append rather than map()->all(): Collection::all() is typed
+        // array<int, ...>, which PHPStan will not accept as a list.
+        $rows = [];
+
+        foreach ($dossier->exports as $export) {
+            $rows[] = DossierExportData::fromModel($export, $canDownload)->toArray();
+        }
+
+        return $rows;
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return list<array<array-key, mixed>>
      */
     private function audioRecordingRows(Dossier $dossier): array
     {
@@ -150,9 +155,13 @@ final readonly class FetchDossierShowQuery
             'audioRecordings' => fn ($query) => $query->with('pipelines.steps')->latest(),
         ]);
 
-        return $dossier->audioRecordings
-            ->map(fn (AudioRecording $recording): array => StaffAudioRecordingData::fromModel($recording)->toArray())
-            ->all();
+        $rows = [];
+
+        foreach ($dossier->audioRecordings as $recording) {
+            $rows[] = StaffAudioRecordingData::fromModel($recording)->toArray();
+        }
+
+        return $rows;
     }
 
     private function resolveClient(Dossier $dossier): Client

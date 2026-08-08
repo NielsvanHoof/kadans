@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
@@ -27,7 +28,7 @@ final class PipelineStepFactory extends Factory
     {
         return [
             'pipeline_id' => Pipeline::factory(),
-            'key' => 'process',
+            'key' => PipelineStepKey::Submit,
             'position' => 0,
             'status' => PipelineStepStatus::Pending,
             'attempts' => 0,

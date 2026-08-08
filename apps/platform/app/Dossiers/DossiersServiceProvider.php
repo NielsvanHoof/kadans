@@ -12,8 +12,10 @@ use App\Dossiers\Policies\AudioRecordingPolicy;
 use App\Dossiers\Policies\DocumentRequestPolicy;
 use App\Dossiers\Policies\DossierPolicy;
 use App\Dossiers\Policies\UploadedDocumentPolicy;
+use App\Dossiers\Presenters\DossierExportPipelineSubjectPresenter;
 use App\Dossiers\Retry\DossierExportPipelineRetryRunner;
 use App\Pipelines\Support\PipelineRetryRunnerRegistry;
+use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,13 +24,16 @@ use Illuminate\Support\ServiceProvider;
  */
 final class DossiersServiceProvider extends ServiceProvider
 {
-    public function boot(PipelineRetryRunnerRegistry $retryRunners): void
-    {
+    public function boot(
+        PipelineRetryRunnerRegistry $retryRunners,
+        PipelineSubjectPresenterRegistry $subjectPresenters,
+    ): void {
         Gate::policy(DocumentRequest::class, DocumentRequestPolicy::class);
         Gate::policy(Dossier::class, DossierPolicy::class);
         Gate::policy(UploadedDocument::class, UploadedDocumentPolicy::class);
         Gate::policy(AudioRecording::class, AudioRecordingPolicy::class);
 
         $retryRunners->register($this->app->make(DossierExportPipelineRetryRunner::class));
+        $subjectPresenters->register(new DossierExportPipelineSubjectPresenter());
     }
 }

@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Trash2 } from 'lucide-react';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import Heading from '@/components/primitives/heading';
 import { Button, buttonVariants } from '@/components/ui/button';
+import CancelPipelineButton from '@/features/pipelines/show/cancel-pipeline-button';
 import RetryPipelineButton from '@/features/pipelines/show/retry-pipeline-button';
 import { pipelineTypeLabel } from '@/features/pipelines/status/pipeline-status';
 import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
@@ -23,11 +24,13 @@ export default function PipelineShowHeader({
     canDelete = false,
     canDownload = false,
     canRetry = false,
+    canCancel = false,
 }: {
     pipeline: PipelineDetail;
     canDelete?: boolean;
     canDownload?: boolean;
     canRetry?: boolean;
+    canCancel?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -75,6 +78,11 @@ export default function PipelineShowHeader({
                 <RetryPipelineButton
                     pipelineId={pipeline.id}
                     canRetry={canRetry}
+                />
+
+                <CancelPipelineButton
+                    pipelineId={pipeline.id}
+                    canCancel={canCancel}
                 />
 
                 {canDelete ? (

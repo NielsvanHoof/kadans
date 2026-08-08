@@ -6,12 +6,12 @@ namespace App\DocumentProcessing\Actions\Ocr;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\UploadedDocument;
-use App\Pipelines\Actions\PipelineStateAction;
 use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
 use App\Pipelines\Actions\ResolveProviderPipelineForSubjectAction;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Log;
@@ -26,7 +26,7 @@ final readonly class FailTextractExtractionAction
 {
     public function __construct(
         private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
-        private PipelineStateAction $pipelineState,
+        private PipelineState $pipelineState,
         private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
         private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
@@ -90,11 +90,10 @@ final readonly class FailTextractExtractionAction
                     $pipeline,
                     (string) config('ocr.driver'),
                     $jobId,
-                    'provider_processing',
+                    PipelineStepKey::ProviderProcessing,
                 );
-                $this->pipelineState->handle(
+                $this->pipelineState->fail(
                     $pipeline,
-                    PipelineStepOperation::Fail,
                     $pipeline->current_stage,
                     errorCode: 'result_processing_failed',
                     errorMessage: $error,

@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -87,7 +88,7 @@ final class PipelineFactory extends Factory
     {
         return $this->state([
             'status' => PipelineStatus::Failed,
-            'current_stage' => 'submit',
+            'current_stage' => PipelineStepKey::Submit,
             'provider' => 'textract',
             'provider_job_id' => 'textract-job-1',
             'error_code' => 'ocr_job_failed',

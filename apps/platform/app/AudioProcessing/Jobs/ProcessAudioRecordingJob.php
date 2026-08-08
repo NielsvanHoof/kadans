@@ -12,9 +12,10 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
-use App\Pipelines\Actions\PipelineStateAction;
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
+use App\Pipelines\Support\PipelineStepSequence;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -94,7 +95,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         TranscriptionOrchestrator $transcriptionOrchestrator,
         LogAuditActivityAction $logAuditActivity,
-        PipelineStateAction $pipelineState,
+        PipelineState $pipelineState,
         NotifyUploaderOfTranscriptionCompletedAction $notifyUploaderOfTranscriptionCompleted,
         AudioTranscriptionTransitions $transcriptionTransitions,
     ): void {
@@ -133,7 +134,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
             $pipeline = $this->resolvePipeline();
 
             if ($pipeline instanceof Pipeline) {
-                $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'submit');
+                $pipelineState->start($pipeline, PipelineStepKey::Submit);
             }
 
             $outcome = $transcriptionOrchestrator->startProcessing($claimed);
@@ -207,9 +208,8 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        resolve(PipelineStateAction::class)->handle(
+        resolve(PipelineState::class)->fail(
             $pipeline,
-            PipelineStepOperation::Fail,
             $pipeline->current_stage,
             $exception,
             errorCode: 'transcription_job_failed',
@@ -229,24 +229,28 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         Pipeline $pipeline,
         TranscriptionProcessingOutcome $outcome,
         AudioRecording $recording,
-        PipelineStateAction $pipelineState,
+        PipelineState $pipelineState,
     ): void {
         $pipeline->forceFill([
             'provider' => (string) config('transcription.driver'),
             'provider_job_id' => $recording->transcribe_job_id,
         ])->saveQuietly();
 
-        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-
         if ($outcome === TranscriptionProcessingOutcome::Deferred) {
-            $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'transcribe');
+            $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                ->complete(PipelineStepKey::Submit)
+                ->start(PipelineStepKey::Transcribe));
 
             return;
         }
 
-        $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'transcribe');
-        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'transcribe');
-        $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
-        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+        // The provider already finished inline, so the remaining steps are
+        // bookkeeping with no work between them — one lock, one broadcast.
+        $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+            ->complete(PipelineStepKey::Submit)
+            ->start(PipelineStepKey::Transcribe)
+            ->complete(PipelineStepKey::Transcribe)
+            ->start(PipelineStepKey::ProcessResults)
+            ->complete(PipelineStepKey::ProcessResults));
     }
 }

@@ -19,7 +19,6 @@ use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
-use RuntimeException;
 
 test('textract consume command applies sns envelope and deletes the message', function (): void {
     $tenant = Tenant::factory()->create();

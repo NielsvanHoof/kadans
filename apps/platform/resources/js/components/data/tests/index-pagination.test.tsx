@@ -30,7 +30,8 @@ vi.mock('@inertiajs/react', () => ({
         children: React.ReactNode;
         className?: string;
         'aria-label'?: string;
-        'aria-current'?: string;
+        // Match AnchorHTMLAttributes so spreading onto <a> type-checks.
+        'aria-current'?: React.AriaAttributes['aria-current'];
     }) => (
         <a href={href} {...props}>
             {children}

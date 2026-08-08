@@ -12,7 +12,7 @@ use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Pipelines\Actions\PipelineStateAction;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Textract\TextractClient;
@@ -51,7 +51,7 @@ test('textract start persists job id and leaves document processing', function (
     new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path)->handle(
         resolve(OcrOrchestrator::class),
         resolve(LogAuditActivityAction::class),
-        resolve(PipelineStateAction::class),
+        resolve(PipelineState::class),
         resolve(UploadedDocumentProcessingTransitions::class),
     );
 

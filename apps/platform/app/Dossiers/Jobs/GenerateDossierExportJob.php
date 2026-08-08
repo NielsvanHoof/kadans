@@ -7,9 +7,8 @@ namespace App\Dossiers\Jobs;
 use App\Dossiers\Actions\GenerateDossierExportAction;
 use App\Dossiers\Actions\MarkDossierExportFailedAction;
 use App\Dossiers\Models\DossierExport;
-use App\Pipelines\Actions\PipelineStateAction;
-use App\Pipelines\Enums\PipelineStepOperation;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -21,7 +20,7 @@ use Throwable;
 
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
-#[Timeout(120)]
+#[Timeout(self::TIMEOUT_SECONDS)]
 final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
@@ -29,10 +28,10 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
 
     public const int MAX_TRIES = 3;
 
+    public const int TIMEOUT_SECONDS = 120;
+
     /** @var list<int> */
     public const array BACKOFF_SECONDS = [10, 30, 60];
-
-    public $timeout;
 
     public function __construct(public int $pipelineId) {}
 
@@ -47,7 +46,7 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueFor(): int
     {
-        return ($this->timeout * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+        return (self::TIMEOUT_SECONDS * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     /**
@@ -71,12 +70,11 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
     public function failed(Throwable $exception): void
     {
         $pipeline = Pipeline::query()->with('pipelineable')->find($this->pipelineId);
-        $pipelineState = resolve(PipelineStateAction::class);
+        $pipelineState = resolve(PipelineState::class);
 
         if ($pipeline instanceof Pipeline && ! $pipeline->status->isTerminal()) {
-            $pipelineState->handle(
+            $pipelineState->fail(
                 $pipeline,
-                PipelineStepOperation::Fail,
                 $pipeline->current_stage,
                 $exception,
                 errorCode: 'dossier_export_failed',

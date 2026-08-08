@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Pipelines\Models;
 
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
@@ -20,7 +21,7 @@ use Override;
  * @property int $id
  * @property int $tenant_id
  * @property int $pipeline_id
- * @property string $key
+ * @property PipelineStepKey $key
  * @property int $position
  * @property PipelineStepStatus $status
  * @property int $attempts
@@ -105,6 +106,7 @@ final class PipelineStep extends TenantOwnedModel
     protected function casts(): array
     {
         return [
+            'key' => PipelineStepKey::class,
             'status' => PipelineStepStatus::class,
             'position' => 'integer',
             'attempts' => 'integer',

@@ -7,11 +7,13 @@ namespace App\DocumentProcessing;
 use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
 use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
 use App\DocumentProcessing\Enums\OcrDriver;
+use App\DocumentProcessing\Presenters\UploadedDocumentPipelineSubjectPresenter;
 use App\DocumentProcessing\Retry\OcrPipelineRetryRunner;
 use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\DocumentProcessing\Services\Ocr\Drivers\OcrDriverFactory;
 use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
 use App\Pipelines\Support\PipelineRetryRunnerRegistry;
+use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
@@ -45,11 +47,15 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
         );
     }
 
-    public function boot(OcrConfigurationValidator $ocrConfigurationValidator, PipelineRetryRunnerRegistry $retryRunners): void
-    {
+    public function boot(
+        OcrConfigurationValidator $ocrConfigurationValidator,
+        PipelineRetryRunnerRegistry $retryRunners,
+        PipelineSubjectPresenterRegistry $subjectPresenters,
+    ): void {
         $ocrConfigurationValidator->validate();
 
         $retryRunners->register(new OcrPipelineRetryRunner());
+        $subjectPresenters->register(new UploadedDocumentPipelineSubjectPresenter());
     }
 
     /**

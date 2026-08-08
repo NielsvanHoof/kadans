@@ -34,7 +34,7 @@ final class DeletePipelinesForSubjectsAction
                 ->where('pipelineable_type', $type)
                 ->whereIn('pipelineable_id', array_values(array_unique($subjectIds)));
 
-            $deleted += $pipelineQuery->getQuery()->delete();
+            $deleted += $pipelineQuery->delete();
         }
 
         return $deleted;

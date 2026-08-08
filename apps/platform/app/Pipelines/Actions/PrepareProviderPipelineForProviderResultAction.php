@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Pipelines\Actions;
 
-use App\Pipelines\Enums\PipelineStepOperation;
+use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
+use App\Pipelines\Support\PipelineState;
+use App\Pipelines\Support\PipelineStepSequence;
+
+use function in_array;
 
 /**
  * Catch up provider pipeline steps so async completion can advance from the provider step.
@@ -16,14 +20,14 @@ use App\Pipelines\Models\PipelineStep;
 final readonly class PrepareProviderPipelineForProviderResultAction
 {
     public function __construct(
-        private PipelineStateAction $pipelineState,
+        private PipelineState $pipelineState,
     ) {}
 
     public function handle(
         Pipeline $pipeline,
         ?string $provider,
         ?string $providerJobId,
-        string $providerStepKey,
+        PipelineStepKey $providerStepKey,
     ): Pipeline {
         if ($provider !== null || $providerJobId !== null) {
             $pipeline->forceFill([
@@ -32,31 +36,48 @@ final readonly class PrepareProviderPipelineForProviderResultAction
             ])->saveQuietly();
         }
 
-        $submit = $this->step($pipeline, 'submit');
-
-        if ($submit instanceof PipelineStep) {
-            if ($submit->status === PipelineStepStatus::Pending) {
-                $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'submit');
-                $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-            } elseif ($submit->status === PipelineStepStatus::Running) {
-                $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-            }
-        }
-
+        $submit = $this->step($pipeline, PipelineStepKey::Submit);
+        // Safe to read before the submit catch-up below: completing a step moves
+        // the pipeline's status and current_stage, never another step's status.
         $providerStep = $this->step($pipeline, $providerStepKey);
 
-        if ($providerStep instanceof PipelineStep && $providerStep->status === PipelineStepStatus::Pending) {
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, $providerStepKey);
+        $catchUpSubmit = $submit instanceof PipelineStep
+            && in_array($submit->status, [PipelineStepStatus::Pending, PipelineStepStatus::Running], true);
+        $startProvider = $providerStep instanceof PipelineStep
+            && $providerStep->status === PipelineStepStatus::Pending;
+
+        // Nothing to catch up means no write and no broadcast, as before.
+        if (! $catchUpSubmit && ! $startProvider) {
+            return $pipeline->refresh();
         }
+
+        $this->pipelineState->run($pipeline, function (PipelineStepSequence $steps) use (
+            $submit,
+            $catchUpSubmit,
+            $startProvider,
+            $providerStepKey,
+        ): void {
+            if ($catchUpSubmit) {
+                if ($submit?->status === PipelineStepStatus::Pending) {
+                    $steps->start(PipelineStepKey::Submit);
+                }
+
+                $steps->complete(PipelineStepKey::Submit);
+            }
+
+            if ($startProvider) {
+                $steps->start($providerStepKey);
+            }
+        });
 
         return $pipeline->refresh();
     }
 
-    private function step(Pipeline $pipeline, string $key): ?PipelineStep
+    private function step(Pipeline $pipeline, PipelineStepKey $key): ?PipelineStep
     {
         return PipelineStep::query()
             ->where('pipeline_id', $pipeline->id)
-            ->where('key', $key)
+            ->where('key', $key->value)
             ->first();
     }
 }
