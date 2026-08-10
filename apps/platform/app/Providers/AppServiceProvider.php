@@ -17,6 +17,7 @@ use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
+use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Support\DebugbarStorageOpen;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
@@ -161,6 +162,7 @@ final class AppServiceProvider extends ServiceProvider
             'audio_recording' => AudioRecording::class,
             'client' => Client::class,
             'client_access_grant' => ClientAccessGrant::class,
+            'data_subject_request' => DataSubjectRequest::class,
             'document_request' => DocumentRequest::class,
             'dossier' => Dossier::class,
             'dossier_export' => DossierExport::class,

@@ -47,32 +47,14 @@ function declaredAuditEventNames(): array
 }
 
 /**
- * Catches a case added to the enum (with a label, so `label()`'s match stays
- * exhaustive and nothing breaks) that was never wired to an emitter.
- *
- * The enum declares the cases and the Reporting read side only displays and
- * filters them, so neither counts as evidence that anything writes the event.
- */
-test('every audit event is emitted by application code', function (): void {
-    $unemitted = array_values(array_diff(
-        declaredAuditEventNames(),
-        auditEventNamesReferencedIn(app_path(), [
-            'AuditEvent.php',
-            'ActivityLogRowMapper.php',
-            'FetchActivityLogIndexQuery.php',
-        ]),
-    ));
-
-    expect($unemitted)->toBe([], sprintf(
-        'These audit events are declared but nothing writes them: %s',
-        implode(', ', $unemitted),
-    ));
-});
-
-/**
  * Emission alone is not evidence. An event fired from a rarely-taken branch —
  * a failed export, an expired support session — can silently stop firing and no
  * test would notice, which is exactly when an audit trail matters most.
+ *
+ * The other half of this contract — that every case is emitted *somewhere* in
+ * the application — is already covered by tests/Unit/AuditEventCoverageTest.php,
+ * which also scans bootstrap/app.php for the AccessDenied render hook. Do not
+ * duplicate it here.
  */
 test('every audit event is covered by a test', function (): void {
     $untested = array_values(array_diff(

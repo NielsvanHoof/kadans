@@ -49,6 +49,8 @@ use Override;
  * @method static Builder<static>|ClientAccessGrant whereTenantId($value)
  * @method static Builder<static>|ClientAccessGrant whereToken($value)
  * @method static Builder<static>|ClientAccessGrant whereUpdatedAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereDeviceFingerprint($value)
+ * @method static Builder<static>|ClientAccessGrant whereNewDeviceSeenAt($value)
  *
  * @mixin \Eloquent
  */

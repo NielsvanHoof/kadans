@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Env;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
@@ -17,6 +16,7 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -441,7 +441,7 @@ function configFileWithEnv(string $configFile, array $overrides): array
     // through an immutable repository and cannot be unset through.
     $write = static function (string $key, ?string $value): void {
         if ($value === null) {
-            unset($_ENV[$key], $_SERVER[$key]);
+            unset(Env::get($key), $_SERVER[$key]);
             putenv($key);
 
             return;

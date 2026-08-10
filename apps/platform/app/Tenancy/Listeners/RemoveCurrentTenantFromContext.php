@@ -22,8 +22,7 @@ final readonly class RemoveCurrentTenantFromContext
      * makes this class unreachable — the tenant stamp then never clears, and
      * nothing fails to say so.
      */
-    public function handle(ForgotCurrentTenantEvent $event): void
-    {
+     public function handle(ForgotCurrentTenantEvent $event): void    {
         ObservabilityContext::forgetTenant();
     }
 }

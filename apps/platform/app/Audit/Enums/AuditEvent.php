@@ -58,6 +58,9 @@ enum AuditEvent: string
     case PipelineCancelled = 'pipeline.cancelled';
     case PipelineDeleted = 'pipeline.deleted';
     case UserDeleted = 'user.deleted';
+    case DataSubjectRequestLogged = 'data_subject.request_logged';
+    case DataSubjectRequestRefused = 'data_subject.request_refused';
+    case DataSubjectExportCompleted = 'data_subject.export_completed';
     case SupportSessionStarted = 'support.session_started';
     case SupportSessionEnded = 'support.session_ended';
     case SupportSessionExpired = 'support.session_expired';
@@ -122,6 +125,9 @@ enum AuditEvent: string
             self::PipelineCancelled => __('Pipeline cancelled'),
             self::PipelineDeleted => __('Pipeline deleted'),
             self::UserDeleted => __('User account deleted'),
+            self::DataSubjectRequestLogged => __('Data-subject request logged'),
+            self::DataSubjectRequestRefused => __('Data-subject request refused'),
+            self::DataSubjectExportCompleted => __('Data-subject export completed'),
             self::SupportSessionStarted => __('Support session started'),
             self::SupportSessionEnded => __('Support session ended'),
             self::SupportSessionExpired => __('Support session expired'),

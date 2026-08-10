@@ -83,7 +83,7 @@ test('a portal magic-link token never reaches Sentry', function (): void {
         ->and($redacted->getTransaction())->toBe('GET /portal/access/[redacted]')
         ->and($redacted->getBreadcrumbs()[0]->getMetadata()['url'])
         ->toBe('https://app.test/portal/access/[redacted]')
-        ->and(json_encode($redacted->getRequest()) . $redacted->getTransaction())->not->toContain($token);
+        ->and(json_encode($redacted->getRequest()).$redacted->getTransaction())->not->toContain($token);
 });
 
 test('redaction leaves ordinary workspace urls untouched', function (): void {
