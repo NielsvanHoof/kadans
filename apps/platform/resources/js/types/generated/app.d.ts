@@ -68,6 +68,11 @@ declare namespace App {
                 | 'pipeline.cancelled'
                 | 'pipeline.deleted'
                 | 'user.deleted'
+                | 'data_subject.request_logged'
+                | 'data_subject.request_refused'
+                | 'data_subject.export_completed'
+                | 'data_subject.erasure_completed'
+                | 'data_subject.export_downloaded'
                 | 'support.session_started'
                 | 'support.session_ended'
                 | 'support.session_expired'
@@ -477,6 +482,34 @@ declare namespace App {
                 'ocr_document' | 'dossier_export' | 'audio_transcription';
         }
     }
+    namespace Platform {
+        namespace Data {
+            export type DataSubjectRequestData = {
+                readonly id: number;
+                readonly type: string;
+                readonly type_label: string;
+                readonly status: string;
+                readonly status_label: string;
+                readonly client_id: number;
+                readonly client_name: string;
+                readonly requested_at: string;
+                readonly due_at: string;
+                readonly is_overdue: boolean;
+                readonly requested_by_name: string | null;
+                readonly completed_at: string | null;
+                readonly completed_by_name: string | null;
+                readonly refusal_reason: string | null;
+                readonly can_download: boolean;
+            };
+        }
+        namespace Enums {
+            export type DataSubjectPermission =
+                'data_subject.view' | 'data_subject.manage';
+            export type DataSubjectRequestStatus =
+                'pending' | 'completed' | 'refused';
+            export type DataSubjectRequestType = 'export' | 'erasure';
+        }
+    }
     namespace Questionnaires {
         namespace Data {
             export type QuestionnaireTemplateItemData = {
@@ -728,6 +761,7 @@ declare namespace App {
                 | 'processing'
                 | 'members'
                 | 'audit'
+                | 'data_subject_requests'
                 | 'settings';
             export type Role =
                 | 'owner'

@@ -278,9 +278,49 @@ guard on this behaviour.
 | Database notifications | 90 days |
 | Failed queue jobs | 168 hours |
 
-**Known gap:** this covers scheduled deletion, not a GDPR **data-subject request**.
-There is no endpoint to export or erase everything held about one individual on
-demand. That is required, not optional, once real client data is in the system.
+### Data-subject requests
+
+Retention above is *scheduled* deletion. A client exercising their rights on
+demand is a separate, two-step workflow, because the regulation allows a month to
+answer and erasure cannot be undone: a request is **logged** first
+(`DataSubjectRequest`, with a due date from `retention.data_subject_response_days`)
+and **fulfilled or refused** second. Refusal requires a recorded reason — "we are
+legally obliged to keep this" is a valid answer, but it has to be defensible later.
+
+**Export** (Art. 15/20) builds a ZIP containing `data.json` — client, dossiers,
+document requests and answers, uploads, audio and transcripts, portal access
+history, activity trail — plus the original files. It runs as a queued job and the
+artefact expires after `retention.data_subject_export_hours` (72), because a copy
+of everything about one person must not sit on disk indefinitely. Portal grant
+tokens are deliberately excluded: a token is access, not data.
+
+**Erasure** (Art. 17) is *anonymisation*, and the UI says so to the operator:
+
+| Removed | Kept |
+|---|---|
+| Client name → `Erased client #<id>` | Dossiers |
+| Client email → `erased-<id>@erased.invalid` (RFC 2606, unroutable) | Uploaded documents |
+| Portal grants and their device history | Audio and transcripts |
+| Any export archive already produced | The erasure audit entry |
+| Activity trail for the client and its dossiers | |
+
+Three things that make this correct rather than merely plausible:
+
+- **`Client` logs its fillable attributes.** Anonymising without `disableLogging()`
+  writes the real name and email into the new activity row's `attribute_changes` —
+  preserving exactly what the erasure removes. A test asserts the old values
+  appear nowhere in the trail.
+- **Activity rows are immutable** (`Activity::booted()` throws on update), so the
+  trail is *deleted* via `PurgeSubjectActivityLogAction`, not redacted in place.
+  The firm loses the access trail for those dossiers; the erasure entry recorded
+  against the *request* survives, with counts of what it covered.
+- **The retained records may still identify the person.** A payslip is a payslip.
+  Art. 17(3)(b) permits the retention, but the answer to the client has to say so.
+
+Access is gated on `DataSubjectPermission` (`data_subject.view` / `.manage`), which
+is in **no role's defaults** — only owners hold it until a firm grants it
+deliberately. The archive download additionally requires recent password
+confirmation, like every document route.
 
 ## Production configuration guard
 
@@ -321,14 +361,13 @@ Tracked honestly, roughly in priority order:
    credentials when `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty — but it
    cannot happen until gap 2 is closed. CI already authenticates via GitHub OIDC with
    no stored keys; see [`infra/bootstrap/`](../infra/bootstrap/README.md).
-4. **No GDPR data-subject export/erasure flow** (see above).
-5. **No SAST or container scanning** (see above).
-6. **Portal links are re-exchangeable and only *watched*, not bound** — redemption
+4. **No SAST or container scanning** (see above).
+5. **Portal links are re-exchangeable and only *watched*, not bound** — redemption
    from an unfamiliar device is detected and alerted (see above), but a leaked link
    used from a matching network and browser family still passes.
-7. **Frontend has no meaningful test coverage** and there is no end-to-end test of
+6. **Frontend has no meaningful test coverage** and there is no end-to-end test of
    the client portal flow — the one path an unauthenticated user touches.
-8. **An expired platform support session is not always cleared or audited.**
+7. **An expired platform support session is not always cleared or audited.**
    `EnsureValidTenantMembership` calls `clearIfExpired()`, but
    `InitializeTenantFromRoute` returns 404 on `canAccessTenant()` first, so for a
    support user with no membership in the firm the expiry never fires —

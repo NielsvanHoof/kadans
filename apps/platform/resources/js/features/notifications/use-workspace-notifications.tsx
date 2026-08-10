@@ -15,7 +15,6 @@ export function useWorkspaceNotifications(tenantSlug: string): void {
         });
     }, []);
 
-    // Leading dot skips Echo's App.Events namespace — matches broadcastAs().
     useEcho(
         `workspaces.${tenantSlug}`,
         '.client.questionnaire.completed',

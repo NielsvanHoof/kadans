@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Tenancy\Models\Tenant;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\CreateClientAccessGrantAction;
@@ -20,6 +19,7 @@ use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use App\Platform\Models\DataSubjectRequest;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -244,9 +244,9 @@ test('refusing a request records who refused it and why', function (): void {
         ->and($request->refused_by)->toBe($owner->id)
         ->and($request->refusal_reason)->toContain('seven-year')
         ->and(Activity::query()
-        ->where('event', AuditEvent::DataSubjectRequestRefused->value)
-        ->where('subject_id', $request->id)
-        ->exists())
+            ->where('event', AuditEvent::DataSubjectRequestRefused->value)
+            ->where('subject_id', $request->id)
+            ->exists())
         ->toBeTrue();
 });
 

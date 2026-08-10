@@ -41,4 +41,5 @@ Route::middleware([
         require __DIR__.'/tenant/audio-recordings.php';
         require __DIR__.'/tenant/access-grants.php';
         require __DIR__.'/tenant/notifications.php';
+        require __DIR__.'/tenant/data-subject-requests.php';
     });

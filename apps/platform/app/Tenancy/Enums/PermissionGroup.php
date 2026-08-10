@@ -19,6 +19,7 @@ enum PermissionGroup: string
     case Processing = 'processing';
     case Members = 'members';
     case Audit = 'audit';
+    case DataSubjectRequests = 'data_subject_requests';
     case Settings = 'settings';
 
     public function label(): string
@@ -34,6 +35,7 @@ enum PermissionGroup: string
             self::Processing => __('Document processing'),
             self::Members => __('Members'),
             self::Audit => __('Audit log'),
+            self::DataSubjectRequests => __('Data-subject requests'),
             self::Settings => __('Firm settings'),
         };
     }
@@ -54,6 +56,7 @@ enum PermissionGroup: string
             self::Processing => 70,
             self::Members => 80,
             self::Audit => 90,
+            self::DataSubjectRequests => 95,
             self::Settings => 100,
         };
     }

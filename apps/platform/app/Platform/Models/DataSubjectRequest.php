@@ -83,11 +83,15 @@ final class DataSubjectRequest extends TenantOwnedModel
     ];
 
     /**
+     * Soft-deleted (archived) clients must still resolve: the compliance list
+     * is the record of what was asked about whom, and archival must not blank
+     * those rows. Hard-purged clients stay null — fromModel handles that.
+     *
      * @return BelongsTo<Client, $this>
      */
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Client::class)->withTrashed();
     }
 
     /**

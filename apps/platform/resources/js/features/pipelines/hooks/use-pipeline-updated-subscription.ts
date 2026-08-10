@@ -43,7 +43,6 @@ export function usePipelineUpdatedSubscription(
         [enabled],
     );
 
-    // Leading dot skips Echo's App.Events namespace — matches broadcastAs().
     useEcho(`workspaces.${workspace.slug}`, '.pipeline.updated', handler, [
         workspace.slug,
         handler,

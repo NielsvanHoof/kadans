@@ -10,6 +10,7 @@ use App\Dossiers\Http\Controllers\DossierBuilderLockController;
 use App\Dossiers\Http\Controllers\DossierController;
 use App\Dossiers\Http\Controllers\DossierExportController;
 use App\Dossiers\Http\Controllers\UploadedDocumentController;
+use App\Platform\Http\Controllers\DataSubjectRequestController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
 use App\Reporting\Http\Controllers\PipelineController;
@@ -63,6 +64,12 @@ const CONTROLLER_NON_REST_ACTIONS = [
     ],
     DossierController::class => [
         'archived', 'builder', 'bulkArchive', 'bulkRestore', 'restore', 'review',
+    ],
+
+    // Two-step compliance workflow: log, then fulfil or refuse; the archive
+    // download is gated separately because it is a copy of one whole person.
+    DataSubjectRequestController::class => [
+        'download', 'fulfil', 'refuse',
     ],
 
     // Bulk operations on the questionnaire item collection.

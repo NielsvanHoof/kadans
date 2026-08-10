@@ -1,6 +1,7 @@
 ---
 paths:
   - 'resources/js/**'
+  - 'resources/js/**/*.{tsx,ts}'
 ---
 
 # Js
@@ -23,3 +24,6 @@ Permissions are gated by server-sent boolean props (`can_view`, `can_update`); t
 Vitest tests live in a `tests/` subfolder mirroring the tested file's path, using the shared mocks in `resources/js/test/mocks.ts`.
 
 After route/Data/permission/questionnaire changes run `npm run types:check`.
+
+## React Aria Select and Table collection keys
+SelectItem is keyed by `id`, not `value` — `value` is ignored and the key falls back to the rendered text, so forms post labels like "Sander" / "Data export" instead of ids. Use `defaultSelectedKey` (not `defaultValue`; that prop type-checks via GlobalDOMAttributes and is inert). Table columns sit directly under TableHeader with no Row wrapper, need `aria-label` on Table, and exactly one column `isRowHeader`; otherwise React Aria throws "Cell count must match column count".

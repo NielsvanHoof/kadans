@@ -6,10 +6,13 @@ namespace App\Platform;
 
 use App\Platform\Console\PruneModelsCommand;
 use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Platform\Models\DataSubjectRequest;
+use App\Platform\Policies\DataSubjectRequestPolicy;
 use App\Platform\Services\Production\InfrastructureReadinessCheck;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
 use App\Platform\Support\PlatformSupportSessionState;
 use App\Tenancy\Contracts\SupportSessionState;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Override;
 
@@ -33,6 +36,8 @@ final class PlatformServiceProvider extends ServiceProvider
 
     public function boot(ProductionConfigurationValidator $productionConfigurationValidator): void
     {
+        Gate::policy(DataSubjectRequest::class, DataSubjectRequestPolicy::class);
+
         $productionConfigurationValidator->validate();
     }
 }

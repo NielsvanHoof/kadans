@@ -51,6 +51,8 @@ export const TENANT_PERMISSIONS = [
     'roles.view',
     'roles.manage',
     'tenant.settings.manage',
+    'data_subject.view',
+    'data_subject.manage',
 ] as const;
 
 export type TenantPermission = (typeof TENANT_PERMISSIONS)[number];

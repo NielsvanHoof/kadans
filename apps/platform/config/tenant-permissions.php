@@ -10,6 +10,7 @@ use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Pipelines\Enums\PipelinePermission;
+use App\Platform\Enums\DataSubjectPermission;
 use App\Questionnaires\Enums\QuestionnaireTemplatePermission;
 use App\Tenancy\Enums\WorkspacePermission;
 
@@ -41,5 +42,6 @@ return [
         PipelinePermission::class,
         AuditPermission::class,
         WorkspacePermission::class,
+        DataSubjectPermission::class,
     ],
 ];

@@ -13,7 +13,9 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
+use App\Platform\Events\DataSubjectExportCompleted;
 use App\Platform\Models\DataSubjectRequest;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -99,6 +101,10 @@ final readonly class GenerateDataSubjectExportAction
                 ],
                 includeRequestContext: false,
             );
+
+            // Live-reload the compliance list so the Download button appears
+            // without a manual refresh (same channel as pipeline.updated).
+            $this->broadcastCompleted($request);
         } catch (Throwable $exception) {
             if (Storage::disk($disk)->exists($archivePath)) {
                 Storage::disk($disk)->delete($archivePath);
@@ -110,6 +116,19 @@ final readonly class GenerateDataSubjectExportAction
                 unlink($temporaryPath);
             }
         }
+    }
+
+    private function broadcastCompleted(DataSubjectRequest $request): void
+    {
+        $request->loadMissing('tenant');
+
+        $tenant = $request->tenant;
+
+        if (! $tenant instanceof Tenant) {
+            return;
+        }
+
+        event(new DataSubjectExportCompleted($tenant->slug, $request->id));
     }
 
     private function buildArchive(string $temporaryPath, DataSubjectRequest $request, Client $client): void
