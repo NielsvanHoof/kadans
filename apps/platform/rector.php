@@ -6,6 +6,7 @@ use Pest\Rector\Rules\ToBeTrueNotFalseRector;
 use Pest\Rector\Set\PestSetList;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Config\RectorConfig;
+use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPublicMethodParameterRector;
 use Rector\Renaming\Rector\Name\RenameClassRector;
 use RectorLaravel\Rector\ArrayDimFetch\RequestVariablesToRequestFacadeRector;
 use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
@@ -61,6 +62,11 @@ return RectorConfig::configure()
         VisiblePropertyToVisibleAttributeRector::class,
         WithoutIncrementingPropertyToWithoutIncrementingAttributeRector::class,
         WithoutTimestampsPropertyToWithoutTimestampsAttributeRector::class,
+        // Discovery maps listeners via the handle() type hint. Stripping an unused
+        // event parameter unregisters the listener silently (see RemoveCurrentTenantFromContext).
+        RemoveUnusedPublicMethodParameterRector::class => [
+            __DIR__.'/app/*/Listeners',
+        ],
     ])
     ->withCache(
         cacheDirectory: __DIR__.'/storage/rector',

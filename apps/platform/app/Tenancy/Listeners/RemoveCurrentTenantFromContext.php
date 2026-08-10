@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Listeners;
 
 use App\Shared\Observability\ObservabilityContext;
+use Spatie\Multitenancy\Events\ForgotCurrentTenantEvent;
 
 /**
  * Drop the tenant stamp when the tenant is forgotten.
@@ -20,8 +21,11 @@ final readonly class RemoveCurrentTenantFromContext
      * listener to its event through the type hint on `handle()`. Dropping it
      * makes this class unreachable — the tenant stamp then never clears, and
      * nothing fails to say so.
+     *
+     * Do not let Rector's RemoveUnusedPublicMethodParameterRector strip this;
+     * domain Listeners directories are skipped for that rule in rector.php.
      */
-    public function handle(): void
+    public function handle(ForgotCurrentTenantEvent $event): void
     {
         ObservabilityContext::forgetTenant();
     }
