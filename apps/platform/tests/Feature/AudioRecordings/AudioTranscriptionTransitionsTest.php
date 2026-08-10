@@ -9,6 +9,8 @@ use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
 
+covers(AudioTranscriptionTransitions::class);
+
 beforeEach(function (): void {
     $this->transitions = resolve(AudioTranscriptionTransitions::class);
 });

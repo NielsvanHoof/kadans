@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Questionnaires\Queries\FetchQuestionnaireTemplatesQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
+
+covers(FetchQuestionnaireTemplatesQuery::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);

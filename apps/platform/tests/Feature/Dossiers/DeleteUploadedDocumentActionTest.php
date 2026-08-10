@@ -11,6 +11,8 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
 
+covers(DeleteUploadedDocumentAction::class);
+
 beforeEach(function (): void {
     Storage::fake('local');
     config()->set('filesystems.default', 'local');

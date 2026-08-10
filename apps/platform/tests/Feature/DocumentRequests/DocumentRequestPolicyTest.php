@@ -9,6 +9,8 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Policies\DocumentRequestPolicy;
 use App\Tenancy\Enums\Role;
 
+covers(DocumentRequestPolicy::class);
+
 /**
  * @return array{policy: DocumentRequestPolicy, owner: mixed, tenant: mixed, documentRequest: DocumentRequest, dossier: Dossier}
  */

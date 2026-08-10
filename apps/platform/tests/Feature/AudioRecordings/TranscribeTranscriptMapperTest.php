@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\AudioProcessing\Services\Transcribe\TranscribeTranscriptMapper;
 
+covers(TranscribeTranscriptMapper::class);
+
 test('mapper builds transcript text and speaker segments from Transcribe JSON', function (): void {
     $payload = [
         'results' => [

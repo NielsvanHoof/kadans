@@ -6,6 +6,8 @@ use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Policies\QuestionnaireTemplatePolicy;
 use App\Tenancy\Enums\Role;
 
+covers(QuestionnaireTemplatePolicy::class);
+
 test('owner can manage firm templates and copy system templates', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 

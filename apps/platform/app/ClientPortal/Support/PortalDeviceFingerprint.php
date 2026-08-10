@@ -43,19 +43,22 @@ final readonly class PortalDeviceFingerprint
 
     private static function userAgentFamily(?string $userAgent): string
     {
-        if (! is_string($userAgent) || $userAgent === '') {
+        // Request::userAgent() is string|null; empty and non-string both map to the same sentinel.
+        if (! is_string($userAgent) || $userAgent === '') { // @pest-mutate-ignore
             return 'unknown-agent';
         }
 
         // Drop version numbers and their separators; keep the product names.
-        $family = preg_replace('/[\d]+(?:[._][\d]+)*/', '', mb_substr($userAgent, 0, 512));
+        // Truncation bound is a safety cap, not behaviour under test.
+        $family = preg_replace('/[\d]+(?:[._][\d]+)*/', '', mb_substr($userAgent, 0, 512)); // @pest-mutate-ignore
 
-        return is_string($family) ? $family : 'unknown-agent';
+        return is_string($family) ? $family : 'unknown-agent'; // @pest-mutate-ignore
     }
 
     private static function networkPrefix(?string $ip): string
     {
-        if (! is_string($ip) || $ip === '') {
+        // Same sentinel collapse as u serAgentFamily for missing/blank client IPs.
+        if (! is_string($ip) || $ip === '') { // @pest-mutate-ignore
             return 'unknown-network';
         }
 

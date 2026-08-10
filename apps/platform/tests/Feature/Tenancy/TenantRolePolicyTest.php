@@ -6,6 +6,8 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Policies\TenantRolePolicy;
 
+covers(TenantRolePolicy::class);
+
 test('owners can manage custom roles', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 

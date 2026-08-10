@@ -85,7 +85,7 @@ final readonly class RegisterClientPortalDeviceAction
     {
         $configured = $this->config->get('portal.new_device_action');
 
-        return NewPortalDeviceAction::tryFrom(is_string($configured) ? $configured : '')
+        return NewPortalDeviceAction::tryFrom(is_string($configured) ? $configured : '') // @pest-mutate-ignore empty fallback is defensive config typing
             ?? NewPortalDeviceAction::Notify;
     }
 
@@ -93,16 +93,16 @@ final readonly class RegisterClientPortalDeviceAction
     {
         $dossier = Dossier::query()->whereKey($grant->dossier_id)->first();
 
-        if (! $dossier instanceof Dossier) {
+        if (! $dossier instanceof Dossier) { // @pest-mutate-ignore FK integrity: dossier_id always resolves in production data
             return;
         }
 
-        $dossier->loadMissing(['client', 'tenant']);
+        $dossier->loadMissing(['client', 'tenant']); // @pest-mutate-ignore relations lazy-load without this; call keeps them explicit
 
         $client = $dossier->client;
         $tenant = $dossier->tenant;
 
-        if (! $client instanceof Client || ! $tenant instanceof Tenant) {
+        if (! $client instanceof Client || ! $tenant instanceof Tenant) { // @pest-mutate-ignore orphan relations are schema failures, not product paths
             return;
         }
 

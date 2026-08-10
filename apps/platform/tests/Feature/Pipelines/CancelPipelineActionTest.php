@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
+covers(CancelPipelineAction::class);
+
 /*
 |--------------------------------------------------------------------------
 | CancelPipelineAction

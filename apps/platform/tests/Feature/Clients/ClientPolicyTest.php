@@ -7,34 +7,30 @@ use App\Clients\Models\Client;
 use App\Clients\Policies\ClientPolicy;
 use App\Tenancy\Enums\Role;
 
-test('owner can viewAny, view, create, update, restore, and delete clients', function (): void {
+covers(ClientPolicy::class);
+
+test('client management abilities match the actor', function (string $actor, bool $allowed): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-    $policy = new ClientPolicy;
-
-    expect($policy->viewAny($owner))->toBeTrue()
-        ->and($policy->view($owner, $client))->toBeTrue()
-        ->and($policy->create($owner))->toBeTrue()
-        ->and($policy->update($owner, $client))->toBeTrue()
-        ->and($policy->restore($owner, $client))->toBeTrue()
-        ->and($policy->delete($owner, $client))->toBeTrue();
-});
-
-test('read-only members cannot manage clients', function (): void {
-    ['tenant' => $tenant] = provisionWorkspace();
-    $reader = workspaceMember($tenant, Role::ReadOnly);
+    $user = match ($actor) {
+        'owner' => $owner,
+        'read only' => workspaceMember($tenant, Role::ReadOnly),
+        default => throw new InvalidArgumentException("Unknown actor [{$actor}]."),
+    };
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $policy = new ClientPolicy;
 
-    expect($policy->viewAny($reader))->toBeFalse()
-        ->and($policy->view($reader, $client))->toBeFalse()
-        ->and($policy->create($reader))->toBeFalse()
-        ->and($policy->update($reader, $client))->toBeFalse()
-        ->and($policy->restore($reader, $client))->toBeFalse()
-        ->and($policy->delete($reader, $client))->toBeFalse();
-});
+    expect($policy->viewAny($user))->toBe($allowed)
+        ->and($policy->view($user, $client))->toBe($allowed)
+        ->and($policy->create($user))->toBe($allowed)
+        ->and($policy->update($user, $client))->toBe($allowed)
+        ->and($policy->restore($user, $client))->toBe($allowed)
+        ->and($policy->delete($user, $client))->toBe($allowed);
+})->with([
+    'owner' => ['owner', true],
+    'read only' => ['read only', false],
+]);
 
 test('users outside the tenant cannot view a client', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();

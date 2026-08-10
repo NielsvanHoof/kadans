@@ -4,9 +4,28 @@ How automated tests are written and organized. For where tests live in the repo 
 
 ## Framework
 
-Write tests with **Pest** using `test()` functions. Prefer `test()` over `it()` unless you are extending a file that already uses `it()` consistently.
+Write tests with **Pest 5** using `test()` functions. Prefer `test()` over `it()` unless you are extending a file that already uses `it()` consistently.
 
 Do not add PHPUnit class-based tests.
+
+### Grouping, datasets, and `covers()`
+
+- **`describe()`** — group transition/state suites that share setup (Pipelines, DocumentRequests). Do not wrap every file in `describe()`.
+- **Datasets (`->with([...])`)** — use for role matrices, enum/status tables, and validation case tables that only differ by inputs. Prefer named keys (`'read only' => Role::ReadOnly`) so failures stay readable. Do not force-dataset unique happy paths or multi-step workflows. See [`PipelinePolicyTest`](../tests/Feature/Pipelines/PipelinePolicyTest.php).
+- **`covers()` / `mutates()`** — at the top of focused Feature/Unit files that target a single class (policies, transitions, actions, queries, mappers), declare `covers(SomeClass::class)`. That scopes coverage reports and drives `composer test:mutate`. Skip it on broad HTTP/Inertia flow files that touch many classes.
+
+Example (policy + dataset):
+
+```php
+covers(PipelinePolicy::class);
+
+test('roles without pipelines.retry may not retry a failed run', function (Role $role): void {
+    // ...
+})->with([
+    'reviewer' => Role::Reviewer,
+    'read only' => Role::ReadOnly,
+]);
+```
 
 ## Suite layout
 
@@ -126,7 +145,38 @@ npm test
 
 # Frontend unit + coverage floor (same gate as CI)
 npm run test:coverage
+
+# Refresh time-balanced shard timings (commit tests/.pest/shards.json)
+vendor/bin/sail composer test:shards:update
+
+# Run one CI shard locally (pest binary — artisan test --parallel --shard is broken on Pest 5)
+vendor/bin/sail php vendor/bin/pest --parallel --shard=1/4
 ```
+
+### CI sharding and local TIA
+
+Platform CI splits PHP Pest across **4 time-balanced shards** using committed [`tests/.pest/shards.json`](../tests/.pest/shards.json). The coverage gate stays a separate job (coverage + shards do not mix). When Pest warns that shards are out of date after adding/renaming files, run `composer test:shards:update` and commit the result.
+
+**Test Impact Analysis** is for local development only:
+
+- `tests/Pest.php` enables `pest()->tia()->locally()->baselined()` when a git work tree is available.
+- Sail mounts `apps/platform` without the monorepo `.git`, so auto-TIA is off inside Sail. Run Pest on the host (or pass `--tia` where git works) to use it.
+- Fetching the shared baseline needs the GitHub CLI (`gh auth login`). Without it, Pest records a local baseline on first run.
+- PR / push CI always runs the full suite (`--ci`, no `--tia`). The [tia-baseline](../../.github/workflows/tia-baseline.yml) workflow records the shared `pest-tia-baseline` artifact on `main` / nightly.
+
+### Mutation testing (local — not a CI gate)
+
+Requires PCOV or Xdebug inside Sail (both are available in this project's container). Focused policy/transition/action/query/mapper tests declare `covers()`.
+
+```bash
+# All covers() files — one mutate run per file so other covers() targets do not pollute the score
+vendor/bin/sail composer test:mutate
+
+# Single file while strengthening assertions
+vendor/bin/sail php vendor/bin/pest --mutate --parallel tests/Feature/Pipelines/PipelinePolicyTest.php
+```
+
+Close untested mutants by strengthening assertions. Use `@pest-mutate-ignore` only for intentional noise, with a one-line reason. There is **no** mutation score fail gate in CI yet.
 
 After PHP changes, run Pint on dirty files:
 

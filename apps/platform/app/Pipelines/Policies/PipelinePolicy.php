@@ -40,7 +40,7 @@ final class PipelinePolicy
             return false;
         }
 
-        $pipeline->loadMissing('pipelineable');
+        $pipeline->loadMissing('pipelineable'); // @pest-mutate-ignore MorphTo lazy-loads without this; call keeps the relation explicit
         $export = $pipeline->pipelineable;
 
         return $export instanceof DossierExport

@@ -2,28 +2,52 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Policies\AudioRecordingPolicy;
 use App\Tenancy\Enums\Role;
+use App\Tenancy\Models\Tenant;
 
-test('owner can view, download, create, and delete audio recordings on an open dossier', function (): void {
+covers(AudioRecordingPolicy::class);
+
+/**
+ * @return array{owner: User, tenant: Tenant, dossier: Dossier, audioRecording: AudioRecording, policy: AudioRecordingPolicy}
+ */
+function audioRecordingPolicyContext(
+    DossierStatus $status = DossierStatus::InReview,
+): array {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
         'client_id' => $client->id,
-        'status' => DossierStatus::InReview,
+        'status' => $status,
     ]);
     $audioRecording = AudioRecording::factory()->create([
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
     ]);
 
-    $policy = new AudioRecordingPolicy;
+    return [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+        'audioRecording' => $audioRecording,
+        'policy' => new AudioRecordingPolicy,
+    ];
+}
+
+test('owner can view, download, create, and delete audio recordings on an open dossier', function (): void {
+    [
+        'owner' => $owner,
+        'dossier' => $dossier,
+        'audioRecording' => $audioRecording,
+        'policy' => $policy,
+    ] = audioRecordingPolicyContext();
 
     expect($policy->view($owner, $audioRecording))->toBeTrue()
         ->and($policy->download($owner, $audioRecording))->toBeTrue()
@@ -32,20 +56,13 @@ test('owner can view, download, create, and delete audio recordings on an open d
 });
 
 test('reviewers can view recordings but cannot upload, download, or delete them', function (): void {
-    ['tenant' => $tenant] = provisionWorkspace();
+    [
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+        'audioRecording' => $audioRecording,
+        'policy' => $policy,
+    ] = audioRecordingPolicyContext();
     $reviewer = workspaceMember($tenant, Role::Reviewer);
-
-    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-    $dossier = Dossier::factory()->create([
-        'tenant_id' => $tenant->id,
-        'client_id' => $client->id,
-    ]);
-    $audioRecording = AudioRecording::factory()->create([
-        'tenant_id' => $tenant->id,
-        'dossier_id' => $dossier->id,
-    ]);
-
-    $policy = new AudioRecordingPolicy;
 
     expect($policy->view($reviewer, $audioRecording))->toBeTrue()
         ->and($policy->download($reviewer, $audioRecording))->toBeFalse()
@@ -54,20 +71,12 @@ test('reviewers can view recordings but cannot upload, download, or delete them'
 });
 
 test('uploading and deleting are blocked once the dossier is completed', function (): void {
-    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
-
-    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-    $dossier = Dossier::factory()->create([
-        'tenant_id' => $tenant->id,
-        'client_id' => $client->id,
-        'status' => DossierStatus::Completed,
-    ]);
-    $audioRecording = AudioRecording::factory()->create([
-        'tenant_id' => $tenant->id,
-        'dossier_id' => $dossier->id,
-    ]);
-
-    $policy = new AudioRecordingPolicy;
+    [
+        'owner' => $owner,
+        'dossier' => $dossier,
+        'audioRecording' => $audioRecording,
+        'policy' => $policy,
+    ] = audioRecordingPolicyContext(DossierStatus::Completed);
 
     expect($policy->create($owner, $dossier))->toBeFalse()
         ->and($policy->delete($owner, $audioRecording))->toBeFalse()

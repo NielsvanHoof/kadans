@@ -18,6 +18,8 @@ use Aws\Textract\TextractClient;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
 
+covers(CompleteTextractExtractionAction::class, FailTextractExtractionAction::class);
+
 test('complete textract extraction maps forms tables and asks the overview agent', function (): void {
     Event::fake([MessageLogged::class]);
 

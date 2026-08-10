@@ -7,6 +7,8 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Policies\TenantMembershipPolicy;
 
+covers(TenantMembershipPolicy::class);
+
 test('members with manage permission can update memberships', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $member = workspaceMember($tenant, Role::Adviser);

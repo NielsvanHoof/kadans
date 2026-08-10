@@ -8,11 +8,14 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Policies\DossierPolicy;
 use App\Tenancy\Enums\Role;
+use App\Tenancy\Models\Tenant;
+
+covers(DossierPolicy::class);
 
 /**
- * @return array{policy: DossierPolicy, owner: User, tenant: mixed, dossier: Dossier}
+ * @return array{policy: DossierPolicy, owner: User, tenant: Tenant, dossier: Dossier}
  */
-function dossierPolicyContext(): array
+function dossierPolicyContext(DossierStatus $status = DossierStatus::Draft): array
 {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
@@ -20,7 +23,7 @@ function dossierPolicyContext(): array
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
         'client_id' => $client->id,
-        'status' => DossierStatus::Draft,
+        'status' => $status,
     ]);
 
     return [
@@ -46,19 +49,20 @@ test('owner can manage and follow up a draft dossier', function (): void {
         ->and($policy->delete($owner, $dossier))->toBeTrue();
 });
 
-test('update and complete are denied when the dossier is completed', function (): void {
-    $context = dossierPolicyContext();
+// Completed dossiers still allow delete/view, but block status-gated mutations.
+test('completed dossiers deny status-gated mutations', function (string $ability): void {
+    $context = dossierPolicyContext(DossierStatus::Completed);
     $policy = $context['policy'];
     $owner = $context['owner'];
     $dossier = $context['dossier'];
 
-    $dossier->forceFill(['status' => DossierStatus::Completed])->save();
-
-    expect($policy->update($owner, $dossier))->toBeFalse()
-        ->and($policy->sendReminder($owner, $dossier))->toBeFalse()
-        ->and($policy->complete($owner, $dossier))->toBeFalse()
+    expect($policy->{$ability}($owner, $dossier))->toBeFalse()
         ->and($policy->delete($owner, $dossier))->toBeTrue();
-});
+})->with([
+    'update' => 'update',
+    'sendReminder' => 'sendReminder',
+    'complete' => 'complete',
+]);
 
 test('read-only members can view dossiers but cannot create or complete', function (): void {
     $context = dossierPolicyContext();

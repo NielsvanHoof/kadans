@@ -10,8 +10,28 @@ test('the complete quality gate includes the production frontend build', functio
         flags: JSON_THROW_ON_ERROR,
     );
 
-    expect($composer['scripts']['ci:check'])
-        ->toContain('npm run build');
+    // Frontend build lives on ci:quality; ci:check composes that plus the full Pest suite.
+    expect($composer['scripts']['ci:quality'])
+        ->toContain('npm run build')
+        ->and($composer['scripts']['ci:check'])
+        ->toContain('@ci:quality');
+});
+
+test('committed shards.json powers time-balanced CI sharding', function (): void {
+    $shardsPath = dirname(__DIR__, 2).'/tests/.pest/shards.json';
+
+    expect(file_exists($shardsPath))->toBeTrue();
+
+    /** @var array{timings: array<string, float>} $shards */
+    $shards = json_decode(
+        (string) file_get_contents($shardsPath),
+        true,
+        flags: JSON_THROW_ON_ERROR,
+    );
+
+    expect($shards['timings'])
+        ->toBeArray()
+        ->not->toBeEmpty();
 });
 
 test('the TypeScript check generates ignored Wayfinder modules on a fresh checkout', function (): void {

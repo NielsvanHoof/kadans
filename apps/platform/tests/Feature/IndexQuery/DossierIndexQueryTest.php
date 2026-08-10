@@ -9,6 +9,8 @@ use App\Dossiers\Queries\FetchDossierIndexQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
+covers(FetchDossierIndexQuery::class);
+
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });

@@ -10,6 +10,8 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 
+covers(UploadedDocumentProcessingTransitions::class);
+
 beforeEach(function (): void {
     $this->transitions = resolve(UploadedDocumentProcessingTransitions::class);
 });

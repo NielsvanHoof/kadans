@@ -10,6 +10,8 @@ use App\Pipelines\Actions\DeletePipelinesForSubjectsAction;
 use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Models\Tenant;
 
+covers(DeletePipelinesForSubjectsAction::class);
+
 test('deleting pipelines for subjects leaves another tenant\'s runs untouched', function (): void {
     ['tenant' => $first] = provisionWorkspace('First Firm');
     ['tenant' => $second] = provisionWorkspace('Second Firm');

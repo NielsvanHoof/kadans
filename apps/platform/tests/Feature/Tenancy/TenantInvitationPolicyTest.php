@@ -7,6 +7,8 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Policies\TenantInvitationPolicy;
 
+covers(TenantInvitationPolicy::class);
+
 test('owners and administrators can create invitations in the current workspace', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $admin = workspaceMember($tenant, Role::Administrator);

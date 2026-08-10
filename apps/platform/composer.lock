@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fa5f67b3c4fa966462064d54a06412fd",
+    "content-hash": "2cd08ad8ebf7576a29dee3bf5c4d5265",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -14691,31 +14691,32 @@
         },
         {
             "name": "pestphp/pest-plugin-mutate",
-            "version": "v5.0.1",
+            "version": "v5.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pestphp/pest-plugin-mutate.git",
-                "reference": "ca1e6e6402323353ef4c1dd5bf034e6f4ab17fbf"
+                "reference": "d0c87110416b699413cc073b8dcc92e440d81931"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pestphp/pest-plugin-mutate/zipball/ca1e6e6402323353ef4c1dd5bf034e6f4ab17fbf",
-                "reference": "ca1e6e6402323353ef4c1dd5bf034e6f4ab17fbf",
+                "url": "https://api.github.com/repos/pestphp/pest-plugin-mutate/zipball/d0c87110416b699413cc073b8dcc92e440d81931",
+                "reference": "d0c87110416b699413cc073b8dcc92e440d81931",
                 "shasum": ""
             },
             "require": {
                 "nikic/php-parser": "^5.8.0",
                 "pestphp/pest-plugin": "^5.0.0",
                 "php": "^8.4",
+                "phpunit/php-code-coverage": "^14.3.0",
                 "psr/simple-cache": "^3.0.0"
             },
             "conflict": {
                 "pestphp/pest": "<5.0.0"
             },
             "require-dev": {
-                "pestphp/pest": "^5.0.3",
+                "pestphp/pest": "^5.0.4",
                 "pestphp/pest-dev-tools": "^5.0.0",
-                "pestphp/pest-plugin-type-coverage": "^5.0.0"
+                "pestphp/pest-plugin-type-coverage": "^5.0.2"
             },
             "type": "library",
             "autoload": {
@@ -14750,7 +14751,7 @@
                 "unit"
             ],
             "support": {
-                "source": "https://github.com/pestphp/pest-plugin-mutate/tree/v5.0.1"
+                "source": "https://github.com/pestphp/pest-plugin-mutate/tree/v5.0.2"
             },
             "funding": [
                 {
@@ -14766,7 +14767,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-04T15:26:47+00:00"
+            "time": "2026-08-10T11:01:27+00:00"
         },
         {
             "name": "pestphp/pest-plugin-phpstan",

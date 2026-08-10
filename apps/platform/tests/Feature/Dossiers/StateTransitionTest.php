@@ -16,6 +16,8 @@ use App\Tenancy\Models\Tenant;
 use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
+covers(DossierTransitions::class, DocumentRequestTransitions::class);
+
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create();
     $this->tenant->makeCurrent();

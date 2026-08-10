@@ -9,6 +9,8 @@ use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Enums\Role;
 
+covers(ClientAccessGrantPolicy::class);
+
 test('owners and advisers can grant portal access in the current workspace', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $adviser = workspaceMember($tenant, Role::Adviser);

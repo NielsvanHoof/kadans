@@ -1,0 +1,87 @@
+name: Platform TIA baseline
+
+# Records the shared Pest Test Impact Analysis graph for local developers.
+# Pull-request CI intentionally runs the full suite without --tia.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/platform/**"
+      - ".github/workflows/tia-baseline.yml"
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-tia-baseline
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/platform
+
+env:
+  PHP_VERSION: "8.5"
+  NODE_VERSION: "24"
+
+jobs:
+  baseline:
+    name: Record Pest TIA baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, intl, mbstring, pcntl, pdo_pgsql, redis, sqlite3, zip
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/platform/package-lock.json
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Prepare the application
+        run: |
+          cp .env.ci .env
+          php artisan key:generate --no-interaction
+
+      - name: Build frontend assets
+        run: npm run build
+
+      # Dedicated baseline job — the only place --tia belongs on CI.
+      - name: Record TIA baseline
+        run: php vendor/bin/pest --parallel --tia --coverage --fresh
+
+      - name: Resolve TIA baseline path
+        id: baseline
+        run: echo "path=$(php vendor/bin/pest --baseline)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload TIA baseline
+        uses: actions/upload-artifact@v7
+        with:
+          name: pest-tia-baseline
+          path: ${{ steps.baseline.outputs.path }}
+          include-hidden-files: true
+          retention-days: 30
+          if-no-files-found: error

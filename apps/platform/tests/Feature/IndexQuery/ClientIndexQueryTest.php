@@ -9,6 +9,8 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\Request;
 use Inertia\Testing\AssertableInertia as Assert;
 
+covers(FetchClientIndexQuery::class);
+
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });

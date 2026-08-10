@@ -11,6 +11,8 @@ use App\Pipelines\Transitions\PipelineStepTransitions;
 use App\Pipelines\Transitions\PipelineTransitions;
 use Illuminate\Validation\ValidationException;
 
+covers(PipelineTransitions::class, PipelineStepTransitions::class);
+
 /*
 |--------------------------------------------------------------------------
 | PipelineTransitions / PipelineStepTransitions

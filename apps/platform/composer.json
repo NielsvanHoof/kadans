@@ -52,6 +52,7 @@
         "pestphp/pest-plugin-agent": "^5.0",
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
+        "pestphp/pest-plugin-mutate": "^5.0.2",
         "pestphp/pest-plugin-phpstan": "^5.0",
         "pestphp/pest-plugin-rector": "^5.0",
         "phpstan/phpstan-strict-rules": "^2.0",
@@ -100,7 +101,7 @@
             "composer audit",
             "npm audit --audit-level=high"
         ],
-        "ci:check": [
+        "ci:quality": [
             "Composer\\Config::disableProcessTimeout",
             "@security:check",
             "npm run lint:check",
@@ -109,7 +110,14 @@
             "npm run build",
             "npm run test:coverage",
             "@rector:check",
-            "@test"
+            "@lint:check",
+            "@types:check"
+        ],
+        "ci:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "@ci:quality",
+            "@php artisan config:clear --ansi",
+            "@php artisan test --parallel"
         ],
         "types:check": [
             "phpstan analyse --memory-limit=1024M"
@@ -126,6 +134,11 @@
             "@types:check",
             "@php artisan test --parallel"
         ],
+        "test:shards:update": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --parallel --update-shards"
+        ],
         "test:coverage": [
             "Composer\\Config::disableProcessTimeout",
             "@putenv XDEBUG_MODE=coverage",
@@ -137,6 +150,12 @@
             "@putenv XDEBUG_MODE=coverage",
             "@php artisan config:clear --ansi",
             "@php artisan test --parallel --coverage --min=87"
+        ],
+        "test:mutate": [
+            "Composer\\Config::disableProcessTimeout",
+            "@putenv XDEBUG_MODE=coverage",
+            "@php artisan config:clear --ansi",
+            "bash -lc 'set -euo pipefail; while IFS= read -r f; do php vendor/bin/pest --mutate --parallel \"$f\"; done < <(grep -rl --include=\"*.php\" -E \"^covers\\(\" tests | sort)'"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

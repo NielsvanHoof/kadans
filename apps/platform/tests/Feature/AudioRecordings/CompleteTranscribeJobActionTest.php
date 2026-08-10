@@ -17,6 +17,8 @@ use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
+covers(CompleteTranscribeJobAction::class);
+
 test('complete action persists transcript segments and notifies the uploader', function (): void {
     Notification::fake();
     Storage::fake('s3');

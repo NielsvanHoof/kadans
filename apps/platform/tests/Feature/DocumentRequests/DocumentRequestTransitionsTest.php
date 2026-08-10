@@ -14,6 +14,8 @@ use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Validation\ValidationException;
 
+covers(DocumentRequestTransitions::class);
+
 /*
 |--------------------------------------------------------------------------
 | DocumentRequestTransitions
