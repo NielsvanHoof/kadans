@@ -11,6 +11,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
+| rector.php | .ai/rules/general.md |
 | resources/js/features/**/hooks/** | .ai/rules/hooks.md |
 | app/Shared/Http/** | .ai/rules/http.md |
 | app/*/Jobs/** | .ai/rules/jobs.md |

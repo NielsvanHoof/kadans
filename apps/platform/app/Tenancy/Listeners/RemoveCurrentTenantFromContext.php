@@ -22,8 +22,8 @@ final readonly class RemoveCurrentTenantFromContext
      * makes this class unreachable — the tenant stamp then never clears, and
      * nothing fails to say so.
      *
-     * Do not let Rector's RemoveUnusedPublicMethodParameterRector strip this;
-     * domain Listeners directories are skipped for that rule in rector.php.
+     * Do not let Rector's RemoveUnusedPublicMethodParameterRector strip this —
+     * that rule is skipped entirely in rector.php (path globs in withSkip do not match).
      */
     public function handle(ForgotCurrentTenantEvent $event): void
     {
