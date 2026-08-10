@@ -39,6 +39,13 @@ final readonly class ProductionConfigurationValidator
 
     private const string DEV_REVERB_APP_SECRET = 'local-reverb-secret';
 
+    /**
+     * Monolog drivers that only ever write to local disk.
+     *
+     * @var list<string>
+     */
+    private const array FILE_LOG_DRIVERS = ['single', 'daily'];
+
     public function __construct(
         private Application $application,
         private Repository $config,
@@ -66,6 +73,13 @@ final readonly class ProductionConfigurationValidator
             $this->config->get('filesystems.disks.s3.report') === true ? null : 'filesystems.disks.s3.report',
             $this->matches('broadcasting.default', 'reverb'),
             $this->matches('ocr.driver', 'textract'),
+            // Both provider drivers, not just OCR: a mock transcriber silently
+            // produces fabricated transcripts instead of failing.
+            $this->matches('transcription.driver', 'transcribe'),
+            $this->hasProductionSearchDriver() ? null : 'scout.driver',
+            $this->hasErrorReporting() ? null : 'sentry.dsn',
+            $this->unshippedLogChannelKey(),
+            $this->hasSafeSessionSameSite() ? null : 'session.same_site',
             $this->hasDeliveringMailer() ? null : 'mail.default',
             $this->hasValidMailFromAddress() ? null : 'mail.from.address',
             $this->hasTrustedProxies() ? null : 'production.trusted_proxies',
@@ -95,6 +109,80 @@ final readonly class ProductionConfigurationValidator
         $url = $this->config->get('app.url');
 
         return is_string($url) && str_starts_with($url, 'https://');
+    }
+
+    /**
+     * Errors must reach somewhere a human looks. With an empty DSN the Sentry
+     * SDK disables itself silently, so every production exception is reported
+     * to nothing — and nothing about the running app looks wrong.
+     */
+    private function hasErrorReporting(): bool
+    {
+        $dsn = $this->config->get('sentry.dsn');
+
+        return is_string($dsn) && mb_trim($dsn) !== '';
+    }
+
+    /**
+     * At least one log channel must leave the machine. `single`/`daily` write
+     * into a container filesystem that is discarded on the next deploy, which
+     * is indistinguishable from having no logs at all.
+     *
+     * Returns the key an operator actually has to change — the stack's channel
+     * list when a stack is misconfigured, not the `logging.default` that points
+     * at it.
+     */
+    private function unshippedLogChannelKey(): ?string
+    {
+        $default = $this->config->get('logging.default');
+
+        if (! is_string($default) || $default === '') {
+            return 'logging.default';
+        }
+
+        if ($default !== 'stack') {
+            return $this->channelShipsOffHost($default) ? null : 'logging.default';
+        }
+
+        $channels = $this->config->get('logging.channels.stack.channels');
+
+        if (! is_array($channels) || $channels === []) {
+            return 'logging.channels.stack.channels';
+        }
+
+        $ships = array_any(
+            $channels,
+            fn (mixed $channel): bool => is_string($channel) && $this->channelShipsOffHost($channel),
+        );
+
+        return $ships ? null : 'logging.channels.stack.channels';
+    }
+
+    private function channelShipsOffHost(string $channel): bool
+    {
+        $driver = $this->config->get("logging.channels.{$channel}.driver");
+
+        return is_string($driver) && ! in_array($driver, self::FILE_LOG_DRIVERS, true);
+    }
+
+    /**
+     * `none` would let the session cookie ride cross-site requests, which is
+     * the CSRF exposure SameSite exists to close.
+     */
+    private function hasSafeSessionSameSite(): bool
+    {
+        return in_array($this->config->get('session.same_site'), ['lax', 'strict'], true);
+    }
+
+    /**
+     * `collection` filters in PHP over every row and `null` silently returns
+     * nothing — both make workspace search quietly wrong rather than broken.
+     */
+    private function hasProductionSearchDriver(): bool
+    {
+        $driver = $this->config->get('scout.driver');
+
+        return is_string($driver) && ! in_array($driver, ['collection', 'null'], true);
     }
 
     private function hasDeliveringMailer(): bool

@@ -14,8 +14,8 @@ beforeEach(function (): void {
 
 /**
  * Covers the deploy that never sets LOG_STACK. An operator who sets it
- * explicitly still wins, so a file-only stack in production is not prevented
- * here — that needs a ProductionConfigurationValidator check (task A4).
+ * explicitly still wins — a file-only stack is rejected at boot instead, by
+ * ProductionConfigurationValidator.
  */
 test('production falls back to structured stderr when LOG_STACK is unset', function (): void {
     $logging = configFileWithEnv('logging', ['APP_ENV' => 'production', 'LOG_STACK' => null]);

@@ -6,7 +6,9 @@ paths:
 # Config
 
 ## Production config is validated at boot — add new unsafe keys to the validator
-`App\Platform\Services\Production\ProductionConfigurationValidator` **fails boot** in production on unsafe config (debug on, non-HTTPS `APP_URL`, cache/queue/session not Redis, Redis without TLS, session not encrypted/secure/domain-scoped, filesystem not S3, broadcasting not Reverb, OCR driver not Textract, non-delivering mailer, dev Reverb credentials, trusted proxies unset or `REMOTE_ADDR`/`*`).
+`App\Platform\Services\Production\ProductionConfigurationValidator` **fails boot** in production on unsafe config: debug on, non-HTTPS `APP_URL`, cache/queue/session not Redis, Redis without TLS, session not encrypted/secure/domain-scoped or `same_site=none`, filesystem not S3, broadcasting not Reverb, OCR driver not Textract, transcription driver not Transcribe, Scout driver `collection`/`null`, empty Sentry DSN, a log stack of only file channels (`single`/`daily`), non-delivering mailer, dev Reverb credentials, trusted proxies unset or `REMOTE_ADDR`/`*`.
+
+Telescope is deliberately **not** checked here: it is in composer's `dont-discover` and `AppServiceProvider` only registers it under `environment('local')`, so config cannot switch it on in production.
 
 When you add a config key that would be dangerous with its development default, add a check here rather than trusting the deploy. Follow the existing private-predicate style: each check returns the offending key name or `null` into the `$invalidKeys` filter.
 

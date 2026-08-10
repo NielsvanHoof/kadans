@@ -17,9 +17,14 @@ beforeEach(function (): void {
         'filesystems.default' => 's3',
         'filesystems.disks.s3.report' => true,
         'filesystems.disks.s3.throw' => true,
+        'logging.default' => 'stack',
+        'logging.channels.stack.channels' => ['stderr_json', 'sentry_logs'],
         'mail.default' => 'ses',
         'mail.from.address' => 'support@example.com',
         'ocr.driver' => 'textract',
+        'scout.driver' => 'meilisearch',
+        'sentry.dsn' => 'https://public@sentry.example.com/1',
+        'transcription.driver' => 'transcribe',
         'production.allowed_hosts' => ['app.example.com'],
         'production.trusted_proxies' => '10.0.0.0/8',
         'queue.default' => 'redis',
@@ -62,6 +67,18 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'unreported storage exceptions' => ['filesystems.disks.s3.report', false],
     'non-Reverb broadcasting' => ['broadcasting.default', 'log'],
     'mock OCR' => ['ocr.driver', 'mock'],
+    'mock transcription' => ['transcription.driver', 'mock'],
+    'in-memory search driver' => ['scout.driver', 'collection'],
+    'disabled search driver' => ['scout.driver', 'null'],
+    'missing Sentry DSN' => ['sentry.dsn', null],
+    'empty Sentry DSN' => ['sentry.dsn', ''],
+    'whitespace Sentry DSN' => ['sentry.dsn', '   '],
+    'file-only log stack' => ['logging.channels.stack.channels', ['single']],
+    'file-and-rotating-file log stack' => ['logging.channels.stack.channels', ['single', 'daily']],
+    'empty log stack' => ['logging.channels.stack.channels', []],
+    'missing log channel' => ['logging.default', null],
+    'cross-site session cookie' => ['session.same_site', 'none'],
+    'unset session same-site' => ['session.same_site', null],
     'non-delivering mailer' => ['mail.default', 'log'],
     'invalid sender address' => ['mail.from.address', 'invalid'],
     'missing trusted proxies' => ['production.trusted_proxies', null],
@@ -81,6 +98,25 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'empty Reverb allowed origins' => ['reverb.apps.apps.0.allowed_origins', []],
 ]);
 
+/**
+ * The log check asks whether anything leaves the machine, not that every
+ * channel does — a file channel alongside one that ships is fine, and a single
+ * non-stack channel needs no stack at all.
+ *
+ * @param  array<string, mixed>  $logging
+ */
+test('a log stack passes when any channel ships off the host', function (array $logging): void {
+    config($logging);
+
+    resolve(ProductionConfigurationValidator::class)->validate();
+
+    expect(true)->toBeTrue();
+})->with([
+    'structured stderr only' => [['logging.channels.stack.channels' => ['stderr_json']]],
+    'file alongside Sentry' => [['logging.channels.stack.channels' => ['single', 'sentry_logs']]],
+    'a single non-stack channel' => [['logging.default' => 'stderr_json']],
+]);
+
 test('non-production environments may use local services', function (): void {
     $this->app->instance('env', 'testing');
 
@@ -88,8 +124,12 @@ test('non-production environments may use local services', function (): void {
         'app.debug' => true,
         'app.url' => 'http://localhost',
         'filesystems.default' => 'local',
+        'logging.channels.stack.channels' => ['single'],
         'ocr.driver' => 'mock',
         'queue.default' => 'sync',
+        'scout.driver' => 'collection',
+        'sentry.dsn' => null,
+        'transcription.driver' => 'mock',
     ]);
 
     resolve(ProductionConfigurationValidator::class)->validate();
