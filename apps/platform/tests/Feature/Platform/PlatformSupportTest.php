@@ -124,6 +124,16 @@ test('expired support sessions are rejected', function (): void {
     $this->withSession([SupportSession::SESSION_KEY => $payload])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertNotFound();
+
+    // No SupportSessionExpired entry here, and that is a known gap rather than
+    // the intended behaviour: InitializeTenantFromRoute 404s on canAccessTenant()
+    // before EnsureValidTenantMembership can call clearIfExpired(). The trail
+    // therefore shows the session starting and never ending for a support user
+    // with no membership. See AuditTrailCompletenessTest for the path that does
+    // reach it.
+    expect(Activity::query()
+        ->where('event', AuditEvent::SupportSessionExpired->value)
+        ->exists())->toBeFalse();
 });
 
 test('ending a support session removes firm access', function (): void {

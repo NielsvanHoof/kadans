@@ -14,6 +14,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Log;
 
 use function Laravel\Prompts\info;
 use function sprintf;
@@ -94,6 +95,21 @@ final class MonitorPipelinesCommand extends Command
             $markedStuck,
             $repeatedlyFailing,
         ));
+
+        // Console output goes nowhere in a container. Anything actionable has to
+        // reach the log stream, where StuckPipelinesCheck also raises an alert.
+        $context = [
+            'active' => $active,
+            'marked_stuck' => $markedStuck,
+            'repeatedly_failing' => $repeatedlyFailing,
+            'stuck_after_minutes' => $stuckAfter,
+        ];
+
+        if ($markedStuck > 0 || $repeatedlyFailing > 0) {
+            Log::warning('Pipelines: monitor found pipelines needing attention.', $context);
+        } else {
+            Log::info('Pipelines: monitor found no stalled pipelines.', $context);
+        }
 
         return self::SUCCESS;
     }

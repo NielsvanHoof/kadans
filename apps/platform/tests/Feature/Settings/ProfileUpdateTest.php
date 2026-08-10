@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('profile page is displayed', function (): void {
@@ -82,6 +84,16 @@ test('user can delete their account', function (): void {
 
     $this->assertGuest();
     expect($user->fresh())->toBeNull();
+
+    // The account row is gone, so the trail entry is the only remaining record
+    // that the deletion happened — and who asked for it.
+    $activity = Activity::query()
+        ->where('event', AuditEvent::UserDeleted->value)
+        ->latest('id')
+        ->first();
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->causer_id)->toBe($user->id);
 });
 
 test('correct password must be provided to delete account', function (): void {

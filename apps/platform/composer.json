@@ -114,11 +114,6 @@
         "types:check": [
             "phpstan analyse --memory-limit=1024M"
         ],
-        "ide-helper": [
-            "@php artisan ide-helper:generate --ansi",
-            "@php artisan ide-helper:meta --ansi",
-            "@php artisan ide-helper:models -W --ansi"
-        ],
         "rector": [
             "rector process --ansi"
         ],

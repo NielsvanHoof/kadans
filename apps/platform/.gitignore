@@ -44,7 +44,11 @@ yarn-error.log
 frankenphp-worker.php
 
 # Agent / AI coding tools (local, machine-specific)
-.ai/
+# Exclude .ai/ contents rather than the directory itself: git cannot re-include a
+# path from an excluded directory, and .ai/rules below must stay trackable.
+.ai/*
+# Committed: shared, reviewable project rules that agents and teammates both read.
+!.ai/rules/
 .agents/
 .claude/
 .codex/

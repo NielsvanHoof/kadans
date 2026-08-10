@@ -41,8 +41,11 @@ return [
     'notifications' => [
         /*
          * Notifications will only get sent if this option is set to `true`.
+         *
+         * On by default in production: checks that record failures nobody is
+         * told about are just a slower way of not noticing.
          */
-        'enabled' => env('HEALTH_NOTIFICATIONS_ENABLED', false),
+        'enabled' => env('HEALTH_NOTIFICATIONS_ENABLED', env('APP_ENV') === 'production'),
 
         'notifications' => [
             CheckFailedNotification::class => ['mail'],

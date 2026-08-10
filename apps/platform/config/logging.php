@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -54,9 +55,19 @@ return [
 
     'channels' => [
 
+        /*
+         * Production defaults to structured stderr because the app runs in a
+         * container: `single` writes to storage/logs inside an ephemeral
+         * filesystem, where nothing ever reads it. A deploy that forgets
+         * LOG_STACK still ships parseable logs; ProductionConfigurationValidator
+         * rejects a stack that is only file channels.
+         */
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            'channels' => explode(',', (string) env(
+                'LOG_STACK',
+                env('APP_ENV') === 'production' ? 'stderr_json,sentry_logs' : 'single',
+            )),
             'ignore_exceptions' => false,
         ],
 
@@ -104,6 +115,24 @@ return [
                 'stream' => 'php://stderr',
             ],
             'formatter' => env('LOG_STDERR_FORMATTER'),
+            'processors' => [PsrLogMessageProcessor::class],
+        ],
+
+        /*
+         * One JSON object per line on stderr, for the container log driver to
+         * ship. Everything put into Laravel's Context — request_id, tenant_id,
+         * user_id, route, command — is merged onto the record's `extra` key by
+         * ContextLogProcessor, so it arrives as queryable fields rather than
+         * interpolated into the message.
+         */
+        'stderr_json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'info'),
+            'handler' => StreamHandler::class,
+            'handler_with' => [
+                'stream' => 'php://stderr',
+            ],
+            'formatter' => JsonFormatter::class,
             'processors' => [PsrLogMessageProcessor::class],
         ],
 

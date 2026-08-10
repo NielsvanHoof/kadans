@@ -10,6 +10,7 @@ use App\Dossiers\Support\DocumentUploadLimits;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\HandleAppearance;
+use App\Shared\Http\Middleware\TrackRequestContext;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
 use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -80,6 +81,9 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->web(append: [
+            // Before everything else: later middleware, controllers, and jobs
+            // dispatched from them all log under this request's correlation id.
+            TrackRequestContext::class,
             // First in, last out: generates the Vite nonce before the root view
             // renders, then writes CSP and friends onto the finished response.
             AddSecurityHeaders::class,

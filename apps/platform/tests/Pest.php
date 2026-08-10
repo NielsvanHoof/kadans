@@ -415,6 +415,58 @@ function workspaceMember(Tenant $tenant, Role $role, ?User $user = null): User
 }
 
 /**
+ * Re-evaluate a config file under temporary environment variables.
+ *
+ * For config that branches on the environment (`env('APP_ENV') === 'production'`)
+ * and so cannot be exercised through `config()`, which is already resolved.
+ *
+ * Two traps this exists to contain:
+ *
+ * 1. Laravel's env repository stacks three adapters — `$_SERVER`, `$_ENV`, and
+ *    `getenv()` (putenv is enabled by default) — so all three must move together
+ *    or whichever stale one is read first wins.
+ * 2. Restoring matters more than setting. PHPUnit's `<env>` entries do not
+ *    necessarily populate `$_SERVER`, so a naive `$previous = $_SERVER[$key]`
+ *    captures null and "restores" APP_ENV to an empty string. Every later test
+ *    in that process then runs with no environment, failing in ways that look
+ *    nothing like an env problem (mismatched CSRF tokens, for instance).
+ *
+ * @param  array<string, string|null>  $overrides  Null removes the variable.
+ * @return array<string, mixed>
+ */
+function configFileWithEnv(string $configFile, array $overrides): array
+{
+    $write = static function (string $key, ?string $value): void {
+        if ($value === null) {
+            unset($_ENV[$key], $_SERVER[$key]);
+            putenv($key);
+
+            return;
+        }
+
+        $_ENV[$key] = $value;
+        $_SERVER[$key] = $value;
+        putenv("{$key}={$value}");
+    };
+
+    $previous = [];
+
+    foreach ($overrides as $key => $value) {
+        $existing = $_SERVER[$key] ?? $_ENV[$key] ?? getenv($key);
+        $previous[$key] = $existing === false ? null : (string) $existing;
+        $write($key, $value);
+    }
+
+    try {
+        return require base_path("config/{$configFile}.php");
+    } finally {
+        foreach ($previous as $key => $value) {
+            $write($key, $value);
+        }
+    }
+}
+
+/**
  * Grant an active exclusive builder lock so structure mutations authorize.
  */
 function grantDossierBuilderLock(Dossier $dossier, User $user): string

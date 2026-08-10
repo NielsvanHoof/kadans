@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Platform\Support\Sentry\RedactsPortalTokensFromEvents;
+use App\Platform\Support\Sentry\StampsEventsWithObservabilityContext;
+
 /**
  * Sentry Laravel SDK configuration file.
  *
@@ -162,6 +165,18 @@ return [
 
         // Enable the tracing integrations supplied by Sentry (recommended)
         'default_integrations' => env('SENTRY_TRACE_DEFAULT_INTEGRATIONS_ENABLED', true),
+    ],
+
+    /*
+     * Application integrations, as class names so `config:cache` can serialize
+     * this file. A `before_send` closure could not be cached.
+     *
+     * Redaction is listed first, but ordering is not load-bearing: the SDK runs
+     * every global event processor before the event is sent.
+     */
+    'integrations' => [
+        RedactsPortalTokensFromEvents::class,
+        StampsEventsWithObservabilityContext::class,
     ],
 
 ];
