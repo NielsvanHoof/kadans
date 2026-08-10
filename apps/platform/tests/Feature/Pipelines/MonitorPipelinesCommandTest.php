@@ -6,12 +6,15 @@ use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Console\Commands\MonitorPipelinesCommand;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Artisan;
+
+covers(MonitorPipelinesCommand::class);
 
 test('pipelines:monitor reports each tenant\'s own counts rather than global totals', function (): void {
     ['tenant' => $first] = provisionWorkspace('First Firm');

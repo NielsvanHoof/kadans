@@ -13,7 +13,6 @@ use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Tenancy\Models\Tenant;
 
 beforeEach(function (): void {
     config(['ocr.driver' => 'mock']);
@@ -71,8 +70,8 @@ test('ocr orchestrator returns deferred outcome when the driver leaves processin
  */
 function createUploadedDocumentForOcrOrchestratorTest(array $attributes = []): UploadedDocument
 {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    // provisionWorkspace sets the current tenant for scoped queries and audit logs.
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

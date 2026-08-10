@@ -11,7 +11,6 @@ use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Support\Facades\Notification;
@@ -51,8 +50,7 @@ test('complete action persists transcript segments and notifies the uploader', f
         'transcription.transcribe.bucket' => 'qompose-docs',
     ]);
 
-    $tenant = Tenant::factory()->create();
-    actingInWorkspace($tenant);
+    ['tenant' => $tenant] = provisionWorkspace();
     $uploader = User::factory()->create();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

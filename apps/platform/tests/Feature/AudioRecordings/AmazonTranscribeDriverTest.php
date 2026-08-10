@@ -8,7 +8,6 @@ use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\TranscribeService\TranscribeServiceClient;
 
@@ -21,8 +20,7 @@ test('amazon transcribe driver starts a job and stores the job name', function (
         'transcription.transcribe.output_prefix' => 'transcriptions',
     ]);
 
-    $tenant = Tenant::factory()->create();
-    actingInWorkspace($tenant);
+    ['tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,

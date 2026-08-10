@@ -9,16 +9,24 @@ use App\Tenancy\Policies\TenantInvitationPolicy;
 
 covers(TenantInvitationPolicy::class);
 
-test('owners and administrators can create invitations in the current workspace', function (): void {
+test('roles holding invite permission may create invitations', function (string $actor): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
-    $admin = workspaceMember($tenant, Role::Administrator);
+
+    $user = match ($actor) {
+        'owner' => $owner,
+        'administrator' => workspaceMember($tenant, Role::Administrator),
+        default => throw new InvalidArgumentException("Unknown actor [{$actor}]."),
+    };
+
     $policy = resolve(TenantInvitationPolicy::class);
 
     actingInWorkspace($tenant);
 
-    expect($policy->create($owner))->toBeTrue()
-        ->and($policy->create($admin))->toBeTrue();
-});
+    expect($policy->create($user))->toBeTrue();
+})->with([
+    'owner' => 'owner',
+    'administrator' => 'administrator',
+]);
 
 test('read-only members cannot create, resend, or revoke invitations', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

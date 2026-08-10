@@ -36,7 +36,7 @@ test('staff can create a client, dossier, and document request', function (): vo
         'email' => 'jane@example.com',
     ])->assertRedirect(workspaceRoute('workspaces.dossiers.create', $tenant));
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     $client = Client::query()->sole();
 
     $this->post(workspaceRoute('workspaces.dossiers.store', $tenant), [
@@ -180,7 +180,7 @@ test('document request creation rolls back when auditing fails', function (): vo
         Event::forget($event);
     }
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     expect(DocumentRequest::query()->whereBelongsTo($dossier)->exists())->toBeFalse();
 });

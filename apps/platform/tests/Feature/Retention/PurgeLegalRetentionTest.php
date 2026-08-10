@@ -70,7 +70,7 @@ test('expired archived dossier is permanently purged with files and activity log
     $this->artisan('retention:purge-legal')
         ->assertSuccessful();
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     expect(Dossier::withTrashed()->find($dossier->id))->toBeNull()
         ->and(DocumentRequest::query()->find($documentRequest->id))->toBeNull()

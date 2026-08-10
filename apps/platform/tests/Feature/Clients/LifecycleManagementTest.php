@@ -288,6 +288,6 @@ test('archived records cannot be restored through another workspace', function (
         ->patch(workspaceRoute('workspaces.clients.restore', $otherTenant, ['client' => $client]))
         ->assertNotFound();
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     expect($client->fresh()->trashed())->toBeTrue();
 });

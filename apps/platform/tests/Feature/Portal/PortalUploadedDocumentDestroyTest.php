@@ -59,7 +59,7 @@ test('portal client cannot destroy an upload that belongs to another dossier', f
         'uploadedDocument' => $foreignUpload->id,
     ]))->assertNotFound();
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     expect(UploadedDocument::query()->whereKey($foreignUpload->id)->exists())->toBeTrue();
 });

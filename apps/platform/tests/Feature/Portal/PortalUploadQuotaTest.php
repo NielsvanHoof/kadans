@@ -45,7 +45,7 @@ test('portal upload is rejected when the dossier byte quota would be exceeded', 
     Storage::fake('local');
 
     $context = portalQuotaWorkspace();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $filledRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
@@ -84,7 +84,7 @@ test('portal upload is rejected when the dossier byte quota would be exceeded', 
             'documents' => 'This dossier has reached its portal upload limit of '.DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER_LABEL.'. Remove a file or contact your advisor.',
         ]);
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect(UploadedDocument::query()->where('document_request_id', $openRequest->id)->exists())->toBeFalse()
         ->and(UploadedDocument::query()->count())->toBe(1);
@@ -95,7 +95,7 @@ test('portal upload succeeds when the dossier is still under the byte quota', fu
     Queue::fake();
 
     $context = portalQuotaWorkspace();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
@@ -124,7 +124,7 @@ test('portal upload succeeds when the dossier is still under the byte quota', fu
         ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
     )->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->exists())->toBeTrue();
 });

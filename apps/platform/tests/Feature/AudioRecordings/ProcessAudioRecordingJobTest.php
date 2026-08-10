@@ -17,9 +17,10 @@ use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Pipelines\Support\PipelineState;
-use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+
+covers(ProcessAudioRecordingJob::class);
 
 beforeEach(function (): void {
     Storage::fake('local');
@@ -197,8 +198,8 @@ test('processing job ignores an upload revision that has been replaced', functio
  */
 function createAudioRecordingForProcessingTest(array $overrides = []): AudioRecording
 {
-    $tenant = Tenant::factory()->create();
-    actingInWorkspace($tenant);
+    // provisionWorkspace sets the current tenant for scoped queries and audit logs.
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

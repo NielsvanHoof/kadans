@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform\Data;
 
+use App\Clients\Models\Client;
 use App\Platform\Models\DataSubjectRequest;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -34,10 +35,10 @@ final class DataSubjectRequestData extends Data
 
     public static function fromModel(DataSubjectRequest $request): self
     {
-        // Archived clients still resolve via withTrashed on the relation.
-        // Hard-purged clients leave only the id — keep the list readable.
-        $clientName = $request->client?->name
-            ?? __('Deleted client #:id', ['id' => $request->client_id]);
+        $client = $request->client;
+        $clientName = $client instanceof Client
+            ? $client->name
+            : __('Deleted client #:id', ['id' => $request->client_id]);
 
         return new self(
             id: $request->id,

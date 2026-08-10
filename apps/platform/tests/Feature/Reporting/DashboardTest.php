@@ -87,8 +87,8 @@ test('firm dashboard shows tenant-scoped operational metrics', function (): void
         'status' => DocumentRequestStatus::Submitted,
     ]);
 
-    $foreignTenant = Tenant::factory()->create();
-    $foreignTenant->makeCurrent();
+    ['tenant' => $foreignTenant] = provisionWorkspace('Other firm');
+    actingInWorkspace($foreignTenant);
     $foreignClient = Client::factory()->create(['tenant_id' => $foreignTenant->id]);
     $foreignDossier = Dossier::factory()->create([
         'tenant_id' => $foreignTenant->id,
@@ -209,17 +209,20 @@ test('dashboard metrics cache keys are tenant-scoped', function (): void {
 
 test('users with multiple firms can choose which firm to open', function (): void {
     $user = User::factory()->create();
-    $betaTenant = Tenant::factory()->create(['name' => 'Beta Tax', 'slug' => 'beta-tax']);
-    $acmeTenant = Tenant::factory()->create(['name' => 'Acme Accountants', 'slug' => 'acme-accountants']);
-    $inactiveTenant = Tenant::factory()->create(['name' => 'Dormant Firm', 'slug' => 'dormant-firm']);
 
-    TenantMembership::factory()->create(['tenant_id' => $betaTenant->id, 'user_id' => $user->id]);
-    TenantMembership::factory()->create(['tenant_id' => $acmeTenant->id, 'user_id' => $user->id]);
-    TenantMembership::factory()->create([
-        'tenant_id' => $inactiveTenant->id,
-        'user_id' => $user->id,
-        'status' => TenantMembershipStatus::Suspended,
-    ]);
+    // Same owner across firms — provisionWorkspace seeds roles + active membership.
+    provisionWorkspace('Beta Tax', $user);
+    provisionWorkspace('Acme Accountants', $user);
+    ['tenant' => $inactiveTenant] = provisionWorkspace('Dormant Firm', $user);
+
+    TenantMembership::query()
+        ->where('tenant_id', $inactiveTenant->id)
+        ->where('user_id', $user->id)
+        ->update(['status' => TenantMembershipStatus::Suspended]);
+
+    // Firm picker only renders when no in-process current tenant is set
+    // (DashboardController::index redirects when Tenant::current() is present).
+    Tenant::forgetCurrent();
 
     $this->actingAs($user)
         ->get(route('dashboard'))

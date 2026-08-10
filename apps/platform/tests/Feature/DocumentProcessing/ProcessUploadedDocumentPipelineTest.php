@@ -26,8 +26,7 @@ beforeEach(function (): void {
 });
 
 test('deferred OCR job advances the pipeline through provider processing', function (): void {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $uploaded = uploadedDocumentForOcrPipeline($tenant);
     $pipeline = resolve(CreatePipelineAction::class)->handle($uploaded, PipelineType::OcrDocument);
@@ -57,8 +56,7 @@ test('deferred OCR job advances the pipeline through provider processing', funct
 });
 
 test('textract completion heals a pending OCR pipeline when the document is already done', function (): void {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $uploaded = uploadedDocumentForOcrPipeline($tenant, [
         'processing_status' => DocumentProcessingStatus::Completed,

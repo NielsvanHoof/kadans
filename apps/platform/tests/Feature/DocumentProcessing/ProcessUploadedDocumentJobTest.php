@@ -18,6 +18,8 @@ use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
 
+covers(ProcessUploadedDocumentJob::class);
+
 beforeEach(function (): void {
     Storage::fake('local');
     config(['ocr.driver' => 'mock']);
@@ -128,8 +130,8 @@ test('processing job ignores an upload revision that has been replaced', functio
 });
 
 test('processing audit events stay tenant-scoped', function (): void {
-    $tenantA = Tenant::factory()->create();
-    $tenantB = Tenant::factory()->create();
+    ['tenant' => $tenantA] = provisionWorkspace('Firm A');
+    ['tenant' => $tenantB] = provisionWorkspace('Firm B');
 
     $uploadedA = createUploadedDocumentForProcessingTest(tenant: $tenantA);
 
@@ -160,8 +162,9 @@ function createUploadedDocumentForProcessingTest(
     array $overrides = [],
     ?Tenant $tenant = null,
 ): UploadedDocument {
-    $tenant ??= Tenant::factory()->create();
-    $tenant->makeCurrent();
+    // When a tenant is passed in, switch context; otherwise provision a workspace.
+    $tenant ??= provisionWorkspace()['tenant'];
+    actingInWorkspace($tenant);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

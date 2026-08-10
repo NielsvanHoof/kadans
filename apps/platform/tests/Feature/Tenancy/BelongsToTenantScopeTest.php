@@ -35,6 +35,7 @@ test('queryWithoutTenantScope allows intentional cross-tenant lookups', function
 });
 
 test('runForTenant enables strict scoping for the callback duration', function (): void {
+    // Bare tenant: runForTenant must work without a provisioned workspace graph.
     $tenant = Tenant::factory()->create();
     $context = resolve(TenantContext::class);
 

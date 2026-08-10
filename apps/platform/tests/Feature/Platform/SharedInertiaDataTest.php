@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
+use App\Tenancy\Models\Tenant;
 use App\Tenancy\Support\PermissionRegistry;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\DB;
@@ -102,11 +102,11 @@ test('the shared permission map denies what a restricted role cannot do', functi
 });
 
 test('workspace navigation is remembered as a once prop', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
     $user = User::factory()->create();
-    resolve(ProvisionTenantAction::class)->handle('Beta Tax', $user);
-    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    provisionWorkspace('Beta Tax', $user);
+    provisionWorkspace('Acme Accountants', $user);
+    // Firm list on profile is not workspace-scoped; clear in-process current tenant.
+    Tenant::forgetCurrent();
 
     $this->actingAs($user)
         ->withHeaders(sharedDataInertiaHeaders())
@@ -120,12 +120,11 @@ test('workspace navigation is remembered as a once prop', function (): void {
 });
 
 test('remembered workspace navigation is not queried on every inertia response', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
     $user = User::factory()->create();
     // Two firms so session middleware does not auto-select a tenant (and query further).
-    resolve(ProvisionTenantAction::class)->handle('Beta Tax', $user);
-    resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    provisionWorkspace('Beta Tax', $user);
+    provisionWorkspace('Acme Accountants', $user);
+    Tenant::forgetCurrent();
 
     DB::flushQueryLog();
     DB::enableQueryLog();

@@ -98,11 +98,11 @@ test('POST /forgot-password is throttled and returns 429 once the limit is excee
 
     for ($attempt = 0; $attempt < 3; $attempt++) {
         $this->post(route('password.email'), ['email' => $user->email])
-            ->assertStatus(302);
+            ->assertRedirect();
     }
 
     $this->post(route('password.email'), ['email' => $user->email])
-        ->assertStatus(429);
+        ->assertTooManyRequests();
 });
 
 test('POST /reset-password is throttled and returns 429 once the limit is exceeded', function (): void {
@@ -117,11 +117,11 @@ test('POST /reset-password is throttled and returns 429 once the limit is exceed
 
     for ($attempt = 0; $attempt < 10; $attempt++) {
         $this->post(route('password.update'), $payload)
-            ->assertStatus(302);
+            ->assertRedirect();
     }
 
     $this->post(route('password.update'), $payload)
-        ->assertStatus(429);
+        ->assertTooManyRequests();
 });
 
 test('password cannot be reset with invalid token', function (): void {

@@ -159,7 +159,7 @@ function frontendLabelMapTranslationKeysUsedInDirectory(string $directory): arra
     return array_values(array_unique($keys));
 }
 
-it('keeps English and Dutch translation keys fully aligned', function (): void {
+test('keeps English and Dutch translation keys fully aligned', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
 
@@ -178,7 +178,7 @@ it('keeps English and Dutch translation keys fully aligned', function (): void {
         ->toBeEmpty('Missing keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
-it('covers every backend translation key in both locale files', function (): void {
+test('covers every backend translation key in both locale files', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
     $englishKeys = array_keys($translations['english']);
@@ -192,7 +192,7 @@ it('covers every backend translation key in both locale files', function (): voi
         ->toBeEmpty('Missing backend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
-it('covers every frontend translation key in both locale files', function (): void {
+test('covers every frontend translation key in both locale files', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
     $englishKeys = array_keys($translations['english']);
@@ -212,7 +212,7 @@ it('covers every frontend translation key in both locale files', function (): vo
         ->toBeEmpty('Missing frontend keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
 });
 
-it('requires pipeline label-map strings in both locale files', function (): void {
+test('requires pipeline label-map strings in both locale files', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
 
@@ -278,7 +278,7 @@ function flattenValidationKeys(array $lines): array
     return $keys;
 }
 
-it('keeps English and Dutch validation rule keys aligned', function (): void {
+test('keeps English and Dutch validation rule keys aligned', function (): void {
     $projectRoot = dirname(__DIR__, 2);
 
     /** @var array<string, mixed> $englishValidation */

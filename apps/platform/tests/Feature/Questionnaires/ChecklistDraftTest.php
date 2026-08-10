@@ -132,5 +132,5 @@ test('checklist draft endpoint is rate limited', function (): void {
 
     $this->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $template]), [
         'description' => 'Anything',
-    ])->assertStatus(429);
+    ])->assertTooManyRequests();
 });

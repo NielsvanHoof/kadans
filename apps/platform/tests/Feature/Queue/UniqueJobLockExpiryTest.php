@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Sleep;
 
+covers(
+    ProcessUploadedDocumentJob::class,
+    ProcessAudioRecordingJob::class,
+    GenerateDossierExportJob::class,
+);
+
 /**
  * @return array{0: object, 1: int}
  */

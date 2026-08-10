@@ -15,6 +15,7 @@ use Database\Factories\DataSubjectRequestFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Override;
 
 /**
@@ -42,7 +43,7 @@ use Override;
  * @property CarbonImmutable|null $expires_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
- * @property-read Client $client
+ * @property-read Client|null $client
  * @property-read User|null $completedBy
  * @property-read User|null $refusedBy
  * @property-read User|null $requestedBy
@@ -91,7 +92,10 @@ final class DataSubjectRequest extends TenantOwnedModel
      */
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class)->withTrashed();
+        $relation = $this->belongsTo(Client::class);
+        $relation->getQuery()->withoutGlobalScope(SoftDeletingScope::class);
+
+        return $relation;
     }
 
     /**

@@ -162,7 +162,7 @@ test('clients index rejects invalid filters', function (): void {
 
     $this->actingAs($owner)
         ->get(workspaceRoute('workspaces.clients.index', $tenant).'?filter[unknown]=x')
-        ->assertStatus(400);
+        ->assertBadRequest();
 });
 
 test('clients index does not leak another tenants clients', function (): void {

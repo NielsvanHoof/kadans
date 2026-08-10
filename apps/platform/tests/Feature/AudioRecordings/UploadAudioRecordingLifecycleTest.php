@@ -11,7 +11,6 @@ use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Actions\AudioRecordings\UploadAudioRecordingAction;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Models\Tenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -118,8 +117,8 @@ test('an audio upload rolls back database and storage when its audit record fail
 
 function createDossierForAudioLifecycleTest(): Dossier
 {
-    $tenant = Tenant::factory()->create();
-    actingInWorkspace($tenant);
+    // provisionWorkspace sets the current tenant for scoped queries and audit logs.
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
 

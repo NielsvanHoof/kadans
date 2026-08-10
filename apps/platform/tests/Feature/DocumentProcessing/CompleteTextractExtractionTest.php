@@ -12,7 +12,6 @@ use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Textract\TextractClient;
 use Illuminate\Log\Events\MessageLogged;
@@ -345,8 +344,8 @@ function sampleAnalyzeDocumentBlocks(): array
  */
 function createProcessingDocumentWithTextractJob(string $jobId, array $overrides = []): UploadedDocument
 {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    // provisionWorkspace sets the current tenant for scoped queries and audit logs.
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

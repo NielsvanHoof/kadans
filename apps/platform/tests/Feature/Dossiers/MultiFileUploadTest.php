@@ -220,7 +220,7 @@ test('portal client can upload multiple files in one submission', function (): v
         ],
     ])->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Submitted)
         ->and(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->count())->toBe(2);
@@ -242,7 +242,7 @@ test('portal client can submit a second batch of files after the first is alread
         'documents' => [UploadedFile::fake()->create('payslip-feb.pdf', 100, 'application/pdf')],
     ])->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->count())->toBe(2);
 });
@@ -269,7 +269,7 @@ test('portal client can remove one of their uploaded files before review', funct
         'uploadedDocument' => $removed->id,
     ]))->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect(UploadedDocument::query()->whereKey($removed->id)->exists())->toBeFalse()
         ->and(UploadedDocument::query()->whereKey($kept->id)->exists())->toBeTrue();
@@ -292,7 +292,7 @@ test('portal client cannot remove a file once the request is under review', func
         'uploadedDocument' => $uploaded->id,
     ]))->assertNotFound();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect(UploadedDocument::query()->whereKey($uploaded->id)->exists())->toBeTrue();
 });

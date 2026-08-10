@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
+use App\Tenancy\Console\Commands\CreateOwnerCommand;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
+
+covers(CreateOwnerCommand::class);
 
 test('tenancy create-owner provisions a verified owner and firm', function (): void {
     $this->artisan('tenancy:create-owner', [

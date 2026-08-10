@@ -128,5 +128,5 @@ test('reminder draft endpoint is rate limited', function (): void {
     }
 
     $this->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))
-        ->assertStatus(429);
+        ->assertTooManyRequests();
 });

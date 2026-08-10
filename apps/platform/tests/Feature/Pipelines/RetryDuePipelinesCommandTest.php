@@ -9,6 +9,7 @@ use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Console\Commands\RetryDuePipelinesCommand;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
@@ -17,6 +18,8 @@ use App\Pipelines\Support\PipelineState;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+
+covers(RetryDuePipelinesCommand::class);
 
 /*
 |--------------------------------------------------------------------------

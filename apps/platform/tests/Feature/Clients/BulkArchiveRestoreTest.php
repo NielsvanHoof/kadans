@@ -143,7 +143,7 @@ test('bulk archive rejects ids from another workspace', function (): void {
         ])
         ->assertSessionHasErrors('ids.0');
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     expect($foreignClient->fresh()->trashed())->toBeFalse();
 });
 

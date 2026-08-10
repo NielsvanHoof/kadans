@@ -6,6 +6,8 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 
 test('tenant context runs callbacks under the given tenant and restores afterward', function (): void {
+    // Bare tenants on purpose: this exercises TenantContext::runForTenant restore,
+    // not workspace roles — provisionWorkspace would obscure the makeCurrent baseline.
     $tenantA = Tenant::factory()->create();
     $tenantB = Tenant::factory()->create();
 

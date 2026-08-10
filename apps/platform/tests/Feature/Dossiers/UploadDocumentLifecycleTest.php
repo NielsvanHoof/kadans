@@ -10,7 +10,6 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Tenancy\Models\Tenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -148,8 +147,8 @@ test('a failed document request deletion leaves its database graph and file inta
 
 function createDocumentRequestForUploadLifecycleTest(): DocumentRequest
 {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    // provisionWorkspace sets the current tenant for scoped queries and audit logs.
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

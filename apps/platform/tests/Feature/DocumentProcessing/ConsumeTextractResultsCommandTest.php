@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
+use App\DocumentProcessing\Console\Commands\Ocr\ConsumeTextractResultsCommand;
 use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\DocumentRequest;
@@ -12,7 +13,6 @@ use App\Pipelines\Actions\CreatePipelineAction;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Enums\PipelineType;
-use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Sns\Exception\InvalidSnsMessageException;
 use Aws\Sns\Message;
@@ -20,9 +20,10 @@ use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 
+covers(ConsumeTextractResultsCommand::class);
+
 test('textract consume command applies sns envelope and deletes the message', function (): void {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -158,8 +159,7 @@ test('textract consume command applies sns envelope and deletes the message', fu
 });
 
 test('textract consume command marks a document failed after the final receive attempt', function (): void {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -247,8 +247,7 @@ test('textract consume command marks a document failed after the final receive a
 });
 
 test('textract consume command rejects an SNS envelope with an invalid signature', function (): void {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

@@ -44,7 +44,7 @@ use Aws\Textract\TextractClient;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Support\Facades\Gate;
 
-it('registers domain service providers in the application', function (): void {
+test('registers domain service providers in the application', function (): void {
     expect(app()->getProviders(DocumentProcessingServiceProvider::class))->not->toBeEmpty()
         ->and(app()->getProviders(TenancyServiceProvider::class))->not->toBeEmpty()
         ->and(app()->getProviders(DossiersServiceProvider::class))->not->toBeEmpty()
@@ -55,14 +55,14 @@ it('registers domain service providers in the application', function (): void {
         ->and(app()->getProviders(QuestionnairesServiceProvider::class))->not->toBeEmpty();
 });
 
-it('binds OCR and AWS clients from DocumentProcessingServiceProvider', function (): void {
+test('binds OCR and AWS clients from DocumentProcessingServiceProvider', function (): void {
     expect(resolve(TextractClient::class))->toBeInstanceOf(TextractClient::class)
         ->and(resolve(SqsClient::class))->toBeInstanceOf(SqsClient::class)
         ->and(resolve(DescribesDocumentOverview::class))->toBeInstanceOf(AgentDocumentOverviewNormalizer::class)
         ->and(resolve(StartsDocumentOcr::class))->toBeInstanceOf(MockOcrExtractor::class);
 });
 
-it('points Textract, SQS, and Transcribe clients at a configured local AWS endpoint', function (): void {
+test('points Textract, SQS, and Transcribe clients at a configured local AWS endpoint', function (): void {
     config([
         'ocr.textract.endpoint' => 'http://floci:4566',
         'transcription.transcribe.endpoint' => 'http://floci:4566',
@@ -81,7 +81,7 @@ it('points Textract, SQS, and Transcribe clients at a configured local AWS endpo
         ->toBe('http://floci:4566');
 });
 
-it('leaves AWS clients on regional endpoints when no local endpoint is configured', function (): void {
+test('leaves AWS clients on regional endpoints when no local endpoint is configured', function (): void {
     config([
         'ocr.textract.endpoint' => null,
         'ocr.textract.region' => 'eu-west-1',
@@ -101,12 +101,12 @@ it('leaves AWS clients on regional endpoints when no local endpoint is configure
         ->not->toContain('floci');
 });
 
-it('binds tenancy and platform services from their domain providers', function (): void {
+test('binds tenancy and platform services from their domain providers', function (): void {
     expect(resolve(PermissionRegistry::class))->toBeInstanceOf(PermissionRegistry::class)
         ->and(resolve(ChecksReadiness::class))->toBeInstanceOf(InfrastructureReadinessCheck::class);
 });
 
-it('registers domain policies via domain service providers', function (): void {
+test('registers domain policies via domain service providers', function (): void {
     expect(Gate::getPolicyFor(new Activity))->toBeInstanceOf(ActivityPolicy::class)
         ->and(Gate::getPolicyFor(new Client))->toBeInstanceOf(ClientPolicy::class)
         ->and(Gate::getPolicyFor(new ClientAccessGrant))->toBeInstanceOf(ClientAccessGrantPolicy::class)

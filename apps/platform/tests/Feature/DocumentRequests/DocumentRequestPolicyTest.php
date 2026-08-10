@@ -8,13 +8,14 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Policies\DocumentRequestPolicy;
 use App\Tenancy\Enums\Role;
+use App\Tenancy\Models\Tenant;
 
 covers(DocumentRequestPolicy::class);
 
 /**
- * @return array{policy: DocumentRequestPolicy, owner: mixed, tenant: mixed, documentRequest: DocumentRequest, dossier: Dossier}
+ * @return array{policy: DocumentRequestPolicy, owner: mixed, tenant: Tenant, documentRequest: DocumentRequest, dossier: Dossier}
  */
-function documentRequestPolicyContext(): array
+function documentRequestPolicyContext(DossierStatus $status = DossierStatus::InReview): array
 {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
@@ -22,7 +23,7 @@ function documentRequestPolicyContext(): array
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
         'client_id' => $client->id,
-        'status' => DossierStatus::InReview,
+        'status' => $status,
     ]);
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $tenant->id,
@@ -51,19 +52,17 @@ test('owner can view, upload, update, and review document requests on open dossi
         ->and($policy->review($owner, $documentRequest))->toBeTrue();
 });
 
-test('review and upload are denied when the dossier is completed', function (): void {
-    $context = documentRequestPolicyContext();
+test('completed dossiers deny status-gated document request mutations', function (string $ability): void {
+    $context = documentRequestPolicyContext(DossierStatus::Completed);
     $policy = $context['policy'];
     $owner = $context['owner'];
     $documentRequest = $context['documentRequest'];
-    $dossier = $context['dossier'];
 
-    $dossier->forceFill(['status' => DossierStatus::Completed])->save();
-    $documentRequest->setRelation('dossier', $dossier->fresh());
-
-    expect($policy->upload($owner, $documentRequest))->toBeFalse()
-        ->and($policy->review($owner, $documentRequest))->toBeFalse();
-});
+    expect($policy->{$ability}($owner, $documentRequest))->toBeFalse();
+})->with([
+    'upload' => 'upload',
+    'review' => 'review',
+]);
 
 test('reviewers can review but cannot upload or update structure', function (): void {
     $context = documentRequestPolicyContext();

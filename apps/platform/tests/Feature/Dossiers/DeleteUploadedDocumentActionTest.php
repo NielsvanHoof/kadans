@@ -24,8 +24,8 @@ beforeEach(function (): void {
 function createDeleteUploadedDocumentFixture(
     DocumentRequestStatus $status = DocumentRequestStatus::Submitted,
 ): array {
-    $tenant = Tenant::factory()->create();
-    $tenant->makeCurrent();
+    // Roles are unused here, but provisionWorkspace sets the current tenant correctly.
+    ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([

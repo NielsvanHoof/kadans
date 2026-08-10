@@ -222,7 +222,8 @@ test('support session grants download and audit view but denies client managemen
 test('support session stays read-only even when the user is also a firm member', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
-    // Engineer who is both platform support and a firm member (no Spatie role beyond membership).
+    // Membership without a Spatie role on purpose — workspaceMember() would assign one,
+    // and this case asserts support stay read-only even with bare firm membership.
     $support = User::factory()->platformSupport()->create();
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

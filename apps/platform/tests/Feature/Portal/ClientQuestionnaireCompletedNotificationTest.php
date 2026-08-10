@@ -13,6 +13,7 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
 use Illuminate\Support\Facades\Event;
@@ -58,7 +59,7 @@ test('last portal answer submission broadcasts questionnaire completed to the wo
 
     $context = createQuestionnaireNotificationContext();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -99,7 +100,7 @@ test('partial portal submission does not broadcast questionnaire completed', fun
 
     $context = createQuestionnaireNotificationContext();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $first = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -139,7 +140,7 @@ test('empty dossier does not broadcast questionnaire completed', function (): vo
 
     $context = createQuestionnaireNotificationContext();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     resolve(NotifyWorkspaceIfQuestionnaireCompleteAction::class)->handle($context['dossier']);
 
@@ -151,7 +152,7 @@ test('resubmitting after rejection broadcasts questionnaire completed again', fu
 
     $context = createQuestionnaireNotificationContext();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -175,24 +176,16 @@ test('last portal submission creates database notifications for active members o
     Event::fake([ClientQuestionnaireCompleted::class]);
 
     $context = createQuestionnaireNotificationContext();
-    $activeMember = User::factory()->create();
-    $suspendedMember = User::factory()->create();
+    $activeMember = workspaceMember($context['tenant'], Role::Adviser);
+    $suspendedMember = workspaceMember($context['tenant'], Role::ReadOnly);
     $outsider = User::factory()->create();
 
-    TenantMembership::query()->create([
-        'tenant_id' => $context['tenant']->id,
-        'user_id' => $activeMember->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-    TenantMembership::query()->create([
-        'tenant_id' => $context['tenant']->id,
-        'user_id' => $suspendedMember->id,
-        'status' => TenantMembershipStatus::Suspended,
-        'joined_at' => now(),
-    ]);
+    TenantMembership::query()
+        ->where('tenant_id', $context['tenant']->id)
+        ->where('user_id', $suspendedMember->id)
+        ->update(['status' => TenantMembershipStatus::Suspended]);
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -209,14 +202,14 @@ test('last portal submission creates database notifications for active members o
         'answer_text' => '221B Baker Street',
     ])->assertRedirect(route('portal.show'));
 
-    expect($context['owner']->notifications)->toHaveCount(1)
-        ->and($activeMember->notifications)->toHaveCount(1)
-        ->and($suspendedMember->notifications)
+    expect($context['owner']->fresh()->notifications)->toHaveCount(1)
+        ->and($activeMember->fresh()->notifications)->toHaveCount(1)
+        ->and($suspendedMember->fresh()->notifications)
         ->toBeEmpty()
-        ->and($outsider->notifications)
+        ->and($outsider->fresh()->notifications)
         ->toBeEmpty();
 
-    $payload = $context['owner']->notifications->first()->data;
+    $payload = $context['owner']->fresh()->notifications->first()->data;
 
     expect($payload['type'])->toBe('client_questionnaire_completed')
         ->and($payload['tenant_id'])->toBe((string) $context['tenant']->id)
@@ -232,7 +225,7 @@ test('partial portal submission does not create database notifications', functio
 
     $context = createQuestionnaireNotificationContext();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $first = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
+use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
 
@@ -50,15 +51,14 @@ test('non-member cannot authorize the workspace private channel', function (): v
 });
 
 test('suspended member cannot authorize the workspace private channel', function (): void {
-    $member = User::factory()->create();
     ['tenant' => $tenant] = provisionWorkspace();
+    $member = workspaceMember($tenant, Role::ReadOnly);
 
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $member->id,
-        'status' => TenantMembershipStatus::Suspended,
-        'joined_at' => now(),
-    ]);
+    // workspaceMember creates an active membership; suspend for this denial path.
+    TenantMembership::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $member->id)
+        ->update(['status' => TenantMembershipStatus::Suspended]);
 
     $this->actingAs($member)
         ->postJson('/broadcasting/auth', [

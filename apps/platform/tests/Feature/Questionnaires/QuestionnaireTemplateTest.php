@@ -80,7 +80,7 @@ test('owner can copy a system template into the firm', function (): void {
         ->post(workspaceRoute('workspaces.templates.copy', $tenant, ['template' => $system]))
         ->assertRedirect();
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     $copy = QuestionnaireTemplate::query()
         ->where('tenant_id', $tenant->id)
         ->where('source_template_id', $system->id)
@@ -146,7 +146,7 @@ test('adviser can apply a template and edit dossier items', function (): void {
         ])
         ->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     $requests = DocumentRequest::query()
         ->where('dossier_id', $dossier->id)
         ->orderBy('sort_order')
@@ -229,7 +229,7 @@ test('applying a template assigns unique field keys when template items have nul
         ])
         ->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     $fieldKeys = DocumentRequest::query()
         ->where('dossier_id', $dossier->id)
         ->pluck('field_key');
@@ -416,7 +416,7 @@ test('guest can submit text, date, and boolean answers through the portal', func
         'answer_text' => '2026-07-27',
     ])->assertRedirect(route('portal.show'));
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     expect($textRequest->fresh())
         ->status->toBe(DocumentRequestStatus::Submitted)

@@ -6,7 +6,7 @@ use App\Platform\Support\DebugbarStorageOpen;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 
-it('uses FrankenPHP with bounded worker lifetimes', function (): void {
+test('uses FrankenPHP with bounded worker lifetimes', function (): void {
     expect(config('octane.server'))
         ->toBe('frankenphp')
         ->and(config('octane.max_requests'))
@@ -15,7 +15,7 @@ it('uses FrankenPHP with bounded worker lifetimes', function (): void {
         ->toBe(120);
 });
 
-it('lets the Sail supervisor own the local HTTP server', function (): void {
+test('lets the Sail supervisor own the local HTTP server', function (): void {
     $commandNames = collect(DevCommands::commands())->pluck('name');
 
     expect($commandNames)
@@ -23,7 +23,7 @@ it('lets the Sail supervisor own the local HTTP server', function (): void {
         ->toContain('queue', 'vite', 'reverb');
 });
 
-it('skips AWS result consumers while OCR and transcription stay on mock drivers', function (): void {
+test('skips AWS result consumers while OCR and transcription stay on mock drivers', function (): void {
     // phpunit/.env.testing keep mock drivers even if Pulumi queue URLs exist locally.
     expect(config('ocr.driver'))
         ->toBe('mock')
@@ -37,7 +37,7 @@ it('skips AWS result consumers while OCR and transcription stay on mock drivers'
         ->not->toContain('transcribe-consume');
 });
 
-it('keeps Debugbar storage.open safe when Octane boots without a client IP', function (): void {
+test('keeps Debugbar storage.open safe when Octane boots without a client IP', function (): void {
     // Class string (not a Closure) so config:cache / optimize can serialize it.
     expect(config('debugbar.storage.open'))->toBe(DebugbarStorageOpen::class);
 
@@ -50,7 +50,7 @@ it('keeps Debugbar storage.open safe when Octane boots without a client IP', fun
         ->toBeTrue();
 });
 
-it('can cache configuration with the Debugbar storage.open resolver', function (): void {
+test('can cache configuration with the Debugbar storage.open resolver', function (): void {
     $this->artisan('config:cache')->assertSuccessful();
 
     try {

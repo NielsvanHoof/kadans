@@ -97,5 +97,5 @@ test('dossiers index rejects invalid sort', function (): void {
 
     $this->actingAs($owner)
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?sort=password')
-        ->assertStatus(400);
+        ->assertBadRequest();
 });

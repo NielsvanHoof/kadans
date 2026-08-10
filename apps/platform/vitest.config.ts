@@ -44,7 +44,7 @@ export default defineConfig({
             // Ratchet: set at the suite's measured line % after shared-trunk tests.
             // Raise deliberately when coverage improves; never lower without a task.
             thresholds: {
-                lines: 36,
+                lines: 41,
             },
         },
     },

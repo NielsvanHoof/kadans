@@ -65,7 +65,7 @@ function createPortalDossierWithGrant(): array
 test('guest exchanges a valid access token for a restricted portal session', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -130,7 +130,7 @@ test('invalid or revoked portal tokens are rejected', function (): void {
     $this->get(route('portal.exchange', $context['plainTextToken']))
         ->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $context['grant']->update(['revoked_at' => now()]);
 
     $this->get(route('portal.show'))
@@ -164,7 +164,7 @@ test('guest can upload a document through the portal', function (): void {
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -183,7 +183,7 @@ test('guest can upload a document through the portal', function (): void {
         ['documents' => [$file]],
     )->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $documentRequest->refresh();
 
@@ -197,7 +197,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -214,7 +214,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
         ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
     )->assertForbidden();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->exists())->toBeFalse();
 });
@@ -222,7 +222,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
 test('portal cannot answer while a text item awaits review', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -247,7 +247,7 @@ test('portal cannot answer while a text item awaits review', function (): void {
 test('a saved choice answer reveals the matching conditional field on the portal', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $sourceFieldKey = (string) Str::ulid();
     $dependentFieldKey = (string) Str::ulid();
     $yesOptionId = (string) Str::uuid();
@@ -316,7 +316,7 @@ test('portal upload cannot target a document request from another dossier', func
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $otherDossier = Dossier::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'client_id' => $context['client']->id,
@@ -342,7 +342,7 @@ test('portal upload rolls back database and storage when its audit record fails'
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -368,7 +368,7 @@ test('portal upload rolls back database and storage when its audit record fails'
         Event::forget($event);
     }
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $documentRequest->refresh();
 
@@ -383,7 +383,7 @@ test('portal upload rolls back database and storage when its audit record fails'
 test('portal answer rolls back when its audit record fails', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
