@@ -14,6 +14,8 @@ Visiting the link exchanges the token for a server-side session capped at `porta
 
 Grants are revocable, `MassPrunable`, and record `last_used_at` under a row lock.
 
+Redemption is device-checked once, in `ClientPortalSessionController` (not per request — the device cannot change mid-session). `RegisterClientPortalDeviceAction` compares a **coarse** fingerprint (`PortalDeviceFingerprint`: user agent with version numbers stripped + IPv4 /24 or IPv6 /64, hashed). Coarse on purpose: a precise fingerprint fires on every browser update and DHCP lease and the alert gets trained away. Only the hash is persisted. `portal.new_device_action` is `notify` (default) / `block` / `ignore`; `block` aborts **404**, never 403. One alert per grant — `new_device_seen_at` is the flag.
+
 Portal submissions delegate to `DocumentRequestTransitions::canSubmit()` — clients may submit only when an item is `pending` or `rejected` and the dossier is not completed. Never duplicate that rule in an HTTP adapter or the UI.
 
 The portal conceals cross-dossier probes as 404s via `abort()`, which deliberately does **not** reach `LogAccessDeniedAction` (only policy denials do). Keep it that way — otherwise probes flood the audit trail.

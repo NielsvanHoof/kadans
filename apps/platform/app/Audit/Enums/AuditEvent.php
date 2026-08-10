@@ -26,6 +26,8 @@ enum AuditEvent: string
     case ClientPortalAccessGrantCreated = 'client_portal.access_grant_created';
     case ClientPortalAccessGrantRevoked = 'client_portal.access_grant_revoked';
     case ClientPortalAccessed = 'client_portal.accessed';
+    case ClientPortalAccessedFromNewDevice = 'client_portal.accessed_from_new_device';
+    case ClientPortalNewDeviceBlocked = 'client_portal.new_device_blocked';
     case ClientPortalInviteQueued = 'client_portal.invite_queued';
     case ClientPortalInviteSent = 'client_portal.invite_sent';
     case ClientPortalInviteFailed = 'client_portal.invite_failed';
@@ -88,6 +90,8 @@ enum AuditEvent: string
             self::ClientPortalAccessGrantCreated => __('Client portal access grant created'),
             self::ClientPortalAccessGrantRevoked => __('Client portal access grant revoked'),
             self::ClientPortalAccessed => __('Client portal accessed'),
+            self::ClientPortalAccessedFromNewDevice => __('Client portal opened from a new device'),
+            self::ClientPortalNewDeviceBlocked => __('Client portal blocked an unrecognised device'),
             self::ClientPortalInviteQueued => __('Client portal invitation queued'),
             self::ClientPortalInviteSent => __('Client portal invitation sent'),
             self::ClientPortalInviteFailed => __('Client portal invitation failed'),

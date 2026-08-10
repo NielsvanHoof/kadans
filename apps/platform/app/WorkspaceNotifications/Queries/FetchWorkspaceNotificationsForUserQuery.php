@@ -6,6 +6,7 @@ namespace App\WorkspaceNotifications\Queries;
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
+use App\ClientPortal\Notifications\ClientPortalNewDeviceNotification;
 use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use App\Tenancy\Models\Tenant;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationItemData;
@@ -26,6 +27,7 @@ final class FetchWorkspaceNotificationsForUserQuery
     private const array SupportedTypes = [
         ClientQuestionnaireCompletedNotification::DatabaseType,
         AudioTranscriptionCompletedNotification::DatabaseType,
+        ClientPortalNewDeviceNotification::DatabaseType,
     ];
 
     public function handle(User $user, Tenant $tenant): WorkspaceNotificationsData
@@ -71,6 +73,7 @@ final class FetchWorkspaceNotificationsForUserQuery
 
         [$message, $url, $extra] = match ($type) {
             AudioTranscriptionCompletedNotification::DatabaseType => $this->mapAudioTranscriptionCompleted($data),
+            ClientPortalNewDeviceNotification::DatabaseType => $this->mapClientPortalNewDevice($data),
             default => $this->mapClientQuestionnaireCompleted($data),
         };
 
@@ -107,6 +110,30 @@ final class FetchWorkspaceNotificationsForUserQuery
             (string) ($data['dossier_url'] ?? ''),
             [
                 'dossierId' => (int) ($data['dossier_id'] ?? 0),
+                'dossierTitle' => $dossierTitle,
+                'clientName' => $clientName,
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: string, 2: array<string, mixed>}
+     */
+    private function mapClientPortalNewDevice(array $data): array
+    {
+        $clientName = (string) ($data['client_name'] ?? '');
+        $dossierTitle = (string) ($data['dossier_title'] ?? '');
+
+        $message = __('The portal link for “:dossier” was opened from a new device.', [
+            'dossier' => $dossierTitle,
+        ]);
+
+        return [
+            $message,
+            (string) ($data['dossier_url'] ?? ''),
+            [
+                'dossierId' => isset($data['dossier_id']) ? (int) $data['dossier_id'] : null,
                 'dossierTitle' => $dossierTitle,
                 'clientName' => $clientName,
             ],

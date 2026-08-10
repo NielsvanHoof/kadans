@@ -36,6 +36,8 @@ declare namespace App {
                 | 'client_portal.access_grant_created'
                 | 'client_portal.access_grant_revoked'
                 | 'client_portal.accessed'
+                | 'client_portal.accessed_from_new_device'
+                | 'client_portal.new_device_blocked'
                 | 'client_portal.invite_queued'
                 | 'client_portal.invite_sent'
                 | 'client_portal.invite_failed'
@@ -135,6 +137,12 @@ declare namespace App {
         namespace Enums {
             export type ClientAccessGrantPermission =
                 'client_access.grant' | 'client_access.revoke';
+            export type NewPortalDeviceAction = 'notify' | 'block' | 'ignore';
+            export type PortalDeviceOutcome =
+                | 'first_use'
+                | 'recognised'
+                | 'new_device_allowed'
+                | 'new_device_blocked';
         }
     }
     namespace Clients {

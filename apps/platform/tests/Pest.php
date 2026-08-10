@@ -437,9 +437,11 @@ function workspaceMember(Tenant $tenant, Role $role, ?User $user = null): User
  */
 function configFileWithEnv(string $configFile, array $overrides): array
 {
+    // Writes go to the superglobals and putenv directly: Env::get() is a read
+    // through an immutable repository and cannot be unset through.
     $write = static function (string $key, ?string $value): void {
         if ($value === null) {
-            unset(Env::get($key), $_SERVER[$key]);
+            unset($_ENV[$key], $_SERVER[$key]);
             putenv($key);
 
             return;
@@ -453,8 +455,10 @@ function configFileWithEnv(string $configFile, array $overrides): array
     $previous = [];
 
     foreach ($overrides as $key => $value) {
-        $existing = $_SERVER[$key] ?? Env::get($key, getenv($key));
-        $previous[$key] = $existing === false ? null : (string) $existing;
+        // Read back through Env so the captured value is whatever config would
+        // have seen, across all three adapters.
+        $existing = Env::get($key);
+        $previous[$key] = $existing === null || $existing === false ? null : (string) $existing;
         $write($key, $value);
     }
 

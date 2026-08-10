@@ -121,6 +121,22 @@ test('a log stack passes when any channel ships off the host', function (array $
     'a single non-stack channel' => [['logging.default' => 'stderr_json']],
 ]);
 
+/**
+ * Schemes and hosts are case-insensitive, so a technically-correct APP_URL must
+ * not fail boot. A prefix match on 'https://' used to reject the first case.
+ */
+test('a valid application URL is accepted whatever its casing', function (string $url, string $domain): void {
+    config(['app.url' => $url, 'session.domain' => $domain]);
+
+    resolve(ProductionConfigurationValidator::class)->validate();
+
+    expect(true)->toBeTrue();
+})->with([
+    'uppercase scheme' => ['HTTPS://app.example.com', 'app.example.com'],
+    'mixed-case host' => ['https://App.Example.com', 'app.example.com'],
+    'mixed-case session domain' => ['https://app.example.com', 'App.Example.com'],
+]);
+
 test('non-production environments may use local services', function (): void {
     $this->app->instance('env', 'testing');
 

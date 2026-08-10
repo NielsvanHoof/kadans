@@ -7,14 +7,13 @@ namespace App\Platform\Services\Production;
 use App\Accounts\Enums\TwoFactorEnforcement;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Uri;
 use LogicException;
 
 use function in_array;
 use function is_array;
 use function is_string;
-use function parse_url;
 use function sprintf;
-use function str_starts_with;
 
 final readonly class ProductionConfigurationValidator
 {
@@ -106,11 +105,17 @@ final readonly class ProductionConfigurationValidator
         return $this->config->get($key) === $expected ? null : $key;
     }
 
+    /**
+     * Parsed rather than prefix-matched: a scheme is case-insensitive, so
+     * `HTTPS://app.example.com` is valid and a `str_starts_with('https://')`
+     * check would have failed boot on it. `Uri::of()` returns a null scheme for
+     * unparseable input instead of throwing.
+     */
     private function isHttpsUrl(): bool
     {
         $url = $this->config->get('app.url');
 
-        return is_string($url) && str_starts_with($url, 'https://');
+        return is_string($url) && Uri::of($url)->scheme() === 'https';
     }
 
     /**
@@ -214,13 +219,20 @@ final readonly class ProductionConfigurationValidator
         return is_string($address) && filter_var($address, FILTER_VALIDATE_EMAIL) !== false;
     }
 
+    /**
+     * Compared case-insensitively because DNS is: `Uri::of()` lowercases the
+     * host it parses, so a `session.domain` of `App.Example.com` would otherwise
+     * be rejected despite naming the same host.
+     */
     private function hasSecureSessionDomain(): bool
     {
-        $applicationHost = parse_url((string) $this->config->get('app.url'), PHP_URL_HOST);
+        $applicationHost = Uri::of((string) $this->config->get('app.url'))->host();
+        $sessionDomain = $this->config->get('session.domain');
 
         return is_string($applicationHost)
             && $applicationHost !== ''
-            && $this->config->get('session.domain') === $applicationHost;
+            && is_string($sessionDomain)
+            && mb_strtolower($sessionDomain) === $applicationHost;
     }
 
     /**

@@ -77,9 +77,39 @@ Clients never hold an account. Access is a `ClientAccessGrant` scoped to one dos
 **Known tradeoff:** a grant token can be re-exchanged until it expires (operator
 choice, up to 90 days) rather than being single-use. Clients lose emails and
 re-open links from multiple devices, and single-use tokens generated a support
-burden that outweighed the benefit. There is currently **no device or IP binding**
-and **no notification when a link is used from a new device** — both are worth
-adding before scaling the client base.
+burden that outweighed the benefit.
+
+### Redemption from a new device
+
+That tradeoff stands, but a re-exchangeable link is now *watched*. On redemption
+`RegisterClientPortalDeviceAction` compares a coarse fingerprint against the one
+that redeemed the link first. `portal.new_device_action` decides what follows:
+
+| Mode | Behaviour |
+|---|---|
+| `notify` (default) | Client is let in; the responsible staff member gets an inbox item, and `ClientPortalAccessedFromNewDevice` lands in the trail |
+| `block` | Refused as a **404**, so a probe cannot distinguish a blocked device from a token that never existed. Audited as `ClientPortalNewDeviceBlocked` |
+| `ignore` | Nothing recorded |
+
+Design points that are load-bearing:
+
+- **The fingerprint is deliberately coarse** — `sha256(user-agent with version
+  numbers stripped | IPv4 /24 or IPv6 /64)`. A precise fingerprint would fire on
+  every browser auto-update and every DHCP lease change, and the alert would be
+  trained away. Only the hash is stored: this is a signal about a credential, not
+  a record of where a client lives.
+- **At most one alert per grant** (`new_device_seen_at` doubles as the flag). The
+  finding worth acting on is "this link is open in more than one place"; repeating
+  it each time a client switches phone and laptop would bury it.
+- **`notify`, not `block`, is the default.** Blocking strands clients who move from
+  mobile data to wifi — the same support burden that killed single-use tokens.
+- **It fails open-but-loud:** an unrecognised policy value falls back to `notify`.
+- Checked at **redemption only**, not per request: once a session exists the
+  device cannot meaningfully change.
+
+**Still open:** the fingerprint is a detection signal, not a binding — a leaked
+link used from a matching network and browser family is indistinguishable from the
+real client.
 
 ## Uploads and document delivery
 
@@ -293,7 +323,9 @@ Tracked honestly, roughly in priority order:
    no stored keys; see [`infra/bootstrap/`](../infra/bootstrap/README.md).
 4. **No GDPR data-subject export/erasure flow** (see above).
 5. **No SAST or container scanning** (see above).
-6. **Portal links are re-exchangeable, unbound to device or IP** (see above).
+6. **Portal links are re-exchangeable and only *watched*, not bound** — redemption
+   from an unfamiliar device is detected and alerted (see above), but a leaked link
+   used from a matching network and browser family still passes.
 7. **Frontend has no meaningful test coverage** and there is no end-to-end test of
    the client portal flow — the one path an unauthenticated user touches.
 8. **An expired platform support session is not always cleared or audited.**
