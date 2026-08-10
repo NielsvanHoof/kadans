@@ -1,5 +1,8 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
+import IndexQuerySelectFilter, {
+    ALL_VALUE,
+} from '@/components/data/index-query/index-query-select-filter';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -12,8 +15,6 @@ import {
 import { useIndexQuery } from '@/hooks/use-index-query';
 import { useTranslation } from '@/hooks/use-translation';
 import type { IndexQueryConfig } from '@/types/pagination';
-
-const ALL_VALUE = '__all__';
 
 const SEARCH_DEBOUNCE_MS = 500;
 
@@ -173,41 +174,15 @@ export default function IndexQueryToolbar({
                 }
 
                 return (
-                    <div
+                    <IndexQuerySelectFilter
                         key={filter.key}
-                        className="flex min-w-40 flex-col gap-1.5"
-                    >
-                        <span className="text-xs font-medium text-muted-foreground">
-                            {t(filter.label)}
-                        </span>
-                        <Select
-                            selectedKey={filters[filter.key] ?? ALL_VALUE}
-                            onSelectionChange={(value) =>
-                                handleSelectChange(filter.key, String(value))
-                            }
-                            placeholder={t(filter.label)}
-                            aria-label={t(filter.label)}
-                        >
-                            <SelectTrigger className="w-full min-w-40">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem id={ALL_VALUE}>
-                                        {t('All')}
-                                    </SelectItem>
-                                    {(filter.options ?? []).map((option) => (
-                                        <SelectItem
-                                            key={option.value}
-                                            id={option.value}
-                                        >
-                                            {t(option.label)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                        label={filter.label}
+                        selectedKey={filters[filter.key] ?? ALL_VALUE}
+                        options={filter.options ?? []}
+                        onSelectionChange={(value) =>
+                            handleSelectChange(filter.key, value)
+                        }
+                    />
                 );
             })}
 

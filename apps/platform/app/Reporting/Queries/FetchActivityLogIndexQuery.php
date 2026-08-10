@@ -77,6 +77,11 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                         ->map(fn (AuditEvent $event): array => [
                             'value' => $event->value,
                             'label' => $event->label(),
+                            'group' => $event->group(),
+                        ])
+                        ->sortBy([
+                            ['group', 'asc'],
+                            ['label', 'asc'],
                         ])
                         ->values()
                         ->all(),

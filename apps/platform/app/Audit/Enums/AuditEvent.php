@@ -142,4 +142,91 @@ enum AuditEvent: string
             self::AudioTranscriptionFailed => __('Audio transcription failed'),
         };
     }
+
+    /**
+     * Domain grouping label for filter UIs (activity event select).
+     */
+    public function group(): string
+    {
+        return match ($this) {
+            self::DossierViewed,
+            self::DossierCompleted,
+            self::DossierExportRequested,
+            self::DossierExportCompleted,
+            self::DossierExportFailed,
+            self::DossierExportDownloaded,
+            self::DossierReminderQueued,
+            self::DossierReminderSent,
+            self::DossierReminderFailed,
+            self::DossierDeleted,
+            self::DossierRestored => __('Dossiers'),
+
+            self::DocumentRequestCreated,
+            self::DocumentRequestAccepted,
+            self::DocumentRequestRejected,
+            self::DocumentRequestDeleted => __('Document requests'),
+
+            self::DocumentUploaded,
+            self::DocumentViewed,
+            self::DocumentDownloaded,
+            self::DocumentProcessingStarted,
+            self::DocumentProcessingCompleted,
+            self::DocumentProcessingFailed => __('Documents'),
+
+            self::QuestionnaireAnswerSubmitted,
+            self::QuestionnaireTemplateDeleted,
+            self::QuestionnaireTemplateItemDeleted => __('Questionnaires'),
+
+            self::ClientQuestionnaireCompleted,
+            self::ClientPortalAccessGrantCreated,
+            self::ClientPortalAccessGrantRevoked,
+            self::ClientPortalAccessed,
+            self::ClientPortalAccessedFromNewDevice,
+            self::ClientPortalNewDeviceBlocked,
+            self::ClientPortalInviteQueued,
+            self::ClientPortalInviteSent,
+            self::ClientPortalInviteFailed,
+            self::ClientChangesRequestedQueued,
+            self::ClientChangesRequestedSent,
+            self::ClientChangesRequestedFailed => __('Client portal'),
+
+            self::AccessDenied => __('Access'),
+
+            self::MemberInvited,
+            self::MemberInvitationAccepted,
+            self::MemberInvitationRevoked,
+            self::MemberRoleChanged,
+            self::MemberSuspended,
+            self::MemberRemoved => __('Members'),
+
+            self::RoleCreated,
+            self::RoleUpdated,
+            self::RoleDeleted => __('Roles'),
+
+            self::ClientDeleted,
+            self::ClientRestored => __('Clients'),
+
+            self::PipelineRetried,
+            self::PipelineCancelled,
+            self::PipelineDeleted => __('Pipelines'),
+
+            self::UserDeleted => __('Users'),
+
+            self::DataSubjectRequestLogged,
+            self::DataSubjectRequestRefused,
+            self::DataSubjectExportCompleted,
+            self::DataSubjectErasureCompleted,
+            self::DataSubjectExportDownloaded => __('Data-subject requests'),
+
+            self::SupportSessionStarted,
+            self::SupportSessionEnded,
+            self::SupportSessionExpired => __('Support'),
+
+            self::AudioRecordingUploaded,
+            self::AudioRecordingDownloaded,
+            self::AudioTranscriptionStarted,
+            self::AudioTranscriptionCompleted,
+            self::AudioTranscriptionFailed => __('Audio recordings'),
+        };
+    }
 }

@@ -9,6 +9,7 @@ use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\CreateClientAccessGrantAction;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
+use App\Reporting\Queries\FetchActivityLogIndexQuery;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -221,4 +222,22 @@ test('unparseable activity log date filters return a validation error', function
         )
         ->assertRedirect(workspaceRoute('workspaces.activity.index', $tenant))
         ->assertSessionHasErrors('filter.created_from');
+});
+
+test('activity index toolbar event options include domain groups', function (): void {
+    $toolbar = resolve(FetchActivityLogIndexQuery::class)->toolbarMetadata();
+
+    /** @var array{options?: list<array{value: string, label: string, group?: string}>}|null $eventFilter */
+    $eventFilter = collect($toolbar['filters'])->firstWhere('key', 'event');
+
+    expect($eventFilter)->not->toBeNull()
+        ->and($eventFilter['options'] ?? [])->not->toBeEmpty()
+        ->and($eventFilter['options'][0] ?? [])->toHaveKeys(['value', 'label', 'group'])
+        ->and(AuditEvent::DossierViewed->group())->toBe(__('Dossiers'));
+
+    $groups = collect($eventFilter['options'] ?? [])->pluck('group')->all();
+
+    expect($groups)->toContain(__('Dossiers'), __('Client portal'), __('Documents'))
+        // Options are sorted by group, then label — group sequence is non-decreasing.
+        ->and($groups)->toBe(collect($groups)->sort()->values()->all());
 });
