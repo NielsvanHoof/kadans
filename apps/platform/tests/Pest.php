@@ -437,11 +437,13 @@ function workspaceMember(Tenant $tenant, Role $role, ?User $user = null): User
  */
 function configFileWithEnv(string $configFile, array $overrides): array
 {
-    // Writes go to the superglobals and putenv directly: Env::get() is a read
-    // through an immutable repository and cannot be unset through.
+    // Writes go to $_ENV/$_SERVER/putenv directly. Env::get() is a *read* through
+    // an immutable repository — `unset(Env::get($key))` is not valid PHP ("cannot
+    // use method return value in write context") and takes the whole suite down
+    // before a single test boots. Do not reintroduce it.
     $write = static function (string $key, ?string $value): void {
         if ($value === null) {
-            unset(Env::get($key), $_SERVER[$key]);
+            unset($_ENV[$key], $_SERVER[$key]);
             putenv($key);
 
             return;

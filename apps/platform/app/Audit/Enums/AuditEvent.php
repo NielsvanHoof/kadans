@@ -61,6 +61,7 @@ enum AuditEvent: string
     case DataSubjectRequestLogged = 'data_subject.request_logged';
     case DataSubjectRequestRefused = 'data_subject.request_refused';
     case DataSubjectExportCompleted = 'data_subject.export_completed';
+    case DataSubjectErasureCompleted = 'data_subject.erasure_completed';
     case SupportSessionStarted = 'support.session_started';
     case SupportSessionEnded = 'support.session_ended';
     case SupportSessionExpired = 'support.session_expired';
@@ -128,6 +129,7 @@ enum AuditEvent: string
             self::DataSubjectRequestLogged => __('Data-subject request logged'),
             self::DataSubjectRequestRefused => __('Data-subject request refused'),
             self::DataSubjectExportCompleted => __('Data-subject export completed'),
+            self::DataSubjectErasureCompleted => __('Data-subject erasure completed'),
             self::SupportSessionStarted => __('Support session started'),
             self::SupportSessionEnded => __('Support session ended'),
             self::SupportSessionExpired => __('Support session expired'),

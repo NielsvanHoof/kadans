@@ -8,6 +8,9 @@ use App\Platform\Services\Health\FailedQueueJobsCheck;
 use App\Platform\Services\Health\StuckPipelinesCheck;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+// Spatie's Status is a spatie/enum class exposing ok()/failed() as static
+// *methods* via __callStatic — there are no Status::OK / Status::FAILED
+// constants, and referencing them is a fatal "undefined constant".
 use Spatie\Health\Enums\Status;
 use Spatie\Health\Facades\Health;
 
@@ -40,7 +43,7 @@ test('the registered checks cover work finishing, not just workers running', fun
 test('the failed job check passes when nothing failed recently', function (): void {
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
-    expect($result->status)->toBe(Status::OK)
+    expect($result->status)->toBe(Status::ok())
         ->and($result->meta['failed_jobs'])->toBe(0);
 });
 
@@ -49,7 +52,7 @@ test('the failed job check fails when a job exhausted its retries', function ():
 
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
-    expect($result->status)->toBe(Status::FAILED)
+    expect($result->status)->toBe(Status::failed())
         ->and($result->meta['failed_jobs'])->toBe(1);
 });
 
@@ -62,7 +65,7 @@ test('the failed job check ignores failures outside the window', function (): vo
 
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
-    expect($result->status)->toBe(Status::OK)
+    expect($result->status)->toBe(Status::ok())
         ->and($result->meta['failed_jobs'])->toBe(0);
 });
 
@@ -71,7 +74,7 @@ test('the stuck pipeline check passes when every pipeline is progressing', funct
 
     Pipeline::factory()->create(['status' => PipelineStatus::Running]);
 
-    expect(StuckPipelinesCheck::new()->run()->status)->toBe(Status::OK);
+    expect(StuckPipelinesCheck::new()->run()->status)->toBe(Status::ok());
 });
 
 /**
@@ -90,7 +93,7 @@ test('the stuck pipeline check sees stuck pipelines in any tenant', function ():
 
     $result = StuckPipelinesCheck::new()->run();
 
-    expect($result->status)->toBe(Status::FAILED)
+    expect($result->status)->toBe(Status::failed())
         ->and($result->meta['stuck_pipelines'])->toBe(2);
 });
 
