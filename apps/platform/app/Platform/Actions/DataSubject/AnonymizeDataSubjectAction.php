@@ -129,10 +129,12 @@ final readonly class AnonymizeDataSubjectAction
         $archives = $archiveQuery->get();
 
         foreach ($archives as $archive) {
-            if ($archive->disk === null || $archive->path === null) {
+            if ($archive->disk === null) {
                 continue;
             }
-
+            if ($archive->path === null) {
+                continue;
+            }
             if (Storage::disk($archive->disk)->exists($archive->path)) {
                 Storage::disk($archive->disk)->delete($archive->path);
             }

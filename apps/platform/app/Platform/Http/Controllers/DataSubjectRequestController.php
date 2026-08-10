@@ -79,7 +79,7 @@ final class DataSubjectRequestController extends Controller
         $this->authorize('fulfil', $dataSubjectRequest);
 
         if ($dataSubjectRequest->type === DataSubjectRequestType::Export) {
-            GenerateDataSubjectExportJob::dispatch($dataSubjectRequest->id);
+            dispatch(new GenerateDataSubjectExportJob($dataSubjectRequest->id));
 
             Toast::success(__('Building the export. It will appear here when it is ready.'));
         } else {

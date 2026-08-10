@@ -32,7 +32,7 @@ function requestFixture(): array
         'name' => 'Marieke de Vries',
     ]);
 
-    return compact('owner', 'tenant', 'client');
+    return ['owner' => $owner, 'tenant' => $tenant, 'client' => $client];
 }
 
 test('an owner can open the requests screen', function (): void {

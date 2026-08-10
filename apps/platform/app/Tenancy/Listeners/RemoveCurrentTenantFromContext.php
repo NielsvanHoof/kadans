@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tenancy\Listeners;
 
 use App\Shared\Observability\ObservabilityContext;
-use Spatie\Multitenancy\Events\ForgotCurrentTenantEvent;
 
 /**
  * Drop the tenant stamp when the tenant is forgotten.
@@ -22,7 +21,7 @@ final readonly class RemoveCurrentTenantFromContext
      * makes this class unreachable — the tenant stamp then never clears, and
      * nothing fails to say so.
      */
-    public function handle(ForgotCurrentTenantEvent $event): void
+    public function handle(): void
     {
         ObservabilityContext::forgetTenant();
     }

@@ -44,7 +44,7 @@ function eraseFixture(): array
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Erasure);
 
-    return compact('owner', 'tenant', 'client', 'dossier', 'request');
+    return ['owner' => $owner, 'tenant' => $tenant, 'client' => $client, 'dossier' => $dossier, 'request' => $request];
 }
 
 test('the client identity is replaced with a non-routable placeholder', function (): void {
@@ -57,10 +57,11 @@ test('the client identity is replaced with a non-routable placeholder', function
     expect($client->name)->toBe("Erased client #{$client->id}")
         ->and($client->email)->toBe("erased-{$client->id}@erased.invalid")
         // RFC 2606 reserves .invalid, so the placeholder can never reach a mailbox.
-        ->and($client->email)->toEndWith('@erased.invalid');
-
-    expect($request->refresh()->status)->toBe(DataSubjectRequestStatus::Completed)
-        ->and($request->completed_by)->toBe($owner->id);
+        ->and($client->email)->toEndWith('@erased.invalid')
+        ->and($request->refresh()->status)
+        ->toBe(DataSubjectRequestStatus::Completed)
+        ->and($request->completed_by)
+        ->toBe($owner->id);
 });
 
 /**
@@ -153,8 +154,10 @@ test('the client is no longer findable by their old name', function (): void {
 
     resolve(AnonymizeDataSubjectAction::class)->handle($request, $owner);
 
-    expect(Client::search('Marieke')->get())->toHaveCount(0)
-        ->and(Client::search('marieke@example.com')->get())->toHaveCount(0);
+    expect(Client::search('Marieke')->get())
+        ->toBeEmpty()
+        ->and(Client::search('marieke@example.com')->get())
+        ->toBeEmpty();
 });
 
 /**

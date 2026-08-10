@@ -22,7 +22,7 @@ final class FetchDataSubjectRequestIndexQuery
 
         $query->getQuery()
             ->orderByRaw("case when status = 'pending' then 0 else 1 end")
-            ->orderBy('due_at');
+            ->oldest('due_at');
 
         $requests = $query->get();
 
