@@ -20,10 +20,12 @@ test('every audit event is emitted somewhere in the application', function (): v
     );
 
     foreach ($files as $file) {
-        if (! $file->isFile() || $file->getExtension() !== 'php') {
+        if (! $file->isFile()) {
             continue;
         }
-
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
         // The enum defines every case; only emissions elsewhere count.
         if ($file->getPathname() === $enumPath) {
             continue;

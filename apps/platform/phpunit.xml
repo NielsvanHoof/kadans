@@ -43,6 +43,12 @@
              SECURITY_CSP_* overrides; individual tests opt into report-only. -->
         <env name="SECURITY_CSP_ENABLED" value="true"/>
         <env name="SECURITY_CSP_REPORT_ONLY" value="false"/>
+        <!-- Pin 2FA enforcement so a developer's local .env cannot change it.
+             Factory users are created "now", so the 14-day grace window means
+             enforcement stays dormant for the rest of the suite; the tests that
+             exercise it set security.two_factor.* explicitly. -->
+        <env name="SECURITY_TWO_FACTOR_ENFORCEMENT" value="all"/>
+        <env name="SECURITY_TWO_FACTOR_GRACE_DAYS" value="14"/>
         <!-- Same idea for HSTS: assert the production-shaped header regardless of
              a developer's (or .env.ci) SECURITY_HSTS_* overrides. -->
         <env name="SECURITY_HSTS_ENABLED" value="true"/>

@@ -40,7 +40,7 @@ test('the registered checks cover work finishing, not just workers running', fun
 test('the failed job check passes when nothing failed recently', function (): void {
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
-    expect($result->status)->toBe(Status::ok())
+    expect($result->status)->toBe(Status::OK)
         ->and($result->meta['failed_jobs'])->toBe(0);
 });
 
@@ -49,7 +49,7 @@ test('the failed job check fails when a job exhausted its retries', function ():
 
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
-    expect($result->status)->toBe(Status::failed())
+    expect($result->status)->toBe(Status::FAILED)
         ->and($result->meta['failed_jobs'])->toBe(1);
 });
 
@@ -62,7 +62,7 @@ test('the failed job check ignores failures outside the window', function (): vo
 
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
-    expect($result->status)->toBe(Status::ok())
+    expect($result->status)->toBe(Status::OK)
         ->and($result->meta['failed_jobs'])->toBe(0);
 });
 
@@ -71,7 +71,7 @@ test('the stuck pipeline check passes when every pipeline is progressing', funct
 
     Pipeline::factory()->create(['status' => PipelineStatus::Running]);
 
-    expect(StuckPipelinesCheck::new()->run()->status)->toBe(Status::ok());
+    expect(StuckPipelinesCheck::new()->run()->status)->toBe(Status::OK);
 });
 
 /**
@@ -90,7 +90,7 @@ test('the stuck pipeline check sees stuck pipelines in any tenant', function ():
 
     $result = StuckPipelinesCheck::new()->run();
 
-    expect($result->status)->toBe(Status::failed())
+    expect($result->status)->toBe(Status::FAILED)
         ->and($result->meta['stuck_pipelines'])->toBe(2);
 });
 

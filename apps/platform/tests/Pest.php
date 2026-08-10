@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Env;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
@@ -438,7 +439,7 @@ function configFileWithEnv(string $configFile, array $overrides): array
 {
     $write = static function (string $key, ?string $value): void {
         if ($value === null) {
-            unset($_ENV[$key], $_SERVER[$key]);
+            unset(Env::get($key), $_SERVER[$key]);
             putenv($key);
 
             return;
@@ -452,7 +453,7 @@ function configFileWithEnv(string $configFile, array $overrides): array
     $previous = [];
 
     foreach ($overrides as $key => $value) {
-        $existing = $_SERVER[$key] ?? $_ENV[$key] ?? getenv($key);
+        $existing = $_SERVER[$key] ?? Env::get($key, getenv($key));
         $previous[$key] = $existing === false ? null : (string) $existing;
         $write($key, $value);
     }

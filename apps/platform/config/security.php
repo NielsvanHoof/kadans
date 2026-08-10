@@ -2,7 +2,41 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Enums\TwoFactorEnforcement;
+
 return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Two-Factor Authentication Enforcement
+    |--------------------------------------------------------------------------
+    |
+    | Fortify makes 2FA available; this decides who has to use it. Enforcement
+    | is applied by App\Accounts\Http\Middleware\RequireTwoFactorAuthentication
+    | on the authenticated app and workspace route groups — never on settings or
+    | auth routes, or an unenrolled user could not reach the enrolment page.
+    |
+    | Only a *confirmed* TOTP factor satisfies this. A registered passkey does
+    | not: passkeys are an alternative login here, so a user holding one can
+    | still sign in with a password alone and would have no second factor on
+    | that path.
+    |
+    | `grace_days` is counted from account creation, giving a new hire time to
+    | enrol. Set it to 0 to require enrolment before the first page load.
+    |
+    | Production must not run with this `off` — ProductionConfigurationValidator
+    | rejects it at boot.
+    |
+    */
+
+    'two_factor' => [
+        'enforcement' => env('SECURITY_TWO_FACTOR_ENFORCEMENT', TwoFactorEnforcement::AllStaff->value),
+
+        // Only consulted when enforcement is `by_permission`.
+        'permission' => env('SECURITY_TWO_FACTOR_PERMISSION', 'documents.download'),
+
+        'grace_days' => (int) env('SECURITY_TWO_FACTOR_GRACE_DAYS', 14),
+    ],
 
     /*
     |--------------------------------------------------------------------------

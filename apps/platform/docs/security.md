@@ -193,9 +193,43 @@ directly to the named routes once Fortify has registered them. Sessions are
 Redis-backed, encrypted, and `secure` in production. Invitation tokens follow the
 same hashed-and-expiring pattern as portal grants.
 
-**Known gap:** 2FA is available but not *enforced*. For a platform holding client
-financial records, requiring it for every staff member — or at minimum for roles with
-the document download permission — is the obvious next step.
+### Two-factor enforcement
+
+2FA is **required**, not merely available. `config/security.php` (`two_factor`) picks
+the policy and `App\Accounts\Http\Middleware\RequireTwoFactorAuthentication` applies it:
+
+| Mode | Who must enrol |
+|---|---|
+| `off` | Nobody. Rejected at boot in production. |
+| `all` (default) | Every staff account. |
+| `by_permission` | Staff whose role in the current workspace carries `security.two_factor.permission` — `documents.download` by default. |
+
+`grace_days` (14 by default) is counted from account creation so a new hire can work
+while they enrol; 0 requires enrolment before the first page load.
+
+Three details that are load-bearing:
+
+- **Only a confirmed TOTP factor counts.** A registered passkey does not: passkeys are
+  an alternative login here, so a user holding one can still sign in with a password
+  alone and would have no second factor on that path. Fortify's `confirm` option is
+  on, so an abandoned enrolment (secret, no `two_factor_confirmed_at`) does not count
+  either.
+- **Enforcement is applied per route group, not globally.** `routes/web.php` and
+  `routes/tenant.php` carry the middleware; `routes/settings.php` and the Fortify auth
+  routes deliberately do not, because the enrolment page, password confirmation, and
+  logout all have to stay reachable for someone who has not enrolled yet. An
+  exemption list keyed on Fortify's route names would have rotted into a lockout the
+  first time the package renamed one.
+- **It fails closed.** An unrecognised mode is treated as `all`, so a typo in the
+  deploy environment cannot silently switch enforcement off.
+
+XHR callers get a 403 rather than a redirect, so a poll cannot render the settings
+page into a JSON slot.
+
+**Known gap:** because factory users are created "now", the 14-day grace window means
+the rest of the test suite never exercises enforcement — only
+`tests/Feature/Auth/TwoFactorEnforcementTest.php` does. Treat that file as the sole
+guard on this behaviour.
 
 ## Audit and retention
 
@@ -257,12 +291,17 @@ Tracked honestly, roughly in priority order:
    credentials when `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty — but it
    cannot happen until gap 2 is closed. CI already authenticates via GitHub OIDC with
    no stored keys; see [`infra/bootstrap/`](../infra/bootstrap/README.md).
-4. **2FA not enforced** (see above).
-5. **No GDPR data-subject export/erasure flow** (see above).
-6. **No SAST or container scanning** (see above).
-7. **Portal links are re-exchangeable, unbound to device or IP** (see above).
-8. **Frontend has no meaningful test coverage** and there is no end-to-end test of
+4. **No GDPR data-subject export/erasure flow** (see above).
+5. **No SAST or container scanning** (see above).
+6. **Portal links are re-exchangeable, unbound to device or IP** (see above).
+7. **Frontend has no meaningful test coverage** and there is no end-to-end test of
    the client portal flow — the one path an unauthenticated user touches.
+8. **An expired platform support session is not always cleared or audited.**
+   `EnsureValidTenantMembership` calls `clearIfExpired()`, but
+   `InitializeTenantFromRoute` returns 404 on `canAccessTenant()` first, so for a
+   support user with no membership in the firm the expiry never fires —
+   `AuditEvent::SupportSessionExpired` is only reachable when the support user is
+   also a member. The trail then shows a session starting and never ending.
 
 ## Reporting a vulnerability
 

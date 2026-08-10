@@ -3,6 +3,7 @@ declare namespace App {
         namespace Enums {
             export type Locale = 'en' | 'nl';
             export type PlatformRole = 'support';
+            export type TwoFactorEnforcement = 'off' | 'all' | 'by_permission';
         }
     }
     namespace AudioProcessing {

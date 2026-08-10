@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform\Services\Production;
 
+use App\Accounts\Enums\TwoFactorEnforcement;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use LogicException;
@@ -80,6 +81,7 @@ final readonly class ProductionConfigurationValidator
             $this->hasErrorReporting() ? null : 'sentry.dsn',
             $this->unshippedLogChannelKey(),
             $this->hasSafeSessionSameSite() ? null : 'session.same_site',
+            $this->enforcesTwoFactor() ? null : 'security.two_factor.enforcement',
             $this->hasDeliveringMailer() ? null : 'mail.default',
             $this->hasValidMailFromAddress() ? null : 'mail.from.address',
             $this->hasTrustedProxies() ? null : 'production.trusted_proxies',
@@ -163,6 +165,19 @@ final readonly class ProductionConfigurationValidator
         $driver = $this->config->get("logging.channels.{$channel}.driver");
 
         return is_string($driver) && ! in_array($driver, self::FILE_LOG_DRIVERS, true);
+    }
+
+    /**
+     * A platform holding client financial records must not run with 2FA
+     * optional. Any mode other than `off` is accepted — choosing between
+     * all-staff and permission-keyed enforcement is the operator's call.
+     */
+    private function enforcesTwoFactor(): bool
+    {
+        $enforcement = $this->config->get('security.two_factor.enforcement');
+
+        return $enforcement !== TwoFactorEnforcement::Off->value
+            && TwoFactorEnforcement::tryFrom(is_string($enforcement) ? $enforcement : '') instanceof TwoFactorEnforcement;
     }
 
     /**

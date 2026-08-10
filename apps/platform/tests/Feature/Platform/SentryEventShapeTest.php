@@ -17,12 +17,8 @@ test('both application integrations are registered as cacheable class names', fu
     expect(config('sentry.integrations'))->toBe([
         RedactsPortalTokensFromEvents::class,
         StampsEventsWithObservabilityContext::class,
-    ]);
-
-    // A closure here would break `config:cache`, which production relies on.
-    foreach (config('sentry.integrations') as $integration) {
-        expect($integration)->toBeString();
-    }
+    ])
+        ->and(config('sentry.integrations'))->each->toBeString();
 });
 
 test('an event is attributed to its request, tenant, route, and user', function (): void {
@@ -54,7 +50,8 @@ test('an event carries no user data beyond the id', function (): void {
 test('an event with no context is left untagged rather than tagged with nulls', function (): void {
     $event = StampsEventsWithObservabilityContext::stamp(Event::createEvent());
 
-    expect($event->getTags())->toBe([])
+    expect($event->getTags())
+        ->toBeEmpty()
         ->and($event->getUser())->toBeNull();
 });
 
@@ -85,10 +82,8 @@ test('a portal magic-link token never reaches Sentry', function (): void {
     expect($redacted->getRequest()['url'])->toBe('https://app.test/portal/access/[redacted]')
         ->and($redacted->getTransaction())->toBe('GET /portal/access/[redacted]')
         ->and($redacted->getBreadcrumbs()[0]->getMetadata()['url'])
-        ->toBe('https://app.test/portal/access/[redacted]');
-
-    expect(json_encode($redacted->getRequest()).$redacted->getTransaction())
-        ->not->toContain($token);
+        ->toBe('https://app.test/portal/access/[redacted]')
+        ->and(json_encode($redacted->getRequest()) . $redacted->getTransaction())->not->toContain($token);
 });
 
 test('redaction leaves ordinary workspace urls untouched', function (): void {
@@ -102,7 +97,9 @@ test('redaction leaves ordinary workspace urls untouched', function (): void {
 test('redaction tolerates an event with no request, transaction, or breadcrumbs', function (): void {
     $event = RedactsPortalTokensFromEvents::redact(Event::createEvent());
 
-    expect($event->getRequest())->toBe([])
+    expect($event->getRequest())
+        ->toBeEmpty()
         ->and($event->getTransaction())->toBeNull()
-        ->and($event->getBreadcrumbs())->toBe([]);
+        ->and($event->getBreadcrumbs())
+        ->toBeEmpty();
 });
