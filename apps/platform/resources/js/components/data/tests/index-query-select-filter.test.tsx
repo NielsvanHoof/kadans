@@ -6,7 +6,10 @@ import type { IndexQueryFilterOption } from '@/types/pagination';
 
 vi.mock('@/hooks/use-translation', () => ({
     useTranslation: () => ({
-        t: (key: string, replacements: Record<string, string | number> = {}) => {
+        t: (
+            key: string,
+            replacements: Record<string, string | number> = {},
+        ) => {
             let translation = key;
 
             for (const [placeholder, value] of Object.entries(replacements)) {
@@ -91,10 +94,14 @@ describe('IndexQuerySelectFilter', () => {
             }),
         ).toBeInTheDocument();
         expect(
-            within(listbox).getByText('Alpha', { selector: '[data-slot=select-label]' }),
+            within(listbox).getByText('Alpha', {
+                selector: '[data-slot=select-label]',
+            }),
         ).toBeInTheDocument();
         expect(
-            within(listbox).getByText('Beta', { selector: '[data-slot=select-label]' }),
+            within(listbox).getByText('Beta', {
+                selector: '[data-slot=select-label]',
+            }),
         ).toBeInTheDocument();
 
         await user.type(search, 'Alpha option 1');

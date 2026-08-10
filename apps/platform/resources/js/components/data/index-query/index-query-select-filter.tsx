@@ -28,9 +28,7 @@ type OptionGroup = {
  * Build SelectGroup sections from optional `group` metadata.
  * Ungrouped options (and the list when no groups exist) use a single null section.
  */
-function groupFilterOptions(
-    options: IndexQueryFilterOption[],
-): OptionGroup[] {
+function groupFilterOptions(options: IndexQueryFilterOption[]): OptionGroup[] {
     if (options.length === 0) {
         return [];
     }
@@ -94,9 +92,7 @@ export default function IndexQuerySelectFilter({
 
     const optionItems = optionGroups.map((group) => (
         <SelectGroup key={group.label ?? '__ungrouped__'}>
-            {group.label ? (
-                <SelectLabel>{t(group.label)}</SelectLabel>
-            ) : null}
+            {group.label ? <SelectLabel>{t(group.label)}</SelectLabel> : null}
             {group.options.map((option) => {
                 const optionLabel = t(option.label);
 
@@ -120,9 +116,7 @@ export default function IndexQuerySelectFilter({
             </span>
             <Select
                 selectedKey={selectedKey}
-                onSelectionChange={(value) =>
-                    onSelectionChange(String(value))
-                }
+                onSelectionChange={(value) => onSelectionChange(String(value))}
                 // Clear the typeahead when the popover closes so the next open
                 // shows the full list again.
                 onOpenChange={(open) => {
@@ -140,7 +134,7 @@ export default function IndexQuerySelectFilter({
                 {isSearchable ? (
                     // SelectContent always wraps children in SelectList, so
                     // searchable filters compose Popover + search + List manually.
-                    <SelectPopover className="min-w-72 max-w-sm">
+                    <SelectPopover className="max-w-sm min-w-72">
                         <div className="p-1 pb-0">
                             <Input
                                 type="search"
@@ -164,10 +158,7 @@ export default function IndexQuerySelectFilter({
                         </div>
                         <SelectList>
                             <SelectGroup>
-                                <SelectItem
-                                    id={ALL_VALUE}
-                                    textValue={t('All')}
-                                >
+                                <SelectItem id={ALL_VALUE} textValue={t('All')}>
                                     {t('All')}
                                 </SelectItem>
                             </SelectGroup>
