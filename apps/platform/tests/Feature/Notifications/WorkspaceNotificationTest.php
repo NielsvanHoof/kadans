@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
+use App\ClientPortal\Notifications\ClientPortalInviteNotification;
+use App\ClientPortal\Notifications\ClientPortalNewDeviceNotification;
+use App\ClientPortal\Notifications\ClientPortalReminderNotification;
 use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use App\Clients\Models\Client;
+use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Enums\Role;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationItemData;
 use App\WorkspaceNotifications\Queries\FetchWorkspaceNotificationsForUserQuery;
+use Illuminate\Support\Facades\Date;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -68,6 +73,20 @@ function notifyOwnerOfTranscription(User $owner, mixed $tenant, Dossier $dossier
     ));
 }
 
+function notifyOwnerOfNewDevice(User $owner, mixed $tenant, Dossier $dossier): void
+{
+    $owner->notify(new ClientPortalNewDeviceNotification(
+        tenantId: $tenant->id,
+        dossierId: $dossier->id,
+        dossierTitle: $dossier->title,
+        clientName: 'Jane Client',
+        dossierUrl: route('workspaces.dossiers.show', [
+            'tenant' => $tenant,
+            'dossier' => $dossier,
+        ]),
+    ));
+}
+
 test('shared notifications prop returns tenant-scoped inbox items', function (): void {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
@@ -86,10 +105,11 @@ test('shared notifications prop returns tenant-scoped inbox items', function ():
                 ->where('notifications.items.0.read_at', null)));
 });
 
-test('the notifications query mixes both notification types in one inbox', function (): void {
+test('the notifications query mixes all supported notification types in one inbox', function (): void {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
     notifyOwnerOfTranscription($context['owner'], $context['tenant'], $context['dossier']);
+    notifyOwnerOfNewDevice($context['owner'], $context['tenant'], $context['dossier']);
 
     $notifications = resolve(FetchWorkspaceNotificationsForUserQuery::class)
         ->handle($context['owner'], $context['tenant']);
@@ -97,12 +117,25 @@ test('the notifications query mixes both notification types in one inbox', funct
     $types = array_map(fn (WorkspaceNotificationItemData $item): string => $item->type, $notifications->items);
     $messages = array_map(fn (WorkspaceNotificationItemData $item): string => $item->message, $notifications->items);
 
-    expect($notifications->unreadCount)->toBe(2)
-        ->and($notifications->items)->toHaveCount(2)
+    // New-device rows rebuild the message at read time so the bell follows the
+    // viewing user's locale, same as questionnaire and transcription items.
+    expect($notifications->unreadCount)->toBe(3)
+        ->and($notifications->items)->toHaveCount(3)
         ->and($types)->toContain('audio_transcription_completed')
         ->and($types)->toContain('client_questionnaire_completed')
+        ->and($types)->toContain('client_portal_new_device')
         ->and($messages)->toContain('Transcript ready for call.mp3.')
-        ->and($messages)->toContain('Jane Client finished the questionnaire for “2025 Payroll dossier”.');
+        ->and($messages)->toContain('Jane Client finished the questionnaire for “2025 Payroll dossier”.')
+        ->and($messages)->toContain('The portal link for “2025 Payroll dossier” was opened from a new device.');
+
+    $newDevice = collect($notifications->items)
+        ->first(fn (WorkspaceNotificationItemData $item): bool => $item->type === 'client_portal_new_device');
+
+    expect($newDevice)->not->toBeNull()
+        ->and($newDevice->dossierId)->toBe($context['dossier']->id)
+        ->and($newDevice->dossierTitle)->toBe('2025 Payroll dossier')
+        ->and($newDevice->clientName)->toBe('Jane Client')
+        ->and($newDevice->url)->toContain('/dossiers/');
 });
 
 test('staff can mark an audio transcription notification as read', function (): void {
@@ -197,4 +230,30 @@ test('staff cannot mark another users notification as read', function (): void {
         ->assertNotFound();
 
     expect($notification->fresh()->read_at)->toBeNull();
+});
+
+test('portal mail notifications expose telescope tags for their subjects', function (): void {
+    $dossier = new Dossier;
+    $dossier->id = 9;
+
+    expect(new ClientPortalInviteNotification(
+        grantId: 8,
+        dossier: $dossier,
+        portalUrl: 'https://example.test/portal',
+        expiresAt: Date::now()->addDay(),
+        firmName: 'Acme',
+    )->tags())->toBe([
+        'notification',
+        'mail',
+        'client_portal_invite',
+        'grant:8',
+        'dossier:9',
+    ])->and(new ClientPortalReminderNotification(
+        grantId: 8,
+        dossier: $dossier,
+        portalUrl: 'https://example.test/portal',
+        expiresAt: Date::now()->addDay(),
+        firmName: 'Acme',
+        source: DossierReminderSource::Manual,
+    )->tags())->toContain('client_portal_reminder', 'grant:8', 'dossier:9', 'reminder_source:manual');
 });

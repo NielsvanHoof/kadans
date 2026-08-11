@@ -64,6 +64,108 @@ test('system templates cannot be updated or deleted', function (): void {
     expect($system->fresh()->name)->not->toBe('Hacked');
 });
 
+test('owner can create view update and delete a firm template', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.templates.create', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('questionnaires/create')
+            ->has('categories'));
+
+    // Omit description so CreateQuestionnaireTemplateAction's null branch is exercised.
+    $this->post(workspaceRoute('workspaces.templates.store', $tenant), [
+        'name' => 'Firm onboarding pack',
+        'category' => QuestionnaireTemplateCategory::Kyc->value,
+    ])->assertRedirect();
+
+    // Second create keeps the isset(description) true branch covered as well.
+    $this->post(workspaceRoute('workspaces.templates.store', $tenant), [
+        'name' => 'Firm pack with blurb',
+        'description' => 'Internal copy for payroll clients',
+        'category' => QuestionnaireTemplateCategory::Custom->value,
+    ])->assertRedirect();
+
+    actingInWorkspace($tenant);
+    $template = QuestionnaireTemplate::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('name', 'Firm onboarding pack')
+        ->sole();
+
+    expect($template->description)->toBeNull()
+        ->and(QuestionnaireTemplate::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('name', 'Firm pack with blurb')
+            ->sole()
+            ->description)->toBe('Internal copy for payroll clients');
+
+    $this->post(workspaceRoute('workspaces.templates.items.store', $tenant, ['template' => $template]), [
+        'type' => QuestionnaireItemType::Boolean->value,
+        'title' => 'Confirm completeness',
+        'instructions' => 'Yes or no',
+    ])->assertRedirect(workspaceRoute('workspaces.templates.show', $tenant, ['template' => $template]));
+
+    $this->get(workspaceRoute('workspaces.templates.show', $tenant, ['template' => $template]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('questionnaires/show')
+            ->where('template.id', $template->id)
+            ->where('template.name', 'Firm onboarding pack')
+            ->where('template.description', null)
+            ->where('template.is_system', false)
+            ->where('can_manage', true)
+            ->has('template.items', 1)
+            ->where('template.items.0.title', 'Confirm completeness')
+            ->has('categories'));
+
+    $this->put(workspaceRoute('workspaces.templates.update', $tenant, ['template' => $template]), [
+        'name' => 'Firm onboarding pack v2',
+        'description' => 'Updated blurb',
+        'category' => QuestionnaireTemplateCategory::Custom->value,
+    ])->assertRedirect(workspaceRoute('workspaces.templates.show', $tenant, ['template' => $template]));
+
+    expect($template->fresh())
+        ->name->toBe('Firm onboarding pack v2')
+        ->description->toBe('Updated blurb')
+        ->category->toBe(QuestionnaireTemplateCategory::Custom);
+
+    $this->delete(workspaceRoute('workspaces.templates.destroy', $tenant, ['template' => $template]))
+        ->assertRedirect(workspaceRoute('workspaces.templates.index', $tenant));
+
+    actingInWorkspace($tenant);
+    expect(QuestionnaireTemplate::query()->whereKey($template->id)->exists())->toBeFalse();
+});
+
+test('read only staff cannot create or mutate firm templates', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reader = workspaceMember($tenant, Role::ReadOnly);
+
+    $template = QuestionnaireTemplate::factory()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Protected pack',
+    ]);
+
+    $this->actingAs($reader)
+        ->get(workspaceRoute('workspaces.templates.create', $tenant))
+        ->assertForbidden();
+
+    $this->post(workspaceRoute('workspaces.templates.store', $tenant), [
+        'name' => 'Should not create',
+        'category' => QuestionnaireTemplateCategory::Custom->value,
+    ])->assertForbidden();
+
+    $this->put(workspaceRoute('workspaces.templates.update', $tenant, ['template' => $template]), [
+        'name' => 'Hacked',
+        'category' => QuestionnaireTemplateCategory::Custom->value,
+    ])->assertForbidden();
+
+    $this->delete(workspaceRoute('workspaces.templates.destroy', $tenant, ['template' => $template]))
+        ->assertForbidden();
+
+    expect($template->fresh()->name)->toBe('Protected pack');
+});
+
 test('owner can copy a system template into the firm', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 

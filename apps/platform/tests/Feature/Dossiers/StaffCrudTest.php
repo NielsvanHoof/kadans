@@ -39,6 +39,16 @@ test('staff can create a client, dossier, and document request', function (): vo
     actingInWorkspace($tenant);
     $client = Client::query()->sole();
 
+    // Create page loads client + responsible-staff options for the form.
+    $this->get(workspaceRoute('workspaces.dossiers.create', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/create')
+            ->has('clients', 1)
+            ->where('clients.0.id', $client->id)
+            ->where('clients.0.name', 'Jane Client')
+            ->has('responsible_staff'));
+
     $this->post(workspaceRoute('workspaces.dossiers.store', $tenant), [
         'client_id' => $client->id,
         'title' => '2025 Payroll dossier',
