@@ -30,7 +30,7 @@ final class ResolveLegalDocumentContentAction
      */
     public function handle(LegalDocument $document, string $locale): array
     {
-        $resolvedLocale = Locale::tryFrom($locale)?->value ?? Locale::English->value;
+        $resolvedLocale = Locale::tryFrom($locale)->value ?? Locale::English->value;
         $markdown = $this->readMarkdown($document, $resolvedLocale);
 
         // CommonMark via Laravel — HTML input is not trusted from these files,
