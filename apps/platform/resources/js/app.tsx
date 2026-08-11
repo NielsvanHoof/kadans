@@ -35,6 +35,9 @@ function pageLayout(name: string) {
         case name.startsWith('portal/'):
             // Guest magic-link portal — no staff chrome.
             return null;
+        case name.startsWith('legal/'):
+            // Public privacy / cookies / terms — own shell, no staff chrome.
+            return null;
         case name === 'dossiers/builder':
             // Full-bleed form builder without the app sidebar.
             return DossierBuilderLayout;

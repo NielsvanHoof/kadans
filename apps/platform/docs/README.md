@@ -25,6 +25,7 @@ Domains are **folder namespaces**, not Laravel packages. Each domain that needs 
 6. [Permissions](permissions.md) — how tenant permissions are defined and enforced
 7. [Security](security.md) — threat model, tenant isolation, portal tokens, response hardening
 8. [Adding a domain](adding-a-domain.md) — checklist for a new feature area
+9. [Legal](legal/COUNSEL-HANDOFF.md) — EU/NL privacy, cookies, terms drafts and counsel handoff
 
 ## Related
 

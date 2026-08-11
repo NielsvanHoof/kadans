@@ -508,6 +508,7 @@ declare namespace App {
             export type DataSubjectRequestStatus =
                 'pending' | 'completed' | 'refused';
             export type DataSubjectRequestType = 'export' | 'erasure';
+            export type LegalDocument = 'privacy' | 'cookies' | 'terms';
         }
     }
     namespace Questionnaires {
