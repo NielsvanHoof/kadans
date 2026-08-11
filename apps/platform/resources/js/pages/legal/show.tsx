@@ -3,6 +3,7 @@ import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import LegalFooterLinks from '@/features/legal/legal-footer-links';
 import { useTranslation } from '@/hooks/use-translation';
 import { show as legalShow } from '@/routes/legal';
+import { dashboard } from '@/routes';
 
 type LegalNavItem = {
     slug: string;
@@ -38,7 +39,7 @@ export default function LegalShow({
                 <header className="border-b border-border/80">
                     <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-5 py-5 md:px-8">
                         <Link
-                            href={legalShow.url('privacy')}
+                            href={dashboard.url()}
                             className="flex items-center gap-2 text-sm font-medium"
                             aria-label={t('Privacy policy')}
                         >
