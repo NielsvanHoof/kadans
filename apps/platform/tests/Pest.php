@@ -31,16 +31,6 @@ use Tests\TestCase;
 |
 */
 
-// Local TIA needs a git work tree. Sail mounts apps/platform without the monorepo
-// .git, so skip auto-TIA there; host checkouts and CI still get it. Pass `--tia`
-// (or set PEST_TIA=1) to force a run when git is available. `baselined()` fetches
-// the shared graph from `.github/workflows/tia-baseline.yml` when present.
-$gitWorkTree = mb_trim((string) shell_exec('git rev-parse --is-inside-work-tree 2>/dev/null'));
-
-if ($gitWorkTree === 'true') {
-    pest()->tia()->locally()->baselined();
-}
-
 // Feature tests hit the database by default; individual files must not re-declare this.
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)

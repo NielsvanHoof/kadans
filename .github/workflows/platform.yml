@@ -5,14 +5,12 @@ on:
     paths:
       - "apps/platform/**"
       - ".github/workflows/platform.yml"
-      - ".github/codeql/**"
   push:
     branches:
       - main
     paths:
       - "apps/platform/**"
       - ".github/workflows/platform.yml"
-      - ".github/codeql/**"
 
 permissions:
   contents: read
@@ -92,37 +90,6 @@ jobs:
           path: apps/platform/public/build
           retention-days: 1
           if-no-files-found: error
-
-  # Findings upload as code-scanning alerts on the PR; the job fails only if
-  # analysis itself fails, not on alert count. Container HIGH/CRITICAL is the
-  # severity gate that fails the build (see deployment-artifact).
-  codeql:
-    name: CodeQL (javascript-typescript)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
-
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
-        with:
-          languages: javascript-typescript
-          config-file: .github/codeql/codeql-config.yml
-          queries: security-extended
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
-
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
-        with:
-          category: "/language:javascript-typescript"
 
   tests:
     name: Pest (shard ${{ matrix.shard }}/4)
@@ -281,12 +248,10 @@ jobs:
       - tests
       - coverage
       - postgres-migrations
-      - codeql
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-      security-events: write
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -318,7 +283,8 @@ jobs:
 
       # Scan the OCI tarball in place — no registry. Explicit gate: HIGH/CRITICAL
       # with a published fix (ignore-unfixed). Default Trivy severity is all levels
-      # with exit 0; both are overridden here on purpose.
+      # with exit 0; both are overridden here on purpose. SARIF / code-scanning
+      # upload is omitted (needs a public repo or GitHub Advanced Security).
       - name: Scan production image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -326,16 +292,8 @@ jobs:
           vuln-type: os,library
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          format: sarif
-          output: ${{ runner.temp }}/trivy-image.sarif
+          format: table
           exit-code: "1"
-
-      - name: Upload Trivy SARIF
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
-        with:
-          sarif_file: ${{ runner.temp }}/trivy-image.sarif
-          category: trivy-production-image
 
       - name: Upload immutable production image
         id: upload

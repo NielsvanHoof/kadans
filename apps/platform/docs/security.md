@@ -352,17 +352,12 @@ image with an SBOM and max provenance. That image is pushed to **no registry** �
 lands as a GitHub Actions artifact with 7-day retention. Dependabot watches
 Composer, npm, and Actions weekly.
 
-**SAST (frontend):** CodeQL (`security-extended`, language `javascript-typescript`)
-runs on every PR and on `main` for JS/TS under `apps/platform` (config:
-[`.github/codeql/codeql-config.yml`](../../.github/codeql/codeql-config.yml)). Findings
-upload as GitHub code-scanning alerts on the PR. **CodeQL does not support PHP**, so
-the Laravel backend is outside this gate (PHPStan in `ci:quality` is type analysis,
-not security SAST).
+**SAST:** CodeQL is not enabled (needs a public repository or GitHub Advanced
+Security). PHPStan in `ci:quality` is type analysis, not security SAST.
 
 **Container scanning:** after the OCI tarball is built, Trivy scans it in place
 (`input:` — no registry). The job **fails** on HIGH or CRITICAL findings that have a
 published fix (`severity: HIGH,CRITICAL`, `ignore-unfixed: true`, `exit-code: 1`).
-SARIF is uploaded so image findings also appear in the Security tab.
 
 ## Accepted risks (v1.0)
 
@@ -387,7 +382,7 @@ and expired platform support sessions are cleared/audited before tenant access d
 
 | Item | Status |
 |---|---|
-| **No PHP SAST** | Tracked in **TASK-28.1**. CodeQL cannot analyse PHP. A Psalm + `psalm/plugin-laravel` attempt was deferred: beta19 conflicts with PHPUnit 13’s `sebastian/diff` ^9, and `dev-master` (which allows ^9) crashed on PHP 8.5. Revisit when a tagged Psalm release is installable in the app lockfile. PHPStan in `ci:quality` remains type analysis, not security SAST. |
+| **No PHP / JS SAST in CI** | Tracked in **TASK-28.1**. CodeQL is deferred (private repo without Advanced Security). A Psalm + `psalm/plugin-laravel` attempt was deferred: beta19 conflicts with PHPUnit 13’s `sebastian/diff` ^9, and `dev-master` (which allows ^9) crashed on PHP 8.5. Revisit when a tagged Psalm release is installable, or when CodeQL becomes available. PHPStan in `ci:quality` remains type analysis, not security SAST. |
 
 Nothing in the former open-gaps list should sit outside either an accepted-risk
 decision or a tracked task.

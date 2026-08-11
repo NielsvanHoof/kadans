@@ -153,16 +153,11 @@ vendor/bin/sail composer test:shards:update
 vendor/bin/sail php vendor/bin/pest --parallel --shard=1/4
 ```
 
-### CI sharding and local TIA
+### CI sharding
 
 Platform CI splits PHP Pest across **4 time-balanced shards** using committed [`tests/.pest/shards.json`](../tests/.pest/shards.json). The coverage gate stays a separate job (coverage + shards do not mix). When Pest warns that shards are out of date after adding/renaming files, run `composer test:shards:update` and commit the result.
 
-**Test Impact Analysis** is for local development only:
-
-- `tests/Pest.php` enables `pest()->tia()->locally()->baselined()` when a git work tree is available.
-- Sail mounts `apps/platform` without the monorepo `.git`, so auto-TIA is off inside Sail. Run Pest on the host (or pass `--tia` where git works) to use it.
-- Fetching the shared baseline needs the GitHub CLI (`gh auth login`). Without it, Pest records a local baseline on first run.
-- PR / push CI always runs the full suite (`--ci`, no `--tia`). The [tia-baseline](../../.github/workflows/tia-baseline.yml) workflow records the shared `pest-tia-baseline` artifact on `main` / nightly.
+Pest TIA is not used: it requires the project directory to be the git repository root, and this app lives at `apps/platform` in the monorepo.
 
 ### Mutation testing (local — not a CI gate)
 
