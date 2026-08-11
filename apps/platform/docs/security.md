@@ -1,8 +1,8 @@
 # Security
 
-How this platform protects the documents firms and their clients put into it, and
-where the known gaps still are. Read alongside [architecture](architecture.md) and
-[permissions](permissions.md).
+How this platform protects the documents firms and their clients put into it, which
+risks are accepted for v1.0, and what work remains tracked. Read alongside
+[architecture](architecture.md) and [permissions](permissions.md).
 
 ## What we are protecting
 
@@ -364,49 +364,33 @@ not security SAST).
 published fix (`severity: HIGH,CRITICAL`, `ignore-unfixed: true`, `exit-code: 1`).
 SARIF is uploaded so image findings also appear in the Security tab.
 
-## Open gaps
+## Accepted risks (v1.0)
 
-Tracked honestly, roughly in priority order:
+These are deliberate deferrals with a recorded decision — not unfinished backlog.
+Unless noted otherwise, the **reopen trigger** is the same: before the first real
+client document enters the system.
 
-1. **No malware scanning on uploads.** Clients upload arbitrary files that staff then
-   open. GuardDuty Malware Protection for S3 (bucket-level) or ClamAV in
-   `ProcessUploadedDocumentJob`, gating download/preview on a `scan_status`.
-2. **No application compute in the Pulumi stack.** `infra/` provisions S3, SNS, SQS,
-   and KMS only; there is no ECS service, queue worker, scheduler, or application
-   deploy step. CI builds the OCI image above but pushes it to no registry (GitHub
-   artifact, 7-day retention). [`deploy.yml`](../../.github/workflows/deploy.yml) is
-   a manual-dispatch Pulumi run covering the **OCR stack only** — no migration and
-   no application deploy.
-3. **Static IAM credentials for local development** — narrowed, not yet eliminated.
-   The permission set now lives in one shared document (`infra/src/policies.ts`) used
-   by both the local IAM user and an **ECS task role** that is already provisioned
-   (`infra/src/application.ts`), so the deployed app will carry no keys at all. That
-   switch needs no application code changes — both credential paths skip explicit
-   credentials when `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty — but it
-   cannot happen until gap 2 is closed. CI already authenticates via GitHub OIDC with
-   no stored keys; see [`infra/bootstrap/`](../infra/bootstrap/README.md).
-4. **No PHP SAST.** CodeQL cannot analyse PHP. A Psalm + `psalm/plugin-laravel`
-   attempt was deferred: beta19 conflicts with PHPUnit 13’s `sebastian/diff` ^9, and
-   `dev-master` (which allows ^9) crashed on PHP 8.5. Revisit when a tagged Psalm
-   release is installable in the app lockfile.
-5. **Portal links are re-exchangeable and only *watched*, not bound** — redemption
-   from an unfamiliar device is detected and alerted (see above), but a leaked link
-   used from a matching network and browser family still passes.
-6. **No browser end-to-end tests.** Frontend unit coverage is enforced as a Vitest
-   line ratchet (`vitest.config.ts`, currently 41%) across the shared-trunk suite;
-   TASK-14.4 deliberately stripped dead Playwright/Pest browser scaffolding rather
-   than writing smoke tests. The client portal path an unauthenticated user touches
-   *is* covered at the HTTP feature level in `tests/Feature/Portal/` — token
-   exchange, the session requirement on every portal route, upload, cross-dossier
-   and cross-tenant rejection, answer submission, the byte quota, and
-   database/storage rollback when the audit write fails — but not as a real-browser
-   walkthrough.
-7. **An expired platform support session is not always cleared or audited.**
-   `EnsureValidTenantMembership` calls `clearIfExpired()`, but
-   `InitializeTenantFromRoute` returns 404 on `canAccessTenant()` first, so for a
-   support user with no membership in the firm the expiry never fires —
-   `AuditEvent::SupportSessionExpired` is only reachable when the support user is
-   also a member. The trail then shows a session starting and never ending.
+| Risk | Why it is acceptable now | Reopen | Decision |
+|---|---|---|---|
+| **No malware scanning on uploads** | MIME allowlist, per-file CSP with `script-src 'none'`, and S3-origin delivery already reduce browser-side exploit risk. Staff still open client files. | Before first real client document (or sooner if a pilot requires scanning by contract). Prefer GuardDuty Malware Protection for S3 or ClamAV gating download/preview on `scan_status`. | decision-1 |
+| **No application compute in Pulumi** | `infra/` owns S3/SNS/SQS/KMS (and related support). CI builds an OCI image with SBOM/provenance but stores it as a short-lived Actions artifact — no registry push. [`deploy.yml`](../../.github/workflows/deploy.yml) is OCR-stack Pulumi only. | Before first real client document — production traffic needs owned compute/deploy. | decision-2 |
+| **Static IAM credentials for local development** | Permissions live in one shared document (`infra/src/policies.ts`) for the local IAM user and a provisioned ECS task role (`infra/src/application.ts`). App code already skips keys when env credentials are empty; CI uses GitHub OIDC. Eliminating local keys is blocked on application compute. | When decision-2 lands — switch local/default path off long-lived keys. | decision-3 |
+| **Portal grants re-exchangeable and watched, not bound** | Product choice: lost emails and multi-device use made single-use tokens a support burden. New-device redemption is watched (`notify` / `block` / `ignore`); a leaked link from a matching network + browser family can still pass. Canonical rationale stays in [Known tradeoff](#client-portal) above — do not rewrite it here. | Before first real client document: reassess defaulting `block`, shorter TTL, or tighter binding for the first paying firm. | decision-4 |
+| **No browser end-to-end tests** | Vitest line ratchet on the shared-trunk suite; portal behaviour covered at HTTP feature level in `tests/Feature/Portal/`. TASK-14.4 removed dead Playwright/Pest browser scaffolding rather than writing smoke tests. | Before first real client document if portal UX regressions become a release risk, or when browser CI budget is approved. | decision-5 |
+
+Items formerly listed as gaps that are **already closed** (not accepted risks): staff
+2FA is enforced; on-demand GDPR export/erasure exists under Data-subject requests above;
+and expired platform support sessions are cleared/audited before tenant access denial
+(including non-member support users — see decision-6, superseded by TASK-33).
+
+## Remaining tracked work
+
+| Item | Status |
+|---|---|
+| **No PHP SAST** | Tracked in **TASK-28.1**. CodeQL cannot analyse PHP. A Psalm + `psalm/plugin-laravel` attempt was deferred: beta19 conflicts with PHPUnit 13’s `sebastian/diff` ^9, and `dev-master` (which allows ^9) crashed on PHP 8.5. Revisit when a tagged Psalm release is installable in the app lockfile. PHPStan in `ci:quality` remains type analysis, not security SAST. |
+
+Nothing in the former open-gaps list should sit outside either an accepted-risk
+decision or a tracked task.
 
 ## Reporting a vulnerability
 

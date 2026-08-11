@@ -19,6 +19,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
 | resources/js/**, resources/js/**/*.{tsx,ts} | .ai/rules/js.md |
 | app/*/Listeners/** | .ai/rules/listeners.md |
+| app/Tenancy/Http/Middleware/** | .ai/rules/middleware.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/*/Models/** | .ai/rules/models.md |
 | app/Pipelines/** | .ai/rules/pipelines.md |

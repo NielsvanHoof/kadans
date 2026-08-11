@@ -281,12 +281,11 @@ test('a stale transcription failure is discarded without an audit entry', functi
 });
 
 /**
- * The only route that actually reaches `clearIfExpired()`: the support user is
- * also a firm member, so InitializeTenantFromRoute's `canAccessTenant()` check
- * passes on the membership and EnsureValidTenantMembership gets to run.
+ * Member + support: after expiry the membership still passes canAccessTenant(),
+ * EnsureValidTenantMembership (and InitializeTenantFromRoute) clear/audit, and
+ * the dashboard stays reachable as a normal member.
  *
- * For a support user with no membership the expiry is never cleared or audited
- * (that middleware 404s first) — PlatformSupportTest pins that gap explicitly.
+ * Non-member support expiry + 404 is covered in PlatformSupportTest.
  */
 test('an expired support session is audited when the middleware reaches it', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
