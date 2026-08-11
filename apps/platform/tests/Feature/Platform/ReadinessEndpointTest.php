@@ -38,6 +38,22 @@ test('readiness fails closed when a production dependency is unavailable', funct
         ->assertExactJson(['status' => 'unavailable']);
 });
 
+test('readiness is rate limited for anonymous callers', function (): void {
+    app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
+    {
+        public function check(): void {}
+    });
+
+    // Dedicated address so earlier /ready hits in this file do not share the bucket.
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.50']);
+
+    for ($attempt = 0; $attempt < 60; $attempt++) {
+        $this->getJson('/ready')->assertOk();
+    }
+
+    $this->getJson('/ready')->assertTooManyRequests();
+});
+
 test('liveness does not depend on production dependencies', function (): void {
     app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
     {

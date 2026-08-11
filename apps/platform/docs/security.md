@@ -223,6 +223,12 @@ directly to the named routes once Fortify has registered them. Sessions are
 Redis-backed, encrypted, and `secure` in production. Invitation tokens follow the
 same hashed-and-expiring pattern as portal grants.
 
+Anonymous `GET /ready` stays unauthenticated so load balancers can probe it, but it
+is throttled at **60 requests/minute per IP** — comfortably above typical ALB poll
+intervals (5–30s). Failures return only `{"status":"unavailable"}` (details go to
+Sentry). Full diagnostics live at `/health`, which requires an authenticated platform
+support session.
+
 ### Two-factor enforcement
 
 2FA is **required**, not merely available. `config/security.php` (`two_factor`) picks
