@@ -97,6 +97,8 @@ export default function QuestionnaireBuilderSettings({
                     <FieldLabel htmlFor={`builder-type-${documentRequest.id}`}>
                         {t('Type')}
                     </FieldLabel>
+                    {/* React Aria Select ignores FieldLabel+htmlFor
+                        (LabelContext is nulled when htmlFor is set). */}
                     <Select
                         selectedKey={form.type}
                         isDisabled={!canEdit}
@@ -106,6 +108,7 @@ export default function QuestionnaireBuilderSettings({
                                 buildDefaultOptions(t),
                             )
                         }
+                        aria-label={t('Type')}
                     >
                         <SelectTrigger
                             id={`builder-type-${documentRequest.id}`}

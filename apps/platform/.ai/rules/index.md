@@ -11,10 +11,12 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
+| resources/js/components/feedback/** | .ai/rules/feedback.md |
 | rector.php | .ai/rules/general.md |
 | resources/js/features/**/hooks/** | .ai/rules/hooks.md |
 | app/Shared/Http/** | .ai/rules/http.md |
 | app/*/Jobs/** | .ai/rules/jobs.md |
+| resources/js/**/tests/** | .ai/rules/js-tests.md |
 | resources/js/**, resources/js/**/*.{tsx,ts} | .ai/rules/js.md |
 | app/*/Listeners/** | .ai/rules/listeners.md |
 | database/migrations/** | .ai/rules/migrations.md |

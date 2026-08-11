@@ -17,7 +17,6 @@ use App\Pipelines\Models\Pipeline;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -41,11 +40,9 @@ final readonly class UploadAudioRecordingAction
         $disk = (string) config('filesystems.default', 'local');
         $directory = sprintf('tenants/%d/dossiers/%d/audio', $dossier->tenant_id, $dossier->id);
 
-        $extension = $file->getClientOriginalExtension();
-        $filename = Str::uuid()->toString().($extension !== '' ? '.'.$extension : '');
         $path = $this->filesystems
             ->disk($disk)
-            ->putFileAs($directory, $file, $filename);
+            ->putFile($directory, $file);
 
         throw_if(! is_string($path) || $path === '', RuntimeException::class, 'Failed to store the uploaded audio recording.');
 

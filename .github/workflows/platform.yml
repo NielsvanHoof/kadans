@@ -93,22 +93,17 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  # SAST: injection / unsafe deserialisation / path traversal that audits miss.
   # Findings upload as code-scanning alerts on the PR; the job fails only if
   # analysis itself fails, not on alert count. Container HIGH/CRITICAL is the
   # severity gate that fails the build (see deployment-artifact).
   codeql:
-    name: CodeQL (${{ matrix.language }})
+    name: CodeQL (javascript-typescript)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
       actions: read
       security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [php, javascript-typescript]
 
     steps:
       - name: Check out source
@@ -117,7 +112,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
         with:
-          languages: ${{ matrix.language }}
+          languages: javascript-typescript
           config-file: .github/codeql/codeql-config.yml
           queries: security-extended
 
@@ -127,7 +122,7 @@ jobs:
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
         with:
-          category: "/language:${{ matrix.language }}"
+          category: "/language:javascript-typescript"
 
   tests:
     name: Pest (shard ${{ matrix.shard }}/4)

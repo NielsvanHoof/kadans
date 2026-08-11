@@ -1,6 +1,5 @@
 # Scope CodeQL to the platform app inside the monorepo.
 #
-# Interpreted languages (PHP, JS/TS) honour paths / paths-ignore here.
 name: "Platform CodeQL"
 
 paths:
@@ -13,4 +12,5 @@ paths-ignore:
   - apps/platform/bootstrap/cache
   - apps/platform/storage
   - apps/platform/**/*.blade.php
+  - apps/platform/**/*.php
   - "**/*.min.js"

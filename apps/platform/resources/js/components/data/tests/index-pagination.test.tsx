@@ -24,16 +24,28 @@ vi.mock('@inertiajs/react', () => ({
     Link: ({
         href,
         children,
-        ...props
+        className,
+        // Inertia-only — must not leak onto the DOM <a>.
+        preserveState: _preserveState,
+        preserveScroll: _preserveScroll,
+        'aria-label': ariaLabel,
+        'aria-current': ariaCurrent,
     }: {
         href: string;
         children: React.ReactNode;
         className?: string;
+        preserveState?: boolean;
+        preserveScroll?: boolean;
         'aria-label'?: string;
         // Match AnchorHTMLAttributes so spreading onto <a> type-checks.
         'aria-current'?: React.AriaAttributes['aria-current'];
     }) => (
-        <a href={href} {...props}>
+        <a
+            href={href}
+            className={className}
+            aria-label={ariaLabel}
+            aria-current={ariaCurrent}
+        >
             {children}
         </a>
     ),

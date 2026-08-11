@@ -352,10 +352,12 @@ image with an SBOM and max provenance. That image is pushed to **no registry** �
 lands as a GitHub Actions artifact with 7-day retention. Dependabot watches
 Composer, npm, and Actions weekly.
 
-**SAST:** CodeQL (`security-extended`) runs on every PR and on `main` for PHP and
-JavaScript/TypeScript under `apps/platform` (config:
+**SAST (frontend):** CodeQL (`security-extended`, language `javascript-typescript`)
+runs on every PR and on `main` for JS/TS under `apps/platform` (config:
 [`.github/codeql/codeql-config.yml`](../../.github/codeql/codeql-config.yml)). Findings
-upload as GitHub code-scanning alerts on the PR.
+upload as GitHub code-scanning alerts on the PR. **CodeQL does not support PHP**, so
+the Laravel backend is outside this gate (PHPStan in `ci:quality` is type analysis,
+not security SAST).
 
 **Container scanning:** after the OCI tarball is built, Trivy scans it in place
 (`input:` — no registry). The job **fails** on HIGH or CRITICAL findings that have a
@@ -383,10 +385,14 @@ Tracked honestly, roughly in priority order:
    credentials when `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty — but it
    cannot happen until gap 2 is closed. CI already authenticates via GitHub OIDC with
    no stored keys; see [`infra/bootstrap/`](../infra/bootstrap/README.md).
-4. **Portal links are re-exchangeable and only *watched*, not bound** — redemption
+4. **No PHP SAST.** CodeQL cannot analyse PHP. A Psalm + `psalm/plugin-laravel`
+   attempt was deferred: beta19 conflicts with PHPUnit 13’s `sebastian/diff` ^9, and
+   `dev-master` (which allows ^9) crashed on PHP 8.5. Revisit when a tagged Psalm
+   release is installable in the app lockfile.
+5. **Portal links are re-exchangeable and only *watched*, not bound** — redemption
    from an unfamiliar device is detected and alerted (see above), but a leaked link
    used from a matching network and browser family still passes.
-5. **No browser end-to-end tests.** Frontend unit coverage is enforced as a Vitest
+6. **No browser end-to-end tests.** Frontend unit coverage is enforced as a Vitest
    line ratchet (`vitest.config.ts`, currently 41%) across the shared-trunk suite;
    TASK-14.4 deliberately stripped dead Playwright/Pest browser scaffolding rather
    than writing smoke tests. The client portal path an unauthenticated user touches
@@ -395,7 +401,7 @@ Tracked honestly, roughly in priority order:
    and cross-tenant rejection, answer submission, the byte quota, and
    database/storage rollback when the audit write fails — but not as a real-browser
    walkthrough.
-6. **An expired platform support session is not always cleared or audited.**
+7. **An expired platform support session is not always cleared or audited.**
    `EnsureValidTenantMembership` calls `clearIfExpired()`, but
    `InitializeTenantFromRoute` returns 404 on `canAccessTenant()` first, so for a
    support user with no membership in the firm the expiry never fires —

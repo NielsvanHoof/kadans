@@ -51,11 +51,12 @@ export default function LogRequestForm() {
                                     `value`. `defaultValue` type-checks via
                                     GlobalDOMAttributes but is inert — use
                                     defaultSelectedKey or the form posts the
-                                    rendered label (e.g. "Sander") instead. */}
+                                     */}
                                 <Select
                                     isRequired
                                     name="client_id"
                                     placeholder={t('Client')}
+                                    aria-label={t('Client')}
                                     defaultSelectedKey={String(
                                         clients[0]?.id ?? '',
                                     )}
@@ -92,6 +93,7 @@ export default function LogRequestForm() {
                                 <Select
                                     name="type"
                                     placeholder={t('Request')}
+                                    aria-label={t('Request')}
                                     defaultSelectedKey="export"
                                 >
                                     <SelectTrigger id="type">

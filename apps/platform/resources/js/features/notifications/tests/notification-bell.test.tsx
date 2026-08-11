@@ -1,5 +1,6 @@
 import { User } from '@react-aria/test-utils';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceNotificationsSummary } from '@/features/notifications/types';
 import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
@@ -132,6 +133,7 @@ describe('NotificationBell', () => {
     });
 
     it('marks all read via a partial reload', async () => {
+        const user = userEvent.setup();
         pageProps.notifications = summary({ unread_count: 2 });
 
         render(<NotificationBell />);
@@ -148,7 +150,9 @@ describe('NotificationBell', () => {
         const markAllRead = within(dialogRoot(dialog)).getByRole('button', {
             name: 'Mark all read',
         });
-        markAllRead.click();
+        // userEvent wraps the press in act() so RAC Button state updates
+        // do not warn about updates outside of a test act boundary.
+        await user.click(markAllRead);
 
         expect(routerPost).toHaveBeenCalledWith(
             '/workspaces/acme/notifications/read-all',

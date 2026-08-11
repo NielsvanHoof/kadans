@@ -18,7 +18,6 @@ use Closure;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
@@ -58,11 +57,9 @@ final readonly class UploadDocumentForRequestAction
             $documentRequest->dossier_id,
         );
 
-        $extension = $file->getClientOriginalExtension();
-        $filename = Str::uuid()->toString().($extension !== '' ? '.'.$extension : '');
         $path = $this->filesystems
             ->disk($disk)
-            ->putFileAs($directory, $file, $filename);
+            ->putFile($directory, $file);
 
         throw_if(! is_string($path) || $path === '', RuntimeException::class, 'Failed to store the uploaded document.');
 

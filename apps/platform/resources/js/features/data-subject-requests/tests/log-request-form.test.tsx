@@ -26,15 +26,25 @@ vi.mock('@inertiajs/react', () => ({
     }),
     Form: ({
         children,
-        ...props
+        // Inertia-only — must not leak onto the DOM <form>.
+        resetOnSuccess: _resetOnSuccess,
+        action,
+        method,
+        className,
     }: {
         children: (state: {
             processing: boolean;
             errors: Record<string, string>;
         }) => React.ReactNode;
+        resetOnSuccess?: boolean | string[];
+        action?: string;
+        method?: string;
+        className?: string;
     }) => (
         <form
-            {...props}
+            action={action}
+            method={method}
+            className={className}
             onSubmit={(event) => {
                 event.preventDefault();
                 submitted.push(
