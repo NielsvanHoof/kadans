@@ -9,11 +9,9 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 use function is_int;
-use function is_string;
 
 /**
  * Resolves a short-lived portal session and makes the grant's tenant current
@@ -64,15 +62,10 @@ final readonly class ResolveClientPortalGrant
 
         abort_unless($tenant instanceof Tenant, Response::HTTP_NOT_FOUND);
 
-        // Host slug must match the grant's firm — blocks cross-tenant token reuse.
-        $hostSlug = $request->route('tenant');
-        abort_unless(is_string($hostSlug) && $hostSlug === $tenant->slug, Response::HTTP_NOT_FOUND);
-
         // Tenant must be current so BelongsToTenant scopes work for dossier queries.
         $tenant->makeCurrent();
         // Fail fast if a later query runs without the portal tenant.
         $this->tenantContext->enableStrict();
-        URL::defaults(['tenant' => $tenant->slug]);
 
         $request->attributes->set(self::REQUEST_ATTRIBUTE, $grant);
 

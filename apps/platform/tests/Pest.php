@@ -354,19 +354,6 @@ function workspaceRoute(
 }
 
 /**
- * Absolute portal URL on the tenant host (domain-scoped portal routes).
- *
- * @param  array<string, mixed>  $parameters
- */
-function portalRoute(
-    string $name,
-    Tenant|string $tenant,
-    array $parameters = [],
-): string {
-    return route($name, ['tenant' => $tenant, ...$parameters]);
-}
-
-/**
  * Seed roles/permissions, provision a firm, and activate its tenant context.
  *
  * @return array{owner: User, tenant: Tenant}

@@ -88,10 +88,10 @@ test('a portal magic-link token never reaches Sentry', function (): void {
 
 test('redaction leaves ordinary workspace urls untouched', function (): void {
     $event = Event::createEvent();
-    $event->setRequest(['url' => 'https://acme.qompose.test/dossiers/12']);
+    $event->setRequest(['url' => 'https://app.test/workspaces/acme/dossiers/12']);
 
     expect(RedactsPortalTokensFromEvents::redact($event)->getRequest()['url'])
-        ->toBe('https://acme.qompose.test/dossiers/12');
+        ->toBe('https://app.test/workspaces/acme/dossiers/12');
 });
 
 test('redaction tolerates an event with no request, transaction, or breadcrumbs', function (): void {

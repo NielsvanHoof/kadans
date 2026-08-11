@@ -24,7 +24,6 @@ final class ClientPortalUploadController extends Controller
      * Accept a client upload for one document request on the grant's dossier.
      */
     public function store(
-        string $tenant,
         StorePortalUploadedDocumentRequest $request,
         int $documentRequest,
         SubmitPortalUploadAction $submitPortalUpload,
@@ -59,7 +58,6 @@ final class ClientPortalUploadController extends Controller
      * Remove one file from a multi-file document request, before it's reviewed.
      */
     public function destroy(
-        string $tenant,
         Request $request,
         int $documentRequest,
         int $uploadedDocument,

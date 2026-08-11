@@ -10,11 +10,8 @@ use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\ClientPortal\Support\PortalDeviceFingerprint;
 use App\Shared\Http\Controllers\Controller;
-use App\Tenancy\Models\Tenant;
-use App\Tenancy\Support\TenantHostname;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 use function max;
@@ -24,24 +21,13 @@ final class ClientPortalSessionController extends Controller
 {
     public function __invoke(
         Request $request,
-        string $tenant,
         string $token,
         ResolveClientAccessGrantFromTokenAction $resolveClientAccessGrantFromToken,
         RegisterClientPortalDeviceAction $registerClientPortalDevice,
     ): RedirectResponse {
-        $hostname = resolve(TenantHostname::class);
-        abort_unless($hostname->isValidTenantSlug($tenant), Response::HTTP_NOT_FOUND);
-
         $grant = $resolveClientAccessGrantFromToken->handle($token);
 
         abort_unless($grant instanceof ClientAccessGrant, Response::HTTP_NOT_FOUND);
-
-        // Token must belong to the firm named by the subdomain.
-        $grantTenant = Tenant::query()->find($grant->tenant_id);
-        abort_unless(
-            $grantTenant instanceof Tenant && $grantTenant->slug === $tenant,
-            Response::HTTP_NOT_FOUND,
-        );
 
         // Redemption is the security event, so the device is checked here rather
         // than per request: once a session exists the device cannot change.
@@ -73,8 +59,6 @@ final class ClientPortalSessionController extends Controller
         // StartSession stores successful GET URLs after the controller returns.
         // Prevent the redeemed bearer URL from being copied to `_previous.url`.
         $request->headers->set('X-Requested-With', 'XMLHttpRequest');
-
-        URL::defaults(['tenant' => $grantTenant->slug]);
 
         return to_route('portal.show');
     }

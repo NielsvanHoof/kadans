@@ -11,11 +11,10 @@ use Illuminate\Support\Facades\Route;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 /*
- * Staff workspace routes on {tenant}.{base_domain}, split per domain under
- * routes/tenant/. Middleware and name prefix are applied once here.
+ * Staff workspace routes, split per domain under routes/tenant/.
+ * The middleware stack, prefix, and name prefix are applied once here
+ * so every domain file only declares its own routes.
  */
-$tenantDomain = '{tenant}.'.config('tenancy-hosts.base_domain');
-
 Route::middleware([
     'web',
     'auth',
@@ -29,8 +28,7 @@ Route::middleware([
     // team context set before it can read the user's role in this workspace.
     RequireTwoFactorAuthentication::class,
 ])
-    ->domain($tenantDomain)
-    ->where(['tenant' => '[a-z0-9]([a-z0-9-]*[a-z0-9])?'])
+    ->prefix('workspaces/{tenant:slug}')
     ->name('workspaces.')
     ->group(function (): void {
         require __DIR__.'/tenant/reporting.php';

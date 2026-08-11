@@ -110,7 +110,7 @@ Use `--prune` only when you intend to delete Spatie permission rows that no long
 
 ## Role management UI
 
-`{tenant}.{base}/roles` renders a roles × permissions matrix, gated by
+`workspaces/{tenant:slug}/roles` renders a roles × permissions matrix, gated by
 `WorkspacePermission::ViewRoles` (`roles.view`, default: Administrator) through
 [`TenantRolePolicy`](../app/Tenancy/Policies/TenantRolePolicy.php).
 

@@ -71,7 +71,7 @@ test('users cannot read dossiers from another tenant via id guessing', function 
         ->assertNotFound();
 });
 
-test('the workspace host takes precedence over the session tenant', function (): void {
+test('the workspace in the url takes precedence over the session tenant', function (): void {
     $user = User::factory()->create();
 
     ['tenant' => $tenantA] = provisionWorkspace('Tenant A', $user);
@@ -138,9 +138,7 @@ test('tenant routes are registered with the expected middleware', function (): v
         ->toContain(EnsureValidTenantMembership::class)
         ->toContain(SetPermissionTeamContext::class)->not->toContain(EnsureValidTenantSession::class)
         ->and($route->uri())
-        ->toBe('dossiers')
-        ->and($route->getDomain())
-        ->toBe('{tenant}.'.config('tenancy-hosts.base_domain'));
+        ->toBe('workspaces/{tenant}/dossiers');
 });
 
 test('workspace pages load tenant memberships only once', function (): void {

@@ -67,19 +67,19 @@ test('portal upload is rejected when the dossier byte quota would be exceeded', 
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
     // Fake size is kilobytes — 120 KB pushes the dossier over the remaining ~1 KB.
     $file = UploadedFile::fake()->create('statement.pdf', 120, 'application/pdf');
 
-    $this->from(portalRoute('portal.show', $context['tenant']))
+    $this->from(route('portal.show'))
         ->post(
-            portalRoute('portal.document-requests.upload', $context['tenant'], [
+            route('portal.document-requests.upload', [
                 'documentRequest' => $openRequest->id,
             ]),
             ['documents' => [$file]],
         )
-        ->assertRedirect(portalRoute('portal.show', $context['tenant']))
+        ->assertRedirect(route('portal.show'))
         ->assertSessionHasErrors([
             'documents' => 'This dossier has reached its portal upload limit of '.DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER_LABEL.'. Remove a file or contact your advisor.',
         ]);
@@ -115,14 +115,14 @@ test('portal upload succeeds when the dossier is still under the byte quota', fu
         'size_bytes' => 50_000,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
     $this->post(
-        portalRoute('portal.document-requests.upload', $context['tenant'], [
+        route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
         ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
-    )->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    )->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);
 

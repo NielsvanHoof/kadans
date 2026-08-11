@@ -10,7 +10,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Uri;
 use LogicException;
 
-use function array_slice;
 use function in_array;
 use function is_array;
 use function is_string;
@@ -224,35 +223,16 @@ final readonly class ProductionConfigurationValidator
      * Compared case-insensitively because DNS is: `Uri::of()` lowercases the
      * host it parses, so a `session.domain` of `App.Example.com` would otherwise
      * be rejected despite naming the same host.
-     *
-     * Accepts either the exact APP_URL host (single-host) or the parent cookie
-     * domain (with or without a leading dot) so sessions can span app.{base}
-     * and {slug}.{base}.
      */
     private function hasSecureSessionDomain(): bool
     {
         $applicationHost = Uri::of((string) $this->config->get('app.url'))->host();
         $sessionDomain = $this->config->get('session.domain');
 
-        if (! is_string($applicationHost) || $applicationHost === '' || ! is_string($sessionDomain) || $sessionDomain === '') {
-            return false;
-        }
-
-        $applicationHost = mb_strtolower($applicationHost);
-        $sessionDomain = mb_strtolower($sessionDomain);
-        $normalizedSessionDomain = mb_ltrim($sessionDomain, '.');
-
-        if ($normalizedSessionDomain === $applicationHost) {
-            return true;
-        }
-
-        if (! str_contains($applicationHost, '.')) {
-            return false;
-        }
-
-        $parentDomain = implode('.', array_slice(explode('.', $applicationHost), 1));
-
-        return $normalizedSessionDomain === $parentDomain;
+        return is_string($applicationHost)
+            && $applicationHost !== ''
+            && is_string($sessionDomain)
+            && mb_strtolower($sessionDomain) === $applicationHost;
     }
 
     /**

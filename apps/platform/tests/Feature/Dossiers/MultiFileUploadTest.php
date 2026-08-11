@@ -211,14 +211,14 @@ test('portal client can upload multiple files in one submission', function (): v
     $context = createMultiFilePortalWorkspace();
     $documentRequest = makeMultiFileDocumentRequest($context['tenant'], $context['dossier']);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->post(portalRoute('portal.document-requests.upload', $context['tenant'], ['documentRequest' => $documentRequest->id]), [
+    $this->post(route('portal.document-requests.upload', ['documentRequest' => $documentRequest->id]), [
         'documents' => [
             UploadedFile::fake()->create('payslip-jan.pdf', 100, 'application/pdf'),
             UploadedFile::fake()->create('payslip-feb.pdf', 100, 'application/pdf'),
         ],
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);
 
@@ -230,17 +230,17 @@ test('portal client can submit a second batch of files after the first is alread
     $context = createMultiFilePortalWorkspace();
     $documentRequest = makeMultiFileDocumentRequest($context['tenant'], $context['dossier']);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $uploadUrl = portalRoute('portal.document-requests.upload', $context['tenant'], ['documentRequest' => $documentRequest->id]);
+    $uploadUrl = route('portal.document-requests.upload', ['documentRequest' => $documentRequest->id]);
 
     $this->post($uploadUrl, [
         'documents' => [UploadedFile::fake()->create('payslip-jan.pdf', 100, 'application/pdf')],
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     $this->post($uploadUrl, [
         'documents' => [UploadedFile::fake()->create('payslip-feb.pdf', 100, 'application/pdf')],
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);
 
@@ -262,12 +262,12 @@ test('portal client can remove one of their uploaded files before review', funct
     ]);
     Storage::disk('local')->put($removed->path, 'contents');
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->delete(portalRoute('portal.document-requests.uploaded-documents.destroy', $context['tenant'], [
+    $this->delete(route('portal.document-requests.uploaded-documents.destroy', [
         'documentRequest' => $documentRequest->id,
         'uploadedDocument' => $removed->id,
-    ]))->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ]))->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);
 
@@ -285,9 +285,9 @@ test('portal client cannot remove a file once the request is under review', func
         'document_request_id' => $documentRequest->id,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->delete(portalRoute('portal.document-requests.uploaded-documents.destroy', $context['tenant'], [
+    $this->delete(route('portal.document-requests.uploaded-documents.destroy', [
         'documentRequest' => $documentRequest->id,
         'uploadedDocument' => $uploaded->id,
     ]))->assertNotFound();

@@ -62,7 +62,7 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'non-Redis sessions' => ['session.driver', 'file'],
     'unencrypted sessions' => ['session.encrypt', false],
     'insecure session cookie' => ['session.secure', false],
-    'wrong session domain' => ['session.domain', 'evil.com'],
+    'wrong session domain' => ['session.domain', 'example.com'],
     'local document storage' => ['filesystems.default', 'local'],
     'suppressed storage exceptions' => ['filesystems.disks.s3.throw', false],
     'unreported storage exceptions' => ['filesystems.disks.s3.report', false],
@@ -135,8 +135,6 @@ test('a valid application URL is accepted whatever its casing', function (string
     'uppercase scheme' => ['HTTPS://app.example.com', 'app.example.com'],
     'mixed-case host' => ['https://App.Example.com', 'app.example.com'],
     'mixed-case session domain' => ['https://app.example.com', 'App.Example.com'],
-    'parent session domain with dot' => ['https://app.example.com', '.example.com'],
-    'parent session domain without dot' => ['https://app.example.com', 'example.com'],
 ]);
 
 test('non-production environments may use local services', function (): void {

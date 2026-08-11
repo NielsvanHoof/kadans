@@ -68,13 +68,13 @@ test('last portal answer submission broadcasts questionnaire completed to the wo
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
+    $this->post(route('portal.document-requests.answer', [
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     Event::assertDispatched(function (ClientQuestionnaireCompleted $event) use ($context): bool {
         expect($event->tenantSlug)->toBe($context['tenant']->slug)
@@ -118,13 +118,13 @@ test('partial portal submission does not broadcast questionnaire completed', fun
         'sort_order' => 1,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
+    $this->post(route('portal.document-requests.answer', [
         'documentRequest' => $first,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     Event::assertNotDispatched(ClientQuestionnaireCompleted::class);
 
@@ -161,13 +161,13 @@ test('resubmitting after rejection broadcasts questionnaire completed again', fu
         'status' => DocumentRequestStatus::Rejected,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
+    $this->post(route('portal.document-requests.answer', [
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => 'Updated address',
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     Event::assertDispatched(ClientQuestionnaireCompleted::class);
 });
@@ -194,13 +194,13 @@ test('last portal submission creates database notifications for active members o
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
+    $this->post(route('portal.document-requests.answer', [
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     expect($context['owner']->fresh()->notifications)->toHaveCount(1)
         ->and($activeMember->fresh()->notifications)->toHaveCount(1)
@@ -243,13 +243,13 @@ test('partial portal submission does not create database notifications', functio
         'sort_order' => 1,
     ]);
 
-    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
+    $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
+    $this->post(route('portal.document-requests.answer', [
         'documentRequest' => $first,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
+    ])->assertRedirect(route('portal.show'));
 
     Notification::assertNothingSent();
 });

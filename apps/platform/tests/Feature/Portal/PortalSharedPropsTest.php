@@ -24,10 +24,10 @@ test('portal shared props expose the firm name without the workspace slug', func
 
     $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
-    $this->get(portalRoute('portal.exchange', $tenant, ['token' => $result['plain_text_token']]))
-        ->assertRedirect(portalRoute('portal.show', $tenant));
+    $this->get(route('portal.exchange', $result['plain_text_token']))
+        ->assertRedirect(route('portal.show'));
 
-    $this->get(portalRoute('portal.show', $tenant))
+    $this->get(route('portal.show'))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('portal/show')

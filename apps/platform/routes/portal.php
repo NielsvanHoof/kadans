@@ -10,20 +10,14 @@ use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use Illuminate\Support\Facades\Route;
 
-/*
- * Guest client portal on {tenant}.{base} — magic links embed the firm subdomain.
- */
-$tenantDomain = '{tenant}.'.config('tenancy-hosts.base_domain');
-
+/* Guest client portal — magic links are exchanged for restricted sessions. */
 Route::middleware([
     'web',
     'throttle:30,1',
     HardenClientPortalResponse::class,
 ])
-    ->domain($tenantDomain)
     ->prefix('portal')
     ->name('portal.')
-    ->where(['tenant' => '[a-z0-9]([a-z0-9-]*[a-z0-9])?'])
     ->group(function (): void {
         Route::get('access/{token}', ClientPortalSessionController::class)
             ->where('token', '[A-Za-z0-9]+')
