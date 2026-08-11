@@ -72,15 +72,15 @@ test('guest exchanges a valid access token for a restricted portal session', fun
         'title' => 'Payslip January 2025',
     ]);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']))
-        ->assertRedirect(route('portal.show'))
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]))
+        ->assertRedirect(portalRoute('portal.show', $context['tenant']))
         ->assertSessionHas(ResolveClientPortalGrant::SESSION_GRANT_ID, $context['grant']->id)
         ->assertSessionHas(ResolveClientPortalGrant::SESSION_EXPIRES_AT);
 
     expect((string) json_encode(session()->all()))
         ->not->toContain($context['plainTextToken']);
 
-    $response = $this->get(route('portal.show'));
+    $response = $this->get(portalRoute('portal.show', $context['tenant']));
 
     $response
         ->assertOk()
@@ -121,23 +121,23 @@ test('guest exchanges a valid access token for a restricted portal session', fun
 test('invalid or revoked portal tokens are rejected', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $this->get(route('portal.exchange', 'not-a-real-token'))
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => 'not-a-real-token']))
         ->assertNotFound()
         ->assertHeader('Cache-Control', 'max-age=0, must-revalidate, no-store, private')
         ->assertHeader('Referrer-Policy', 'no-referrer')
         ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
 
-    $this->get(route('portal.exchange', $context['plainTextToken']))
-        ->assertRedirect(route('portal.show'));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]))
+        ->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
     actingInWorkspace($context['tenant']);
     $context['grant']->update(['revoked_at' => now()]);
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $context['tenant']))
         ->assertNotFound()
         ->assertSessionMissing(ResolveClientPortalGrant::SESSION_GRANT_ID);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']))
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]))
         ->assertNotFound()
         ->assertHeader('Cache-Control', 'max-age=0, must-revalidate, no-store, private')
         ->assertHeader('Referrer-Policy', 'no-referrer');
@@ -146,14 +146,14 @@ test('invalid or revoked portal tokens are rejected', function (): void {
 test('portal routes require a live restricted session', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $this->get(route('portal.show'))->assertNotFound();
+    $this->get(portalRoute('portal.show', $context['tenant']))->assertNotFound();
 
-    $this->get(route('portal.exchange', $context['plainTextToken']))
-        ->assertRedirect(route('portal.show'));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]))
+        ->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
     $this->travel(16)->minutes();
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $context['tenant']))
         ->assertNotFound()
         ->assertSessionMissing(ResolveClientPortalGrant::SESSION_GRANT_ID)
         ->assertSessionMissing(ResolveClientPortalGrant::SESSION_EXPIRES_AT);
@@ -174,14 +174,14 @@ test('guest can upload a document through the portal', function (): void {
 
     $file = UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf');
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
     $this->post(
-        route('portal.document-requests.upload', [
+        portalRoute('portal.document-requests.upload', $context['tenant'], [
             'documentRequest' => $documentRequest->id,
         ]),
         ['documents' => [$file]],
-    )->assertRedirect(route('portal.show'));
+    )->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
     actingInWorkspace($context['tenant']);
 
@@ -205,10 +205,10 @@ test('portal cannot upload while a file item awaits review', function (): void {
         'status' => DocumentRequestStatus::Submitted,
     ]);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
     $this->post(
-        route('portal.document-requests.upload', [
+        portalRoute('portal.document-requests.upload', $context['tenant'], [
             'documentRequest' => $documentRequest->id,
         ]),
         ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
@@ -231,9 +231,9 @@ test('portal cannot answer while a text item awaits review', function (): void {
         'status' => DocumentRequestStatus::Submitted,
     ]);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => '221B Baker Street',
@@ -284,19 +284,19 @@ test('a saved choice answer reveals the matching conditional field on the portal
         ],
     ]);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 1)
             ->where('dossier.document_requests.0.id', $choiceRequest->id));
 
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
         'documentRequest' => $choiceRequest,
     ]), [
         'answer_option_ids' => [$yesOptionId],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
     $choiceRequest->refresh();
 
@@ -304,7 +304,7 @@ test('a saved choice answer reveals the matching conditional field on the portal
         ->status->toBe(DocumentRequestStatus::Submitted)
         ->answer_option_ids->toBe([$yesOptionId]);
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 2)
@@ -327,10 +327,10 @@ test('portal upload cannot target a document request from another dossier', func
         'title' => 'Foreign request',
     ]);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
     $this->post(
-        route('portal.document-requests.upload', [
+        portalRoute('portal.document-requests.upload', $context['tenant'], [
             'documentRequest' => $foreignRequest->id,
         ]),
         ['documents' => [UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')]],
@@ -355,11 +355,11 @@ test('portal upload rolls back database and storage when its audit record fails'
         throw_if($activity->event === AuditEvent::DocumentUploaded->value, RuntimeException::class, 'Simulated audit failure.');
     });
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
     try {
         $this->post(
-            route('portal.document-requests.upload', [
+            portalRoute('portal.document-requests.upload', $context['tenant'], [
                 'documentRequest' => $documentRequest->id,
             ]),
             ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
@@ -397,10 +397,10 @@ test('portal answer rolls back when its audit record fails', function (): void {
         throw_if($activity->event === AuditEvent::QuestionnaireAnswerSubmitted->value, RuntimeException::class, 'Simulated audit failure.');
     });
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
     try {
-        $this->post(route('portal.document-requests.answer', [
+        $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
             'documentRequest' => $documentRequest,
         ]), [
             'answer_text' => '221B Baker Street',
@@ -549,7 +549,7 @@ test('portal invitation delivery outcomes are audited without the bearer url', f
     $notification = new ClientPortalInviteNotification(
         grantId: $context['grant']->id,
         dossier: $context['dossier'],
-        portalUrl: route('portal.exchange', $context['plainTextToken']),
+        portalUrl: portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]),
         expiresAt: $context['grant']->expires_at,
         firmName: $context['tenant']->name,
     );
@@ -588,7 +588,7 @@ test('delivery audit failures are reported without retrying a delivered invitati
     $notification = new ClientPortalInviteNotification(
         grantId: $context['grant']->id,
         dossier: $context['dossier'],
-        portalUrl: route('portal.exchange', $context['plainTextToken']),
+        portalUrl: portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]),
         expiresAt: $context['grant']->expires_at,
         firmName: $context['tenant']->name,
     );
@@ -659,11 +659,11 @@ test('grant issuance rolls back when its audit transaction fails', function (): 
 test('portal locale follows the browser language when no cookie is set', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $this->get(route('portal.exchange', $context['plainTextToken']))
-        ->assertRedirect(route('portal.show'));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]))
+        ->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
     $this->withHeaders(['Accept-Language' => 'nl-NL,nl;q=0.9,en;q=0.8'])
-        ->get(route('portal.show'))
+        ->get(portalRoute('portal.show', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('locale', 'nl')
@@ -684,12 +684,12 @@ test('portal locale follows the browser language when no cookie is set', functio
 test('portal locale cookie overrides the browser language', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $this->get(route('portal.exchange', $context['plainTextToken']))
-        ->assertRedirect(route('portal.show'));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]))
+        ->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
     $this->withHeaders(['Accept-Language' => 'en-US,en;q=0.9'])
         ->withUnencryptedCookie('locale', 'nl')
-        ->get(route('portal.show'))
+        ->get(portalRoute('portal.show', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('locale', 'nl')

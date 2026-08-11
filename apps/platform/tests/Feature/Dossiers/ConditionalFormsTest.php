@@ -159,20 +159,20 @@ test('multi-select visibility matches when any selected option overlaps', functi
         ],
     ]);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 1));
 
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
         'documentRequest' => $multiSelect,
     ]), [
         'answer_option_ids' => [$optionB, $optionA],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $context['tenant']))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossier.document_requests', 2)
@@ -304,10 +304,10 @@ test('an answer is rejected when it selects an option the field does not offer',
         ],
     ]);
 
-    $this->get(route('portal.exchange', $context['plainTextToken']));
+    $this->get(portalRoute('portal.exchange', $context['tenant'], ['token' => $context['plainTextToken']]));
 
     // A well-formed uuid that belongs to no option on this field.
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
         'documentRequest' => $choice,
     ]), [
         'answer_option_ids' => [(string) Str::uuid()],
@@ -315,11 +315,11 @@ test('an answer is rejected when it selects an option the field does not offer',
 
     expect($choice->fresh()->answer_option_ids)->toBeNull();
 
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $context['tenant'], [
         'documentRequest' => $choice,
     ]), [
         'answer_option_ids' => [$configuredOptionId],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(portalRoute('portal.show', $context['tenant']));
 
     expect($choice->fresh()->answer_option_ids)->toBe([$configuredOptionId]);
 });

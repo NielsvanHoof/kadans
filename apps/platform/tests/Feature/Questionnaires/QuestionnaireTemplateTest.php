@@ -487,10 +487,10 @@ test('guest can submit text, date, and boolean answers through the portal', func
     $grant = $result['grant'];
 
     // The frontend registry relies on these enum values being serialized unchanged.
-    $this->get(route('portal.exchange', $plainTextToken))
-        ->assertRedirect(route('portal.show'));
+    $this->get(portalRoute('portal.exchange', $tenant, ['token' => $plainTextToken]))
+        ->assertRedirect(portalRoute('portal.show', $tenant));
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('portal/show')
@@ -500,23 +500,23 @@ test('guest can submit text, date, and boolean answers through the portal', func
                 ->values()
                 ->all() === ['boolean', 'date', 'file', 'text']));
 
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $tenant, [
         'documentRequest' => $textRequest->id,
     ]), [
         'answer_text' => 'Keizersgracht 1, Amsterdam',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(portalRoute('portal.show', $tenant));
 
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $tenant, [
         'documentRequest' => $booleanRequest->id,
     ]), [
         'answer_boolean' => true,
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(portalRoute('portal.show', $tenant));
 
-    $this->post(route('portal.document-requests.answer', [
+    $this->post(portalRoute('portal.document-requests.answer', $tenant, [
         'documentRequest' => $dateRequest->id,
     ]), [
         'answer_text' => '2026-07-27',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(portalRoute('portal.show', $tenant));
 
     actingInWorkspace($tenant);
 

@@ -49,11 +49,14 @@ final readonly class ClientPortalReminderDispatcher implements ClientPortalRemin
             self::GRANT_TTL_DAYS,
         );
 
-        $firmName = $dossier->tenant instanceof Tenant
-            ? $dossier->tenant->name
-            : (string) config('app.name');
+        $tenant = $dossier->tenant;
+
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Dossier tenant is missing.');
+
+        $firmName = $tenant->name;
 
         $portalUrl = URL::route('portal.exchange', [
+            'tenant' => $tenant,
             'token' => $result['plain_text_token'],
         ]);
 

@@ -52,9 +52,9 @@ test('portal client cannot destroy an upload that belongs to another dossier', f
         'document_request_id' => $otherRequest->id,
     ]);
 
-    $this->get(route('portal.exchange', $grantResult['plain_text_token']));
+    $this->get(portalRoute('portal.exchange', $tenant, ['token' => $grantResult['plain_text_token']]));
 
-    $this->delete(route('portal.document-requests.uploaded-documents.destroy', [
+    $this->delete(portalRoute('portal.document-requests.uploaded-documents.destroy', $tenant, [
         'documentRequest' => $otherRequest->id,
         'uploadedDocument' => $foreignUpload->id,
     ]))->assertNotFound();
@@ -102,9 +102,9 @@ test('portal client cannot destroy an upload that belongs to another tenant', fu
         'document_request_id' => $foreignRequest->id,
     ]);
 
-    $this->get(route('portal.exchange', $homeGrant['plain_text_token']));
+    $this->get(portalRoute('portal.exchange', $homeTenant, ['token' => $homeGrant['plain_text_token']]));
 
-    $this->delete(route('portal.document-requests.uploaded-documents.destroy', [
+    $this->delete(portalRoute('portal.document-requests.uploaded-documents.destroy', $homeTenant, [
         'documentRequest' => $foreignRequest->id,
         'uploadedDocument' => $foreignUpload->id,
     ]))->assertNotFound();

@@ -331,11 +331,11 @@ test('portal reports progress and records the latest client open', function (): 
     ]);
     $grant = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
-    $this->get(route('portal.exchange', $grant['plain_text_token']))
-        ->assertRedirect(route('portal.show'))
+    $this->get(portalRoute('portal.exchange', $tenant, ['token' => $grant['plain_text_token']]))
+        ->assertRedirect(portalRoute('portal.show', $tenant))
         ->assertSessionHas(ResolveClientPortalGrant::SESSION_GRANT_ID);
 
-    $this->get(route('portal.show'))
+    $this->get(portalRoute('portal.show', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->where('dossier.progress.total', 3)

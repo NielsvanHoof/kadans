@@ -21,6 +21,7 @@ final class ClientPortalAnswerController extends Controller
      * Accept a text or yes/no answer from the client portal.
      */
     public function store(
+        string $tenant,
         StorePortalQuestionnaireAnswerRequest $request,
         DocumentRequest $documentRequest,
         SubmitPortalAnswerAction $submitPortalAnswer,

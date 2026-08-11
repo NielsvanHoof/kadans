@@ -41,7 +41,7 @@ const DIFFERENT_DEVICE = [
 ];
 
 /**
- * @return array{grant: ClientAccessGrant, token: string, dossier: Dossier, responsible: User}
+ * @return array{grant: ClientAccessGrant, token: string, dossier: Dossier, responsible: User, tenant: \App\Tenancy\Models\Tenant}
  */
 function portalGrantContext(?User $responsible = null): array
 {
@@ -63,17 +63,18 @@ function portalGrantContext(?User $responsible = null): array
         'token' => $result['plain_text_token'],
         'dossier' => $dossier,
         'responsible' => $responsible,
+        'tenant' => $tenant,
     ];
 }
 
 test('the first redemption records the device without alerting anyone', function (): void {
     Notification::fake();
 
-    ['grant' => $grant, 'token' => $token] = portalGrantContext();
+    ['grant' => $grant, 'token' => $token, 'tenant' => $tenant] = portalGrantContext();
 
     $this->withServerVariables(FIRST_DEVICE)
-        ->get(route('portal.exchange', $token))
-        ->assertRedirect(route('portal.show'));
+        ->get(portalRoute('portal.exchange', $tenant, ['token' => $token]))
+        ->assertRedirect(portalRoute('portal.show', $tenant));
 
     $grant->refresh();
 
@@ -86,14 +87,14 @@ test('the first redemption records the device without alerting anyone', function
 test('reopening from the same device stays quiet', function (): void {
     Notification::fake();
 
-    ['grant' => $grant, 'token' => $token] = portalGrantContext();
+    ['grant' => $grant, 'token' => $token, 'tenant' => $tenant] = portalGrantContext();
 
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $token));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
     $original = $grant->refresh()->device_fingerprint;
 
     $this->withServerVariables(FIRST_DEVICE)
-        ->get(route('portal.exchange', $token))
-        ->assertRedirect(route('portal.show'));
+        ->get(portalRoute('portal.exchange', $tenant, ['token' => $token]))
+        ->assertRedirect(portalRoute('portal.show', $tenant));
 
     expect($grant->refresh()->device_fingerprint)->toBe($original)
         ->and($grant->new_device_seen_at)->toBeNull();
@@ -108,13 +109,13 @@ test('reopening from the same device stays quiet', function (): void {
 test('a browser update on the same network is still the same device', function (): void {
     Notification::fake();
 
-    ['grant' => $grant, 'token' => $token] = portalGrantContext();
+    ['grant' => $grant, 'token' => $token, 'tenant' => $tenant] = portalGrantContext();
 
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $token));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
 
     $this->withServerVariables(SAME_NETWORK_NEWER_BROWSER)
-        ->get(route('portal.exchange', $token))
-        ->assertRedirect(route('portal.show'));
+        ->get(portalRoute('portal.exchange', $tenant, ['token' => $token]))
+        ->assertRedirect(portalRoute('portal.show', $tenant));
 
     expect($grant->refresh()->new_device_seen_at)->toBeNull();
 
@@ -124,14 +125,14 @@ test('a browser update on the same network is still the same device', function (
 test('a genuinely different device lets the client in and tells the responsible member', function (): void {
     Notification::fake();
 
-    ['grant' => $grant, 'token' => $token, 'responsible' => $responsible, 'dossier' => $dossier] = portalGrantContext();
+    ['grant' => $grant, 'token' => $token, 'responsible' => $responsible, 'dossier' => $dossier, 'tenant' => $tenant] = portalGrantContext();
     $otherMember = workspaceMember($dossier->tenant, Role::Adviser);
 
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $token));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
 
     $this->withServerVariables(DIFFERENT_DEVICE)
-        ->get(route('portal.exchange', $token))
-        ->assertRedirect(route('portal.show'));
+        ->get(portalRoute('portal.exchange', $tenant, ['token' => $token]))
+        ->assertRedirect(portalRoute('portal.show', $tenant));
 
     expect($grant->refresh()->new_device_seen_at)->not->toBeNull();
 
@@ -158,12 +159,12 @@ test('a genuinely different device lets the client in and tells the responsible 
 test('only one alert is raised per grant however many devices open it', function (): void {
     Notification::fake();
 
-    ['token' => $token] = portalGrantContext();
+    ['token' => $token, 'tenant' => $tenant] = portalGrantContext();
 
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $token));
-    $this->withServerVariables(DIFFERENT_DEVICE)->get(route('portal.exchange', $token));
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $token));
-    $this->withServerVariables(DIFFERENT_DEVICE)->get(route('portal.exchange', $token));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
+    $this->withServerVariables(DIFFERENT_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
+    $this->withServerVariables(DIFFERENT_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
 
     Notification::assertSentTimes(ClientPortalNewDeviceNotification::class, 1);
 
@@ -186,8 +187,8 @@ test('every active member is told when a dossier has no responsible user', funct
 
     $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $result['plain_text_token']));
-    $this->withServerVariables(DIFFERENT_DEVICE)->get(route('portal.exchange', $result['plain_text_token']));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $result['plain_text_token']]));
+    $this->withServerVariables(DIFFERENT_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $result['plain_text_token']]));
 
     Notification::assertSentTo($owner, ClientPortalNewDeviceNotification::class);
 });
@@ -196,16 +197,16 @@ test('block mode refuses an unfamiliar device as a 404', function (): void {
     Notification::fake();
     config(['portal.new_device_action' => NewPortalDeviceAction::Block->value]);
 
-    ['grant' => $grant, 'token' => $token] = portalGrantContext();
+    ['grant' => $grant, 'token' => $token, 'tenant' => $tenant] = portalGrantContext();
 
     $this->withServerVariables(FIRST_DEVICE)
-        ->get(route('portal.exchange', $token))
-        ->assertRedirect(route('portal.show'));
+        ->get(portalRoute('portal.exchange', $tenant, ['token' => $token]))
+        ->assertRedirect(portalRoute('portal.show', $tenant));
 
     // A 404, not a 403: a probe must not be able to tell a blocked device from
     // a token that never existed.
     $this->withServerVariables(DIFFERENT_DEVICE)
-        ->get(route('portal.exchange', $token))
+        ->get(portalRoute('portal.exchange', $tenant, ['token' => $token]))
         ->assertNotFound();
 
     expect(Activity::query()
@@ -228,12 +229,12 @@ test('ignore mode records nothing at all', function (): void {
     Notification::fake();
     config(['portal.new_device_action' => NewPortalDeviceAction::Ignore->value]);
 
-    ['grant' => $grant, 'token' => $token] = portalGrantContext();
+    ['grant' => $grant, 'token' => $token, 'tenant' => $tenant] = portalGrantContext();
 
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $token));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
     $this->withServerVariables(DIFFERENT_DEVICE)
-        ->get(route('portal.exchange', $token))
-        ->assertRedirect(route('portal.show'));
+        ->get(portalRoute('portal.exchange', $tenant, ['token' => $token]))
+        ->assertRedirect(portalRoute('portal.show', $tenant));
 
     $grant->refresh();
 
@@ -250,10 +251,10 @@ test('an unrecognised policy falls back to notifying', function (): void {
     Notification::fake();
     config(['portal.new_device_action' => 'notifyy']);
 
-    ['token' => $token, 'responsible' => $responsible] = portalGrantContext();
+    ['token' => $token, 'responsible' => $responsible, 'tenant' => $tenant] = portalGrantContext();
 
-    $this->withServerVariables(FIRST_DEVICE)->get(route('portal.exchange', $token));
-    $this->withServerVariables(DIFFERENT_DEVICE)->get(route('portal.exchange', $token));
+    $this->withServerVariables(FIRST_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
+    $this->withServerVariables(DIFFERENT_DEVICE)->get(portalRoute('portal.exchange', $tenant, ['token' => $token]));
 
     Notification::assertSentTo($responsible, ClientPortalNewDeviceNotification::class);
 });

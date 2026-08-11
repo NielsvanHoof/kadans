@@ -7,15 +7,23 @@ namespace App\Tenancy\Http\Middleware;
 use App\Accounts\Models\User;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Support\TenantHostname;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 use function is_string;
 
+/**
+ * Resolve the current tenant from the {tenant} subdomain route parameter.
+ */
 final readonly class InitializeTenantFromRoute
 {
-    public function __construct(private SupportSessionState $supportSession) {}
+    public function __construct(
+        private SupportSessionState $supportSession,
+        private TenantHostname $tenantHostname,
+    ) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -32,6 +40,7 @@ final readonly class InitializeTenantFromRoute
             : (is_string($tenantParameter) ? $tenantParameter : null);
 
         abort_if($tenantSlug === null, Response::HTTP_NOT_FOUND);
+        abort_unless($this->tenantHostname->isValidTenantSlug($tenantSlug), Response::HTTP_NOT_FOUND);
 
         $tenant = Tenant::query()->where('slug', $tenantSlug)->first();
 
@@ -47,6 +56,7 @@ final readonly class InitializeTenantFromRoute
         $tenant->makeCurrent();
         $request->route()?->setParameter('tenant', $tenant);
         $request->session()->put('active_tenant_id', $tenant->id);
+        URL::defaults(['tenant' => $tenant->slug]);
 
         return $next($request);
     }

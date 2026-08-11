@@ -9,6 +9,7 @@ use App\Tenancy\Enums\Role as RoleEnum;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Support\TenantHostname;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -61,9 +62,15 @@ final readonly class ProvisionTenantAction
 
     private function createTenantWithAvailableSlug(string $name, ?string $requestedSlug): Tenant
     {
+        $hostname = resolve(TenantHostname::class);
         $baseSlug = Str::slug($requestedSlug ?? $name);
 
-        if ($baseSlug === '') {
+        if ($baseSlug === '' || $hostname->isReservedSubdomain($baseSlug)) {
+            $baseSlug = 'workspace';
+        }
+
+        // Keep walking suffixes until the candidate is a valid DNS tenant label.
+        if (! $hostname->isValidTenantSlug($baseSlug)) {
             $baseSlug = 'workspace';
         }
 
@@ -72,7 +79,7 @@ final readonly class ProvisionTenantAction
         while (true) {
             $slug = $this->slugWithSuffix($baseSlug, $suffix);
 
-            if (Tenant::query()->where('slug', $slug)->toBase()->exists()) {
+            if (! $hostname->isValidTenantSlug($slug) || Tenant::query()->where('slug', $slug)->toBase()->exists()) {
                 $suffix++;
 
                 continue;

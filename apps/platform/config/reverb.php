@@ -3,6 +3,22 @@
 declare(strict_types=1);
 
 $applicationHost = parse_url((string) env('APP_URL', ''), PHP_URL_HOST);
+$applicationHost = is_string($applicationHost) ? mb_strtolower($applicationHost) : '';
+
+$tenancyBaseDomain = env('TENANCY_BASE_DOMAIN');
+$tenancyBaseDomain = is_string($tenancyBaseDomain) && $tenancyBaseDomain !== ''
+    ? mb_strtolower($tenancyBaseDomain)
+    : (
+        $applicationHost !== '' && str_contains($applicationHost, '.')
+            ? implode('.', array_slice(explode('.', $applicationHost), 1))
+            : $applicationHost
+    );
+
+$reverbAllowedOrigins = $applicationHost !== '' ? [$applicationHost] : [];
+
+if ($tenancyBaseDomain !== '' && $tenancyBaseDomain !== $applicationHost) {
+    $reverbAllowedOrigins[] = '*.'.$tenancyBaseDomain;
+}
 
 return [
 
@@ -86,13 +102,10 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
-                // Secondary defense alongside a real app secret: a wildcard here
-                // lets any web page open a connection and attempt to subscribe,
-                // widening who can even try the HMAC-forging attack this app
-                // secret is meant to stop.
-                'allowed_origins' => is_string($applicationHost) && $applicationHost !== ''
-                    ? [$applicationHost]
-                    : [],
+                // Secondary defense alongside a real app secret: central host plus
+                // single-label tenant subdomains of the tenancy base. Bare `*` is
+                // still rejected by the production configuration validator.
+                'allowed_origins' => $reverbAllowedOrigins,
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),

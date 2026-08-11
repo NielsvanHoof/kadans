@@ -29,12 +29,17 @@ final class SendClientPortalInviteAction
 
         throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
 
-        $firmName = $dossier->tenant instanceof Tenant
-            ? $dossier->tenant->name
-            : (string) config('app.name');
+        $tenant = $dossier->tenant;
 
-        // Absolute portal URL embedding the one-time plain token.
-        $portalUrl = URL::route('portal.exchange', ['token' => $plainTextToken]);
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Dossier tenant is missing.');
+
+        $firmName = $tenant->name;
+
+        // Absolute portal URL embedding the one-time plain token on the firm host.
+        $portalUrl = URL::route('portal.exchange', [
+            'tenant' => $tenant,
+            'token' => $plainTextToken,
+        ]);
 
         Notification::route('mail', $client->email)
             ->notify(

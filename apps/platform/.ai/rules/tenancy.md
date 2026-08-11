@@ -10,7 +10,9 @@ The app runs on Octane (FrankenPHP) — workers boot once and serve many request
 
 `TenantContext` is the reference implementation: the strict-scoping flag lives in Laravel's `Context` (`Context::addHidden` / `forgetHidden`), not a static, precisely so it cannot survive into the next request on a reused worker. Follow that pattern for anything request-scoped.
 
-`TenantContext::runForTenant()` is the single entry point for console and async code that must run as a tenant. HTTP sets the tenant via middleware instead.
+`TenantContext::runForTenant()` is the single entry point for console and async code that must run as a tenant. HTTP sets the tenant via middleware instead (`InitializeTenantFromRoute` on `{slug}.{base}`, `InitializeTenantFromSession` on the central app host).
+
+Tenant slugs are DNS labels on `{slug}.{base_domain}` (see `config/tenancy-hosts.php`). Reserved first labels (`app`, `www`, `mail`, `api`, …) must never become firm slugs — enforce via `TenantHostname` at provision time and in host middleware.
 
 Prefer `$this->app->scoped()` over `singleton()` for per-request services.
 

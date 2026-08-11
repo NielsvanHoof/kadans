@@ -77,7 +77,8 @@ Providers registered in [`bootstrap/providers.php`](../bootstrap/providers.php):
 routes/
 ├── web.php              # auth, session tenant; requires web/*
 ├── web/                 # reporting, tenancy/firms, platform, invitations
-├── tenant.php           # workspace staff API/UI under workspaces/{tenant:slug}
+├── tenant.php           # workspace staff API/UI on {tenant}.{base_domain}
+├── portal.php           # client portal on the same tenant host under /portal
 ├── tenant/              # clients, dossiers, members, questionnaires, …
 ├── portal.php           # guest client portal
 ├── settings.php

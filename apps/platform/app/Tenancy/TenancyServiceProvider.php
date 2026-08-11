@@ -14,9 +14,12 @@ use App\Tenancy\Policies\TenantInvitationPolicy;
 use App\Tenancy\Policies\TenantMembershipPolicy;
 use App\Tenancy\Policies\TenantRolePolicy;
 use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\TenantHostname;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Override;
+
+use function is_string;
 
 /**
  * Tenancy container bindings, policies, and support Gate overlay.
@@ -32,6 +35,29 @@ final class TenancyServiceProvider extends ServiceProvider
             static fn (): PermissionRegistry => new PermissionRegistry(
                 config()->array('tenant-permissions.enums'),
             ),
+        );
+
+        // Hostname layout is config-driven; scoped so tests can swap config mid-run.
+        $this->app->scoped(
+            TenantHostname::class,
+            static function (): TenantHostname {
+                /** @var list<string> $central */
+                $central = array_values(array_filter(
+                    config()->array('tenancy-hosts.central_domains'),
+                    static fn (mixed $host): bool => is_string($host) && $host !== '',
+                ));
+                /** @var list<string> $reserved */
+                $reserved = array_values(array_filter(
+                    config()->array('tenancy-hosts.reserved_subdomains'),
+                    static fn (mixed $label): bool => is_string($label) && $label !== '',
+                ));
+
+                return new TenantHostname(
+                    baseDomain: (string) config('tenancy-hosts.base_domain'),
+                    centralDomains: $central,
+                    reservedSubdomains: $reserved,
+                );
+            },
         );
     }
 
