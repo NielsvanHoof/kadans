@@ -334,11 +334,12 @@ traffic.
 
 ## Supply chain
 
-CI (`.github/workflows/platform.yml`) runs `composer audit` and
+CI ([`platform.yml`](../../.github/workflows/platform.yml)) runs `composer audit` and
 `npm audit --audit-level=high` in the quality gate, holds an 87% backend coverage
-floor, tests PostgreSQL migrations and one rollback, and publishes an immutable OCI
-image with an SBOM and max provenance. Dependabot watches Composer, npm, and Actions
-weekly.
+floor, tests PostgreSQL migrations and one rollback, and builds an immutable OCI
+image with an SBOM and max provenance. That image is pushed to **no registry** — it
+lands as a GitHub Actions artifact with 7-day retention. Dependabot watches
+Composer, npm, and Actions weekly.
 
 **Known gap:** no SAST (CodeQL) and no container image scanning (Trivy/Grype) — the
 SBOM is generated but nothing consumes it.
@@ -351,8 +352,11 @@ Tracked honestly, roughly in priority order:
    open. GuardDuty Malware Protection for S3 (bucket-level) or ClamAV in
    `ProcessUploadedDocumentJob`, gating download/preview on a `scan_status`.
 2. **No application compute in the Pulumi stack.** `infra/` provisions S3, SNS, SQS,
-   and KMS only; there is no ECS service, queue worker, scheduler, or app deploy
-   workflow. CI builds the image but nothing runs it.
+   and KMS only; there is no ECS service, queue worker, scheduler, or application
+   deploy step. CI builds the OCI image above but pushes it to no registry (GitHub
+   artifact, 7-day retention). [`deploy.yml`](../../.github/workflows/deploy.yml) is
+   a manual-dispatch Pulumi run covering the **OCR stack only** — no migration and
+   no application deploy.
 3. **Static IAM credentials for local development** — narrowed, not yet eliminated.
    The permission set now lives in one shared document (`infra/src/policies.ts`) used
    by both the local IAM user and an **ECS task role** that is already provisioned
@@ -365,8 +369,15 @@ Tracked honestly, roughly in priority order:
 5. **Portal links are re-exchangeable and only *watched*, not bound** — redemption
    from an unfamiliar device is detected and alerted (see above), but a leaked link
    used from a matching network and browser family still passes.
-6. **Frontend has no meaningful test coverage** and there is no end-to-end test of
-   the client portal flow — the one path an unauthenticated user touches.
+6. **No browser end-to-end tests.** Frontend unit coverage is enforced as a Vitest
+   line ratchet (`vitest.config.ts`, currently 41%) across the shared-trunk suite;
+   TASK-14.4 deliberately stripped dead Playwright/Pest browser scaffolding rather
+   than writing smoke tests. The client portal path an unauthenticated user touches
+   *is* covered at the HTTP feature level in `tests/Feature/Portal/` — token
+   exchange, the session requirement on every portal route, upload, cross-dossier
+   and cross-tenant rejection, answer submission, the byte quota, and
+   database/storage rollback when the audit write fails — but not as a real-browser
+   walkthrough.
 7. **An expired platform support session is not always cleared or audited.**
    `EnsureValidTenantMembership` calls `clearIfExpired()`, but
    `InitializeTenantFromRoute` returns 404 on `canAccessTenant()` first, so for a
