@@ -78,6 +78,7 @@ test('staff from another tenant cannot open an extraction page', function (): vo
     ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Firm A');
     ['owner' => $ownerB] = provisionWorkspace('Firm B');
 
+    actingInWorkspace($tenantA);
     $client = Client::factory()->create(['tenant_id' => $tenantA->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenantA->id,

@@ -36,6 +36,11 @@ Every tenant-owned record extends `TenantOwnedModel`, which applies
 - **Ordering is load-bearing.** `bootstrap/app.php` prepends the tenant resolvers
   ahead of `SubstituteBindings`, so the tenant is current *before* route model
   binding runs. `tests/Feature/Tenancy/TenantMiddlewarePriorityTest.php` guards this.
+- **Writes refuse a foreign `tenant_id`.** `BelongsToTenant` stamps the current tenant
+  when the attribute is absent, and throws if a create supplies a different id — so a
+  future `->create($request->all())` cannot quietly park a row in another firm.
+  `tenant_id` is also immutable after create. Factories still mass-assign it when it
+  matches the current tenant (or when building under that tenant's context).
 
 Deliberate bypasses go through `TenantOwnedModel::queryWithoutTenantScope()`, which
 is greppable. Today it is used only where no tenant can be current yet: resolving a

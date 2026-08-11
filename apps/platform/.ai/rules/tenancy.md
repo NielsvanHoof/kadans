@@ -13,3 +13,6 @@ The app runs on Octane (FrankenPHP) — workers boot once and serve many request
 `TenantContext::runForTenant()` is the single entry point for console and async code that must run as a tenant. HTTP sets the tenant via middleware instead.
 
 Prefer `$this->app->scoped()` over `singleton()` for per-request services.
+
+## tenant_id writes must match the current tenant
+`BelongsToTenant` refuses creates whose `tenant_id` differs from `Tenant::current()`, and rejects dirty `tenant_id` on update. Keep `tenant_id` in `$fillable` for factories. Cross-tenant fixtures must switch context first (`actingInWorkspace` / `runForTenant`), not smuggle another id. Root factories that default `tenant_id` (`ClientFactory`, `TenantInvitationFactory`) prefer `Tenant::current()?->getKey() ?? Tenant::factory()` so nested Pipeline→…→Client graphs stay in-tenant.

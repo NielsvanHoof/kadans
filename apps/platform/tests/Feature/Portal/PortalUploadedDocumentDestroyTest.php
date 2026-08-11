@@ -68,13 +68,14 @@ test('portal client cannot destroy an upload that belongs to another tenant', fu
     ['owner' => $owner, 'tenant' => $homeTenant] = provisionWorkspace();
     ['tenant' => $otherTenant] = provisionWorkspace('Other firm');
 
+    // Second provisionWorkspace left Other firm current — switch back before home fixtures.
+    actingInWorkspace($homeTenant);
+
     $homeClient = Client::factory()->create(['tenant_id' => $homeTenant->id]);
     $homeDossier = Dossier::factory()->create([
         'tenant_id' => $homeTenant->id,
         'client_id' => $homeClient->id,
     ]);
-
-    actingInWorkspace($homeTenant);
 
     $homeGrant = resolve(CreateClientAccessGrantAction::class)->handle(
         $homeDossier,

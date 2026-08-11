@@ -64,6 +64,8 @@ test('pipelines:monitor marks an inactive run stuck without touching another ten
  */
 function monitoredPipeline(Tenant $tenant, PipelineStatus $status, array $attributes = []): Pipeline
 {
+    actingInWorkspace($tenant);
+
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
