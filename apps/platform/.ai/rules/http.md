@@ -16,4 +16,9 @@ Adding a fetch directive? Add it to `applyDevelopmentServerOrigins()` too. In ho
 
 Two deliberate relaxations, do not "fix" them: `style-src` allows `'unsafe-inline'` (Tailwind v4 runtime injection + React inline style attributes), and `script-src` is `'self'` + nonce rather than `'strict-dynamic'`. Inertia's page payload is `<script type="application/json">` and carries no nonce by design — the HTML spec never executes or CSP-checks those.
 
+`SECURITY_CSP_REPORT_ONLY=true` only switches to `Content-Security-Policy-Report-Only` when `SECURITY_CSP_REPORT_URI` is also set. Report-Only without a sink is ignored by browsers (console warning, no enforcement); `headerName()` falls back to the enforcing header in that case.
+
 The application owns `Referrer-Policy` exclusively. The production Caddyfile must not set it — Caddy's bare `header` directive replaces the field and would downgrade portal responses. Guarded by `tests/Feature/Security/ProductionCaddyfileTest.php`.
+
+## CSP report-only needs a report_uri
+SECURITY_CSP_REPORT_ONLY only switches to Content-Security-Policy-Report-Only when SECURITY_CSP_REPORT_URI is also set. Report-Only without a sink is ignored by browsers (console warning, no enforcement). ContentSecurityPolicy::headerName() falls back to the enforcing header in that case — do not "fix" that by sending bare Report-Only.

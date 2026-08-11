@@ -213,8 +213,10 @@ built-manifest mode so a running `npm run dev` cannot change rendered output, an
 `phpunit.xml` pins `SECURITY_CSP_ENABLED`/`SECURITY_CSP_REPORT_ONLY` so a developer's
 local overrides cannot mask a broken policy.
 
-To roll out a tightened policy safely, set `SECURITY_CSP_REPORT_ONLY=true` (and
-optionally `SECURITY_CSP_REPORT_URI`), watch reports, then flip it back.
+To roll out a tightened policy safely, set `SECURITY_CSP_REPORT_ONLY=true` **and**
+`SECURITY_CSP_REPORT_URI` to a reporting endpoint, watch reports, then flip it back.
+Report-Only without a sink is a browser no-op (console warning only); the app falls
+back to the enforcing `Content-Security-Policy` header in that case.
 
 ## Authentication
 

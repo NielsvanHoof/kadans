@@ -89,12 +89,26 @@ test('sends strict transport security over https', function (): void {
 });
 
 test('can be switched to report-only without changing the policy', function (): void {
+    // Report-Only is a no-op without a sink — browsers require report-uri/report-to.
     config()->set('security.csp.report_only', true);
+    config()->set('security.csp.report_uri', 'https://csp.example.test/report');
 
     $response = get('/login');
 
     $response->assertHeaderMissing('Content-Security-Policy');
     expect($response->headers->get('Content-Security-Policy-Report-Only'))
+        ->toContain("frame-ancestors 'none'")
+        ->toContain('report-uri https://csp.example.test/report');
+});
+
+test('report-only without a report uri falls back to enforcing', function (): void {
+    config()->set('security.csp.report_only', true);
+    config()->set('security.csp.report_uri', null);
+
+    $response = get('/login');
+
+    $response->assertHeaderMissing('Content-Security-Policy-Report-Only');
+    expect($response->headers->get('Content-Security-Policy'))
         ->toContain("frame-ancestors 'none'");
 });
 

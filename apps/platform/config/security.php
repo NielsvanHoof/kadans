@@ -49,13 +49,16 @@ return [
     | being duplicated here.
     |
     | Set `report_only` to send Content-Security-Policy-Report-Only instead of
-    | enforcing — useful when rolling out a tightened policy.
+    | enforcing — useful when rolling out a tightened policy. Report-Only is
+    | ignored by browsers unless `report_uri` is also set; without a sink we
+    | fall back to the enforcing Content-Security-Policy header.
     |
     */
 
     'csp' => [
         'enabled' => (bool) env('SECURITY_CSP_ENABLED', true),
         'report_only' => (bool) env('SECURITY_CSP_REPORT_ONLY', false),
+        // Required for report_only to take effect (browsers need a report sink).
         'report_uri' => env('SECURITY_CSP_REPORT_URI'),
 
         /*

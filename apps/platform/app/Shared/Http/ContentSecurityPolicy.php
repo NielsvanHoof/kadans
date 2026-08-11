@@ -49,10 +49,14 @@ final readonly class ContentSecurityPolicy
 
     /**
      * The header name to send under, honouring the report-only toggle.
+     *
+     * Report-Only without a reporting endpoint is a no-op: browsers refuse to
+     * act on it and log a console warning. Fall back to the enforcing header
+     * unless `report_uri` is actually set.
      */
     public function headerName(): string
     {
-        return $this->config->get('security.csp.report_only') === true
+        return $this->wantsReportOnly()
             ? 'Content-Security-Policy-Report-Only'
             : 'Content-Security-Policy';
     }
@@ -125,6 +129,20 @@ final readonly class ContentSecurityPolicy
         }
 
         return implode('; ', $policy);
+    }
+
+    /**
+     * Whether we should emit Report-Only (needs both the toggle and a sink).
+     */
+    private function wantsReportOnly(): bool
+    {
+        if ($this->config->get('security.csp.report_only') !== true) {
+            return false;
+        }
+
+        $reportUri = $this->config->get('security.csp.report_uri');
+
+        return is_string($reportUri) && mb_trim($reportUri) !== '';
     }
 
     /**

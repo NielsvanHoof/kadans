@@ -2,8 +2,8 @@ import { Head, Link } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import LegalFooterLinks from '@/features/legal/legal-footer-links';
 import { useTranslation } from '@/hooks/use-translation';
-import { show as legalShow } from '@/routes/legal';
 import { dashboard } from '@/routes';
+import { show as legalShow } from '@/routes/legal';
 
 type LegalNavItem = {
     slug: string;
