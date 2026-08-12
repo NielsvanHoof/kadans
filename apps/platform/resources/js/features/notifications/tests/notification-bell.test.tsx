@@ -11,6 +11,33 @@ let pageProps: Record<string, unknown> = {};
 vi.mock('@inertiajs/react', () => ({
     router: { post: routerPost },
     usePage: () => mockInertiaPage(pageProps),
+    Form: ({
+        children,
+        action,
+        onSuccess,
+        ...props
+    }: {
+        children: (state: { processing: boolean }) => React.ReactNode;
+        action?: string;
+        onSuccess?: () => void;
+        method?: string;
+        className?: string;
+    }) => {
+        // Strip Inertia-only props before rendering a DOM form.
+        void props;
+
+        return (
+            <form
+                action={action}
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    onSuccess?.();
+                }}
+            >
+                {children({ processing: false })}
+            </form>
+        );
+    },
 }));
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
@@ -19,6 +46,12 @@ vi.mock('@/routes/workspaces/notifications', () => ({
     readAll: {
         url: (tenant: { slug: string }) =>
             `/workspaces/${tenant.slug}/notifications/read-all`,
+    },
+    clearAll: {
+        form: (tenant: { slug: string }) => ({
+            action: `/workspaces/${tenant.slug}/notifications/clear-all`,
+            method: 'delete' as const,
+        }),
     },
 }));
 
@@ -112,7 +145,7 @@ describe('NotificationBell', () => {
         expect(screen.getByText('99+')).toBeInTheDocument();
     });
 
-    it('posts to read-all and does not throw when there is nothing unread', async () => {
+    it('disables mark-all when there is nothing unread', async () => {
         pageProps.notifications = summary({ unread_count: 0 });
 
         render(<NotificationBell />);
@@ -150,8 +183,6 @@ describe('NotificationBell', () => {
         const markAllRead = within(dialogRoot(dialog)).getByRole('button', {
             name: 'Mark all read',
         });
-        // userEvent wraps the press in act() so RAC Button state updates
-        // do not warn about updates outside of a test act boundary.
         await user.click(markAllRead);
 
         expect(routerPost).toHaveBeenCalledWith(
@@ -159,5 +190,87 @@ describe('NotificationBell', () => {
             {},
             { preserveScroll: true, only: ['notifications'] },
         );
+    });
+
+    it('disables clear all when the inbox is empty', async () => {
+        pageProps.notifications = summary({ unread_count: 0, items: [] });
+
+        render(<NotificationBell />);
+
+        const dialog = testUtilUser.createTester('Dialog', {
+            root: screen.getByRole('button', { name: 'Notifications' }),
+            overlayType: 'popover',
+        });
+
+        await dialog.open();
+
+        const clearAll = within(dialogRoot(dialog)).getByRole('button', {
+            name: 'Clear all',
+        });
+
+        expect(clearAll).toHaveAttribute('data-disabled', 'true');
+    });
+
+    it('opens a confirm dialog before clearing all notifications', async () => {
+        const user = userEvent.setup();
+        pageProps.notifications = summary({
+            unread_count: 1,
+            items: [
+                {
+                    id: 'notif-1',
+                    type: 'client_questionnaire_completed',
+                    message: 'Done',
+                    url: '/workspaces/acme/dossiers/1',
+                    read_at: null,
+                    created_at: '2026-01-01T10:00:00Z',
+                    dossier_id: 1,
+                    dossier_title: 'Dossier 1',
+                    client_name: null,
+                    audio_recording_id: null,
+                    original_filename: null,
+                },
+            ],
+        });
+
+        render(<NotificationBell />);
+
+        const dialog = testUtilUser.createTester('Dialog', {
+            root: screen.getByRole('button', {
+                name: 'Notifications, :count unread',
+            }),
+            overlayType: 'popover',
+        });
+
+        await dialog.open();
+
+        await user.click(
+            within(dialogRoot(dialog)).getByRole('button', {
+                name: 'Clear all',
+            }),
+        );
+
+        const alert = await screen.findByRole('alertdialog', {
+            name: 'Clear all notifications?',
+        });
+
+        expect(
+            screen.getByText(
+                'This removes every notification for this workspace from your inbox. You cannot undo this.',
+            ),
+        ).toBeInTheDocument();
+        expect(alert.querySelector('form')).toHaveAttribute(
+            'action',
+            '/workspaces/acme/notifications/clear-all',
+        );
+
+        await user.click(
+            within(alert).getByRole('button', { name: 'Clear all' }),
+        );
+
+        expect(
+            screen.queryByRole('alertdialog', {
+                name: 'Clear all notifications?',
+            }),
+        ).not.toBeInTheDocument();
     });
 });

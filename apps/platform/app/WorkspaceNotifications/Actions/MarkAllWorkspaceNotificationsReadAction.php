@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\WorkspaceNotifications\Actions;
 
 use App\Accounts\Models\User;
-use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
-use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use App\Tenancy\Models\Tenant;
+use App\WorkspaceNotifications\Support\WorkspaceNotificationTypes;
 use Illuminate\Notifications\DatabaseNotification;
 
 /**
@@ -21,10 +20,7 @@ final class MarkAllWorkspaceNotificationsReadAction
             ->where('notifiable_type', $user->getMorphClass())
             ->where('notifiable_id', $user->getKey());
 
-        $query->getQuery()->whereIn('type', [
-            ClientQuestionnaireCompletedNotification::DatabaseType,
-            AudioTranscriptionCompletedNotification::DatabaseType,
-        ]);
+        $query->getQuery()->whereIn('type', WorkspaceNotificationTypes::databaseTypes());
 
         $query->getQuery()->whereRaw("data->>'tenant_id' = ?", [(string) $tenant->getKey()]);
         $query->getQuery()->whereNull('read_at');

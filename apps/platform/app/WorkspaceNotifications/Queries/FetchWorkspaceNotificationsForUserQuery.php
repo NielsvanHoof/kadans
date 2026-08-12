@@ -11,6 +11,7 @@ use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
 use App\Tenancy\Models\Tenant;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationItemData;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationsData;
+use App\WorkspaceNotifications\Support\WorkspaceNotificationTypes;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 
@@ -21,22 +22,13 @@ final class FetchWorkspaceNotificationsForUserQuery
 {
     private const int Limit = 20;
 
-    /**
-     * @var list<string>
-     */
-    private const array SupportedTypes = [
-        ClientQuestionnaireCompletedNotification::DatabaseType,
-        AudioTranscriptionCompletedNotification::DatabaseType,
-        ClientPortalNewDeviceNotification::DatabaseType,
-    ];
-
     public function handle(User $user, Tenant $tenant): WorkspaceNotificationsData
     {
         $baseQuery = DatabaseNotification::query()
             ->where('notifiable_type', $user->getMorphClass())
             ->where('notifiable_id', $user->getKey());
 
-        $baseQuery->getQuery()->whereIn('type', self::SupportedTypes);
+        $baseQuery->getQuery()->whereIn('type', WorkspaceNotificationTypes::databaseTypes());
 
         $baseQuery->getQuery()->whereRaw("data->>'tenant_id' = ?", [(string) $tenant->getKey()]);
 

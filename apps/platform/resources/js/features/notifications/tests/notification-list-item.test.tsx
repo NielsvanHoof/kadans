@@ -7,9 +7,25 @@ import { mockUseTranslation } from '@/test/mocks';
 
 const routerPost = vi.fn();
 const routerVisit = vi.fn();
+const routerDelete = vi.fn();
 
 vi.mock('@inertiajs/react', () => ({
-    router: { post: routerPost, visit: routerVisit },
+    router: { post: routerPost, visit: routerVisit, delete: routerDelete },
+    Link: ({
+        href,
+        children,
+        onClick,
+        className,
+    }: {
+        href: string;
+        children: React.ReactNode;
+        onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+        className?: string;
+    }) => (
+        <a href={href} className={className} onClick={onClick}>
+            {children}
+        </a>
+    ),
 }));
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
@@ -24,6 +40,15 @@ vi.mock('@/routes/workspaces/notifications', () => ({
             notification: string;
         }) => `/workspaces/${tenant.slug}/notifications/${notification}/read`,
     },
+    destroy: {
+        url: ({
+            tenant,
+            notification,
+        }: {
+            tenant: { slug: string };
+            notification: string;
+        }) => `/workspaces/${tenant.slug}/notifications/${notification}`,
+    },
 }));
 
 const { default: NotificationListItem } =
@@ -36,7 +61,7 @@ function notification(
 ): WorkspaceNotification {
     return {
         id: 'notif-1',
-        type: 'dossier.reminder',
+        type: 'client_questionnaire_completed',
         message: 'A reminder was sent',
         url: '/workspaces/acme/dossiers/1',
         read_at: null,
@@ -53,6 +78,7 @@ function notification(
 beforeEach(() => {
     routerPost.mockReset();
     routerVisit.mockReset();
+    routerDelete.mockReset();
 });
 
 describe('NotificationListItem', () => {
@@ -69,7 +95,10 @@ describe('NotificationListItem', () => {
             />,
         );
 
-        await user.click(screen.getByText('A reminder was sent'));
+        const link = screen.getByRole('link', { name: /A reminder was sent/ });
+        expect(link).toHaveAttribute('href', '/workspaces/acme/dossiers/1');
+
+        await user.click(link);
 
         expect(routerPost).toHaveBeenCalledWith(
             '/workspaces/acme/notifications/notif-1/read',
@@ -95,7 +124,9 @@ describe('NotificationListItem', () => {
             />,
         );
 
-        await user.click(screen.getByText('A reminder was sent'));
+        await user.click(
+            screen.getByRole('link', { name: /A reminder was sent/ }),
+        );
 
         expect(routerPost).toHaveBeenCalled();
         expect(routerVisit).not.toHaveBeenCalled();
@@ -113,9 +144,37 @@ describe('NotificationListItem', () => {
             />,
         );
 
-        await user.click(screen.getByText('A reminder was sent'));
+        await user.click(
+            screen.getByRole('link', { name: /A reminder was sent/ }),
+        );
 
         expect(routerPost).not.toHaveBeenCalled();
-        expect(routerVisit).toHaveBeenCalledWith('/workspaces/acme/dossiers/1');
+        // Read items let the Link handle navigation — no router.visit hop.
+        expect(routerVisit).not.toHaveBeenCalled();
+    });
+
+    it('deletes a notification without navigating', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <NotificationListItem
+                notification={notification()}
+                workspace={workspace}
+            />,
+        );
+
+        await user.click(
+            screen.getByRole('button', { name: 'Delete notification' }),
+        );
+
+        expect(routerDelete).toHaveBeenCalledWith(
+            '/workspaces/acme/notifications/notif-1',
+            {
+                preserveScroll: true,
+                only: ['notifications'],
+            },
+        );
+        expect(routerVisit).not.toHaveBeenCalled();
+        expect(routerPost).not.toHaveBeenCalled();
     });
 });

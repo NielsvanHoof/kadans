@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDateTime } from '@/lib/format-date-time';
+import {
+    formatDate,
+    formatDateTime,
+    formatRelativeTime,
+} from '@/lib/format-date-time';
 
 describe('formatDate', () => {
     it('formats a plain YYYY-MM-DD calendar day', () => {
@@ -28,5 +32,27 @@ describe('formatDateTime', () => {
         expect(formatDateTime('2025-03-15T14:30:45.000Z', 'en-GB')).toBe(
             '15/03/2025, 14:30:45',
         );
+    });
+});
+
+describe('formatRelativeTime', () => {
+    const now = new Date('2025-03-15T14:00:00.000Z');
+
+    it('formats minutes ago', () => {
+        expect(
+            formatRelativeTime('2025-03-15T13:45:00.000Z', 'en', now),
+        ).toBe('15 minutes ago');
+    });
+
+    it('formats hours ago', () => {
+        expect(
+            formatRelativeTime('2025-03-15T12:00:00.000Z', 'en', now),
+        ).toBe('2 hours ago');
+    });
+
+    it('formats in the viewing locale', () => {
+        expect(
+            formatRelativeTime('2025-03-15T13:00:00.000Z', 'nl', now),
+        ).toMatch(/uur/);
     });
 });

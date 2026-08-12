@@ -71,6 +71,8 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     // query-scoped — the action filters by the owning user, so there is no IDOR.
     'workspaces.notifications.read' => 'query-scoped: filters on notifiable_id + tenant.',
     'workspaces.notifications.read-all' => 'query-scoped: filters on notifiable_id + tenant.',
+    'workspaces.notifications.destroy' => 'query-scoped: filters on notifiable_id + tenant.',
+    'workspaces.notifications.clear-all' => 'query-scoped: filters on notifiable_id + tenant.',
 ];
 
 /**

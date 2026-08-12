@@ -232,6 +232,55 @@ test('staff cannot mark another users notification as read', function (): void {
     expect($notification->fresh()->read_at)->toBeNull();
 });
 
+test('staff can delete one workspace notification', function (): void {
+    $context = createWorkspaceNotificationContext();
+    notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
+
+    $notification = $context['owner']->notifications()->sole();
+
+    $this->actingAs($context['owner'])
+        ->from(workspaceRoute('workspaces.dashboard', $context['tenant']))
+        ->delete(workspaceRoute('workspaces.notifications.destroy', $context['tenant'], [
+            'notification' => $notification->id,
+        ]))
+        ->assertRedirect(workspaceRoute('workspaces.dashboard', $context['tenant']));
+
+    expect($context['owner']->notifications()->count())->toBe(0);
+});
+
+test('staff can clear all workspace notifications', function (): void {
+    $context = createWorkspaceNotificationContext();
+    notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
+    notifyOwnerOfTranscription($context['owner'], $context['tenant'], $context['dossier']);
+    notifyOwnerOfNewDevice($context['owner'], $context['tenant'], $context['dossier']);
+
+    expect($context['owner']->notifications()->count())->toBe(3);
+
+    $this->actingAs($context['owner'])
+        ->from(workspaceRoute('workspaces.dashboard', $context['tenant']))
+        ->delete(workspaceRoute('workspaces.notifications.clear-all', $context['tenant']))
+        ->assertRedirect(workspaceRoute('workspaces.dashboard', $context['tenant']));
+
+    expect($context['owner']->notifications()->count())->toBe(0);
+});
+
+test('staff cannot delete another users notification', function (): void {
+    $context = createWorkspaceNotificationContext();
+    notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
+
+    $notification = $context['owner']->notifications()->sole();
+
+    workspaceMember($context['tenant'], Role::ReadOnly, $context['outsider']);
+
+    $this->actingAs($context['outsider'])
+        ->delete(workspaceRoute('workspaces.notifications.destroy', $context['tenant'], [
+            'notification' => $notification->id,
+        ]))
+        ->assertNotFound();
+
+    expect($context['owner']->notifications()->count())->toBe(1);
+});
+
 test('portal mail notifications expose telescope tags for their subjects', function (): void {
     $dossier = new Dossier;
     $dossier->id = 9;

@@ -7,6 +7,8 @@ namespace App\WorkspaceNotifications\Http\Controllers;
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
+use App\WorkspaceNotifications\Actions\DeleteAllWorkspaceNotificationsAction;
+use App\WorkspaceNotifications\Actions\DeleteWorkspaceNotificationAction;
 use App\WorkspaceNotifications\Actions\MarkAllWorkspaceNotificationsReadAction;
 use App\WorkspaceNotifications\Actions\MarkWorkspaceNotificationReadAction;
 use Illuminate\Http\RedirectResponse;
@@ -40,6 +42,35 @@ final class WorkspaceNotificationController extends Controller
         $user = $this->currentUser();
 
         $markAllWorkspaceNotificationsRead->handle($user, $tenant);
+
+        return back();
+    }
+
+    /**
+     * Delete one workspace notification.
+     */
+    public function destroy(
+        Tenant $tenant,
+        string $notification,
+        DeleteWorkspaceNotificationAction $deleteWorkspaceNotification,
+    ): RedirectResponse {
+        $user = $this->currentUser();
+
+        $deleteWorkspaceNotification->handle($user, $tenant, $notification);
+
+        return back();
+    }
+
+    /**
+     * Delete every workspace notification for this tenant.
+     */
+    public function destroyAll(
+        Tenant $tenant,
+        DeleteAllWorkspaceNotificationsAction $deleteAllWorkspaceNotifications,
+    ): RedirectResponse {
+        $user = $this->currentUser();
+
+        $deleteAllWorkspaceNotifications->handle($user, $tenant);
 
         return back();
     }
