@@ -20,7 +20,7 @@ test('lets the Sail supervisor own the local HTTP server', function (): void {
 
     expect($commandNames)
         ->not->toContain('server')
-        ->toContain('queue', 'vite', 'reverb');
+        ->toContain('queue', 'ocr', 'transcription', 'dossier-export', 'vite', 'reverb');
 });
 
 test('skips AWS result consumers while OCR and transcription stay on mock drivers', function (): void {

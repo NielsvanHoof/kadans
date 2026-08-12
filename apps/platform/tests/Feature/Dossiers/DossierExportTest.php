@@ -52,7 +52,12 @@ test('a permitted staff member can queue a dossier export and it is audited', fu
 
     expect($pipeline)->toBeInstanceOf(Pipeline::class);
 
-    Queue::assertPushed(GenerateDossierExportJob::class, fn (GenerateDossierExportJob $job): bool => $job->pipelineId === $pipeline->id);
+    Queue::assertPushed(
+        GenerateDossierExportJob::class,
+        fn (GenerateDossierExportJob $job): bool => $job->pipelineId === $pipeline->id
+            // Off the default queue — ZIP packaging must not stall unrelated jobs.
+            && $job->queue === 'dossier-export',
+    );
 });
 
 test('the export job creates a ZIP manifest and copies uploaded documents', function (): void {

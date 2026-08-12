@@ -214,11 +214,9 @@ final class AppServiceProvider extends ServiceProvider
     private function configureDevCommands(): void
     {
         DevCommands::except('server');
-
-        // Runs alongside the default "queue" listener so transcription start
-        // jobs can't stall unrelated work. Completion for Amazon Transcribe
-        // arrives via artisan transcribe:consume (EventBridge → SQS), not this queue.
+        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=ocr', 'ocr');
         DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=transcription', 'transcription');
+        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=dossier-export', 'dossier-export');
 
         // Only when the real drivers are on. Leftover Pulumi queue URLs with
         // OCR_DRIVER=mock + Floci must not start consumers against missing queues.

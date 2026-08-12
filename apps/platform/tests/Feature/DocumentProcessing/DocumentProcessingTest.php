@@ -49,8 +49,13 @@ test('uploading a document dispatches the mock OCR processing job', function ():
             ->sole()->type->value)
         ->toBe('ocr_document');
 
-    Queue::assertPushed(ProcessUploadedDocumentJob::class, fn (ProcessUploadedDocumentJob $job): bool => $job->uploadedDocumentId === $uploaded->id
-        && $job->pipelineId !== null);
+    Queue::assertPushed(
+        ProcessUploadedDocumentJob::class,
+        fn (ProcessUploadedDocumentJob $job): bool => $job->uploadedDocumentId === $uploaded->id
+            && $job->pipelineId !== null
+            // Off the default queue — a slow OCR start must not stall unrelated jobs.
+            && $job->queue === 'ocr',
+    );
 });
 
 test('staff dossier show includes processing fields for uploaded documents', function (): void {

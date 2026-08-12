@@ -33,7 +33,10 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
     /** @var list<int> */
     public const array BACKOFF_SECONDS = [10, 30, 60];
 
-    public function __construct(public int $pipelineId) {}
+    public function __construct(public int $pipelineId)
+    {
+        $this->onQueue('dossier-export');
+    }
 
     public function uniqueId(): string
     {

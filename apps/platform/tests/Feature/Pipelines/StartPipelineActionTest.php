@@ -73,7 +73,8 @@ it('queues the OCR job with the document it has to read', function (): void {
         ProcessUploadedDocumentJob::class,
         fn (ProcessUploadedDocumentJob $job): bool => $job->uploadedDocumentId === $document->id
             && $job->expectedPath === $document->path
-            && $job->pipelineId === $pipeline->id,
+            && $job->pipelineId === $pipeline->id
+            && $job->queue === 'ocr',
     );
 });
 
@@ -86,7 +87,8 @@ it('queues the transcription job with the recording it has to transcribe', funct
         ProcessAudioRecordingJob::class,
         fn (ProcessAudioRecordingJob $job): bool => $job->audioRecordingId === $recording->id
             && $job->expectedPath === $recording->path
-            && $job->pipelineId === $pipeline->id,
+            && $job->pipelineId === $pipeline->id
+            && $job->queue === 'transcription',
     );
 });
 
@@ -97,7 +99,8 @@ it('queues the export job, which carries only the run it belongs to', function (
 
     Queue::assertPushed(
         GenerateDossierExportJob::class,
-        fn (GenerateDossierExportJob $job): bool => $job->pipelineId === $pipeline->id,
+        fn (GenerateDossierExportJob $job): bool => $job->pipelineId === $pipeline->id
+            && $job->queue === 'dossier-export',
     );
 });
 

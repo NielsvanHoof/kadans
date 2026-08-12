@@ -47,7 +47,8 @@ test('replacing an upload commits new metadata before deleting the old file', fu
 
     Queue::assertPushed(
         ProcessUploadedDocumentJob::class,
-        fn (ProcessUploadedDocumentJob $job): bool => $job->expectedPath === $replacement->path,
+        fn (ProcessUploadedDocumentJob $job): bool => $job->expectedPath === $replacement->path
+            && $job->queue === 'ocr',
     );
 });
 

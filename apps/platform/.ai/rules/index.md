@@ -18,9 +18,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Shared/Http/** | .ai/rules/http.md |
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
-| compose.yaml, package.json | .ai/rules/local-environment.md |
 | resources/js/**, resources/js/**/*.{tsx,ts} | .ai/rules/js.md |
 | app/*/Listeners/** | .ai/rules/listeners.md |
+| compose.yaml, package.json | .ai/rules/local-environment.md |
 | app/Tenancy/Http/Middleware/** | .ai/rules/middleware.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/*/Models/** | .ai/rules/models.md |

@@ -51,7 +51,9 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         public int $uploadedDocumentId,
         public ?string $expectedPath = null,
         public ?int $pipelineId = null
-    ) {}
+    ) {
+        $this->onQueue('ocr');
+    }
 
     public function uniqueId(): string
     {
