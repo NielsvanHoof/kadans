@@ -1,5 +1,6 @@
 import { ArrowDown, CheckCircle2, Clock3 } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import type { PortalDossier } from '@/features/portal/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
@@ -21,7 +22,6 @@ export default function PortalProgressOverview({
         return null;
     }
 
-    const percentage = Math.round((progress.completed / progress.total) * 100);
     const isComplete = progress.remaining === 0;
 
     return (
@@ -81,19 +81,17 @@ export default function PortalProgressOverview({
                         </div>
                     </div>
 
-                    <div
-                        role="progressbar"
-                        aria-valuemin={0}
-                        aria-valuemax={progress.total}
-                        aria-valuenow={progress.completed}
+                    {/*
+                      Taller, fully rounded track than the compact default —
+                      this is the client's main progress cue, not a chip.
+                    */}
+                    <Progress
+                        value={progress.completed}
+                        minValue={0}
+                        maxValue={progress.total}
                         aria-label={t('Dossier progress')}
-                        className="h-2 overflow-hidden rounded-full bg-muted"
-                    >
-                        <div
-                            className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
-                            style={{ width: `${percentage}%` }}
-                        />
-                    </div>
+                        className="[&_[data-slot=progress-indicator]]:rounded-full [&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-track]]:rounded-full"
+                    />
                     <p className="font-data text-xs text-muted-foreground tabular-nums">
                         {t(
                             ':completed of :total complete · :approved approved',

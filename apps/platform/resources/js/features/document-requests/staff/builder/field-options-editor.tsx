@@ -1,11 +1,13 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import {
     FieldDescription,
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipTrigger } from '@/components/ui/tooltip';
 import type { QuestionnaireOption } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -93,41 +95,59 @@ export function FieldOptionsEditor({
                         }
                         onBlur={onSaveDraft}
                     />
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0"
-                        isDisabled={!canEdit || index === 0}
-                        aria-label={t('Move option up')}
-                        onClick={() => moveOption(index, -1)}
-                    >
-                        <ArrowUp aria-hidden="true" />
-                    </Button>
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0"
-                        isDisabled={!canEdit || index === options.length - 1}
-                        aria-label={t('Move option down')}
-                        onClick={() => moveOption(index, 1)}
-                    >
-                        <ArrowDown aria-hidden="true" />
-                    </Button>
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 shrink-0"
-                        isDisabled={
-                            !canEdit || options.length <= MINIMUM_OPTIONS
-                        }
-                        aria-label={t('Remove option')}
-                        onClick={() => removeOption(index)}
-                    >
-                        <Trash2 aria-hidden="true" />
-                    </Button>
+                    {/*
+                      Icon-only actions: aria-label names them for screen
+                      readers, the tooltip does the same for sighted users.
+                    */}
+                    <ButtonGroup>
+                        <TooltipTrigger>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="size-8 shrink-0"
+                                isDisabled={!canEdit || index === 0}
+                                aria-label={t('Move option up')}
+                                onClick={() => moveOption(index, -1)}
+                            >
+                                <ArrowUp aria-hidden="true" />
+                            </Button>
+                            <Tooltip>{t('Move option up')}</Tooltip>
+                        </TooltipTrigger>
+                        <TooltipTrigger>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="size-8 shrink-0"
+                                isDisabled={
+                                    !canEdit || index === options.length - 1
+                                }
+                                aria-label={t('Move option down')}
+                                onClick={() => moveOption(index, 1)}
+                            >
+                                <ArrowDown aria-hidden="true" />
+                            </Button>
+                            <Tooltip>{t('Move option down')}</Tooltip>
+                        </TooltipTrigger>
+                        <TooltipTrigger>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="size-8 shrink-0"
+                                isDisabled={
+                                    !canEdit ||
+                                    options.length <= MINIMUM_OPTIONS
+                                }
+                                aria-label={t('Remove option')}
+                                onClick={() => removeOption(index)}
+                            >
+                                <Trash2 aria-hidden="true" />
+                            </Button>
+                            <Tooltip>{t('Remove option')}</Tooltip>
+                        </TooltipTrigger>
+                    </ButtonGroup>
                 </div>
             ))}
             <Button

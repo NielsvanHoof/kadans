@@ -17,6 +17,7 @@ import {
     AttachmentTitle,
 } from '@/components/ui/attachment';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { Progress, ProgressValue } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/use-translation';
 import { fileIconForFilename } from '@/lib/file-icon-for-filename';
 import { formatBytes } from '@/lib/format-bytes';
@@ -219,6 +220,17 @@ export default function MultiFileDropzone({
                         );
                     })}
                 </AttachmentGroup>
+            ) : null}
+
+            {/* Inertia reports one aggregate percentage for the whole request,
+                so the bar belongs to the batch rather than to each file. */}
+            {isUploading ? (
+                <Progress
+                    value={progressPercent ?? 0}
+                    aria-label={t('Uploading…')}
+                >
+                    <ProgressValue />
+                </Progress>
             ) : null}
 
             {!atCapacity && (

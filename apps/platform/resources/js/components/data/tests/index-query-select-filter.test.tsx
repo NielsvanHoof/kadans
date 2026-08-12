@@ -66,7 +66,7 @@ describe('IndexQuerySelectFilter', () => {
         ).toBeInTheDocument();
     });
 
-    it('shows a typeahead, group labels, and an empty state for long lists', async () => {
+    it('shows a combobox typeahead, group labels, and an empty state for long lists', async () => {
         const user = userEvent.setup();
         const onSelectionChange = vi.fn();
 
@@ -79,14 +79,12 @@ describe('IndexQuerySelectFilter', () => {
             />,
         );
 
-        await user.click(screen.getByRole('button', { name: /Event|All/ }));
+        // Long lists become a real combobox: the input *is* the typeahead,
+        // so there is no separate search field wedged into the popover.
+        const combobox = screen.getByRole('combobox', { name: 'Event' });
+        await user.click(combobox);
+        await user.keyboard('{ArrowDown}');
 
-        const search = await screen.findByRole('searchbox', {
-            name: 'Search Event…',
-        });
-        expect(search).toBeInTheDocument();
-
-        // Options render inside the listbox; group headers use SelectLabel.
         const listbox = await screen.findByRole('listbox');
         expect(
             await within(listbox).findByRole('option', {
@@ -95,16 +93,16 @@ describe('IndexQuerySelectFilter', () => {
         ).toBeInTheDocument();
         expect(
             within(listbox).getByText('Alpha', {
-                selector: '[data-slot=select-label]',
+                selector: '[data-slot=combobox-label]',
             }),
         ).toBeInTheDocument();
         expect(
             within(listbox).getByText('Beta', {
-                selector: '[data-slot=select-label]',
+                selector: '[data-slot=combobox-label]',
             }),
         ).toBeInTheDocument();
 
-        await user.type(search, 'Alpha option 1');
+        await user.type(combobox, 'Alpha option 1');
         expect(
             await within(listbox).findByRole('option', {
                 name: 'Alpha option 1',
@@ -114,14 +112,42 @@ describe('IndexQuerySelectFilter', () => {
             within(listbox).queryByRole('option', { name: 'Beta option 12' }),
         ).not.toBeInTheDocument();
 
-        await user.clear(search);
-        await user.type(search, 'zzzz-no-match');
+        await user.clear(combobox);
+        await user.type(combobox, 'zzzz-no-match');
 
         expect(
             await screen.findByText('No matching options.'),
         ).toBeInTheDocument();
         expect(
-            within(listbox).queryByRole('option', { name: 'Alpha option 1' }),
+            screen.queryByRole('option', { name: 'Alpha option 1' }),
         ).not.toBeInTheDocument();
+    });
+
+    it('posts the option id, not its label, when a long-list option is picked', async () => {
+        const user = userEvent.setup();
+        const onSelectionChange = vi.fn();
+
+        render(
+            <IndexQuerySelectFilter
+                label="Event"
+                selectedKey="__all__"
+                options={buildManyOptions()}
+                onSelectionChange={onSelectionChange}
+            />,
+        );
+
+        const combobox = screen.getByRole('combobox', { name: 'Event' });
+        await user.click(combobox);
+        await user.keyboard('{ArrowDown}');
+        await user.clear(combobox);
+        await user.type(combobox, 'Beta option 7');
+
+        await user.click(
+            await screen.findByRole('option', { name: 'Beta option 7' }),
+        );
+
+        // RAC collections key off `id`; a missing id silently falls back to the
+        // rendered text and the filter would post "Beta option 7" as the value.
+        expect(onSelectionChange).toHaveBeenCalledWith('event-7');
     });
 });

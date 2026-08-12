@@ -115,12 +115,11 @@ describe('PermissionChecklist', () => {
         const user = userEvent.setup();
         const { onSelectedPermissionsChange } = setup(['clients.view']);
 
-        const dossiersHeading = screen.getByText('Dossiers');
-        const dossiersGroup = dossiersHeading.closest('div');
+        // Each group is a fieldset named by its legend, so the group role is
+        // the scope boundary — not whichever div happens to wrap the heading.
+        const dossiersGroup = screen.getByRole('group', { name: 'Dossiers' });
         await user.click(
-            within(dossiersGroup as HTMLElement).getByRole('button', {
-                name: 'All',
-            }),
+            within(dossiersGroup).getByRole('button', { name: 'All' }),
         );
 
         expect(onSelectedPermissionsChange).toHaveBeenCalledWith(
@@ -143,12 +142,9 @@ describe('PermissionChecklist', () => {
             'clients.view',
         ]);
 
-        const dossiersHeading = screen.getByText('Dossiers');
-        const dossiersGroup = dossiersHeading.closest('div');
+        const dossiersGroup = screen.getByRole('group', { name: 'Dossiers' });
         await user.click(
-            within(dossiersGroup as HTMLElement).getByRole('button', {
-                name: 'None',
-            }),
+            within(dossiersGroup).getByRole('button', { name: 'None' }),
         );
 
         expect(onSelectedPermissionsChange).toHaveBeenCalledWith([

@@ -17,6 +17,7 @@ import {
     AttachmentTrigger,
 } from '@/components/ui/attachment';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { fileIconForFilename } from '@/lib/file-icon-for-filename';
@@ -252,6 +253,13 @@ export default function FileDropzone({
                                 <AttachmentDescription>
                                     {attachmentDescription}
                                 </AttachmentDescription>
+                            ) : null}
+                            {attachmentState === 'uploading' ? (
+                                <Progress
+                                    value={progressPercent ?? 0}
+                                    aria-label={t('Uploading…')}
+                                    className="mt-1.5"
+                                />
                             ) : null}
                         </AttachmentContent>
 
