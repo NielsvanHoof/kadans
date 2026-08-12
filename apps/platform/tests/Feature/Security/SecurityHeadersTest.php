@@ -103,7 +103,7 @@ test('can be switched to report-only without changing the policy', function (): 
 
 test('report-only without a report uri falls back to enforcing', function (): void {
     config()->set('security.csp.report_only', true);
-    config()->set('security.csp.report_uri', null);
+    config()->set('security.csp.report_uri');
 
     $response = get('/login');
 
