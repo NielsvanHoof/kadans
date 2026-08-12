@@ -12,6 +12,7 @@ use App\Dossiers\Contracts\ClientPortalReminders;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;
@@ -51,7 +52,7 @@ final readonly class ClientPortalReminderDispatcher implements ClientPortalRemin
 
         $firmName = $dossier->tenant instanceof Tenant
             ? $dossier->tenant->name
-            : (string) config('app.name');
+            : Config::string('app.name');
 
         $portalUrl = URL::route('portal.exchange', [
             'token' => $result['plain_text_token'],

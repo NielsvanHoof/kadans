@@ -10,6 +10,7 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -58,10 +59,10 @@ final class WorkspaceMemberRoles
             return [];
         }
 
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
-        $rolesTable = (string) config('permission.table_names.roles');
-        $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
-        $modelKey = (string) config('permission.column_names.model_morph_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
+        $rolesTable = Config::string('permission.table_names.roles');
+        $modelHasRolesTable = Config::string('permission.table_names.model_has_roles');
+        $modelKey = Config::string('permission.column_names.model_morph_key');
 
         /** @var array<int, string> $roleNames */
         $roleNames = [];
@@ -125,10 +126,10 @@ final class WorkspaceMemberRoles
 
     public function activeOwnerCount(Tenant $tenant): int
     {
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
-        $rolesTable = (string) config('permission.table_names.roles');
-        $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
-        $modelKey = (string) config('permission.column_names.model_morph_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
+        $rolesTable = Config::string('permission.table_names.roles');
+        $modelHasRolesTable = Config::string('permission.table_names.model_has_roles');
+        $modelKey = Config::string('permission.column_names.model_morph_key');
 
         // Count via joins instead of Spatie's role() scope — Attribute/macro
         // scopes trip phpstan-strict-rules (staticMethod.dynamicCall).

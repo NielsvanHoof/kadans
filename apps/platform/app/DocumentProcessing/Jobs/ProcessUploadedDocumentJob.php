@@ -22,6 +22,7 @@ use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -218,7 +219,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         PipelineState $pipelineState,
     ): void {
         $pipeline->forceFill([
-            'provider' => (string) config('ocr.driver'),
+            'provider' => Config::string('ocr.driver'),
             'provider_job_id' => $document->textract_job_id,
         ])->saveQuietly();
 

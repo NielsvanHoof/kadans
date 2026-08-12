@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Shared\Concerns;
 
+use Illuminate\Support\Facades\Config;
+
 use function is_string;
 
 /**
@@ -23,11 +25,12 @@ trait ResolvesConfiguredModel
 
     public function provider(): string
     {
-        $provider = config("ai.agents.{$this->agentConfigKey()}.provider");
+        // Blank/null agent providers fall back to ai.default (tests cover null).
+        $provider = Config::get("ai.agents.{$this->agentConfigKey()}.provider");
 
         return is_string($provider) && mb_trim($provider) !== ''
             ? $provider
-            : (string) config('ai.default');
+            : Config::string('ai.default');
     }
 
     /**
@@ -35,7 +38,8 @@ trait ResolvesConfiguredModel
      */
     public function model(): ?string
     {
-        $model = config("ai.agents.{$this->agentConfigKey()}.model");
+        // Some agents leave model unset (env without default) so Config::get.
+        $model = Config::get("ai.agents.{$this->agentConfigKey()}.model");
 
         return is_string($model) && mb_trim($model) !== '' ? $model : null;
     }

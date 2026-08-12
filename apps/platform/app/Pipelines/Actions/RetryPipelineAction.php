@@ -7,9 +7,9 @@ namespace App\Pipelines\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Pipelines\Contracts\PipelineRetryRunner;
+use App\Pipelines\Contracts\PipelineRunner;
 use App\Pipelines\Models\Pipeline;
-use App\Pipelines\Support\PipelineRetryRunnerRegistry;
+use App\Pipelines\Support\PipelineRunnerRegistry;
 use App\Pipelines\Transitions\PipelineTransitions;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +29,7 @@ final readonly class RetryPipelineAction
         private PipelineTransitions $transitions,
         private BroadcastPipelineUpdatedAction $broadcastPipelineUpdated,
         private LogAuditActivityAction $logAuditActivity,
-        private PipelineRetryRunnerRegistry $retryRunners,
+        private PipelineRunnerRegistry $runners,
     ) {}
 
     /**
@@ -39,7 +39,7 @@ final readonly class RetryPipelineAction
      */
     public function handle(Pipeline $pipeline, ?User $user = null): Pipeline
     {
-        $runner = $this->retryRunners->for($pipeline->type);
+        $runner = $this->runners->for($pipeline->type);
 
         /** @var array{0: Pipeline, 1: Model} $result */
         $result = DB::transaction(function () use ($pipeline, $user, $runner): array {
@@ -83,7 +83,7 @@ final readonly class RetryPipelineAction
      * A run whose subject has gone away can never make progress, so refuse it
      * rather than queueing a job that is guaranteed to no-op.
      */
-    private function resolveSubject(Pipeline $pipeline, PipelineRetryRunner $runner): Model
+    private function resolveSubject(Pipeline $pipeline, PipelineRunner $runner): Model
     {
         $pipeline->loadMissing('pipelineable');
         $subject = $pipeline->pipelineable;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Platform\Http\Controllers\DataSubjectRequestController;
 use Illuminate\Auth\Middleware\RequirePassword;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 
 Route::get('data-subject-requests', [DataSubjectRequestController::class, 'index'])
@@ -25,6 +26,6 @@ Route::post('data-subject-requests/{dataSubjectRequest}/refuse', [DataSubjectReq
 Route::get('data-subject-requests/{dataSubjectRequest}/download', [DataSubjectRequestController::class, 'download'])
     ->where('dataSubjectRequest', '[0-9]+')
     ->middleware(RequirePassword::using(
-        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('data-subject-requests.download');

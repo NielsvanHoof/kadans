@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Config;
 use RuntimeException;
 
 final class ClientPortalReminderNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
@@ -85,7 +86,7 @@ final class ClientPortalReminderNotification extends Notification implements Sho
         return $message
             ->action(__('Continue in the secure portal'), $this->portalUrl)
             ->line(__('This new secure link expires on :expires.', [
-                'expires' => $this->expiresAt->timezone(config('app.timezone'))->format('j F Y, H:i'),
+                'expires' => $this->expiresAt->timezone(Config::string('app.timezone'))->format('j F Y, H:i'),
             ]))
             ->line(__('If you have already provided everything, no further action is needed.'))
             ->tag('client_portal_reminder')

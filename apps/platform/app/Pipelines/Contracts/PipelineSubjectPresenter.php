@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  * Reporting describe a run's subject — its name, where it sits, how to reach
  * it — without importing that domain's models.
  *
- * The sibling of PipelineRetryRunner: same registration story, same reason.
+ * The sibling of PipelineRunner: same registration story, same reason.
  */
 interface PipelineSubjectPresenter
 {

@@ -10,6 +10,7 @@ use App\Audit\Models\Activity;
 use App\Shared\Observability\ObservabilityContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Context;
 
 use function is_array;
@@ -31,7 +32,7 @@ final readonly class LogAuditActivityAction
     ): Activity {
         $context = $includeRequestContext ? $this->requestContext() : [];
 
-        $logger = activity(config('activitylog.default_log_name'))
+        $logger = activity(Config::string('activitylog.default_log_name'))
             ->event($event->value)
             ->withProperties($this->withoutSensitiveProperties([...$context, ...$properties]));
 

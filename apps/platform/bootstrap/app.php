@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Router;
 use Illuminate\Session\SessionManager;
+use Illuminate\Support\Facades\Config;
 use Inertia\ExceptionResponse;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
@@ -55,7 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustHosts(
-            at: fn (): array => (array) config('production.allowed_hosts', []),
+            at: fn (): array => Config::array('production.allowed_hosts'),
             subdomains: false,
         );
         $middleware->trustProxies(

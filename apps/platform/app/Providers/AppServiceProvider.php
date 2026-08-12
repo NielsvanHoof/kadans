@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -83,7 +84,8 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function configureTrustedProxies(): void
     {
-        $proxies = config('production.trusted_proxies');
+        // May be null when unset — typed string() rejects null.
+        $proxies = Config::get('production.trusted_proxies');
 
         if (is_string($proxies) && $proxies !== '') {
             TrustProxies::at($proxies);
@@ -104,7 +106,7 @@ final class AppServiceProvider extends ServiceProvider
         // (UrlGenerator::formatScheme falls back to $request->getScheme()),
         // so it must be paired with forceScheme().
         if (app()->isProduction()) {
-            URL::useOrigin((string) config('app.url'));
+            URL::useOrigin(Config::string('app.url'));
             URL::forceScheme('https');
         }
 
@@ -188,13 +190,12 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function configureDebugbarStorageOpen(): void
     {
-        $open = config('debugbar.storage.open');
+        // Default is null (and may later be bool/class) — typed string() rejects that.
+        $open = Config::get('debugbar.storage.open');
 
         // .env values are strings; cast so Debugbar treats them as bools.
         if (is_string($open) && in_array(mb_strtolower($open), ['true', 'false', '1', '0'], true)) {
-            config([
-                'debugbar.storage.open' => filter_var($open, FILTER_VALIDATE_BOOLEAN),
-            ]);
+            Config::set('debugbar.storage.open', filter_var($open, FILTER_VALIDATE_BOOLEAN));
 
             return;
         }
@@ -204,9 +205,7 @@ final class AppServiceProvider extends ServiceProvider
         }
 
         // Class string stays serializable; Debugbar calls ::resolve($request).
-        config([
-            'debugbar.storage.open' => DebugbarStorageOpen::class,
-        ]);
+        Config::set('debugbar.storage.open', DebugbarStorageOpen::class);
     }
 
     /**
@@ -231,7 +230,8 @@ final class AppServiceProvider extends ServiceProvider
             DevCommands::artisan('textract:consume', 'textract-consume');
         }
 
-        if (config('broadcasting.default') !== 'reverb') {
+        // phpunit sets BROADCAST_CONNECTION=null → env converts to PHP null.
+        if (Config::get('broadcasting.default') !== 'reverb') {
             return;
         }
 
@@ -243,11 +243,12 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function shouldRunTranscribeConsume(): bool
     {
-        if ((string) config('transcription.driver') !== TranscriptionDriver::Transcribe->value) {
+        if (Config::string('transcription.driver') !== TranscriptionDriver::Transcribe->value) {
             return false;
         }
 
-        $queueUrl = config('transcription.transcribe.results_queue_url');
+        // Queue URL is optional/null while drivers stay on mock.
+        $queueUrl = Config::get('transcription.transcribe.results_queue_url');
 
         return is_string($queueUrl) && $queueUrl !== '';
     }
@@ -257,11 +258,12 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function shouldRunTextractConsume(): bool
     {
-        if ((string) config('ocr.driver') !== OcrDriver::Textract->value) {
+        if (Config::string('ocr.driver') !== OcrDriver::Textract->value) {
             return false;
         }
 
-        $queueUrl = config('ocr.textract.results_queue_url');
+        // Queue URL is optional/null while drivers stay on mock.
+        $queueUrl = Config::get('ocr.textract.results_queue_url');
 
         return is_string($queueUrl) && $queueUrl !== '';
     }

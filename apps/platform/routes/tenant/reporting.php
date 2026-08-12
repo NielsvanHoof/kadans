@@ -7,6 +7,7 @@ use App\Reporting\Http\Controllers\DashboardController;
 use App\Reporting\Http\Controllers\MediaLibraryController;
 use App\Reporting\Http\Controllers\PipelineController;
 use Illuminate\Auth\Middleware\RequirePassword;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard');
@@ -21,7 +22,7 @@ Route::get('pipelines/{pipeline}', [PipelineController::class, 'show'])->name('p
 Route::get('pipelines/{pipeline}/download', [PipelineController::class, 'download'])
     ->middleware([
         RequirePassword::using(
-            passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+            passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
         ),
     ])
     ->name('pipelines.download');

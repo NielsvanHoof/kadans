@@ -8,15 +8,16 @@ use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
 use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
 use App\DocumentProcessing\Enums\OcrDriver;
 use App\DocumentProcessing\Presenters\UploadedDocumentPipelineSubjectPresenter;
-use App\DocumentProcessing\Retry\OcrPipelineRetryRunner;
+use App\DocumentProcessing\Runners\OcrPipelineRunner;
 use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\DocumentProcessing\Services\Ocr\Drivers\OcrDriverFactory;
 use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
-use App\Pipelines\Support\PipelineRetryRunnerRegistry;
+use App\Pipelines\Support\PipelineRunnerRegistry;
 use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use Override;
 
@@ -42,19 +43,19 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
         $this->app->bind(
             StartsDocumentOcr::class,
             fn ($app): StartsDocumentOcr => $app->make(OcrDriverFactory::class)->make(
-                (string) config('ocr.driver', OcrDriver::Mock->value),
+                Config::string('ocr.driver', OcrDriver::Mock->value),
             ),
         );
     }
 
     public function boot(
         OcrConfigurationValidator $ocrConfigurationValidator,
-        PipelineRetryRunnerRegistry $retryRunners,
+        PipelineRunnerRegistry $pipelineRunners,
         PipelineSubjectPresenterRegistry $subjectPresenters,
     ): void {
         $ocrConfigurationValidator->validate();
 
-        $retryRunners->register(new OcrPipelineRetryRunner());
+        $pipelineRunners->register(new OcrPipelineRunner());
         $subjectPresenters->register(new UploadedDocumentPipelineSubjectPresenter());
     }
 
@@ -71,16 +72,17 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
      */
     private function awsClientConfig(string $regionConfigKey): array
     {
-        $key = config('ocr.textract.key');
-        $secret = config('ocr.textract.secret');
-        $token = config('ocr.textract.token');
-        $region = config($regionConfigKey, 'eu-west-1');
-        $endpoint = config('ocr.textract.endpoint');
+        // Credentials / endpoint are optional nulls (IAM role in prod, Floci locally).
+        $key = Config::get('ocr.textract.key');
+        $secret = Config::get('ocr.textract.secret');
+        $token = Config::get('ocr.textract.token');
+        $region = Config::string($regionConfigKey, 'eu-west-1');
+        $endpoint = Config::get('ocr.textract.endpoint');
 
         /** @var array{version: string, region: string, endpoint?: string, credentials?: array{key: string, secret: string, token?: string}} $clientConfig */
         $clientConfig = [
             'version' => 'latest',
-            'region' => is_string($region) && $region !== '' ? $region : 'eu-west-1',
+            'region' => $region !== '' ? $region : 'eu-west-1',
         ];
 
         // Empty in production so the SDK talks to real AWS regional endpoints.

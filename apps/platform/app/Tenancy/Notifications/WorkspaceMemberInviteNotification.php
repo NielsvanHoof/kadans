@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Config;
 
 final class WorkspaceMemberInviteNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
@@ -57,7 +58,7 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
         return (new MailMessage)
             ->subject(__('Join :firm on :app', [
                 'firm' => $this->firmName,
-                'app' => (string) config('app.name'),
+                'app' => Config::string('app.name'),
             ]))
             ->greeting(__('You have been invited'))
             ->line(__(':firm invited you to join their workspace as :role.', [
@@ -65,7 +66,7 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
                 'role' => Role::tryFrom($this->role)?->label() ?? $this->role,
             ]))
             ->line(__('This invitation expires on :date.', [
-                'date' => $this->expiresAt->timezone(config('app.timezone'))->toDayDateTimeString(),
+                'date' => $this->expiresAt->timezone(Config::string('app.timezone'))->toDayDateTimeString(),
             ]))
             ->action(__('Accept invitation'), $this->acceptUrl)
             ->line(__('If you did not expect this email, you can ignore it.'))

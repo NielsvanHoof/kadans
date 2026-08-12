@@ -13,6 +13,7 @@ use App\Tenancy\Models\Tenant;
 use App\WorkspaceNotifications\Queries\FetchWorkspaceNotificationsForUserQuery;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Middleware;
@@ -86,7 +87,7 @@ final class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            'name' => Config::string('app.name'),
             ...($this->localeProps)($locale),
             'auth' => [
                 'user' => $user instanceof User

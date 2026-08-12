@@ -11,6 +11,7 @@ use App\Dossiers\Transitions\DossierExportTransitions;
 use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -62,7 +63,7 @@ final readonly class GenerateDossierExportAction
         }
 
         $archivePath = 'dossier-exports/'.$claimed->tenant_id.'/'.$claimed->dossier_id.'/'.$claimed->id.'.zip';
-        $disk = (string) config('exports.disk');
+        $disk = Config::string('exports.disk');
         $temporaryPath = Storage::disk('local')->path(
             'dossier-export-tmp-'.bin2hex(random_bytes(16)).'.zip',
         );
@@ -83,7 +84,7 @@ final readonly class GenerateDossierExportAction
             throw_if($stored === false, RuntimeException::class, 'Unable to store the dossier export archive.');
 
             $completedAt = now();
-            $expiresAt = $completedAt->copy()->addMinutes((int) config('exports.expires_in_minutes'));
+            $expiresAt = $completedAt->copy()->addMinutes(Config::integer('exports.expires_in_minutes'));
 
             $this->transitions->complete($claimed, $disk, $archivePath, $completedAt, $expiresAt);
 

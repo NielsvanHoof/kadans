@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Config;
 use Laravel\Scout\Builder as ScoutBuilder;
 use Laravel\Scout\Searchable;
 use Override;
@@ -161,7 +162,7 @@ final class Dossier extends TenantOwnedModel
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName(config('activitylog.default_log_name'))
+            ->useLogName(Config::string('activitylog.default_log_name'))
             ->logOnly($this->auditableAttributes())
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

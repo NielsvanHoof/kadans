@@ -22,6 +22,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -54,8 +55,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         public ?string $expectedPath = null,
         public ?int $pipelineId = null
     ) {
-        // Read at construction time — Octane workers must not cache this on the class.
-        $this->timeout = (int) config('transcription.timeouts.job', 120);
+        $this->timeout = Config::integer('transcription.timeouts.job', 120);
         $this->onQueue('transcription');
     }
 
@@ -232,7 +232,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         PipelineState $pipelineState,
     ): void {
         $pipeline->forceFill([
-            'provider' => (string) config('transcription.driver'),
+            'provider' => Config::string('transcription.driver'),
             'provider_job_id' => $recording->transcribe_job_id,
         ])->saveQuietly();
 

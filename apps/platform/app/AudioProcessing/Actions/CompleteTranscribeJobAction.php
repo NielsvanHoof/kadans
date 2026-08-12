@@ -19,6 +19,7 @@ use App\Pipelines\Support\PipelineState;
 use App\Pipelines\Support\PipelineStepSequence;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
 use function in_array;
@@ -109,7 +110,7 @@ final readonly class CompleteTranscribeJobAction
                 ) {
                     $pipeline = $this->prepareProviderPipeline->handle(
                         $pipeline,
-                        (string) config('transcription.driver'),
+                        Config::string('transcription.driver'),
                         $jobId,
                         PipelineStepKey::Transcribe,
                     );
@@ -178,7 +179,7 @@ final readonly class CompleteTranscribeJobAction
         if ($pipeline instanceof Pipeline) {
             $pipeline = $this->prepareProviderPipeline->handle(
                 $pipeline,
-                (string) config('transcription.driver'),
+                Config::string('transcription.driver'),
                 $jobId,
                 PipelineStepKey::Transcribe,
             );

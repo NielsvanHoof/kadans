@@ -17,6 +17,7 @@ use App\Platform\Events\DataSubjectExportCompleted;
 use App\Platform\Models\DataSubjectRequest;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -56,7 +57,7 @@ final readonly class GenerateDataSubjectExportAction
 
         $client = Client::withTrashed()->findOrFail($request->client_id);
 
-        $disk = (string) config('exports.disk');
+        $disk = Config::string('exports.disk');
         $archivePath = sprintf(
             'data-subject-exports/%d/%d/%d.zip',
             $request->tenant_id,
@@ -81,7 +82,7 @@ final readonly class GenerateDataSubjectExportAction
 
             $completedAt = now();
             $expiresAt = $completedAt->copy()->addHours(
-                (int) config('retention.data_subject_export_hours'),
+                Config::integer('retention.data_subject_export_hours'),
             );
 
             $request->forceFill([

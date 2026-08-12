@@ -22,6 +22,7 @@ use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -61,7 +62,7 @@ final class DataSubjectRequestController extends Controller
         );
 
         Toast::success(__('Request logged. It is due within :days days.', [
-            'days' => (int) config('retention.data_subject_response_days'),
+            'days' => Config::integer('retention.data_subject_response_days'),
         ]));
 
         return to_route('workspaces.data-subject-requests.index', $this->workspaceRouteParameters());

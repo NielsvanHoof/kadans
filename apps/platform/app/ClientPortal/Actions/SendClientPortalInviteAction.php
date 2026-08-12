@@ -9,6 +9,7 @@ use App\ClientPortal\Notifications\ClientPortalInviteNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;
@@ -31,7 +32,7 @@ final class SendClientPortalInviteAction
 
         $firmName = $dossier->tenant instanceof Tenant
             ? $dossier->tenant->name
-            : (string) config('app.name');
+            : Config::string('app.name');
 
         // Absolute portal URL embedding the one-time plain token.
         $portalUrl = URL::route('portal.exchange', ['token' => $plainTextToken]);

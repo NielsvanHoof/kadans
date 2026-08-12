@@ -10,6 +10,7 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\Rule;
 
 final class StoreTenantRoleRequest extends FormRequest
@@ -26,14 +27,14 @@ final class StoreTenantRoleRequest extends FormRequest
     public function rules(): array
     {
         $tenant = $this->route('tenant');
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
 
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(config('permission.table_names.roles'), 'name')
+                Rule::unique(Config::string('permission.table_names.roles'), 'name')
                     ->where($teamForeignKey, $tenant instanceof Tenant ? $tenant->id : null)
                     ->where('guard_name', 'web'),
             ],

@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\DocumentRequests;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
-use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Actions\StartPipelineAction;
 use App\Pipelines\Enums\PipelineType;
-use App\Pipelines\Models\Pipeline;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Closure;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
@@ -31,7 +30,7 @@ final readonly class UploadDocumentForRequestAction
     public function __construct(
         private FilesystemManager $filesystems,
         private DocumentRequestTransitions $documentRequestTransitions,
-        private CreatePipelineAction $createPipeline,
+        private StartPipelineAction $startPipeline,
     ) {}
 
     /**
@@ -50,7 +49,7 @@ final readonly class UploadDocumentForRequestAction
     ): UploadedDocument {
         throw_if($documentRequest->type !== QuestionnaireItemType::File, InvalidArgumentException::class, 'Only file items accept uploads.');
 
-        $disk = (string) config('filesystems.default', 'local');
+        $disk = Config::string('filesystems.default', 'local');
         $directory = sprintf(
             'tenants/%d/dossiers/%d',
             $documentRequest->tenant_id,
@@ -67,7 +66,6 @@ final readonly class UploadDocumentForRequestAction
 
         /** @var array{disk: string, path: string}|null $replacedFile */
         $replacedFile = null;
-        $pipeline = null;
 
         try {
             $uploadedDocument = DB::transaction(function () use (
@@ -78,7 +76,6 @@ final readonly class UploadDocumentForRequestAction
                 $sizeBytes,
                 $afterPersist,
                 $context,
-                &$pipeline,
                 &$replacedFile,
             ): UploadedDocument {
                 $documentRequestQuery = DocumentRequest::query()
@@ -131,7 +128,7 @@ final readonly class UploadDocumentForRequestAction
                     $afterPersist($uploadedDocument, $lockedDocumentRequest);
                 }
 
-                $pipeline = $this->createPipeline->handle(
+                $this->startPipeline->handle(
                     $uploadedDocument,
                     PipelineType::OcrDocument,
                     metadata: [
@@ -159,10 +156,6 @@ final readonly class UploadDocumentForRequestAction
                 'Failed to remove the file replaced by a newer document upload.',
             );
         }
-
-        throw_if(! $pipeline instanceof Pipeline, RuntimeException::class, 'Failed to create the document processing pipeline.');
-
-        dispatch(new ProcessUploadedDocumentJob($uploadedDocument->id, $uploadedDocument->path, $pipeline->id));
 
         return $uploadedDocument;
     }

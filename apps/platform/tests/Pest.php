@@ -157,7 +157,7 @@ pest()->presets()->custom('qompose', fn (): array => [
     |                                    gates on DossierPermission
     |
     | DocumentProcessing and AudioProcessing each depend on Pipelines one-way (run
-    | tracking), registering a PipelineRetryRunner into Pipelines' registry rather
+    | tracking), registering a PipelineRunner into Pipelines' registry rather
     | than Pipelines knowing about OCR/transcription specifics.
     |
     | Audit was likewise modelled as a layer (L3) and generated ~20 violations,
@@ -301,7 +301,7 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\WorkspaceNotifications',
         ]),
 
-    // Registers a PipelineRetryRunner into Pipelines' registry; otherwise
+    // Registers a PipelineRunner into Pipelines' registry; otherwise
     // unremarkable as an L4 sibling.
     expect('App\AudioProcessing')
         ->not->toUse([
@@ -312,7 +312,7 @@ pest()->presets()->custom('qompose', fn (): array => [
         ]),
 
     // Depends on Dossiers only for PipelinePolicy::download's DossierPermission
-    // check; OCR/transcription specifics stay inverted behind PipelineRetryRunner.
+    // check; OCR/transcription specifics stay inverted behind PipelineRunner.
     expect('App\Pipelines')
         ->not->toUse([
             'App\ClientPortal',

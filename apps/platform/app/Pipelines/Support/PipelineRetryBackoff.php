@@ -6,6 +6,7 @@ namespace App\Pipelines\Support;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Config;
 
 /**
  * When, if ever, a failed run should try again on its own.
@@ -33,9 +34,9 @@ final readonly class PipelineRetryBackoff
 
     public function delayMinutes(int $attemptNumber): int
     {
-        $base = max(1, (int) config('pipelines.retry.base_delay_minutes', 5));
-        $multiplier = max(1, (int) config('pipelines.retry.multiplier', 4));
-        $ceiling = max($base, (int) config('pipelines.retry.max_delay_minutes', 240));
+        $base = max(1, Config::integer('pipelines.retry.base_delay_minutes', 5));
+        $multiplier = max(1, Config::integer('pipelines.retry.multiplier', 4));
+        $ceiling = max($base, Config::integer('pipelines.retry.max_delay_minutes', 240));
 
         $exponent = max(0, $attemptNumber - 1);
         $delay = $base * $multiplier ** $exponent;
@@ -45,6 +46,6 @@ final readonly class PipelineRetryBackoff
 
     public function maxAttempts(): int
     {
-        return max(1, (int) config('pipelines.retry.max_attempts', 3));
+        return max(1, Config::integer('pipelines.retry.max_attempts', 3));
     }
 }

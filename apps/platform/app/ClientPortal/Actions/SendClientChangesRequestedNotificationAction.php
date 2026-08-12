@@ -9,6 +9,7 @@ use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Notification;
 use RuntimeException;
 
@@ -31,7 +32,7 @@ final class SendClientChangesRequestedNotificationAction
 
         $firmName = $dossier->tenant instanceof Tenant
             ? $dossier->tenant->name
-            : (string) config('app.name');
+            : Config::string('app.name');
 
         Notification::route('mail', $client->email)
             ->notify(

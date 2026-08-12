@@ -10,6 +10,7 @@ use DateTimeInterface;
 use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;
+use Illuminate\Support\Facades\Config;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 
@@ -52,7 +53,7 @@ final readonly class ResolveDocumentTemporaryUrlAction
      */
     public function supportsTemporaryUrl(UploadedDocument $document): bool
     {
-        $driver = config('filesystems.disks.'.$document->disk.'.driver');
+        $driver = Config::string('filesystems.disks.'.$document->disk.'.driver');
 
         return $driver === 's3';
     }
@@ -96,8 +97,9 @@ final readonly class ResolveDocumentTemporaryUrlAction
         DateTimeInterface $expiresAt,
         string $disposition,
     ): ?string {
-        $endpoint = config('filesystems.disks.s3.endpoint');
-        $publicBase = config('filesystems.disks.s3.url');
+        // Endpoint / public URL are optional nulls when disks share one host.
+        $endpoint = Config::get('filesystems.disks.s3.endpoint');
+        $publicBase = Config::get('filesystems.disks.s3.url');
 
         // Only needed when internal and public endpoints differ.
         if (! is_string($endpoint) || ! is_string($publicBase) || $endpoint === $publicBase) {
@@ -114,12 +116,12 @@ final readonly class ResolveDocumentTemporaryUrlAction
             'region' => $originalClient->getRegion(),
             'version' => 'latest',
             'endpoint' => $publicBase,
-            'use_path_style_endpoint' => config('filesystems.disks.s3.use_path_style_endpoint', false),
+            'use_path_style_endpoint' => Config::boolean('filesystems.disks.s3.use_path_style_endpoint', false),
             'credentials' => $originalClient->getCredentials()->wait(),
         ]);
 
         $command = $publicClient->getCommand('GetObject', [
-            'Bucket' => config('filesystems.disks.s3.bucket'),
+            'Bucket' => Config::string('filesystems.disks.s3.bucket'),
             'Key' => $document->path,
             'ResponseContentDisposition' => $this->contentDisposition($disposition, $document->original_filename),
             'ResponseContentType' => $document->mime_type,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Dossiers\Http\Controllers\AudioRecordingController;
 use Illuminate\Auth\Middleware\RequirePassword;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,12 +22,12 @@ Route::get('audio-recordings/{audioRecording}/live', [AudioRecordingController::
     ->name('audio-recordings.live');
 Route::get('audio-recordings/{audioRecording}', [AudioRecordingController::class, 'show'])
     ->middleware(RequirePassword::using(
-        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('audio-recordings.show');
 Route::get('audio-recordings/{audioRecording}/download', [AudioRecordingController::class, 'download'])
     ->middleware(RequirePassword::using(
-        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('audio-recordings.download');
 Route::delete('audio-recordings/{audioRecording}', [AudioRecordingController::class, 'destroy'])

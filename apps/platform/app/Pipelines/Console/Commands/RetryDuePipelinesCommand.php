@@ -13,6 +13,7 @@ use App\Tenancy\TenantContext;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -38,7 +39,7 @@ final class RetryDuePipelinesCommand extends Command
         PipelineRetryBackoff $backoff,
     ): int {
         $due = Date::now();
-        $batchSize = max(1, (int) config('pipelines.retry.batch_size', 50));
+        $batchSize = max(1, Config::integer('pipelines.retry.batch_size', 50));
         $retried = 0;
         $failures = 0;
 

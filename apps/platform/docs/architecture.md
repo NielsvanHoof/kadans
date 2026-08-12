@@ -62,7 +62,7 @@ Domains are PHP namespaces with their own service providers for bindings and pol
 | Container bindings | Domain `*ServiceProvider::register()` (e.g. OCR/AWS in `DocumentProcessingServiceProvider`) |
 | Morph map | `Relation::enforceMorphMap()` in [`AppServiceProvider`](../app/Providers/AppServiceProvider.php) |
 | Permissions | Enums listed in [`config/tenant-permissions.php`](../config/tenant-permissions.php) |
-| Pipeline retry runners | `PipelineRetryRunnerRegistry::register()` in each owning domain's `*ServiceProvider::boot()` (OCR, AudioProcessing, Dossiers export) |
+| Pipeline runners | `PipelineRunnerRegistry::register()` in each owning domain's `*ServiceProvider::boot()` (OCR, AudioProcessing, Dossiers export) |
 
 Providers registered in [`bootstrap/providers.php`](../bootstrap/providers.php):
 
@@ -166,13 +166,13 @@ a client cascades), `Dossiers`/`DocumentProcessing` and `Dossiers`/`AudioProcess
 their lifecycle), and `Dossiers`/`Pipelines` (export runs are pipelines owned
 by a dossier; `PipelinePolicy::download` also gates on `DossierPermission`).
 `DocumentProcessing` and `AudioProcessing` each depend on `Pipelines` one-way
-for run tracking, registering a `PipelineRetryRunner` into its registry rather
+for run tracking, registering a `PipelineRunner` into its registry rather
 than `Pipelines` knowing OCR/transcription specifics.
 
 When a lower layer needs something from a higher one, invert it with a contract
 the lower layer owns and the higher one binds — see
 `Tenancy\Contracts\SupportSessionState`, `Dossiers\Contracts\ClientPortalReminders`,
-`Pipelines\Contracts\PipelineRetryRunner`, and `Shared\Cache\TenantCacheInvalidator`.
+`Pipelines\Contracts\PipelineRunner`, and `Shared\Cache\TenantCacheInvalidator`.
 
 Migrations and factories stay under `database/` — not inside `app/{Domain}`.
 

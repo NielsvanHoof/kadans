@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Retry;
+namespace App\DocumentProcessing\Runners;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\Dossiers\Models\UploadedDocument;
-use App\Pipelines\Contracts\PipelineRetryRunner;
+use App\Pipelines\Contracts\PipelineRunner;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use Illuminate\Database\Eloquent\Model;
+use RuntimeException;
 
-final class OcrPipelineRetryRunner implements PipelineRetryRunner
+final class OcrPipelineRunner implements PipelineRunner
 {
     public function type(): PipelineType
     {
@@ -26,6 +27,8 @@ final class OcrPipelineRetryRunner implements PipelineRetryRunner
 
     public function resetSubject(Model $subject): void
     {
+        throw_unless($subject instanceof UploadedDocument, RuntimeException::class, 'The OCR pipeline runner received an unexpected subject.');
+
         $subject->forceFill([
             'processing_status' => DocumentProcessingStatus::Pending,
             'processing_error' => null,
@@ -38,9 +41,11 @@ final class OcrPipelineRetryRunner implements PipelineRetryRunner
 
     public function dispatch(Pipeline $pipeline, Model $subject): void
     {
+        throw_unless($subject instanceof UploadedDocument, RuntimeException::class, 'The OCR pipeline runner received an unexpected subject.');
+
         dispatch(new ProcessUploadedDocumentJob(
-            $subject->getKey(),
-            $subject->getAttribute('path'),
+            $subject->id,
+            $subject->path,
             $pipeline->id,
         ))->afterCommit();
     }

@@ -14,6 +14,7 @@ use App\Tenancy\Policies\TenantInvitationPolicy;
 use App\Tenancy\Policies\TenantMembershipPolicy;
 use App\Tenancy\Policies\TenantRolePolicy;
 use App\Tenancy\Support\PermissionRegistry;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Override;
@@ -30,7 +31,7 @@ final class TenancyServiceProvider extends ServiceProvider
         $this->app->singleton(
             PermissionRegistry::class,
             static fn (): PermissionRegistry => new PermissionRegistry(
-                config()->array('tenant-permissions.enums'),
+                Config::array('tenant-permissions.enums'),
             ),
         );
     }

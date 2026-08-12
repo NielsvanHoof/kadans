@@ -5,7 +5,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Applies to | Rule file |
 | --- | --- |
 | app/*/{Actions,Queries,Services,Transitions}/** | .ai/rules/actions-queries-services-transitions.md |
-| app/** | .ai/rules/app.md |
+| app/*/Actions/** | .ai/rules/actions.md |
+| app/**, app/**/*.php | .ai/rules/app.md |
 | app/ClientPortal/** | .ai/rules/client-portal.md |
 | config/** | .ai/rules/config.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |

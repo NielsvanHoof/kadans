@@ -14,6 +14,7 @@ use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -88,7 +89,7 @@ final readonly class FailTextractExtractionAction
             if ($pipeline instanceof Pipeline) {
                 $pipeline = $this->prepareProviderPipeline->handle(
                     $pipeline,
-                    (string) config('ocr.driver'),
+                    Config::string('ocr.driver'),
                     $jobId,
                     PipelineStepKey::ProviderProcessing,
                 );

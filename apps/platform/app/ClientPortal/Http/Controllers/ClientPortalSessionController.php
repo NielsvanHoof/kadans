@@ -12,6 +12,7 @@ use App\ClientPortal\Support\PortalDeviceFingerprint;
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpFoundation\Response;
 
 use function max;
@@ -42,7 +43,7 @@ final class ClientPortalSessionController extends Controller
 
         $lifetimeMinutes = max(1, min(
             60,
-            (int) config('portal.session_lifetime_minutes', 15),
+            Config::integer('portal.session_lifetime_minutes', 15),
         ));
         $sessionExpiresAt = now()->addMinutes($lifetimeMinutes);
 

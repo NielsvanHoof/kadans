@@ -22,6 +22,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Config;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -115,7 +116,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
      */
     public function preferredLocale(): string
     {
-        return $this->locale ?? (string) config('app.locale');
+        return $this->locale ?? Config::string('app.locale');
     }
 
     /**

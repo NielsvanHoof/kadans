@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\AudioRecordings;
 
 use App\Accounts\Models\User;
-use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Actions\StartPipelineAction;
 use App\Pipelines\Enums\PipelineType;
-use App\Pipelines\Models\Pipeline;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
@@ -28,7 +27,7 @@ final readonly class UploadAudioRecordingAction
 {
     public function __construct(
         private FilesystemManager $filesystems,
-        private CreatePipelineAction $createPipeline,
+        private StartPipelineAction $startPipeline,
         private LogAuditActivityAction $logAuditActivity,
     ) {}
 
@@ -37,7 +36,7 @@ final readonly class UploadAudioRecordingAction
         UploadedFile $file,
         ?User $uploadedBy = null,
     ): AudioRecording {
-        $disk = (string) config('filesystems.default', 'local');
+        $disk = Config::string('filesystems.default', 'local');
         $directory = sprintf('tenants/%d/dossiers/%d/audio', $dossier->tenant_id, $dossier->id);
 
         $path = $this->filesystems
@@ -47,7 +46,6 @@ final readonly class UploadAudioRecordingAction
         throw_if(! is_string($path) || $path === '', RuntimeException::class, 'Failed to store the uploaded audio recording.');
 
         $sizeBytes = $file->getSize();
-        $pipeline = null;
 
         try {
             $audioRecording = DB::transaction(function () use (
@@ -57,7 +55,6 @@ final readonly class UploadAudioRecordingAction
                 $file,
                 $sizeBytes,
                 $uploadedBy,
-                &$pipeline,
             ): AudioRecording {
                 $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
                 $dossierQuery->getQuery()->lockForUpdate();
@@ -78,7 +75,7 @@ final readonly class UploadAudioRecordingAction
                     'transcription_finished_at' => null,
                 ]);
 
-                $pipeline = $this->createPipeline->handle(
+                $this->startPipeline->handle(
                     $audioRecording,
                     PipelineType::AudioTranscription,
                     $uploadedBy,
@@ -105,10 +102,6 @@ final readonly class UploadAudioRecordingAction
 
             throw $exception;
         }
-
-        throw_if(! $pipeline instanceof Pipeline, RuntimeException::class, 'Failed to create the audio transcription pipeline.');
-
-        dispatch(new ProcessAudioRecordingJob($audioRecording->id, $audioRecording->path, $pipeline->id));
 
         return $audioRecording;
     }

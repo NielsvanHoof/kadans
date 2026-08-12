@@ -8,7 +8,7 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Pipelines\Models\Pipeline;
-use App\Pipelines\Support\PipelineRetryRunnerRegistry;
+use App\Pipelines\Support\PipelineRunnerRegistry;
 use App\Pipelines\Transitions\PipelineTransitions;
 use Illuminate\Support\Facades\DB;
 
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * looks in flight, so a cancelled run would otherwise leave its document or
  * recording stuck in `processing` with nothing left to move it on. The reset
  * itself is the owning domain's business, so it goes through the same registry
- * RetryPipelineAction uses.
+ * StartPipelineAction and RetryPipelineAction use.
  *
  * Unlike a retry, this does not queue anything, and a missing subject does not
  * block it: the run still needs closing either way.
@@ -31,7 +31,7 @@ final readonly class CancelPipelineAction
         private PipelineTransitions $transitions,
         private BroadcastPipelineUpdatedAction $broadcastPipelineUpdated,
         private LogAuditActivityAction $logAuditActivity,
-        private PipelineRetryRunnerRegistry $retryRunners,
+        private PipelineRunnerRegistry $runners,
     ) {}
 
     public function handle(Pipeline $pipeline, User $user): Pipeline
@@ -73,7 +73,7 @@ final readonly class CancelPipelineAction
      */
     private function releaseSubject(Pipeline $pipeline): void
     {
-        $runner = $this->retryRunners->for($pipeline->type);
+        $runner = $this->runners->for($pipeline->type);
 
         $pipeline->loadMissing('pipelineable');
         $subject = $pipeline->pipelineable;

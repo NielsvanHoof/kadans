@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Config;
 use Override;
 
 /**
@@ -126,7 +127,7 @@ final class ClientAccessGrant extends TenantOwnedModel
      */
     public function prunable(): Builder
     {
-        $cutoff = now()->subDays((int) config('retention.portal_grants_days'));
+        $cutoff = now()->subDays(Config::integer('retention.portal_grants_days'));
 
         return self::queryWithoutTenantScope()
             ->where(function (Builder $query) use ($cutoff): void {

@@ -11,6 +11,7 @@ use App\Clients\Models\Client;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Models\DataSubjectRequest;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -44,7 +45,7 @@ final readonly class LogDataSubjectRequestAction
                 'status' => DataSubjectRequestStatus::Pending,
                 'requested_at' => $requestedAt,
                 'due_at' => $requestedAt->copy()->addDays(
-                    (int) config('retention.data_subject_response_days'),
+                    Config::integer('retention.data_subject_response_days'),
                 ),
                 'requested_by' => $requestedBy->id,
             ]);

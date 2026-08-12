@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\AudioProcessing\Retry;
+namespace App\AudioProcessing\Runners;
 
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
-use App\Pipelines\Contracts\PipelineRetryRunner;
+use App\Pipelines\Contracts\PipelineRunner;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use Illuminate\Database\Eloquent\Model;
+use RuntimeException;
 
-final class AudioTranscriptionPipelineRetryRunner implements PipelineRetryRunner
+final class AudioTranscriptionPipelineRunner implements PipelineRunner
 {
     public function type(): PipelineType
     {
@@ -26,6 +27,8 @@ final class AudioTranscriptionPipelineRetryRunner implements PipelineRetryRunner
 
     public function resetSubject(Model $subject): void
     {
+        throw_unless($subject instanceof AudioRecording, RuntimeException::class, 'The audio transcription pipeline runner received an unexpected subject.');
+
         $subject->forceFill([
             'transcription_status' => TranscriptionStatus::Pending,
             'transcription_error' => null,
@@ -39,9 +42,11 @@ final class AudioTranscriptionPipelineRetryRunner implements PipelineRetryRunner
 
     public function dispatch(Pipeline $pipeline, Model $subject): void
     {
+        throw_unless($subject instanceof AudioRecording, RuntimeException::class, 'The audio transcription pipeline runner received an unexpected subject.');
+
         dispatch(new ProcessAudioRecordingJob(
-            $subject->getKey(),
-            $subject->getAttribute('path'),
+            $subject->id,
+            $subject->path,
             $pipeline->id,
         ))->afterCommit();
     }
