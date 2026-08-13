@@ -24,8 +24,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | Seconds for ProcessAudioRecordingJob::$timeout. The start job is fast
-    | (mock completes inline; Transcribe only starts the AWS job). Keep
-    | REDIS_QUEUE_RETRY_AFTER above this value.
+    | (mock completes inline; Transcribe only starts the AWS job). Redis
+    | retry_after must also exceed GenerateDataSubjectExportJob (600s).
     |
     */
 

@@ -15,6 +15,8 @@ use App\Tenancy\Enums\Role;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationItemData;
 use App\WorkspaceNotifications\Queries\FetchWorkspaceNotificationsForUserQuery;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -279,6 +281,53 @@ test('staff cannot delete another users notification', function (): void {
         ->assertNotFound();
 
     expect($context['owner']->notifications()->count())->toBe(1);
+});
+
+test('a non-uuid notification id returns 404 instead of 500', function (string $method, string $routeName): void {
+    $context = createWorkspaceNotificationContext();
+
+    $route = Route::getRoutes()->getByName($routeName);
+
+    expect($route)->not->toBeNull()
+        ->and($route->wheres['notification'] ?? '')->not->toBe('')
+        ->and(preg_match('/^'.$route->wheres['notification'].'$/', 'foo'))->toBe(0);
+
+    $this->actingAs($context['owner'])
+        ->{$method}(workspaceRoute($routeName, $context['tenant'], [
+            'notification' => 'foo',
+        ]))
+        ->assertNotFound();
+})->with([
+    'read' => ['post', 'workspaces.notifications.read'],
+    'destroy' => ['delete', 'workspaces.notifications.destroy'],
+]);
+
+test('an unmapped workspace notification type is omitted from the bell', function (): void {
+    $context = createWorkspaceNotificationContext();
+    notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
+
+    // Column type is in the inbox allow-list so the query loads the row; data.type
+    // is unknown, which used to render as a questionnaire with dossierId 0.
+    $context['owner']->notifications()->create([
+        'id' => (string) Str::uuid(),
+        'type' => ClientQuestionnaireCompletedNotification::DatabaseType,
+        'data' => [
+            'tenant_id' => (string) $context['tenant']->id,
+            'type' => 'unknown_workspace_bell_type',
+            'message' => 'should never render',
+        ],
+    ]);
+
+    $notifications = resolve(FetchWorkspaceNotificationsForUserQuery::class)
+        ->handle($context['owner'], $context['tenant']);
+
+    $types = array_map(fn (WorkspaceNotificationItemData $item): string => $item->type, $notifications->items);
+    $messages = array_map(fn (WorkspaceNotificationItemData $item): string => $item->message, $notifications->items);
+
+    expect($notifications->items)->toHaveCount(1)
+        ->and($types)->toBe(['client_questionnaire_completed'])
+        ->and($messages)->not->toContain('should never render')
+        ->and($notifications->items[0]->dossierId)->toBe($context['dossier']->id);
 });
 
 test('portal mail notifications expose telescope tags for their subjects', function (): void {

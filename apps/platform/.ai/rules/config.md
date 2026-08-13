@@ -1,6 +1,7 @@
 ---
 paths:
   - 'config/**'
+  - config/queue.php
 ---
 
 # Config
@@ -15,3 +16,6 @@ When you add a config key that would be dangerous with its development default, 
 `phpunit.xml` deliberately pins `SECURITY_CSP_*` and `SECURITY_HSTS_*` so a developer's local `.env` cannot mask a broken policy. Keep new security config pinned the same way.
 
 Config must stay `config:cache`-serializable — register class names, not Closures (see `configureDebugbarStorageOpen`).
+
+## Redis retry_after must exceed every job timeout
+Redis retry_after must be strictly greater than every job timeout (largest: GenerateDataSubjectExportJob 600s). Default and .env.example are 660. ProductionConfigurationValidator fails boot when the reservation would expire while a job can still run. Do not lower the DSR export timeout to dodge this — the archive can contain every file for one client.

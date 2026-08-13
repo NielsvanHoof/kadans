@@ -228,4 +228,22 @@ final class WorkspaceMemberRoles
             ->lockForUpdate()
             ->exists();
     }
+
+    /**
+     * Serialize last-owner checks across concurrent membership mutations.
+     *
+     * Call inside DB::transaction() before locking the target membership row.
+     * A lock on that row alone does not serialize two mutations on different
+     * owners (remove A + demote B): both count 2 under READ COMMITTED and both
+     * commit, leaving zero owners. The tenant row is the shared key.
+     */
+    public function lockOwnerMutations(int $tenantId): void
+    {
+        $row = DB::table('tenants')
+            ->where('id', $tenantId)
+            ->lockForUpdate()
+            ->first(['id']);
+
+        throw_unless($row !== null, RuntimeException::class, 'Tenant not found.');
+    }
 }

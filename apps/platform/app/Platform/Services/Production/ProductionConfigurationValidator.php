@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Platform\Services\Production;
 
 use App\Accounts\Enums\TwoFactorEnforcement;
+use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Uri;
@@ -12,7 +15,10 @@ use LogicException;
 
 use function in_array;
 use function is_array;
+use function is_int;
+use function is_numeric;
 use function is_string;
+use function max;
 use function sprintf;
 
 final readonly class ProductionConfigurationValidator
@@ -62,6 +68,7 @@ final readonly class ProductionConfigurationValidator
             $this->isHttpsUrl() ? null : 'app.url',
             $this->matches('cache.default', 'redis'),
             $this->matches('queue.default', 'redis'),
+            $this->hasRetryAfterAboveJobTimeouts() ? null : 'queue.connections.redis.retry_after',
             $this->matches('database.redis.default.scheme', 'tls'),
             $this->matches('database.redis.cache.scheme', 'tls'),
             $this->matches('session.driver', 'redis'),
@@ -98,6 +105,34 @@ final readonly class ProductionConfigurationValidator
                 implode(', ', $invalidKeys),
             ));
         }
+    }
+
+    /**
+     * Redis releases a reserved job when retry_after elapses. If that is at or
+     * below a job's timeout, a second worker runs the same GDPR export (or OCR
+     * start) concurrently. ShouldBeUnique only blocks new dispatches.
+     */
+    private function hasRetryAfterAboveJobTimeouts(): bool
+    {
+        $retryAfter = $this->config->get('queue.connections.redis.retry_after');
+
+        if (! is_int($retryAfter) && ! is_numeric($retryAfter)) {
+            return false;
+        }
+
+        return (int) $retryAfter > $this->largestJobTimeoutSeconds();
+    }
+
+    private function largestJobTimeoutSeconds(): int
+    {
+        $transcriptionTimeout = $this->config->get('transcription.timeouts.job');
+
+        return max(
+            GenerateDataSubjectExportJob::TIMEOUT_SECONDS,
+            GenerateDossierExportJob::TIMEOUT_SECONDS,
+            ProcessUploadedDocumentJob::TIMEOUT_SECONDS,
+            is_numeric($transcriptionTimeout) ? (int) $transcriptionTimeout : 0,
+        );
     }
 
     private function matches(string $key, string $expected): ?string

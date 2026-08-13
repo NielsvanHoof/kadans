@@ -6,6 +6,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
@@ -100,6 +101,37 @@ test('archived dossier younger than retention cutoff is not purged', function ()
     expect(Dossier::onlyTrashed()->find($dossier->id))->not->toBeNull();
 });
 
+test('purging a dossier deletes audio recordings from storage and counts them', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $audioRecording = AudioRecording::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'disk' => 'local',
+        'path' => 'audio/retention-voice.mp3',
+    ]);
+
+    Storage::disk('local')->put($audioRecording->path, 'voice-recording');
+
+    $dossier->delete();
+    Dossier::withTrashed()
+        ->whereKey($dossier->id)
+        ->update(['deleted_at' => now()->subDays(1095)->subDay()]);
+
+    $result = resolve(PurgeExpiredDossierAction::class)
+        ->handle(Dossier::onlyTrashed()->findOrFail($dossier->id));
+
+    expect($result['purged'])->toBeTrue()
+        ->and($result['files_deleted'])->toBe(1)
+        ->and(Storage::disk('local')->exists($audioRecording->path))->toBeFalse()
+        ->and(AudioRecording::query()->find($audioRecording->id))->toBeNull();
+});
+
 test('expired archived client is purged only after dossiers are hard deleted', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
@@ -181,8 +213,15 @@ test('a failing dossier purge is reported and does not present as success', func
         'disk' => 'local',
         'path' => 'uploads/retention-failure.pdf',
     ]);
+    $audioRecording = AudioRecording::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'disk' => 'local',
+        'path' => 'audio/retention-failure.mp3',
+    ]);
 
     Storage::disk('local')->put($uploadedDocument->path, 'must-survive-rollback');
+    Storage::disk('local')->put($audioRecording->path, 'audio-must-survive-rollback');
 
     $dossier->delete();
 
@@ -208,5 +247,6 @@ test('a failing dossier purge is reported and does not present as success', func
             && ($context['dossier_id'] ?? null) === $dossier->id);
 
     expect(Dossier::onlyTrashed()->find($dossier->id))->not->toBeNull()
-        ->and(Storage::disk('local')->exists($uploadedDocument->path))->toBeTrue();
+        ->and(Storage::disk('local')->exists($uploadedDocument->path))->toBeTrue()
+        ->and(Storage::disk('local')->exists($audioRecording->path))->toBeTrue();
 });

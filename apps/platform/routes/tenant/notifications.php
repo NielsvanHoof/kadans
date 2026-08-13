@@ -13,7 +13,9 @@ Route::delete('notifications/clear-all', [WorkspaceNotificationController::class
     ->name('notifications.clear-all');
 
 Route::post('notifications/{notification}/read', [WorkspaceNotificationController::class, 'update'])
+    ->whereUuid('notification')
     ->name('notifications.read');
 
 Route::delete('notifications/{notification}', [WorkspaceNotificationController::class, 'destroy'])
+    ->whereUuid('notification')
     ->name('notifications.destroy');

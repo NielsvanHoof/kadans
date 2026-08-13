@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
+
+covers(ProductionConfigurationValidator::class);
 
 beforeEach(function (): void {
     $this->app->instance('env', 'production');
@@ -26,9 +31,11 @@ beforeEach(function (): void {
         'security.two_factor.enforcement' => 'all',
         'sentry.dsn' => 'https://public@sentry.example.com/1',
         'transcription.driver' => 'transcribe',
+        'transcription.timeouts.job' => 120,
         'production.allowed_hosts' => ['app.example.com'],
         'production.trusted_proxies' => '10.0.0.0/8',
         'queue.default' => 'redis',
+        'queue.connections.redis.retry_after' => 660,
         'reverb.apps.apps.0.allowed_origins' => ['app.example.com'],
         'reverb.apps.apps.0.key' => 'production-reverb-key',
         'reverb.apps.apps.0.options.scheme' => 'https',
@@ -44,7 +51,11 @@ beforeEach(function (): void {
 test('safe production configuration passes validation', function (): void {
     resolve(ProductionConfigurationValidator::class)->validate();
 
-    expect(true)->toBeTrue();
+    expect(config('queue.connections.redis.retry_after'))
+        ->toBeGreaterThan(GenerateDataSubjectExportJob::TIMEOUT_SECONDS)
+        ->toBeGreaterThan(GenerateDossierExportJob::TIMEOUT_SECONDS)
+        ->toBeGreaterThan(ProcessUploadedDocumentJob::TIMEOUT_SECONDS)
+        ->toBeGreaterThan((int) config('transcription.timeouts.job'));
 });
 
 test('production rejects unsafe configuration', function (string $key, mixed $value): void {
@@ -57,6 +68,8 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'non-HTTPS application URL' => ['app.url', 'http://app.example.com'],
     'non-Redis cache' => ['cache.default', 'file'],
     'non-Redis queue' => ['queue.default', 'sync'],
+    'retry_after at data-subject export timeout' => ['queue.connections.redis.retry_after', GenerateDataSubjectExportJob::TIMEOUT_SECONDS],
+    'retry_after below data-subject export timeout' => ['queue.connections.redis.retry_after', 90],
     'unencrypted Redis cache' => ['database.redis.cache.scheme', 'tcp'],
     'unencrypted Redis connection' => ['database.redis.default.scheme', 'tcp'],
     'non-Redis sessions' => ['session.driver', 'file'],
@@ -155,6 +168,16 @@ test('non-production environments may use local services', function (): void {
     resolve(ProductionConfigurationValidator::class)->validate();
 
     expect(true)->toBeTrue();
+});
+
+test('production rejects retry_after at or below the transcription job timeout', function (): void {
+    config([
+        'queue.connections.redis.retry_after' => 180,
+        'transcription.timeouts.job' => 180,
+    ]);
+
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
+        ->toThrow(LogicException::class, 'queue.connections.redis.retry_after');
 });
 
 test('composer package discovery can run before production configuration exists', function (): void {

@@ -23,6 +23,8 @@ final readonly class SuspendTenantMemberAction
     public function handle(TenantMembership $membership, User $suspendedBy): TenantMembership
     {
         return DB::transaction(function () use ($membership, $suspendedBy): TenantMembership {
+            $this->memberRoles->lockOwnerMutations($membership->tenant_id);
+
             $membershipQuery = TenantMembership::query()->whereKey($membership->getKey());
             $membershipQuery->getQuery()->lockForUpdate();
             $locked = $membershipQuery->firstOrFail();

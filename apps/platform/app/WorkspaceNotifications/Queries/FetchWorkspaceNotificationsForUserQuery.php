@@ -15,6 +15,8 @@ use App\WorkspaceNotifications\Support\WorkspaceNotificationTypes;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 
+use function is_string;
+
 /**
  * Recent workspace inbox notifications for the staff bell dropdown.
  */
@@ -47,7 +49,13 @@ final class FetchWorkspaceNotificationsForUserQuery
         $items = [];
 
         foreach ($notifications as $notification) {
-            $items[] = $this->mapNotification($notification);
+            $item = $this->mapNotification($notification);
+
+            if (! $item instanceof WorkspaceNotificationItemData) {
+                continue;
+            }
+
+            $items[] = $item;
         }
 
         return new WorkspaceNotificationsData(
@@ -56,18 +64,29 @@ final class FetchWorkspaceNotificationsForUserQuery
         );
     }
 
-    private function mapNotification(DatabaseNotification $notification): WorkspaceNotificationItemData
+    private function mapNotification(DatabaseNotification $notification): ?WorkspaceNotificationItemData
     {
         /** @var array<string, mixed> $data */
         $data = $notification->data;
 
-        $type = (string) ($data['type'] ?? ClientQuestionnaireCompletedNotification::DatabaseType);
+        $type = $data['type'] ?? null;
 
-        [$message, $url, $extra] = match ($type) {
+        if (! is_string($type) || $type === '') {
+            return null;
+        }
+
+        $mapped = match ($type) {
             AudioTranscriptionCompletedNotification::DatabaseType => $this->mapAudioTranscriptionCompleted($data),
             ClientPortalNewDeviceNotification::DatabaseType => $this->mapClientPortalNewDevice($data),
-            default => $this->mapClientQuestionnaireCompleted($data),
+            ClientQuestionnaireCompletedNotification::DatabaseType => $this->mapClientQuestionnaireCompleted($data),
+            default => null,
         };
+
+        if ($mapped === null) {
+            return null;
+        }
+
+        [$message, $url, $extra] = $mapped;
 
         return new WorkspaceNotificationItemData(...[
             'id' => $notification->id,

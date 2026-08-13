@@ -45,8 +45,8 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
     public const array BACKOFF_SECONDS = [10, 30, 60];
 
     /**
-     * Must stay comfortably below the queue connection's retry_after
-     * (see .env's REDIS_QUEUE_RETRY_AFTER). Start-only / mock is fast.
+     * Must stay below Redis retry_after. The connection default is sized for
+     * GenerateDataSubjectExportJob (600s), which is the larger timeout.
      */
     public int $timeout;
 

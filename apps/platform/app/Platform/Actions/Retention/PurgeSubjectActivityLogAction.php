@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Platform\Actions\Retention;
 
 use App\Audit\Models\Activity;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
@@ -62,15 +63,27 @@ final class PurgeSubjectActivityLogAction
                 ->delete();
         }
 
+        $audioRecordingIds = AudioRecording::query()
+            ->where('dossier_id', $dossier->id)
+            ->toBase()
+            ->pluck('id');
+
+        foreach ($audioRecordingIds as $audioRecordingId) {
+            $deletedCount += Activity::query()
+                ->where('subject_type', (new AudioRecording)->getMorphClass())
+                ->where('subject_id', $audioRecordingId)
+                ->delete();
+        }
+
         $pipelineQuery = Pipeline::query();
         $pipelineIds = $pipelineQuery->getQuery()
-            ->where(function (Builder $query) use ($dossier, $uploadedDocumentIds, $exportIds): void {
+            ->where(function (Builder $query) use ($dossier, $uploadedDocumentIds, $exportIds, $audioRecordingIds): void {
                 $query
                     ->where(function (Builder $query) use ($dossier): void {
                         $query->where('pipelineable_type', (new Dossier)->getMorphClass())
                             ->where('pipelineable_id', $dossier->id);
                     })
-                    ->orWhere(function (Builder $query) use ($uploadedDocumentIds, $exportIds): void {
+                    ->orWhere(function (Builder $query) use ($uploadedDocumentIds, $exportIds, $audioRecordingIds): void {
                         $query
                             ->where(function (Builder $query) use ($uploadedDocumentIds): void {
                                 $query->where('pipelineable_type', (new UploadedDocument)->getMorphClass())
@@ -79,6 +92,10 @@ final class PurgeSubjectActivityLogAction
                             ->orWhere(function (Builder $query) use ($exportIds): void {
                                 $query->where('pipelineable_type', (new DossierExport)->getMorphClass())
                                     ->whereIn('pipelineable_id', $exportIds);
+                            })
+                            ->orWhere(function (Builder $query) use ($audioRecordingIds): void {
+                                $query->where('pipelineable_type', (new AudioRecording)->getMorphClass())
+                                    ->whereIn('pipelineable_id', $audioRecordingIds);
                             });
                     });
             })

@@ -17,6 +17,7 @@ final readonly class PurgeExpiredDossierAction
     public function __construct(
         private DeleteStoredDocumentFilesAction $deleteStoredDocumentFiles,
         private DeleteStoredDossierExportFilesAction $deleteStoredDossierExportFiles,
+        private DeleteStoredAudioFilesAction $deleteStoredAudioFiles,
         private DeletePipelinesForSubjectsAction $deletePipelinesForSubjects,
         private PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
     ) {}
@@ -46,17 +47,21 @@ final readonly class PurgeExpiredDossierAction
         $uploadedDocumentsQuery->getQuery()->whereIn('document_request_id', $documentRequestIds);
         $uploadedDocuments = $uploadedDocumentsQuery->get();
         $dossierExports = DossierExport::query()->where('dossier_id', $dossier->id)->get();
+        $audioRecordings = $dossier->audioRecordings()->get();
 
-        $filesDeleted = $uploadedDocuments->count() + $dossierExports->filter(
-            static fn (DossierExport $export): bool => $export->path !== null,
-        )->count();
+        $filesDeleted = $uploadedDocuments->count()
+            + $dossierExports->filter(
+                static fn (DossierExport $export): bool => $export->path !== null,
+            )->count()
+            + $audioRecordings->count();
 
         try {
-            $activityRowsDeleted = DB::transaction(function () use ($dossier, $uploadedDocuments, $dossierExports): int {
+            $activityRowsDeleted = DB::transaction(function () use ($dossier, $uploadedDocuments, $dossierExports, $audioRecordings): int {
                 $activityRowsDeleted = $this->purgeSubjectActivityLog->handle($dossier);
                 $this->deletePipelinesForSubjects->handle([
                     ...$uploadedDocuments->all(),
                     ...$dossierExports->all(),
+                    ...$audioRecordings->all(),
                 ]);
 
                 $dossier->disableLogging();
@@ -68,6 +73,7 @@ final readonly class PurgeExpiredDossierAction
             // Blobs only after a successful commit — mirrors document delete ordering.
             $this->deleteStoredDocumentFiles->handle($uploadedDocuments);
             $this->deleteStoredDossierExportFiles->handle($dossierExports);
+            $this->deleteStoredAudioFiles->handle($audioRecordings);
         } catch (Throwable $exception) {
             report($exception);
             Log::error('Legal retention dossier purge failed.', [

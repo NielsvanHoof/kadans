@@ -8,7 +8,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Actions/** | .ai/rules/actions.md |
 | app/**, app/**/*.php | .ai/rules/app.md |
 | app/ClientPortal/** | .ai/rules/client-portal.md |
-| config/** | .ai/rules/config.md |
+| config/**, config/queue.php | .ai/rules/config.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
@@ -27,7 +27,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Models/** | .ai/rules/models.md |
 | app/Pipelines/** | .ai/rules/pipelines.md |
 | app/Platform/Models/DataSubjectRequest.php | .ai/rules/platform-models.md |
+| app/WorkspaceNotifications/Queries/** | .ai/rules/queries.md |
 | app/*/{Data,Http/Requests,Enums,Policies}/** | .ai/rules/requests-enums-policies.md |
+| app/Platform/Actions/Retention/** | .ai/rules/retention.md |
 | routes/** | .ai/rules/routes.md |
 | app/Tenancy/** | .ai/rules/tenancy.md |
 | tests/** | .ai/rules/tests.md |
