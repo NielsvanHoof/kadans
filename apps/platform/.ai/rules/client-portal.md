@@ -21,3 +21,10 @@ Portal submissions delegate to `DocumentRequestTransitions::canSubmit()` — cli
 The portal conceals cross-dossier probes as 404s via `abort()`, which deliberately does **not** reach `LogAccessDeniedAction` (only policy denials do). Keep it that way — otherwise probes flood the audit trail.
 
 Cumulative portal uploads per dossier are capped by `DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER`.
+
+## Portal magic-link resolution is timeboxed; the session middleware is not
+ResolveClientAccessGrantFromTokenAction wraps its lookup in Timebox (200ms, matching Laravel's SessionGuard). Every portal denial is already concealed as a 404, so response time was the last channel separating an unknown token from a revoked/expired one — the empty-token branch returns before any query, and a hit costs a row read a miss does not.
+
+Do NOT add Timebox to ResolveClientPortalGrant middleware. It resolves from SESSION_GRANT_ID, which is only ever written by ClientPortalSessionController after a successful token exchange. A session value behind a signed cookie is not attacker-iterable, so there is no oracle — timeboxing it would only add latency to every portal navigation.
+
+Timebox::usleep() delegates to Sleep::usleep(), so Sleep::fake() + Sleep::assertSleptTimes() test it without real delay.

@@ -9,14 +9,13 @@ use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 use function is_array;
 use function is_string;
 use function json_decode;
 use function mb_ltrim;
-use function mb_strlen;
-use function mb_substr;
 use function parse_url;
 use function rawurldecode;
 use function str_starts_with;
@@ -104,7 +103,7 @@ final readonly class TranscribeExtractionPipeline
     private function objectKeyForConfiguredBucket(string $uri, string $bucket): ?string
     {
         if (str_starts_with($uri, "s3://{$bucket}/")) {
-            return rawurldecode(mb_substr($uri, mb_strlen("s3://{$bucket}/")));
+            return rawurldecode(Str::after($uri, "s3://{$bucket}/"));
         }
 
         $parts = parse_url($uri);
@@ -121,7 +120,7 @@ final readonly class TranscribeExtractionPipeline
             (str_starts_with($host, 's3.') || str_starts_with($host, 's3-'))
             && str_starts_with($path, "{$bucket}/")
         ) {
-            return rawurldecode(mb_substr($path, mb_strlen("{$bucket}/")));
+            return rawurldecode(Str::after($path, "{$bucket}/"));
         }
 
         // https://bucket.s3.eu-west-1.amazonaws.com/key

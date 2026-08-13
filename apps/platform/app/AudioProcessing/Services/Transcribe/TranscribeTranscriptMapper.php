@@ -27,13 +27,8 @@ final class TranscribeTranscriptMapper
             return new TranscriptionResult(text: '', segments: []);
         }
 
-        $transcripts = $results['transcripts'] ?? [];
-        $text = '';
-
-        if (is_array($transcripts) && isset($transcripts[0]) && is_array($transcripts[0])) {
-            $raw = $transcripts[0]['transcript'] ?? '';
-            $text = is_string($raw) ? $raw : '';
-        }
+        $transcript = data_get($results, 'transcripts.0.transcript');
+        $text = is_string($transcript) ? $transcript : '';
 
         $segments = $this->mapSpeakerSegments($results);
 
@@ -204,13 +199,7 @@ final class TranscribeTranscriptMapper
      */
     private function itemContent(array $item): ?string
     {
-        $alternatives = $item['alternatives'] ?? null;
-
-        if (! is_array($alternatives) || ! isset($alternatives[0]) || ! is_array($alternatives[0])) {
-            return null;
-        }
-
-        $content = $alternatives[0]['content'] ?? null;
+        $content = data_get($item, 'alternatives.0.content');
 
         if (! is_string($content) || $content === '') {
             return null;
@@ -276,22 +265,9 @@ final class TranscribeTranscriptMapper
                 continue;
             }
 
-            $alternatives = $item['alternatives'] ?? null;
-            if (! is_array($alternatives)) {
-                continue;
-            }
-            if (! isset($alternatives[0])) {
-                continue;
-            }
-            if (! is_array($alternatives[0])) {
-                continue;
-            }
+            $content = $this->itemContent($item);
 
-            $content = $alternatives[0]['content'] ?? null;
-            if (! is_string($content)) {
-                continue;
-            }
-            if ($content === '') {
+            if ($content === null) {
                 continue;
             }
 

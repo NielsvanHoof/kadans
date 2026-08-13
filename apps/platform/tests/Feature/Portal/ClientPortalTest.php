@@ -6,6 +6,7 @@ use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Listeners\LogClientPortalInviteFailed;
 use App\ClientPortal\Listeners\LogClientPortalInviteSent;
@@ -28,6 +29,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Pest\Expectation;
@@ -702,4 +704,56 @@ test('portal locale cookie overrides the browser language', function (): void {
 
                 expect($translations['Access expires :date'])->toBe('Toegang verloopt :date');
             }));
+});
+
+test('portal magic-link resolution is timeboxed so a miss cannot be timed apart from a hit', function (string $case, bool $expectsGrant): void {
+    ['plainTextToken' => $plainTextToken, 'grant' => $grant] = createPortalDossierWithGrant();
+
+    if ($case === 'revoked') {
+        $grant->forceFill(['revoked_at' => now()])->save();
+    }
+
+    $token = match ($case) {
+        'valid', 'revoked' => $plainTextToken,
+        'unknown' => Str::random(64),
+        default => '',
+    };
+
+    Sleep::fake();
+
+    $resolved = resolve(ResolveClientAccessGrantFromTokenAction::class)->handle($token);
+
+    $expectsGrant
+        ? expect($resolved)->toBeInstanceOf(ClientAccessGrant::class)
+        : expect($resolved)->toBeNull();
+
+    // The floor covers every outcome, including the empty-token short circuit
+    // that returns before touching the database at all.
+    Sleep::assertSleptTimes(1);
+})->with([
+    'valid' => ['valid', true],
+    'unknown token' => ['unknown', false],
+    'revoked grant' => ['revoked', false],
+    'empty token' => ['empty', false],
+]);
+
+test('portal access is recorded after the response with the tenant still resolvable', function (): void {
+    $context = createPortalDossierWithGrant();
+
+    $this->get(route('portal.exchange', $context['plainTextToken']))
+        ->assertRedirect(route('portal.show'));
+
+    $this->get(route('portal.show'))->assertOk();
+
+    // The dossier stamp is the fragile half: it runs through TenantScope via
+    // toBase(), so a deferred callback that lost the current tenant would
+    // silently update zero rows instead of failing loudly.
+    expect($context['dossier']->fresh()->last_client_opened_at)->not->toBeNull()
+        ->and($context['grant']->fresh()->last_used_at)->not->toBeNull();
+
+    $activity = Activity::query()
+        ->where('event', AuditEvent::ClientPortalAccessed->value)
+        ->sole();
+
+    expect($activity->tenant_id)->toBe($context['tenant']->id);
 });

@@ -107,6 +107,8 @@ const CONTROLLER_NON_REST_ACTIONS = [
         'accept', 'register',
     ],
     TenantInvitationController::class => ['resend'],
+
+    WorkspaceNotificationController::class => ['destroyAll'],
 ];
 
 /**

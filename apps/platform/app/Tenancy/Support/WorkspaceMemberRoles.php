@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
-use function array_key_exists;
 use function getPermissionsTeamId;
 use function in_array;
 use function is_string;
@@ -113,13 +112,7 @@ final class WorkspaceMemberRoles
         }
 
         /** @var list<int> $missingUserIds */
-        $missingUserIds = [];
-
-        foreach ($userIds as $userId) {
-            if (! array_key_exists($userId, $roleNamesByUserId)) {
-                $missingUserIds[] = $userId;
-            }
-        }
+        $missingUserIds = array_values(array_diff($userIds, array_keys($roleNamesByUserId)));
 
         return $roleNamesByUserId + $this->roleNamesByUserId($tenant, $missingUserIds);
     }

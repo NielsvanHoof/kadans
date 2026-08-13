@@ -12,6 +12,7 @@ use App\Shared\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
@@ -43,7 +44,7 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
                     'options' => array_map(
                         static fn (PipelineStatus $status): array => [
                             'value' => $status->value,
-                            'label' => __(str_replace('_', ' ', ucfirst($status->value))),
+                            'label' => __(Str::headline($status->value)),
                         ],
                         PipelineStatus::cases(),
                     ),

@@ -20,7 +20,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
-use function array_key_exists;
 use function in_array;
 
 /**
@@ -151,13 +150,7 @@ final readonly class FetchWorkspaceRolesQuery
 
         foreach ($roles as $role) {
             foreach ($role->permissions as $permission) {
-                $permissionName = $permission->name;
-
-                if (! array_key_exists($permissionName, $roleNamesByPermission)) {
-                    $roleNamesByPermission[$permissionName] = [];
-                }
-
-                $roleNamesByPermission[$permissionName][] = $role->name;
+                $roleNamesByPermission[$permission->name][] = $role->name;
             }
         }
 
