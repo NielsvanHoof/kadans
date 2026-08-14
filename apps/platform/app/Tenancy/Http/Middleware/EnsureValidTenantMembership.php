@@ -32,11 +32,14 @@ final readonly class EnsureValidTenantMembership
 
         abort_unless($user->canAccessTenant($tenant), Response::HTTP_FORBIDDEN);
 
-        // Only bump last_accessed_at for real memberships — not support sessions.
+        // Only bump last_accessed_at for real memberships — not support sessions —
+        // and only once every few minutes. See hasRecentAccessRecorded().
         if ($user->belongsToTenant($tenant)) {
             foreach ($user->tenantMemberships as $membership) {
                 if ($membership->tenant_id === $tenant->getKey()) {
-                    $membership->update(['last_accessed_at' => now()]);
+                    if (! $membership->hasRecentAccessRecorded()) {
+                        $membership->update(['last_accessed_at' => now()]);
+                    }
 
                     break;
                 }
