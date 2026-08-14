@@ -28,7 +28,6 @@ final readonly class OcrOrchestrator
         Log::info('OCR: orchestrator starting document processing.', [
             'uploaded_document_id' => $document->id,
             'tenant_id' => $document->tenant_id,
-            'original_filename' => $document->original_filename,
             'processing_status' => $document->processing_status->value,
         ]);
 

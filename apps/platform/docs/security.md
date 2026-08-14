@@ -280,6 +280,17 @@ guard on this behaviour.
 `DocumentDownloaded`, `DossierExportDownloaded`, `ClientPortalAccessed`, and
 `AccessDenied`. Activity is tenant-scoped and readable in the workspace UI.
 
+**Personal data lives in the audit trail, not the application log.** A client
+filename is personal data on its own — `Loonstrook_J_de_Vries_maart.pdf` names the
+person, the document type and the period without anyone opening the file. The audit
+trail may carry it, because that trail is tenant-scoped and is deleted by both
+`retention:purge-legal` and `AnonymizeDataSubjectAction`. The application log stack
+is neither: it has its own retention and access, and nothing purges it, so anything
+written there cannot be erased on request. OCR, transcription and their queue jobs
+therefore log `id` + `tenant_id` only. Enforced two ways — `tests/Unit/DocumentFilenameLoggingTest.php`
+scans every `Log::` context array in `app/`, and a full OCR run is asserted to leak
+no filename in `tests/Feature/DocumentProcessing/ProcessUploadedDocumentJobTest.php`.
+
 `config/retention.php` drives scheduled purging:
 
 | Data | Default |

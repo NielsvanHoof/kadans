@@ -145,7 +145,6 @@ final readonly class CompleteTextractExtractionAction
                 'tenant_id' => $document->tenant_id,
                 'textract_job_id' => $jobId,
                 'status' => $status,
-                'original_filename' => $document->original_filename,
             ]);
 
             if ($status === 'SUCCEEDED') {

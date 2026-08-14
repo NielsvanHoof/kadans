@@ -28,7 +28,6 @@ final readonly class TranscriptionOrchestrator
         Log::info('Transcription: orchestrator starting audio processing.', [
             'audio_recording_id' => $recording->id,
             'tenant_id' => $recording->tenant_id,
-            'original_filename' => $recording->original_filename,
             'transcription_status' => $recording->transcription_status->value,
         ]);
 
