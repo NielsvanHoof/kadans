@@ -34,7 +34,7 @@ final class StoreUploadedDocumentRequest extends FormRequest
     {
         $documentRequest = $this->route('documentRequest');
         $allowMultiple = $documentRequest instanceof DocumentRequest
-            && ($documentRequest->configuration['allow_multiple'] ?? false) === true;
+            && $documentRequest->allowsMultipleUploads();
 
         return [
             'documents' => [

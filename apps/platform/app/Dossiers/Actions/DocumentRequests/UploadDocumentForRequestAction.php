@@ -90,7 +90,7 @@ final readonly class UploadDocumentForRequestAction
                 [$lockedDossier, $lockedDocumentRequest] = $this->dossierLocks
                     ->documentRequestWithDossier($documentRequest);
 
-                $allowMultiple = ($lockedDocumentRequest->configuration['allow_multiple'] ?? false) === true;
+                $allowMultiple = $lockedDocumentRequest->allowsMultipleUploads();
                 $existing = $allowMultiple
                     ? null
                     : UploadedDocument::query()

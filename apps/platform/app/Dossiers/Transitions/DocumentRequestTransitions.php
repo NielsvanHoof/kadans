@@ -45,7 +45,7 @@ final class DocumentRequestTransitions
             // uploads while awaiting review, instead of locking after the
             // first file like a single-file request does.
             if (
-                ($documentRequest->configuration['allow_multiple'] ?? false) === true
+                $documentRequest->allowsMultipleUploads()
                 && $documentRequest->status === DocumentRequestStatus::Submitted
             ) {
                 return true;
@@ -92,7 +92,7 @@ final class DocumentRequestTransitions
             return true;
         }
 
-        return ($documentRequest->configuration['allow_multiple'] ?? false) === true
+        return $documentRequest->allowsMultipleUploads()
             && $documentRequest->status === DocumentRequestStatus::Submitted;
     }
 

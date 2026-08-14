@@ -65,7 +65,7 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
             ? DocumentRequest::query()->find((int) $documentRequestId)
             : null;
         $allowMultiple = $documentRequest instanceof DocumentRequest
-            && ($documentRequest->configuration['allow_multiple'] ?? false) === true;
+            && $documentRequest->allowsMultipleUploads();
 
         return [
             'documents' => [
