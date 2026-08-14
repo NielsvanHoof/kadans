@@ -25,7 +25,10 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+
+use function sprintf;
 
 /**
  * Staff upload + OCR extraction page + document download.
@@ -207,7 +210,23 @@ final class UploadedDocumentController extends Controller
         ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
         string $disposition,
     ): RedirectResponse|StreamedResponse {
-        if ($resolveDocumentTemporaryUrl->supportsTemporaryUrl($uploadedDocument)) {
+        $driver = $resolveDocumentTemporaryUrl->diskDriver($uploadedDocument);
+
+        if ($driver === null) {
+            // The row names a disk that is no longer configured, so the bytes
+            // are unreachable. Fail closed as a miss rather than a 500: the
+            // caller cannot act on it either way, but operators still need to
+            // know a row outlived its disk, so it is reported.
+            report(new RuntimeException(sprintf(
+                'Uploaded document %d is stored on disk "%s", which is not configured.',
+                $uploadedDocument->id,
+                $uploadedDocument->disk,
+            )));
+
+            abort(404);
+        }
+
+        if ($driver === 's3') {
             $url = $resolveDocumentTemporaryUrl->handle(
                 $uploadedDocument,
                 now()->addMinutes(5),

@@ -9,8 +9,11 @@ use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use Aws\S3\S3Client;
+use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Storage;
 
 test('local disk downloads stream through the application', function (): void {
@@ -332,4 +335,100 @@ test('s3 disk reports temporary url support while local does not', function (): 
 
     expect($resolver->supportsTemporaryUrl(new UploadedDocument(['disk' => 's3'])))->toBeTrue()
         ->and($resolver->supportsTemporaryUrl(new UploadedDocument(['disk' => 'local'])))->toBeFalse();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Failing closed on missing configuration
+|--------------------------------------------------------------------------
+|
+| `disk` is a plain string column written at upload time, so it is data and
+| can outlive the disk it names. Config::string() throws on a missing key,
+| which turned such a row into a 500 on the download route instead of a
+| handled miss; Storage::disk() would then have thrown on the streaming
+| fallback anyway, so returning false was not enough on its own.
+|
+| AWS_BUCKET is the other half: it carries no default, so the config key
+| exists as null when unset — and a default passed to Config::string() is
+| ignored when the key exists. Only Config::get() plus an explicit check is
+| safe (.ai/rules/app.md).
+|
+*/
+
+test('a document on an unconfigured disk resolves to no driver instead of throwing', function (): void {
+    config()->set('filesystems.disks', ['local' => ['driver' => 'local']]);
+
+    $resolver = resolve(ResolveDocumentTemporaryUrlAction::class);
+    $orphaned = new UploadedDocument(['disk' => 'retired-archive']);
+
+    expect($resolver->diskDriver($orphaned))->toBeNull()
+        ->and($resolver->supportsTemporaryUrl($orphaned))->toBeFalse()
+        ->and($resolver->diskDriver(new UploadedDocument(['disk' => 'local'])))->toBe('local');
+});
+
+test('downloading a document whose disk was removed is a reported 404, not a 500', function (): void {
+    Exceptions::fake();
+    Storage::fake('local');
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create(['tenant_id' => $tenant->id, 'client_id' => $client->id]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
+    $uploaded = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'disk' => 'retired-archive',
+        'path' => 'tenants/'.$tenant->id.'/dossiers/'.$dossier->id.'/file.pdf',
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
+        ->get(workspaceRoute('workspaces.uploaded-documents.download', $tenant, [
+            'uploadedDocument' => $uploaded->id,
+        ]))
+        ->assertNotFound();
+
+    // A row outliving its disk is still a real problem operators must see.
+    Exceptions::assertReported(
+        fn (RuntimeException $exception): bool => str_contains($exception->getMessage(), 'retired-archive'),
+    );
+});
+
+test('a missing bucket falls through to the adapter instead of throwing', function (): void {
+    config()->set('filesystems.disks.s3.driver', 's3');
+    // Both set and differing, so the public-presign branch is entered...
+    config()->set('filesystems.disks.s3.endpoint', 'http://floci:4566');
+    config()->set('filesystems.disks.s3.url', 'http://localhost:4566');
+    // ...but AWS_BUCKET is unset, which the config exposes as a present null.
+    config()->set('filesystems.disks.s3.bucket');
+
+    // Must be an AwsS3V3Adapter, or the method returns before the bucket is
+    // ever read and the test proves nothing.
+    $disk = Mockery::mock(AwsS3V3Adapter::class);
+    $disk->shouldReceive('getClient')->andReturn(new S3Client([
+        'region' => 'eu-west-1',
+        'version' => 'latest',
+        'endpoint' => 'http://floci:4566',
+        'use_path_style_endpoint' => true,
+        'credentials' => ['key' => 'test-key', 'secret' => 'test-secret'],
+    ]));
+    $disk->shouldReceive('temporaryUrl')->once()->andReturn('http://localhost:4566/signed');
+
+    $filesystems = Mockery::mock(FilesystemManager::class);
+    $filesystems->shouldReceive('disk')->once()->with('s3')->andReturn($disk);
+
+    $uploaded = new UploadedDocument([
+        'disk' => 's3',
+        'path' => 'tenants/1/dossiers/1/file.pdf',
+        'original_filename' => 'payslip.pdf',
+        'mime_type' => 'application/pdf',
+    ]);
+
+    expect(new ResolveDocumentTemporaryUrlAction($filesystems)->handle($uploaded, now()->addMinutes(5)))
+        ->toBe('http://localhost:4566/signed');
 });
