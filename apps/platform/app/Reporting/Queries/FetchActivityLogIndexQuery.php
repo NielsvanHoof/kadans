@@ -141,7 +141,9 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
         return [
             AllowedFilter::exact('event'),
             AllowedFilter::exact('causer_id'),
-            ScoutSearchFilter::make(Activity::class, 'description'),
+            ScoutSearchFilter::make(Activity::class, 'description', wheres: [
+                'tenant_id' => $this->tenant->id,
+            ]),
             AllowedFilter::callback('created_from', function (Builder $query, mixed $value): void {
                 if (! is_string($value) || $value === '') {
                     return;

@@ -7,12 +7,14 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/{Actions,Queries,Services,Transitions}/** | .ai/rules/actions-queries-services-transitions.md |
 | app/*/Actions/** | .ai/rules/actions.md |
 | app/**, app/**/*.php | .ai/rules/app.md |
+| app/Audit/Models/** | .ai/rules/audit-models.md |
 | app/ClientPortal/** | .ai/rules/client-portal.md |
 | config/**, config/queue.php | .ai/rules/config.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
+| app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |
 | resources/js/features/**/hooks/** | .ai/rules/hooks.md |
 | app/ClientPortal/Http/Controllers/** | .ai/rules/http-controllers.md |

@@ -66,6 +66,10 @@ final class Activity extends SpatieActivity
     /**
      * Columns Scout's database engine searches with LIKE.
      *
+     * tenant_id is a Scout where() on the table column (ScoutSearchFilter
+     * $wheres), not a searchable key. DatabaseEngine LIKEs every key here, so
+     * putting tenant_id in this array would make a search of "1" match tenant 12.
+     *
      * @return array{id: int, description: string, event: string}
      */
     public function toSearchableArray(): array

@@ -241,3 +241,58 @@ test('activity index toolbar event options include domain groups', function (): 
         // Options are sorted by group, then label — group sequence is non-decreasing.
         ->and($groups)->toBe(collect($groups)->sort()->values()->all());
 });
+
+test('activity log scout search filters by tenant_id in the engine query', function (): void {
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B');
+
+    $needle = 'ZZScoutAuditNeedle unique trail';
+
+    actingInWorkspace($tenantB);
+    $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
+    $dossierB = Dossier::factory()->create([
+        'tenant_id' => $tenantB->id,
+        'client_id' => $clientB->id,
+    ]);
+    $foreign = Activity::query()->create([
+        'log_name' => config('activitylog.default_log_name'),
+        'description' => $needle,
+        'event' => AuditEvent::DossierViewed->value,
+        'subject_type' => $dossierB->getMorphClass(),
+        'subject_id' => $dossierB->id,
+        'tenant_id' => $tenantB->id,
+    ]);
+
+    actingInWorkspace($tenantA);
+    $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
+    $dossierA = Dossier::factory()->create([
+        'tenant_id' => $tenantA->id,
+        'client_id' => $clientA->id,
+    ]);
+    $own = Activity::query()->create([
+        'log_name' => config('activitylog.default_log_name'),
+        'description' => $needle,
+        'event' => AuditEvent::DossierViewed->value,
+        'subject_type' => $dossierA->getMorphClass(),
+        'subject_id' => $dossierA->id,
+        'tenant_id' => $tenantA->id,
+    ]);
+
+    $unscopedKeys = Activity::search($needle)->keys();
+    $scopedKeys = Activity::search($needle)->where('tenant_id', $tenantA->id)->keys();
+
+    expect($unscopedKeys->all())->toContain($foreign->id, $own->id)
+        ->and($scopedKeys->all())->toContain($own->id)
+        ->and($scopedKeys->all())->not->toContain($foreign->id);
+
+    $this->actingAs($ownerA)
+        ->get(
+            workspaceRoute('workspaces.activity.index', $tenantA)
+            .'?'.http_build_query(['filter' => ['description' => $needle]]),
+        )
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/activity/index')
+            ->has('activities.data', 1)
+            ->where('activities.data.0.id', $own->id));
+});

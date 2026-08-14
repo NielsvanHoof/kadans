@@ -7,6 +7,7 @@ use App\Clients\Queries\FetchClientIndexQuery;
 use App\Dossiers\Models\Dossier;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Inertia\Testing\AssertableInertia as Assert;
 
 covers(FetchClientIndexQuery::class);
@@ -188,4 +189,26 @@ test('clients index does not leak another tenants clients', function (): void {
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('clients.data', 1)
             ->where('clients.data.0.name', 'Own Client'));
+});
+
+test('scout search hydrates at most the configured key limit', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    Config::set('scout.key_limit', 3);
+
+    try {
+        Client::factory()->count(4)->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'ZZScoutBound Client',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(workspaceRoute('workspaces.clients.index', $tenant).'?filter[q]=ZZScoutBound')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page): Assert => $page
+                ->where('clients.total', 3)
+                ->has('clients.data', 3));
+    } finally {
+        Config::set('scout.key_limit', 1000);
+    }
 });
