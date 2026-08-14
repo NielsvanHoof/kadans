@@ -1,4 +1,7 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
+import IndexPagination from '@/components/data/index-query/index-pagination';
+import IndexQueryResults from '@/components/data/index-query/index-query-results';
+import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
 import Heading from '@/components/primitives/heading';
 import { useReloadOnDataSubjectExportCompleted } from '@/features/data-subject-requests/hooks/use-reload-on-data-subject-export-completed';
 import LogRequestForm from '@/features/data-subject-requests/log-request-form';
@@ -7,6 +10,7 @@ import type { DataSubjectRequest } from '@/features/data-subject-requests/types'
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as requestIndex } from '@/routes/workspaces/data-subject-requests';
+import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
 /**
  * Data-subject requests — the firm's record of clients exercising their access
@@ -14,9 +18,11 @@ import { index as requestIndex } from '@/routes/workspaces/data-subject-requests
  */
 export default function DataSubjectRequestIndex({
     requests,
+    indexQuery,
     can_manage: canManage = false,
 }: {
-    requests: DataSubjectRequest[];
+    requests: Paginated<DataSubjectRequest>;
+    indexQuery: IndexQueryConfig;
     can_manage?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
@@ -50,7 +56,23 @@ export default function DataSubjectRequestIndex({
 
                 {canManage ? <LogRequestForm /> : null}
 
-                <RequestsListCard requests={requests} canManage={canManage} />
+                <IndexQueryToolbar
+                    config={indexQuery}
+                    only={[
+                        'requests',
+                        'filters',
+                        'sort',
+                        'indexQuery',
+                        'flash',
+                    ]}
+                />
+                <IndexQueryResults className="space-y-6">
+                    <RequestsListCard
+                        requests={requests}
+                        canManage={canManage}
+                    />
+                    <IndexPagination paginator={requests} />
+                </IndexQueryResults>
 
                 <p className="text-sm text-muted-foreground">
                     {t(

@@ -12,9 +12,11 @@ use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DocumentUploadLimits;
 use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
 
 final readonly class SubmitPortalUploadAction
 {
@@ -38,6 +40,25 @@ final readonly class SubmitPortalUploadAction
                 DocumentRequest $lockedDocumentRequest,
                 Dossier $dossier,
             ) use ($grant): void {
+                // The cap's only enforceable check. StorePortalUploadedDocumentRequest
+                // sums bytes before the write, so concurrent POSTs all read the same
+                // pre-write total and every one of them passes. This runs inside the
+                // transaction that already holds the dossier lock (see DossierLocks),
+                // which serialises every portal upload on the dossier, and after the
+                // row is written — so the sum includes the file being added, and a
+                // replacement counts once rather than twice.
+                //
+                // Throwing here also lands before startPipeline, so an over-cap file
+                // never costs an OCR run. The rollback is what the cap is for.
+                if (
+                    DocumentUploadLimits::portalBytesUsedForDossier($dossier->id)
+                    > DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER
+                ) {
+                    throw ValidationException::withMessages([
+                        'documents' => DocumentUploadLimits::portalCapMessage(),
+                    ]);
+                }
+
                 $this->dossierTransitions->markInReview($dossier);
 
                 // The grant is locked last — see DossierLocks for the order.

@@ -99,7 +99,9 @@ export default function MediaDocumentsCard({
                                                         firstUpload.size_bytes,
                                                     )}
                                                     {' · '}
-                                                    {formatDateTime(firstUpload.uploaded_at)}
+                                                    {formatDateTime(
+                                                        firstUpload.uploaded_at,
+                                                    )}
                                                     {extraUploadCount > 0 &&
                                                         ` · ${t('+:count more', { count: extraUploadCount })}`}
                                                 </p>

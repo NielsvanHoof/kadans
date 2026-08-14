@@ -127,7 +127,6 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
             'audio_recording_id' => $claimed->id,
             'tenant_id' => $claimed->tenant_id,
             'attempt' => $this->attempts(),
-            'original_filename' => $claimed->original_filename,
         ]);
 
         try {

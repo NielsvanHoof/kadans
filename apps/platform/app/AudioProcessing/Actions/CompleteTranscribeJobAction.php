@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Actions;
 
+use App\AudioProcessing\Data\TranscribeCompletionNotification;
 use App\AudioProcessing\Services\Transcribe\TranscribeExtractionPipeline;
 use App\AudioProcessing\Transitions\AudioTranscriptionTransitions;
 use App\Audit\Actions\LogAuditActivityAction;
@@ -23,10 +24,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
 use function in_array;
-use function is_string;
 use function mb_strlen;
-use function mb_strtoupper;
-use function mb_substr;
 
 /**
  * Applies an Amazon Transcribe completion notification to an AudioRecording.
@@ -50,8 +48,10 @@ final readonly class CompleteTranscribeJobAction
      */
     public function handle(array $notification): bool
     {
-        $jobId = $this->jobName($notification);
-        $status = $this->jobStatus($notification);
+        $completion = TranscribeCompletionNotification::fromEventBridgeDetail($notification);
+
+        $jobId = $completion->jobId;
+        $status = $completion->status;
 
         if ($jobId === null) {
             Log::warning('Transcription: Transcribe completion ignored — missing job name.');
@@ -92,7 +92,7 @@ final readonly class CompleteTranscribeJobAction
             return false;
         }
 
-        return $this->tenantContext->runForTenant($tenant, function () use ($recording, $notification, $jobId, $status): bool {
+        return $this->tenantContext->runForTenant($tenant, function () use ($recording, $jobId, $status, $completion): bool {
             $pipeline = $this->resolveProviderPipeline->handle(
                 $recording,
                 PipelineType::AudioTranscription,
@@ -136,15 +136,12 @@ final readonly class CompleteTranscribeJobAction
                 'status' => $status,
             ]);
 
-            if (in_array($status, ['COMPLETED', 'SUCCEEDED'], true)) {
+            if ($completion->isCompleted()) {
                 return $this->completeSuccessfully($recording, $pipeline, $jobId);
             }
 
-            if (in_array($status, ['FAILED', 'ERROR'], true)) {
-                $message = $notification['FailureReason'] ?? "Amazon Transcribe job reported {$status}.";
-                $error = is_string($message) && $message !== ''
-                    ? mb_substr($message, 0, 500)
-                    : "Amazon Transcribe job reported {$status}.";
+            if ($completion->isFailed()) {
+                $error = $completion->failureReason();
 
                 $this->markTranscribeJobFailed->handle($recording, $jobId, $error, $status);
 
@@ -238,37 +235,5 @@ final readonly class CompleteTranscribeJobAction
         ]);
 
         return true;
-    }
-
-    /**
-     * @param  array<string, mixed>  $notification
-     */
-    private function jobName(array $notification): ?string
-    {
-        foreach (['JobName', 'TranscriptionJobName'] as $key) {
-            $value = $notification[$key] ?? null;
-
-            if (is_string($value) && $value !== '') {
-                return $value;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $notification
-     */
-    private function jobStatus(array $notification): ?string
-    {
-        foreach (['Status', 'TranscriptionJobStatus'] as $key) {
-            $value = $notification[$key] ?? null;
-
-            if (is_string($value) && $value !== '') {
-                return mb_strtoupper($value);
-            }
-        }
-
-        return null;
     }
 }

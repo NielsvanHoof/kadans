@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
+import type { Paginated } from '@/types/pagination';
 import RequestActions from './request-actions';
 import RequestStatusBadge from './request-status-badge';
 import type { DataSubjectRequest } from './types';
@@ -19,13 +20,14 @@ export default function RequestsListCard({
     requests,
     canManage,
 }: {
-    requests: DataSubjectRequest[];
+    requests: Paginated<DataSubjectRequest>;
     canManage: boolean;
 }) {
     const { t } = useTranslation();
     const { formatDateTime } = useFormatters();
+    const rows = requests.data;
 
-    if (requests.length === 0) {
+    if (rows.length === 0) {
         return (
             <EmptyState
                 icon={ShieldQuestion}
@@ -52,7 +54,7 @@ export default function RequestsListCard({
                     <TableHead className="text-right">{t('Actions')}</TableHead>
                 </TableHeader>
                 <TableBody>
-                    {requests.map((request) => (
+                    {rows.map((request) => (
                         <TableRow key={request.id} id={String(request.id)}>
                             <TableCell className="font-medium">
                                 {request.client_name}

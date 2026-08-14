@@ -32,9 +32,8 @@ vi.mock('@/actions/App/Accounts/Http/Controllers/TimezoneController', () => ({
     },
 }));
 
-const { default: TimezoneSelect } = await import(
-    '@/features/settings/timezone-select'
-);
+const { default: TimezoneSelect } =
+    await import('@/features/settings/timezone-select');
 
 describe('TimezoneSelect', () => {
     beforeEach(() => {

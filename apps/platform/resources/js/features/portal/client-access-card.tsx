@@ -72,7 +72,9 @@ export default function ClientAccessCard({
                                 <div className="text-sm">
                                     <p>
                                         {t('Expires :datetime', {
-                                            datetime: formatDateTime(grant.expires_at),
+                                            datetime: formatDateTime(
+                                                grant.expires_at,
+                                            ),
                                         })}
                                     </p>
                                     <p className="text-muted-foreground">
@@ -83,7 +85,9 @@ export default function ClientAccessCard({
                                               : t('Expired')}
                                         {grant.last_used_at &&
                                             ` · ${t('Last used :datetime', {
-                                                datetime: formatDateTime(grant.last_used_at),
+                                                datetime: formatDateTime(
+                                                    grant.last_used_at,
+                                                ),
                                             })}`}
                                     </p>
                                 </div>

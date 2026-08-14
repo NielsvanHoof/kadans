@@ -9,7 +9,6 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Support\DocumentUploadLimits;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
@@ -66,7 +65,7 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
             ? DocumentRequest::query()->find((int) $documentRequestId)
             : null;
         $allowMultiple = $documentRequest instanceof DocumentRequest
-            && ($documentRequest->configuration['allow_multiple'] ?? false) === true;
+            && $documentRequest->allowsMultipleUploads();
 
         return [
             'documents' => [
@@ -95,36 +94,22 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
                 return;
             }
 
-            // Build on getQuery(), terminate on toBase() so TenantScope is applied
-            // to both the outer sum and the document-request subquery.
-            $dossierDocumentRequests = DocumentRequest::query();
-            $dossierDocumentRequests->getQuery()
-                ->where('dossier_id', $grant->dossier_id)
-                ->select('id');
-
-            $dossierUploads = UploadedDocument::query();
-            $dossierUploads->getQuery()
-                ->whereIn('document_request_id', $dossierDocumentRequests->toBase());
-
-            $usedBytes = (int) $dossierUploads->toBase()->sum('size_bytes');
+            // Cheap pre-check for a friendly error. The sum is taken before the
+            // write and outside any transaction, so it cannot be authoritative:
+            // SubmitPortalUploadAction re-checks it under the dossier lock.
+            $usedBytes = DocumentUploadLimits::portalBytesUsedForDossier($grant->dossier_id);
 
             $incomingBytes = collect($this->file('documents', []))
                 ->filter(static fn (mixed $file): bool => $file instanceof UploadedFile)
                 ->sum(static fn (UploadedFile $file): int => $file->getSize());
 
             $totalBytes = $usedBytes + (int) $incomingBytes;
-            $maxBytes = DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER;
 
-            if ($totalBytes <= $maxBytes) {
+            if ($totalBytes <= DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER) {
                 return;
             }
 
-            $validator->errors()->add(
-                'documents',
-                __('This dossier has reached its portal upload limit of :max. Remove a file or contact your advisor.', [
-                    'max' => DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER_LABEL,
-                ]),
-            );
+            $validator->errors()->add('documents', DocumentUploadLimits::portalCapMessage());
         });
     }
 }

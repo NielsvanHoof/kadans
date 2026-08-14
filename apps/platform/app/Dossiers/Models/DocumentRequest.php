@@ -129,6 +129,35 @@ final class DocumentRequest extends TenantOwnedModel
     }
 
     /**
+     * Whether this item accepts more than one uploaded file.
+     *
+     * `configuration` is a free-form JSON column, so every reader had to spell
+     * out the same `(… ?? false) === true` defaulting. That is five
+     * character-identical expressions across requests, actions, transitions and
+     * a portal adapter, each free to drift — and the key is absent entirely on
+     * non-File items, so the default is load-bearing rather than cosmetic.
+     *
+     * NormalizeQuestionnaireItemConfigurationAction owns the write side and
+     * still reads the raw array: it normalises a payload into configuration
+     * before any model exists.
+     */
+    public function allowsMultipleUploads(): bool
+    {
+        return ($this->configuration['allow_multiple'] ?? false) === true;
+    }
+
+    /**
+     * Whether an answer to this item is required.
+     *
+     * Note the default is the inverse of allow_multiple's: an item is required
+     * unless it says otherwise, which is why this cannot share one helper.
+     */
+    public function isRequired(): bool
+    {
+        return ($this->configuration['is_required'] ?? true) !== false;
+    }
+
+    /**
      * Whether this item sits before $other on the canvas.
      *
      * Two items can briefly share a sort_order while a reorder is in flight, so the

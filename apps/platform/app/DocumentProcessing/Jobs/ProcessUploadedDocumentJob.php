@@ -122,7 +122,6 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             'uploaded_document_id' => $claimed->id,
             'tenant_id' => $claimed->tenant_id,
             'attempt' => $this->attempts(),
-            'original_filename' => $claimed->original_filename,
         ]);
 
         try {
@@ -147,6 +146,8 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
                     'tries' => self::MAX_TRIES,
                     'error' => $exception->getMessage(),
                 ]);
+
+                $processingTransitions->resetForRetry($claimed, $expectedPath);
 
                 throw $exception;
             }

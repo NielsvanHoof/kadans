@@ -59,6 +59,37 @@ final class UploadedDocumentProcessingTransitions
     }
 
     /**
+     * Reset to pending after a retryable job failure so the next attempt can reclaim.
+     *
+     * Without this a failure that had already reached Textract left the row on
+     * Processing WITH a job id, which claim() reads as "an external job is
+     * already in flight". Every later attempt then declined to claim and
+     * returned successfully, so the exhausted-failure branch never ran: no
+     * processing_error, no DocumentProcessingFailed entry, and a review card
+     * that span forever. Nothing recovered it — there is no scheduled OCR
+     * sweep, and StuckPipelinesCheck watches Pipeline rows, not
+     * processing_status.
+     *
+     * The path guard is what keeps this safe: a job holding a replaced upload
+     * revision must not reset the current one.
+     *
+     * The cost is a duplicated provider job — the original Textract job is
+     * orphaned and its completion will not match the new job id. That is the
+     * same trade the transcription path already makes, and a duplicate charge
+     * beats a document that never finishes.
+     */
+    public function resetForRetry(UploadedDocument $document, string $expectedPath): void
+    {
+        UploadedDocument::query()
+            ->whereKey($document->id)
+            ->where('path', $expectedPath)
+            ->update([
+                'processing_status' => DocumentProcessingStatus::Pending->value,
+                'textract_job_id' => null,
+            ]);
+    }
+
+    /**
      * Complete a processing document for a known Textract job + path revision.
      *
      * @return bool True when exactly one row was updated

@@ -16,6 +16,8 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 covers(ProcessUploadedDocumentJob::class);
@@ -153,6 +155,50 @@ test('processing audit events stay tenant-scoped', function (): void {
             ->where('subject_id', $uploadedA->id)
             ->count())
         ->toBe(1);
+});
+
+/**
+ * The audit trail is allowed to name the file and does; the application log is
+ * not, because retention:purge-legal and AnonymizeDataSubjectAction never reach
+ * it, so a filename logged here could not be erased on request.
+ *
+ * tests/Unit/DocumentFilenameLoggingTest.php enforces this by scanning source.
+ * This test proves it end to end on a real run of the OCR path, which is what
+ * catches a filename arriving through an interpolated message or a collaborator
+ * rather than a literal context key.
+ */
+test('a full OCR run leaks no client filename into the application log', function (): void {
+    $uploaded = createUploadedDocumentForProcessingTest([
+        'original_filename' => 'Loonstrook_J_de_Vries_maart.pdf',
+    ]);
+
+    $records = [];
+
+    Log::listen(function (MessageLogged $message) use (&$records): void {
+        $records[] = $message->message.' '.json_encode($message->context);
+    });
+
+    new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path)->handle(
+        resolve(OcrOrchestrator::class),
+        resolve(LogAuditActivityAction::class),
+        resolve(PipelineState::class),
+        resolve(UploadedDocumentProcessingTransitions::class),
+    );
+
+    // The run has to have logged something, or the assertion below is empty.
+    expect($records)->not->toBeEmpty();
+
+    foreach ($records as $record) {
+        expect($record)->not->toContain('Loonstrook_J_de_Vries_maart.pdf')
+            ->and($record)->not->toContain('de_Vries');
+    }
+
+    // And the trail that *is* purged still carries it.
+    expect(Activity::query()
+        ->where('event', AuditEvent::DocumentProcessingStarted->value)
+        ->where('subject_id', $uploaded->id)
+        ->value('properties'))
+        ->toContain('Loonstrook_J_de_Vries_maart.pdf');
 });
 
 /**

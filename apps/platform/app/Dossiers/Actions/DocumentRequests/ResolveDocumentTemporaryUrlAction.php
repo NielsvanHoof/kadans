@@ -49,13 +49,28 @@ final readonly class ResolveDocumentTemporaryUrlAction
     public function __construct(private FilesystemManager $filesystems) {}
 
     /**
+     * The configured driver for the disk this document was stored on, or null
+     * when that disk is no longer configured at all.
+     *
+     * `disk` is a plain string column written at upload time, so it is data,
+     * not config: a row can outlive the disk it names. Config::string() throws
+     * on a missing key, which turned such a row into a 500 on the download
+     * route rather than a handled miss. Config::get() is what .ai/rules/app.md
+     * prescribes whenever a key may legitimately be absent.
+     */
+    public function diskDriver(UploadedDocument $document): ?string
+    {
+        $driver = Config::get('filesystems.disks.'.$document->disk.'.driver');
+
+        return is_string($driver) && $driver !== '' ? $driver : null;
+    }
+
+    /**
      * S3-compatible disks support temporary URLs; local disk keeps streaming downloads in tests.
      */
     public function supportsTemporaryUrl(UploadedDocument $document): bool
     {
-        $driver = Config::string('filesystems.disks.'.$document->disk.'.driver');
-
-        return $driver === 's3';
+        return $this->diskDriver($document) === 's3';
     }
 
     public function handle(
@@ -110,6 +125,17 @@ final readonly class ResolveDocumentTemporaryUrlAction
             return null;
         }
 
+        // AWS_BUCKET carries no default, so the key exists as null when it is
+        // unset — and a default handed to Config::string() is ignored when the
+        // key exists. Only Config::get() plus an explicit check is safe here
+        // (.ai/rules/app.md). A miss falls through to the adapter's own
+        // temporaryUrl(), which is the path used whenever the endpoints match.
+        $bucket = Config::get('filesystems.disks.s3.bucket');
+
+        if (! is_string($bucket) || $bucket === '') {
+            return null;
+        }
+
         // Build a presigning client that targets the public endpoint.
         $originalClient = $disk->getClient();
         $publicClient = new S3Client([
@@ -121,7 +147,7 @@ final readonly class ResolveDocumentTemporaryUrlAction
         ]);
 
         $command = $publicClient->getCommand('GetObject', [
-            'Bucket' => Config::string('filesystems.disks.s3.bucket'),
+            'Bucket' => $bucket,
             'Key' => $document->path,
             'ResponseContentDisposition' => $this->contentDisposition($disposition, $document->original_filename),
             'ResponseContentType' => $document->mime_type,

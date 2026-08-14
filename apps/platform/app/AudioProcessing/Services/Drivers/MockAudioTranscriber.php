@@ -48,7 +48,6 @@ final class MockAudioTranscriber implements StartsAudioTranscription
         Log::info('Transcription: mock driver completed.', [
             'audio_recording_id' => $recording->id,
             'tenant_id' => $recording->tenant_id,
-            'original_filename' => $recording->original_filename,
         ]);
     }
 

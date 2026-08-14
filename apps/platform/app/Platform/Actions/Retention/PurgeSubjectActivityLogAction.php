@@ -13,9 +13,27 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Models\Pipeline;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
+/**
+ * Delete the activity trail for a subject, and for a dossier's whole subtree.
+ *
+ * The subtree pass used to issue one DELETE per child id — a dossier with 125
+ * children meant 125 statements — inside the transaction PurgeExpiredDossierAction
+ * opens, so activity_log lock duration scaled with child count on a path that
+ * runs up to 50 times per tenant every night. The ids are collected the same
+ * way; only the deletes are batched, using the (subject_type, subject_id)
+ * composite index that nullableMorphs() already created.
+ */
 final class PurgeSubjectActivityLogAction
 {
+    /**
+     * Ids per DELETE. Bounded so a dossier with thousands of children cannot
+     * build one enormous IN list, and so the statement stays under SQLite's
+     * bound-parameter limit in tests.
+     */
+    private const int DELETE_CHUNK_SIZE = 500;
+
     public function handle(Model $subject): int
     {
         if ($subject instanceof Dossier) {
@@ -33,47 +51,27 @@ final class PurgeSubjectActivityLogAction
             ->where('dossier_id', $dossier->id)
             ->pluck('id');
 
-        foreach ($documentRequestIds as $documentRequestId) {
-            $deletedCount += Activity::query()
-                ->where('subject_type', (new DocumentRequest)->getMorphClass())
-                ->where('subject_id', $documentRequestId)
-                ->delete();
-        }
+        $deletedCount += $this->purgeForSubjectIds((new DocumentRequest)->getMorphClass(), $documentRequestIds);
 
         $uploadedDocumentsQuery = UploadedDocument::query();
         $uploadedDocumentsQuery->getQuery()->whereIn('document_request_id', $documentRequestIds);
         $uploadedDocumentIds = $uploadedDocumentsQuery->toBase()->pluck('id');
 
-        foreach ($uploadedDocumentIds as $uploadedDocumentId) {
-            $deletedCount += Activity::query()
-                ->where('subject_type', (new UploadedDocument)->getMorphClass())
-                ->where('subject_id', $uploadedDocumentId)
-                ->delete();
-        }
+        $deletedCount += $this->purgeForSubjectIds((new UploadedDocument)->getMorphClass(), $uploadedDocumentIds);
 
         $exportIds = DossierExport::query()
             ->where('dossier_id', $dossier->id)
             ->toBase()
             ->pluck('id');
 
-        foreach ($exportIds as $exportId) {
-            $deletedCount += Activity::query()
-                ->where('subject_type', (new DossierExport)->getMorphClass())
-                ->where('subject_id', $exportId)
-                ->delete();
-        }
+        $deletedCount += $this->purgeForSubjectIds((new DossierExport)->getMorphClass(), $exportIds);
 
         $audioRecordingIds = AudioRecording::query()
             ->where('dossier_id', $dossier->id)
             ->toBase()
             ->pluck('id');
 
-        foreach ($audioRecordingIds as $audioRecordingId) {
-            $deletedCount += Activity::query()
-                ->where('subject_type', (new AudioRecording)->getMorphClass())
-                ->where('subject_id', $audioRecordingId)
-                ->delete();
-        }
+        $deletedCount += $this->purgeForSubjectIds((new AudioRecording)->getMorphClass(), $audioRecordingIds);
 
         $pipelineQuery = Pipeline::query();
         $pipelineIds = $pipelineQuery->getQuery()
@@ -101,14 +99,7 @@ final class PurgeSubjectActivityLogAction
             })
             ->pluck('id');
 
-        foreach ($pipelineIds as $pipelineId) {
-            $deletedCount += Activity::query()
-                ->where('subject_type', (new Pipeline)->getMorphClass())
-                ->where('subject_id', $pipelineId)
-                ->delete();
-        }
-
-        return $deletedCount;
+        return $deletedCount + $this->purgeForSubjectIds((new Pipeline)->getMorphClass(), $pipelineIds);
     }
 
     private function purgeForModel(Model $subject): int
@@ -117,5 +108,34 @@ final class PurgeSubjectActivityLogAction
             ->where('subject_type', $subject->getMorphClass())
             ->where('subject_id', $subject->getKey())
             ->delete();
+    }
+
+    /**
+     * Delete every activity row for one subject type and a set of ids.
+     *
+     * Built on Activity::query() and terminated on toBase() so the model's
+     * scopes still apply to the delete, matching the idiom used elsewhere for
+     * whereIn on an Eloquent builder.
+     *
+     * @param  Collection<int, mixed>  $subjectIds
+     */
+    private function purgeForSubjectIds(string $morphClass, Collection $subjectIds): int
+    {
+        $deletedCount = 0;
+
+        foreach ($subjectIds->chunk(self::DELETE_CHUNK_SIZE) as $chunk) {
+            $ids = $chunk->values()->all();
+
+            if ($ids === []) {
+                continue;
+            }
+
+            $activityQuery = Activity::query()->where('subject_type', $morphClass);
+            $activityQuery->getQuery()->whereIn('subject_id', $ids);
+
+            $deletedCount += $activityQuery->toBase()->delete();
+        }
+
+        return $deletedCount;
     }
 }

@@ -45,7 +45,7 @@ final class DocumentRequestTransitions
             // uploads while awaiting review, instead of locking after the
             // first file like a single-file request does.
             if (
-                ($documentRequest->configuration['allow_multiple'] ?? false) === true
+                $documentRequest->allowsMultipleUploads()
                 && $documentRequest->status === DocumentRequestStatus::Submitted
             ) {
                 return true;
@@ -56,6 +56,44 @@ final class DocumentRequestTransitions
 
         return $documentRequest->status->isAwaitingClient()
             || $documentRequest->status === DocumentRequestStatus::Submitted;
+    }
+
+    /**
+     * Whether an uploaded file may be removed in the given context.
+     *
+     * Staff and clients deliberately do NOT get the same rule, and the
+     * asymmetry is the decision rather than an oversight:
+     *
+     * - A client may only remove a file they just added to a request that
+     *   accepts several and is still awaiting review. Once an item is accepted
+     *   or rejected the answer is part of a reviewed record, and a client
+     *   pulling a file out from under that would leave the review describing
+     *   something that is no longer there.
+     * - Staff may remove any upload while the dossier is open. They are named
+     *   in the audit trail, and fixing a client's mistake — the wrong payslip
+     *   on an accepted item — is ordinary work that otherwise requires
+     *   rejecting and re-requesting a document the client already sent.
+     *
+     * Both are bounded by the dossier being unlocked: a completed dossier is a
+     * closed record for everyone.
+     */
+    public function canDeleteUpload(
+        DocumentRequest $documentRequest,
+        SubmissionContext $context,
+        ?Dossier $dossier = null,
+    ): bool {
+        $dossier ??= $documentRequest->dossier;
+
+        if (! $dossier instanceof Dossier || $dossier->status->isLocked()) {
+            return false;
+        }
+
+        if ($context === SubmissionContext::Staff) {
+            return true;
+        }
+
+        return $documentRequest->allowsMultipleUploads()
+            && $documentRequest->status === DocumentRequestStatus::Submitted;
     }
 
     /**

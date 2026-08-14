@@ -41,13 +41,17 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                         label={t('Last sent')}
                         value={
                             dossier.last_client_message_sent_at
-                                ? formatDateTime(dossier.last_client_message_sent_at)
+                                ? formatDateTime(
+                                      dossier.last_client_message_sent_at,
+                                  )
                                 : t('Not sent yet')
                         }
                         detail={
                             dossier.next_reminder_at
                                 ? t('Next reminder :datetime', {
-                                      datetime: formatDateTime(dossier.next_reminder_at),
+                                      datetime: formatDateTime(
+                                          dossier.next_reminder_at,
+                                      ),
                                   })
                                 : t('No reminder scheduled')
                         }

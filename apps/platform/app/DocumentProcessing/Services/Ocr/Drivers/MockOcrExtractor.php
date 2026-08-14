@@ -54,7 +54,6 @@ final class MockOcrExtractor implements StartsDocumentOcr
         Log::info('OCR: mock driver completed extraction.', [
             'uploaded_document_id' => $document->id,
             'tenant_id' => $document->tenant_id,
-            'original_filename' => $document->original_filename,
             'extracted_length' => mb_strlen($extractedText),
         ]);
     }

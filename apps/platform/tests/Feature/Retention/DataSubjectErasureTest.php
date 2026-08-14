@@ -14,9 +14,13 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Platform\Actions\DataSubject\AnonymizeDataSubjectAction;
 use App\Platform\Actions\DataSubject\GenerateDataSubjectExportAction;
 use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
+use App\Platform\Actions\DataSubject\RefuseDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Models\DataSubjectRequest;
+use App\Tenancy\Enums\Role;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -227,6 +231,141 @@ test('an activity row cannot be edited, only removed', function (): void {
 
     expect(fn () => $activity->forceFill(['properties' => []])->save())
         ->toThrow(RuntimeException::class, 'Audit log records are immutable.');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Racing the guarded transition
+|--------------------------------------------------------------------------
+|
+| The test below this block refreshes the model between calls, so the cheap
+| pre-check catches the second attempt. That is the sequential case.
+|
+| These tests hydrate TWO separate instances of the same row, which is what
+| two concurrent POSTs actually hold: each read the request before either
+| wrote to it, so both copies say Pending. Reusing one instance would not
+| reproduce the bug, because the old code mutated that instance in place.
+|
+| Before TASK-36.3 the guard was `$request->status->isOpen()` on the caller's
+| copy, checked outside the transaction and never re-read inside it, so both
+| calls passed and both erased — leaving two DataSubjectErasureCompleted
+| entries with different completed_by.
+|
+*/
+
+test('a double submit erases once and records one completed entry', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant, 'request' => $request] = eraseFixture();
+
+    $secondOperator = workspaceMember($tenant, Role::Owner);
+    actingInWorkspace($tenant);
+
+    // Two independent reads of the same row — one per in-flight request.
+    $firstRead = DataSubjectRequest::query()->findOrFail($request->getKey());
+    $secondRead = DataSubjectRequest::query()->findOrFail($request->getKey());
+
+    expect($firstRead->status)->toBe(DataSubjectRequestStatus::Pending)
+        ->and($secondRead->status)->toBe(DataSubjectRequestStatus::Pending);
+
+    $action = resolve(AnonymizeDataSubjectAction::class);
+
+    $action->handle($firstRead, $owner);
+
+    // The loser still believes the request is open. Only a re-read under the
+    // row lock can tell it otherwise.
+    expect($secondRead->status)->toBe(DataSubjectRequestStatus::Pending)
+        ->and(fn () => $action->handle($secondRead, $secondOperator))
+        ->toThrow(ValidationException::class);
+
+    actingInWorkspace($tenant);
+
+    expect(
+        Activity::query()
+            ->where('event', AuditEvent::DataSubjectErasureCompleted->value)
+            ->count(),
+    )->toBe(1)
+        // The first operator owns the erasure; the loser must not overwrite it.
+        ->and($request->refresh()->completed_by)->toBe($owner->id);
+});
+
+test('a refusal cannot win a race against a completed fulfilment', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant, 'request' => $request] = eraseFixture();
+
+    $secondOperator = workspaceMember($tenant, Role::Owner);
+    actingInWorkspace($tenant);
+
+    $fulfilRead = DataSubjectRequest::query()->findOrFail($request->getKey());
+    $refuseRead = DataSubjectRequest::query()->findOrFail($request->getKey());
+
+    resolve(AnonymizeDataSubjectAction::class)->handle($fulfilRead, $owner);
+
+    expect($refuseRead->status)->toBe(DataSubjectRequestStatus::Pending)
+        ->and(fn () => resolve(RefuseDataSubjectRequestAction::class)
+            ->handle($refuseRead, $secondOperator, 'Retention obligation under Art. 17(3)(b).'))
+        ->toThrow(ValidationException::class);
+
+    $request->refresh();
+
+    // A request recorded as both Completed and Refused would make the trail
+    // unreadable: two contradictory answers to one legal request.
+    expect($request->status)->toBe(DataSubjectRequestStatus::Completed)
+        ->and($request->refused_by)->toBeNull()
+        ->and($request->refusal_reason)->toBeNull();
+});
+
+test('the erasure locks the request row before it writes anything, archives included', function (): void {
+    Storage::fake('local');
+    config(['exports.disk' => 'local']);
+
+    ['owner' => $owner, 'client' => $client, 'request' => $request] = eraseFixture();
+
+    // A sibling archive, so the archive-clearing write is in play.
+    $exportRequest = resolve(LogDataSubjectRequestAction::class)
+        ->handle($client, $owner, DataSubjectRequestType::Export);
+    resolve(GenerateDataSubjectExportAction::class)->handle($exportRequest);
+
+    /** @var list<string> $queries */
+    $queries = [];
+
+    DB::listen(function (QueryExecuted $query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    resolve(AnonymizeDataSubjectAction::class)->handle($request, $owner);
+
+    $lockIndex = null;
+    $firstWriteIndex = null;
+
+    foreach ($queries as $index => $sql) {
+        $lowered = mb_strtolower($sql);
+
+        if (! str_contains($lowered, '"data_subject_requests"')) {
+            continue;
+        }
+
+        // The lock is the only select keyed on the primary key; the
+        // archive sweep selects on client_id, so match precisely or the
+        // sweep gets mistaken for the lock and the assertion proves nothing.
+        if ($lockIndex === null && str_starts_with($lowered, 'select') && str_contains($lowered, '"id" = ?')) {
+            $lockIndex = $index;
+        }
+
+        if ($firstWriteIndex === null && str_starts_with($lowered, 'update')) {
+            $firstWriteIndex = $index;
+        }
+    }
+
+    expect($lockIndex)->not->toBeNull('The request row was never locked.')
+        ->and($firstWriteIndex)->not->toBeNull('Nothing was written to data_subject_requests.')
+        // Every write — the archive columns as well as the status — lands after
+        // the lock, so all of it is inside the one transaction. Clearing archive
+        // rows before the transaction, as this used to, put them before the lock.
+        ->and($lockIndex)->toBeLessThan($firstWriteIndex);
+
+    // SQLite compiles lockForUpdate() to nothing, so only the real driver can
+    // confirm the SQL — see tests/Feature/Tenancy/LastOwnerMutationLockTest.php.
+    if (DB::connection()->getDriverName() === 'pgsql') {
+        expect(mb_strtolower($queries[$lockIndex]))->toContain('for update');
+    }
 });
 
 test('an erasure cannot be run twice or against an export request', function (): void {

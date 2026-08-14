@@ -46,10 +46,14 @@ export default function DocumentRequestReview({
                             {documentRequest.reviewed_by_name
                                 ? t('Reviewed by :name on :date.', {
                                       name: documentRequest.reviewed_by_name,
-                                      date: formatDateTime(documentRequest.reviewed_at),
+                                      date: formatDateTime(
+                                          documentRequest.reviewed_at,
+                                      ),
                                   })
                                 : t('Reviewed on :date.', {
-                                      date: formatDateTime(documentRequest.reviewed_at),
+                                      date: formatDateTime(
+                                          documentRequest.reviewed_at,
+                                      ),
                                   })}
                         </p>
                     )}
