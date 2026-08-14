@@ -20,6 +20,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/features/**/hooks/** | .ai/rules/hooks.md |
 | app/ClientPortal/Http/Controllers/** | .ai/rules/http-controllers.md |
 | app/Shared/Http/** | .ai/rules/http.md |
+| app/{DocumentProcessing,AudioProcessing}/{Jobs,Transitions}/** | .ai/rules/jobs-transitions.md |
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
 | resources/js/**, resources/js/**/*.{tsx,ts} | .ai/rules/js.md |

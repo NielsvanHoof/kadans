@@ -147,6 +147,8 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
                     'error' => $exception->getMessage(),
                 ]);
 
+                $processingTransitions->resetForRetry($claimed, $expectedPath);
+
                 throw $exception;
             }
 
