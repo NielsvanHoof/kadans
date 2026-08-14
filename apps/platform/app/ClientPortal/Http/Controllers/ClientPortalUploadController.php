@@ -9,9 +9,10 @@ use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Http\Requests\StorePortalUploadedDocumentRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
-use App\Dossiers\Enums\DocumentRequestStatus;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
@@ -62,6 +63,7 @@ final class ClientPortalUploadController extends Controller
         int $documentRequest,
         int $uploadedDocument,
         DeleteUploadedDocumentAction $deleteUploadedDocument,
+        DocumentRequestTransitions $documentRequestTransitions,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 
@@ -75,8 +77,10 @@ final class ClientPortalUploadController extends Controller
         // doesn't accept multiple files, or one already under review, offers
         // no delete button in the UI, so reaching here means a stale page.
         abort_unless(
-            ($documentRequestModel->configuration['allow_multiple'] ?? false) === true
-                && $documentRequestModel->status === DocumentRequestStatus::Submitted,
+            $documentRequestTransitions->canDeleteUpload(
+                $documentRequestModel,
+                SubmissionContext::Portal,
+            ),
             404,
         );
 
