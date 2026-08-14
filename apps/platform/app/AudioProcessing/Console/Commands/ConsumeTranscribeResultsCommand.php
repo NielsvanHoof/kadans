@@ -6,6 +6,7 @@ namespace App\AudioProcessing\Console\Commands;
 
 use App\AudioProcessing\Actions\CompleteTranscribeJobAction;
 use App\AudioProcessing\Actions\FailTranscribeJobAction;
+use App\AudioProcessing\Data\TranscribeCompletionNotification;
 use Aws\Sqs\SqsClient;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -112,23 +113,26 @@ final class ConsumeTranscribeResultsCommand extends Command
 
                 try {
                     $notification = $this->parseQueuePayload($body);
+                    // Same parse the action performs, so the two can no longer
+                    // disagree about a job name or a status's casing.
+                    $completion = TranscribeCompletionNotification::fromEventBridgeDetail($notification);
                     $applied = $completeTranscribeJob->handle($notification);
 
                     if ($applied) {
-                        $jobId = $this->jobNameFrom($notification) ?? 'unknown';
+                        $jobId = $completion->jobId ?? 'unknown';
                         info("Applied Amazon Transcribe result for job {$jobId}");
                         Log::info('Transcription: transcribe:consume applied and deleted SQS message.', [
                             'transcribe_job_id' => $jobId,
                             'sqs_message_id' => $messageId,
-                            'status' => $this->jobStatusFrom($notification),
+                            'status' => $completion->status,
                         ]);
                         $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
                     } else {
                         warning('Skipped or deferred Amazon Transcribe SQS message.');
                         Log::warning('Transcription: transcribe:consume skipped or deferred SQS message.', [
-                            'transcribe_job_id' => $this->jobNameFrom($notification),
+                            'transcribe_job_id' => $completion->jobId,
                             'sqs_message_id' => $messageId,
-                            'status' => $this->jobStatusFrom($notification),
+                            'status' => $completion->status,
                         ]);
                     }
                 } catch (Throwable $exception) {
@@ -140,7 +144,12 @@ final class ConsumeTranscribeResultsCommand extends Command
                         'error' => $exception->getMessage(),
                     ]);
 
-                    $jobId = is_array($notification) ? $this->jobNameFrom($notification) : null;
+                    // $notification stays null when parseQueuePayload() itself
+                    // threw, so a partially-understood message still yields the
+                    // job id needed to fail it permanently.
+                    $jobId = is_array($notification)
+                        ? TranscribeCompletionNotification::fromEventBridgeDetail($notification)->jobId
+                        : null;
 
                     if (
                         $receiveCount >= $maxReceiveCount
@@ -246,37 +255,5 @@ final class ConsumeTranscribeResultsCommand extends Command
         ]);
 
         return true;
-    }
-
-    /**
-     * @param  array<string, mixed>  $notification
-     */
-    private function jobNameFrom(array $notification): ?string
-    {
-        foreach (['JobName', 'TranscriptionJobName'] as $key) {
-            $value = $notification[$key] ?? null;
-
-            if (is_string($value) && $value !== '') {
-                return $value;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $notification
-     */
-    private function jobStatusFrom(array $notification): ?string
-    {
-        foreach (['Status', 'TranscriptionJobStatus'] as $key) {
-            $value = $notification[$key] ?? null;
-
-            if (is_string($value) && $value !== '') {
-                return $value;
-            }
-        }
-
-        return null;
     }
 }
