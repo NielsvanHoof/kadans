@@ -8,6 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ final readonly class CreateDocumentRequestAction
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
         private NormalizeQuestionnaireItemConfigurationAction $normalizeConfiguration,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
@@ -29,9 +31,7 @@ final readonly class CreateDocumentRequestAction
     public function handle(Dossier $dossier, array $attributes): DocumentRequest
     {
         return DB::transaction(function () use ($dossier, $attributes): DocumentRequest {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             $position = $attributes['position'] ?? null;
             unset($attributes['position']);

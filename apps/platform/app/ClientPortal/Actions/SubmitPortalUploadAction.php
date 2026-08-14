@@ -36,13 +36,11 @@ final readonly class SubmitPortalUploadAction
             function (
                 UploadedDocument $uploadedDocument,
                 DocumentRequest $lockedDocumentRequest,
+                Dossier $dossier,
             ) use ($grant): void {
-                $dossierQuery = Dossier::query()->whereKey($lockedDocumentRequest->dossier_id);
-                $dossierQuery->getQuery()->lockForUpdate();
-                $dossier = $dossierQuery->firstOrFail();
-
                 $this->dossierTransitions->markInReview($dossier);
 
+                // The grant is locked last — see DossierLocks for the order.
                 $grantQuery = ClientAccessGrant::query()->whereKey($grant->getKey());
                 $grantQuery->getQuery()->lockForUpdate();
                 $lockedGrant = $grantQuery->firstOrFail();

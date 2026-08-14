@@ -8,6 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -18,17 +19,14 @@ final readonly class DeleteDocumentRequestAction
     public function __construct(
         private FilesystemManager $filesystems,
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(DocumentRequest $documentRequest): void
     {
         /** @var list<array{disk: string, path: string}> $storedFiles */
         $storedFiles = DB::transaction(function () use ($documentRequest): array {
-            $documentRequestQuery = DocumentRequest::query()
-                ->whereKey($documentRequest->getKey());
-            $documentRequestQuery->getQuery()->lockForUpdate();
-
-            $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
+            $lockedDocumentRequest = $this->dossierLocks->documentRequest($documentRequest);
             $storedFiles = UploadedDocument::query()
                 ->where('document_request_id', $lockedDocumentRequest->id)
                 ->get()

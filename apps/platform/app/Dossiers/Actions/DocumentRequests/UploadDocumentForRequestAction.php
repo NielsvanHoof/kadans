@@ -7,7 +7,9 @@ namespace App\Dossiers\Actions\DocumentRequests;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Pipelines\Actions\StartPipelineAction;
 use App\Pipelines\Enums\PipelineType;
@@ -31,6 +33,7 @@ final readonly class UploadDocumentForRequestAction
         private FilesystemManager $filesystems,
         private DocumentRequestTransitions $documentRequestTransitions,
         private StartPipelineAction $startPipeline,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
@@ -39,7 +42,13 @@ final readonly class UploadDocumentForRequestAction
      * `allow_multiple` configuration is enabled, in which case the file is
      * appended alongside any existing uploads instead.
      *
-     * @param  (Closure(UploadedDocument, DocumentRequest): void)|null  $afterPersist
+     * The dossier is locked here, before the request, and handed to
+     * $afterPersist. Both callers need it — staff and portal uploads each move
+     * the dossier to in-review — and when they locked it themselves inside the
+     * callback the transaction ended up holding the request before the dossier,
+     * the reverse of every other path. See DossierLocks.
+     *
+     * @param  (Closure(UploadedDocument, DocumentRequest, Dossier): void)|null  $afterPersist
      */
     public function handle(
         DocumentRequest $documentRequest,
@@ -78,11 +87,9 @@ final readonly class UploadDocumentForRequestAction
                 $context,
                 &$replacedFile,
             ): UploadedDocument {
-                $documentRequestQuery = DocumentRequest::query()
-                    ->whereKey($documentRequest->getKey());
-                $documentRequestQuery->getQuery()->lockForUpdate();
+                [$lockedDossier, $lockedDocumentRequest] = $this->dossierLocks
+                    ->documentRequestWithDossier($documentRequest);
 
-                $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
                 $allowMultiple = ($lockedDocumentRequest->configuration['allow_multiple'] ?? false) === true;
                 $existing = $allowMultiple
                     ? null
@@ -125,7 +132,7 @@ final readonly class UploadDocumentForRequestAction
                 $this->documentRequestTransitions->submitUpload($lockedDocumentRequest, $context);
 
                 if ($afterPersist instanceof Closure) {
-                    $afterPersist($uploadedDocument, $lockedDocumentRequest);
+                    $afterPersist($uploadedDocument, $lockedDocumentRequest, $lockedDossier);
                 }
 
                 $this->startPipeline->handle(

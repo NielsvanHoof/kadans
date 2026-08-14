@@ -10,6 +10,7 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Events\DocumentRequestRejected;
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -21,6 +22,7 @@ final readonly class ReviewDocumentRequestAction
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
         private DocumentRequestTransitions $documentRequestTransitions,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(
@@ -37,9 +39,7 @@ final readonly class ReviewDocumentRequestAction
             $decision,
             $rejectionReason,
         ): DocumentRequest {
-            $documentRequestQuery = DocumentRequest::query()->whereKey($documentRequest->getKey());
-            $documentRequestQuery->getQuery()->lockForUpdate();
-            $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
+            $lockedDocumentRequest = $this->dossierLocks->documentRequest($documentRequest);
 
             if ($decision === DocumentRequestStatus::Accepted) {
                 $this->documentRequestTransitions->accept($lockedDocumentRequest, $reviewer);

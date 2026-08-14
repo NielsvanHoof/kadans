@@ -11,6 +11,7 @@ use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsActio
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -21,23 +22,16 @@ final readonly class CompleteDossierAction
         private LogAuditActivityAction $logAuditActivity,
         private DossierTransitions $dossierTransitions,
         private ResolveApplicableDocumentRequestsAction $resolveApplicableDocumentRequests,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(Dossier $dossier, User $completedBy): Dossier
     {
         return DB::transaction(function () use ($dossier, $completedBy): Dossier {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
-
-            $documentRequestQuery = DocumentRequest::query()
-                ->whereBelongsTo($lockedDossier)
-                ->oldest('sort_order')
-                ->oldest('id');
-            $documentRequestQuery->getQuery()->lockForUpdate();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             // Need configuration + answers so visibility / optional rules can resolve.
-            $documentRequests = $documentRequestQuery->get();
+            $documentRequests = $this->dossierLocks->documentRequestsFor($lockedDossier);
             $applicableDocumentRequests = $this->resolveApplicableDocumentRequests->handle(
                 $documentRequests,
             );

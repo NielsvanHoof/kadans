@@ -8,6 +8,7 @@ use App\Accounts\Models\User;
 use App\Dossiers\Data\DossierBuilderLockData;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierBuilderLock;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -16,15 +17,17 @@ use Illuminate\Support\Str;
  */
 final readonly class AcquireDossierBuilderLockAction
 {
+    public function __construct(
+        private DossierLocks $dossierLocks,
+    ) {}
+
     /**
      * Acquire when free / expired / already ours. Otherwise return the existing holder.
      */
     public function handle(Dossier $dossier, User $user): DossierBuilderLockData
     {
         return DB::transaction(function () use ($dossier, $user): DossierBuilderLockData {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
             $lockedDossier->loadMissing('builderLockedBy:id,name,email');
 
             // Same user already holds it — extend TTL and reuse the token.

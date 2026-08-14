@@ -9,20 +9,20 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Events\DossierArchived;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 
 final readonly class DeleteDossierAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(Dossier $dossier, User $deletedBy): void
     {
         DB::transaction(function () use ($dossier, $deletedBy): void {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             if (! $lockedDossier->trashed()) {
                 // ClientPortal listens and revokes live magic-link grants.

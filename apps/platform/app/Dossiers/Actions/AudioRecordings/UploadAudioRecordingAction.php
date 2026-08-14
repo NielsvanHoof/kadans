@@ -10,6 +10,7 @@ use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use App\Pipelines\Actions\StartPipelineAction;
 use App\Pipelines\Enums\PipelineType;
 use Illuminate\Filesystem\FilesystemManager;
@@ -29,6 +30,7 @@ final readonly class UploadAudioRecordingAction
         private FilesystemManager $filesystems,
         private StartPipelineAction $startPipeline,
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(
@@ -56,9 +58,7 @@ final readonly class UploadAudioRecordingAction
                 $sizeBytes,
                 $uploadedBy,
             ): AudioRecording {
-                $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-                $dossierQuery->getQuery()->lockForUpdate();
-                $lockedDossier = $dossierQuery->firstOrFail();
+                $lockedDossier = $this->dossierLocks->dossier($dossier);
 
                 $audioRecording = $lockedDossier->audioRecordings()->create([
                     'disk' => $disk,

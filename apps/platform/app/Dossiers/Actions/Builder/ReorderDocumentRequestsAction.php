@@ -6,6 +6,7 @@ namespace App\Dossiers\Actions\Builder;
 
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -13,8 +14,12 @@ use function array_diff;
 use function array_unique;
 use function count;
 
-final class ReorderDocumentRequestsAction
+final readonly class ReorderDocumentRequestsAction
 {
+    public function __construct(
+        private DossierLocks $dossierLocks,
+    ) {}
+
     /**
      * @param  array<mixed>  $documentRequestIds
      */
@@ -26,9 +31,7 @@ final class ReorderDocumentRequestsAction
         );
 
         DB::transaction(function () use ($dossier, $ids): void {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             $ownedIds = $lockedDossier->documentRequests()
                 ->toBase()

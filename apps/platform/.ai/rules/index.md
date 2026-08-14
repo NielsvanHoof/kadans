@@ -13,6 +13,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
+| app/{Dossiers,ClientPortal}/** | .ai/rules/dossiers-client-portal.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
 | app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |

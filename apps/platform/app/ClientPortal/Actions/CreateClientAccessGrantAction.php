@@ -7,6 +7,7 @@ namespace App\ClientPortal\Actions;
 use App\Accounts\Models\User;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,6 +16,7 @@ final readonly class CreateClientAccessGrantAction
 {
     public function __construct(
         private DossierTransitions $dossierTransitions,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
@@ -25,9 +27,7 @@ final readonly class CreateClientAccessGrantAction
     public function handle(Dossier $dossier, User $createdBy, int $expiresInDays = 7): array
     {
         return DB::transaction(function () use ($dossier, $createdBy, $expiresInDays): array {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             $this->dossierTransitions->markAwaitingClient($lockedDossier);
 

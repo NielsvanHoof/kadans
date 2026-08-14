@@ -10,7 +10,7 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Actions\DocumentRequests\SubmitQuestionnaireAnswerAction;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +22,7 @@ final readonly class SubmitPortalAnswerAction
         private LogAuditActivityAction $logAuditActivity,
         private DossierTransitions $dossierTransitions,
         private NotifyWorkspaceIfQuestionnaireCompleteAction $notifyWorkspaceIfQuestionnaireComplete,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
@@ -41,14 +42,10 @@ final readonly class SubmitPortalAnswerAction
             $answerBoolean,
             $answerOptionIds,
         ): DocumentRequest {
-            $documentRequestQuery = DocumentRequest::query()->whereKey($documentRequest->getKey());
-            $documentRequestQuery->getQuery()->lockForUpdate();
-            $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
+            [$dossier, $lockedDocumentRequest] = $this->dossierLocks
+                ->documentRequestWithDossier($documentRequest);
 
-            $dossierQuery = Dossier::query()->whereKey($lockedDocumentRequest->dossier_id);
-            $dossierQuery->getQuery()->lockForUpdate();
-            $dossier = $dossierQuery->firstOrFail();
-
+            // The grant is locked last — see DossierLocks for the order.
             $grantQuery = ClientAccessGrant::query()->whereKey($grant->getKey());
             $grantQuery->getQuery()->lockForUpdate();
             $lockedGrant = $grantQuery->firstOrFail();

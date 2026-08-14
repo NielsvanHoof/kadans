@@ -11,6 +11,7 @@ use App\Dossiers\Contracts\ClientPortalReminders;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -20,6 +21,7 @@ final readonly class SendDossierReminderAction
         private ClientPortalReminders $clientPortalReminders,
         private DossierHasOutstandingClientItemsQuery $dossierHasOutstandingClientItems,
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(
@@ -30,9 +32,7 @@ final readonly class SendDossierReminderAction
         ?string $customMessage = null,
     ): bool {
         return DB::transaction(function () use ($dossier, $grantCreator, $source, $auditCauser, $customMessage): bool {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             if (
                 $source === DossierReminderSource::Scheduled

@@ -8,7 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +21,7 @@ final readonly class SubmitStaffQuestionnaireAnswerAction
         private SubmitQuestionnaireAnswerAction $submitQuestionnaireAnswer,
         private DossierTransitions $dossierTransitions,
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
@@ -38,15 +39,8 @@ final readonly class SubmitStaffQuestionnaireAnswerAction
             $answerBoolean,
             $answerOptionIds,
         ): DocumentRequest {
-            $documentRequestQuery = DocumentRequest::query()
-                ->whereKey($documentRequest->getKey());
-            $documentRequestQuery->getQuery()->lockForUpdate();
-            $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
-
-            $dossierQuery = Dossier::query()
-                ->whereKey($lockedDocumentRequest->dossier_id);
-            $dossierQuery->getQuery()->lockForUpdate();
-            $dossier = $dossierQuery->firstOrFail();
+            [$dossier, $lockedDocumentRequest] = $this->dossierLocks
+                ->documentRequestWithDossier($documentRequest);
 
             $submittedDocumentRequest = $this->submitQuestionnaireAnswer->handle(
                 $lockedDocumentRequest,
