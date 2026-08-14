@@ -9,7 +9,6 @@ use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
 use App\Dossiers\Actions\DraftDossierReminderMessageAction;
 use App\Dossiers\Data\ReminderDraftContextData;
-use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
@@ -17,8 +16,6 @@ use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
-
-use function in_array;
 
 final class DossierReminderDraftController extends Controller
 {
@@ -51,11 +48,7 @@ final class DossierReminderDraftController extends Controller
         /** @var list<string> $outstandingItemTitles */
         $outstandingItemTitles = $resolveApplicableDocumentRequests
             ->handle($documentRequests)
-            ->filter(fn (DocumentRequest $documentRequest): bool => in_array(
-                $documentRequest->status,
-                [DocumentRequestStatus::Pending, DocumentRequestStatus::Rejected],
-                true,
-            ))
+            ->filter(fn (DocumentRequest $documentRequest): bool => $documentRequest->status->isAwaitingClient())
             ->map(fn (DocumentRequest $documentRequest): string => $documentRequest->title)
             ->values()
             ->all();

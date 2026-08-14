@@ -8,12 +8,9 @@ use App\Accounts\Models\User;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Models\DossierExport;
 use App\Pipelines\Enums\PipelinePermission;
-use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
-
-use function in_array;
 
 final class PipelinePolicy
 {
@@ -49,13 +46,13 @@ final class PipelinePolicy
     }
 
     /**
-     * Only a failed or stuck run may be restarted. This deliberately does not
-     * use `isTerminal()` like `delete()` does: that also covers completed and
-     * cancelled runs, which stay closed.
+     * Only a failed or stuck run may be restarted. Named on the enum as
+     * isRetryable() so this does not use isTerminal() like delete() does:
+     * that also covers completed and cancelled runs, which stay closed.
      */
     public function retry(User $user, Pipeline $pipeline): bool
     {
-        return in_array($pipeline->status, [PipelineStatus::Failed, PipelineStatus::Stuck], true)
+        return $pipeline->status->isRetryable()
             && $this->userHasPermissionInTenant($user, $pipeline->tenant, PipelinePermission::Retry);
     }
 

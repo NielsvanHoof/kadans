@@ -128,7 +128,7 @@ export default function NotificationListItem({
                 <span className="min-w-0 flex-1">
                     <span
                         className={cn(
-                            'line-clamp-2 break-words leading-snug',
+                            'line-clamp-2 leading-snug wrap-break-word',
                             isUnread
                                 ? 'font-medium text-foreground'
                                 : 'text-muted-foreground',
@@ -153,7 +153,7 @@ export default function NotificationListItem({
                 size="icon"
                 className={cn(
                     'size-7 shrink-0 text-muted-foreground hover:text-destructive',
-                    '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100',
+                    '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100',
                 )}
                 aria-label={t('Delete notification')}
                 onPress={deleteNotification}

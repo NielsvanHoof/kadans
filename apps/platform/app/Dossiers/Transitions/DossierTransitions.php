@@ -18,7 +18,7 @@ final class DossierTransitions
 {
     public function markAwaitingClient(Dossier $dossier): void
     {
-        if ($dossier->status === DossierStatus::Completed) {
+        if ($dossier->status->isLocked()) {
             throw ValidationException::withMessages([
                 'dossier' => 'A completed dossier cannot receive a new portal invitation.',
             ]);
@@ -34,7 +34,7 @@ final class DossierTransitions
 
     public function markInReview(Dossier $dossier): void
     {
-        if ($dossier->status === DossierStatus::Completed) {
+        if ($dossier->status->isLocked()) {
             throw ValidationException::withMessages([
                 'dossier' => 'A completed dossier cannot return to review.',
             ]);
@@ -49,7 +49,7 @@ final class DossierTransitions
 
     public function complete(Dossier $dossier): void
     {
-        if ($dossier->status === DossierStatus::Completed) {
+        if ($dossier->status->isLocked()) {
             throw ValidationException::withMessages([
                 'dossier' => 'This dossier is already completed.',
             ]);

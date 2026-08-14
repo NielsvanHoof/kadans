@@ -8,7 +8,6 @@ use App\Accounts\Models\User;
 use App\Dossiers\Actions\Builder\AcquireDossierBuilderLockAction;
 use App\Dossiers\Data\DossierBuilderData;
 use App\Dossiers\Data\DossierBuilderLockData;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Data\QuestionnaireTemplateOptionData;
@@ -34,7 +33,7 @@ final readonly class FetchDossierBuilderQuery
         $user = $request->user();
         $canManage = $user?->can('create', DocumentRequest::class) ?? false;
         $canUpdate = $user instanceof User && $user->can('update', $dossier);
-        $isCompletable = $dossier->status !== DossierStatus::Completed;
+        $isCompletable = ! $dossier->status->isLocked();
 
         // Entering /builder claims the lock when the visitor can edit structure.
         $builderLock = $this->resolveBuilderLock(

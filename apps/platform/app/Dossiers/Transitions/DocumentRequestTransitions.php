@@ -6,7 +6,6 @@ namespace App\Dossiers\Transitions;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -16,7 +15,6 @@ use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 use function count;
-use function in_array;
 
 /**
  * Guarded status transitions for questionnaire items on a dossier.
@@ -39,30 +37,25 @@ final class DocumentRequestTransitions
         if ($context === SubmissionContext::Portal) {
             $dossier ??= $documentRequest->dossier;
 
-            if (! $dossier instanceof Dossier || $dossier->status === DossierStatus::Completed) {
+            if (! $dossier instanceof Dossier || $dossier->status->isLocked()) {
                 return false;
             }
-
-            $allowedStatuses = [
-                DocumentRequestStatus::Pending,
-                DocumentRequestStatus::Rejected,
-            ];
 
             // A request accepting multiple files stays open for further
             // uploads while awaiting review, instead of locking after the
             // first file like a single-file request does.
-            if (($documentRequest->configuration['allow_multiple'] ?? false) === true) {
-                $allowedStatuses[] = DocumentRequestStatus::Submitted;
+            if (
+                ($documentRequest->configuration['allow_multiple'] ?? false) === true
+                && $documentRequest->status === DocumentRequestStatus::Submitted
+            ) {
+                return true;
             }
 
-            return in_array($documentRequest->status, $allowedStatuses, true);
+            return $documentRequest->status->isAwaitingClient();
         }
 
-        return in_array($documentRequest->status, [
-            DocumentRequestStatus::Pending,
-            DocumentRequestStatus::Rejected,
-            DocumentRequestStatus::Submitted,
-        ], true);
+        return $documentRequest->status->isAwaitingClient()
+            || $documentRequest->status === DocumentRequestStatus::Submitted;
     }
 
     /**

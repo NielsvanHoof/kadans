@@ -6,7 +6,6 @@ namespace App\Dossiers\Policies;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestPermission;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
@@ -48,6 +47,6 @@ final class UploadedDocumentPolicy
 
         return $dossier instanceof Dossier
             && $this->userHasPermissionInTenant($user, $uploadedDocument->tenant, DocumentRequestPermission::Upload)
-            && $dossier->status !== DossierStatus::Completed;
+            && ! $dossier->status->isLocked();
     }
 }

@@ -38,7 +38,7 @@ final readonly class PipelineTransitions
      */
     public function retry(Pipeline $pipeline): Pipeline
     {
-        if (! in_array($pipeline->status, [PipelineStatus::Failed, PipelineStatus::Stuck], true)) {
+        if (! $pipeline->status->isRetryable()) {
             throw ValidationException::withMessages([
                 'pipeline' => 'Only a failed or stuck pipeline can be retried.',
             ]);
@@ -140,7 +140,7 @@ final readonly class PipelineTransitions
         ?string $errorMessage,
         ?string $errorCode,
     ): Pipeline {
-        if (in_array($pipeline->status, [PipelineStatus::Completed, PipelineStatus::Cancelled], true)) {
+        if ($pipeline->status->isSettled()) {
             throw ValidationException::withMessages([
                 'pipeline' => 'A closed pipeline cannot be marked stuck.',
             ]);

@@ -12,4 +12,6 @@ Validate HTTP writes in Form Requests under `app/{Domain}/Http/Requests/`, using
 
 Enums are string-backed with TitleCase case names. Permission enums implement `TenantPermission` (`value`, `label`, `description`, `group()`, `defaultRoles()`) and must be registered in `config/tenant-permissions.php` or `PermissionRegistry` will not see them. **Never list Owner in `defaultRoles()`** — owners implicitly hold every registered permission.
 
+Status sets live on the enum as an exhaustive `isX()` match (so PHPStan flags a new case) plus `*Values()` derived from `cases()` for SQL `whereIn` / `whereNotIn`. Do not duplicate `[Pending, Rejected]`, `Completed` as locked, or `[Failed, Stuck]` / `[Completed, Cancelled]` at call sites. Failed-only scheduled retry and Stuck-only health checks stay Failed-only / Stuck-only — do not widen them to retryable. Review decisions stay `[Accepted, Rejected]`. Do not move TranscriptionStatus out of DocumentProcessing.
+
 Policies use `AuthorizesTenantPermission` and are registered with `Gate::policy()` in the owning domain's `*ServiceProvider`. Controllers call `$this->authorize()`; Form Request `authorize()` and Inertia capability props use `$user->can()`.

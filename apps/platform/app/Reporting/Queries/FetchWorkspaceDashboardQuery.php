@@ -37,10 +37,10 @@ final class FetchWorkspaceDashboardQuery
         $outstandingDocumentRequestsQuery = DocumentRequest::query()
             ->whereBelongsTo($tenant);
 
-        $outstandingDocumentRequestsQuery->getQuery()->whereIn('status', [
-            DocumentRequestStatus::Pending->value,
-            DocumentRequestStatus::Rejected->value,
-        ]);
+        $outstandingDocumentRequestsQuery->getQuery()->whereIn(
+            'status',
+            DocumentRequestStatus::awaitingClientValues(),
+        );
 
         $submittedDocumentRequests = DocumentRequest::query()
             ->whereBelongsTo($tenant)
@@ -50,20 +50,20 @@ final class FetchWorkspaceDashboardQuery
 
         $awaitingClientQuery = Dossier::query()
             ->whereBelongsTo($tenant)
-            ->whereNot('status', DossierStatus::Completed)
             ->whereHas('documentRequests', function (Builder $documentRequestQuery): void {
-                $documentRequestQuery->getQuery()->whereIn('status', [
-                    DocumentRequestStatus::Pending->value,
-                    DocumentRequestStatus::Rejected->value,
-                ]);
+                $documentRequestQuery->getQuery()->whereIn(
+                    'status',
+                    DocumentRequestStatus::awaitingClientValues(),
+                );
             });
+        $awaitingClientQuery->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
         $needsReviewQuery = Dossier::query()
             ->whereBelongsTo($tenant)
-            ->whereNot('status', DossierStatus::Completed)
             ->whereHas('documentRequests', fn (Builder $documentRequestQuery) => $documentRequestQuery
                 ->getQuery()
                 ->where('status', DocumentRequestStatus::Submitted->value));
+        $needsReviewQuery->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
         $overdueQuery = clone $awaitingClientQuery;
         $overdueQuery->getQuery()
             ->whereNotNull('due_date')
@@ -76,30 +76,29 @@ final class FetchWorkspaceDashboardQuery
         $awaitingClientThisWeekQuery = DocumentRequest::query()
             ->whereBelongsTo($tenant)
             ->where('created_at', '>=', $thisWeekStart);
-        $awaitingClientThisWeekQuery->getQuery()->whereIn('status', [
-            DocumentRequestStatus::Pending->value,
-            DocumentRequestStatus::Rejected->value,
-        ]);
+        $awaitingClientThisWeekQuery->getQuery()->whereIn(
+            'status',
+            DocumentRequestStatus::awaitingClientValues(),
+        );
 
         $awaitingClientLastWeekQuery = DocumentRequest::query()
             ->whereBelongsTo($tenant)
             ->where('created_at', '>=', $lastWeekStart)
             ->where('created_at', '<', $thisWeekStart);
-        $awaitingClientLastWeekQuery->getQuery()->whereIn('status', [
-            DocumentRequestStatus::Pending->value,
-            DocumentRequestStatus::Rejected->value,
-        ]);
+        $awaitingClientLastWeekQuery->getQuery()->whereIn(
+            'status',
+            DocumentRequestStatus::awaitingClientValues(),
+        );
+
+        $openDossiersQuery = Dossier::query()->whereBelongsTo($tenant);
+        $openDossiersQuery->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
         return new DashboardMetricsData(
             clients: Client::query()
                 ->whereBelongsTo($tenant)
                 ->toBase()
                 ->count(),
-            openDossiers: Dossier::query()
-                ->whereBelongsTo($tenant)
-                ->whereNot('status', DossierStatus::Completed)
-                ->toBase()
-                ->count(),
+            openDossiers: $openDossiersQuery->toBase()->count(),
             needsReview: $needsReviewQuery->toBase()->count(),
             awaitingClient: (clone $awaitingClientQuery)->toBase()->count(),
             overdue: $overdueQuery->toBase()->count(),

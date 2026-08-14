@@ -67,10 +67,7 @@ export function formatRelativeTime(
 
     for (const division of RelativeDivisions) {
         if (Math.abs(durationSeconds) < division.amount) {
-            return formatter.format(
-                Math.round(durationSeconds),
-                division.unit,
-            );
+            return formatter.format(Math.round(durationSeconds), division.unit);
         }
 
         durationSeconds /= division.amount;

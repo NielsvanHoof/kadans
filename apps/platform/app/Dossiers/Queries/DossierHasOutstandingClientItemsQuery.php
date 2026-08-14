@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace App\Dossiers\Queries;
 
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
-use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-
-use function in_array;
 
 /**
  * True when the dossier still has questionnaire items awaiting client input.
@@ -33,14 +30,7 @@ final readonly class DossierHasOutstandingClientItemsQuery
         return $this->resolveApplicableDocumentRequests
             ->handle($documentRequests)
             ->contains(
-                fn (DocumentRequest $documentRequest): bool => in_array(
-                    $documentRequest->status,
-                    [
-                        DocumentRequestStatus::Pending,
-                        DocumentRequestStatus::Rejected,
-                    ],
-                    true,
-                ),
+                fn (DocumentRequest $documentRequest): bool => $documentRequest->status->isAwaitingClient(),
             );
     }
 }

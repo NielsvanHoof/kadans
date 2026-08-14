@@ -66,13 +66,13 @@ final class SendScheduledDossierRemindersCommand extends Command
         $sentCount = 0;
 
         $dueDossiersQuery = Dossier::query()
-            ->whereNot('status', DossierStatus::Completed)
             ->whereHas('documentRequests', function (Builder $documentRequestQuery): void {
-                $documentRequestQuery->getQuery()->whereIn('status', [
-                    DocumentRequestStatus::Pending->value,
-                    DocumentRequestStatus::Rejected->value,
-                ]);
+                $documentRequestQuery->getQuery()->whereIn(
+                    'status',
+                    DocumentRequestStatus::awaitingClientValues(),
+                );
             });
+        $dueDossiersQuery->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
         $dueDossiersQuery->getQuery()
             ->whereNotNull('next_reminder_at')
             ->where('next_reminder_at', '<=', now());

@@ -175,11 +175,10 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
     private function applyWorkflowQueue(Builder $query, string $queue): void
     {
         if ($queue === 'needs_review') {
-            $query
-                ->whereNot('status', DossierStatus::Completed)
-                ->whereHas('documentRequests', fn (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery) => $documentRequestQuery
-                    ->getQuery()
-                    ->where('status', DocumentRequestStatus::Submitted->value));
+            $query->whereHas('documentRequests', fn (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery) => $documentRequestQuery
+                ->getQuery()
+                ->where('status', DocumentRequestStatus::Submitted->value));
+            $query->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
             return;
         }
@@ -188,14 +187,13 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             return;
         }
 
-        $query
-            ->whereNot('status', DossierStatus::Completed)
-            ->whereHas('documentRequests', function (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery): void {
-                $documentRequestQuery->getQuery()->whereIn('status', [
-                    DocumentRequestStatus::Pending->value,
-                    DocumentRequestStatus::Rejected->value,
-                ]);
-            });
+        $query->whereHas('documentRequests', function (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery): void {
+            $documentRequestQuery->getQuery()->whereIn(
+                'status',
+                DocumentRequestStatus::awaitingClientValues(),
+            );
+        });
+        $query->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
         if ($queue === 'overdue') {
             $query->getQuery()

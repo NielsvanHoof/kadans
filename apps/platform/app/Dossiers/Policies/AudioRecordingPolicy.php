@@ -6,7 +6,6 @@ namespace App\Dossiers\Policies;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\AudioRecordingPermission;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Contracts\TenantPermission;
@@ -57,6 +56,6 @@ final class AudioRecordingPolicy
     ): bool {
         return $dossier instanceof Dossier
             && $this->userHasPermissionInTenant($user, $dossier->tenant, $permission)
-            && $dossier->status !== DossierStatus::Completed;
+            && ! $dossier->status->isLocked();
     }
 }

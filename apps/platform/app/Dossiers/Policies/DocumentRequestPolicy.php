@@ -6,7 +6,6 @@ namespace App\Dossiers\Policies;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestPermission;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Contracts\TenantPermission;
@@ -71,6 +70,6 @@ final class DocumentRequestPolicy
 
         return $this->userHasPermissionInTenant($user, $documentRequest->tenant, $permission)
             && $dossier instanceof Dossier
-            && $dossier->status !== DossierStatus::Completed;
+            && ! $dossier->status->isLocked();
     }
 }

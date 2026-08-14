@@ -9,7 +9,6 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Contracts\ClientPortalReminders;
 use App\Dossiers\Enums\DossierReminderSource;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +44,7 @@ final readonly class SendDossierReminderAction
                 return false;
             }
 
-            if ($lockedDossier->status === DossierStatus::Completed) {
+            if ($lockedDossier->status->isLocked()) {
                 throw ValidationException::withMessages([
                     'dossier' => __('A completed dossier cannot receive reminders.'),
                 ]);

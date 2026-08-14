@@ -39,15 +39,15 @@ describe('formatRelativeTime', () => {
     const now = new Date('2025-03-15T14:00:00.000Z');
 
     it('formats minutes ago', () => {
-        expect(
-            formatRelativeTime('2025-03-15T13:45:00.000Z', 'en', now),
-        ).toBe('15 minutes ago');
+        expect(formatRelativeTime('2025-03-15T13:45:00.000Z', 'en', now)).toBe(
+            '15 minutes ago',
+        );
     });
 
     it('formats hours ago', () => {
-        expect(
-            formatRelativeTime('2025-03-15T12:00:00.000Z', 'en', now),
-        ).toBe('2 hours ago');
+        expect(formatRelativeTime('2025-03-15T12:00:00.000Z', 'en', now)).toBe(
+            '2 hours ago',
+        );
     });
 
     it('formats in the viewing locale', () => {

@@ -46,10 +46,7 @@ final class ResolveProviderPipelineForSubjectAction
         }
 
         $openQuery = clone $query;
-        $openQuery->getQuery()->whereNotIn('status', [
-            PipelineStatus::Completed->value,
-            PipelineStatus::Cancelled->value,
-        ]);
+        $openQuery->getQuery()->whereNotIn('status', PipelineStatus::settledValues());
 
         return $openQuery->first();
     }

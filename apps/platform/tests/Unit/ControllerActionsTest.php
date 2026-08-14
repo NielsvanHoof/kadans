@@ -11,6 +11,7 @@ use App\Dossiers\Http\Controllers\DossierController;
 use App\Dossiers\Http\Controllers\DossierExportController;
 use App\Dossiers\Http\Controllers\UploadedDocumentController;
 use App\Platform\Http\Controllers\DataSubjectRequestController;
+use App\Platform\Http\Controllers\WorkspaceNotificationController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
 use App\Reporting\Http\Controllers\PipelineController;
