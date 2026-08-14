@@ -7,8 +7,8 @@ namespace App\Platform\Actions\DataSubject;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Models\DataSubjectRequest;
+use App\Platform\Transitions\DataSubjectRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -23,6 +23,7 @@ final readonly class RefuseDataSubjectRequestAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
+        private DataSubjectRequestTransitions $transitions,
     ) {}
 
     public function handle(
@@ -30,7 +31,8 @@ final readonly class RefuseDataSubjectRequestAction
         User $refusedBy,
         string $reason,
     ): DataSubjectRequest {
-        throw_unless($request->status->isOpen(), ValidationException::withMessages([
+        // Cheap pre-checks. The status one is not the guard — see lockIfOpen().
+        throw_unless($this->transitions->canClose($request), ValidationException::withMessages([
             'status' => __('Only an open request can be refused.'),
         ]));
 
@@ -39,25 +41,28 @@ final readonly class RefuseDataSubjectRequestAction
         ]));
 
         return DB::transaction(function () use ($request, $refusedBy, $reason): DataSubjectRequest {
-            $request->forceFill([
-                'status' => DataSubjectRequestStatus::Refused,
-                'refused_at' => now(),
-                'refused_by' => $refusedBy->id,
-                'refusal_reason' => mb_substr(mb_trim($reason), 0, 500),
-            ])->save();
+            // Without the lock a refusal could race a fulfil and both would
+            // win, leaving one request recorded as Completed and Refused.
+            $locked = $this->transitions->lockIfOpen($request);
+
+            throw_unless($locked instanceof DataSubjectRequest, ValidationException::withMessages([
+                'status' => __('Only an open request can be refused.'),
+            ]));
+
+            $this->transitions->refuse($locked, $refusedBy, $reason);
 
             $this->logAuditActivity->handle(
                 AuditEvent::DataSubjectRequestRefused,
-                $request,
+                $locked,
                 [
-                    'client_id' => $request->client_id,
-                    'request_type' => $request->type->value,
-                    'refusal_reason' => $request->refusal_reason,
+                    'client_id' => $locked->client_id,
+                    'request_type' => $locked->type->value,
+                    'refusal_reason' => $locked->refusal_reason,
                 ],
                 causer: $refusedBy,
             );
 
-            return $request;
+            return $locked;
         });
     }
 }

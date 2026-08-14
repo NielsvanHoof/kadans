@@ -12,13 +12,14 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Actions\Retention\PurgeSubjectActivityLogAction;
-use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Models\DataSubjectRequest;
+use App\Platform\Transitions\DataSubjectRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
+use Throwable;
 
 use function count;
 use function sprintf;
@@ -53,6 +54,7 @@ final readonly class AnonymizeDataSubjectAction
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
         private PurgeSubjectActivityLogAction $purgeSubjectActivityLog,
+        private DataSubjectRequestTransitions $transitions,
     ) {}
 
     public function handle(DataSubjectRequest $request, User $completedBy): void
@@ -63,92 +65,131 @@ final readonly class AnonymizeDataSubjectAction
             'Only an erasure request anonymizes a client.',
         );
 
-        throw_unless($request->status->isOpen(), ValidationException::withMessages([
+        // Cheap pre-check so a plainly-closed request fails without opening a
+        // transaction. It is not the guard — see lockIfOpen() below.
+        throw_unless($this->transitions->canClose($request), ValidationException::withMessages([
             'status' => __('Only an open request can be fulfilled.'),
         ]));
 
-        $client = Client::withTrashed()->findOrFail($request->client_id);
+        $archives = DB::transaction(function () use ($request, $completedBy): array {
+            // Everything below runs on the locked row. A double-submit that gets
+            // here second finds the request already Completed and is rejected
+            // rather than erasing a second time under a different completed_by.
+            $locked = $this->transitions->lockIfOpen($request);
 
-        $dossierIds = [];
+            throw_unless($locked instanceof DataSubjectRequest, ValidationException::withMessages([
+                'status' => __('Only an open request can be fulfilled.'),
+            ]));
 
-        foreach (Dossier::withTrashed()->where('client_id', $client->id)->toBase()->pluck('id') as $id) {
-            $dossierIds[] = (int) $id;
-        }
+            $client = Client::withTrashed()->findOrFail($locked->client_id);
 
-        // Outside the transaction: object storage is not transactional, and a
-        // rolled-back delete would leave the row pointing at a missing file.
-        $archivesDeleted = $this->deleteExportArchives($client);
+            $dossierIds = [];
 
-        DB::transaction(function () use ($request, $client, $completedBy, $dossierIds, $archivesDeleted): void {
+            foreach (Dossier::withTrashed()->where('client_id', $client->id)->toBase()->pluck('id') as $id) {
+                $dossierIds[] = (int) $id;
+            }
+
             $grantIds = $this->grantIds($dossierIds);
 
             // Trail first: the grant rows are the subject of their own entries.
             $activityDeleted = $this->purgeActivity($client, $dossierIds, $grantIds);
             $grantsDeleted = $this->deletePortalGrants($dossierIds);
+            $archives = $this->clearExportArchiveRows($client);
 
             $this->anonymize($client);
 
-            $request->forceFill([
-                'status' => DataSubjectRequestStatus::Completed,
-                'completed_at' => now(),
-                'completed_by' => $completedBy->id,
-                // Any archive this request's own export produced is gone too.
-                'disk' => null,
-                'path' => null,
-                'expires_at' => null,
-            ])->save();
+            $this->transitions->complete($locked, $completedBy);
 
             // Recorded against the request, not the client, so it survives the
             // erasure it describes — the firm's proof that it complied.
             $this->logAuditActivity->handle(
                 AuditEvent::DataSubjectErasureCompleted,
-                $request,
+                $locked,
                 [
                     'client_id' => $client->id,
                     'dossiers_retained' => count($dossierIds),
                     'portal_grants_deleted' => $grantsDeleted,
                     'activity_entries_deleted' => $activityDeleted,
-                    'export_archives_deleted' => $archivesDeleted,
+                    'export_archives_deleted' => count($archives),
                 ],
                 causer: $completedBy,
             );
+
+            return $archives;
         });
+
+        // Blobs only after a successful commit — mirrors document delete
+        // ordering. Deleting them before the transaction, as this used to, had
+        // the compensation backwards: a rollback left the file already gone.
+        $this->deleteExportArchiveBlobs($archives);
     }
 
     /**
-     * An export archive is a complete copy of the person in one file. Leaving it
-     * behind would make the erasure meaningless.
+     * Clear the archive columns for every request belonging to this client, and
+     * report the objects that now need deleting.
+     *
+     * An export archive is a complete copy of the person in one file, so leaving
+     * one behind would make the erasure meaningless. The row write belongs in
+     * the transaction with the status change; the blob delete cannot be, because
+     * object storage does not roll back.
+     *
+     * @return list<array{disk: string, path: string}>
      */
-    private function deleteExportArchives(Client $client): int
+    private function clearExportArchiveRows(Client $client): array
     {
-        $deleted = 0;
-
         $archiveQuery = DataSubjectRequest::query()->where('client_id', $client->id);
         $archiveQuery->getQuery()->whereNotNull('path');
 
-        $archives = $archiveQuery->get();
+        $objects = [];
 
-        foreach ($archives as $archive) {
+        foreach ($archiveQuery->get() as $archive) {
             if ($archive->disk === null) {
                 continue;
             }
             if ($archive->path === null) {
                 continue;
             }
-            if (Storage::disk($archive->disk)->exists($archive->path)) {
-                Storage::disk($archive->disk)->delete($archive->path);
-            }
+
+            $objects[] = ['disk' => $archive->disk, 'path' => $archive->path];
 
             $archive->forceFill([
                 'disk' => null,
                 'path' => null,
                 'expires_at' => null,
             ])->save();
-
-            $deleted++;
         }
 
-        return $deleted;
+        return $objects;
+    }
+
+    /**
+     * A failed archive delete must not pass silently: the row now says the copy
+     * is gone, so an unreported failure is a false erasure record.
+     *
+     * @param  list<array{disk: string, path: string}>  $archives
+     */
+    private function deleteExportArchiveBlobs(array $archives): void
+    {
+        foreach ($archives as $archive) {
+            try {
+                if (! Storage::disk($archive['disk'])->exists($archive['path'])) {
+                    continue;
+                }
+
+                $deleted = Storage::disk($archive['disk'])->delete($archive['path']);
+            } catch (Throwable $exception) {
+                report(new RuntimeException(
+                    'Failed to delete a data-subject export archive during erasure.',
+                    previous: $exception,
+                ));
+
+                continue;
+            }
+
+            report_unless($deleted, new RuntimeException(
+                'Failed to delete a data-subject export archive during erasure.',
+            ));
+        }
     }
 
     /**
