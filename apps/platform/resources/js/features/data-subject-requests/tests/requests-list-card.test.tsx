@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { DataSubjectRequest } from '@/features/data-subject-requests/types';
 import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
+import type { Paginated } from '@/types/pagination';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
@@ -18,6 +20,23 @@ vi.mock('@/routes/workspaces/data-subject-requests', () => ({
 const { default: RequestsListCard } = await import('../requests-list-card');
 
 /**
+ * The card takes a paginator, not a flat array — see FetchDataSubjectRequestIndexQuery.
+ * Same shim as features/audit/tests/activity-log-card.test.tsx.
+ */
+function paginated(
+    data: DataSubjectRequest[],
+): Paginated<DataSubjectRequest> {
+    return {
+        data,
+        total: data.length,
+        current_page: 1,
+        last_page: 1,
+        per_page: 15,
+        links: [],
+    } as unknown as Paginated<DataSubjectRequest>;
+}
+
+/**
  * React Aria's Table is a collection: columns must sit directly under
  * TableHeader (no Row wrapper). Nesting heads in a Row collapses them to one
  * column and throws "Found N cells and 1 columns" at commit time — so a smoke
@@ -29,7 +48,7 @@ describe('RequestsListCard', () => {
             render(
                 <RequestsListCard
                     canManage={false}
-                    requests={[
+                    requests={paginated([
                         {
                             id: 1,
                             type: 'export',
@@ -47,7 +66,7 @@ describe('RequestsListCard', () => {
                             refusal_reason: null,
                             can_download: false,
                         },
-                    ]}
+                    ])}
                 />,
             ),
         ).not.toThrow();

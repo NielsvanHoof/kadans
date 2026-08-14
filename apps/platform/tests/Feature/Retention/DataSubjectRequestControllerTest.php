@@ -47,7 +47,7 @@ test('an owner can open the requests screen', function (): void {
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('data-subject-requests/index')
             ->where('can_manage', true)
-            ->has('requests', 1)
+            ->has('requests.data', 1)
             ->has('clients', 1));
 });
 
@@ -66,8 +66,8 @@ test('the requests screen still lists a request after its client is archived', f
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('data-subject-requests/index')
-            ->has('requests', 1)
-            ->where('requests.0.client_name', 'Marieke de Vries'));
+            ->has('requests.data', 1)
+            ->where('requests.data.0.client_name', 'Marieke de Vries'));
 });
 
 test('roles without the permission cannot reach the screen', function (Role $role): void {
@@ -242,4 +242,89 @@ test('a request from another firm is not reachable', function (): void {
             'dataSubjectRequest' => $request->id,
         ]))
         ->assertNotFound();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Bounded queries
+|--------------------------------------------------------------------------
+|
+| The index used to load every request the tenant had ever had, with three
+| eager loads, on each render. DataSubjectRequest is deliberately not
+| Prunable — a compliance record has to outlive the request it describes —
+| so the set only ever grows.
+|
+*/
+
+test('the requests index is paginated rather than loading every request ever logged', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant, 'client' => $client] = requestFixture();
+
+    DataSubjectRequest::factory()->count(40)->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'requested_by' => $owner->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('data-subject-requests/index')
+            ->has('requests.data', 15)
+            ->where('requests.total', 40)
+            ->where('requests.last_page', 3)
+            // The toolbar config the shared index UI needs.
+            ->has('indexQuery.filters')
+            ->has('indexQuery.sorts')
+            ->etc());
+});
+
+test('the requests index keeps open requests ahead of closed ones', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant, 'client' => $client] = requestFixture();
+
+    // A closed request with the earliest deadline must still rank below an
+    // open one: a closed request can no longer breach.
+    DataSubjectRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'requested_by' => $owner->id,
+        'status' => DataSubjectRequestStatus::Completed,
+        'due_at' => now()->subDays(10),
+    ]);
+
+    $open = DataSubjectRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'requested_by' => $owner->id,
+        'status' => DataSubjectRequestStatus::Pending,
+        'due_at' => now()->addDays(5),
+    ]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('data-subject-requests/index')
+            ->where('requests.data.0.id', $open->id)
+            ->etc());
+});
+
+test('the client picker is bounded and ordered by the database', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = requestFixture();
+
+    Client::factory()->count(3)->sequence(
+        ['name' => 'Zeta Holding'],
+        ['name' => 'Alpha BV'],
+        ['name' => 'Midden NV'],
+    )->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('clients.0.name', 'Alpha BV')
+            ->where('clients.1.name', 'Marieke de Vries')
+            ->where('clients.2.name', 'Midden NV')
+            ->where('clients.3.name', 'Zeta Holding')
+            ->etc());
 });

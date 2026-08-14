@@ -34,6 +34,12 @@ final class DataSubjectRequestController extends Controller
 {
     use ResolvesCurrentUser;
 
+    /**
+     * Ceiling on the client picker. Sized well above any realistic firm's book
+     * so the picker stays a plain select, while still bounding the query.
+     */
+    private const int CLIENT_PICKER_LIMIT = 500;
+
     public function index(Tenant $tenant, FetchDataSubjectRequestIndexQuery $fetchIndex): Response
     {
         $this->authorize('viewAny', DataSubjectRequest::class);
@@ -42,6 +48,7 @@ final class DataSubjectRequestController extends Controller
 
         return Inertia::render('data-subject-requests/index', [
             'requests' => $fetchIndex->handle(),
+            ...$fetchIndex->indexQueryProps(),
             'can_manage' => $canManage,
             // Only needed to populate the "log a request" picker.
             'clients' => $canManage ? $this->clientOptions() : [],
@@ -136,16 +143,29 @@ final class DataSubjectRequestController extends Controller
     }
 
     /**
+     * Options for the "log a request" picker.
+     *
+     * Only the three columns the picker renders are selected, and the list is
+     * bounded: this used to load every full client row the tenant had. A firm
+     * past the cap picks the client from the client list instead, which is
+     * paginated and searchable.
+     *
      * @return list<PersonOptionData>
      */
     private function clientOptions(): array
     {
         $options = [];
 
-        $clientQuery = Client::query();
-        $clientQuery->getQuery()->orderBy('name');
+        // orderBy/limit go through getQuery(): phpstan-strict-rules reads a
+        // chained call on the Eloquent builder as a dynamic static call.
+        $clientQuery = Client::select(['id', 'name', 'email']);
+        $clientQuery->getQuery()
+            ->orderBy('name')
+            ->limit(self::CLIENT_PICKER_LIMIT);
 
-        foreach ($clientQuery->get() as $client) {
+        $clients = $clientQuery->get();
+
+        foreach ($clients as $client) {
             $options[] = new PersonOptionData($client->id, $client->name, $client->email);
         }
 
