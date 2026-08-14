@@ -2,6 +2,7 @@ import { ArrowDown, CheckCircle2, Clock3 } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import type { PortalDossier } from '@/features/portal/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +16,8 @@ export default function PortalProgressOverview({
     dossier: PortalDossier;
     firmName: string;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDate } = useFormatters();
     const progress = dossier.progress;
 
     if (progress.total === 0) {
@@ -70,9 +72,10 @@ export default function PortalProgressOverview({
                                       )
                                     : dossier.due_date
                                       ? t('Please finish by :date.', {
-                                            date: new Date(
-                                                `${dossier.due_date}T00:00:00`,
-                                            ).toLocaleDateString(locale),
+                                            // Calendar day — formatDate, not
+                                            // formatDateTime, so the deadline
+                                            // does not shift by a day.
+                                            date: formatDate(dossier.due_date),
                                         })
                                       : t(
                                             'Complete the next item below, then continue through the list.',

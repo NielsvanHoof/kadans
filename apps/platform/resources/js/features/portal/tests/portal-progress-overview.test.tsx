@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { PortalDossier } from '@/features/portal/types';
+import { mockUseFormatters } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => ({
     useTranslation: () => ({
@@ -19,6 +20,7 @@ vi.mock('@/hooks/use-translation', () => ({
         availableLocales: [],
     }),
 }));
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 const { default: PortalProgressOverview } =
     await import('@/features/portal/portal-progress-overview');

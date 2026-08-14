@@ -1,12 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock('@/hooks/use-current-workspace', () => ({
     useCurrentWorkspace: () => ({ slug: 'acme', name: 'Acme' }),
 }));
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 vi.mock('@/routes/workspaces/data-subject-requests', () => ({
     download: () => ({ url: '/download' }),
@@ -37,8 +38,8 @@ describe('RequestsListCard', () => {
                             status_label: 'Pending',
                             client_id: 7,
                             client_name: 'Sander',
-                            requested_at: '2026-08-01 10:00:00',
-                            due_at: '2026-09-01 10:00:00',
+                            requested_at: '2026-08-01T10:00:00+00:00',
+                            due_at: '2026-09-01T10:00:00+00:00',
                             is_overdue: false,
                             requested_by_name: 'Admin',
                             completed_at: null,

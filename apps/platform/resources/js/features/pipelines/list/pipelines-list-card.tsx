@@ -10,8 +10,8 @@ import {
 import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import type { PipelineIndexRow } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showPipeline } from '@/routes/workspaces/pipelines';
 import type { Paginated } from '@/types/pagination';
 
@@ -21,7 +21,8 @@ export default function PipelinesListCard({
     pipelines: Paginated<PipelineIndexRow>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     const columns: DataTableColumn<PipelineIndexRow>[] = [
         {
@@ -86,8 +87,8 @@ export default function PipelinesListCard({
             cell: (pipeline) => (
                 <span className="text-sm text-muted-foreground">
                     {pipeline.last_activity_at
-                        ? formatDateTime(pipeline.last_activity_at, locale)
-                        : formatDateTime(pipeline.created_at, locale)}
+                        ? formatDateTime(pipeline.last_activity_at)
+                        : formatDateTime(pipeline.created_at)}
                 </span>
             ),
         },

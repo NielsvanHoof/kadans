@@ -10,9 +10,9 @@ import TranscriptView from '@/features/audio-recordings/transcript-view/transcri
 import type { AudioRecordingShowProps } from '@/features/audio-recordings/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
 type AudioRecordingDetail = AudioRecordingShowProps['audio_recording'];
@@ -27,7 +27,8 @@ export default function AudioRecordingShowContent({
     can_download: canDownload,
 }: AudioRecordingShowProps) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const [audioRecording, setAudioRecording] = useState(initialAudioRecording);
     const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
     const [isAudioLoading, setIsAudioLoading] = useState(false);
@@ -123,7 +124,7 @@ export default function AudioRecordingShowContent({
 
             <p className="font-data text-sm text-muted-foreground">
                 {formatBytes(audioRecording.size_bytes)} · {t('uploaded')}{' '}
-                {formatDateTime(audioRecording.uploaded_at, locale)}
+                {formatDateTime(audioRecording.uploaded_at)}
             </p>
 
             {downloadUrl && (

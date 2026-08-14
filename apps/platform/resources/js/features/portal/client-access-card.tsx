@@ -23,8 +23,8 @@ import {
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import type { AccessGrant } from '@/features/portal/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
@@ -44,7 +44,8 @@ export default function ClientAccessCard({
     canCreate: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const [sendInvite, setSendInvite] = useState(true);
 
     return (
@@ -71,10 +72,7 @@ export default function ClientAccessCard({
                                 <div className="text-sm">
                                     <p>
                                         {t('Expires :datetime', {
-                                            datetime: formatDateTime(
-                                                grant.expires_at,
-                                                locale,
-                                            ),
+                                            datetime: formatDateTime(grant.expires_at),
                                         })}
                                     </p>
                                     <p className="text-muted-foreground">
@@ -85,10 +83,7 @@ export default function ClientAccessCard({
                                               : t('Expired')}
                                         {grant.last_used_at &&
                                             ` · ${t('Last used :datetime', {
-                                                datetime: formatDateTime(
-                                                    grant.last_used_at,
-                                                    locale,
-                                                ),
+                                                datetime: formatDateTime(grant.last_used_at),
                                             })}`}
                                     </p>
                                 </div>

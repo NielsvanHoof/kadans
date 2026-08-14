@@ -62,7 +62,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(
             headers: Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_AWS_ELB,
         );
-        $middleware->encryptCookies(except: ['appearance', 'locale', 'sidebar_state']);
+        // Written by client-side JS in plaintext, so they must not be encrypted —
+        // EncryptCookies would fail to decrypt and silently drop them.
+        $middleware->encryptCookies(except: ['appearance', 'locale', 'sidebar_state', 'timezone']);
 
         // Tenant must be current before route model binding so BelongsToTenant scopes apply.
         $middleware->prependToPriorityList(

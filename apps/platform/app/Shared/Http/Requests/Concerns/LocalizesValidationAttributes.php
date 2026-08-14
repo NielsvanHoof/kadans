@@ -21,6 +21,7 @@ trait LocalizesValidationAttributes
             'password_confirmation' => __('Confirm password'),
             'current_password' => __('Current password'),
             'locale' => __('Language'),
+            'timezone' => __('Timezone'),
             'title' => __('Title'),
             'description' => __('Description'),
             'message' => __('Message'),

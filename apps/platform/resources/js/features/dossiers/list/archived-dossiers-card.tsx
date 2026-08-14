@@ -6,8 +6,8 @@ import BulkRestoreDossiersButton from '@/features/dossiers/list/bulk-restore-dos
 import RestoreDossierButton from '@/features/dossiers/list/restore-dossier-button';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { ArchivedDossierSummary } from '@/features/dossiers/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import type { Paginated } from '@/types/pagination';
 
 export default function ArchivedDossiersCard({
@@ -19,7 +19,8 @@ export default function ArchivedDossiersCard({
     canRestore: boolean;
     canRestoreClients: boolean;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const rows = dossiers.data;
 
     const columns: DataTableColumn<ArchivedDossierSummary>[] = [
@@ -39,10 +40,7 @@ export default function ArchivedDossiersCard({
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                         {t('Archived :datetime', {
-                            datetime: formatDateTime(
-                                dossier.archived_at,
-                                locale,
-                            ),
+                            datetime: formatDateTime(dossier.archived_at),
                         })}
                     </p>
                 </div>

@@ -5,8 +5,8 @@ import EmptyState from '@/components/primitives/empty-state';
 import BulkRestoreClientsButton from '@/features/clients/list/bulk-restore-clients-button';
 import RestoreClientButton from '@/features/clients/list/restore-client-button';
 import type { ArchivedClientSummary } from '@/features/clients/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import type { Paginated } from '@/types/pagination';
 
 export default function ArchivedClientsCard({
@@ -16,7 +16,8 @@ export default function ArchivedClientsCard({
     clients: Paginated<ArchivedClientSummary>;
     canRestore: boolean;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const rows = clients.data;
 
     const columns: DataTableColumn<ArchivedClientSummary>[] = [
@@ -32,10 +33,7 @@ export default function ArchivedClientsCard({
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                         {t('Archived :datetime', {
-                            datetime: formatDateTime(
-                                client.archived_at,
-                                locale,
-                            ),
+                            datetime: formatDateTime(client.archived_at),
                         })}
                         {' · '}
                         {client.dossiers_count === 1

@@ -7,8 +7,8 @@ import {
 } from '@/components/ui/card';
 import { pipelineStepLabel } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineDetail } from '@/features/pipelines/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Subject card plus the four summary metric cards on the pipeline show page.
@@ -18,7 +18,8 @@ export default function PipelineShowSummary({
 }: {
     pipeline: PipelineDetail;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     return (
         <>
@@ -71,7 +72,7 @@ export default function PipelineShowSummary({
                         <CardDescription>{t('Started')}</CardDescription>
                         <CardTitle className="text-sm">
                             {pipeline.started_at
-                                ? formatDateTime(pipeline.started_at, locale)
+                                ? formatDateTime(pipeline.started_at)
                                 : t('Not started')}
                         </CardTitle>
                     </CardHeader>
@@ -81,10 +82,7 @@ export default function PipelineShowSummary({
                         <CardDescription>{t('Last activity')}</CardDescription>
                         <CardTitle className="text-sm">
                             {pipeline.last_activity_at
-                                ? formatDateTime(
-                                      pipeline.last_activity_at,
-                                      locale,
-                                  )
+                                ? formatDateTime(pipeline.last_activity_at)
                                 : t('No activity yet')}
                         </CardTitle>
                     </CardHeader>

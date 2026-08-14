@@ -6,8 +6,8 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { PipelineDetail } from '@/features/pipelines/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Provider / retry diagnostics and optional metadata JSON for a pipeline run.
@@ -17,7 +17,8 @@ export default function PipelineShowDiagnostics({
 }: {
     pipeline: PipelineDetail;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     return (
         <div className="space-y-6">
@@ -52,10 +53,7 @@ export default function PipelineShowDiagnostics({
                                     {t('Next retry')}
                                 </p>
                                 <p>
-                                    {formatDateTime(
-                                        pipeline.next_retry_at,
-                                        locale,
-                                    )}
+                                    {formatDateTime(pipeline.next_retry_at)}
                                 </p>
                             </div>
                         ) : null}

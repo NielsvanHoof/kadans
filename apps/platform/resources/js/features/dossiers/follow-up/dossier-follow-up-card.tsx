@@ -4,8 +4,8 @@ import { FieldLegend, FieldSet } from '@/components/ui/field';
 import DossierReminderComposeDialog from '@/features/dossiers/follow-up/dossier-reminder-compose-dialog';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDate, formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Staff glance strip: due/sent/opened facts, then a single reminder action.
@@ -13,7 +13,8 @@ import { formatDate, formatDateTime } from '@/lib/format-date-time';
  */
 export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
     const { canSendReminder } = useDossierCapabilities();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime, formatDate } = useFormatters();
     const canRemind = canSendReminder && dossier.has_outstanding_client_items;
 
     return (
@@ -28,7 +29,7 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                         label={t('Due and owner')}
                         value={
                             dossier.due_date
-                                ? formatDate(dossier.due_date, locale)
+                                ? formatDate(dossier.due_date)
                                 : t('No due date')
                         }
                         detail={
@@ -40,19 +41,13 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                         label={t('Last sent')}
                         value={
                             dossier.last_client_message_sent_at
-                                ? formatDateTime(
-                                      dossier.last_client_message_sent_at,
-                                      locale,
-                                  )
+                                ? formatDateTime(dossier.last_client_message_sent_at)
                                 : t('Not sent yet')
                         }
                         detail={
                             dossier.next_reminder_at
                                 ? t('Next reminder :datetime', {
-                                      datetime: formatDateTime(
-                                          dossier.next_reminder_at,
-                                          locale,
-                                      ),
+                                      datetime: formatDateTime(dossier.next_reminder_at),
                                   })
                                 : t('No reminder scheduled')
                         }
@@ -62,10 +57,7 @@ export default function DossierFollowUpCard({ dossier }: { dossier: Dossier }) {
                         label={t('Last opened')}
                         value={
                             dossier.last_client_opened_at
-                                ? formatDateTime(
-                                      dossier.last_client_opened_at,
-                                      locale,
-                                  )
+                                ? formatDateTime(dossier.last_client_opened_at)
                                 : t('Not opened yet')
                         }
                         detail={

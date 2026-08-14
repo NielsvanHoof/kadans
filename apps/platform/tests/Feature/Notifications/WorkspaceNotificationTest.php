@@ -107,6 +107,27 @@ test('shared notifications prop returns tenant-scoped inbox items', function ():
                 ->where('notifications.items.0.read_at', null)));
 });
 
+test('inbox timestamps are serialized with a UTC offset', function (): void {
+    $context = createWorkspaceNotificationContext();
+    notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
+
+    // An offset-less string is parsed as local time by the browser, skewing the
+    // relative label by the viewer's own offset. Assert the serializer's output
+    // rather than a hand-written fixture — that is the seam this bug hid in.
+    $this->actingAs($context['owner'])
+        ->get(workspaceRoute('workspaces.dashboard', $context['tenant']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->where(
+                    'notifications.items.0.created_at',
+                    fn (string $createdAt): bool => (bool) preg_match(
+                        '/T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/',
+                        $createdAt,
+                    ),
+                )));
+});
+
 test('the notifications query mixes all supported notification types in one inbox', function (): void {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);

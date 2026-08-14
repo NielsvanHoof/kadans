@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import type { WorkspaceInvitation } from '@/features/members/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
@@ -24,7 +25,8 @@ export default function PendingInvitationsCard({
     invitations: WorkspaceInvitation[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     if (invitations.length === 0) {
         return (
@@ -71,9 +73,9 @@ export default function PendingInvitationsCard({
                                 <p className="text-sm text-muted-foreground">
                                     {invitation.role_label} ·{' '}
                                     {t('Expires :date', {
-                                        date: new Date(
+                                        date: formatDateTime(
                                             invitation.expires_at,
-                                        ).toLocaleString(locale),
+                                        ),
                                     })}
                                 </p>
                             </div>

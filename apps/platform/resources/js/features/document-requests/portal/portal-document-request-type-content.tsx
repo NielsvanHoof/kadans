@@ -14,9 +14,9 @@ import type {
     PortalUploadedDocument,
 } from '@/features/document-requests/types';
 import { storesAnswerText } from '@/features/document-requests/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 
 export type PortalDocumentRequestTypeProps = {
     documentRequest: PortalDocumentRequest;
@@ -70,7 +70,8 @@ function PortalUploadedFile({
     uploaded: PortalUploadedDocument;
     canRemove: boolean;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     return (
         <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border/70 bg-muted/30 px-3 py-2.5 text-sm">
@@ -81,7 +82,7 @@ function PortalUploadedFile({
                 <p className="text-xs text-muted-foreground">
                     {formatBytes(uploaded.size_bytes)}
                     {uploaded.uploaded_at ? (
-                        <> · {formatDateTime(uploaded.uploaded_at, locale)}</>
+                        <> · {formatDateTime(uploaded.uploaded_at)}</>
                     ) : null}
                 </p>
             </div>

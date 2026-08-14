@@ -25,6 +25,9 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
         Role|string $role,
         public string $acceptUrl,
         public CarbonInterface $expiresAt,
+        // Resolved by the caller and carried on the job: a queued notification has
+        // no request, so it cannot read the recipient's cookie.
+        public string $displayTimezone = 'UTC',
     ) {
         $this->role = $role instanceof Role ? $role->value : $role;
         $this->afterCommit();
@@ -65,8 +68,12 @@ final class WorkspaceMemberInviteNotification extends Notification implements Sh
                 'firm' => $this->firmName,
                 'role' => Role::tryFrom($this->role)?->label() ?? $this->role,
             ]))
+            // Zone abbreviation included — a recipient cannot act on a deadline
+            // without knowing whose clock it is on.
             ->line(__('This invitation expires on :date.', [
-                'date' => $this->expiresAt->timezone(Config::string('app.timezone'))->toDayDateTimeString(),
+                'date' => $this->expiresAt
+                    ->timezone($this->displayTimezone)
+                    ->format('j F Y, H:i (T)'),
             ]))
             ->action(__('Accept invitation'), $this->acceptUrl)
             ->line(__('If you did not expect this email, you can ignore it.'))

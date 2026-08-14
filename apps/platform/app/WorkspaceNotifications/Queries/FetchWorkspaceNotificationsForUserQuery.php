@@ -93,8 +93,8 @@ final class FetchWorkspaceNotificationsForUserQuery
             'type' => $type,
             'message' => $message,
             'url' => $url,
-            'readAt' => $notification->read_at?->toDateTimeString(),
-            'createdAt' => $notification->created_at?->toDateTimeString() ?? '',
+            'readAt' => $notification->read_at?->toIso8601String(),
+            'createdAt' => $notification->created_at?->toIso8601String() ?? '',
             ...$extra,
         ]);
     }

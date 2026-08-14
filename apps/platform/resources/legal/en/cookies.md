@@ -24,13 +24,14 @@ These are required to provide the service you request (login, security, session)
 
 ### Functionality / preferences
 
-These remember choices you make (language, theme, sidebar). We set them to make the interface usable across visits. **We do not currently use advertising or analytics cookies.**
+These remember choices you make (language, timezone, theme, sidebar). We set them to make the interface usable across visits. **We do not currently use advertising or analytics cookies.**
 
-| Cookie          | Duration | Purpose                     |
-| --------------- | -------- | --------------------------- |
-| `locale`        | 365 days | Language (`en` / `nl`)      |
-| `appearance`    | 365 days | Light / dark / system theme |
-| `sidebar_state` | 7 days   | Staff sidebar open/closed   |
+| Cookie          | Duration | Purpose                             |
+| --------------- | -------- | ----------------------------------- |
+| `locale`        | 365 days | Language (`en` / `nl`)              |
+| `timezone`      | 365 days | Timezone used to show dates & times |
+| `appearance`    | 365 days | Light / dark / system theme         |
+| `sidebar_state` | 7 days   | Staff sidebar open/closed           |
 
 Matching values may also be stored in `localStorage`.
 

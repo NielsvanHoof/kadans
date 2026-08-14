@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Notifications;
 
+use App\Accounts\Support\DisplayTimezones;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;
@@ -13,7 +14,6 @@ use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Config;
 use RuntimeException;
 
 final class ClientPortalReminderNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
@@ -85,8 +85,12 @@ final class ClientPortalReminderNotification extends Notification implements Sho
 
         return $message
             ->action(__('Continue in the secure portal'), $this->portalUrl)
+            // Client recipients have no account, so the configured display zone is
+            // the best available. (T) names it so the deadline is never ambiguous.
             ->line(__('This new secure link expires on :expires.', [
-                'expires' => $this->expiresAt->timezone(Config::string('app.timezone'))->format('j F Y, H:i'),
+                'expires' => $this->expiresAt
+                    ->timezone(DisplayTimezones::default())
+                    ->format('j F Y, H:i (T)'),
             ]))
             ->line(__('If you have already provided everything, no further action is needed.'))
             ->tag('client_portal_reminder')

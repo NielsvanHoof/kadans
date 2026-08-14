@@ -1,13 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { UploadedDocument } from '@/features/document-requests/types';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock('@/hooks/use-current-workspace', () => ({
     useCurrentWorkspace: () => ({ slug: 'acme', name: 'Acme' }),
 }));
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 const { default: DocumentProcessingPanel } =
     await import('@/features/document-requests/staff/review/document-processing-panel');

@@ -26,6 +26,8 @@ declare module '@inertiajs/core' {
             name: string;
             locale: string;
             available_locales: AvailableLocale[];
+            /** Resolved IANA zone for presenting instants. Format from this, never from the browser's own zone. */
+            timezone: string;
             translations: Record<string, string>;
             auth: Auth;
             workspaces: Firm[];

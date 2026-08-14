@@ -24,13 +24,14 @@ Deze zijn nodig om de gevraagde dienst te leveren (login, beveiliging, sessie). 
 
 ### Functionaliteit / voorkeuren
 
-Deze onthouden keuzes (taal, thema, zijbalk). Wij zetten ze om de interface over bezoeken bruikbaar te houden. **Wij gebruiken momenteel geen advertentie- of analyticscookies.**
+Deze onthouden keuzes (taal, tijdzone, thema, zijbalk). Wij zetten ze om de interface over bezoeken bruikbaar te houden. **Wij gebruiken momenteel geen advertentie- of analyticscookies.**
 
-| Cookie          | Duur      | Doel                          |
-| --------------- | --------- | ----------------------------- |
-| `locale`        | 365 dagen | Taal (`en` / `nl`)            |
-| `appearance`    | 365 dagen | Licht / donker / systeemthema |
-| `sidebar_state` | 7 dagen   | Staff-zijbalk open/dicht      |
+| Cookie          | Duur      | Doel                                     |
+| --------------- | --------- | ---------------------------------------- |
+| `locale`        | 365 dagen | Taal (`en` / `nl`)                       |
+| `timezone`      | 365 dagen | Tijdzone waarin datums en tijden tonen   |
+| `appearance`    | 365 dagen | Licht / donker / systeemthema            |
+| `sidebar_state` | 7 dagen   | Staff-zijbalk open/dicht                 |
 
 Overeenkomstige waarden kunnen ook in `localStorage` staan.
 

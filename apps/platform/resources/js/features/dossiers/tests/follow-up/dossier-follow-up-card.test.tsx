@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Dossier } from '@/features/dossiers/types';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
@@ -10,6 +10,7 @@ const useDossierCapabilities = vi.fn();
 vi.mock('@/features/dossiers/permissions/dossier-permissions-context', () => ({
     useDossierCapabilities,
 }));
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 // The compose dialog owns its own AI-draft/Inertia-form wiring, which is out
 // of scope here — this test only cares about whether it is rendered at all.

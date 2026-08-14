@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import type { PortalDossier } from '@/features/portal/types';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 /**
  * The portal is server-rendered, so nothing on this page may touch a browser
@@ -28,6 +28,7 @@ vi.mock('@inertiajs/react', () => ({
     Link: ({ children }: { children?: unknown }) => children,
     router: { post: vi.fn() },
 }));
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 const { default: PortalDocumentRequestsCard } =
     await import('@/features/document-requests/portal/portal-document-requests-card');

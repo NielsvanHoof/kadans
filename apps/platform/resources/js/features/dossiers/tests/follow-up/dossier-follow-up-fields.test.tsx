@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 const { default: DossierFollowUpFields } =
     await import('@/features/dossiers/follow-up/dossier-follow-up-fields');

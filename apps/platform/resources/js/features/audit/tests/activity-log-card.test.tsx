@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActivityLogEntry } from '@/features/audit/types';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 import type { Paginated } from '@/types/pagination';
 
 vi.mock('@/hooks/use-current-workspace', () => ({
@@ -27,6 +27,7 @@ vi.mock('@/hooks/use-translation', () => ({
         availableLocales: [],
     }),
 }));
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 const { default: ActivityLogCard } =
     await import('@/features/audit/activity-log-card');

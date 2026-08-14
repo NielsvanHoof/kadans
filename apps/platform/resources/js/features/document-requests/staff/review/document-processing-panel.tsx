@@ -11,9 +11,9 @@ import type {
     UploadedDocument,
 } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Compact file strip on the dossier: status + download + link to extraction page.
@@ -29,7 +29,8 @@ export default function DocumentProcessingPanel({
     canRemove?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const isComplete = uploadedDocument.processing_status === 'completed';
 
     return (
@@ -55,7 +56,7 @@ export default function DocumentProcessingPanel({
                     </div>
                     <p className="text-muted-foreground">
                         {formatBytes(uploadedDocument.size_bytes)} ·{' '}
-                        {formatDateTime(uploadedDocument.uploaded_at, locale)}
+                        {formatDateTime(uploadedDocument.uploaded_at)}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

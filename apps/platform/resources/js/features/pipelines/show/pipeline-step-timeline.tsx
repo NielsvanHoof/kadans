@@ -6,8 +6,8 @@ import {
     pipelineStepStatusTone,
 } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineStepDetail } from '@/features/pipelines/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 
 function StepIcon({ status }: { status: PipelineStepDetail['status'] }) {
     if (status === 'completed') {
@@ -34,7 +34,8 @@ export default function PipelineStepTimeline({
 }: {
     steps: PipelineStepDetail[];
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     return (
         <div className="space-y-0">
@@ -86,20 +87,14 @@ export default function PipelineStepTimeline({
                             {step.started_at ? (
                                 <span>
                                     {t('Started :datetime', {
-                                        datetime: formatDateTime(
-                                            step.started_at,
-                                            locale,
-                                        ),
+                                        datetime: formatDateTime(step.started_at),
                                     })}
                                 </span>
                             ) : null}
                             {step.completed_at ? (
                                 <span>
                                     {t('Finished :datetime', {
-                                        datetime: formatDateTime(
-                                            step.completed_at,
-                                            locale,
-                                        ),
+                                        datetime: formatDateTime(step.completed_at),
                                     })}
                                 </span>
                             ) : null}

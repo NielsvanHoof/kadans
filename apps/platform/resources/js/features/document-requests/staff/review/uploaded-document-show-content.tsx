@@ -11,9 +11,9 @@ import DocumentPreviewPanel, {
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
 type UploadedDocumentDetail = UploadedDocumentShowProps['uploaded_document'];
@@ -29,7 +29,8 @@ export default function UploadedDocumentShowContent({
     can_download: canDownload,
 }: UploadedDocumentShowProps) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const [uploadedDocument, setUploadedDocument] = useState(
         initialUploadedDocument,
     );
@@ -148,7 +149,7 @@ export default function UploadedDocumentShowContent({
 
             <p className="font-data text-sm text-muted-foreground">
                 {formatBytes(uploadedDocument.size_bytes)} · {t('uploaded')}{' '}
-                {formatDateTime(uploadedDocument.uploaded_at, locale)}
+                {formatDateTime(uploadedDocument.uploaded_at)}
             </p>
 
             {uploadedDocument.processing_status === 'failed' &&

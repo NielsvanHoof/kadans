@@ -9,6 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import RequestActions from './request-actions';
 import RequestStatusBadge from './request-status-badge';
@@ -22,6 +23,7 @@ export default function RequestsListCard({
     canManage: boolean;
 }) {
     const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     if (requests.length === 0) {
         return (
@@ -67,7 +69,7 @@ export default function RequestsListCard({
                                 <RequestStatusBadge request={request} />
                             </TableCell>
                             <TableCell className="whitespace-nowrap">
-                                {request.due_at}
+                                {formatDateTime(request.due_at)}
                             </TableCell>
                             <TableCell>
                                 <div className="flex justify-end">

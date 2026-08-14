@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/card';
 import type { MediaDocument } from '@/features/media/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { fileIconForFilename } from '@/lib/file-icon-for-filename';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
@@ -30,7 +30,8 @@ export default function MediaDocumentsCard({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const rows = documents.data;
     const total = documents.total;
 
@@ -98,10 +99,7 @@ export default function MediaDocumentsCard({
                                                         firstUpload.size_bytes,
                                                     )}
                                                     {' · '}
-                                                    {formatDateTime(
-                                                        firstUpload.uploaded_at,
-                                                        locale,
-                                                    )}
+                                                    {formatDateTime(firstUpload.uploaded_at)}
                                                     {extraUploadCount > 0 &&
                                                         ` · ${t('+:count more', { count: extraUploadCount })}`}
                                                 </p>

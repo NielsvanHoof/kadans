@@ -71,6 +71,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | The timezone used to *present* instants when there is no per-user signal:
+    | the first render before the browser has reported its zone, and mail sent to
+    | clients, who have no account and no cookie.
+    |
+    | This is deliberately separate from 'timezone' above, which must stay "UTC".
+    | That option sets PHP's default zone, so changing it would make now() return
+    | local wall-clock time and write it naively into the timestamp columns,
+    | reinterpreting every row already stored. Storage stays UTC; only
+    | presentation is localised.
+    |
+    */
+
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Europe/Amsterdam'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

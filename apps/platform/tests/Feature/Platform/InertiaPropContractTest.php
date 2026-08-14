@@ -73,7 +73,7 @@ function pageShape(string $url): array
     $page = test()->get($url)->assertOk()->viewData('page');
 
     // Shared props are covered by SharedInertiaDataTest; keep this to page props.
-    $shared = ['name', 'locale', 'available_locales', 'translations', 'auth',
+    $shared = ['name', 'locale', 'available_locales', 'timezone', 'translations', 'auth',
         'workspaces', 'current_firm', 'permissions', 'support_session',
         'notifications', 'sidebar_open', 'errors', 'flash'];
 

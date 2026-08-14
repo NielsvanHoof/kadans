@@ -1,9 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    afterAll,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import type { WorkspaceNotification } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 const routerPost = vi.fn();
 const routerVisit = vi.fn();
@@ -50,6 +58,7 @@ vi.mock('@/routes/workspaces/notifications', () => ({
         }) => `/workspaces/${tenant.slug}/notifications/${notification}`,
     },
 }));
+vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
 const { default: NotificationListItem } =
     await import('@/features/notifications/notification-list-item');
@@ -176,5 +185,52 @@ describe('NotificationListItem', () => {
         );
         expect(routerVisit).not.toHaveBeenCalled();
         expect(routerPost).not.toHaveBeenCalled();
+    });
+
+    // Pinned to +02:00 because the runner is UTC, where an offset-less timestamp
+    // parses identically to an offset-bearing one — the original bug was
+    // invisible at TZ=UTC, so asserting there proves nothing.
+    describe('viewed from a +02:00 timezone', () => {
+        beforeAll(() => {
+            vi.stubEnv('TZ', 'Europe/Amsterdam');
+        });
+
+        afterAll(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it('shows the true age of a freshly created notification', async () => {
+            // Backend shape: toIso8601String(), not a hand-written ...Z fixture —
+            // a correct-by-accident fixture is what let this bug ship.
+            const eightMinutesAgo = new Date(Date.now() - 8 * 60 * 1000)
+                .toISOString()
+                .replace('Z', '+00:00');
+
+            render(
+                <NotificationListItem
+                    notification={notification({ created_at: eightMinutesAgo })}
+                    workspace={workspace}
+                />,
+            );
+
+            expect(await screen.findByText('8 minutes ago')).toBeTruthy();
+        });
+
+        it('would show a 2-hour skew if the offset were missing', async () => {
+            // The reported symptom, reproduced: same digits, no offset.
+            const eightMinutesAgo = new Date(Date.now() - 8 * 60 * 1000)
+                .toISOString()
+                .slice(0, 19)
+                .replace('T', ' ');
+
+            render(
+                <NotificationListItem
+                    notification={notification({ created_at: eightMinutesAgo })}
+                    workspace={workspace}
+                />,
+            );
+
+            expect(await screen.findByText('2 hours ago')).toBeTruthy();
+        });
     });
 });

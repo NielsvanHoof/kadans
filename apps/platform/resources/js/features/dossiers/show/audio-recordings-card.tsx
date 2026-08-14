@@ -20,8 +20,8 @@ import {
     pipelineStepStatusLabel,
 } from '@/features/pipelines/status/pipeline-status';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showAudioRecording } from '@/routes/workspaces/audio-recordings';
 
 /**
@@ -38,7 +38,8 @@ export default function AudioRecordingsCard({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const [recordings, setRecordings] = useState(dossier.audio_recordings);
 
     // Sync when Inertia replaces the dossier prop (upload redirect / navigation).
@@ -155,10 +156,7 @@ export default function AudioRecordingsCard({
                                                 )}{' '}
                                                 ·{' '}
                                                 {t('Uploaded :datetime', {
-                                                    datetime: formatDateTime(
-                                                        recording.uploaded_at,
-                                                        locale,
-                                                    ),
+                                                    datetime: formatDateTime(recording.uploaded_at),
                                                 })}
                                             </span>
                                         </p>

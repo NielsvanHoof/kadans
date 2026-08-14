@@ -16,8 +16,9 @@
 | `locale` | Client (`setClientCookie`) + `LocaleController` | 365 days | Functionality | Disclose; strict WP194 treats persistent preference as non-exempt | Stores UI language (`en` / `nl`) for guests and before account preference applies |
 | `appearance` | Client (`setClientCookie` / appearance hooks) | 365 days | Functionality | Disclose; same note as locale | Stores light / dark / system theme for SSR-safe bootstrap (`HandleAppearance`) |
 | `sidebar_state` | Staff UI (`sidebar.tsx`) | 7 days | Functionality | Disclose | Remembers sidebar expanded/collapsed for staff chrome |
+| `timezone` | Client (`useTimezoneSync`) + `TimezoneController` | 365 days | Functionality | Disclose; same note as locale | Stores the IANA zone (e.g. `Europe/Amsterdam`) used to present dates and times. No HTTP header carries a timezone, so this cookie is the only way the server can render timestamps in the viewer's own zone |
 
-Cookies `appearance`, `locale`, and `sidebar_state` are excluded from Laravel cookie encryption (`bootstrap/app.php`) so middleware/JS can read them.
+Cookies `appearance`, `locale`, `sidebar_state`, and `timezone` are excluded from Laravel cookie encryption (`bootstrap/app.php`) so middleware/JS can read them.
 
 ## Storage beyond cookies
 
@@ -29,7 +30,7 @@ Cookies `appearance`, `locale`, and `sidebar_state` are excluded from Laravel co
 ## Classification conclusions
 
 1. **Strictly necessary (no consent banner required):** session, CSRF, remember-me.
-2. **Functionality / preference (disclose in cookie statement):** locale, appearance, sidebar_state.
+2. **Functionality / preference (disclose in cookie statement):** locale, appearance, sidebar_state, timezone.
 3. **No analytics / advertising cookies** in the current codebase → **no blocking consent CMP** for launch (per product plan). Re-audit before adding GA, PostHog, Meta Pixel, etc.
 4. **Counsel open point:** whether persistent preference cookies need prior opt-in under Dutch practice. CNIL-style guidance often treats language/display as exempt; WP194 is stricter for multi-visit persistence. Document in the public cookie statement either way.
 

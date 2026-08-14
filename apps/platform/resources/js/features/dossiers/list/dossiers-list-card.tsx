@@ -8,8 +8,8 @@ import BulkArchiveDossiersButton from '@/features/dossiers/list/bulk-archive-dos
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDate } from '@/lib/format-date-time';
 import { create, show } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
@@ -24,7 +24,8 @@ export default function DossiersListCard({
     canManage?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDate } = useFormatters();
     const rows = dossiers.data;
     const total = dossiers.total;
 
@@ -64,7 +65,7 @@ export default function DossiersListCard({
             cell: (dossier) => (
                 <span className="text-sm text-muted-foreground">
                     {dossier.due_date
-                        ? formatDate(dossier.due_date, locale)
+                        ? formatDate(dossier.due_date)
                         : t('No due date')}
                 </span>
             ),

@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Item } from '@/components/ui/item';
 import type { WorkspaceNotification } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime, formatRelativeTime } from '@/lib/format-date-time';
 import { cn } from '@/lib/utils';
 import {
     destroy as destroyNotification,
@@ -36,10 +36,16 @@ export default function NotificationListItem({
     notification: WorkspaceNotification;
     workspace: Firm;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime, formatDateTimeWithZone, formatRelativeTime } =
+        useFormatters();
     const isUnread = notification.read_at === null;
     const absoluteTime = notification.created_at
-        ? formatDateTime(notification.created_at, locale)
+        ? formatDateTime(notification.created_at)
+        : '';
+    // The tooltip names the zone — on hover a bare wall-clock time is ambiguous.
+    const absoluteTimeWithZone = notification.created_at
+        ? formatDateTimeWithZone(notification.created_at)
         : '';
     // Relative labels depend on "now" — wait until mount to avoid hydration drift.
     const [relativeTime, setRelativeTime] = useState<string | null>(null);
@@ -49,12 +55,13 @@ export default function NotificationListItem({
             return;
         }
 
-        setRelativeTime(formatRelativeTime(notification.created_at, locale));
-    }, [notification.created_at, locale]);
+        setRelativeTime(formatRelativeTime(notification.created_at));
+        // formatRelativeTime is memoised on locale + timezone, so depending on it
+        // covers both without re-running the effect on every render.
+    }, [notification.created_at, formatRelativeTime]);
 
     const TypeIcon = TypeIcons[notification.type] ?? ClipboardCheck;
-
-    const openNotification = (event: MouseEvent<HTMLAnchorElement>): void => {
+    const openNotification = (event: MouseEvent<Element>): void => {
         // Let modified / middle-clicks open the real URL without a mark-read hop.
         if (
             event.metaKey ||
@@ -139,7 +146,7 @@ export default function NotificationListItem({
                     {notification.created_at && (
                         <span
                             className="mt-0.5 block font-data text-xs text-muted-foreground tabular-nums"
-                            title={absoluteTime}
+                            title={absoluteTimeWithZone}
                         >
                             {relativeTime ?? absoluteTime}
                         </span>

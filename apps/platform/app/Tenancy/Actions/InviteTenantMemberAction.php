@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Actions;
 
 use App\Accounts\Models\User;
+use App\Accounts\Support\DisplayTimezones;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Tenancy\Models\Tenant;
@@ -82,6 +83,11 @@ final readonly class InviteTenantMemberAction
                 ? $inviteeLocale
                 : app()->getLocale();
 
+            $inviteeTimezone = User::query()->where('email', $email)->value('timezone');
+            $displayTimezone = DisplayTimezones::sanitize(
+                is_string($inviteeTimezone) ? $inviteeTimezone : null,
+            ) ?? DisplayTimezones::default();
+
             Notification::route('mail', $email)
                 ->notify(
                     new WorkspaceMemberInviteNotification(
@@ -90,6 +96,7 @@ final readonly class InviteTenantMemberAction
                         role: $role,
                         acceptUrl: $acceptUrl,
                         expiresAt: $expiresAt,
+                        displayTimezone: $displayTimezone,
                     )->locale($locale),
                 );
 

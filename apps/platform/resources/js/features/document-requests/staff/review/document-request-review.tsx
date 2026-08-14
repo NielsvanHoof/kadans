@@ -17,8 +17,8 @@ import { Textarea } from '@/components/ui/textarea';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import { inlineActionOptions } from '@/lib/inline-action-options';
 
 export default function DocumentRequestReview({
@@ -30,7 +30,8 @@ export default function DocumentRequestReview({
 }) {
     const { canReview } = useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     if (documentRequest.status === 'rejected') {
         return (
@@ -45,16 +46,10 @@ export default function DocumentRequestReview({
                             {documentRequest.reviewed_by_name
                                 ? t('Reviewed by :name on :date.', {
                                       name: documentRequest.reviewed_by_name,
-                                      date: formatDateTime(
-                                          documentRequest.reviewed_at,
-                                          locale,
-                                      ),
+                                      date: formatDateTime(documentRequest.reviewed_at),
                                   })
                                 : t('Reviewed on :date.', {
-                                      date: formatDateTime(
-                                          documentRequest.reviewed_at,
-                                          locale,
-                                      ),
+                                      date: formatDateTime(documentRequest.reviewed_at),
                                   })}
                         </p>
                     )}
@@ -73,7 +68,7 @@ export default function DocumentRequestReview({
                         {documentRequest.reviewed_by_name
                             ? `${documentRequest.reviewed_by_name} · `
                             : ''}
-                        {formatDateTime(documentRequest.reviewed_at, locale)}
+                        {formatDateTime(documentRequest.reviewed_at)}
                     </AlertDescription>
                 )}
             </Alert>

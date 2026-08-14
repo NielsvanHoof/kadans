@@ -41,6 +41,7 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     'profile.update' => 'current-user-only: own profile.',
     'profile.destroy' => 'current-user-only: own account.',
     'security.edit' => 'current-user-only: own security settings.',
+    'timezone.update' => 'current-user-only: own timezone preference.',
     'user-password.update' => 'current-user-only: own password (Fortify).',
 
     // membership-check — inline User::canAccessTenant rather than a policy.
