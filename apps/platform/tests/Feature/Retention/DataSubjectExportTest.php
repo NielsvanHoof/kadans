@@ -307,3 +307,71 @@ test('the export job fulfils the request and tolerates one that vanished', funct
 
     expect(true)->toBeTrue();
 });
+
+/**
+ * This export is the worse of the two for peak memory: it can contain every
+ * document AND every audio recording ever held about one person, and its job
+ * carries a 600s timeout with no memory hint. ZipArchive::addFromString() keeps
+ * every entry's bytes until close(), so RSS tracked the whole archive.
+ */
+test('a data-subject export does not grow memory with total archive size', function (): void {
+    Storage::fake('local');
+    config(['exports.disk' => 'local']);
+
+    ['owner' => $owner, 'tenant' => $tenant, 'client' => $client, 'dossier' => $dossier] = dataSubjectFixture();
+
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'status' => DocumentRequestStatus::Submitted,
+    ]);
+
+    // 12 x 4 MB across both file kinds the export gathers.
+    foreach (range(1, 6) as $index) {
+        $documentPath = sprintf('tenants/%d/dossiers/%d/scan-%d.pdf', $tenant->id, $dossier->id, $index);
+        Storage::disk('local')->put($documentPath, str_repeat('x', 4_194_304));
+
+        UploadedDocument::factory()->create([
+            'tenant_id' => $tenant->id,
+            'document_request_id' => $documentRequest->id,
+            'disk' => 'local',
+            'path' => $documentPath,
+            'original_filename' => sprintf('scan-%d.pdf', $index),
+            'size_bytes' => 4_194_304,
+        ]);
+
+        $audioPath = sprintf('tenants/%d/dossiers/%d/audio/call-%d.m4a', $tenant->id, $dossier->id, $index);
+        Storage::disk('local')->put($audioPath, str_repeat('y', 4_194_304));
+
+        AudioRecording::factory()->create([
+            'tenant_id' => $tenant->id,
+            'dossier_id' => $dossier->id,
+            'disk' => 'local',
+            'path' => $audioPath,
+            'original_filename' => sprintf('call-%d.m4a', $index),
+            'size_bytes' => 4_194_304,
+        ]);
+    }
+
+    $request = resolve(LogDataSubjectRequestAction::class)
+        ->handle($client, $owner, DataSubjectRequestType::Export);
+
+    gc_collect_cycles();
+    $before = memory_get_peak_usage(true);
+
+    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+
+    $growth = memory_get_peak_usage(true) - $before;
+
+    $request->refresh();
+
+    expect($request->status)->toBe(DataSubjectRequestStatus::Completed)
+        ->and($request->path)->not->toBeNull()
+        // Generous bound: growth must not track the 48 MB of payload.
+        ->and($growth)->toBeLessThan(16 * 1_048_576)
+        // And nothing is left staged behind.
+        ->and(array_filter(
+            Storage::disk('local')->allDirectories(),
+            static fn (string $directory): bool => str_starts_with($directory, 'data-subject-export-staging-'),
+        ))->toBeEmpty();
+});

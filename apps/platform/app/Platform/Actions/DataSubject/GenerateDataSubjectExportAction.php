@@ -68,8 +68,12 @@ final readonly class GenerateDataSubjectExportAction
             'data-subject-export-tmp-'.bin2hex(random_bytes(16)).'.zip',
         );
 
+        // Source files are staged here so ZipArchive can read them lazily at
+        // close(). One directory means one cleanup, wherever the build threw.
+        $stagingDirectory = 'data-subject-export-staging-'.bin2hex(random_bytes(16));
+
         try {
-            $this->buildArchive($temporaryPath, $request, $client);
+            $this->buildArchive($temporaryPath, $request, $client, $stagingDirectory);
 
             $stream = fopen($temporaryPath, 'rb');
 
@@ -113,6 +117,8 @@ final readonly class GenerateDataSubjectExportAction
 
             throw $exception;
         } finally {
+            Storage::disk('local')->deleteDirectory($stagingDirectory);
+
             if (file_exists($temporaryPath)) {
                 unlink($temporaryPath);
             }
@@ -132,8 +138,12 @@ final readonly class GenerateDataSubjectExportAction
         event(new DataSubjectExportCompleted($tenant->slug, $request->id));
     }
 
-    private function buildArchive(string $temporaryPath, DataSubjectRequest $request, Client $client): void
-    {
+    private function buildArchive(
+        string $temporaryPath,
+        DataSubjectRequest $request,
+        Client $client,
+        string $stagingDirectory,
+    ): void {
         $archive = new ZipArchive();
 
         throw_if(
@@ -157,7 +167,7 @@ final readonly class GenerateDataSubjectExportAction
                     'created_at' => $client->created_at?->toIso8601String(),
                     'archived_at' => $client->deleted_at?->toIso8601String(),
                 ],
-                'dossiers' => $this->dossiers($archive, $client),
+                'dossiers' => $this->dossiers($archive, $client, $stagingDirectory),
                 'portal_access' => $this->portalAccess($client),
                 'activity' => $this->activity($client),
             ];
@@ -181,7 +191,7 @@ final readonly class GenerateDataSubjectExportAction
     /**
      * @return list<array<string, mixed>>
      */
-    private function dossiers(ZipArchive $archive, Client $client): array
+    private function dossiers(ZipArchive $archive, Client $client, string $stagingDirectory): array
     {
         $fileNumber = 0;
 
@@ -204,8 +214,8 @@ final readonly class GenerateDataSubjectExportAction
                 'due_date' => $dossier->due_date?->toDateString(),
                 'created_at' => $dossier->created_at?->toIso8601String(),
                 'archived_at' => $dossier->deleted_at?->toIso8601String(),
-                'document_requests' => $this->documentRequests($archive, $dossier, $fileNumber),
-                'audio_recordings' => $this->audioRecordings($archive, $dossier, $fileNumber),
+                'document_requests' => $this->documentRequests($archive, $dossier, $fileNumber, $stagingDirectory),
+                'audio_recordings' => $this->audioRecordings($archive, $dossier, $fileNumber, $stagingDirectory),
             ];
         }
 
@@ -215,7 +225,7 @@ final readonly class GenerateDataSubjectExportAction
     /**
      * @return list<array<string, mixed>>
      */
-    private function documentRequests(ZipArchive $archive, Dossier $dossier, int &$fileNumber): array
+    private function documentRequests(ZipArchive $archive, Dossier $dossier, int &$fileNumber, string $stagingDirectory): array
     {
         $requests = [];
 
@@ -230,7 +240,7 @@ final readonly class GenerateDataSubjectExportAction
                 'answer_boolean' => $documentRequest->answer_boolean,
                 'answered_at' => $documentRequest->answered_at?->toIso8601String(),
                 'rejection_reason' => $documentRequest->rejection_reason,
-                'files' => $this->uploadedDocuments($archive, $documentRequest, $fileNumber),
+                'files' => $this->uploadedDocuments($archive, $documentRequest, $fileNumber, $stagingDirectory),
             ];
         }
 
@@ -240,7 +250,7 @@ final readonly class GenerateDataSubjectExportAction
     /**
      * @return list<array<string, mixed>>
      */
-    private function uploadedDocuments(ZipArchive $archive, DocumentRequest $documentRequest, int &$fileNumber): array
+    private function uploadedDocuments(ZipArchive $archive, DocumentRequest $documentRequest, int &$fileNumber, string $stagingDirectory): array
     {
         $files = [];
 
@@ -255,6 +265,7 @@ final readonly class GenerateDataSubjectExportAction
                     $uploadedDocument->original_filename,
                     $uploadedDocument->disk,
                     $uploadedDocument->path,
+                    $stagingDirectory,
                 ),
                 'original_filename' => $uploadedDocument->original_filename,
                 'mime_type' => $uploadedDocument->mime_type,
@@ -273,7 +284,7 @@ final readonly class GenerateDataSubjectExportAction
      *
      * @return list<array<string, mixed>>
      */
-    private function audioRecordings(ZipArchive $archive, Dossier $dossier, int &$fileNumber): array
+    private function audioRecordings(ZipArchive $archive, Dossier $dossier, int &$fileNumber, string $stagingDirectory): array
     {
         $recordings = [];
 
@@ -288,6 +299,7 @@ final readonly class GenerateDataSubjectExportAction
                     $recording->original_filename,
                     $recording->disk,
                     $recording->path,
+                    $stagingDirectory,
                 ),
                 'original_filename' => $recording->original_filename,
                 'mime_type' => $recording->mime_type,
@@ -378,6 +390,41 @@ final readonly class GenerateDataSubjectExportAction
     }
 
     /**
+     * Copy a stored object to local disk and return its real path.
+     *
+     * The archive used to be built with addFromString(), which makes
+     * ZipArchive hold every file's bytes until close(). This export can
+     * contain every document AND every audio recording ever held about one
+     * person, so it was the worse of the two for peak memory — on a queue
+     * worker with no memory hint. addFile() reads lazily at close() instead,
+     * and the copy streams, so peak memory is one stream buffer.
+     */
+    private function stageForArchive(string $sourceDisk, string $sourcePath, string $stagedPath): string
+    {
+        $source = Storage::disk($sourceDisk)->readStream($sourcePath);
+
+        throw_if(
+            $source === null,
+            RuntimeException::class,
+            'Unable to read a stored file for the data-subject export.',
+        );
+
+        try {
+            $staged = Storage::disk('local')->writeStream($stagedPath, $source);
+        } finally {
+            fclose($source);
+        }
+
+        throw_if(
+            ! $staged,
+            RuntimeException::class,
+            'Unable to stage a stored file for the data-subject export.',
+        );
+
+        return Storage::disk('local')->path($stagedPath);
+    }
+
+    /**
      * Numbered so two uploads with the same original filename cannot collide.
      */
     private function addFile(
@@ -387,15 +434,8 @@ final readonly class GenerateDataSubjectExportAction
         string $originalFilename,
         string $disk,
         string $path,
+        string $stagingDirectory,
     ): string {
-        $contents = Storage::disk($disk)->get($path);
-
-        throw_if(
-            $contents === null,
-            RuntimeException::class,
-            'Unable to read a stored file for the data-subject export.',
-        );
-
         $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
         $basename = Str::slug(pathinfo($originalFilename, PATHINFO_FILENAME));
 
@@ -408,7 +448,10 @@ final readonly class GenerateDataSubjectExportAction
         );
 
         throw_if(
-            ! $archive->addFromString($archivePath, $contents),
+            ! $archive->addFile(
+                $this->stageForArchive($disk, $path, $stagingDirectory.'/'.$number),
+                $archivePath,
+            ),
             RuntimeException::class,
             'Unable to add a stored file to the data-subject export.',
         );
