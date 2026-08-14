@@ -156,7 +156,9 @@ export default function AudioRecordingsCard({
                                                 )}{' '}
                                                 ·{' '}
                                                 {t('Uploaded :datetime', {
-                                                    datetime: formatDateTime(recording.uploaded_at),
+                                                    datetime: formatDateTime(
+                                                        recording.uploaded_at,
+                                                    ),
                                                 })}
                                             </span>
                                         </p>

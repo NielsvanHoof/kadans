@@ -23,9 +23,7 @@ const { default: RequestsListCard } = await import('../requests-list-card');
  * The card takes a paginator, not a flat array — see FetchDataSubjectRequestIndexQuery.
  * Same shim as features/audit/tests/activity-log-card.test.tsx.
  */
-function paginated(
-    data: DataSubjectRequest[],
-): Paginated<DataSubjectRequest> {
+function paginated(data: DataSubjectRequest[]): Paginated<DataSubjectRequest> {
     return {
         data,
         total: data.length,

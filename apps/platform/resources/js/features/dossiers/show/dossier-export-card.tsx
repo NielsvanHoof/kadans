@@ -119,11 +119,15 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
                                         </p>
                                         <p className="text-muted-foreground">
                                             {t('Requested :datetime', {
-                                                datetime: formatDateTime(exportItem.created_at),
+                                                datetime: formatDateTime(
+                                                    exportItem.created_at,
+                                                ),
                                             })}
                                             {exportItem.expires_at
                                                 ? ` · ${t('Expires :datetime', {
-                                                      datetime: formatDateTime(exportItem.expires_at),
+                                                      datetime: formatDateTime(
+                                                          exportItem.expires_at,
+                                                      ),
                                                   })}`
                                                 : null}
                                         </p>

@@ -68,7 +68,9 @@ export default function ActivityLogCard({
                                     </Badge>
                                     {activity.created_at && (
                                         <span className="text-xs text-muted-foreground">
-                                            {formatDateTime(activity.created_at)}
+                                            {formatDateTime(
+                                                activity.created_at,
+                                            )}
                                         </span>
                                     )}
                                 </div>

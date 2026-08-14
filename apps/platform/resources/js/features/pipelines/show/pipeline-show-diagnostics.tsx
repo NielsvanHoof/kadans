@@ -52,9 +52,7 @@ export default function PipelineShowDiagnostics({
                                 <p className="text-muted-foreground">
                                     {t('Next retry')}
                                 </p>
-                                <p>
-                                    {formatDateTime(pipeline.next_retry_at)}
-                                </p>
+                                <p>{formatDateTime(pipeline.next_retry_at)}</p>
                             </div>
                         ) : null}
                     </div>

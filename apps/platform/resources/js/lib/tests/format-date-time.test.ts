@@ -62,7 +62,11 @@ describe('formatDateTime', () => {
     it('follows daylight saving in the target zone', () => {
         // CEST in July: +02:00, an hour further ahead than the March case above.
         expect(
-            formatDateTime('2025-07-15T14:30:45.000Z', 'en-GB', 'Europe/Amsterdam'),
+            formatDateTime(
+                '2025-07-15T14:30:45.000Z',
+                'en-GB',
+                'Europe/Amsterdam',
+            ),
         ).toBe('15/07/2025, 16:30:45');
     });
 
@@ -71,7 +75,6 @@ describe('formatDateTime', () => {
             formatDateTime('2025-03-15T23:30:00.000Z', 'en-GB', 'Asia/Tokyo'),
         ).toBe('16/03/2025, 08:30:00');
     });
-
 });
 
 describe('formatDateTimeWithZone', () => {
@@ -102,7 +105,11 @@ describe('formatDateTimeWithZone', () => {
         // sidestep that with a second, zone-only formatter — so the guarantee
         // worth asserting is simply that it returns a string instead of throwing.
         expect(() =>
-            formatDateTimeWithZone('2025-03-15T14:30:45.000Z', 'nl', 'Asia/Tokyo'),
+            formatDateTimeWithZone(
+                '2025-03-15T14:30:45.000Z',
+                'nl',
+                'Asia/Tokyo',
+            ),
         ).not.toThrow();
     });
 });
@@ -127,7 +134,6 @@ describe('formatRelativeTime', () => {
             formatRelativeTime('2025-03-15T13:00:00.000Z', 'nl', now),
         ).toMatch(/uur/);
     });
-
 });
 
 // The test runner is UTC, where an offset-less string and an offset-bearing one

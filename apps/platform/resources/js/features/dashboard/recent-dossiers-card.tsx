@@ -90,7 +90,9 @@ export default function RecentDossiersCard({
                                         <p className="mt-1 text-xs text-muted-foreground">
                                             {dossier.due_date
                                                 ? t('Due :date', {
-                                                      date: formatDate(dossier.due_date),
+                                                      date: formatDate(
+                                                          dossier.due_date,
+                                                      ),
                                                   })
                                                 : t('No due date')}
                                             {dossier.responsible_name

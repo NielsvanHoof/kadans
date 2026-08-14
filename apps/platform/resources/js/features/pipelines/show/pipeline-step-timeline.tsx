@@ -87,14 +87,18 @@ export default function PipelineStepTimeline({
                             {step.started_at ? (
                                 <span>
                                     {t('Started :datetime', {
-                                        datetime: formatDateTime(step.started_at),
+                                        datetime: formatDateTime(
+                                            step.started_at,
+                                        ),
                                     })}
                                 </span>
                             ) : null}
                             {step.completed_at ? (
                                 <span>
                                     {t('Finished :datetime', {
-                                        datetime: formatDateTime(step.completed_at),
+                                        datetime: formatDateTime(
+                                            step.completed_at,
+                                        ),
                                     })}
                                 </span>
                             ) : null}

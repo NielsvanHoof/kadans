@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/table';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
+import type { Paginated } from '@/types/pagination';
 import RequestActions from './request-actions';
 import RequestStatusBadge from './request-status-badge';
-import type { Paginated } from '@/types/pagination';
 import type { DataSubjectRequest } from './types';
 
 export default function RequestsListCard({
