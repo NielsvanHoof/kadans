@@ -6,16 +6,17 @@ namespace App\Dossiers\Http\Controllers;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\Dossiers\Actions\AudioRecordings\DeleteAudioRecordingAction;
 use App\Dossiers\Actions\AudioRecordings\UploadAudioRecordingAction;
 use App\Dossiers\Data\StaffAudioRecordingData;
 use App\Dossiers\Http\Requests\AudioRecordings\StoreAudioRecordingRequest;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\FetchAudioRecordingShowQuery;
-use App\Pipelines\Actions\DeletePipelinesForSubjectsAction;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,12 +58,16 @@ final class AudioRecordingController extends Controller
 
         try {
             $uploadAudioRecording->handle($dossier, $file, $request->user());
+        } catch (ModelNotFoundException) {
+            // The dossier was deleted between resolving the route and taking
+            // its row lock. That is a gone resource, not a bug: reporting it
+            // would file a Sentry issue for ordinary concurrency and hide it
+            // behind a "try again" the client can never satisfy.
+            abort(404);
         } catch (Throwable $exception) {
             report($exception);
 
-            return back()->withErrors([
-                'audio' => __('Something went wrong while uploading the audio file. Please try again.'),
-            ]);
+            return back()->withErrors(['audio' => __('Something went wrong while uploading the audio file. Please try again.')]);
         }
 
         Toast::success(__('Audio recording uploaded.'));
@@ -131,16 +136,15 @@ final class AudioRecordingController extends Controller
 
     public function destroy(
         Tenant $tenant,
+        Request $request,
         AudioRecording $audioRecording,
-        DeletePipelinesForSubjectsAction $deletePipelinesForSubjects,
+        DeleteAudioRecordingAction $deleteAudioRecording,
     ): RedirectResponse {
         $this->authorize('delete', $audioRecording);
 
         $dossier = $audioRecording->dossier;
 
-        Storage::disk($audioRecording->disk)->delete($audioRecording->path);
-        $deletePipelinesForSubjects->handle([$audioRecording]);
-        $audioRecording->delete();
+        $deleteAudioRecording->handle($audioRecording, $request->user());
 
         Toast::success(__('Audio recording removed.'));
 

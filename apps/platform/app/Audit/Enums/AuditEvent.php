@@ -68,6 +68,7 @@ enum AuditEvent: string
     case SupportSessionExpired = 'support.session_expired';
     case AudioRecordingUploaded = 'audio_recording.uploaded';
     case AudioRecordingDownloaded = 'audio_recording.downloaded';
+    case AudioRecordingDeleted = 'audio_recording.deleted';
     case AudioTranscriptionStarted = 'audio_recording.transcription_started';
     case AudioTranscriptionCompleted = 'audio_recording.transcription_completed';
     case AudioTranscriptionFailed = 'audio_recording.transcription_failed';
@@ -137,6 +138,7 @@ enum AuditEvent: string
             self::SupportSessionExpired => __('Support session expired'),
             self::AudioRecordingUploaded => __('Audio recording uploaded'),
             self::AudioRecordingDownloaded => __('Audio recording downloaded'),
+            self::AudioRecordingDeleted => __('Audio recording deleted'),
             self::AudioTranscriptionStarted => __('Audio transcription started'),
             self::AudioTranscriptionCompleted => __('Audio transcription completed'),
             self::AudioTranscriptionFailed => __('Audio transcription failed'),
@@ -224,6 +226,7 @@ enum AuditEvent: string
 
             self::AudioRecordingUploaded,
             self::AudioRecordingDownloaded,
+            self::AudioRecordingDeleted,
             self::AudioTranscriptionStarted,
             self::AudioTranscriptionCompleted,
             self::AudioTranscriptionFailed => __('Audio recordings'),

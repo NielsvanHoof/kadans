@@ -78,6 +78,7 @@ declare namespace App {
                 | 'support.session_expired'
                 | 'audio_recording.uploaded'
                 | 'audio_recording.downloaded'
+                | 'audio_recording.deleted'
                 | 'audio_recording.transcription_started'
                 | 'audio_recording.transcription_completed'
                 | 'audio_recording.transcription_failed';
