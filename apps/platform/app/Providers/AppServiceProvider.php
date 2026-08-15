@@ -217,6 +217,7 @@ final class AppServiceProvider extends ServiceProvider
         DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=ocr', 'ocr');
         DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=transcription', 'transcription');
         DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=dossier-export', 'dossier-export');
+        DevCommands::artisan('schedule:work', 'scheduled-tasks');
 
         // Only when the real drivers are on. Leftover Pulumi queue URLs with
         // OCR_DRIVER=mock + Floci must not start consumers against missing queues.
