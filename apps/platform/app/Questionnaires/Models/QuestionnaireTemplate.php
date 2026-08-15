@@ -83,7 +83,6 @@ final class QuestionnaireTemplate extends Model
      */
     public static function queryVisibleToCurrentTenant(): Builder
     {
-        // self::query() (final class) keeps Builder<QuestionnaireTemplate> invariant.
         $query = self::query();
         $tenant = Tenant::current();
 
