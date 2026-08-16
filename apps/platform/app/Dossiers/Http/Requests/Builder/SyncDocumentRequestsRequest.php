@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Builder;
 
+use App\Dossiers\Http\Requests\Concerns\AuthorizesDocumentRequestReplacement;
 use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -23,6 +24,7 @@ use function is_string;
  */
 final class SyncDocumentRequestsRequest extends FormRequest
 {
+    use AuthorizesDocumentRequestReplacement;
     use AuthorizesDossierBuilderMutation;
     use LocalizesValidationAttributes;
 
@@ -80,79 +82,6 @@ final class SyncDocumentRequestsRequest extends FormRequest
             $this->validateExistingIdsBelongToDossier($validator, $dossier, $items);
             $this->validateVisibilityAgainstPayloadOrder($validator, $items);
         });
-    }
-
-    /**
-     * The canvas replaces the dossier's rows wholesale: retained rows are updated,
-     * omitted rows are hard-deleted along with their uploads and stored files.
-     * Authorize both effects per row the way `destroy` and `update` do — holding the
-     * builder lock plus `create` must not become a weaker path to either one.
-     */
-    private function userMayReplaceExistingDocumentRequests(): bool
-    {
-        $dossier = $this->route('dossier');
-
-        if (! $dossier instanceof Dossier) {
-            return false;
-        }
-
-        $user = $this->user();
-
-        if ($user === null) {
-            return false;
-        }
-
-        $retainedIds = $this->retainedDocumentRequestIds();
-
-        $existing = DocumentRequest::query()
-            ->whereBelongsTo($dossier)
-            ->with('tenant')
-            ->get();
-
-        foreach ($existing as $documentRequest) {
-            // DocumentRequestPolicy reads both relations per row; seed the one we hold.
-            $documentRequest->setRelation('dossier', $dossier);
-
-            $ability = isset($retainedIds[$documentRequest->id]) ? 'update' : 'delete';
-
-            if (! $user->can($ability, $documentRequest)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Ids the payload keeps. Read from unvalidated input, because `authorize()` runs
-     * before `rules()` — anything unusable is simply not retained, so the row falls
-     * under `delete` and the gate stays closed rather than open.
-     *
-     * @return array<int, true>
-     */
-    private function retainedDocumentRequestIds(): array
-    {
-        $items = $this->input('items');
-
-        if (! is_array($items)) {
-            return [];
-        }
-
-        $retainedIds = [];
-
-        foreach ($items as $item) {
-            if (! is_array($item)) {
-                continue;
-            }
-
-            $id = $item['id'] ?? null;
-
-            if (is_numeric($id) && (int) $id > 0) {
-                $retainedIds[(int) $id] = true;
-            }
-        }
-
-        return $retainedIds;
     }
 
     /**

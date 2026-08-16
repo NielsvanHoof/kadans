@@ -258,7 +258,7 @@ final readonly class AnonymizeDataSubjectAction
         }
 
         if ($grantIds !== []) {
-            $grantActivity = Activity::query()
+            $grantActivity = Activity::queryAcrossTenants()
                 ->where('subject_type', (new ClientAccessGrant)->getMorphClass());
             $grantActivity->getQuery()->whereIn('subject_id', $grantIds);
 

@@ -120,8 +120,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
      */
     protected function subject(): Builder
     {
-        return Activity::query()
-            ->where('tenant_id', $this->tenant->id)
+        return Activity::queryForTenant($this->tenant)
             ->with([
                 'causer',
                 'subject' => function ($morphTo): void {

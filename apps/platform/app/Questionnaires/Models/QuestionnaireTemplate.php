@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Scout\Builder as ScoutBuilder;
 use Laravel\Scout\Searchable;
 use Override;
 
@@ -108,6 +109,26 @@ final class QuestionnaireTemplate extends Model
             'name' => $this->name,
             'description' => $this->description ?? '',
         ];
+    }
+
+    /**
+     * Constrain Scout's database engine to templates this firm can see.
+     *
+     * Without this the engine builds from newQuery(). This model is not a
+     * TenantOwnedModel — tenant_id is nullable so system templates stay shared —
+     * so that query carries no tenant filter, and `scout.key_limit` truncates a
+     * window drawn from every firm's templates *before* the caller's visibility
+     * filter runs. A firm's own templates then silently fall out of its own
+     * search results as the platform takes on more firms.
+     *
+     * Collection engine (tests) ignores this and builds from query().
+     *
+     * @param  ScoutBuilder<QuestionnaireTemplate>  $_builder
+     * @return Builder<QuestionnaireTemplate>
+     */
+    public function newScoutQuery(ScoutBuilder $_builder): Builder
+    {
+        return self::queryVisibleToCurrentTenant();
     }
 
     public function isSystem(): bool

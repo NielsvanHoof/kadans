@@ -63,4 +63,5 @@ AGENTS.md
 CLAUDE.md
 boost.json
 
-backlog/*
+# Backlog.md is shared task/decision history. Keep only local lock files out.
+backlog/.locks/

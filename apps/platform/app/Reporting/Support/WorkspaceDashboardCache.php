@@ -25,6 +25,17 @@ final class WorkspaceDashboardCache
     private const int TTL_SECONDS = 300;
 
     /**
+     * Bump whenever DashboardMetricsData gains, drops, or renames a field.
+     *
+     * Storing a plain array keeps a shape change from failing to unserialize, but
+     * fromArray() still reads every key it expects: without a version segment, a
+     * deploy that adds a metric reads pre-deploy entries that lack it and the
+     * dashboard errors for the rest of the TTL, for every tenant already cached.
+     * A new segment simply misses instead, and the old entries age out on TTL.
+     */
+    private const string SCHEMA_VERSION = 'v2';
+
+    /**
      * @param  Closure(): DashboardMetricsData  $callback
      */
     public static function rememberMetrics(int $tenantId, Closure $callback): DashboardMetricsData
@@ -53,7 +64,8 @@ final class WorkspaceDashboardCache
 
         $metrics = $callback();
 
-        // Store a plain array so deploys that change the DTO shape stay safe.
+        // Plain array, not a serialized DTO: the class shape is free to move
+        // between deploys. SCHEMA_VERSION covers the array's own shape.
         Cache::put(self::key($tenantId), $metrics->toArray(), self::TTL_SECONDS);
 
         return $metrics;
@@ -69,6 +81,11 @@ final class WorkspaceDashboardCache
      */
     private static function key(int $tenantId): string
     {
-        return sprintf('dashboard:metrics:%d:%s', $tenantId, today()->toDateString());
+        return sprintf(
+            'dashboard:metrics:%s:%d:%s',
+            self::SCHEMA_VERSION,
+            $tenantId,
+            today()->toDateString(),
+        );
     }
 }

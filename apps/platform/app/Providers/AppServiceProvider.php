@@ -126,8 +126,6 @@ final class AppServiceProvider extends ServiceProvider
 
         Model::shouldBeStrict();
 
-        Model::preventLazyLoading(! app()->isProduction());
-
         Model::automaticallyEagerLoadRelationships();
     }
 

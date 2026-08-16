@@ -104,7 +104,7 @@ final class PurgeSubjectActivityLogAction
 
     private function purgeForModel(Model $subject): int
     {
-        return Activity::query()
+        return Activity::queryAcrossTenants()
             ->where('subject_type', $subject->getMorphClass())
             ->where('subject_id', $subject->getKey())
             ->delete();
@@ -113,9 +113,9 @@ final class PurgeSubjectActivityLogAction
     /**
      * Delete every activity row for one subject type and a set of ids.
      *
-     * Built on Activity::query() and terminated on toBase() so the model's
-     * scopes still apply to the delete, matching the idiom used elsewhere for
-     * whereIn on an Eloquent builder.
+     * Built on Activity::queryAcrossTenants() and terminated on toBase() so the
+     * model's scopes still apply to the delete, matching the idiom used elsewhere
+     * for whereIn on an Eloquent builder.
      *
      * @param  Collection<int, mixed>  $subjectIds
      */
@@ -130,7 +130,7 @@ final class PurgeSubjectActivityLogAction
                 continue;
             }
 
-            $activityQuery = Activity::query()->where('subject_type', $morphClass);
+            $activityQuery = Activity::queryAcrossTenants()->where('subject_type', $morphClass);
             $activityQuery->getQuery()->whereIn('subject_id', $ids);
 
             $deletedCount += $activityQuery->toBase()->delete();

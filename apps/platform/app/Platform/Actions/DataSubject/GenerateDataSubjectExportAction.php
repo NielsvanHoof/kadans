@@ -360,7 +360,7 @@ final readonly class GenerateDataSubjectExportAction
             ->pluck('id')
             ->all();
 
-        $query = Activity::query();
+        $query = Activity::queryAcrossTenants();
         $query->getQuery()
             ->where(function (QueryBuilder $builder) use ($client, $dossierIds): void {
                 $builder
