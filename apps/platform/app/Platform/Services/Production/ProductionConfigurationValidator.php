@@ -85,6 +85,7 @@ final readonly class ProductionConfigurationValidator
             $this->matches('transcription.driver', 'transcribe'),
             $this->hasProductionSearchDriver() ? null : 'scout.driver',
             $this->hasErrorReporting() ? null : 'sentry.dsn',
+            $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
             $this->unshippedLogChannelKey(),
             $this->hasSafeSessionSameSite() ? null : 'session.same_site',
             $this->enforcesTwoFactor() ? null : 'security.two_factor.enforcement',
@@ -161,6 +162,24 @@ final readonly class ProductionConfigurationValidator
     private function hasErrorReporting(): bool
     {
         $dsn = $this->config->get('sentry.dsn');
+
+        return is_string($dsn) && mb_trim($dsn) !== '';
+    }
+
+    /**
+     * The same argument as `hasErrorReporting`, for the half of the app that
+     * fails where no server-side log can see it. A React render error takes the
+     * page down with no PHP exception, no log line, and no failed response —
+     * unreported, the only symptom is a user saying the screen went blank.
+     *
+     * This checks the server's copy of the DSN, which is a proxy: the value the
+     * bundle uses was inlined by Vite at build time and cannot be read back at
+     * runtime. It catches the case that actually happens — the variable missing
+     * from the deploy environment, so neither the build nor the server had it.
+     */
+    private function hasBrowserErrorReporting(): bool
+    {
+        $dsn = $this->config->get('services.sentry.browser_dsn');
 
         return is_string($dsn) && mb_trim($dsn) !== '';
     }

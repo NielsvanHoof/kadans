@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Context;
 use Sentry\Breadcrumb;
 use Sentry\Event;
 
+use function Pest\Laravel\get;
+
 beforeEach(function (): void {
     Context::flush();
 });
@@ -19,6 +21,18 @@ test('both application integrations are registered as cacheable class names', fu
         StampsEventsWithObservabilityContext::class,
     ])
         ->and(config('sentry.integrations'))->each->toBeString();
+});
+
+/**
+ * The browser SDK reads these to continue the trace the PHP SDK started, which
+ * is what puts a client-side error and the request that rendered the page in one
+ * trace. They are also how the backend's sampling decision reaches the browser,
+ * so a trace is not kept on one side and dropped on the other.
+ */
+test('the root document carries the tracing meta tags the browser sdk continues from', function (): void {
+    get('/login')
+        ->assertSee('name="sentry-trace"', escape: false)
+        ->assertSee('name="baggage"', escape: false);
 });
 
 test('an event is attributed to its request, tenant, route, and user', function (): void {

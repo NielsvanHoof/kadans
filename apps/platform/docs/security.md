@@ -72,6 +72,13 @@ Clients never hold an account. Access is a `ClientAccessGrant` scoped to one dos
 - Every portal response gets `no-store`, `no-referrer`, and
   `X-Robots-Tag: noindex, nofollow, noarchive` via `HardenClientPortalResponse`.
   Inertia history encryption is on.
+- **The token is stripped from error reports on both sides.** It travels in the URL
+  path, and Sentry records request URLs regardless of `send_default_pii`, so an
+  exception on a portal route would otherwise ship a live credential to a third
+  party. `RedactsPortalTokensFromEvents` (PHP) and `resources/js/lib/observability.ts`
+  (browser) rewrite it in the request URL, the transaction name, and breadcrumbs.
+  Both patterns track the `[A-Za-z0-9]+` route constraint in `routes/portal.php`;
+  loosening that constraint means updating all three.
 - Grants are revocable, prunable, and record `last_used_at` under a row lock.
 - Rate limits: 30 req/min on the portal, 10 req/min on token exchange.
 - **Per-dossier portal upload quota:** cumulative uploaded bytes across all
@@ -178,7 +185,10 @@ the Caddyfile.
 `App\Shared\Http\ContentSecurityPolicy` builds the policy per request, deriving
 everything environment-specific from existing config rather than restating it: the
 Vite nonce, the Vite dev server when running hot, the Reverb websocket from
-`broadcasting.connections.reverb`, and the S3 host from `filesystems.disks.s3`.
+`broadcasting.connections.reverb`, the S3 host from `filesystems.disks.s3`, and the
+Sentry ingest host from `services.sentry.browser_dsn`. Only the DSN's origin reaches
+the header — `originFromUrl()` drops the public key along with the rest of the
+userinfo. With no browser DSN configured the origin is omitted entirely.
 
 Scripts are **nonce-gated**. `AddSecurityHeaders` calls `Vite::useCspNonce()` on the
 way in so the root Blade view, `@vite`, and `@fonts` all stamp the same nonce; the
@@ -210,8 +220,8 @@ and fonts are self-hosted under `public/build/assets/`.
 
 Two test-isolation guards keep this honest: `tests/TestCase::setUp()` pins Vite to
 built-manifest mode so a running `npm run dev` cannot change rendered output, and
-`phpunit.xml` pins `SECURITY_CSP_ENABLED`/`SECURITY_CSP_REPORT_ONLY` so a developer's
-local overrides cannot mask a broken policy.
+`phpunit.xml` pins `SECURITY_CSP_ENABLED`/`SECURITY_CSP_REPORT_ONLY` (and blanks
+`VITE_SENTRY_DSN`) so a developer's local overrides cannot mask a broken policy.
 
 To roll out a tightened policy safely, set `SECURITY_CSP_REPORT_ONLY=true` **and**
 `SECURITY_CSP_REPORT_URI` to a reporting endpoint, watch reports, then flip it back.
@@ -352,9 +362,11 @@ confirmation, like every document route.
 production if any of these is wrong: `app.debug` on, non-HTTPS `APP_URL`, cache or
 queue not Redis, Redis not on TLS, sessions not Redis/encrypted/secure/domain-scoped,
 filesystem not S3 (with throw + report on), broadcasting not Reverb, OCR driver not
-Textract, no delivering mailer, or trusted proxies unset / set to `REMOTE_ADDR` /
-`*` (must be LB/VPC CIDRs or `PRIVATE_SUBNETS`). Misconfiguration cannot reach
-traffic.
+Textract, no delivering mailer, either Sentry DSN empty (the PHP one and the browser
+one — a React render error produces no PHP exception and no log line, so unreported
+its only symptom is a user saying the screen went blank), or trusted proxies unset /
+set to `REMOTE_ADDR` / `*` (must be LB/VPC CIDRs or `PRIVATE_SUBNETS`).
+Misconfiguration cannot reach traffic.
 
 ## Supply chain
 

@@ -48,6 +48,10 @@
              SECURITY_CSP_* overrides; individual tests opt into report-only. -->
         <env name="SECURITY_CSP_ENABLED" value="true"/>
         <env name="SECURITY_CSP_REPORT_ONLY" value="false"/>
+        <!-- The browser Sentry DSN feeds connect-src. Empty here so a developer
+             with a real DSN in .env cannot make the policy assertions pass on an
+             origin CI would not have; the tests about it set it explicitly. -->
+        <env name="VITE_SENTRY_DSN" value=""/>
         <!-- Pin 2FA enforcement so a developer's local .env cannot change it.
              Factory users are created "now", so the 14-day grace window means
              enforcement stays dormant for the rest of the suite; the tests that

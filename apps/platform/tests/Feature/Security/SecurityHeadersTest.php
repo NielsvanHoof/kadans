@@ -161,6 +161,25 @@ describe('policy assembly', function (): void {
             ->not->toContain('amazonaws.com');
     });
 
+    test('allows the sentry ingest host the browser sdk reports to', function (): void {
+        config()->set('services.sentry.browser_dsn', 'https://publickey@o4507.ingest.de.sentry.io/9');
+
+        $policy = resolve(ContentSecurityPolicy::class)->build('abc123');
+
+        // Only the origin — the DSN's public key is userinfo and must not be
+        // copied into a response header.
+        expect($policy)
+            ->toMatch('/connect-src [^;]*https:\/\/o4507\.ingest\.de\.sentry\.io/')
+            ->not->toContain('publickey');
+    });
+
+    test('omits the sentry ingest host when the frontend has no dsn', function (): void {
+        config()->set('services.sentry.browser_dsn', null);
+
+        expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
+            ->not->toContain('sentry.io');
+    });
+
     test('allows data uris for images so the two-factor qr code renders', function (): void {
         expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
             ->toMatch('/img-src [^;]*data:/');
