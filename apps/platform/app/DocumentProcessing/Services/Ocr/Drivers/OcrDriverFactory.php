@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Services\Ocr\Drivers;
 
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\OcrDriver;
 use Illuminate\Foundation\Application;
 use InvalidArgumentException;
@@ -18,7 +18,7 @@ final readonly class OcrDriverFactory
         private TextractDocumentOcr $textractDocumentOcr,
     ) {}
 
-    public function make(string $driver): StartsDocumentOcr
+    public function make(string $driver): DocumentOcr
     {
         $ocrDriver = OcrDriver::tryFrom($driver);
 

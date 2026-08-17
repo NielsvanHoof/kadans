@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing;
 
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\AudioProcessing\Enums\TranscriptionDriver;
 use App\AudioProcessing\Presenters\AudioRecordingPipelineSubjectPresenter;
 use App\AudioProcessing\Runners\AudioTranscriptionPipelineRunner;
@@ -33,8 +33,8 @@ final class AudioProcessingServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
-            StartsAudioTranscription::class,
-            fn ($app): StartsAudioTranscription => $app->make(TranscriptionDriverFactory::class)->make(
+            AudioTranscriber::class,
+            fn ($app): AudioTranscriber => $app->make(TranscriptionDriverFactory::class)->make(
                 Config::string('transcription.driver', TranscriptionDriver::Mock->value),
             ),
         );

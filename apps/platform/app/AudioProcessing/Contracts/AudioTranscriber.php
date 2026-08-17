@@ -10,7 +10,7 @@ use App\Dossiers\Models\AudioRecording;
  * Starts transcription for a recording that is already claimed as processing.
  * Mock/AI drivers complete synchronously; Amazon Transcribe leaves the row processing.
  */
-interface StartsAudioTranscription
+interface AudioTranscriber
 {
     public function start(AudioRecording $recording): void;
 }

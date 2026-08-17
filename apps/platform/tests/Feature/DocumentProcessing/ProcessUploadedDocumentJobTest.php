@@ -6,7 +6,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
@@ -88,7 +88,7 @@ test('processing job does not restart an active external OCR job', function (): 
         'processing_started_at' => now(),
     ]);
 
-    $ocr = Mockery::mock(StartsDocumentOcr::class);
+    $ocr = Mockery::mock(DocumentOcr::class);
     $ocr->shouldNotReceive('start');
 
     new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path)->handle(
@@ -115,7 +115,7 @@ test('processing job ignores an upload revision that has been replaced', functio
 
     $uploaded->forceFill(['path' => 'replacement.pdf'])->save();
 
-    $ocr = Mockery::mock(StartsDocumentOcr::class);
+    $ocr = Mockery::mock(DocumentOcr::class);
     $ocr->shouldNotReceive('start');
 
     $staleJob->handle(

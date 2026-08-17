@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Actions\NotifyUploaderOfTranscriptionCompletedAction;
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
 use App\AudioProcessing\Services\TranscriptionOrchestrator;
@@ -126,7 +126,7 @@ test('processing job does not restart a recording with an in-flight Transcribe j
         'transcription_started_at' => now(),
     ]);
 
-    $transcriber = Mockery::mock(StartsAudioTranscription::class);
+    $transcriber = Mockery::mock(AudioTranscriber::class);
     $transcriber->shouldNotReceive('start');
 
     new ProcessAudioRecordingJob($recording->id, $recording->path)->handle(
@@ -151,7 +151,7 @@ test('processing job does not restart a recording with an in-flight Transcribe j
 test('processing job resets to pending on a retryable failure so a retry can reclaim it', function (): void {
     $recording = createAudioRecordingForProcessingTest();
 
-    $transcriber = Mockery::mock(StartsAudioTranscription::class);
+    $transcriber = Mockery::mock(AudioTranscriber::class);
     $transcriber->shouldReceive('start')->once()->andThrow(new RuntimeException('Timed out.'));
 
     $job = new ProcessAudioRecordingJob($recording->id, $recording->path);
@@ -176,7 +176,7 @@ test('processing job ignores an upload revision that has been replaced', functio
 
     $recording->forceFill(['path' => 'audio/replacement.mp3'])->save();
 
-    $transcriber = Mockery::mock(StartsAudioTranscription::class);
+    $transcriber = Mockery::mock(AudioTranscriber::class);
     $transcriber->shouldNotReceive('start');
 
     $staleJob->handle(

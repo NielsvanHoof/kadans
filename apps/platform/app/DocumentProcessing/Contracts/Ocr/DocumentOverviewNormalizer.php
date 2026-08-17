@@ -10,7 +10,7 @@ namespace App\DocumentProcessing\Contracts\Ocr;
  * @phpstan-import-type DocumentExtractionPayload from DocumentExtraction
  * @phpstan-import-type DocumentOverview from DocumentExtraction
  */
-interface DescribesDocumentOverview
+interface DocumentOverviewNormalizer
 {
     /**
      * @param  DocumentExtractionPayload  $payload

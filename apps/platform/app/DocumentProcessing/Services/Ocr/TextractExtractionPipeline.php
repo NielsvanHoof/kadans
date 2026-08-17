@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Services\Ocr;
 
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Services\Ocr\Normalization\FieldSensitivityClassifier;
 use App\DocumentProcessing\Services\Ocr\Normalization\TextractFormsTablesMapper;
 use App\DocumentProcessing\Services\Ocr\Textract\TextractJobBlockFetcher;
@@ -25,7 +25,7 @@ final readonly class TextractExtractionPipeline
     public function __construct(
         private TextractJobBlockFetcher $blockFetcher,
         private TextractFormsTablesMapper $formsTablesMapper,
-        private DescribesDocumentOverview $describesDocumentOverview,
+        private DocumentOverviewNormalizer $overviewNormalizer,
         private FieldSensitivityClassifier $fieldSensitivityClassifier,
     ) {}
 
@@ -44,7 +44,7 @@ final readonly class TextractExtractionPipeline
             'table_count' => count($structured['tables']),
         ]);
 
-        $overview = $this->describesDocumentOverview->describe($structured);
+        $overview = $this->overviewNormalizer->describe($structured);
 
         $structured['document_type'] = $overview['document_type'];
         $structured['summary'] = $overview['summary'];

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Services\Drivers;
 
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use Aws\TranscribeService\TranscribeServiceClient;
@@ -23,7 +23,7 @@ use function is_string;
  * Starts async Amazon Transcribe for audio already on S3.
  * Completion arrives later via EventBridge → SQS → CompleteTranscribeJobAction.
  */
-final readonly class AmazonTranscribeAudioTranscriber implements StartsAudioTranscription
+final readonly class AmazonTranscribeAudioTranscriber implements AudioTranscriber
 {
     public function __construct(
         private TranscribeServiceClient $transcribe,

@@ -6,7 +6,7 @@ namespace App\DocumentProcessing\Services\Ocr;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\OcrProcessingOutcome;
 use App\Dossiers\Models\UploadedDocument;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 final readonly class OcrOrchestrator
 {
     public function __construct(
-        private StartsDocumentOcr $ocr,
+        private DocumentOcr $ocr,
         private LogAuditActivityAction $logAuditActivity,
     ) {}
 

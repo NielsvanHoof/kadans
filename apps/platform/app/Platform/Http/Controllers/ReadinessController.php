@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Controllers;
 
-use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Platform\Contracts\Production\ReadinessCheck;
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,7 +12,7 @@ use Throwable;
 
 final class ReadinessController extends Controller
 {
-    public function __invoke(ChecksReadiness $readiness): JsonResponse
+    public function __invoke(ReadinessCheck $readiness): JsonResponse
     {
         try {
             $readiness->check();

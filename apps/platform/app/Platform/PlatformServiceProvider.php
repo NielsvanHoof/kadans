@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Platform;
 
 use App\Platform\Console\PruneModelsCommand;
-use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Platform\Contracts\Production\ReadinessCheck;
 use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Policies\DataSubjectRequestPolicy;
 use App\Platform\Services\Production\InfrastructureReadinessCheck;
@@ -28,7 +28,7 @@ final class PlatformServiceProvider extends ServiceProvider
             PruneModelsCommand::class,
         ]);
 
-        $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
+        $this->app->bind(ReadinessCheck::class, InfrastructureReadinessCheck::class);
 
         // Wraps the HTTP session, so it must not outlive a request under Octane.
         $this->app->scoped(SupportSessionState::class, PlatformSupportSessionState::class);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Services;
 
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\AudioProcessing\Enums\TranscriptionDriver;
 use App\AudioProcessing\Services\Drivers\AmazonTranscribeAudioTranscriber;
 use App\AudioProcessing\Services\Drivers\MockAudioTranscriber;
@@ -20,7 +20,7 @@ final readonly class TranscriptionDriverFactory
         private AmazonTranscribeAudioTranscriber $amazonTranscribeAudioTranscriber,
     ) {}
 
-    public function make(string $driver): StartsAudioTranscription
+    public function make(string $driver): AudioTranscriber
     {
         $transcriptionDriver = TranscriptionDriver::tryFrom($driver);
 

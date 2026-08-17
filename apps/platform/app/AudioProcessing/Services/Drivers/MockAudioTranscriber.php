@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Services\Drivers;
 
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\AudioProcessing\Data\TranscriptionResult;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
  * CI stand-in for Amazon Transcribe.
  * Completes synchronously inside start() so demos and tests stay offline-stable.
  */
-final class MockAudioTranscriber implements StartsAudioTranscription
+final class MockAudioTranscriber implements AudioTranscriber
 {
     public function start(AudioRecording $recording): void
     {

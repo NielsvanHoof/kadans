@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\DocumentProcessing\Services\Ocr\Normalization;
 
 use App\DocumentProcessing\Ai\DocumentOverviewAgent;
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
 use App\DocumentProcessing\Contracts\Ocr\DocumentExtraction;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use RuntimeException;
@@ -26,7 +26,7 @@ use function mb_strlen;
  * @phpstan-import-type DocumentExtractionPayload from DocumentExtraction
  * @phpstan-import-type DocumentOverview from DocumentExtraction
  */
-final readonly class AgentDocumentOverviewNormalizer implements DescribesDocumentOverview
+final readonly class AgentDocumentOverviewNormalizer implements DocumentOverviewNormalizer
 {
     /**
      * @param  DocumentExtractionPayload  $payload

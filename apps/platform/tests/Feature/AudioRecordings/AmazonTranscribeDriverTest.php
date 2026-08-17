@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\AudioProcessing\Services\Drivers\AmazonTranscribeAudioTranscriber;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
@@ -54,5 +54,5 @@ test('amazon transcribe driver starts a job and stores the job name', function (
 
     expect($recording->transcribe_job_id)->toStartWith('audio-'.$recording->id.'-')
         ->and($recording->transcription_status)->toBe(TranscriptionStatus::Processing)
-        ->and(resolve(StartsAudioTranscription::class))->toBeInstanceOf(AmazonTranscribeAudioTranscriber::class);
+        ->and(resolve(AudioTranscriber::class))->toBeInstanceOf(AmazonTranscribeAudioTranscriber::class);
 });

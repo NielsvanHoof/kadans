@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
@@ -29,7 +29,7 @@ beforeEach(function (): void {
  */
 function bindOcrDriverThatFailsAfterSubmitting(): void
 {
-    app()->bind(StartsDocumentOcr::class, fn (): StartsDocumentOcr => new class implements StartsDocumentOcr
+    app()->bind(DocumentOcr::class, fn (): DocumentOcr => new class implements DocumentOcr
     {
         public function start(UploadedDocument $document): void
         {

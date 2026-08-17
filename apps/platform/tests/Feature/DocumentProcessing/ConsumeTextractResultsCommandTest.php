@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Console\Commands\Ocr\ConsumeTextractResultsCommand;
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -118,7 +118,7 @@ test('textract consume command applies sns envelope and deletes the message', fu
             ],
         ]));
 
-    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview = Mockery::mock(DocumentOverviewNormalizer::class);
     $overview->shouldReceive('describe')
         ->once()
         ->andReturn([
@@ -130,7 +130,7 @@ test('textract consume command applies sns envelope and deletes the message', fu
     $this->app->instance(SqsClient::class, $sqs);
     $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
-    $this->app->instance(DescribesDocumentOverview::class, $overview);
+    $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
     $this->artisan('textract:consume', ['--once' => true])
         ->assertSuccessful();
@@ -228,13 +228,13 @@ test('textract consume command marks a document failed after the final receive a
         ->once()
         ->andThrow(new RuntimeException('Persistent Textract result failure.'));
 
-    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview = Mockery::mock(DocumentOverviewNormalizer::class);
     $overview->shouldNotReceive('describe');
 
     $this->app->instance(SqsClient::class, $sqs);
     $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
-    $this->app->instance(DescribesDocumentOverview::class, $overview);
+    $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
     $this->artisan('textract:consume', ['--once' => true])
         ->assertSuccessful();
@@ -312,13 +312,13 @@ test('textract consume command rejects an SNS envelope with an invalid signature
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldNotReceive('getDocumentAnalysis');
 
-    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview = Mockery::mock(DocumentOverviewNormalizer::class);
     $overview->shouldNotReceive('describe');
 
     $this->app->instance(SqsClient::class, $sqs);
     $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
-    $this->app->instance(DescribesDocumentOverview::class, $overview);
+    $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
     $this->artisan('textract:consume', ['--once' => true])
         ->assertSuccessful();

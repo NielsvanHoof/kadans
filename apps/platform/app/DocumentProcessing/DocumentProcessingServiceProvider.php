@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing;
 
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\OcrDriver;
 use App\DocumentProcessing\Presenters\UploadedDocumentPipelineSubjectPresenter;
 use App\DocumentProcessing\Runners\OcrPipelineRunner;
@@ -38,11 +38,11 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
         // Stateless — safe to share across Octane workers / long-running consume loops.
         $this->app->singleton(MessageValidator::class);
 
-        $this->app->bind(DescribesDocumentOverview::class, AgentDocumentOverviewNormalizer::class);
+        $this->app->bind(DocumentOverviewNormalizer::class, AgentDocumentOverviewNormalizer::class);
 
         $this->app->bind(
-            StartsDocumentOcr::class,
-            fn ($app): StartsDocumentOcr => $app->make(OcrDriverFactory::class)->make(
+            DocumentOcr::class,
+            fn ($app): DocumentOcr => $app->make(OcrDriverFactory::class)->make(
                 Config::string('ocr.driver', OcrDriver::Mock->value),
             ),
         );

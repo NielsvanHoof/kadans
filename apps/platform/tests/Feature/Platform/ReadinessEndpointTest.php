@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Platform\Contracts\Production\ReadinessCheck;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Console\Scheduling\Schedule;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
@@ -14,7 +14,7 @@ use Spatie\Health\Facades\Health;
 use Spatie\Health\Jobs\HealthQueueJob;
 
 test('readiness succeeds when production dependencies are available', function (): void {
-    app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
+    app()->bind(ReadinessCheck::class, fn (): ReadinessCheck => new class implements ReadinessCheck
     {
         public function check(): void {}
     });
@@ -25,7 +25,7 @@ test('readiness succeeds when production dependencies are available', function (
 });
 
 test('readiness fails closed when a production dependency is unavailable', function (): void {
-    app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
+    app()->bind(ReadinessCheck::class, fn (): ReadinessCheck => new class implements ReadinessCheck
     {
         public function check(): void
         {
@@ -39,7 +39,7 @@ test('readiness fails closed when a production dependency is unavailable', funct
 });
 
 test('readiness is rate limited for anonymous callers', function (): void {
-    app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
+    app()->bind(ReadinessCheck::class, fn (): ReadinessCheck => new class implements ReadinessCheck
     {
         public function check(): void {}
     });
@@ -55,7 +55,7 @@ test('readiness is rate limited for anonymous callers', function (): void {
 });
 
 test('liveness does not depend on production dependencies', function (): void {
-    app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
+    app()->bind(ReadinessCheck::class, fn (): ReadinessCheck => new class implements ReadinessCheck
     {
         public function check(): void
         {
@@ -72,7 +72,7 @@ test('liveness and readiness respond without a global host allowance', function 
     // balancer's Host header never needs a special allowance.
     config(['production.allowed_hosts' => ['^app\.example\.com$']]);
 
-    app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
+    app()->bind(ReadinessCheck::class, fn (): ReadinessCheck => new class implements ReadinessCheck
     {
         public function check(): void {}
     });

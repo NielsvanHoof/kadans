@@ -10,7 +10,7 @@ use App\Dossiers\Models\UploadedDocument;
  * Starts OCR for an uploaded document that is already claimed as processing.
  * Mock drivers complete synchronously; Textract leaves the row in processing.
  */
-interface StartsDocumentOcr
+interface DocumentOcr
 {
     public function start(UploadedDocument $document): void;
 }

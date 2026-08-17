@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Platform\Services\Production;
 
-use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Platform\Contracts\Production\ReadinessCheck;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Redis\RedisManager;
 
-final readonly class InfrastructureReadinessCheck implements ChecksReadiness
+final readonly class InfrastructureReadinessCheck implements ReadinessCheck
 {
     public function __construct(
         private ConnectionResolverInterface $database,

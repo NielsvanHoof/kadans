@@ -11,8 +11,8 @@ use App\ClientPortal\Policies\ClientAccessGrantPolicy;
 use App\Clients\ClientsServiceProvider;
 use App\Clients\Models\Client;
 use App\Clients\Policies\ClientPolicy;
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\DocumentProcessingServiceProvider;
 use App\DocumentProcessing\Services\Ocr\Drivers\MockOcrExtractor;
 use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
@@ -25,7 +25,7 @@ use App\Dossiers\Policies\DossierPolicy;
 use App\Dossiers\Policies\UploadedDocumentPolicy;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Policies\PipelinePolicy;
-use App\Platform\Contracts\Production\ChecksReadiness;
+use App\Platform\Contracts\Production\ReadinessCheck;
 use App\Platform\PlatformServiceProvider;
 use App\Platform\Services\Production\InfrastructureReadinessCheck;
 use App\Questionnaires\Models\QuestionnaireTemplate;
@@ -58,8 +58,8 @@ test('registers domain service providers in the application', function (): void 
 test('binds OCR and AWS clients from DocumentProcessingServiceProvider', function (): void {
     expect(resolve(TextractClient::class))->toBeInstanceOf(TextractClient::class)
         ->and(resolve(SqsClient::class))->toBeInstanceOf(SqsClient::class)
-        ->and(resolve(DescribesDocumentOverview::class))->toBeInstanceOf(AgentDocumentOverviewNormalizer::class)
-        ->and(resolve(StartsDocumentOcr::class))->toBeInstanceOf(MockOcrExtractor::class);
+        ->and(resolve(DocumentOverviewNormalizer::class))->toBeInstanceOf(AgentDocumentOverviewNormalizer::class)
+        ->and(resolve(DocumentOcr::class))->toBeInstanceOf(MockOcrExtractor::class);
 });
 
 test('points Textract, SQS, and Transcribe clients at a configured local AWS endpoint', function (): void {
@@ -103,7 +103,7 @@ test('leaves AWS clients on regional endpoints when no local endpoint is configu
 
 test('binds tenancy and platform services from their domain providers', function (): void {
     expect(resolve(PermissionRegistry::class))->toBeInstanceOf(PermissionRegistry::class)
-        ->and(resolve(ChecksReadiness::class))->toBeInstanceOf(InfrastructureReadinessCheck::class);
+        ->and(resolve(ReadinessCheck::class))->toBeInstanceOf(InfrastructureReadinessCheck::class);
 });
 
 test('registers domain policies via domain service providers', function (): void {

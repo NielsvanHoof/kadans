@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Services;
 
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\AudioProcessing\Enums\TranscriptionProcessingOutcome;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 final readonly class TranscriptionOrchestrator
 {
     public function __construct(
-        private StartsAudioTranscription $transcriber,
+        private AudioTranscriber $transcriber,
         private LogAuditActivityAction $logAuditActivity,
     ) {}
 

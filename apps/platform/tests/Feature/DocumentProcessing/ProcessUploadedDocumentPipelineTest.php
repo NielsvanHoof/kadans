@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\Dossiers\Models\DocumentRequest;
@@ -31,7 +31,7 @@ test('deferred OCR job advances the pipeline through provider processing', funct
     $uploaded = uploadedDocumentForOcrPipeline($tenant);
     $pipeline = resolve(CreatePipelineAction::class)->handle($uploaded, PipelineType::OcrDocument);
 
-    $ocr = Mockery::mock(StartsDocumentOcr::class);
+    $ocr = Mockery::mock(DocumentOcr::class);
     $ocr->shouldReceive('start')->once()->andReturnUsing(function (UploadedDocument $document): void {
         $document->forceFill([
             'textract_job_id' => 'textract-deferred-1',
@@ -41,7 +41,7 @@ test('deferred OCR job advances the pipeline through provider processing', funct
 
     // Exercise Container::call like the queue worker — catches Laravel 13 nullable defaults.
     $job = new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path, $pipeline->id);
-    app()->instance(StartsDocumentOcr::class, $ocr);
+    app()->instance(DocumentOcr::class, $ocr);
     app()->call($job->handle(...));
 
     $pipeline->refresh();
@@ -66,9 +66,9 @@ test('textract completion heals a pending OCR pipeline when the document is alre
     ]);
     $pipeline = resolve(CreatePipelineAction::class)->handle($uploaded, PipelineType::OcrDocument);
 
-    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview = Mockery::mock(DocumentOverviewNormalizer::class);
     $overview->shouldNotReceive('describe');
-    $this->app->instance(DescribesDocumentOverview::class, $overview);
+    $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
     $textract = Mockery::mock(TextractClient::class);
     $textract->shouldNotReceive('getDocumentAnalysis');

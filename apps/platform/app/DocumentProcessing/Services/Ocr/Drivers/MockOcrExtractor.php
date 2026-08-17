@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Services\Ocr\Drivers;
 
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\ExtractionFieldSensitivity;
 use App\Dossiers\Models\UploadedDocument;
@@ -17,7 +17,7 @@ use function json_encode;
  * POC / CI stand-in for a real OCR provider.
  * Returns deterministic structured extraction JSON so demos and tests stay stable offline.
  */
-final class MockOcrExtractor implements StartsDocumentOcr
+final class MockOcrExtractor implements DocumentOcr
 {
     /**
      * Build a fake extraction payload from the uploaded file metadata.

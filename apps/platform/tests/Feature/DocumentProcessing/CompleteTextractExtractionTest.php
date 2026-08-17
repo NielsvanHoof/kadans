@@ -7,7 +7,7 @@ use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
 use App\DocumentProcessing\Actions\Ocr\FailTextractExtractionAction;
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -33,7 +33,7 @@ test('complete textract extraction maps forms tables and asks the overview agent
             'Blocks' => sampleAnalyzeDocumentBlocks(),
         ]));
 
-    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview = Mockery::mock(DocumentOverviewNormalizer::class);
     $overview->shouldReceive('describe')
         ->once()
         ->with(Mockery::on(fn (array $payload): bool => ($payload['fields'][0]['label'] ?? null) === 'BSN'
@@ -47,7 +47,7 @@ test('complete textract extraction maps forms tables and asks the overview agent
         ]);
 
     $this->app->instance(TextractClient::class, $textract);
-    $this->app->instance(DescribesDocumentOverview::class, $overview);
+    $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
     $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-success-1',
@@ -118,7 +118,7 @@ test('complete textract extraction does not overwrite a replacement upload', fun
             ]);
         });
 
-    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview = Mockery::mock(DocumentOverviewNormalizer::class);
     $overview->shouldReceive('describe')
         ->once()
         ->andReturn([
@@ -128,7 +128,7 @@ test('complete textract extraction does not overwrite a replacement upload', fun
         ]);
 
     $this->app->instance(TextractClient::class, $textract);
-    $this->app->instance(DescribesDocumentOverview::class, $overview);
+    $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
     $applied = resolve(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-replaced-1',

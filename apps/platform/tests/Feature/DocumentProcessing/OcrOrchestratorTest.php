@@ -6,7 +6,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\OcrProcessingOutcome;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
@@ -43,7 +43,7 @@ test('ocr orchestrator returns immediate outcome for synchronous drivers', funct
 test('ocr orchestrator returns deferred outcome when the driver leaves processing open', function (): void {
     $uploaded = createUploadedDocumentForOcrOrchestratorTest();
 
-    $mockOcr = Mockery::mock(StartsDocumentOcr::class);
+    $mockOcr = Mockery::mock(DocumentOcr::class);
     $mockOcr->shouldReceive('start')
         ->once()
         ->with(Mockery::on(fn (UploadedDocument $document): bool => $document->is($uploaded)));

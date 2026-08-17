@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Accounts\Enums\PlatformRole;
 use App\AudioProcessing\Actions\NotifyUploaderOfTranscriptionCompletedAction;
-use App\AudioProcessing\Contracts\StartsAudioTranscription;
+use App\AudioProcessing\Contracts\AudioTranscriber;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
 use App\AudioProcessing\Services\Drivers\AmazonTranscribeAudioTranscriber;
 use App\AudioProcessing\Services\Drivers\MockAudioTranscriber;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
 test('configured transcription drivers resolve through the factory', function (string $driver, string $expectedClass): void {
     config(['transcription.driver' => $driver]);
 
-    expect(resolve(StartsAudioTranscription::class))->toBeInstanceOf($expectedClass);
+    expect(resolve(AudioTranscriber::class))->toBeInstanceOf($expectedClass);
 })->with([
     'mock' => ['mock', MockAudioTranscriber::class],
     'transcribe' => ['transcribe', AmazonTranscribeAudioTranscriber::class],
@@ -28,7 +28,7 @@ test('configured transcription drivers resolve through the factory', function (s
 test('unsupported transcription drivers fail closed', function (): void {
     config(['transcription.driver' => 'unsupported']);
 
-    expect(fn (): StartsAudioTranscription => resolve(StartsAudioTranscription::class))
+    expect(fn (): AudioTranscriber => resolve(AudioTranscriber::class))
         ->toThrow(InvalidArgumentException::class, 'Unsupported transcription driver [unsupported].');
 });
 
@@ -38,7 +38,7 @@ test('mock transcription cannot be resolved in production', function (): void {
     config(['transcription.driver' => 'mock']);
 
     try {
-        expect(fn (): StartsAudioTranscription => resolve(StartsAudioTranscription::class))
+        expect(fn (): AudioTranscriber => resolve(AudioTranscriber::class))
             ->toThrow(LogicException::class, 'Mock transcription driver cannot be used in production.');
     } finally {
         $this->app->instance('env', $originalEnvironment);
