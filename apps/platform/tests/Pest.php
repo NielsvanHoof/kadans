@@ -6,6 +6,7 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
 use App\Dossiers\Models\Dossier;
+use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Reporting\Queries\ActivityLogRowMapper;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Queries\PaginatedIndexQuery;
@@ -18,6 +19,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Env;
 use Illuminate\Support\Str;
+use Inertia\Support\Header;
 use Tests\TestCase;
 
 /*
@@ -458,6 +460,26 @@ function configFileWithEnv(string $configFile, array $overrides): array
             $write($key, $value);
         }
     }
+}
+
+/**
+ * Headers for the follow-up request that resolves an Inertia deferred prop.
+ *
+ * Deferred props are absent from the first response by design, so asserting on
+ * one means replaying the request the client makes after paint. A plain
+ * `?only[]=` query string does not do this — Inertia reads the partial headers.
+ *
+ * @return array<string, string>
+ */
+function deferredPropHeaders(string $prop, string $component = 'workspaces/dashboard'): array
+{
+    return [
+        Header::INERTIA => 'true',
+        // Inertia answers 409 when the asset version header is missing or stale.
+        Header::VERSION => resolve(HandleInertiaRequests::class)->version(request()) ?? '',
+        Header::PARTIAL_COMPONENT => $component,
+        Header::PARTIAL_ONLY => $prop,
+    ];
 }
 
 /**

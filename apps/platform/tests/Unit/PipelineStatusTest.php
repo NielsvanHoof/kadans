@@ -42,3 +42,12 @@ test('settled membership is named on the enum', function (PipelineStatus $status
 test('settled values are derived from matching cases in declaration order', function (): void {
     expect(PipelineStatus::settledValues())->toBe(['completed', 'cancelled']);
 });
+
+test('retryable values are derived from matching cases in declaration order', function (): void {
+    expect(PipelineStatus::retryableValues())->toBe(['failed', 'stuck']);
+});
+
+test('retryable and settled values never overlap', function (): void {
+    expect(array_intersect(PipelineStatus::retryableValues(), PipelineStatus::settledValues()))
+        ->toBeEmpty();
+});

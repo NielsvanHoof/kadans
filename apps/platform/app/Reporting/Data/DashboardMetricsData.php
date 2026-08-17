@@ -13,6 +13,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class DashboardMetricsData extends Data
 {
+    /**
+     * @param  list<DashboardTrendPointData>  $weeklyThroughput
+     */
     public function __construct(
         public readonly int $clients,
         public readonly int $openDossiers,
@@ -32,6 +35,8 @@ final class DashboardMetricsData extends Data
         /** Outstanding document requests created in the last 7 days. */
         public readonly int $awaitingClientThisWeek = 0,
         public readonly int $awaitingClientLastWeek = 0,
+        /** Eight weekly buckets of documents received, oldest first. */
+        public readonly array $weeklyThroughput = [],
     ) {}
 
     /**
@@ -51,11 +56,22 @@ final class DashboardMetricsData extends Data
      *     needs_review_this_week: int,
      *     needs_review_last_week: int,
      *     awaiting_client_this_week: int,
-     *     awaiting_client_last_week: int
+     *     awaiting_client_last_week: int,
+     *     weekly_throughput: list<array{week_start: string, documents_received: int}>
      * }  $metrics
      */
     public static function fromArray(array $metrics): self
     {
+        /** @var list<DashboardTrendPointData> $weeklyThroughput */
+        $weeklyThroughput = [];
+
+        foreach ($metrics['weekly_throughput'] as $point) {
+            $weeklyThroughput[] = new DashboardTrendPointData(
+                weekStart: $point['week_start'],
+                documentsReceived: $point['documents_received'],
+            );
+        }
+
         return new self(
             clients: $metrics['clients'],
             openDossiers: $metrics['open_dossiers'],
@@ -71,6 +87,7 @@ final class DashboardMetricsData extends Data
             needsReviewLastWeek: $metrics['needs_review_last_week'],
             awaitingClientThisWeek: $metrics['awaiting_client_this_week'],
             awaitingClientLastWeek: $metrics['awaiting_client_last_week'],
+            weeklyThroughput: $weeklyThroughput,
         );
     }
 }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Reporting\Data\DashboardMetricsData;
+use App\Reporting\Data\DashboardTrendPointData;
 use App\Reporting\Support\WorkspaceDashboardCache;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,7 +25,7 @@ covers(WorkspaceDashboardCache::class);
 */
 
 /**
- * @return array<string, int>
+ * @return array<string, mixed>
  */
 function dashboardMetricsFixture(int $clients = 3): array
 {
@@ -37,6 +38,12 @@ function dashboardMetricsFixture(int $clients = 3): array
         inReview: 1,
         submittedDocumentRequests: 5,
         outstandingDocumentRequests: 6,
+        // Nested rows, so the round trip covers more than scalars: fromArray()
+        // has to rebuild these from plain arrays, not just read them back.
+        weeklyThroughput: [
+            new DashboardTrendPointData(weekStart: '2026-08-03', documentsReceived: 4),
+            new DashboardTrendPointData(weekStart: '2026-08-10', documentsReceived: 7),
+        ],
     )->toArray();
 }
 
@@ -54,7 +61,12 @@ test('metrics survive a round trip through the cache', function (): void {
         fn (): DashboardMetricsData => throw new RuntimeException('callback should not run'),
     );
 
-    expect($cached->clients)->toBe(3);
+    expect($cached->clients)->toBe(3)
+        // Nested DTOs are the part fromArray() has to rebuild by hand.
+        ->and($cached->weeklyThroughput)->toHaveCount(2)
+        ->and($cached->weeklyThroughput[1])->toBeInstanceOf(DashboardTrendPointData::class)
+        ->and($cached->weeklyThroughput[1]->weekStart)->toBe('2026-08-10')
+        ->and($cached->weeklyThroughput[1]->documentsReceived)->toBe(7);
 });
 
 test('the cache key carries a schema version', function (): void {
@@ -63,7 +75,7 @@ test('the cache key carries a schema version', function (): void {
         fn (): DashboardMetricsData => DashboardMetricsData::fromArray(dashboardMetricsFixture()),
     );
 
-    $key = sprintf('dashboard:metrics:v2:7:%s', today()->toDateString());
+    $key = sprintf('dashboard:metrics:v3:7:%s', today()->toDateString());
 
     expect(Cache::has($key))->toBeTrue();
 });

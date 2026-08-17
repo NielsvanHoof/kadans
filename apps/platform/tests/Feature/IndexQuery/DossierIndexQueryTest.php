@@ -6,6 +6,7 @@ use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\FetchDossierIndexQuery;
+use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -19,7 +20,7 @@ test('dossier index toolbar metadata includes workflow filters and due date sort
     $toolbar = resolve(FetchDossierIndexQuery::class)->toolbarMetadata();
 
     expect($toolbar['defaults']['sort'])->toBe('-updated_at')
-        ->and(collect($toolbar['filters'])->pluck('key')->all())->toBe(['q', 'status', 'client', 'queue'])
+        ->and(collect($toolbar['filters'])->pluck('key')->all())->toBe(['q', 'status', 'client', 'queue', 'responsible'])
         ->and(collect($toolbar['filters'])->firstWhere('key', 'status')['options'] ?? [])
         ->toHaveCount(4)
         ->and(collect($toolbar['filters'])->firstWhere('key', 'queue')['options'] ?? [])
@@ -67,6 +68,52 @@ test('dossiers index filters by status and search', function (): void {
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.reference', 'PAY-001'));
+});
+
+test('dossiers index filters by responsible staff member', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $colleague = workspaceMember($tenant, Role::Adviser);
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Mine',
+        'responsible_user_id' => $owner->id,
+    ]);
+    Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Theirs',
+        'responsible_user_id' => $colleague->id,
+    ]);
+    Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Unassigned',
+        'responsible_user_id' => null,
+    ]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dossiers.index', $tenant)."?filter[responsible]={$owner->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->has('dossiers.data', 1)
+            ->where('dossiers.data.0.title', 'Mine'));
+});
+
+test('dossier toolbar lists active workspace staff as responsible options', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $colleague = workspaceMember($tenant, Role::Adviser);
+
+    actingInWorkspace($tenant);
+
+    $options = collect(
+        resolve(FetchDossierIndexQuery::class)->toolbarMetadata()['filters']
+    )->firstWhere('key', 'responsible')['options'] ?? [];
+
+    expect(collect($options)->pluck('value')->all())
+        ->toContain((string) $owner->id, (string) $colleague->id);
 });
 
 test('dossiers index sorts by title ascending', function (): void {

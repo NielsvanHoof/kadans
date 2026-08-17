@@ -27,4 +27,20 @@ return [
     |
     */
     'new_device_action' => env('PORTAL_NEW_DEVICE_ACTION', NewPortalDeviceAction::Notify->value),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard follow-up thresholds
+    |--------------------------------------------------------------------------
+    |
+    | When the workspace dashboard starts calling a client "quiet". These are
+    | presentation thresholds for a nudge, not enforcement — nothing expires or
+    | is blocked because of them, so they stay generous by default.
+    |
+    */
+    'follow_up' => [
+        'never_opened_days' => (int) env('PORTAL_NEVER_OPENED_DAYS', 3),
+        'stale_activity_days' => (int) env('PORTAL_STALE_ACTIVITY_DAYS', 7),
+        'expiring_link_days' => (int) env('PORTAL_EXPIRING_LINK_DAYS', 7),
+    ],
 ];

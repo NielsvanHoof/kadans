@@ -29,6 +29,25 @@ enum PipelineStatus: string
         return $values;
     }
 
+    /**
+     * Mirrors settledValues() for the inverse set — the runs a human still has
+     * to deal with. Used for whereIn() on the base query builder.
+     *
+     * @return list<string>
+     */
+    public static function retryableValues(): array
+    {
+        $values = [];
+
+        foreach (self::cases() as $status) {
+            if ($status->isRetryable()) {
+                $values[] = $status->value;
+            }
+        }
+
+        return $values;
+    }
+
     public function isTerminal(): bool
     {
         return match ($this) {

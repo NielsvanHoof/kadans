@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { DossierSummary } from '@/features/dossiers/types';
+import type { DashboardRecentDossier } from '@/features/dashboard/types';
 import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
@@ -29,7 +29,9 @@ vi.mock('@inertiajs/react', () => ({
 const { default: RecentDossiersCard } =
     await import('@/features/dashboard/recent-dossiers-card');
 
-function dossier(overrides: Partial<DossierSummary> = {}): DossierSummary {
+function dossier(
+    overrides: Partial<DashboardRecentDossier> = {},
+): DashboardRecentDossier {
     return {
         id: 1,
         client_name: 'Acme Corp',
@@ -38,6 +40,7 @@ function dossier(overrides: Partial<DossierSummary> = {}): DossierSummary {
         status: 'draft',
         due_date: null,
         responsible_name: null,
+        updated_at: '2026-01-01T00:00:00+00:00',
         ...overrides,
     };
 }

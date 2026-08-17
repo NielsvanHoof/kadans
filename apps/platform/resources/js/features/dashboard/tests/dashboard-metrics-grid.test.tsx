@@ -47,6 +47,7 @@ function metrics(
         needs_review_last_week: 0,
         awaiting_client_this_week: 0,
         awaiting_client_last_week: 0,
+        weekly_throughput: [],
         ...overrides,
     };
 }

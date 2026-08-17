@@ -19,6 +19,20 @@ use function sprintf;
  *
  * The date segment rolls over at midnight so time-relative metrics (overdue,
  * weekly trends) stay correct even when no data mutates.
+ *
+ * Two things must never be stored here:
+ *
+ * Per-user data. The key has no user segment, so the first member to load the
+ * dashboard would populate the blob and every other member of the firm would
+ * read that person's numbers until the TTL expired. My-work counters therefore
+ * bypass this cache entirely.
+ *
+ * Pipeline and portal-grant data. Only Client, Dossier and DocumentRequest use
+ * InvalidatesTenantCaches, so a failed job or a client opening their link would
+ * not evict the entry. Adding the trait to those models would be worse — both
+ * write far more often than dossiers do, and each write would throw away the
+ * expensive aggregate counts this cache exists to hold. Those widgets use
+ * Inertia::defer() and stay live.
  */
 final class WorkspaceDashboardCache
 {
@@ -33,7 +47,7 @@ final class WorkspaceDashboardCache
      * dashboard errors for the rest of the TTL, for every tenant already cached.
      * A new segment simply misses instead, and the old entries age out on TTL.
      */
-    private const string SCHEMA_VERSION = 'v2';
+    private const string SCHEMA_VERSION = 'v3';
 
     /**
      * @param  Closure(): DashboardMetricsData  $callback
@@ -57,7 +71,8 @@ final class WorkspaceDashboardCache
              *     needs_review_this_week: int,
              *     needs_review_last_week: int,
              *     awaiting_client_this_week: int,
-             *     awaiting_client_last_week: int
+             *     awaiting_client_last_week: int,
+             *     weekly_throughput: list<array{week_start: string, documents_received: int}>
              * } $cached */
             return DashboardMetricsData::fromArray($cached);
         }

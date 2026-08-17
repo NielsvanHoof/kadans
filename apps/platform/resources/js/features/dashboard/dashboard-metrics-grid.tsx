@@ -1,12 +1,5 @@
 import { Link } from '@inertiajs/react';
 import { Check, ClipboardList, Users } from 'lucide-react';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import type { WorkspaceDashboardMetrics } from '@/features/dashboard/types';
 import { dossierStageLabel } from '@/features/dossiers/stage/dossier-stage';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -72,17 +65,8 @@ export default function DashboardMetricsGrid({
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                    <h2 className="font-display text-lg font-semibold tracking-tight">
-                        {t('Dossier workflow')}
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        {t(
-                            'Follow work from prepare through invite to review.',
-                        )}
-                    </p>
-                </div>
+            {/* The lane supplies the heading; this row carries the client count. */}
+            <div className="flex justify-end">
                 <Link
                     href={clientIndex(currentWorkspace)}
                     className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -219,34 +203,6 @@ export default function DashboardMetricsGrid({
                 </ol>
             </nav>
 
-            <Card className="py-4">
-                <CardHeader className="px-4 py-0">
-                    <CardTitle className="text-sm font-medium">
-                        {t('Also tracking')}
-                    </CardTitle>
-                    <CardDescription>
-                        {t('Extra volume signals for the firm.')}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-3 px-4 pt-3 sm:grid-cols-2">
-                    <div className="rounded-lg border px-3 py-2">
-                        <p className="text-xs text-muted-foreground">
-                            {t('Outstanding requests')}
-                        </p>
-                        <p className="font-data text-xl font-semibold tabular-nums">
-                            {metrics.outstanding_document_requests}
-                        </p>
-                    </div>
-                    <div className="rounded-lg border px-3 py-2">
-                        <p className="text-xs text-muted-foreground">
-                            {t('Overdue')}
-                        </p>
-                        <p className="font-data text-xl font-semibold tabular-nums">
-                            {metrics.overdue}
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

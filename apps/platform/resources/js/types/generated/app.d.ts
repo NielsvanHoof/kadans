@@ -629,6 +629,27 @@ declare namespace App {
                 readonly id: number;
                 readonly name: string | null;
             };
+            export type DashboardAgendaItemData = {
+                readonly id: number;
+                readonly title: string;
+                readonly client_name: string;
+                readonly status: App.Dossiers.Enums.DossierStatus;
+                readonly due_date: string;
+                readonly days_remaining: number;
+            };
+            export type DashboardFollowUpItemData = {
+                readonly id: number;
+                readonly title: string;
+                readonly client_name: string;
+                readonly since: string | null;
+                readonly days: number | null;
+            };
+            export type DashboardFollowUpSignalsData = {
+                readonly never_opened: App.Reporting.Data.DashboardFollowUpItemData[];
+                readonly gone_quiet: App.Reporting.Data.DashboardFollowUpItemData[];
+                readonly expiring_links: App.Reporting.Data.DashboardFollowUpItemData[];
+                readonly total_count: number;
+            };
             export type DashboardMetricsData = {
                 readonly clients: number;
                 readonly open_dossiers: number;
@@ -644,6 +665,27 @@ declare namespace App {
                 readonly needs_review_last_week: number;
                 readonly awaiting_client_this_week: number;
                 readonly awaiting_client_last_week: number;
+                readonly weekly_throughput: App.Reporting.Data.DashboardTrendPointData[];
+            };
+            export type DashboardMyWorkData = {
+                readonly assigned_open: number;
+                readonly due_this_week: number;
+                readonly overdue: number;
+                readonly awaiting_my_review: number;
+                readonly agenda: App.Reporting.Data.DashboardAgendaItemData[];
+            };
+            export type DashboardPipelineFailureData = {
+                readonly id: number;
+                readonly type: App.Pipelines.Enums.PipelineType;
+                readonly status: App.Pipelines.Enums.PipelineStatus;
+                readonly error_message: string | null;
+                readonly last_activity_at: string | null;
+                readonly is_retryable: boolean;
+            };
+            export type DashboardProcessingHealthData = {
+                readonly failed: number;
+                readonly stuck: number;
+                readonly recent: App.Reporting.Data.DashboardPipelineFailureData[];
             };
             export type DashboardRecentDossierData = {
                 readonly id: number;
@@ -654,6 +696,10 @@ declare namespace App {
                 readonly due_date: string | null;
                 readonly responsible_name: string | null;
                 readonly updated_at: string;
+            };
+            export type DashboardTrendPointData = {
+                readonly week_start: string;
+                readonly documents_received: number;
             };
             export type MediaLibraryDocumentRowData = {
                 readonly id: number;
@@ -674,10 +720,6 @@ declare namespace App {
                 readonly original_filename: string;
                 readonly size_bytes: number;
                 readonly uploaded_at: string;
-            };
-            export type WorkspaceDashboardPageData = {
-                readonly metrics: App.Reporting.Data.DashboardMetricsData;
-                readonly recent_dossiers: App.Reporting.Data.DashboardRecentDossierData[];
             };
         }
     }
