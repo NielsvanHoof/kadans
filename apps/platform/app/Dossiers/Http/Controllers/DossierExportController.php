@@ -7,11 +7,9 @@ namespace App\Dossiers\Http\Controllers;
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\CreateDossierExportAction;
 use App\Dossiers\Actions\DownloadDossierExportAction;
 use App\Dossiers\Data\DossierExportData;
-use App\Dossiers\Jobs\GenerateDossierExportJob;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Shared\Http\Controllers\Controller;
@@ -32,14 +30,8 @@ final class DossierExportController extends Controller
         CreateDossierExportAction $createDossierExport,
     ): RedirectResponse {
         $this->authorize('export', $dossier);
-        $user = $this->currentUser();
 
-        $export = $createDossierExport->handle($dossier, $user);
-        $pipeline = $export->pipeline;
-
-        abort_unless($pipeline instanceof Pipeline, HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
-
-        dispatch(new GenerateDossierExportJob($pipeline->id))->afterCommit();
+        $createDossierExport->handle($dossier, $this->currentUser());
 
         Toast::success(__('Dossier export queued.'));
 

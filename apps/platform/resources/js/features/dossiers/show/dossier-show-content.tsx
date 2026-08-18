@@ -7,7 +7,7 @@ import {
     useDossierCapabilities,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
 import DossierActionsMenu from '@/features/dossiers/show/dossier-actions-menu';
-import DossierExportCard from '@/features/dossiers/show/dossier-export-card';
+import DossierShowDeferredSections from '@/features/dossiers/show/dossier-show-deferred-sections';
 import DossierWorkflowLinks from '@/features/dossiers/show/dossier-workflow-links';
 import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
@@ -31,6 +31,8 @@ type DossierShowContentProps = {
     canSendReminder: boolean;
     canReview: boolean;
     canDownload: boolean;
+    canUploadAudio: boolean;
+    canDownloadAudio: boolean;
 };
 
 type PrimaryAction =
@@ -49,6 +51,8 @@ export default function DossierShowContent({
     canSendReminder,
     canReview,
     canDownload,
+    canUploadAudio,
+    canDownloadAudio,
 }: DossierShowContentProps) {
     const hasFormItems = dossier.document_requests.length > 0;
 
@@ -59,6 +63,8 @@ export default function DossierShowContent({
             canDownload={canDownload}
             canEditDetails={canEditDetails}
             canSendReminder={canSendReminder}
+            canUploadAudio={canUploadAudio}
+            canDownloadAudio={canDownloadAudio}
             dossierStatus={dossier.status}
             hasFormItems={hasFormItems}
         >
@@ -136,6 +142,8 @@ function DossierShowBody({
         canDownload,
         canEditDetails,
         canCreateInvite,
+        canUploadAudio,
+        canDownloadAudio,
     } = useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
 
@@ -205,7 +213,12 @@ function DossierShowBody({
 
             <DossierWorkflowLinks dossier={dossier} />
 
-            {canDownload ? <DossierExportCard dossier={dossier} /> : null}
+            <DossierShowDeferredSections
+                dossier={dossier}
+                canDownload={canDownload}
+                canUploadAudio={canUploadAudio}
+                canDownloadAudio={canDownloadAudio}
+            />
 
             <section
                 id="dossier-invite"

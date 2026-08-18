@@ -6,7 +6,6 @@ namespace App\Dossiers\Policies;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DossierPermission;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
 
@@ -36,13 +35,13 @@ final class DossierPolicy
     public function update(User $user, Dossier $dossier): bool
     {
         return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::Update)
-            && $dossier->status !== DossierStatus::Completed;
+            && ! $dossier->status->isLocked();
     }
 
     public function complete(User $user, Dossier $dossier): bool
     {
         return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::Complete)
-            && $dossier->status !== DossierStatus::Completed;
+            && ! $dossier->status->isLocked();
     }
 
     public function delete(User $user, Dossier $dossier): bool
@@ -74,7 +73,7 @@ final class DossierPolicy
     public function sendReminder(User $user, Dossier $dossier): bool
     {
         return $this->userHasPermissionInTenant($user, $dossier->tenant, DossierPermission::SendReminder)
-            && $dossier->status !== DossierStatus::Completed;
+            && ! $dossier->status->isLocked();
     }
 
     public function export(User $user, Dossier $dossier): bool

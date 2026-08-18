@@ -3,15 +3,19 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Enums\PipelineType;
-use App\DocumentProcessing\Events\PipelineUpdated;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
+use App\Pipelines\Enums\PipelineStepStatus;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Events\PipelineUpdated;
+use App\Pipelines\Support\PipelineState;
+use App\Pipelines\Support\PipelineStepSequence;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 
 test('creating a pipeline broadcasts pipeline updated to the workspace', function (): void {
     Event::fake([PipelineUpdated::class]);
@@ -40,7 +44,7 @@ test('pipeline step transitions broadcast pipeline updated', function (): void {
 
     Event::fake([PipelineUpdated::class]);
 
-    resolve(PipelineStateAction::class)->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
 
     Event::assertDispatched(fn (PipelineUpdated $event): bool => $event->tenantSlug === $tenant->slug
         && $event->pipelineId === $pipeline->id
@@ -51,14 +55,14 @@ test('pipeline heartbeats do not broadcast pipeline updated', function (): void 
     ['tenant' => $tenant] = provisionWorkspace();
     $document = uploadedDocumentForBroadcast($tenant->id);
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
-    $state = resolve(PipelineStateAction::class);
+    $state = resolve(PipelineState::class);
 
-    $state->handle($pipeline, PipelineStepOperation::Start, 'submit');
+    $state->start($pipeline, PipelineStepKey::Submit);
 
     Event::fake([PipelineUpdated::class]);
 
-    $state->handle($pipeline, PipelineStepOperation::Heartbeat, 'submit');
-    $state->handle($pipeline, PipelineStepOperation::Heartbeat);
+    $state->heartbeatStep($pipeline, PipelineStepKey::Submit);
+    $state->heartbeat($pipeline);
 
     Event::assertNotDispatched(PipelineUpdated::class);
 });
@@ -111,3 +115,55 @@ function uploadedDocumentForBroadcast(int $tenantId): UploadedDocument
         'document_request_id' => $documentRequest->id,
     ]);
 }
+
+test('a batched step sequence broadcasts once, not once per step', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $document = uploadedDocumentForBroadcast($tenant->id);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+
+    Event::fake([PipelineUpdated::class]);
+
+    resolve(PipelineState::class)->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+        ->start(PipelineStepKey::Submit)
+        ->complete(PipelineStepKey::Submit)
+        ->skip(PipelineStepKey::ProviderProcessing)
+        ->start(PipelineStepKey::ProcessResults)
+        ->complete(PipelineStepKey::ProcessResults));
+
+    // Five transitions, one live reload.
+    Event::assertDispatchedTimes(PipelineUpdated::class, 1);
+
+    expect($pipeline->fresh())
+        ->status->toBe(PipelineStatus::Completed)
+        ->and($pipeline->fresh()->steps->pluck('status')->all())->toBe([
+            PipelineStepStatus::Completed,
+            PipelineStepStatus::Skipped,
+            PipelineStepStatus::Completed,
+        ]);
+});
+
+test('a batched sequence rolls every step back together when one transition fails', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $document = uploadedDocumentForBroadcast($tenant->id);
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+
+    Event::fake([PipelineUpdated::class]);
+
+    // process_results was never started, so completing it is an illegal transition.
+    expect(fn () => resolve(PipelineState::class)->run(
+        $pipeline,
+        fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+            ->start(PipelineStepKey::Submit)
+            ->complete(PipelineStepKey::ProcessResults),
+    ))->toThrow(ValidationException::class);
+
+    Event::assertNotDispatched(PipelineUpdated::class);
+
+    expect($pipeline->fresh())
+        ->status->toBe(PipelineStatus::Pending)
+        ->and($pipeline->fresh()->steps->pluck('status')->all())->toBe([
+            PipelineStepStatus::Pending,
+            PipelineStepStatus::Pending,
+            PipelineStepStatus::Pending,
+        ]);
+});

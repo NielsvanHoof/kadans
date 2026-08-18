@@ -63,10 +63,12 @@ jobs:
           cp .env.ci .env
           php artisan key:generate --no-interaction
 
-      - name: Run the complete quality gate
-        run: composer ci:check
+      # Static analysis, frontend checks, and Vite build — PHP Pest runs in the
+      # sharded `tests` job so wall-clock time stays balanced.
+      - name: Run static quality gates
+        run: composer ci:quality
 
-      # ci:check regenerates these; any change means the committed output is stale.
+      # ci:quality regenerates these; any change means the committed output is stale.
       # Uses status --porcelain rather than `diff` so a generated file that was
       # never committed is caught too, not just a modified one.
       - name: Fail on stale generated TypeScript
@@ -79,6 +81,58 @@ jobs:
             git diff -- $paths
             exit 1
           fi
+
+      # Feature tests need the built Vite manifest (see Tests\TestCase).
+      - name: Upload frontend build for Pest shards
+        uses: actions/upload-artifact@v7
+        with:
+          name: platform-frontend-build
+          path: apps/platform/public/build
+          retention-days: 1
+          if-no-files-found: error
+
+  tests:
+    name: Pest (shard ${{ matrix.shard }}/4)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, intl, mbstring, pcntl, pdo_pgsql, redis, sqlite3, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v7
+        with:
+          name: platform-frontend-build
+          path: apps/platform/public/build
+
+      - name: Prepare the application
+        run: |
+          cp .env.ci .env
+          php artisan key:generate --no-interaction
+
+      # Time-balanced via committed tests/.pest/shards.json. Refresh with
+      # `composer test:shards:update` when the suite shape changes a lot.
+      # Use pest directly — `artisan test --parallel --shard` currently fails
+      # forwarding PHPUnit's --runner option under Pest 5.
+      - name: Run Pest shard
+        run: php vendor/bin/pest --parallel --ci --shard=${{ matrix.shard }}/4
 
   coverage:
     name: Test coverage gate
@@ -120,9 +174,13 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
-      # Fails under the --min threshold in composer.json (currently 85%).
-      - name: Enforce the coverage threshold
+      # Fails under the --min threshold in composer.json (currently 87%).
+      - name: Enforce the PHP coverage threshold
         run: composer test:coverage:ci
+
+      # Line floor lives in vitest.config.ts (excludes generated + shadcn ui).
+      - name: Enforce the frontend coverage threshold
+        run: npm run test:coverage
 
   postgres-migrations:
     name: PostgreSQL migrations
@@ -187,10 +245,13 @@ jobs:
     name: Immutable deployment artifact
     needs:
       - quality
+      - tests
       - coverage
       - postgres-migrations
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -201,24 +262,43 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      # bake, not build-push-action: docker/production/Dockerfile starts at
+      # `FROM base`, which is docker/base/Dockerfile wired in as a named build
+      # context. Only bake can resolve `target:base` without a registry.
       - name: Build the production image
         id: build
-        uses: docker/build-push-action@v7
+        uses: docker/bake-action@v6
         with:
-          context: apps/platform
-          file: apps/platform/Dockerfile.production
-          platforms: linux/amd64
-          build-args: |
-            REVERB_PUBLIC_KEY=ci-${{ env.SOURCE_SHA }}
-            VITE_REVERB_HOST=ci.invalid
-          labels: |
-            org.opencontainers.image.revision=${{ env.SOURCE_SHA }}
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-          outputs: type=oci,dest=${{ runner.temp }}/qompose-production-${{ env.SOURCE_SHA }}.tar
-          cache-from: type=gha,scope=platform-production-image
-          cache-to: type=gha,mode=max,scope=platform-production-image
+          workdir: apps/platform
+          files: docker-bake.hcl
+          targets: production
           provenance: mode=max
           sbom: true
+          set: |
+            *.platform=linux/amd64
+            *.cache-from=type=gha,scope=platform-production-image
+            *.cache-to=type=gha,mode=max,scope=platform-production-image
+            production.labels.org.opencontainers.image.revision=${{ env.SOURCE_SHA }}
+            production.labels.org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            production.output=type=oci,dest=${{ runner.temp }}/qompose-production-${{ env.SOURCE_SHA }}.tar
+        env:
+          REVERB_PUBLIC_KEY: ci-${{ env.SOURCE_SHA }}
+          VITE_REVERB_HOST: ci.invalid
+          TAG: ${{ env.SOURCE_SHA }}
+
+      # Scan the OCI tarball in place — no registry. Explicit gate: HIGH/CRITICAL
+      # with a published fix (ignore-unfixed). Default Trivy severity is all levels
+      # with exit 0; both are overridden here on purpose. SARIF / code-scanning
+      # upload is omitted (needs a public repo or GitHub Advanced Security).
+      - name: Scan production image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          input: ${{ runner.temp }}/qompose-production-${{ env.SOURCE_SHA }}.tar
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
 
       - name: Upload immutable production image
         id: upload
@@ -230,10 +310,15 @@ jobs:
           retention-days: 7
 
       - name: Report artifact identity
+        env:
+          # bake-action reports per-target metadata as JSON, not a bare digest.
+          BAKE_METADATA: ${{ steps.build.outputs.metadata }}
         run: |
+          OCI_DIGEST="$(printf '%s' "$BAKE_METADATA" | jq -r '.production["containerimage.digest"] // empty')"
           echo "### Immutable production image" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- Source commit: \`${SOURCE_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- OCI digest: \`${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- OCI digest: \`${OCI_DIGEST:-unavailable}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Artifact digest: \`${{ steps.upload.outputs.artifact-digest }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Download: ${{ steps.upload.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image scan: Trivy HIGH/CRITICAL (fixable) fails the job" >> "$GITHUB_STEP_SUMMARY"

@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing;
 
-use App\DocumentProcessing\Contracts\Ocr\DescribesDocumentOverview;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\OcrDriver;
-use App\DocumentProcessing\Models\Pipeline;
-use App\DocumentProcessing\Policies\PipelinePolicy;
+use App\DocumentProcessing\Presenters\UploadedDocumentPipelineSubjectPresenter;
+use App\DocumentProcessing\Runners\OcrPipelineRunner;
 use App\DocumentProcessing\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\DocumentProcessing\Services\Ocr\Drivers\OcrDriverFactory;
-use App\DocumentProcessing\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
-use Aws\BedrockRuntime\BedrockRuntimeClient;
+use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
+use App\Pipelines\Support\PipelineRunnerRegistry;
+use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
+use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use Override;
 
 use function is_string;
 
 /**
- * OCR / AWS container bindings, config validation, and pipeline authorization.
+ * OCR / AWS container bindings and config validation.
  */
 final class DocumentProcessingServiceProvider extends ServiceProvider
 {
@@ -33,47 +35,60 @@ final class DocumentProcessingServiceProvider extends ServiceProvider
 
         $this->app->singleton(SqsClient::class, fn (): SqsClient => new SqsClient($this->awsClientConfig('ocr.textract.region')));
 
-        // Bedrock may use a different region than Textract (inference profiles).
-        $this->app->singleton(BedrockRuntimeClient::class, fn (): BedrockRuntimeClient => new BedrockRuntimeClient($this->awsClientConfig('ocr.bedrock.region')));
+        // Stateless — safe to share across Octane workers / long-running consume loops.
+        $this->app->singleton(MessageValidator::class);
 
-        $this->app->bind(DescribesDocumentOverview::class, BedrockDocumentOverviewNormalizer::class);
+        $this->app->bind(DocumentOverviewNormalizer::class, AgentDocumentOverviewNormalizer::class);
 
         $this->app->bind(
-            StartsDocumentOcr::class,
-            fn ($app): StartsDocumentOcr => $app->make(OcrDriverFactory::class)->make(
-                (string) config('ocr.driver', OcrDriver::Mock->value),
+            DocumentOcr::class,
+            fn ($app): DocumentOcr => $app->make(OcrDriverFactory::class)->make(
+                Config::string('ocr.driver', OcrDriver::Mock->value),
             ),
         );
     }
 
-    public function boot(OcrConfigurationValidator $ocrConfigurationValidator): void
-    {
+    public function boot(
+        OcrConfigurationValidator $ocrConfigurationValidator,
+        PipelineRunnerRegistry $pipelineRunners,
+        PipelineSubjectPresenterRegistry $subjectPresenters,
+    ): void {
         $ocrConfigurationValidator->validate();
 
-        Gate::policy(Pipeline::class, PipelinePolicy::class);
+        $pipelineRunners->register(new OcrPipelineRunner());
+        $subjectPresenters->register(new UploadedDocumentPipelineSubjectPresenter());
     }
 
     /**
      * Shared AWS SDK client options. Credentials come from ocr.textract.* (IAM role in prod).
+     * When ocr.textract.endpoint is set (local Floci), all OCR AWS clients share that base URL.
      *
      * @return array{
      *     version: string,
      *     region: string,
+     *     endpoint?: string,
      *     credentials?: array{key: string, secret: string, token?: string}
      * }
      */
     private function awsClientConfig(string $regionConfigKey): array
     {
-        $key = config('ocr.textract.key');
-        $secret = config('ocr.textract.secret');
-        $token = config('ocr.textract.token');
-        $region = config($regionConfigKey, 'eu-west-1');
+        // Credentials / endpoint are optional nulls (IAM role in prod, Floci locally).
+        $key = Config::get('ocr.textract.key');
+        $secret = Config::get('ocr.textract.secret');
+        $token = Config::get('ocr.textract.token');
+        $region = Config::string($regionConfigKey, 'eu-west-1');
+        $endpoint = Config::get('ocr.textract.endpoint');
 
-        /** @var array{version: string, region: string, credentials?: array{key: string, secret: string, token?: string}} $clientConfig */
+        /** @var array{version: string, region: string, endpoint?: string, credentials?: array{key: string, secret: string, token?: string}} $clientConfig */
         $clientConfig = [
             'version' => 'latest',
-            'region' => is_string($region) && $region !== '' ? $region : 'eu-west-1',
+            'region' => $region !== '' ? $region : 'eu-west-1',
         ];
+
+        // Empty in production so the SDK talks to real AWS regional endpoints.
+        if (is_string($endpoint) && $endpoint !== '') {
+            $clientConfig['endpoint'] = $endpoint;
+        }
 
         if (is_string($key) && $key !== '' && is_string($secret) && $secret !== '') {
             $credentials = [

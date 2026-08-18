@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Http\Middleware\RequireTwoFactorAuthentication;
 use App\Tenancy\Http\Middleware\EnforceStrictTenantScope;
 use App\Tenancy\Http\Middleware\EnsureValidTenantMembership;
 use App\Tenancy\Http\Middleware\InitializeTenantFromRoute;
@@ -23,6 +24,9 @@ Route::middleware([
     EnsureValidTenantMembership::class,
     SetPermissionTeamContext::class,
     NeedsTenant::class,
+    // Last: the `by_permission` mode needs the tenant current and the Spatie
+    // team context set before it can read the user's role in this workspace.
+    RequireTwoFactorAuthentication::class,
 ])
     ->prefix('workspaces/{tenant:slug}')
     ->name('workspaces.')
@@ -34,6 +38,8 @@ Route::middleware([
         require __DIR__.'/tenant/questionnaires.php';
         require __DIR__.'/tenant/dossiers.php';
         require __DIR__.'/tenant/document-requests.php';
+        require __DIR__.'/tenant/audio-recordings.php';
         require __DIR__.'/tenant/access-grants.php';
         require __DIR__.'/tenant/notifications.php';
+        require __DIR__.'/tenant/data-subject-requests.php';
     });

@@ -4,32 +4,77 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
+use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Pipelines\Models\Pipeline;
 use App\Reporting\Data\DashboardMetricsData;
 use App\Reporting\Data\DashboardRecentDossierData;
-use App\Reporting\Data\WorkspaceDashboardPageData;
 use App\Reporting\Support\WorkspaceDashboardCache;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 use RuntimeException;
 
 final class FetchWorkspaceDashboardQuery
 {
-    public function handle(Tenant $tenant): WorkspaceDashboardPageData
+    public function __construct(
+        private readonly FetchDashboardMyWorkQuery $fetchMyWork,
+        private readonly FetchDashboardFollowUpSignalsQuery $fetchFollowUpSignals,
+        private readonly FetchDashboardProcessingHealthQuery $fetchProcessingHealth,
+        private readonly FetchDashboardTrendQuery $fetchTrend,
+    ) {}
+
+    /**
+     * Page payload, as an array rather than a DTO because Inertia::defer()
+     * values cannot live inside a spatie Data object.
+     *
+     * Three tiers, chosen by who can invalidate the data rather than by cost:
+     * the tenant-wide aggregates are memoised, recent dossiers stay live, and
+     * everything per-user or fast-moving is deferred so it lands after paint.
+     *
+     * @return array<string, mixed>
+     */
+    public function handle(Request $request, Tenant $tenant): array
     {
-        // Metrics are tenant-scoped and expensive (~14 aggregate queries).
-        // Recent dossiers stay live — one cheap query and expected to be fresh.
-        return new WorkspaceDashboardPageData(
-            metrics: WorkspaceDashboardCache::rememberMetrics(
+        $user = $request->user();
+        $canViewProcessingHealth = Gate::allows('viewAny', Pipeline::class);
+
+        return [
+            'metrics' => WorkspaceDashboardCache::rememberMetrics(
                 $tenant->id,
                 fn (): DashboardMetricsData => $this->getMetrics($tenant),
+            )->toArray(),
+            'recent_dossiers' => $this->getRecentDossiers($tenant),
+            'can_view_processing_health' => $canViewProcessingHealth,
+
+            // Scoped to responsible_user_id, so deliberately outside
+            // WorkspaceDashboardCache — that key has no user segment.
+            'my_work' => $user instanceof User
+                ? Inertia::defer(
+                    fn (): array => $this->fetchMyWork->handle($tenant, $user)->toArray(),
+                    'personal',
+                )
+                : null,
+
+            'follow_up_signals' => Inertia::defer(
+                fn (): array => $this->fetchFollowUpSignals->handle($tenant)->toArray(),
+                'signals',
             ),
-            recentDossiers: $this->getRecentDossiers($tenant),
-        );
+
+            // Gated server-side: without pipelines.view the prop never exists.
+            'processing_health' => $canViewProcessingHealth
+                ? Inertia::defer(
+                    fn (): array => $this->fetchProcessingHealth->handle($tenant)->toArray(),
+                    'signals',
+                )
+                : null,
+        ];
     }
 
     public function getMetrics(Tenant $tenant): DashboardMetricsData
@@ -37,10 +82,10 @@ final class FetchWorkspaceDashboardQuery
         $outstandingDocumentRequestsQuery = DocumentRequest::query()
             ->whereBelongsTo($tenant);
 
-        $outstandingDocumentRequestsQuery->getQuery()->whereIn('status', [
-            DocumentRequestStatus::Pending->value,
-            DocumentRequestStatus::Rejected->value,
-        ]);
+        $outstandingDocumentRequestsQuery->getQuery()->whereIn(
+            'status',
+            DocumentRequestStatus::awaitingClientValues(),
+        );
 
         $submittedDocumentRequests = DocumentRequest::query()
             ->whereBelongsTo($tenant)
@@ -50,20 +95,20 @@ final class FetchWorkspaceDashboardQuery
 
         $awaitingClientQuery = Dossier::query()
             ->whereBelongsTo($tenant)
-            ->whereNot('status', DossierStatus::Completed)
             ->whereHas('documentRequests', function (Builder $documentRequestQuery): void {
-                $documentRequestQuery->getQuery()->whereIn('status', [
-                    DocumentRequestStatus::Pending->value,
-                    DocumentRequestStatus::Rejected->value,
-                ]);
+                $documentRequestQuery->getQuery()->whereIn(
+                    'status',
+                    DocumentRequestStatus::awaitingClientValues(),
+                );
             });
+        $awaitingClientQuery->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
         $needsReviewQuery = Dossier::query()
             ->whereBelongsTo($tenant)
-            ->whereNot('status', DossierStatus::Completed)
             ->whereHas('documentRequests', fn (Builder $documentRequestQuery) => $documentRequestQuery
                 ->getQuery()
                 ->where('status', DocumentRequestStatus::Submitted->value));
+        $needsReviewQuery->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
         $overdueQuery = clone $awaitingClientQuery;
         $overdueQuery->getQuery()
             ->whereNotNull('due_date')
@@ -76,30 +121,29 @@ final class FetchWorkspaceDashboardQuery
         $awaitingClientThisWeekQuery = DocumentRequest::query()
             ->whereBelongsTo($tenant)
             ->where('created_at', '>=', $thisWeekStart);
-        $awaitingClientThisWeekQuery->getQuery()->whereIn('status', [
-            DocumentRequestStatus::Pending->value,
-            DocumentRequestStatus::Rejected->value,
-        ]);
+        $awaitingClientThisWeekQuery->getQuery()->whereIn(
+            'status',
+            DocumentRequestStatus::awaitingClientValues(),
+        );
 
         $awaitingClientLastWeekQuery = DocumentRequest::query()
             ->whereBelongsTo($tenant)
             ->where('created_at', '>=', $lastWeekStart)
             ->where('created_at', '<', $thisWeekStart);
-        $awaitingClientLastWeekQuery->getQuery()->whereIn('status', [
-            DocumentRequestStatus::Pending->value,
-            DocumentRequestStatus::Rejected->value,
-        ]);
+        $awaitingClientLastWeekQuery->getQuery()->whereIn(
+            'status',
+            DocumentRequestStatus::awaitingClientValues(),
+        );
+
+        $openDossiersQuery = Dossier::query()->whereBelongsTo($tenant);
+        $openDossiersQuery->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
         return new DashboardMetricsData(
             clients: Client::query()
                 ->whereBelongsTo($tenant)
                 ->toBase()
                 ->count(),
-            openDossiers: Dossier::query()
-                ->whereBelongsTo($tenant)
-                ->whereNot('status', DossierStatus::Completed)
-                ->toBase()
-                ->count(),
+            openDossiers: $openDossiersQuery->toBase()->count(),
             needsReview: $needsReviewQuery->toBase()->count(),
             awaitingClient: (clone $awaitingClientQuery)->toBase()->count(),
             overdue: $overdueQuery->toBase()->count(),
@@ -138,6 +182,7 @@ final class FetchWorkspaceDashboardQuery
                 ->count(),
             awaitingClientThisWeek: $awaitingClientThisWeekQuery->toBase()->count(),
             awaitingClientLastWeek: $awaitingClientLastWeekQuery->toBase()->count(),
+            weeklyThroughput: $this->fetchTrend->handle($tenant),
         );
     }
 
@@ -178,7 +223,7 @@ final class FetchWorkspaceDashboardQuery
                 clientName: $client->name,
                 dueDate: $dossier->due_date?->toDateString(),
                 responsibleName: $dossier->responsibleUser?->name,
-                updatedAt: $dossier->updated_at?->toDateTimeString() ?? '',
+                updatedAt: $dossier->updated_at?->toIso8601String() ?? '',
             );
         }
 

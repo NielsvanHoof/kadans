@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDate } from '@/lib/format-date-time';
 import { cn } from '@/lib/utils';
 
 type DatePickerProps = {
@@ -34,7 +34,8 @@ export default function DatePicker({
     required = false,
     triggerClassName,
 }: DatePickerProps) {
-    const { locale, t } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDate } = useFormatters();
     const [isOpen, setIsOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(() =>
         parseDateValue(defaultValue),
@@ -65,7 +66,7 @@ export default function DatePicker({
                     <CalendarIcon aria-hidden="true" />
                     <span className="truncate">
                         {selectedDate
-                            ? formatDate(selectedDate.toString(), locale, {
+                            ? formatDate(selectedDate.toString(), {
                                   dateStyle: 'long',
                               })
                             : t('Choose a date')}

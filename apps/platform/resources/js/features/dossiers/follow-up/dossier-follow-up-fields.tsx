@@ -81,11 +81,14 @@ export default function DossierFollowUpFields({
                     <FieldLabel htmlFor="responsible_user_id">
                         {t('Responsible staff member')}
                     </FieldLabel>
+                    {/* React Aria Select ignores FieldLabel+htmlFor
+                        (LabelContext is nulled when htmlFor is set). */}
                     <Select
                         selectedKey={responsibleUserId}
                         onSelectionChange={(key) =>
                             setResponsibleUserId(String(key ?? ''))
                         }
+                        aria-label={t('Responsible staff member')}
                     >
                         <SelectTrigger
                             id="responsible_user_id"

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
@@ -13,27 +12,17 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use App\Tenancy\Enums\TenantMembershipStatus;
-use App\Tenancy\Models\TenantMembership;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 test('staff can create a client, dossier, and document request', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.clients.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -47,8 +36,18 @@ test('staff can create a client, dossier, and document request', function (): vo
         'email' => 'jane@example.com',
     ])->assertRedirect(workspaceRoute('workspaces.dossiers.create', $tenant));
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
     $client = Client::query()->sole();
+
+    // Create page loads client + responsible-staff options for the form.
+    $this->get(workspaceRoute('workspaces.dossiers.create', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/create')
+            ->has('clients', 1)
+            ->where('clients.0.id', $client->id)
+            ->where('clients.0.name', 'Jane Client')
+            ->has('responsible_staff'));
 
     $this->post(workspaceRoute('workspaces.dossiers.store', $tenant), [
         'client_id' => $client->id,
@@ -82,10 +81,8 @@ test('staff can create a client, dossier, and document request', function (): vo
 });
 
 test('staff can insert a document request at a canvas position', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -108,7 +105,6 @@ test('staff can insert a document request at a canvas position', function (): vo
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -130,10 +126,8 @@ test('staff can insert a document request at a canvas position', function (): vo
 });
 
 test('document request position is clamped to the end of the list', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -150,7 +144,6 @@ test('document request position is clamped to the end of the list', function ():
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -168,10 +161,8 @@ test('document request position is clamped to the end of the list', function ():
 });
 
 test('document request creation rolls back when auditing fails', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -187,7 +178,6 @@ test('document request creation rolls back when auditing fails', function (): vo
 
     try {
         $this->actingAs($owner)
-            ->withSession(['active_tenant_id' => $tenant->id])
             ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
                 'dossier' => $dossier,
             ]), [
@@ -200,16 +190,14 @@ test('document request creation rolls back when auditing fails', function (): vo
         Event::forget($event);
     }
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     expect(DocumentRequest::query()->whereBelongsTo($dossier)->exists())->toBeFalse();
 });
 
 test('staff can reorder every document request in a dossier', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -238,7 +226,6 @@ test('staff can reorder every document request in a dossier', function (): void 
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post($reorderRoute, ['document_request_ids' => $reorderedIds])
         ->assertRedirect($builderRoute);
 
@@ -267,16 +254,12 @@ test('staff can reorder every document request in a dossier', function (): void 
 });
 
 test('staff cannot attach a dossier to a client in another tenant', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
-    $tenantA = resolve(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
-    $tenantB = resolve(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
+    ['owner' => $ownerA, 'tenant' => $tenantA] = provisionWorkspace('Tenant A');
+    ['tenant' => $tenantB] = provisionWorkspace('Tenant B');
 
-    $tenantB->makeCurrent();
     $foreignClient = Client::factory()->create(['tenant_id' => $tenantB->id]);
 
     $this->actingAs($ownerA)
-        ->withSession(['active_tenant_id' => $tenantA->id])
         ->post(workspaceRoute('workspaces.dossiers.store', $tenantA), [
             'client_id' => $foreignClient->id,
             'title' => 'Invalid dossier',
@@ -285,25 +268,11 @@ test('staff cannot attach a dossier to a client in another tenant', function ():
 });
 
 test('read only staff cannot create clients or dossiers', function (): void {
-    $owner = User::factory()->create();
-    $reader = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
+    ['tenant' => $tenant] = provisionWorkspace();
     // Membership is required so the 403 comes from policy, not tenant middleware.
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reader->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
-    $reader->unsetRelation('roles');
-    $reader->assignRole(Role::ReadOnly->value);
+    $reader = workspaceMember($tenant, Role::ReadOnly);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.clients.store', $tenant), [
             'name' => 'Jane Client',
             'email' => 'jane@example.com',
@@ -319,10 +288,7 @@ test('read only staff cannot create clients or dossiers', function (): void {
 test('staff can issue and revoke a client access grant', function (): void {
     Notification::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -330,7 +296,6 @@ test('staff can issue and revoke a client access grant', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -353,21 +318,8 @@ test('staff can issue and revoke a client access grant', function (): void {
 });
 
 test('read only staff cannot issue client access grants', function (): void {
-    $owner = User::factory()->create();
-    $reader = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reader->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
-    $reader->unsetRelation('roles');
-    $reader->assignRole(Role::ReadOnly->value);
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reader = workspaceMember($tenant, Role::ReadOnly);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -376,7 +328,6 @@ test('read only staff cannot issue client access grants', function (): void {
     ]);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -387,10 +338,7 @@ test('staff can upload a document for a document request', function (): void {
     config(['filesystems.default' => 'local']);
     Storage::fake('local');
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -405,12 +353,11 @@ test('staff can upload a document for a document request', function (): void {
     $file = UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf');
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.upload', $tenant, [
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [
-            'document' => $file,
+            'documents' => [$file],
         ])
         ->assertRedirect(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]));
 
@@ -437,21 +384,8 @@ test('staff can upload a document for a document request', function (): void {
 test('read only staff cannot upload documents', function (): void {
     Storage::fake('local');
 
-    $owner = User::factory()->create();
-    $reader = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reader->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
-    $reader->unsetRelation('roles');
-    $reader->assignRole(Role::ReadOnly->value);
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reader = workspaceMember($tenant, Role::ReadOnly);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -469,12 +403,11 @@ test('read only staff cannot upload documents', function (): void {
     ]);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.upload', $tenant, [
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [
-            'document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf'),
+            'documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
         ])
         ->assertForbidden();
 
@@ -487,10 +420,7 @@ test('read only staff cannot upload documents', function (): void {
 });
 
 test('staff can answer text and boolean requests on behalf of a client', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -517,7 +447,6 @@ test('staff can answer text and boolean requests on behalf of a client', functio
     );
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post($route($textRequest), ['answer_text' => 'Received by email.'])
         ->assertRedirect();
 
@@ -541,10 +470,7 @@ test('staff can create and answer textarea date and number requests', function (
     QuestionnaireItemType $type,
     string $answer,
 ): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -554,7 +480,6 @@ test('staff can create and answer textarea date and number requests', function (
     grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
             'dossier' => $dossier,
         ]), [

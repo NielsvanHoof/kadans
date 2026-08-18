@@ -26,7 +26,6 @@ type ConfirmDestroyDialogBase = {
      */
     trigger?: ReactNode;
     children?: ReactNode;
-    confirmTestId?: string;
     confirmVariant?: 'destructive' | 'default';
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -60,14 +59,14 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
         confirmLabel,
         trigger,
         children,
-        confirmTestId,
         confirmVariant = 'destructive',
         open,
         onOpenChange,
     } = props;
     const { t } = useTranslation();
     const [callbackProcessing, setCallbackProcessing] = useState(false);
-    // Uncontrolled callback mode still needs a closer after async confirm.
+    // Both form and callback modes need a closer after success — always drive
+    // open state (controlled via props, or uncontrolled via this flag).
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
     const isControlled = open !== undefined;
     const dialogOpen = isControlled ? open : uncontrolledOpen;
@@ -79,90 +78,100 @@ export default function ConfirmDestroyDialog(props: ConfirmDestroyDialogProps) {
         }
     };
 
+    /*
+     * React Aria inverts the compound shape: AlertDialogTrigger is the
+     * root, and AlertDialogContent *is* the modal (it renders overlay +
+     * modal + alertdialog). Wrapping the content in another AlertDialog —
+     * the Radix shape — mounts two nested modals, which renders an empty
+     * outer panel and warns that the dialog has no title.
+     *
+     * When there is no trigger (menu-driven / controlled open), skip
+     * AlertDialogTrigger entirely and put isOpen on AlertDialogContent.
+     * DialogTrigger always wraps its first child in PressResponder; without
+     * a pressable child that warns and is the wrong pattern for external
+     * open state (see React Aria Modal "Controlled").
+     */
+    const content = (
+        <>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{title}</AlertDialogTitle>
+                <AlertDialogDescription>{description}</AlertDialogDescription>
+            </AlertDialogHeader>
+
+            {'onConfirm' in props && props.onConfirm ? (
+                <>
+                    {children}
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant="secondary">
+                            {t('Cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            type="button"
+                            variant={confirmVariant}
+                            isDisabled={callbackProcessing}
+                            onPress={async () => {
+                                // AlertDialogAction does not auto-close;
+                                // wait for the island mutation, then dismiss.
+                                setCallbackProcessing(true);
+
+                                try {
+                                    await props.onConfirm();
+                                    setDialogOpen(false);
+                                } finally {
+                                    setCallbackProcessing(false);
+                                }
+                            }}
+                        >
+                            {confirmLabel}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </>
+            ) : 'form' in props && props.form ? (
+                <Form
+                    {...props.form}
+                    options={props.options}
+                    onSuccess={(...args) => {
+                        setDialogOpen(false);
+                        props.form.onSuccess?.(...args);
+                    }}
+                >
+                    {({ processing }) => (
+                        <>
+                            {children}
+                            <AlertDialogFooter>
+                                <AlertDialogCancel variant="secondary">
+                                    {t('Cancel')}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    type="submit"
+                                    variant={confirmVariant}
+                                    isDisabled={processing}
+                                >
+                                    {confirmLabel}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </>
+                    )}
+                </Form>
+            ) : null}
+        </>
+    );
+
+    if (trigger) {
+        return (
+            <AlertDialogTrigger
+                isOpen={dialogOpen}
+                onOpenChange={setDialogOpen}
+            >
+                {trigger}
+                <AlertDialogContent>{content}</AlertDialogContent>
+            </AlertDialogTrigger>
+        );
+    }
+
     return (
-        /*
-         * React Aria inverts the compound shape: AlertDialogTrigger is the
-         * root, and AlertDialogContent *is* the modal (it renders overlay +
-         * modal + alertdialog). Wrapping the content in another AlertDialog —
-         * the Radix shape — mounts two nested modals, which renders an empty
-         * outer panel and warns that the dialog has no title.
-         */
-        <AlertDialogTrigger
-            isOpen={isControlled || 'onConfirm' in props ? dialogOpen : open}
-            onOpenChange={
-                isControlled || 'onConfirm' in props
-                    ? setDialogOpen
-                    : onOpenChange
-            }
-        >
-            {trigger}
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{title}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {description}
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-
-                {'onConfirm' in props && props.onConfirm ? (
-                    <>
-                        {children}
-                        <AlertDialogFooter>
-                            <AlertDialogCancel variant="secondary">
-                                {t('Cancel')}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                type="button"
-                                variant={confirmVariant}
-                                isDisabled={callbackProcessing}
-                                data-test={confirmTestId}
-                                onPress={async () => {
-                                    // AlertDialogAction does not auto-close;
-                                    // wait for the island mutation, then dismiss.
-                                    setCallbackProcessing(true);
-
-                                    try {
-                                        await props.onConfirm();
-                                        setDialogOpen(false);
-                                    } finally {
-                                        setCallbackProcessing(false);
-                                    }
-                                }}
-                            >
-                                {confirmLabel}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </>
-                ) : 'form' in props && props.form ? (
-                    <Form
-                        {...props.form}
-                        options={props.options}
-                        onSuccess={(...args) => {
-                            setDialogOpen(false);
-                            props.form.onSuccess?.(...args);
-                        }}
-                    >
-                        {({ processing }) => (
-                            <>
-                                {children}
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel variant="secondary">
-                                        {t('Cancel')}
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                        type="submit"
-                                        variant={confirmVariant}
-                                        isDisabled={processing}
-                                        data-test={confirmTestId}
-                                    >
-                                        {confirmLabel}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </>
-                        )}
-                    </Form>
-                ) : null}
-            </AlertDialogContent>
-        </AlertDialogTrigger>
+        <AlertDialogContent isOpen={dialogOpen} onOpenChange={setDialogOpen}>
+            {content}
+        </AlertDialogContent>
     );
 }

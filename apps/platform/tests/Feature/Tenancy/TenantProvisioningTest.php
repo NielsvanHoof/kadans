@@ -53,6 +53,7 @@ test('tenant provisioning rolls back the complete tenant graph when a later step
 });
 
 test('tenant provisioning increments a slug that is already reserved', function (): void {
+    // Direct factory row reserves the slug without running ProvisionTenantAction.
     Tenant::factory()->create([
         'name' => 'Existing firm',
         'slug' => 'acme-accountants',
@@ -92,6 +93,7 @@ test('tenant provisioning retries when a slug is claimed during insertion', func
 });
 
 test('firm onboarding uses the insertion-safe slug allocator', function (): void {
+    // Direct factory row reserves the slug without running ProvisionTenantAction.
     Tenant::factory()->create([
         'name' => 'Existing firm',
         'slug' => 'acme-accountants',

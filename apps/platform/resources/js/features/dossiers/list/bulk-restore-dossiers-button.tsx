@@ -40,17 +40,12 @@ export default function BulkRestoreDossiersButton({
                     : t('Restore :count dossiers', { count })
             }
             confirmVariant="default"
-            confirmTestId="confirm-bulk-restore-dossiers-button"
             form={{
                 ...DossierController.bulkRestore.form(currentWorkspace),
                 onSuccess,
             }}
             trigger={
-                <Button
-                    type="button"
-                    size="sm"
-                    data-test="bulk-restore-dossiers-button"
-                >
+                <Button type="button" size="sm">
                     <RotateCcw aria-hidden="true" />
                     {t('Restore')}
                 </Button>

@@ -1,26 +1,34 @@
 import { router, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import { useCallback } from 'react';
+import { usePipelineUpdatedSubscription } from '@/features/pipelines/hooks/use-pipeline-updated-subscription';
 
 /**
  * Subscribe to workspace questionnaire-complete broadcasts.
  * Reloads the shared notifications prop so the bell updates without a toast.
  */
 export function useWorkspaceNotifications(tenantSlug: string): void {
-    const onCompleted = useCallback(() => {
+    const reloadNotifications = useCallback(() => {
         // Partial reload refreshes the bell badge/list without a full page visit.
         router.reload({
             only: ['notifications'],
         });
     }, []);
 
-    // Leading dot skips Echo's App.Events namespace — matches broadcastAs().
     useEcho(
         `workspaces.${tenantSlug}`,
         '.client.questionnaire.completed',
-        onCompleted,
+        reloadNotifications,
         [tenantSlug],
     );
+
+    // Audio transcription has no dedicated broadcast event — it reuses the
+    // existing pipeline.updated stream every other pipeline feature listens to.
+    usePipelineUpdatedSubscription(reloadNotifications, {
+        match: (event) =>
+            event.type === 'audio_transcription' &&
+            event.status === 'completed',
+    });
 }
 
 /**

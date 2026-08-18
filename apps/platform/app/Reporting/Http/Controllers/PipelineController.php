@@ -7,10 +7,12 @@ namespace App\Reporting\Http\Controllers;
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\DeletePipelineAction;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\DownloadDossierExportAction;
 use App\Dossiers\Models\DossierExport;
+use App\Pipelines\Actions\CancelPipelineAction;
+use App\Pipelines\Actions\DeletePipelineAction;
+use App\Pipelines\Actions\RetryPipelineAction;
+use App\Pipelines\Models\Pipeline;
 use App\Reporting\Queries\FetchPipelineIndexQuery;
 use App\Reporting\Queries\FetchPipelineShowQuery;
 use App\Shared\Http\Controllers\Controller;
@@ -53,6 +55,8 @@ final class PipelineController extends Controller
                 ...$fetchPipelineShow->handle($pipeline),
                 'can_delete' => $request->user()?->can('delete', $pipeline) ?? false,
                 'can_download' => $request->user()?->can('download', $pipeline) ?? false,
+                'can_retry' => $request->user()?->can('retry', $pipeline) ?? false,
+                'can_cancel' => $request->user()?->can('cancel', $pipeline) ?? false,
             ],
         );
     }
@@ -84,6 +88,48 @@ final class PipelineController extends Controller
         );
 
         return $downloadDossierExport->handle($export);
+    }
+
+    /**
+     * Re-queue a failed or stuck run. The user stays on the detail page so they
+     * can watch the reopened run progress over the pipeline.updated broadcast.
+     */
+    public function retry(
+        Tenant $tenant,
+        Pipeline $pipeline,
+        RetryPipelineAction $retryPipeline,
+    ): RedirectResponse {
+        $this->authorize('retry', $pipeline);
+
+        $retryPipeline->handle($pipeline, $this->currentUser());
+
+        Toast::success(__('Pipeline retry queued.'));
+
+        return to_route(
+            'workspaces.pipelines.show',
+            $this->workspaceRouteParameters(['pipeline' => $pipeline->id]),
+        );
+    }
+
+    /**
+     * Stop a queued or running run. The user stays on the detail page so the
+     * closed run and its skipped steps appear over the pipeline.updated broadcast.
+     */
+    public function cancel(
+        Tenant $tenant,
+        Pipeline $pipeline,
+        CancelPipelineAction $cancelPipeline,
+    ): RedirectResponse {
+        $this->authorize('cancel', $pipeline);
+
+        $cancelPipeline->handle($pipeline, $this->currentUser());
+
+        Toast::success(__('Pipeline cancelled.'));
+
+        return to_route(
+            'workspaces.pipelines.show',
+            $this->workspaceRouteParameters(['pipeline' => $pipeline->id]),
+        );
     }
 
     public function destroy(

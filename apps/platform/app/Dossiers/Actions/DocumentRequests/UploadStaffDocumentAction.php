@@ -34,11 +34,8 @@ final readonly class UploadStaffDocumentAction
             function (
                 UploadedDocument $uploadedDocument,
                 DocumentRequest $lockedDocumentRequest,
+                Dossier $lockedDossier,
             ): void {
-                $dossierQuery = Dossier::query()->whereKey($lockedDocumentRequest->dossier_id);
-                $dossierQuery->getQuery()->lockForUpdate();
-                $lockedDossier = $dossierQuery->firstOrFail();
-
                 $this->dossierTransitions->markInReview($lockedDossier);
 
                 $this->logAuditActivity->handle(

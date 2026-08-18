@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use function Illuminate\Support\defer;
+
 final class ClientPortalController extends Controller
 {
     /**
@@ -26,7 +28,11 @@ final class ClientPortalController extends Controller
         $grant = $this->grantFromRequest($request);
 
         // Side effects (grant touch, dossier stamp, audit) live in the Action.
-        $recordClientPortalAccess->handle($grant);
+        // Deferred: the rendered page reads none of it, so it runs after the
+        // response flushes. The tenant is still current in terminate middleware,
+        // which the dossier stamp needs — TenantScope would otherwise match no
+        // rows. Covered by the "records portal access after the response" test.
+        defer(fn () => $recordClientPortalAccess->handle($grant));
 
         return Inertia::render('portal/show', $getClientPortalData->handle($grant));
     }

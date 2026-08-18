@@ -17,15 +17,16 @@ import {
     pipelineStepStatusLabel,
 } from '@/features/pipelines/status/pipeline-status';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Dossier ZIP export card. In-flight exports refresh via a JSON island.
  */
 export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const [exports, setExports] = useState(dossier.exports);
 
     // Sync when Inertia replaces the dossier prop (create export redirect).
@@ -120,14 +121,12 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
                                             {t('Requested :datetime', {
                                                 datetime: formatDateTime(
                                                     exportItem.created_at,
-                                                    locale,
                                                 ),
                                             })}
                                             {exportItem.expires_at
                                                 ? ` · ${t('Expires :datetime', {
                                                       datetime: formatDateTime(
                                                           exportItem.expires_at,
-                                                          locale,
                                                       ),
                                                   })}`
                                                 : null}

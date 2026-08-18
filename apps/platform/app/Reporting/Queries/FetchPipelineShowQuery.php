@@ -4,73 +4,54 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
-use App\DocumentProcessing\Data\PipelineShowData;
-use App\DocumentProcessing\Data\PipelineSubjectData;
-use App\DocumentProcessing\Models\Pipeline;
-use App\Dossiers\Models\DossierExport;
-use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Contracts\PipelineSubjectPresenter;
+use App\Pipelines\Data\PipelineShowData;
+use App\Pipelines\Data\PipelineSubjectData;
+use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use App\Shared\Database\MorphType;
-use App\Tenancy\Models\Tenant;
+use Illuminate\Database\Eloquent\Model;
 
-final class FetchPipelineShowQuery
+final readonly class FetchPipelineShowQuery
 {
+    public function __construct(
+        private PipelineSubjectPresenterRegistry $subjectPresenters,
+    ) {}
+
     /**
      * @return array{pipeline: array<string, mixed>}
      */
     public function handle(Pipeline $pipeline): array
     {
+        $presenter = $this->subjectPresenters->for($pipeline->type);
+
         $pipeline->load(['steps', 'pipelineable']);
-        $pipeline->loadMorph('pipelineable', [
-            DossierExport::class => ['dossier.client'],
-            UploadedDocument::class => ['documentRequest.dossier.client'],
-        ]);
+
+        if ($presenter instanceof PipelineSubjectPresenter && $presenter->eagerLoads() !== []) {
+            $pipeline->loadMorph('pipelineable', [
+                $presenter->subjectClass() => $presenter->eagerLoads(),
+            ]);
+        }
 
         return [
             'pipeline' => PipelineShowData::fromModel(
                 $pipeline,
-                $this->subjectData($pipeline),
+                $this->subjectData($pipeline, $presenter),
             )->toArray(),
         ];
     }
 
-    private function subjectData(Pipeline $pipeline): PipelineSubjectData
+    private function subjectData(Pipeline $pipeline, ?PipelineSubjectPresenter $presenter): PipelineSubjectData
     {
         $subject = $pipeline->pipelineable;
-        $type = MorphType::classBasename($pipeline->pipelineable_type);
-        $label = null;
-        $context = null;
-        $href = null;
-
-        if ($subject instanceof DossierExport) {
-            $label = "Dossier export #{$subject->id}";
-            $context = $subject->dossier?->title;
-            $href = $this->dossierHref($subject->dossier?->id);
-        } elseif ($subject instanceof UploadedDocument) {
-            $label = $subject->original_filename;
-            $context = $subject->documentRequest?->dossier?->title;
-            $href = $this->dossierHref($subject->documentRequest?->dossier?->id);
-        }
+        $describable = $presenter instanceof PipelineSubjectPresenter && $subject instanceof Model;
 
         return new PipelineSubjectData(
-            type: $type,
+            type: MorphType::classBasename($pipeline->pipelineable_type),
             id: $pipeline->pipelineable_id,
-            label: $label,
-            context: $context,
-            href: $href,
+            label: $describable ? $presenter->label($subject) : null,
+            context: $describable ? $presenter->context($subject) : null,
+            href: $describable ? $presenter->href($subject, $pipeline) : null,
         );
-    }
-
-    private function dossierHref(?int $dossierId): ?string
-    {
-        $tenant = Tenant::current();
-
-        if (! $tenant instanceof Tenant || $dossierId === null) {
-            return null;
-        }
-
-        return route('workspaces.dossiers.show', [
-            'tenant' => $tenant->slug,
-            'dossier' => $dossierId,
-        ]);
     }
 }

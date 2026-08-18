@@ -3,11 +3,15 @@ import { PlatformConfig } from "./config.js";
 import { DocumentInfrastructure } from "./documents.js";
 
 /**
- * Optional alarm when the Textract results DLQ receives messages.
+ * Optional alarms when OCR / Transcribe results land on a dead-letter queue.
+ *
+ * The alarm SNS topic uses the same OCR CMK as the messaging plane so CloudWatch
+ * can publish encrypted notifications (key policy already grants cloudwatch.amazonaws.com).
  */
 export function createOcrAlarms(
   config: PlatformConfig,
   documents: DocumentInfrastructure,
+  encryptionKey: aws.kms.Key,
 ): void {
   const { environment, alarmEmailAddress } = config;
 
@@ -17,6 +21,7 @@ export function createOcrAlarms(
 
   const topic = new aws.sns.Topic(environment.resourceName("ocr-alarms"), {
     name: environment.resourceName("ocr-alarms"),
+    kmsMasterKeyId: encryptionKey.arn,
   });
   new aws.sns.TopicSubscription(environment.resourceName("ocr-alarms-email"), {
     topic: topic.arn,
@@ -30,6 +35,37 @@ export function createOcrAlarms(
     namespace: "AWS/SQS",
     metricName: "ApproximateNumberOfMessagesVisible",
     dimensions: { QueueName: documents.resultsDeadLetterQueue.name },
+    statistic: "Maximum",
+    period: 300,
+    evaluationPeriods: 1,
+    threshold: 1,
+    comparisonOperator: "GreaterThanOrEqualToThreshold",
+    treatMissingData: "notBreaching",
+    alarmActions: [topic.arn],
+  });
+
+  new aws.cloudwatch.MetricAlarm(environment.resourceName("transcribe-dlq-alarm"), {
+    name: environment.resourceName("transcribe-dlq-alarm"),
+    alarmDescription: "Amazon Transcribe results landed on the dead-letter queue",
+    namespace: "AWS/SQS",
+    metricName: "ApproximateNumberOfMessagesVisible",
+    dimensions: { QueueName: documents.transcribeResultsDeadLetterQueue.name },
+    statistic: "Maximum",
+    period: 300,
+    evaluationPeriods: 1,
+    threshold: 1,
+    comparisonOperator: "GreaterThanOrEqualToThreshold",
+    treatMissingData: "notBreaching",
+    alarmActions: [topic.arn],
+  });
+
+  // Delivery failures never reach the consumer redrive DLQ — alarm those too.
+  new aws.cloudwatch.MetricAlarm(environment.resourceName("transcribe-delivery-dlq-alarm"), {
+    name: environment.resourceName("transcribe-delivery-dlq-alarm"),
+    alarmDescription: "EventBridge failed to deliver Transcribe events to the results queue",
+    namespace: "AWS/SQS",
+    metricName: "ApproximateNumberOfMessagesVisible",
+    dimensions: { QueueName: documents.transcribeDeliveryDeadLetterQueue.name },
     statistic: "Maximum",
     period: 300,
     evaluationPeriods: 1,

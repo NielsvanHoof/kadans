@@ -63,7 +63,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     type="submit"
                                     className="w-full"
                                     isDisabled={processing}
-                                    data-test="email-password-reset-link-button"
                                 >
                                     {processing && <Spinner />}
                                     {t('Email password reset link')}

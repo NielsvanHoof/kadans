@@ -6,6 +6,7 @@ use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Listeners\LogClientPortalInviteFailed;
 use App\ClientPortal\Listeners\LogClientPortalInviteSent;
@@ -18,8 +19,6 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
@@ -30,23 +29,17 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Pest\Expectation;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 /**
  * @return array{owner: User, tenant: mixed, client: Client, dossier: Dossier, plainTextToken: string, grant: ClientAccessGrant}
  */
 function createPortalDossierWithGrant(): array
 {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -74,7 +67,7 @@ function createPortalDossierWithGrant(): array
 test('guest exchanges a valid access token for a restricted portal session', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -139,7 +132,7 @@ test('invalid or revoked portal tokens are rejected', function (): void {
     $this->get(route('portal.exchange', $context['plainTextToken']))
         ->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $context['grant']->update(['revoked_at' => now()]);
 
     $this->get(route('portal.show'))
@@ -173,7 +166,7 @@ test('guest can upload a document through the portal', function (): void {
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -189,10 +182,10 @@ test('guest can upload a document through the portal', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['document' => $file],
+        ['documents' => [$file]],
     )->assertRedirect(route('portal.show'));
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $documentRequest->refresh();
 
@@ -206,7 +199,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -220,10 +213,10 @@ test('portal cannot upload while a file item awaits review', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
+        ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
     )->assertForbidden();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     expect(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->exists())->toBeFalse();
 });
@@ -231,7 +224,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
 test('portal cannot answer while a text item awaits review', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -256,7 +249,7 @@ test('portal cannot answer while a text item awaits review', function (): void {
 test('a saved choice answer reveals the matching conditional field on the portal', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $sourceFieldKey = (string) Str::ulid();
     $dependentFieldKey = (string) Str::ulid();
     $yesOptionId = (string) Str::uuid();
@@ -325,7 +318,7 @@ test('portal upload cannot target a document request from another dossier', func
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $otherDossier = Dossier::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'client_id' => $context['client']->id,
@@ -342,7 +335,7 @@ test('portal upload cannot target a document request from another dossier', func
         route('portal.document-requests.upload', [
             'documentRequest' => $foreignRequest->id,
         ]),
-        ['document' => UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')],
+        ['documents' => [UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')]],
     )->assertNotFound();
 });
 
@@ -351,7 +344,7 @@ test('portal upload rolls back database and storage when its audit record fails'
 
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -371,13 +364,13 @@ test('portal upload rolls back database and storage when its audit record fails'
             route('portal.document-requests.upload', [
                 'documentRequest' => $documentRequest->id,
             ]),
-            ['document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
+            ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
         )->assertServerError();
     } finally {
         Event::forget($event);
     }
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $documentRequest->refresh();
 
@@ -392,7 +385,7 @@ test('portal upload rolls back database and storage when its audit record fails'
 test('portal answer rolls back when its audit record fails', function (): void {
     $context = createPortalDossierWithGrant();
 
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
     $documentRequest = DocumentRequest::factory()->createOne([
         'tenant_id' => $context['tenant']->id,
         'dossier_id' => $context['dossier']->id,
@@ -429,10 +422,8 @@ test('portal answer rolls back when its audit record fails', function (): void {
 test('staff can email a portal invite when creating an access grant', function (): void {
     Notification::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
         'email' => 'jane@example.com',
@@ -443,7 +434,6 @@ test('staff can email a portal invite when creating an access grant', function (
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -507,10 +497,8 @@ test('staff can email a portal invite when creating an access grant', function (
 test('staff can create a portal link without emailing', function (): void {
     Notification::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
         'tenant_id' => $tenant->id,
@@ -518,7 +506,6 @@ test('staff can create a portal link without emailing', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -541,7 +528,6 @@ test('revoking portal access is audited atomically', function (): void {
     $context = createPortalDossierWithGrant();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->delete(workspaceRoute('workspaces.access-grants.destroy', $context['tenant'], [
             'grant' => $context['grant'],
         ]))
@@ -632,10 +618,8 @@ test('delivery audit failures are reported without retrying a delivered invitati
 test('grant issuance rolls back when its audit transaction fails', function (): void {
     Notification::fake();
 
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
         'email' => 'jane@example.com',
@@ -653,7 +637,6 @@ test('grant issuance rolls back when its audit transaction fails', function (): 
 
     try {
         $this->actingAs($owner)
-            ->withSession(['active_tenant_id' => $tenant->id])
             ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
                 'dossier' => $dossier,
             ]), [
@@ -721,4 +704,56 @@ test('portal locale cookie overrides the browser language', function (): void {
 
                 expect($translations['Access expires :date'])->toBe('Toegang verloopt :date');
             }));
+});
+
+test('portal magic-link resolution is timeboxed so a miss cannot be timed apart from a hit', function (string $case, bool $expectsGrant): void {
+    ['plainTextToken' => $plainTextToken, 'grant' => $grant] = createPortalDossierWithGrant();
+
+    if ($case === 'revoked') {
+        $grant->forceFill(['revoked_at' => now()])->save();
+    }
+
+    $token = match ($case) {
+        'valid', 'revoked' => $plainTextToken,
+        'unknown' => Str::random(64),
+        default => '',
+    };
+
+    Sleep::fake();
+
+    $resolved = resolve(ResolveClientAccessGrantFromTokenAction::class)->handle($token);
+
+    $expectsGrant
+        ? expect($resolved)->toBeInstanceOf(ClientAccessGrant::class)
+        : expect($resolved)->toBeNull();
+
+    // The floor covers every outcome, including the empty-token short circuit
+    // that returns before touching the database at all.
+    Sleep::assertSleptTimes(1);
+})->with([
+    'valid' => ['valid', true],
+    'unknown token' => ['unknown', false],
+    'revoked grant' => ['revoked', false],
+    'empty token' => ['empty', false],
+]);
+
+test('portal access is recorded after the response with the tenant still resolvable', function (): void {
+    $context = createPortalDossierWithGrant();
+
+    $this->get(route('portal.exchange', $context['plainTextToken']))
+        ->assertRedirect(route('portal.show'));
+
+    $this->get(route('portal.show'))->assertOk();
+
+    // The dossier stamp is the fragile half: it runs through TenantScope via
+    // toBase(), so a deferred callback that lost the current tenant would
+    // silently update zero rows instead of failing loudly.
+    expect($context['dossier']->fresh()->last_client_opened_at)->not->toBeNull()
+        ->and($context['grant']->fresh()->last_used_at)->not->toBeNull();
+
+    $activity = Activity::query()
+        ->where('event', AuditEvent::ClientPortalAccessed->value)
+        ->sole();
+
+    expect($activity->tenant_id)->toBe($context['tenant']->id);
 });

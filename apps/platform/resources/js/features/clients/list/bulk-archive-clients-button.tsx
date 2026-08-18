@@ -48,18 +48,12 @@ export default function BulkArchiveClientsButton({
                     ? t('Archive client')
                     : t('Archive :count clients', { count })
             }
-            confirmTestId="confirm-bulk-archive-clients-button"
             form={{
                 ...ClientController.bulkArchive.form(currentWorkspace),
                 onSuccess,
             }}
             trigger={
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    data-test="bulk-archive-clients-button"
-                >
+                <Button type="button" size="sm" variant="destructive">
                     {t('Archive')}
                 </Button>
             }

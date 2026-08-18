@@ -9,6 +9,11 @@ import AuthLayout from '@/layouts/auth/auth-layout';
 import DossierBuilderLayout from '@/layouts/dossiers/dossier-builder-layout';
 import OnboardingLayout from '@/layouts/onboarding/onboarding-layout';
 import SettingsLayout from '@/layouts/settings/settings-layout';
+import { initializeObservability } from '@/lib/observability';
+
+// Before anything else, so a failure in the setup below is itself reported.
+// No-ops on a dev build or when the bundle carries no DSN.
+initializeObservability();
 
 // Reverb WebSocket client — keys come from VITE_REVERB_* (.env).
 configureEcho({
@@ -34,6 +39,9 @@ function pageLayout(name: string) {
             return null;
         case name.startsWith('portal/'):
             // Guest magic-link portal — no staff chrome.
+            return null;
+        case name.startsWith('legal/'):
+            // Public privacy / cookies / terms — own shell, no staff chrome.
             return null;
         case name === 'dossiers/builder':
             // Full-bleed form builder without the app sidebar.

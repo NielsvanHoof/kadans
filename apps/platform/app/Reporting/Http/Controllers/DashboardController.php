@@ -12,6 +12,7 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Queries\FetchActiveTenantMembershipsForUserQuery;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -51,13 +52,16 @@ final class DashboardController extends Controller
         ]);
     }
 
-    public function show(Tenant $tenant, FetchWorkspaceDashboardQuery $getWorkspaceDashboardData): Response
-    {
+    public function show(
+        Tenant $tenant,
+        Request $request,
+        FetchWorkspaceDashboardQuery $getWorkspaceDashboardData,
+    ): Response {
         $this->authorize('viewAny', Dossier::class);
 
         return Inertia::render(
             'workspaces/dashboard',
-            $getWorkspaceDashboardData->handle($tenant),
+            $getWorkspaceDashboardData->handle($request, $tenant),
         );
     }
 

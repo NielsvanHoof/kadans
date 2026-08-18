@@ -9,6 +9,7 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ final readonly class ApplyQuestionnaireTemplateToDossierAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
@@ -38,9 +40,7 @@ final readonly class ApplyQuestionnaireTemplateToDossierAction
         $template->loadMissing('items');
 
         return DB::transaction(function () use ($dossier, $template): Collection {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             $nextSortOrder = (int) $lockedDossier
                 ->documentRequests()

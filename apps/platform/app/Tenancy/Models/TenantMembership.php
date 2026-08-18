@@ -51,6 +51,11 @@ final class TenantMembership extends Model
     use HasFactory;
 
     /**
+     * How stale last_accessed_at may get before it is written again.
+     */
+    public const int ACCESS_RECORD_THROTTLE_SECONDS = 300;
+
+    /**
      * @var list<string>
      */
     #[Override]
@@ -94,6 +99,25 @@ final class TenantMembership extends Model
     public function isActive(): bool
     {
         return $this->status === TenantMembershipStatus::Active;
+    }
+
+    /**
+     * Whether last_accessed_at was written recently enough to leave alone.
+     *
+     * The value exists so a workspace can show roughly when a member was last
+     * here, which nothing renders to the minute — the members list formats it
+     * as a date. Writing it on every request meant an UPDATE (two columns,
+     * since the model keeps timestamps) on every page, every Inertia partial
+     * reload, every deferred-prop XHR and every poll, for information nobody
+     * reads at that resolution.
+     *
+     * The check reads the already-loaded attribute, so throttling costs no
+     * query at all — not even a cache round-trip.
+     */
+    public function hasRecentAccessRecorded(): bool
+    {
+        return $this->last_accessed_at !== null
+            && $this->last_accessed_at->gt(now()->subSeconds(self::ACCESS_RECORD_THROTTLE_SECONDS));
     }
 
     /**

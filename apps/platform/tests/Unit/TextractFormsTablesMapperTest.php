@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\DocumentProcessing\Services\Ocr\Normalization\TextractFormsTablesMapper;
 use Tests\TestCase;
 
+covers(TextractFormsTablesMapper::class);
+
 pest()
     ->extend(TestCase::class);
 

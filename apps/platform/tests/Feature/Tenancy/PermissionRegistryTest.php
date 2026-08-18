@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 use App\Audit\Enums\AuditPermission;
 use App\Clients\Enums\ClientPermission;
-use App\DocumentProcessing\Enums\PipelinePermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
+use App\Pipelines\Enums\PipelinePermission;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Support\PermissionRegistry;
 
-it('registers only enums implementing the tenant permission contract', function (): void {
+test('registers only enums implementing the tenant permission contract', function (): void {
     foreach (config()->array('tenant-permissions.enums') as $enum) {
         expect(is_a($enum, TenantPermission::class, allow_string: true))->toBeTrue(
             "[$enum] must implement ".TenantPermission::class,
@@ -21,14 +21,14 @@ it('registers only enums implementing the tenant permission contract', function 
     }
 });
 
-it('exposes a unique permission name for every registered permission', function (): void {
+test('exposes a unique permission name for every registered permission', function (): void {
     $values = resolve(PermissionRegistry::class)->values();
 
     expect($values)->not->toBeEmpty()
         ->and(array_unique($values))->toHaveSameSize($values);
 });
 
-it('rejects two enums that declare the same permission name', function (): void {
+test('rejects two enums that declare the same permission name', function (): void {
     // DossierPermission is registered twice, so every one of its names collides.
     $registry = new PermissionRegistry([DossierPermission::class, DossierPermission::class]);
 
@@ -36,21 +36,21 @@ it('rejects two enums that declare the same permission name', function (): void 
         ->toThrow(InvalidArgumentException::class, 'Duplicate permission name');
 });
 
-it('rejects an enum that does not implement the contract', function (): void {
+test('rejects an enum that does not implement the contract', function (): void {
     $registry = new PermissionRegistry([Role::class]);
 
     expect(fn (): array => $registry->all())
         ->toThrow(InvalidArgumentException::class, 'does not implement');
 });
 
-it('grants owners every registered permission', function (): void {
+test('grants owners every registered permission', function (): void {
     $registry = resolve(PermissionRegistry::class);
 
     expect($registry->valuesForRole(Role::Owner))
         ->toEqualCanonicalizing($registry->values());
 });
 
-it('never lists owner as a default role, since owners are implicit', function (): void {
+test('never lists owner as a default role, since owners are implicit', function (): void {
     foreach (resolve(PermissionRegistry::class)->all() as $permission) {
         expect($permission->defaultRoles())->not->toContain(
             Role::Owner,
@@ -59,7 +59,7 @@ it('never lists owner as a default role, since owners are implicit', function ()
     }
 });
 
-it('groups every permission under a group that is actually rendered', function (): void {
+test('groups every permission under a group that is actually rendered', function (): void {
     $registry = resolve(PermissionRegistry::class);
     $grouped = $registry->grouped();
 
@@ -68,7 +68,7 @@ it('groups every permission under a group that is actually rendered', function (
     expect($flattened)->toHaveSameSize($registry->all());
 });
 
-it('resolves a permission back from its stored name', function (): void {
+test('resolves a permission back from its stored name', function (): void {
     $registry = resolve(PermissionRegistry::class);
 
     expect($registry->tryFrom('dossiers.view'))->toBe(DossierPermission::View)
@@ -81,7 +81,7 @@ it('resolves a permission back from its stored name', function (): void {
  * The intended default capability matrix. Changing any expectation here is a
  * deliberate product decision about what a role may do, not a refactor.
  */
-it('gives each role its intended default capabilities', function (): void {
+test('gives each role its intended default capabilities', function (): void {
     $registry = resolve(PermissionRegistry::class);
 
     // Administrator runs the firm but does not own its settings.
@@ -124,7 +124,7 @@ it('gives each role its intended default capabilities', function (): void {
  * pipeline and reading the audit log are independently grantable, as are
  * creating a dossier and controlling a client's portal access.
  */
-it('keeps independently grantable capabilities on separate permissions', function (): void {
+test('keeps independently grantable capabilities on separate permissions', function (): void {
     $registry = resolve(PermissionRegistry::class);
 
     expect(PipelinePermission::View->value)->not->toBe(AuditPermission::View->value);

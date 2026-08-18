@@ -26,6 +26,8 @@ export type Paginated<T> = {
 export type IndexQueryFilterOption = {
     value: string;
     label: string;
+    /** Optional section header for long option lists (e.g. audit event domain). */
+    group?: string;
 };
 
 export type IndexQueryFilter = {
@@ -45,6 +47,5 @@ export type IndexQueryConfig = {
     sorts: IndexQuerySort[];
     defaults: {
         sort: string;
-        per_page: number;
     };
 };

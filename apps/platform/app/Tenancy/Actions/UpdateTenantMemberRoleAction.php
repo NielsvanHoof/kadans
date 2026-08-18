@@ -24,6 +24,8 @@ final readonly class UpdateTenantMemberRoleAction
     public function handle(TenantMembership $membership, User $updatedBy, string $role): TenantMembership
     {
         return DB::transaction(function () use ($membership, $updatedBy, $role): TenantMembership {
+            $this->memberRoles->lockOwnerMutations($membership->tenant_id);
+
             $membershipQuery = TenantMembership::query()->whereKey($membership->getKey());
             $membershipQuery->getQuery()->lockForUpdate();
             $locked = $membershipQuery->firstOrFail();

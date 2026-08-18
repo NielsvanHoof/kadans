@@ -151,10 +151,14 @@ export default function TemplateShowContent({
                                         <FieldLabel htmlFor="category">
                                             {t('Category')}
                                         </FieldLabel>
+                                        {/* React Aria Select ignores
+                                            FieldLabel+htmlFor (LabelContext
+                                            is nulled when htmlFor is set). */}
                                         <Select
                                             isRequired
                                             defaultValue={template.category}
                                             name="category"
+                                            aria-label={t('Category')}
                                         >
                                             <SelectTrigger
                                                 id="category"

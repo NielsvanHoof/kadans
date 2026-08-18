@@ -1,19 +1,12 @@
-import { useState } from 'react';
-import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import type { DataTableColumn } from '@/components/data/data-table';
 import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
+import IndexDataCard from '@/components/data/index-data-card';
 import EmptyState from '@/components/primitives/empty-state';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import BulkRestoreClientsButton from '@/features/clients/list/bulk-restore-clients-button';
 import RestoreClientButton from '@/features/clients/list/restore-client-button';
 import type { ArchivedClientSummary } from '@/features/clients/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import type { Paginated } from '@/types/pagination';
 
 export default function ArchivedClientsCard({
@@ -23,15 +16,9 @@ export default function ArchivedClientsCard({
     clients: Paginated<ArchivedClientSummary>;
     canRestore: boolean;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const rows = clients.data;
-    const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
-        new Set(),
-    );
-
-    const selectedIds = rows
-        .filter((client) => selectedKeys.has(client.id))
-        .map((client) => client.id);
 
     const columns: DataTableColumn<ArchivedClientSummary>[] = [
         {
@@ -46,10 +33,7 @@ export default function ArchivedClientsCard({
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                         {t('Archived :datetime', {
-                            datetime: formatDateTime(
-                                client.archived_at,
-                                locale,
-                            ),
+                            datetime: formatDateTime(client.archived_at),
                         })}
                         {' · '}
                         {client.dossiers_count === 1
@@ -79,49 +63,43 @@ export default function ArchivedClientsCard({
     ];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('Archived clients')}</CardTitle>
-                <CardDescription>
-                    {clients.total === 1
-                        ? t('1 archived client')
-                        : t(':count archived clients', {
-                              count: clients.total,
-                          })}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DataTable
-                    columns={columns}
-                    rows={rows}
-                    rowKey={(client) => client.id}
-                    selectedKeys={canRestore ? selectedKeys : undefined}
-                    onSelectionChange={canRestore ? setSelectedKeys : undefined}
-                    toolbar={
-                        canRestore ? (
-                            <DataTableBulkToolbar
-                                selectedCount={selectedIds.length}
-                                actions={
-                                    <BulkRestoreClientsButton
-                                        selectedIds={selectedIds}
-                                        onSuccess={() =>
-                                            setSelectedKeys(new Set())
-                                        }
-                                    />
-                                }
-                            />
-                        ) : undefined
-                    }
-                    emptyState={
-                        <EmptyState
-                            title={t('No archived clients.')}
-                            description={t(
-                                'Clients you archive will remain available here during the retention period.',
-                            )}
-                        />
-                    }
+        <IndexDataCard
+            title={t('Archived clients')}
+            description={
+                clients.total === 1
+                    ? t('1 archived client')
+                    : t(':count archived clients', {
+                          count: clients.total,
+                      })
+            }
+            columns={columns}
+            rows={rows}
+            rowKey={(client) => client.id}
+            bulkActions={
+                canRestore
+                    ? ({ selectedRows, clearSelection }) => (
+                          <DataTableBulkToolbar
+                              selectedCount={selectedRows.length}
+                              actions={
+                                  <BulkRestoreClientsButton
+                                      selectedIds={selectedRows.map(
+                                          (client) => client.id,
+                                      )}
+                                      onSuccess={clearSelection}
+                                  />
+                              }
+                          />
+                      )
+                    : undefined
+            }
+            emptyState={
+                <EmptyState
+                    title={t('No archived clients.')}
+                    description={t(
+                        'Clients you archive will remain available here during the retention period.',
+                    )}
                 />
-            </CardContent>
-        </Card>
+            }
+        />
     );
 }

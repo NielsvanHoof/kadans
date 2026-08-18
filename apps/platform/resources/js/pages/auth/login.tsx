@@ -146,7 +146,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                         type="submit"
                                         className="mt-4 w-full"
                                         isDisabled={processing}
-                                        data-test="login-button"
                                     >
                                         {processing && <Spinner />}
                                         {t('Log in')}

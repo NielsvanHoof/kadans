@@ -68,7 +68,6 @@ export default function ConfirmPassword() {
                                 type="submit"
                                 className="w-full"
                                 isDisabled={processing}
-                                data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}
                                 {t('Confirm password')}

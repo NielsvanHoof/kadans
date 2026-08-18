@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Config;
 use Laravel\Scout\Searchable;
 use Override;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -85,7 +86,7 @@ final class Client extends TenantOwnedModel
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName(config('activitylog.default_log_name'))
+            ->useLogName(Config::string('activitylog.default_log_name'))
             ->logOnly($this->auditableAttributes())
             ->logOnlyDirty()
             ->dontLogEmptyChanges();

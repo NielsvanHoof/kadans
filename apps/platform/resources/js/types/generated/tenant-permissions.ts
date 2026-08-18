@@ -21,6 +21,10 @@ export const TENANT_PERMISSIONS = [
     'document_requests.review',
     'documents.view',
     'documents.download',
+    'audio_recordings.view',
+    'audio_recordings.upload',
+    'audio_recordings.download',
+    'audio_recordings.delete',
     'clients.view',
     'clients.create',
     'clients.update',
@@ -35,6 +39,8 @@ export const TENANT_PERMISSIONS = [
     'templates.copy',
     'templates.apply',
     'pipelines.view',
+    'pipelines.retry',
+    'pipelines.cancel',
     'pipelines.delete',
     'audit.view',
     'members.view',
@@ -45,6 +51,8 @@ export const TENANT_PERMISSIONS = [
     'roles.view',
     'roles.manage',
     'tenant.settings.manage',
+    'data_subject.view',
+    'data_subject.manage',
 ] as const;
 
 export type TenantPermission = (typeof TENANT_PERMISSIONS)[number];

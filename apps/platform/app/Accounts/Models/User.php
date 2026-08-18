@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Accounts\Models;
 
 use App\Accounts\Enums\PlatformRole;
+use App\Accounts\Support\DisplayTimezones;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
@@ -22,6 +23,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Config;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -31,6 +33,7 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Traits\HasRoles;
 
 use function array_key_exists;
+use function is_string;
 
 /**
  * @property int $id
@@ -45,6 +48,7 @@ use function array_key_exists;
  * @property string|null $two_factor_recovery_codes
  * @property CarbonImmutable|null $two_factor_confirmed_at
  * @property string|null $locale
+ * @property string|null $timezone
  * @property PlatformRole|null $platform_role
  * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
@@ -80,6 +84,7 @@ use function array_key_exists;
  * @method static Builder<static>|User withoutPermission($permissions)
  * @method static Builder<static>|User withoutRole($roles, ?string $guard = null)
  * @method static Builder<static>|User withoutTeam($teams)
+ * @method static Builder<static>|User whereTimezone($value)
  *
  * @mixin \Eloquent
  */
@@ -97,6 +102,7 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
         'email',
         'password',
         'locale',
+        'timezone',
     ];
 
     /**
@@ -115,7 +121,23 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
      */
     public function preferredLocale(): string
     {
-        return $this->locale ?? (string) config('app.locale');
+        return $this->locale ?? Config::string('app.locale');
+    }
+
+    /**
+     * Timezone used to present instants to this user, including in queued mail
+     * where there is no request and therefore no cookie.
+     *
+     * Reads the raw attribute rather than `$this->timezone`: the column is absent
+     * on models that never selected it, and preventsAccessingMissingAttributes()
+     * is enabled.
+     */
+    public function preferredTimezone(): string
+    {
+        $stored = $this->getAttributes()['timezone'] ?? null;
+
+        return DisplayTimezones::sanitize(is_string($stored) ? $stored : null)
+            ?? DisplayTimezones::default();
     }
 
     /**

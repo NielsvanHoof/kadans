@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Questionnaires\Console\Commands\GenerateQuestionnaireItemTypesCommand;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+
+covers(GenerateQuestionnaireItemTypesCommand::class);
 
 test('questionnaire item type TypeScript stays in sync with the PHP enum', function (): void {
     $path = resource_path('js/features/document-requests/item-types/generated.ts');

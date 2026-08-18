@@ -23,7 +23,7 @@ final class ClientFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => fn (): mixed => Tenant::current()?->getKey() ?? Tenant::factory(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
         ];

@@ -6,7 +6,7 @@ namespace App\DocumentProcessing\Actions\Ocr;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Support\Facades\Log;
 
@@ -18,6 +18,7 @@ final readonly class MarkTextractExtractionFailedAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
+        private UploadedDocumentProcessingTransitions $processingTransitions,
     ) {}
 
     public function handle(
@@ -26,18 +27,9 @@ final readonly class MarkTextractExtractionFailedAction
         string $error,
         string $status,
     ): void {
-        $updated = UploadedDocument::query()
-            ->whereKey($document->id)
-            ->where('path', $document->path)
-            ->where('textract_job_id', $jobId)
-            ->where('processing_status', DocumentProcessingStatus::Processing->value)
-            ->update([
-                'processing_status' => DocumentProcessingStatus::Failed->value,
-                'processing_error' => $error,
-                'processing_finished_at' => now(),
-            ]);
+        $updated = $this->processingTransitions->failWhileProcessing($document, $jobId, $error);
 
-        if ($updated !== 1) {
+        if (! $updated) {
             Log::warning('OCR: discarded stale Textract failure.', [
                 'uploaded_document_id' => $document->id,
                 'tenant_id' => $document->tenant_id,

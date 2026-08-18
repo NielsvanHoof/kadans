@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Throwable;
@@ -60,7 +61,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
      * @return array{
      *     filters: list<array<string, mixed>>,
      *     sorts: list<array{key: string, label: string}>,
-     *     defaults: array{sort: string, per_page: int}
+     *     defaults: array{sort: string}
      * }
      */
     public function toolbarMetadata(): array
@@ -76,6 +77,11 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                         ->map(fn (AuditEvent $event): array => [
                             'value' => $event->value,
                             'label' => $event->label(),
+                            'group' => $event->group(),
+                        ])
+                        ->sortBy([
+                            ['group', 'asc'],
+                            ['label', 'asc'],
                         ])
                         ->values()
                         ->all(),
@@ -105,7 +111,6 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
             ],
             'defaults' => [
                 'sort' => '-created_at',
-                'per_page' => 15,
             ],
         ];
     }
@@ -115,8 +120,7 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
      */
     protected function subject(): Builder
     {
-        return Activity::query()
-            ->where('tenant_id', $this->tenant->id)
+        return Activity::queryForTenant($this->tenant)
             ->with([
                 'causer',
                 'subject' => function ($morphTo): void {
@@ -136,7 +140,9 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
         return [
             AllowedFilter::exact('event'),
             AllowedFilter::exact('causer_id'),
-            ScoutSearchFilter::make(Activity::class, 'description'),
+            ScoutSearchFilter::make(Activity::class, 'description', wheres: [
+                'tenant_id' => $this->tenant->id,
+            ]),
             AllowedFilter::callback('created_from', function (Builder $query, mixed $value): void {
                 if (! is_string($value) || $value === '') {
                     return;
@@ -145,7 +151,11 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                 try {
                     $date = Date::parse($value)->startOfDay();
                 } catch (Throwable) {
-                    return;
+                    // Surface a validation error so the UI does not keep a
+                    // filter chip while returning an unfiltered result set.
+                    throw ValidationException::withMessages([
+                        'filter.created_from' => __('Enter a valid from date.'),
+                    ]);
                 }
 
                 $query->getQuery()->where('created_at', '>=', $date);
@@ -158,7 +168,9 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
                 try {
                     $date = Date::parse($value)->endOfDay();
                 } catch (Throwable) {
-                    return;
+                    throw ValidationException::withMessages([
+                        'filter.created_to' => __('Enter a valid to date.'),
+                    ]);
                 }
 
                 $query->getQuery()->where('created_at', '<=', $date);

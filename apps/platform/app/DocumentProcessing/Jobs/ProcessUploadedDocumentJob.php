@@ -6,20 +6,23 @@ namespace App\DocumentProcessing\Jobs;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\OcrProcessingOutcome;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Enums\PipelineStepKey;
+use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
+use App\Pipelines\Support\PipelineStepSequence;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -29,8 +32,9 @@ use function hash;
  * Async OCR pipeline for an uploaded document.
  * Mock driver completes in-process; Textract stays processing until SNS/SQS completion.
  */
-#[Backoff([10, 30, 60])]
+#[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
+#[Timeout(self::TIMEOUT_SECONDS)]
 final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
@@ -38,15 +42,31 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 
     public const int MAX_TRIES = 3;
 
+    public const int TIMEOUT_SECONDS = 120;
+
+    /** @var list<int> */
+    public const array BACKOFF_SECONDS = [10, 30, 60];
+
     public function __construct(
         public int $uploadedDocumentId,
         public ?string $expectedPath = null,
         public ?int $pipelineId = null
-    ) {}
+    ) {
+        $this->onQueue('ocr');
+    }
 
     public function uniqueId(): string
     {
         return "{$this->uploadedDocumentId}:{$this->pipelineId}:".hash('sha256', $this->expectedPath ?? 'legacy');
+    }
+
+    /**
+     * Auto-release the unique lock after worst-case attempts + backoff so a
+     * SIGKILL / OOM cannot wedge the subject forever
+     */
+    public function uniqueFor(): int
+    {
+        return (self::TIMEOUT_SECONDS * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     /**
@@ -71,7 +91,8 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         OcrOrchestrator $ocrOrchestrator,
         LogAuditActivityAction $logAuditActivity,
-        PipelineStateAction $pipelineState,
+        PipelineState $pipelineState,
+        UploadedDocumentProcessingTransitions $processingTransitions,
     ): void {
         $document = UploadedDocument::query()->findOrFail($this->uploadedDocumentId);
 
@@ -86,7 +107,7 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $claimed = $this->claimForProcessing($document, $expectedPath);
+        $claimed = $processingTransitions->claim($document, $expectedPath);
 
         if (! $claimed instanceof UploadedDocument) {
             Log::info('OCR: skipped ProcessUploadedDocumentJob — could not claim document.', [
@@ -101,14 +122,13 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             'uploaded_document_id' => $claimed->id,
             'tenant_id' => $claimed->tenant_id,
             'attempt' => $this->attempts(),
-            'original_filename' => $claimed->original_filename,
         ]);
 
         try {
             $pipeline = $this->resolvePipeline();
 
             if ($pipeline instanceof Pipeline) {
-                $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'submit');
+                $pipelineState->start($pipeline, PipelineStepKey::Submit);
             }
 
             $outcome = $ocrOrchestrator->startProcessing($claimed);
@@ -127,20 +147,15 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
                     'error' => $exception->getMessage(),
                 ]);
 
+                $processingTransitions->resetForRetry($claimed, $expectedPath);
+
                 throw $exception;
             }
 
             $error = mb_substr($exception->getMessage(), 0, 500);
-            $updated = UploadedDocument::query()
-                ->whereKey($claimed->id)
-                ->where('path', $expectedPath)
-                ->update([
-                    'processing_status' => DocumentProcessingStatus::Failed->value,
-                    'processing_error' => $error,
-                    'processing_finished_at' => now(),
-                ]);
+            $updated = $processingTransitions->failForPath($claimed, $expectedPath, $error);
 
-            if ($updated !== 1) {
+            if (! $updated) {
                 Log::warning('OCR: discarded permanent failure for a stale upload revision.', [
                     'uploaded_document_id' => $claimed->id,
                     'tenant_id' => $claimed->tenant_id,
@@ -183,9 +198,8 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        resolve(PipelineStateAction::class)->handle(
+        resolve(PipelineState::class)->fail(
             $pipeline,
-            PipelineStepOperation::Fail,
             $pipeline->current_stage,
             $exception,
             errorCode: 'ocr_job_failed',
@@ -205,67 +219,27 @@ final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
         Pipeline $pipeline,
         OcrProcessingOutcome $outcome,
         UploadedDocument $document,
-        PipelineStateAction $pipelineState,
+        PipelineState $pipelineState,
     ): void {
         $pipeline->forceFill([
-            'provider' => (string) config('ocr.driver'),
+            'provider' => Config::string('ocr.driver'),
             'provider_job_id' => $document->textract_job_id,
         ])->saveQuietly();
 
-        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'submit');
-
         if ($outcome === OcrProcessingOutcome::Deferred) {
-            $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'provider_processing');
+            $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                ->complete(PipelineStepKey::Submit)
+                ->start(PipelineStepKey::ProviderProcessing));
 
             return;
         }
 
-        $pipelineState->handle($pipeline, PipelineStepOperation::Skip, 'provider_processing');
-        $pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
-        $pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
-    }
-
-    /**
-     * Atomically move pending/failed/processing → processing.
-     * Returns null when the document cannot be claimed (stale path, already
-     * completed, or an external OCR job already in flight).
-     */
-    private function claimForProcessing(
-        UploadedDocument $document,
-        string $expectedPath,
-    ): ?UploadedDocument {
-        return DB::transaction(function () use ($document, $expectedPath): ?UploadedDocument {
-            $query = UploadedDocument::query()->whereKey($document->getKey());
-            $query->getQuery()->lockForUpdate();
-
-            $locked = $query->firstOrFail();
-
-            // Stale job for a replaced upload revision — skip without failing the queue.
-            if ($locked->path !== $expectedPath) {
-                return null;
-            }
-
-            // Another worker finished, or an external OCR job is already in flight.
-            if (
-                $locked->processing_status === DocumentProcessingStatus::Completed
-                || (
-                    $locked->processing_status === DocumentProcessingStatus::Processing
-                    && $locked->textract_job_id !== null
-                )
-            ) {
-                return null;
-            }
-
-            $locked->forceFill([
-                'processing_status' => DocumentProcessingStatus::Processing,
-                'processing_error' => null,
-                'extracted_text' => null,
-                'textract_job_id' => null,
-                'processing_started_at' => $locked->processing_started_at ?? now(),
-                'processing_finished_at' => null,
-            ])->save();
-
-            return $locked;
-        });
+        // The driver returned text inline, so nothing is deferred to a provider
+        // callback — the rest is bookkeeping under one lock and one broadcast.
+        $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+            ->complete(PipelineStepKey::Submit)
+            ->skip(PipelineStepKey::ProviderProcessing)
+            ->start(PipelineStepKey::ProcessResults)
+            ->complete(PipelineStepKey::ProcessResults));
     }
 }

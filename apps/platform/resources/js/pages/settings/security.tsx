@@ -151,11 +151,7 @@ export default function Security(props: Props) {
                             </Field>
 
                             <Field orientation="horizontal">
-                                <Button
-                                    type="submit"
-                                    isDisabled={processing}
-                                    data-test="update-password-button"
-                                >
+                                <Button type="submit" isDisabled={processing}>
                                     {processing && <Spinner />}
                                     {t('Save')}
                                 </Button>

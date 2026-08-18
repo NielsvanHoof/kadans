@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+$applicationHost = parse_url((string) env('APP_URL', ''), PHP_URL_HOST);
+
 return [
 
     /*
@@ -84,7 +86,13 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
-                'allowed_origins' => ['*'],
+                // Secondary defense alongside a real app secret: a wildcard here
+                // lets any web page open a connection and attempt to subscribe,
+                // widening who can even try the HMAC-forging attack this app
+                // secret is meant to stop.
+                'allowed_origins' => is_string($applicationHost) && $applicationHost !== ''
+                    ? [$applicationHost]
+                    : [],
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),

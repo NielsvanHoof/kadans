@@ -9,9 +9,9 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Contracts\ClientPortalReminders;
 use App\Dossiers\Enums\DossierReminderSource;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -21,6 +21,7 @@ final readonly class SendDossierReminderAction
         private ClientPortalReminders $clientPortalReminders,
         private DossierHasOutstandingClientItemsQuery $dossierHasOutstandingClientItems,
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(
@@ -28,11 +29,10 @@ final readonly class SendDossierReminderAction
         User $grantCreator,
         DossierReminderSource $source,
         ?User $auditCauser = null,
+        ?string $customMessage = null,
     ): bool {
-        return DB::transaction(function () use ($dossier, $grantCreator, $source, $auditCauser): bool {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+        return DB::transaction(function () use ($dossier, $grantCreator, $source, $auditCauser, $customMessage): bool {
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             if (
                 $source === DossierReminderSource::Scheduled
@@ -44,7 +44,7 @@ final readonly class SendDossierReminderAction
                 return false;
             }
 
-            if ($lockedDossier->status === DossierStatus::Completed) {
+            if ($lockedDossier->status->isLocked()) {
                 throw ValidationException::withMessages([
                     'dossier' => __('A completed dossier cannot receive reminders.'),
                 ]);
@@ -60,6 +60,7 @@ final readonly class SendDossierReminderAction
                 $lockedDossier,
                 $grantCreator,
                 $source,
+                $customMessage,
             );
 
             $nextReminderAt = $lockedDossier->reminder_interval_days === null
@@ -77,6 +78,7 @@ final readonly class SendDossierReminderAction
                     'source' => $source->value,
                     'channel' => 'mail',
                     'next_reminder_at' => $nextReminderAt?->toIso8601String(),
+                    'custom_message' => $customMessage !== null,
                 ],
                 $auditCauser,
             );

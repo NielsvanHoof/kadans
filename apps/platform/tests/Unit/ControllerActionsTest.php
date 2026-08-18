@@ -3,18 +3,21 @@
 declare(strict_types=1);
 
 use App\Clients\Http\Controllers\ClientController;
+use App\Dossiers\Http\Controllers\AudioRecordingController;
 use App\Dossiers\Http\Controllers\DocumentRequestController;
 use App\Dossiers\Http\Controllers\DocumentRequestReviewController;
 use App\Dossiers\Http\Controllers\DossierBuilderLockController;
 use App\Dossiers\Http\Controllers\DossierController;
 use App\Dossiers\Http\Controllers\DossierExportController;
 use App\Dossiers\Http\Controllers\UploadedDocumentController;
+use App\Platform\Http\Controllers\DataSubjectRequestController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
 use App\Reporting\Http\Controllers\PipelineController;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Http\Controllers\AcceptTenantInvitationController;
 use App\Tenancy\Http\Controllers\TenantInvitationController;
+use App\WorkspaceNotifications\Http\Controllers\WorkspaceNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,6 +67,12 @@ const CONTROLLER_NON_REST_ACTIONS = [
         'archived', 'builder', 'bulkArchive', 'bulkRestore', 'restore', 'review',
     ],
 
+    // Two-step compliance workflow: log, then fulfil or refuse; the archive
+    // download is gated separately because it is a copy of one whole person.
+    DataSubjectRequestController::class => [
+        'download', 'fulfil', 'refuse',
+    ],
+
     // Bulk operations on the questionnaire item collection.
     DocumentRequestController::class => [
         'applyTemplate', 'reorder', 'sync',
@@ -79,8 +88,14 @@ const CONTROLLER_NON_REST_ACTIONS = [
     UploadedDocumentController::class => [
         'download', 'live', 'preview',
     ],
+    AudioRecordingController::class => [
+        'download', 'live',
+    ],
     DossierExportController::class => ['download'],
-    PipelineController::class => ['download'],
+
+    // A processing run is not a REST resource: `download` streams its payload
+    // and `retry` re-queues the run in place rather than creating a new one.
+    PipelineController::class => ['cancel', 'download', 'retry'],
 
     // Staff answering on the client's behalf, alongside the review decision.
     DocumentRequestReviewController::class => ['answer'],
@@ -93,6 +108,8 @@ const CONTROLLER_NON_REST_ACTIONS = [
         'accept', 'register',
     ],
     TenantInvitationController::class => ['resend'],
+
+    WorkspaceNotificationController::class => ['destroyAll'],
 ];
 
 /**

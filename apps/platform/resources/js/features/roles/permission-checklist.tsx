@@ -1,7 +1,16 @@
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FieldLabel } from '@/components/ui/field';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/components/ui/field';
 import type { WorkspacePermissionGroup } from '@/features/roles/types';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -57,8 +66,8 @@ export default function PermissionChecklist({
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
+        <FieldGroup>
+            <ButtonGroup>
                 <Button
                     type="button"
                     variant="outline"
@@ -75,44 +84,49 @@ export default function PermissionChecklist({
                 >
                     {t('Clear all')}
                 </Button>
-            </div>
+            </ButtonGroup>
+
+            {/*
+              `legend` has to be the fieldset's first child to name the group,
+              so the bulk toggles sit on their own row beneath it rather than
+              inside a shared header div.
+            */}
             {permissionGroups.map((group) => (
-                <div key={group.value} className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                            {group.label}
-                        </h4>
-                        <div className="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                    toggleGroupPermissions(group, true)
-                                }
-                            >
-                                {t('All')}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                    toggleGroupPermissions(group, false)
-                                }
-                            >
-                                {t('None')}
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
+                <FieldSet key={group.value} className="gap-2">
+                    <FieldLegend
+                        variant="label"
+                        className="mb-0 tracking-wide uppercase"
+                    >
+                        {group.label}
+                    </FieldLegend>
+
+                    <ButtonGroup>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleGroupPermissions(group, true)}
+                        >
+                            {t('All')}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleGroupPermissions(group, false)}
+                        >
+                            {t('None')}
+                        </Button>
+                    </ButtonGroup>
+
+                    <FieldGroup className="gap-2">
                         {group.permissions.map((permission) => {
                             const checkboxId = `permission-${group.value}-${permission.value}`;
 
                             return (
-                                <div
+                                <Field
                                     key={permission.value}
-                                    className="flex items-start gap-2"
+                                    orientation="horizontal"
                                 >
                                     <Checkbox
                                         id={checkboxId}
@@ -128,23 +142,23 @@ export default function PermissionChecklist({
                                             )
                                         }
                                     />
-                                    <FieldLabel
-                                        htmlFor={checkboxId}
-                                        className="cursor-pointer text-sm"
-                                    >
-                                        <span className="block font-medium">
+                                    <FieldContent>
+                                        <FieldLabel
+                                            htmlFor={checkboxId}
+                                            className="cursor-pointer font-medium"
+                                        >
                                             {permission.label}
-                                        </span>
-                                        <span className="block text-xs text-muted-foreground">
+                                        </FieldLabel>
+                                        <FieldDescription>
                                             {permission.description}
-                                        </span>
-                                    </FieldLabel>
-                                </div>
+                                        </FieldDescription>
+                                    </FieldContent>
+                                </Field>
                             );
                         })}
-                    </div>
-                </div>
+                    </FieldGroup>
+                </FieldSet>
             ))}
-        </div>
+        </FieldGroup>
     );
 }

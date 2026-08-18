@@ -1,3 +1,7 @@
+import { X } from 'lucide-react';
+import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadController';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
+import { Button } from '@/components/ui/button';
 import {
     PortalBooleanDocumentAnswer,
     PortalChoiceDocumentAnswer,
@@ -5,11 +9,14 @@ import {
     PortalTextDocumentAnswer,
 } from '@/features/document-requests/portal/portal-document-answer';
 import PortalDocumentUpload from '@/features/document-requests/portal/portal-document-upload';
-import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import type {
+    PortalDocumentRequest,
+    PortalUploadedDocument,
+} from '@/features/document-requests/types';
 import { storesAnswerText } from '@/features/document-requests/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 
 export type PortalDocumentRequestTypeProps = {
     documentRequest: PortalDocumentRequest;
@@ -23,33 +30,25 @@ export function PortalFileRequestContent({
     documentRequest,
     canRespond,
 }: PortalDocumentRequestTypeProps) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const allowMultiple =
+        documentRequest.configuration?.allow_multiple ?? false;
+    const canRemove = canRespond && allowMultiple;
 
     return (
         <div className="space-y-3">
-            {documentRequest.uploaded_document ? (
-                <div className="rounded-lg border border-dashed border-border/70 bg-muted/30 px-3 py-2.5 text-sm">
-                    <p className="font-medium">
-                        {documentRequest.uploaded_document.original_filename}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                        {formatBytes(
-                            documentRequest.uploaded_document.size_bytes,
-                        )}
-                        {documentRequest.uploaded_document.uploaded_at ? (
-                            <>
-                                {' '}
-                                ·{' '}
-                                {formatDateTime(
-                                    documentRequest.uploaded_document
-                                        .uploaded_at,
-                                    locale,
-                                )}
-                            </>
-                        ) : null}
-                    </p>
+            {documentRequest.uploaded_documents.length > 0 ? (
+                <div className="space-y-2">
+                    {documentRequest.uploaded_documents.map((uploaded) => (
+                        <PortalUploadedFile
+                            key={uploaded.id}
+                            documentRequest={documentRequest}
+                            uploaded={uploaded}
+                            canRemove={canRemove}
+                        />
+                    ))}
                     {!canRespond ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                             {t('File received.')}
                         </p>
                     ) : null}
@@ -57,6 +56,62 @@ export function PortalFileRequestContent({
             ) : null}
             {canRespond ? (
                 <PortalDocumentUpload documentRequest={documentRequest} />
+            ) : null}
+        </div>
+    );
+}
+
+function PortalUploadedFile({
+    documentRequest,
+    uploaded,
+    canRemove,
+}: {
+    documentRequest: PortalDocumentRequest;
+    uploaded: PortalUploadedDocument;
+    canRemove: boolean;
+}) {
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
+
+    return (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border/70 bg-muted/30 px-3 py-2.5 text-sm">
+            <div className="min-w-0">
+                <p className="truncate font-medium">
+                    {uploaded.original_filename}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {formatBytes(uploaded.size_bytes)}
+                    {uploaded.uploaded_at ? (
+                        <> · {formatDateTime(uploaded.uploaded_at)}</>
+                    ) : null}
+                </p>
+            </div>
+            {canRemove ? (
+                <ConfirmDestroyDialog
+                    title={t('Remove :filename?', {
+                        filename: uploaded.original_filename,
+                    })}
+                    description={t(
+                        'This file will be permanently removed from your submission.',
+                    )}
+                    confirmLabel={t('Remove file')}
+                    trigger={
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label={t('Remove :filename', {
+                                filename: uploaded.original_filename,
+                            })}
+                        >
+                            <X aria-hidden />
+                        </Button>
+                    }
+                    form={ClientPortalUploadController.destroy.form({
+                        documentRequest: documentRequest.id,
+                        uploadedDocument: uploaded.id,
+                    })}
+                />
             ) : null}
         </div>
     );

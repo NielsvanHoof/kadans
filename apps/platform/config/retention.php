@@ -68,4 +68,21 @@ return [
     */
     'member_invitations_days' => (int) env('RETENTION_MEMBER_INVITATIONS_DAYS', 90),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Data-subject requests
+    |--------------------------------------------------------------------------
+    |
+    | `response_days` sets the due date on a logged access or erasure request —
+    | GDPR allows one month, so 30 days by default.
+    |
+    | `export_hours` bounds how long a generated export archive stays
+    | downloadable. It is a copy of everything held about one person, so it must
+    | not outlive the request it answers. Longer than a dossier export (which
+    | expires in minutes) because the firm has to get it to the client.
+    |
+    */
+    'data_subject_response_days' => (int) env('RETENTION_DATA_SUBJECT_RESPONSE_DAYS', 30),
+    'data_subject_export_hours' => (int) env('RETENTION_DATA_SUBJECT_EXPORT_HOURS', 72),
+
 ];

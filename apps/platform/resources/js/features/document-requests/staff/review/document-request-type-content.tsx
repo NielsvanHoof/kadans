@@ -32,16 +32,20 @@ export function StaffFileRequestContent({
 }: StaffDocumentRequestTypeProps) {
     const { canDownload, dossierStatus } = useDossierCapabilities();
     const staffFallbackAllowed = useStaffFallbackAllowed(documentRequest);
-    const hasUpload = documentRequest.uploaded_document !== null;
+    const hasUpload = documentRequest.uploaded_documents.length > 0;
+    const allowMultiple =
+        documentRequest.configuration?.allow_multiple ?? false;
 
     return (
         <>
-            {hasUpload && documentRequest.uploaded_document && (
+            {documentRequest.uploaded_documents.map((uploadedDocument) => (
                 <DocumentProcessingPanel
-                    uploadedDocument={documentRequest.uploaded_document}
+                    key={uploadedDocument.id}
+                    uploadedDocument={uploadedDocument}
                     canDownload={canDownload}
+                    canRemove={allowMultiple && uploadedDocument.can_delete}
                 />
-            )}
+            ))}
 
             {!hasUpload && (
                 <WaitingForClientUpload dossierStatus={dossierStatus} />

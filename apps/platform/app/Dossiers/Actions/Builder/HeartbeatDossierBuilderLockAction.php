@@ -8,6 +8,7 @@ use App\Accounts\Models\User;
 use App\Dossiers\Data\DossierBuilderLockData;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierBuilderLock;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -16,15 +17,17 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
  */
 final readonly class HeartbeatDossierBuilderLockAction
 {
+    public function __construct(
+        private DossierLocks $dossierLocks,
+    ) {}
+
     /**
      * @throws ConflictHttpException when the token does not match an active lock for this user
      */
     public function handle(Dossier $dossier, User $user, string $token): DossierBuilderLockData
     {
         return DB::transaction(function () use ($dossier, $user, $token): DossierBuilderLockData {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
             $lockedDossier->loadMissing('builderLockedBy:id,name,email');
 
             if (

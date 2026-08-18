@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\AudioProcessing\AudioProcessingServiceProvider;
 use App\Audit\AuditServiceProvider;
 use App\ClientPortal\ClientPortalServiceProvider;
 use App\Clients\ClientsServiceProvider;
 use App\DocumentProcessing\DocumentProcessingServiceProvider;
 use App\Dossiers\DossiersServiceProvider;
+use App\Pipelines\PipelinesServiceProvider;
 use App\Platform\PlatformServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
@@ -23,7 +25,9 @@ return [
     TypeScriptTransformerServiceProvider::class,
     PlatformServiceProvider::class,
     TenancyServiceProvider::class,
+    PipelinesServiceProvider::class,
     DocumentProcessingServiceProvider::class,
+    AudioProcessingServiceProvider::class,
     DossiersServiceProvider::class,
     AuditServiceProvider::class,
     ClientsServiceProvider::class,

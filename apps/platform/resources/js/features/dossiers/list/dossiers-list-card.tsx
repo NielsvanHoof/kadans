@@ -1,22 +1,15 @@
 import { Link } from '@inertiajs/react';
-import { useState } from 'react';
-import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import type { DataTableColumn } from '@/components/data/data-table';
 import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
+import IndexDataCard from '@/components/data/index-data-card';
 import EmptyState from '@/components/primitives/empty-state';
 import { LinkButton } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import BulkArchiveDossiersButton from '@/features/dossiers/list/bulk-archive-dossiers-button';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDate } from '@/lib/format-date-time';
 import { create, show } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
@@ -31,16 +24,10 @@ export default function DossiersListCard({
     canManage?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDate } = useFormatters();
     const rows = dossiers.data;
     const total = dossiers.total;
-    const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
-        new Set(),
-    );
-
-    const selectedIds = rows
-        .filter((dossier) => selectedKeys.has(dossier.id))
-        .map((dossier) => dossier.id);
 
     const columns: DataTableColumn<DossierSummary>[] = [
         {
@@ -53,6 +40,7 @@ export default function DossiersListCard({
                         tenant: currentWorkspace,
                         dossier: dossier.id,
                     })}
+                    prefetch
                     className="font-medium hover:underline"
                 >
                     {dossier.title}
@@ -77,7 +65,7 @@ export default function DossiersListCard({
             cell: (dossier) => (
                 <span className="text-sm text-muted-foreground">
                     {dossier.due_date
-                        ? formatDate(dossier.due_date, locale)
+                        ? formatDate(dossier.due_date)
                         : t('No due date')}
                 </span>
             ),
@@ -90,54 +78,46 @@ export default function DossiersListCard({
     ];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('All dossiers')}</CardTitle>
-                <CardDescription>
-                    {total === 1
-                        ? t('1 dossier')
-                        : t(':count dossiers', { count: total })}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DataTable
-                    columns={columns}
-                    rows={rows}
-                    rowKey={(dossier) => dossier.id}
-                    selectedKeys={canManage ? selectedKeys : undefined}
-                    onSelectionChange={canManage ? setSelectedKeys : undefined}
-                    toolbar={
-                        canManage ? (
-                            <DataTableBulkToolbar
-                                selectedCount={selectedIds.length}
-                                actions={
-                                    <BulkArchiveDossiersButton
-                                        selectedIds={selectedIds}
-                                        onSuccess={() =>
-                                            setSelectedKeys(new Set())
-                                        }
-                                    />
-                                }
-                            />
-                        ) : undefined
-                    }
-                    emptyState={
-                        <EmptyState
-                            title={t(
-                                'Create a dossier to start collecting documents.',
-                            )}
-                            action={
-                                <LinkButton
-                                    size="sm"
-                                    href={create(currentWorkspace).url}
-                                >
-                                    {t('New dossier')}
-                                </LinkButton>
-                            }
-                        />
+        <IndexDataCard
+            title={t('All dossiers')}
+            description={
+                total === 1
+                    ? t('1 dossier')
+                    : t(':count dossiers', { count: total })
+            }
+            columns={columns}
+            rows={rows}
+            rowKey={(dossier) => dossier.id}
+            bulkActions={
+                canManage
+                    ? ({ selectedRows, clearSelection }) => (
+                          <DataTableBulkToolbar
+                              selectedCount={selectedRows.length}
+                              actions={
+                                  <BulkArchiveDossiersButton
+                                      selectedIds={selectedRows.map(
+                                          (dossier) => dossier.id,
+                                      )}
+                                      onSuccess={clearSelection}
+                                  />
+                              }
+                          />
+                      )
+                    : undefined
+            }
+            emptyState={
+                <EmptyState
+                    title={t('Create a dossier to start collecting documents.')}
+                    action={
+                        <LinkButton
+                            size="sm"
+                            href={create(currentWorkspace).url}
+                        >
+                            {t('New dossier')}
+                        </LinkButton>
                     }
                 />
-            </CardContent>
-        </Card>
+            }
+        />
     );
 }

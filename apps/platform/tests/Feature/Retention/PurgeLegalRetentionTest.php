@@ -6,10 +6,14 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Platform\Actions\Retention\PurgeExpiredDossierAction;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -67,7 +71,7 @@ test('expired archived dossier is permanently purged with files and activity log
     $this->artisan('retention:purge-legal')
         ->assertSuccessful();
 
-    $tenant->makeCurrent();
+    actingInWorkspace($tenant);
 
     expect(Dossier::withTrashed()->find($dossier->id))->toBeNull()
         ->and(DocumentRequest::query()->find($documentRequest->id))->toBeNull()
@@ -95,6 +99,37 @@ test('archived dossier younger than retention cutoff is not purged', function ()
         ->assertSuccessful();
 
     expect(Dossier::onlyTrashed()->find($dossier->id))->not->toBeNull();
+});
+
+test('purging a dossier deletes audio recordings from storage and counts them', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $audioRecording = AudioRecording::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'disk' => 'local',
+        'path' => 'audio/retention-voice.mp3',
+    ]);
+
+    Storage::disk('local')->put($audioRecording->path, 'voice-recording');
+
+    $dossier->delete();
+    Dossier::withTrashed()
+        ->whereKey($dossier->id)
+        ->update(['deleted_at' => now()->subDays(1095)->subDay()]);
+
+    $result = resolve(PurgeExpiredDossierAction::class)
+        ->handle(Dossier::onlyTrashed()->findOrFail($dossier->id));
+
+    expect($result['purged'])->toBeTrue()
+        ->and($result['files_deleted'])->toBe(1)
+        ->and(Storage::disk('local')->exists($audioRecording->path))->toBeFalse()
+        ->and(AudioRecording::query()->find($audioRecording->id))->toBeNull();
 });
 
 test('expired archived client is purged only after dossiers are hard deleted', function (): void {
@@ -158,4 +193,60 @@ test('archived client is not purged while dossiers still exist', function (): vo
 
     expect(Dossier::onlyTrashed()->find($dossier->id))->not->toBeNull()
         ->and(Client::onlyTrashed()->find($client->id))->not->toBeNull();
+});
+
+test('a failing dossier purge is reported and does not present as success', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $uploadedDocument = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'disk' => 'local',
+        'path' => 'uploads/retention-failure.pdf',
+    ]);
+    $audioRecording = AudioRecording::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'disk' => 'local',
+        'path' => 'audio/retention-failure.mp3',
+    ]);
+
+    Storage::disk('local')->put($uploadedDocument->path, 'must-survive-rollback');
+    Storage::disk('local')->put($audioRecording->path, 'audio-must-survive-rollback');
+
+    $dossier->delete();
+
+    Exceptions::fake();
+    Log::spy();
+
+    Dossier::forceDeleting(function (): void {
+        throw new RuntimeException('forced purge failure');
+    });
+
+    $trashed = Dossier::onlyTrashed()->findOrFail($dossier->id);
+
+    expect(fn () => resolve(PurgeExpiredDossierAction::class)->handle($trashed))
+        ->toThrow(RuntimeException::class, 'forced purge failure');
+
+    Exceptions::assertReported(
+        fn (RuntimeException $exception): bool => $exception->getMessage() === 'forced purge failure',
+    );
+
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->withArgs(fn (string $message, array $context): bool => $message === 'Legal retention dossier purge failed.'
+            && ($context['dossier_id'] ?? null) === $dossier->id);
+
+    expect(Dossier::onlyTrashed()->find($dossier->id))->not->toBeNull()
+        ->and(Storage::disk('local')->exists($uploadedDocument->path))->toBeTrue()
+        ->and(Storage::disk('local')->exists($audioRecording->path))->toBeTrue();
 });

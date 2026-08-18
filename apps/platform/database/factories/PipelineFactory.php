@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\DocumentProcessing\Enums\PipelineStatus;
-use App\DocumentProcessing\Enums\PipelineType;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -77,5 +78,24 @@ final class PipelineFactory extends Factory
     public function dossierExport(): static
     {
         return $this->state(['type' => PipelineType::DossierExport]);
+    }
+
+    /**
+     * A run that exhausted its queue attempts, with the diagnostic columns a
+     * real failure leaves behind.
+     */
+    public function failed(): static
+    {
+        return $this->state([
+            'status' => PipelineStatus::Failed,
+            'current_stage' => PipelineStepKey::Submit,
+            'provider' => 'textract',
+            'provider_job_id' => 'textract-job-1',
+            'error_code' => 'ocr_job_failed',
+            'error_message' => 'The processing job failed.',
+            'started_at' => now()->subMinutes(10),
+            'last_activity_at' => now()->subMinutes(5),
+            'failed_at' => now()->subMinutes(5),
+        ]);
     }
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Data;
 
-use App\DocumentProcessing\Data\PipelineData;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Data\PipelineData;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -25,6 +25,7 @@ final class StaffUploadedDocumentData extends Data
         public readonly DocumentProcessingStatus $processingStatus,
         public readonly ?string $processingError,
         public readonly ?PipelineData $pipeline,
+        public readonly bool $canDelete,
     ) {}
 
     /**
@@ -46,6 +47,7 @@ final class StaffUploadedDocumentData extends Data
             pipeline: $latestPipeline === null
                 ? null
                 : PipelineData::fromModel($latestPipeline),
+            canDelete: request()->user()?->can('delete', $uploadedDocument) ?? false,
         );
     }
 }

@@ -7,6 +7,7 @@ use App\Reporting\Http\Controllers\DashboardController;
 use App\Reporting\Http\Controllers\MediaLibraryController;
 use App\Reporting\Http\Controllers\PipelineController;
 use Illuminate\Auth\Middleware\RequirePassword;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard');
@@ -21,8 +22,17 @@ Route::get('pipelines/{pipeline}', [PipelineController::class, 'show'])->name('p
 Route::get('pipelines/{pipeline}/download', [PipelineController::class, 'download'])
     ->middleware([
         RequirePassword::using(
-            passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+            passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
         ),
     ])
     ->name('pipelines.download');
+// No RequirePassword here, unlike the download above: a retry streams no
+// document content, it only re-queues work the user can already see.
+Route::post('pipelines/{pipeline}/retry', [PipelineController::class, 'retry'])
+    ->middleware(['throttle:10,1'])
+    ->name('pipelines.retry');
+// Cancelling closes a run the user can already see; same reasoning as retry.
+Route::post('pipelines/{pipeline}/cancel', [PipelineController::class, 'cancel'])
+    ->middleware(['throttle:10,1'])
+    ->name('pipelines.cancel');
 Route::delete('pipelines/{pipeline}', [PipelineController::class, 'destroy'])->name('pipelines.destroy');

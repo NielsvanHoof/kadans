@@ -26,6 +26,8 @@ enum AuditEvent: string
     case ClientPortalAccessGrantCreated = 'client_portal.access_grant_created';
     case ClientPortalAccessGrantRevoked = 'client_portal.access_grant_revoked';
     case ClientPortalAccessed = 'client_portal.accessed';
+    case ClientPortalAccessedFromNewDevice = 'client_portal.accessed_from_new_device';
+    case ClientPortalNewDeviceBlocked = 'client_portal.new_device_blocked';
     case ClientPortalInviteQueued = 'client_portal.invite_queued';
     case ClientPortalInviteSent = 'client_portal.invite_sent';
     case ClientPortalInviteFailed = 'client_portal.invite_failed';
@@ -52,11 +54,24 @@ enum AuditEvent: string
     case DocumentRequestDeleted = 'document_request.deleted';
     case QuestionnaireTemplateDeleted = 'questionnaire_template.deleted';
     case QuestionnaireTemplateItemDeleted = 'questionnaire_template_item.deleted';
+    case PipelineRetried = 'pipeline.retried';
+    case PipelineCancelled = 'pipeline.cancelled';
     case PipelineDeleted = 'pipeline.deleted';
     case UserDeleted = 'user.deleted';
+    case DataSubjectRequestLogged = 'data_subject.request_logged';
+    case DataSubjectRequestRefused = 'data_subject.request_refused';
+    case DataSubjectExportCompleted = 'data_subject.export_completed';
+    case DataSubjectErasureCompleted = 'data_subject.erasure_completed';
+    case DataSubjectExportDownloaded = 'data_subject.export_downloaded';
     case SupportSessionStarted = 'support.session_started';
     case SupportSessionEnded = 'support.session_ended';
     case SupportSessionExpired = 'support.session_expired';
+    case AudioRecordingUploaded = 'audio_recording.uploaded';
+    case AudioRecordingDownloaded = 'audio_recording.downloaded';
+    case AudioRecordingDeleted = 'audio_recording.deleted';
+    case AudioTranscriptionStarted = 'audio_recording.transcription_started';
+    case AudioTranscriptionCompleted = 'audio_recording.transcription_completed';
+    case AudioTranscriptionFailed = 'audio_recording.transcription_failed';
 
     public function label(): string
     {
@@ -81,6 +96,8 @@ enum AuditEvent: string
             self::ClientPortalAccessGrantCreated => __('Client portal access grant created'),
             self::ClientPortalAccessGrantRevoked => __('Client portal access grant revoked'),
             self::ClientPortalAccessed => __('Client portal accessed'),
+            self::ClientPortalAccessedFromNewDevice => __('Client portal opened from a new device'),
+            self::ClientPortalNewDeviceBlocked => __('Client portal blocked an unrecognised device'),
             self::ClientPortalInviteQueued => __('Client portal invitation queued'),
             self::ClientPortalInviteSent => __('Client portal invitation sent'),
             self::ClientPortalInviteFailed => __('Client portal invitation failed'),
@@ -107,11 +124,112 @@ enum AuditEvent: string
             self::DocumentRequestDeleted => __('Document request deleted'),
             self::QuestionnaireTemplateDeleted => __('Questionnaire template deleted'),
             self::QuestionnaireTemplateItemDeleted => __('Questionnaire template item deleted'),
+            self::PipelineRetried => __('Pipeline retried'),
+            self::PipelineCancelled => __('Pipeline cancelled'),
             self::PipelineDeleted => __('Pipeline deleted'),
             self::UserDeleted => __('User account deleted'),
+            self::DataSubjectRequestLogged => __('Data-subject request logged'),
+            self::DataSubjectRequestRefused => __('Data-subject request refused'),
+            self::DataSubjectExportCompleted => __('Data-subject export completed'),
+            self::DataSubjectErasureCompleted => __('Data-subject erasure completed'),
+            self::DataSubjectExportDownloaded => __('Data-subject export downloaded'),
             self::SupportSessionStarted => __('Support session started'),
             self::SupportSessionEnded => __('Support session ended'),
             self::SupportSessionExpired => __('Support session expired'),
+            self::AudioRecordingUploaded => __('Audio recording uploaded'),
+            self::AudioRecordingDownloaded => __('Audio recording downloaded'),
+            self::AudioRecordingDeleted => __('Audio recording deleted'),
+            self::AudioTranscriptionStarted => __('Audio transcription started'),
+            self::AudioTranscriptionCompleted => __('Audio transcription completed'),
+            self::AudioTranscriptionFailed => __('Audio transcription failed'),
+        };
+    }
+
+    /**
+     * Domain grouping label for filter UIs (activity event select).
+     */
+    public function group(): string
+    {
+        return match ($this) {
+            self::DossierViewed,
+            self::DossierCompleted,
+            self::DossierExportRequested,
+            self::DossierExportCompleted,
+            self::DossierExportFailed,
+            self::DossierExportDownloaded,
+            self::DossierReminderQueued,
+            self::DossierReminderSent,
+            self::DossierReminderFailed,
+            self::DossierDeleted,
+            self::DossierRestored => __('Dossiers'),
+
+            self::DocumentRequestCreated,
+            self::DocumentRequestAccepted,
+            self::DocumentRequestRejected,
+            self::DocumentRequestDeleted => __('Document requests'),
+
+            self::DocumentUploaded,
+            self::DocumentViewed,
+            self::DocumentDownloaded,
+            self::DocumentProcessingStarted,
+            self::DocumentProcessingCompleted,
+            self::DocumentProcessingFailed => __('Documents'),
+
+            self::QuestionnaireAnswerSubmitted,
+            self::QuestionnaireTemplateDeleted,
+            self::QuestionnaireTemplateItemDeleted => __('Questionnaires'),
+
+            self::ClientQuestionnaireCompleted,
+            self::ClientPortalAccessGrantCreated,
+            self::ClientPortalAccessGrantRevoked,
+            self::ClientPortalAccessed,
+            self::ClientPortalAccessedFromNewDevice,
+            self::ClientPortalNewDeviceBlocked,
+            self::ClientPortalInviteQueued,
+            self::ClientPortalInviteSent,
+            self::ClientPortalInviteFailed,
+            self::ClientChangesRequestedQueued,
+            self::ClientChangesRequestedSent,
+            self::ClientChangesRequestedFailed => __('Client portal'),
+
+            self::AccessDenied => __('Access'),
+
+            self::MemberInvited,
+            self::MemberInvitationAccepted,
+            self::MemberInvitationRevoked,
+            self::MemberRoleChanged,
+            self::MemberSuspended,
+            self::MemberRemoved => __('Members'),
+
+            self::RoleCreated,
+            self::RoleUpdated,
+            self::RoleDeleted => __('Roles'),
+
+            self::ClientDeleted,
+            self::ClientRestored => __('Clients'),
+
+            self::PipelineRetried,
+            self::PipelineCancelled,
+            self::PipelineDeleted => __('Pipelines'),
+
+            self::UserDeleted => __('Users'),
+
+            self::DataSubjectRequestLogged,
+            self::DataSubjectRequestRefused,
+            self::DataSubjectExportCompleted,
+            self::DataSubjectErasureCompleted,
+            self::DataSubjectExportDownloaded => __('Data-subject requests'),
+
+            self::SupportSessionStarted,
+            self::SupportSessionEnded,
+            self::SupportSessionExpired => __('Support'),
+
+            self::AudioRecordingUploaded,
+            self::AudioRecordingDownloaded,
+            self::AudioRecordingDeleted,
+            self::AudioTranscriptionStarted,
+            self::AudioTranscriptionCompleted,
+            self::AudioTranscriptionFailed => __('Audio recordings'),
         };
     }
 }

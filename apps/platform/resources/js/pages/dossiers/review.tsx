@@ -1,6 +1,6 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
 import Heading from '@/components/primitives/heading';
 import { LinkButton } from '@/components/ui/button';
@@ -44,14 +44,20 @@ export default function ReviewDossier({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+
+    // Local list so Echo OCR patches can merge without waiting for Inertia.
+    // Adjust during render when props change — avoids a wasted effect pass.
     const [documentRequests, setDocumentRequests] = useState(
         dossier.document_requests,
     );
+    const [documentRequestsProp, setDocumentRequestsProp] = useState(
+        dossier.document_requests,
+    );
 
-    // Sync when Inertia replaces props (review actions, uploads, navigation).
-    useEffect(() => {
+    if (dossier.document_requests !== documentRequestsProp) {
+        setDocumentRequestsProp(dossier.document_requests);
         setDocumentRequests(dossier.document_requests);
-    }, [dossier.document_requests]);
+    }
 
     setLayoutProps({
         breadcrumbs: [
@@ -73,11 +79,13 @@ export default function ReviewDossier({
         ],
     });
 
-    const hasInFlightProcessing = documentRequests.some((request) => {
-        const status = request.uploaded_document?.processing_status;
-
-        return status === 'pending' || status === 'processing';
-    });
+    const hasInFlightProcessing = documentRequests.some((request) =>
+        request.uploaded_documents.some(
+            (uploadedDocument) =>
+                uploadedDocument.processing_status === 'pending' ||
+                uploadedDocument.processing_status === 'processing',
+        ),
+    );
 
     useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocument }>({
         enabled: hasInFlightProcessing,
@@ -105,6 +113,9 @@ export default function ReviewDossier({
                 canDownload={canDownload}
                 canEditDetails={canEditDetails}
                 canSendReminder={canSendReminder}
+                // Audio recordings are not surfaced on the review queue.
+                canUploadAudio={false}
+                canDownloadAudio={false}
                 dossierStatus={dossier.status}
                 hasFormItems={documentRequests.length > 0}
             >
@@ -173,13 +184,21 @@ function mergeUploadedDocument(
     uploadedDocument: UploadedDocument,
 ): DocumentRequest[] {
     return requests.map((request) => {
-        if (request.uploaded_document?.id !== uploadedDocument.id) {
+        if (
+            !request.uploaded_documents.some(
+                (existing) => existing.id === uploadedDocument.id,
+            )
+        ) {
             return request;
         }
 
         return {
             ...request,
-            uploaded_document: uploadedDocument,
+            uploaded_documents: request.uploaded_documents.map((existing) =>
+                existing.id === uploadedDocument.id
+                    ? uploadedDocument
+                    : existing,
+            ),
         };
     });
 }

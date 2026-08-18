@@ -20,6 +20,7 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -43,7 +44,7 @@ final readonly class FetchClientPortalQuery
                 'documentRequests' => fn ($query) => $query
                     ->oldest('sort_order')
                     ->oldest('id')
-                    ->with('uploadedDocument:id,document_request_id,original_filename,size_bytes,uploaded_at'),
+                    ->with('uploadedDocuments:id,document_request_id,original_filename,size_bytes,uploaded_at'),
             ])
             ->findOrFail($grant->dossier_id);
 
@@ -76,8 +77,6 @@ final readonly class FetchClientPortalQuery
         $documentRequests = [];
 
         foreach ($visibleDocumentRequests as $documentRequest) {
-            $uploadedDocument = $documentRequest->uploadedDocument;
-
             $documentRequests[] = new PortalDocumentRequestData(
                 id: $documentRequest->id,
                 type: $documentRequest->type,
@@ -95,13 +94,14 @@ final readonly class FetchClientPortalQuery
                     SubmissionContext::Portal,
                     $dossier,
                 ),
-                uploadedDocument: $uploadedDocument === null
-                    ? null
-                    : new PortalUploadedDocumentData(
+                uploadedDocuments: array_values($documentRequest->uploadedDocuments
+                    ->map(fn (UploadedDocument $uploadedDocument): PortalUploadedDocumentData => new PortalUploadedDocumentData(
+                        id: $uploadedDocument->id,
                         originalFilename: $uploadedDocument->original_filename,
                         sizeBytes: $uploadedDocument->size_bytes,
                         uploadedAt: $uploadedDocument->uploaded_at->toIso8601String(),
-                    ),
+                    ))
+                    ->all()),
             );
         }
 

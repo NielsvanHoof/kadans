@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Http\Middleware\RequireTwoFactorAuthentication;
 use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
@@ -16,8 +17,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware([
     'auth',
     'verified',
+    // After SetPermissionTeamContext: the `by_permission` mode reads the user's
+    // role in the session's workspace, which is not resolved before then.
     InitializeTenantFromSession::class,
     SetPermissionTeamContext::class,
+    RequireTwoFactorAuthentication::class,
 ])->group(function (): void {
     require __DIR__.'/web/reporting.php';
     require __DIR__.'/web/tenancy.php';
@@ -26,3 +30,4 @@ Route::middleware([
 
 require __DIR__.'/settings.php';
 require __DIR__.'/web/invitations.php';
+require __DIR__.'/web/legal.php';

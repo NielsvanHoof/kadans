@@ -19,12 +19,16 @@ export default function NotificationList({
 
     if (items.length === 0) {
         return (
-            <EmptyState title={t('No notifications yet')} variant="compact" />
+            <EmptyState
+                title={t('No notifications yet')}
+                variant="compact"
+                className="px-3 py-6 md:p-6"
+            />
         );
     }
 
     return (
-        <ItemGroup className="max-h-80 overflow-y-auto">
+        <ItemGroup className="max-h-80 overflow-y-auto overscroll-contain">
             {items.map((notification) => (
                 <NotificationListItem
                     key={notification.id}

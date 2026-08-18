@@ -36,6 +36,13 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        {{-- Links the browser pageload span to the PHP transaction that rendered
+             this response, so one trace spans both SDKs. Also carries the
+             backend's sampling decision, which keeps a trace from being kept on
+             one side and dropped on the other. Emits two inert meta tags when
+             Sentry is disabled. --}}
+        {!! \Sentry\Laravel\Integration::sentryMeta() !!}
+
         @fonts
 
         @viteReactRefresh

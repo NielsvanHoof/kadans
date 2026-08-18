@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/card';
 import type { MediaDocument } from '@/features/media/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { fileIconForFilename } from '@/lib/file-icon-for-filename';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
@@ -30,7 +30,8 @@ export default function MediaDocumentsCard({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const rows = documents.data;
     const total = documents.total;
 
@@ -56,9 +57,11 @@ export default function MediaDocumentsCard({
                 ) : (
                     <ul className="divide-y rounded-md border">
                         {rows.map((document) => {
+                            const firstUpload = document.uploaded_documents[0];
+                            const extraUploadCount =
+                                document.uploaded_documents.length - 1;
                             const filename =
-                                document.uploaded_document?.original_filename ??
-                                '';
+                                firstUpload?.original_filename ?? '';
                             const FileIcon = filename
                                 ? fileIconForFilename(filename)
                                 : null;
@@ -86,26 +89,21 @@ export default function MediaDocumentsCard({
                                                 {document.dossier.reference &&
                                                     ` · ${document.dossier.reference}`}
                                             </p>
-                                            {document.uploaded_document ? (
+                                            {firstUpload ? (
                                                 <p className="mt-1 text-sm text-muted-foreground">
                                                     {
-                                                        document
-                                                            .uploaded_document
-                                                            .original_filename
+                                                        firstUpload.original_filename
                                                     }
                                                     {' · '}
                                                     {formatBytes(
-                                                        document
-                                                            .uploaded_document
-                                                            .size_bytes,
+                                                        firstUpload.size_bytes,
                                                     )}
                                                     {' · '}
                                                     {formatDateTime(
-                                                        document
-                                                            .uploaded_document
-                                                            .uploaded_at,
-                                                        locale,
+                                                        firstUpload.uploaded_at,
                                                     )}
+                                                    {extraUploadCount > 0 &&
+                                                        ` · ${t('+:count more', { count: extraUploadCount })}`}
                                                 </p>
                                             ) : (
                                                 <p className="mt-1 text-sm text-muted-foreground">
@@ -135,26 +133,23 @@ export default function MediaDocumentsCard({
                                             {t('Dossier')}
                                         </LinkButton>
 
-                                        {document.uploaded_document &&
-                                            canDownload && (
-                                                <a
-                                                    className={buttonVariants({
-                                                        variant: 'outline',
-                                                        size: 'sm',
-                                                    })}
-                                                    href={UploadedDocumentController.download.url(
-                                                        {
-                                                            tenant: currentWorkspace,
-                                                            uploadedDocument:
-                                                                document
-                                                                    .uploaded_document
-                                                                    .id,
-                                                        },
-                                                    )}
-                                                >
-                                                    {t('Download')}
-                                                </a>
-                                            )}
+                                        {firstUpload && canDownload && (
+                                            <a
+                                                className={buttonVariants({
+                                                    variant: 'outline',
+                                                    size: 'sm',
+                                                })}
+                                                href={UploadedDocumentController.download.url(
+                                                    {
+                                                        tenant: currentWorkspace,
+                                                        uploadedDocument:
+                                                            firstUpload.id,
+                                                    },
+                                                )}
+                                            >
+                                                {t('Download')}
+                                            </a>
+                                        )}
                                     </div>
                                 </li>
                             );

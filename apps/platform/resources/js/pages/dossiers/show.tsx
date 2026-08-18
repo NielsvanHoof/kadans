@@ -20,6 +20,8 @@ export default function ShowDossier({
     can_send_reminder: canSendReminder,
     can_review: canReview,
     can_download: canDownload,
+    can_upload_audio: canUploadAudio,
+    can_download_audio: canDownloadAudio,
 }: {
     dossier: Dossier;
     access_grant_token?: string | null;
@@ -29,6 +31,8 @@ export default function ShowDossier({
     can_send_reminder: boolean;
     can_review: boolean;
     can_download: boolean;
+    can_upload_audio: boolean;
+    can_download_audio: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -61,6 +65,8 @@ export default function ShowDossier({
                 canSendReminder={canSendReminder}
                 canReview={canReview}
                 canDownload={canDownload}
+                canUploadAudio={canUploadAudio}
+                canDownloadAudio={canDownloadAudio}
             />
         </>
     );

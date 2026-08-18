@@ -46,7 +46,16 @@ export default function TwoFactorRecoveryCodes({
     const { t } = useTranslation();
     const [codesAreVisible, setCodesAreVisible] = useState<boolean>(false);
     const codesSectionRef = useRef<HTMLUListElement | null>(null);
+    const scrollTimeoutRef = useRef<number | null>(null);
     const canRegenerateCodes = recoveryCodesList.length > 0 && codesAreVisible;
+
+    useEffect(() => {
+        return () => {
+            if (scrollTimeoutRef.current !== null) {
+                window.clearTimeout(scrollTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const toggleCodesVisibility = useCallback(async () => {
         if (!codesAreVisible && !recoveryCodesList.length) {
@@ -56,11 +65,16 @@ export default function TwoFactorRecoveryCodes({
         setCodesAreVisible(!codesAreVisible);
 
         if (!codesAreVisible) {
-            setTimeout(() => {
+            if (scrollTimeoutRef.current !== null) {
+                window.clearTimeout(scrollTimeoutRef.current);
+            }
+
+            scrollTimeoutRef.current = window.setTimeout(() => {
                 codesSectionRef.current?.scrollIntoView({
                     behavior: 'smooth',
                     block: 'nearest',
                 });
+                scrollTimeoutRef.current = null;
             });
         }
     }, [codesAreVisible, recoveryCodesList.length, fetchRecoveryCodes]);

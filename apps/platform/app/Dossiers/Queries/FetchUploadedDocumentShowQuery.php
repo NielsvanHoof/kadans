@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Dossiers\Queries;
 
 use App\DocumentProcessing\Contracts\Ocr\DocumentExtraction;
-use App\DocumentProcessing\Data\PipelineData;
 use App\Dossiers\Models\UploadedDocument;
-use JsonException;
+use App\Pipelines\Data\PipelineData;
 
 use function is_array;
 use function is_float;
@@ -101,12 +100,11 @@ final class FetchUploadedDocumentShowQuery
             return null;
         }
 
-        try {
-            /** @var mixed $decoded */
-            $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            return null;
-        }
+        /** @var mixed $decoded */
+        $decoded = rescue(
+            static fn (): mixed => json_decode($raw, true, 512, JSON_THROW_ON_ERROR),
+            report: false,
+        );
 
         if (! is_array($decoded)) {
             return null;

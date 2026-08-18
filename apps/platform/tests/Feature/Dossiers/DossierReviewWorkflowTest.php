@@ -16,11 +16,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use App\Tenancy\Enums\TenantMembershipStatus;
-use App\Tenancy\Models\TenantMembership;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Notifications\AnonymousNotifiable;
@@ -31,29 +27,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
-
 /**
  * @return array{owner: User, reviewer: User, tenant: mixed, dossier: Dossier}
  */
 function createReviewWorkflowContext(): array
 {
-    $owner = User::factory()->create();
-    $reviewer = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    TenantMembership::query()->create([
-        'tenant_id' => $tenant->id,
-        'user_id' => $reviewer->id,
-        'status' => TenantMembershipStatus::Active,
-        'joined_at' => now(),
-    ]);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
-    $reviewer->assignRole(Role::Reviewer->value);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $reviewer = workspaceMember($tenant, Role::Reviewer);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -85,7 +65,6 @@ test('a reviewer can approve submitted evidence without editing the questionnair
     ]);
 
     $this->actingAs($context['reviewer'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.review', $context['tenant'], [
             'dossier' => $context['dossier'],
             'documentRequest' => $documentRequest,
@@ -150,7 +129,6 @@ test('rejected items show feedback and a client correction returns them to revie
     );
 
     $this->actingAs($context['reviewer'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post($reviewUrl, [
             'decision' => DocumentRequestStatus::Rejected->value,
         ])
@@ -310,7 +288,6 @@ test('a dossier can only be completed after every item is approved', function ()
     ]);
 
     $this->actingAs($context['reviewer'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post($completeUrl)
         ->assertSessionHasErrors('dossier');
 
@@ -344,7 +321,6 @@ test('a dossier can only be completed after every item is approved', function ()
     ])->assertForbidden();
 
     $this->actingAs($context['owner'])
-        ->withSession(['active_tenant_id' => $context['tenant']->id])
         ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $context['tenant'], [
             'dossier' => $context['dossier'],
         ]), [

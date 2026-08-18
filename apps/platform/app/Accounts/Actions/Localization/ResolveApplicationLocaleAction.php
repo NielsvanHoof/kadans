@@ -7,6 +7,7 @@ namespace App\Accounts\Actions\Localization;
 use App\Accounts\Enums\Locale;
 use App\Accounts\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 
 use function is_string;
 
@@ -41,8 +42,6 @@ final class ResolveApplicationLocaleAction
             return $preferredLocale;
         }
 
-        $fallbackLocale = config('app.locale', Locale::English->value);
-
-        return is_string($fallbackLocale) ? $fallbackLocale : Locale::English->value;
+        return Config::string('app.locale', Locale::English->value);
     }
 }

@@ -17,15 +17,11 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 test('dossier follow up details can be assigned only to active workspace staff', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
@@ -38,7 +34,6 @@ test('dossier follow up details can be assigned only to active workspace staff',
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->patch(workspaceRoute('workspaces.dossiers.update', $tenant, ['dossier' => $dossier]), [
             'title' => $dossier->title,
             'reference' => $dossier->reference,
@@ -98,7 +93,6 @@ test('dashboard and dossier index expose operational workflow queues', function 
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -134,7 +128,6 @@ test('staff can queue an audited reminder with a fresh portal grant', function (
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.reminders.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -179,6 +172,59 @@ test('staff can queue an audited reminder with a fresh portal grant', function (
             ->exists())->toBeTrue();
 });
 
+test('a custom reminder message replaces the default notification body', function (): void {
+    Notification::fake();
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $client = Client::factory()->create([
+        'tenant_id' => $tenant->id,
+        'email' => 'jane@example.com',
+    ]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'status' => DossierStatus::AwaitingClient,
+    ]);
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'status' => DocumentRequestStatus::Pending,
+    ]);
+
+    $this->actingAs($owner)
+        ->post(workspaceRoute('workspaces.dossiers.reminders.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'message' => 'Hi Jane, quick nudge about your paperwork.',
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, [
+            'dossier' => $dossier,
+        ]));
+
+    Notification::assertSentOnDemand(
+        ClientPortalReminderNotification::class,
+        function (
+            ClientPortalReminderNotification $notification,
+            array $channels,
+            AnonymousNotifiable $notifiable,
+        ): bool {
+            $mail = $notification->toMail($notifiable);
+
+            expect((string) json_encode($mail->introLines))
+                ->toContain('Hi Jane, quick nudge about your paperwork.')
+                ->not->toContain('is still waiting for information');
+
+            return true;
+        },
+    );
+
+    $queuedActivity = Activity::query()
+        ->where('event', AuditEvent::DossierReminderQueued->value)
+        ->sole();
+
+    expect($queuedActivity->getProperty('custom_message'))->toBeTrue();
+});
+
 test('scheduled reminders process only due dossiers with client work remaining', function (): void {
     Notification::fake();
 
@@ -217,6 +263,46 @@ test('scheduled reminders process only due dossiers with client work remaining',
             ->where('subject_id', $dueDossier->id)
             ->whereNull('causer_id')
             ->exists())->toBeTrue();
+});
+
+test('scheduled reminders that fail validation disable further sends and log the reason', function (): void {
+    Notification::fake();
+
+    ['tenant' => $tenant] = provisionWorkspace();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'status' => DossierStatus::AwaitingClient,
+        'reminder_interval_days' => 2,
+        'next_reminder_at' => now()->subMinute(),
+    ]);
+
+    // Optional pending items match the schedule query but are not "outstanding",
+    // so SendDossierReminderAction rejects with ValidationException.
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'status' => DocumentRequestStatus::Pending,
+        'configuration' => ['is_required' => false],
+    ]);
+
+    Log::spy();
+
+    $this->artisan('dossiers:send-reminders')->assertSuccessful();
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(fn (string $message, array $context): bool => $message === 'Scheduled dossier reminder disabled after validation failure.'
+            && ($context['dossier_id'] ?? null) === $dossier->id);
+
+    $dossier->refresh();
+
+    expect($dossier->next_reminder_at)->toBeNull()
+        ->and($dossier->reminder_interval_days)->toBeNull();
+
+    Notification::assertNothingSent();
 });
 
 test('portal reports progress and records the latest client open', function (): void {
@@ -275,7 +361,6 @@ test('read only members cannot send client reminders', function (): void {
     ]);
 
     $this->actingAs($reader)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.reminders.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -293,7 +378,6 @@ test('archiving a dossier cancels its scheduled reminder', function (): void {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->delete(workspaceRoute('workspaces.dossiers.destroy', $tenant, [
             'dossier' => $dossier,
         ]))

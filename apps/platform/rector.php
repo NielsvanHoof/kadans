@@ -6,7 +6,10 @@ use Pest\Rector\Rules\ToBeTrueNotFalseRector;
 use Pest\Rector\Set\PestSetList;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Config\RectorConfig;
+use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPublicMethodParameterRector;
+use Rector\Php81\Rector\MethodCall\SpatieEnumMethodCallToEnumConstRector;
 use Rector\Renaming\Rector\Name\RenameClassRector;
+use RectorLaravel\Rector\ArrayDimFetch\EnvVariableToEnvHelperRector;
 use RectorLaravel\Rector\ArrayDimFetch\RequestVariablesToRequestFacadeRector;
 use RectorLaravel\Rector\ArrayDimFetch\ServerVariableToRequestFacadeRector;
 use RectorLaravel\Rector\Class_\AppendsPropertyToAppendsAttributeRector;
@@ -43,9 +46,18 @@ return RectorConfig::configure()
         __DIR__.'/database/migrations',
         // Unsafe: turns not->toBeFalse() into toBeTrue() for string|int|false values.
         ToBeTrueNotFalseRector::class,
-        // $_SERVER['argv'] must stay live for CLI detection; Request::server() is a snapshot.
+        // $_SERVER['argv'] / $_ENV must stay live for CLI and test env mutation;
+        // Request::server() is a snapshot and Env::get() cannot be unset().
         RequestVariablesToRequestFacadeRector::class,
         ServerVariableToRequestFacadeRector::class,
+        EnvVariableToEnvHelperRector::class,
+        // Spatie\Enum (e.g. Health Status) is not a native PHP enum — Status::ok()
+        // must stay; Status::OK is not a valid const and breaks health tests.
+        SpatieEnumMethodCallToEnumConstRector::class,
+        // Discovery maps listeners via the handle() type hint. Stripping an unused
+        // event parameter unregisters the listener silently (RemoveCurrentTenantFromContext).
+        // Path globs in withSkip do not match here — skip the rule entirely.
+        RemoveUnusedPublicMethodParameterRector::class,
         // Prefer classic $fillable/$hidden (and related Eloquent properties) over #[Fillable]
         // attributes — readable next to ide-helper PHPDoc. Composer-based Laravel 13 sets
         // would otherwise convert these back on every run. Command #[Signature] stays enabled.

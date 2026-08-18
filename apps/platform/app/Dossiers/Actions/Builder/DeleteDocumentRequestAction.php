@@ -8,6 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -18,26 +19,22 @@ final readonly class DeleteDocumentRequestAction
     public function __construct(
         private FilesystemManager $filesystems,
         private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
     ) {}
 
     public function handle(DocumentRequest $documentRequest): void
     {
-        /** @var array{disk: string, path: string}|null $storedFile */
-        $storedFile = DB::transaction(function () use ($documentRequest): ?array {
-            $documentRequestQuery = DocumentRequest::query()
-                ->whereKey($documentRequest->getKey());
-            $documentRequestQuery->getQuery()->lockForUpdate();
-
-            $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
-            $uploadedDocument = UploadedDocument::query()
+        /** @var list<array{disk: string, path: string}> $storedFiles */
+        $storedFiles = DB::transaction(function () use ($documentRequest): array {
+            $lockedDocumentRequest = $this->dossierLocks->documentRequest($documentRequest);
+            $storedFiles = UploadedDocument::query()
                 ->where('document_request_id', $lockedDocumentRequest->id)
-                ->first();
-            $storedFile = $uploadedDocument instanceof UploadedDocument
-                ? [
+                ->get()
+                ->map(fn (UploadedDocument $uploadedDocument): array => [
                     'disk' => $uploadedDocument->disk,
                     'path' => $uploadedDocument->path,
-                ]
-                : null;
+                ])
+                ->all();
 
             $this->logAuditActivity->handle(
                 AuditEvent::DocumentRequestDeleted,
@@ -51,13 +48,19 @@ final readonly class DeleteDocumentRequestAction
 
             $lockedDocumentRequest->deleteOrFail();
 
-            return $storedFile;
+            return $storedFiles;
         });
 
-        if ($storedFile === null) {
-            return;
+        foreach ($storedFiles as $storedFile) {
+            $this->deleteStoredFile($storedFile);
         }
+    }
 
+    /**
+     * @param  array{disk: string, path: string}  $storedFile
+     */
+    private function deleteStoredFile(array $storedFile): void
+    {
         try {
             $deleted = $this->filesystems
                 ->disk($storedFile['disk'])

@@ -1,8 +1,6 @@
-import { Form } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import WorkspaceRoleController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceRoleController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
-import InputError from '@/components/primitives/input-error';
 import { Button, LinkButton } from '@/components/ui/button';
 import {
     Card,
@@ -11,11 +9,9 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import DuplicateRoleDialog from '@/features/roles/duplicate-role-dialog';
-import EditRoleDialog from '@/features/roles/edit-role-dialog';
-import PermissionChecklist from '@/features/roles/permission-checklist';
+import RoleFormDialog, {
+    type RoleFormDialogState,
+} from '@/features/roles/role-form-dialog';
 import type {
     WorkspacePermissionGroup,
     WorkspaceRole,
@@ -31,6 +27,7 @@ type RoleManagementCardProps = {
 
 /**
  * Manages tenant-authored roles. System roles stay read-only.
+ * Create / edit / duplicate all go through RoleFormDialog.
  */
 export default function RoleManagementCard({
     roles,
@@ -38,30 +35,11 @@ export default function RoleManagementCard({
 }: RoleManagementCardProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
-    const [editingRole, setEditingRole] = useState<WorkspaceRole | null>(null);
-    const [duplicatingRole, setDuplicatingRole] =
-        useState<WorkspaceRole | null>(null);
-    const [newRoleName, setNewRoleName] = useState('');
-    const [newRolePermissions, setNewRolePermissions] = useState<string[]>([]);
+    const [dialog, setDialog] = useState<RoleFormDialogState | null>(null);
     const customRoles = useMemo(
         () => roles.filter((role) => !role.is_system),
         [roles],
     );
-    const allPermissionValues = useMemo(
-        () =>
-            permissionGroups.flatMap((group) =>
-                group.permissions.map((permission) => permission.value),
-            ),
-        [permissionGroups],
-    );
-
-    const selectAllCreatePermissions = () => {
-        setNewRolePermissions(allPermissionValues);
-    };
-
-    const clearAllCreatePermissions = () => {
-        setNewRolePermissions([]);
-    };
 
     return (
         <Card>
@@ -74,63 +52,12 @@ export default function RoleManagementCard({
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <Form
-                    {...WorkspaceRoleController.store.form(currentWorkspace)}
-                    options={{ preserveScroll: true }}
-                    onSuccess={() => {
-                        setNewRoleName('');
-                        setNewRolePermissions([]);
-                    }}
+                <Button
+                    type="button"
+                    onClick={() => setDialog({ mode: 'create' })}
                 >
-                    {({ processing, errors }) => (
-                        <div className="space-y-4 rounded-lg border p-4">
-                            <Field data-invalid={Boolean(errors.name)}>
-                                <FieldLabel htmlFor="new-role-name">
-                                    {t('Role name')}
-                                </FieldLabel>
-                                <Input
-                                    id="new-role-name"
-                                    name="name"
-                                    value={newRoleName}
-                                    onChange={(event) =>
-                                        setNewRoleName(event.target.value)
-                                    }
-                                    required
-                                    maxLength={255}
-                                    placeholder={t('e.g. Operations manager')}
-                                    aria-invalid={Boolean(errors.name)}
-                                />
-                                <InputError message={errors.name} />
-                            </Field>
-                            <PermissionChecklist
-                                permissionGroups={permissionGroups}
-                                selectedPermissions={newRolePermissions}
-                                onSelectedPermissionsChange={
-                                    setNewRolePermissions
-                                }
-                                onSelectAll={selectAllCreatePermissions}
-                                onClearAll={clearAllCreatePermissions}
-                            />
-                            <InputError message={errors.permissions} />
-                            {newRolePermissions.length === 0 ? (
-                                <p className="text-xs text-muted-foreground">
-                                    {t(
-                                        'Choose at least one permission before saving this role.',
-                                    )}
-                                </p>
-                            ) : null}
-                            <Button
-                                type="submit"
-                                isDisabled={
-                                    processing ||
-                                    newRolePermissions.length === 0
-                                }
-                            >
-                                {t('Create role')}
-                            </Button>
-                        </div>
-                    )}
-                </Form>
+                    {t('Create role')}
+                </Button>
 
                 <div className="space-y-3">
                     <div className="space-y-2">
@@ -144,7 +71,12 @@ export default function RoleManagementCard({
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setDuplicatingRole(role)}
+                                    onClick={() =>
+                                        setDialog({
+                                            mode: 'duplicate',
+                                            role,
+                                        })
+                                    }
                                 >
                                     {t('Duplicate :name', { name: role.label })}
                                 </Button>
@@ -191,7 +123,12 @@ export default function RoleManagementCard({
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setDuplicatingRole(role)}
+                                        onClick={() =>
+                                            setDialog({
+                                                mode: 'duplicate',
+                                                role,
+                                            })
+                                        }
                                     >
                                         {t('Duplicate')}
                                     </Button>
@@ -199,7 +136,12 @@ export default function RoleManagementCard({
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setEditingRole(role)}
+                                        onClick={() =>
+                                            setDialog({
+                                                mode: 'edit',
+                                                role,
+                                            })
+                                        }
                                     >
                                         {t('Edit')}
                                     </Button>
@@ -234,21 +176,12 @@ export default function RoleManagementCard({
                 </div>
             </CardContent>
 
-            <EditRoleDialog
-                role={editingRole}
+            <RoleFormDialog
+                state={dialog}
                 permissionGroups={permissionGroups}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setEditingRole(null);
-                    }
-                }}
-            />
-            <DuplicateRoleDialog
-                role={duplicatingRole}
-                permissionGroups={permissionGroups}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setDuplicatingRole(null);
+                        setDialog(null);
                     }
                 }}
             />

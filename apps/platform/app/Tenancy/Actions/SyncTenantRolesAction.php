@@ -10,7 +10,6 @@ use App\Tenancy\Models\TenantRole as RoleModel;
 use App\Tenancy\Support\PermissionRegistry;
 use Spatie\Permission\Models\Permission as PermissionModel;
 use Spatie\Permission\PermissionRegistrar;
-use Throwable;
 
 use function getPermissionsTeamId;
 use function in_array;
@@ -158,13 +157,10 @@ final readonly class SyncTenantRolesAction
             ));
 
         foreach ($stale as $permission) {
-            try {
-                $permission->delete();
-            } catch (Throwable) {
-                // A permission still referenced by an unexpected constraint is
-                // left in place rather than failing the whole sync.
-                continue;
-            }
+            // A permission still referenced by an unexpected constraint is left
+            // in place rather than failing the whole sync — but rescue() reports
+            // so permission-sync drift is not invisible.
+            rescue(static fn (): ?bool => $permission->delete());
         }
 
         return $stale->count();

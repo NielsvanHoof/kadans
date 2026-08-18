@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Middleware;
 
+use App\Accounts\Actions\Localization\ResolveApplicationTimezoneAction;
 use App\Accounts\Models\User;
 use App\Platform\Http\SharedProps\LocaleProps;
 use App\Platform\Http\SharedProps\SupportSessionProps;
 use App\Platform\Http\SharedProps\TenantPermissionProps;
+use App\Platform\Http\SharedProps\TimezoneProps;
 use App\Platform\Http\SharedProps\WorkspaceProps;
 use App\Tenancy\Models\Tenant;
 use App\WorkspaceNotifications\Queries\FetchWorkspaceNotificationsForUserQuery;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Middleware;
@@ -33,8 +36,10 @@ final class HandleInertiaRequests extends Middleware
     public function __construct(
         private readonly FetchWorkspaceNotificationsForUserQuery $getWorkspaceNotificationsForUser,
         private readonly LocaleProps $localeProps,
+        private readonly ResolveApplicationTimezoneAction $resolveApplicationTimezone,
         private readonly SupportSessionProps $supportSessionProps,
         private readonly TenantPermissionProps $tenantPermissionProps,
+        private readonly TimezoneProps $timezoneProps,
         private readonly WorkspaceProps $workspaceProps,
     ) {}
 
@@ -86,8 +91,9 @@ final class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            'name' => Config::string('app.name'),
             ...($this->localeProps)($locale),
+            ...($this->timezoneProps)($this->resolveApplicationTimezone->handle($request)),
             'auth' => [
                 'user' => $user instanceof User
                     ? [

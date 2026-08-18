@@ -26,7 +26,8 @@ use function str_replace;
  *
  * Everything that varies per environment is derived from existing config rather
  * than restated: the Vite nonce, the Vite dev server (when running hot), the
- * Reverb websocket, and the S3 host that signed document URLs redirect to.
+ * Reverb websocket, the S3 host that signed document URLs redirect to, and the
+ * Sentry ingest host the browser SDK reports to.
  *
  * Two deliberate relaxations, both documented in docs/security.md:
  *
@@ -49,10 +50,14 @@ final readonly class ContentSecurityPolicy
 
     /**
      * The header name to send under, honouring the report-only toggle.
+     *
+     * Report-Only without a reporting endpoint is a no-op: browsers refuse to
+     * act on it and log a console warning. Fall back to the enforcing header
+     * unless `report_uri` is actually set.
      */
     public function headerName(): string
     {
-        return $this->config->get('security.csp.report_only') === true
+        return $this->wantsReportOnly()
             ? 'Content-Security-Policy-Report-Only'
             : 'Content-Security-Policy';
     }
@@ -75,6 +80,13 @@ final readonly class ContentSecurityPolicy
         // Reverb: the browser opens this socket directly from app.tsx.
         foreach ($this->websocketOrigins() as $origin) {
             $connectSources[] = $origin;
+        }
+
+        // Sentry: the browser SDK POSTs envelopes to the ingest host from the page.
+        $errorReportingHost = $this->browserErrorReportingOrigin();
+
+        if ($errorReportingHost !== null) {
+            $connectSources[] = $errorReportingHost;
         }
 
         // Document download/preview 302s to a signed URL on the storage host.
@@ -125,6 +137,20 @@ final readonly class ContentSecurityPolicy
         }
 
         return implode('; ', $policy);
+    }
+
+    /**
+     * Whether we should emit Report-Only (needs both the toggle and a sink).
+     */
+    private function wantsReportOnly(): bool
+    {
+        if ($this->config->get('security.csp.report_only') !== true) {
+            return false;
+        }
+
+        $reportUri = $this->config->get('security.csp.report_uri');
+
+        return is_string($reportUri) && mb_trim($reportUri) !== '';
     }
 
     /**
@@ -249,6 +275,30 @@ final readonly class ContentSecurityPolicy
     }
 
     /**
+     * Origin the browser Sentry SDK posts envelopes to, or null when the bundle
+     * was built without a DSN (local, testing, and any deploy that opted out).
+     *
+     * Derived from the DSN rather than restated in `security.csp.extra_sources`
+     * for the same reason as the Reverb and S3 origins above: moving the
+     * frontend to a different Sentry project would otherwise leave the policy
+     * behind, and a blocked envelope POST is invisible — the SDK reports the
+     * failure to the endpoint it cannot reach.
+     *
+     * `originFromUrl` drops the DSN's public key along with the rest of the
+     * userinfo, so only `scheme://host` reaches the header.
+     */
+    private function browserErrorReportingOrigin(): ?string
+    {
+        $dsn = $this->config->get('services.sentry.browser_dsn');
+
+        if (! is_string($dsn) || mb_trim($dsn) === '') {
+            return null;
+        }
+
+        return $this->originFromUrl(mb_trim($dsn));
+    }
+
+    /**
      * Origin of the S3(-compatible) host that signed document URLs point at.
      *
      * Returns null on the local disk, where documents stream through the app.
@@ -261,7 +311,7 @@ final readonly class ContentSecurityPolicy
             return null;
         }
 
-        // A public URL or custom endpoint (MinIO) wins — that is what the browser hits.
+        // A public URL or custom endpoint (Floci) wins — that is what the browser hits.
         foreach (['url', 'endpoint'] as $key) {
             if (! array_key_exists($key, $disk)) {
                 continue;

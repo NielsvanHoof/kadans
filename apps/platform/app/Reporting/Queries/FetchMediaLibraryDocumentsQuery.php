@@ -7,6 +7,7 @@ namespace App\Reporting\Queries;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Reporting\Data\MediaLibraryDocumentRowData;
 use App\Reporting\Data\MediaLibraryDossierSummaryData;
@@ -33,17 +34,17 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
      *     updated_at: string|null,
      *     dossier: array{id: int, title: string, reference: string|null},
      *     client_name: string,
-     *     uploaded_document: array{
+     *     uploaded_documents: list<array{
      *         id: int,
      *         original_filename: string,
      *         size_bytes: int,
      *         uploaded_at: string
-     *     }|null
+     *     }>
      * }>
      */
     public function handle(): LengthAwarePaginator
     {
-        /** @var LengthAwarePaginator<int, array{id: int, title: string, status: string, updated_at: string|null, dossier: array{id: int, title: string, reference: string|null}, client_name: string, uploaded_document: array{id: int, original_filename: string, size_bytes: int, uploaded_at: string}|null}> */
+        /** @var LengthAwarePaginator<int, array{id: int, title: string, status: string, updated_at: string|null, dossier: array{id: int, title: string, reference: string|null}, client_name: string, uploaded_documents: list<array{id: int, original_filename: string, size_bytes: int, uploaded_at: string}>}> */
         return $this->paginate();
     }
 
@@ -51,7 +52,7 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
      * @return array{
      *     filters: list<array<string, mixed>>,
      *     sorts: list<array{key: string, label: string}>,
-     *     defaults: array{sort: string, per_page: int}
+     *     defaults: array{sort: string}
      * }
      */
     public function toolbarMetadata(): array
@@ -80,7 +81,6 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
             ],
             'defaults' => [
                 'sort' => '-updated_at',
-                'per_page' => 15,
             ],
         ];
     }
@@ -94,7 +94,7 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
             ->where('type', QuestionnaireItemType::File)
             ->whereHas('dossier')
             ->with([
-                'uploadedDocument',
+                'uploadedDocuments',
                 'dossier:id,client_id,title,reference',
                 'dossier.client:id,name',
             ]);
@@ -132,7 +132,6 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
         /** @var DocumentRequest $model */
         $dossier = $this->resolveDossier($model);
         $client = $this->resolveClient($dossier);
-        $uploaded = $model->uploadedDocument;
 
         return new MediaLibraryDocumentRowData(
             id: $model->id,
@@ -145,12 +144,14 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
                 reference: $dossier->reference,
             ),
             clientName: $client->name,
-            uploadedDocument: $uploaded === null ? null : new MediaLibraryUploadedDocumentData(
-                id: $uploaded->id,
-                originalFilename: $uploaded->original_filename,
-                sizeBytes: $uploaded->size_bytes,
-                uploadedAt: $uploaded->uploaded_at->toIso8601String(),
-            ),
+            uploadedDocuments: array_values($model->uploadedDocuments
+                ->map(fn (UploadedDocument $uploaded): MediaLibraryUploadedDocumentData => new MediaLibraryUploadedDocumentData(
+                    id: $uploaded->id,
+                    originalFilename: $uploaded->original_filename,
+                    sizeBytes: $uploaded->size_bytes,
+                    uploadedAt: $uploaded->uploaded_at->toIso8601String(),
+                ))
+                ->all()),
         )->toArray();
     }
 

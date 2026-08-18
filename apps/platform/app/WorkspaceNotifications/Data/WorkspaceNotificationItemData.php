@@ -17,11 +17,15 @@ final class WorkspaceNotificationItemData extends Data
         public readonly string $id,
         public readonly string $type,
         public readonly string $message,
-        public readonly int $dossierId,
-        public readonly string $dossierTitle,
-        public readonly string $clientName,
-        public readonly string $dossierUrl,
+        public readonly string $url,
         public readonly ?string $readAt,
         public readonly string $createdAt,
+        // Present for 'client_questionnaire_completed' rows.
+        public readonly ?int $dossierId = null,
+        public readonly ?string $dossierTitle = null,
+        public readonly ?string $clientName = null,
+        // Present for 'audio_transcription_completed' rows.
+        public readonly ?int $audioRecordingId = null,
+        public readonly ?string $originalFilename = null,
     ) {}
 }

@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
 use App\ClientPortal\Events\ClientQuestionnaireCompleted;
 use App\ClientPortal\Notifications\ClientChangesRequestedNotification;
+use App\ClientPortal\Notifications\ClientPortalNewDeviceNotification;
 use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
-use App\DocumentProcessing\Events\PipelineUpdated;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\Pipelines\Events\PipelineUpdated;
 use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Date;
@@ -75,7 +77,31 @@ test('notifications expose telescope tags for their subjects', function (): void
             role: 'member',
             acceptUrl: 'https://example.test/invite',
             expiresAt: Date::now()->addDay(),
-        )->tags())->toContain('invitation:5');
+        )->tags())->toContain('invitation:5')
+        ->and(new ClientPortalNewDeviceNotification(
+            tenantId: 1,
+            dossierId: 9,
+            dossierTitle: 'Payroll',
+            clientName: 'Jane',
+            dossierUrl: 'https://example.test/dossiers/9',
+        )->tags())->toBe([
+            'notification',
+            'client_portal_new_device',
+            'tenant:1',
+            'dossier:9',
+        ])->and(new AudioTranscriptionCompletedNotification(
+            tenantId: 1,
+            audioRecordingId: 3,
+            originalFilename: 'call.mp3',
+            dossierId: 9,
+            dossierTitle: 'Payroll',
+            audioRecordingUrl: 'https://example.test/audio/3',
+        )->tags())->toBe([
+            'notification',
+            'audio_transcription_completed',
+            'tenant:1',
+            'audio_recording:3',
+        ]);
 });
 
 test('client questionnaire completed notification is queued after commit', function (): void {

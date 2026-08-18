@@ -21,22 +21,18 @@
 
 @theme {
     /*
-     * Three faces, three jobs.
-     * Inter carries body copy and dense form UI — it disappears, which is what
-     * you want under a table of forty document requests.
-     * Schibsted Grotesk is the display voice: a grotesk drawn for a publisher
-     * of record, so it reads editorial rather than startup. Used at headings
-     * and above only; never for body text.
-     * IBM Plex Mono is the data face — every date, count, reference, and
-     * amount, so figures always align down a column like a ledger.
+     * Two faces from the marketing site, plus one for dense data.
+     * Poppins is qompose.nl's voice — body, headings, and the wordmark share
+     * it so the product and the public site read as one brand.
+     * IBM Plex Mono stays the data face — dates, counts, references, and
+     * amounts align down a column like a ledger.
      */
     --font-sans:
-        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-display:
-        'Schibsted Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-data:
         'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
         'Liberation Mono', 'Courier New', monospace;
@@ -111,40 +107,33 @@
 }
 
 /*
- * "Ink & Coral" — the qompose.nl palette, retuned for a dense product UI.
+ * Qompose brand — lifted from qompose.nl (Poppins + coral #EF5734 + cool slate).
  *
- * Coral #EF5734 is the brand: it is the marketing site's link, button, and
- * full-bleed section colour. Here it stays the brand but not the primary.
- * Primary is near-black ink #1D2129, so buttons and active nav are simply the
- * strongest thing on the page, and coral is free to mean "this is Qompose"
- * without also having to mean "submit". Coral carries links, focus rings, the
- * active nav rail, and the brand panel; it never carries a status.
+ * On the marketing site coral is the primary CTA, link, and section colour.
+ * The product follows that: --primary is the same coral, so buttons, checks,
+ * and progress read as Qompose rather than generic ink.
  *
- * Two things forced a retune rather than a straight lift:
+ * Accessibility split (same problem the marketing site has at 3.45:1):
+ * 1. --primary / --brand = display coral #EF5734 for fills, rings, and large
+ *    surfaces (logo tile, section panels). White labels on those fills match
+ *    the public site; UI chrome clears the 3:1 non-text bar.
+ * 2. --brand-foreground = darkened #C2411C (4.94:1 on the canvas) for any
+ *    coral text or small icon — body-sized links must use this, never the
+ *    display coral.
+ * 3. --brand-panel = burnt coral #B03A18 for text-heavy signed-out surfaces
+ *    (auth, onboarding, portal header). White on #EF5734 is too thin for a
+ *    second text tier; at this depth white is 6.06:1 down to /85 (4.80:1).
  *
- * 1. #EF5734 is 3.45:1 on white — it fails AA as a link or as a white label on
- *    a coral button. So --brand is the display coral for large surfaces, and
- *    --brand-foreground is the darkened #C2411C (4.94:1) used for any coral
- *    text or icon. Same split as --warning/--warning-foreground below.
- * 2. Coral sits at OKLCH hue 34°, which is where the old oxblood destructive
- *    lived. Destructive moved to crimson #A4142E (hue 19.5°) and warning moved
- *    from brass to a yellower amber #B8830F (hue 79°), so brand, rejection,
- *    and waiting stay three clearly separate hues.
+ * Destructive stays crimson #A4142E (hue 19.5°) so rejection does not collide
+ * with coral at hue 34°. Warning is amber #B8830F (hue 79°). Status never
+ * rides on colour alone — every state also carries an AuditMark glyph.
  *
- * Neutrals are the cool slate ramp the marketing site already uses (#64748B
- * body, #E2E8F0 rules) rather than the old warm bone. Warm coral against cool
- * grey is qompose.nl's own pairing and it holds up at table density. The site's
- * #64748B is demoted from body text to --muted-foreground; body text is
- * slate-700, because 4.76:1 is too thin to read a whole dossier in.
+ * Neutrals are the site's cool slate ramp (#64748B muted, #E2E8F0 rules).
+ * Body text is ink #1D2129 / slate-700 rather than the site's #64748B, because
+ * 4.76:1 is too thin for a whole dossier.
  *
- * In dark mode the primary inverts to near-white rather than shifting hue:
- * "primary" here means maximum contrast against the canvas, whichever way the
- * canvas goes. Coral does not invert — it lifts slightly to #F4693F so it keeps
- * its identity without vibrating against the dark slate.
- *
- * Colour never carries a status on its own. Every status also carries an
- * AuditMark glyph with its own shape, so the review table stays readable in
- * greyscale and to anyone who can't separate the coral from the green.
+ * In dark mode coral lifts slightly instead of inverting — it is a brand hue,
+ * not a contrast toggle. Neutrals invert as usual.
  */
 :root {
     color-scheme: light;
@@ -155,9 +144,9 @@
     --card-foreground: oklch(0.2472 0.0164 264.2);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.2472 0.0164 264.2);
-    /* Ink #1D2129 — 15.4:1 against the canvas */
-    --primary: oklch(0.2472 0.0164 264.2);
-    --primary-foreground: oklch(0.9842 0.0034 247.9);
+    /* Coral #EF5734 — matches qompose.nl primary CTAs */
+    --primary: oklch(0.6551 0.1938 34.3);
+    --primary-foreground: oklch(1 0 0);
     /* Slate ramp, lifted from the marketing site's own greys */
     --secondary: oklch(0.9683 0.0069 247.9);
     --secondary-foreground: oklch(0.2472 0.0164 264.2);
@@ -180,9 +169,8 @@
     --warning-muted: oklch(0.6462 0.1308 79.2 / 0.12);
     --warning-border: oklch(0.6462 0.1308 79.2 / 0.35);
     /*
-     * Coral #EF5734 — the brand accent. --brand is the display value for fills
-     * and rings; --brand-foreground (#C2411C, 4.94:1) is the only one allowed
-     * to carry text or a small icon.
+     * Coral #EF5734 — same display value as --primary. --brand-foreground
+     * (#C2411C, 4.94:1) is the only coral allowed on body-sized text/icons.
      */
     --brand: oklch(0.6551 0.1938 34.3);
     --brand-foreground: oklch(0.5543 0.1716 35.9);
@@ -191,18 +179,18 @@
     --border: oklch(0.9288 0.0126 255.5);
     --input: oklch(0.869 0.0198 252.9);
     /*
-     * Coral, not ink: the focus ring has to stay visible on top of a primary
-     * button, and an ink ring on an ink button is invisible. Coral clears 3:1
-     * against both the canvas (3.30:1) and the ink button (4.67:1).
+     * Darkened coral for the focus ring: display coral on a coral button is
+     * invisible. #C2411C clears 3:1 against both the canvas and the primary
+     * fill.
      */
-    --ring: oklch(0.6551 0.1938 34.3);
+    --ring: oklch(0.5543 0.1716 35.9);
     /* Ledger paper: the hairline rule and the alternating row tint */
     --ledger-rule: oklch(0.9288 0.0126 255.5);
     --ledger-stripe: oklch(0.2472 0.0164 264.2 / 0.03);
     /*
      * The signed-out brand panel — auth, onboarding, and the client portal
-     * header. Fixed in both themes: it is a printed brand surface, so it must
-     * not follow --primary when the theme inverts.
+     * header. Fixed in both themes: a printed brand surface that must not
+     * wash out when the rest of the theme flips.
      *
      * Burnt coral #B03A18 rather than the #EF5734 display value. The panel
      * carries body copy, and white on #EF5734 is 3.45:1. At this depth white is
@@ -211,22 +199,22 @@
      */
     --brand-panel: oklch(0.5153 0.1599 35.9);
     --brand-panel-foreground: oklch(1 0 0);
-    /* Chart story: ink → coral → slate → seal green → amber */
-    --chart-1: oklch(0.2472 0.0164 264.2);
-    --chart-2: oklch(0.6551 0.1938 34.3);
+    /* Chart story: coral → ink → slate → seal green → amber */
+    --chart-1: oklch(0.6551 0.1938 34.3);
+    --chart-2: oklch(0.2472 0.0164 264.2);
     --chart-3: oklch(0.5544 0.0407 257.4);
     --chart-4: oklch(0.4885 0.0798 162.1);
     --chart-5: oklch(0.6462 0.1308 79.2);
-    /* Tighter than the shadcn default — ledger precision, not friendly SaaS */
-    --radius: 0.5rem;
+    /* Soften toward the marketing site's friendlier radius without going pill */
+    --radius: 0.625rem;
     --sidebar: oklch(0.9683 0.0069 247.9);
     --sidebar-foreground: oklch(0.2472 0.0164 264.2);
-    --sidebar-primary: oklch(0.2472 0.0164 264.2);
-    --sidebar-primary-foreground: oklch(0.9842 0.0034 247.9);
+    --sidebar-primary: oklch(0.6551 0.1938 34.3);
+    --sidebar-primary-foreground: oklch(1 0 0);
     --sidebar-accent: oklch(0.9288 0.0126 255.5);
     --sidebar-accent-foreground: oklch(0.2472 0.0164 264.2);
     --sidebar-border: oklch(0.9288 0.0126 255.5);
-    --sidebar-ring: oklch(0.6551 0.1938 34.3);
+    --sidebar-ring: oklch(0.5543 0.1716 35.9);
 }
 
 .dark {
@@ -237,9 +225,9 @@
     --card-foreground: oklch(0.9288 0.0126 255.5);
     --popover: oklch(0.2289 0.0197 258.4);
     --popover-foreground: oklch(0.9288 0.0126 255.5);
-    /* Inverted: primary is still "the strongest thing against the canvas" */
-    --primary: oklch(0.944 0.0097 252.8);
-    --primary-foreground: oklch(0.2077 0.0177 259.7);
+    /* Coral lifts — brand hue stays itself in dark mode */
+    --primary: oklch(0.6865 0.1805 37.3);
+    --primary-foreground: oklch(1 0 0);
     --secondary: oklch(0.2622 0.0214 257.3);
     --secondary-foreground: oklch(0.9288 0.0126 255.5);
     --muted: oklch(0.2622 0.0214 257.3);
@@ -256,31 +244,30 @@
     --warning-foreground: oklch(0.8334 0.1158 87.8);
     --warning-muted: oklch(0.7532 0.141 83.8 / 0.12);
     --warning-border: oklch(0.7532 0.141 83.8 / 0.35);
-    /* Coral lifts rather than inverts — it is the one hue that stays itself */
     --brand: oklch(0.6865 0.1805 37.3);
     --brand-foreground: oklch(0.7752 0.1346 36.2);
     --brand-muted: oklch(0.6865 0.1805 37.3 / 0.14);
     --brand-border: oklch(0.6865 0.1805 37.3 / 0.38);
     --border: oklch(0.3183 0.0264 257.5);
     --input: oklch(0.3858 0.0265 252.8);
-    --ring: oklch(0.6865 0.1805 37.3);
+    --ring: oklch(0.7752 0.1346 36.2);
     --ledger-rule: oklch(0.3183 0.0264 257.5);
     --ledger-stripe: oklch(0.9288 0.0126 255.5 / 0.035);
     --brand-panel: oklch(0.5153 0.1599 35.9);
     --brand-panel-foreground: oklch(1 0 0);
-    --chart-1: oklch(0.944 0.0097 252.8);
-    --chart-2: oklch(0.6865 0.1805 37.3);
+    --chart-1: oklch(0.6865 0.1805 37.3);
+    --chart-2: oklch(0.944 0.0097 252.8);
     --chart-3: oklch(0.7107 0.0351 256.8);
     --chart-4: oklch(0.6519 0.1017 161.5);
     --chart-5: oklch(0.7532 0.141 83.8);
     --sidebar: oklch(0.1748 0.0131 248.6);
     --sidebar-foreground: oklch(0.9288 0.0126 255.5);
-    --sidebar-primary: oklch(0.944 0.0097 252.8);
-    --sidebar-primary-foreground: oklch(0.2077 0.0177 259.7);
+    --sidebar-primary: oklch(0.6865 0.1805 37.3);
+    --sidebar-primary-foreground: oklch(1 0 0);
     --sidebar-accent: oklch(0.2622 0.0214 257.3);
     --sidebar-accent-foreground: oklch(0.9288 0.0126 255.5);
     --sidebar-border: oklch(0.3183 0.0264 257.5);
-    --sidebar-ring: oklch(0.6865 0.1805 37.3);
+    --sidebar-ring: oklch(0.7752 0.1346 36.2);
 }
 
 @layer base {
@@ -302,13 +289,12 @@
     }
 
     /*
-     * Display face — Schibsted Grotesk. Set tighter than the body face: at
-     * heading sizes its default tracking reads loose and the words stop
-     * holding together as a phrase.
+     * Display face — Poppins at heading weight. Slightly tighter tracking so
+     * multi-word titles hold together as a phrase.
      */
     .font-display {
         font-family: var(--font-display);
-        letter-spacing: -0.018em;
+        letter-spacing: -0.01em;
     }
 
     /*
@@ -324,7 +310,7 @@
 
     /*
      * Figures inside tables align even when they're set in the body face —
-     * Inter's proportional digits make a column of counts wobble.
+     * proportional digits make a column of counts wobble.
      */
     table {
         font-variant-numeric: tabular-nums;

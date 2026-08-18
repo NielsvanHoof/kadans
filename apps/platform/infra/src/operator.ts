@@ -1,7 +1,6 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { PlatformConfig } from "./config.js";
-import { DocumentInfrastructure } from "./documents.js";
 
 export interface OcrOperatorAccess {
   user: aws.iam.User;
@@ -9,13 +8,29 @@ export interface OcrOperatorAccess {
 }
 
 /**
- * IAM user + access key for local/Sail OCR.
- * Root cannot assume roles — use these long-lived keys in .env instead.
+ * IAM user + long-lived access key for local Sail development.
+ *
+ * These are static credentials, which is not how production should work — but the
+ * reason is worth stating accurately, because it is easy to draw the wrong lesson.
+ *
+ * IAM roles hand out temporary credentials to something AWS already recognises: an
+ * ECS task, an EC2 instance, a Lambda. A PHP process on a developer's laptop is
+ * none of those, so there is nothing to attach a role to. Until the stack grows
+ * compute (see `application.ts` for the task role that is already waiting), a
+ * scoped IAM user is the honest option for local work.
+ *
+ * The key is acceptable *because* the policy is narrow — it reaches one bucket,
+ * the OCR/Transcribe queues, and one KMS key, and nothing else. It is not
+ * acceptable in production, and the deployed app must never use it:
+ * `application.ts` attaches the same managed policy as a task role, and the
+ * container gets credentials from the ECS agent instead.
+ *
+ * (An earlier version of this comment said "root cannot assume roles". True, but
+ * beside the point: the real fix is not using root at all — see infra/README.md.)
  */
 export function createOcrOperatorAccess(
   config: PlatformConfig,
-  documents: DocumentInfrastructure,
-  encryptionKey: aws.kms.Key,
+  accessPolicy: aws.iam.Policy,
 ): OcrOperatorAccess {
   const { environment } = config;
 
@@ -23,55 +38,14 @@ export function createOcrOperatorAccess(
     name: environment.resourceName("ocr-local"),
     path: "/qompose/",
     tags: {
-      Purpose: "Local Sail Textract + Bedrock OCR",
+      Purpose: "Local Sail Textract + Transcribe + Bedrock",
     },
   });
 
-  const bucketObjects = documents.bucket.arn.apply((arn) => `${arn}/*`);
-
-  new aws.iam.UserPolicy(environment.resourceName("ocr-local-policy"), {
+  // Managed policy attachment — IAM user inline policies cap at 2048 bytes.
+  new aws.iam.UserPolicyAttachment(environment.resourceName("ocr-local-policy"), {
     user: user.name,
-    policy: aws.iam.getPolicyDocumentOutput({
-      statements: [{
-        actions: ["s3:ListBucket"],
-        resources: [documents.bucket.arn],
-      }, {
-        actions: ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
-        resources: [bucketObjects],
-      }, {
-        actions: [
-          "textract:StartDocumentAnalysis",
-          "textract:GetDocumentAnalysis",
-        ],
-        resources: ["*"],
-      }, {
-        actions: ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-        resources: [
-          "arn:aws:bedrock:*::foundation-model/anthropic.*",
-          "arn:aws:bedrock:*::foundation-model/openai.*",
-          "arn:aws:bedrock:*:*:inference-profile/*",
-        ],
-      }, {
-        actions: ["iam:PassRole"],
-        resources: [documents.textractPublishRole.arn],
-        conditions: [{
-          test: "StringEquals",
-          variable: "iam:PassedToService",
-          values: ["textract.amazonaws.com"],
-        }],
-      }, {
-        actions: [
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:ChangeMessageVisibility",
-        ],
-        resources: [documents.resultsQueue.arn],
-      }, {
-        actions: ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey"],
-        resources: [encryptionKey.arn],
-      }],
-    }).json,
+    policyArn: accessPolicy.arn,
   });
 
   // Access key secret is stored in Pulumi state — sync into .env with the helper script.

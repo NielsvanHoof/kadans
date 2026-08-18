@@ -2,25 +2,23 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
-use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Questionnaires\Queries\FetchQuestionnaireTemplatesQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
+
+covers(FetchQuestionnaireTemplatesQuery::class);
 
 beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
 test('templates index paginates system and firm buckets independently', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
-
-    $tenant->makeCurrent();
 
     // Enough firm templates to require a second firm_page.
     QuestionnaireTemplate::factory()->count(16)->create([
@@ -29,7 +27,6 @@ test('templates index paginates system and firm buckets independently', function
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -41,7 +38,6 @@ test('templates index paginates system and firm buckets independently', function
             ->has('indexQuery'));
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant).'?firm_page=2')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -52,12 +48,9 @@ test('templates index paginates system and firm buckets independently', function
 });
 
 test('templates index shared category filter applies to both buckets', function (): void {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
-
-    $tenant->makeCurrent();
 
     QuestionnaireTemplate::factory()->create([
         'tenant_id' => $tenant->id,
@@ -71,7 +64,6 @@ test('templates index shared category filter applies to both buckets', function 
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.templates.index', $tenant).'?filter[category]=kyc')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page

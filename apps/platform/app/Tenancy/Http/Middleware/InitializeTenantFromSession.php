@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Http\Middleware;
 
 use App\Accounts\Models\User;
+use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
@@ -14,8 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 use function is_int;
 
-final class InitializeTenantFromSession
+final readonly class InitializeTenantFromSession
 {
+    public function __construct(private SupportSessionState $supportSession) {}
+
     /**
      * @param  Closure(Request): Response  $next
      */
@@ -56,6 +59,8 @@ final class InitializeTenantFromSession
         }
 
         $user->loadMissing('tenantMemberships');
+
+        $this->supportSession->clearIfExpired($user);
 
         // Allow session tenant when member OR active support session for that firm.
         if (! $user->canAccessTenant($tenant)) {

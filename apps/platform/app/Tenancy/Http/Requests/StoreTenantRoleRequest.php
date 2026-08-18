@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace App\Tenancy\Http\Requests;
 
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
+use App\Tenancy\Http\Requests\Concerns\ValidatesAssignableRolePermissions;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Support\PermissionRegistry;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\Rule;
 
 final class StoreTenantRoleRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+    use ValidatesAssignableRolePermissions;
 
     public function authorize(): bool
     {
@@ -25,14 +27,14 @@ final class StoreTenantRoleRequest extends FormRequest
     public function rules(): array
     {
         $tenant = $this->route('tenant');
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
 
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(config('permission.table_names.roles'), 'name')
+                Rule::unique(Config::string('permission.table_names.roles'), 'name')
                     ->where($teamForeignKey, $tenant instanceof Tenant ? $tenant->id : null)
                     ->where('guard_name', 'web'),
             ],
@@ -40,7 +42,7 @@ final class StoreTenantRoleRequest extends FormRequest
             'permissions.*' => [
                 'required',
                 'string',
-                Rule::in(resolve(PermissionRegistry::class)->values()),
+                Rule::in($this->assignablePermissionValues()),
             ],
         ];
     }

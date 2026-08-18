@@ -3,6 +3,14 @@ declare namespace App {
         namespace Enums {
             export type Locale = 'en' | 'nl';
             export type PlatformRole = 'support';
+            export type TwoFactorEnforcement = 'off' | 'all' | 'by_permission';
+        }
+    }
+    namespace AudioProcessing {
+        namespace Enums {
+            export type TranscriptionDriver = 'mock' | 'transcribe';
+            export type TranscriptionProcessingOutcome =
+                'immediate' | 'deferred';
         }
     }
     namespace Audit {
@@ -28,6 +36,8 @@ declare namespace App {
                 | 'client_portal.access_grant_created'
                 | 'client_portal.access_grant_revoked'
                 | 'client_portal.accessed'
+                | 'client_portal.accessed_from_new_device'
+                | 'client_portal.new_device_blocked'
                 | 'client_portal.invite_queued'
                 | 'client_portal.invite_sent'
                 | 'client_portal.invite_failed'
@@ -54,11 +64,24 @@ declare namespace App {
                 | 'document_request.deleted'
                 | 'questionnaire_template.deleted'
                 | 'questionnaire_template_item.deleted'
+                | 'pipeline.retried'
+                | 'pipeline.cancelled'
                 | 'pipeline.deleted'
                 | 'user.deleted'
+                | 'data_subject.request_logged'
+                | 'data_subject.request_refused'
+                | 'data_subject.export_completed'
+                | 'data_subject.erasure_completed'
+                | 'data_subject.export_downloaded'
                 | 'support.session_started'
                 | 'support.session_ended'
-                | 'support.session_expired';
+                | 'support.session_expired'
+                | 'audio_recording.uploaded'
+                | 'audio_recording.downloaded'
+                | 'audio_recording.deleted'
+                | 'audio_recording.transcription_started'
+                | 'audio_recording.transcription_completed'
+                | 'audio_recording.transcription_failed';
             export type AuditPermission = 'audit.view';
         }
     }
@@ -84,7 +107,7 @@ declare namespace App {
                 readonly configuration: Record<string, any> | null;
                 readonly rejection_reason: string | null;
                 readonly can_respond: boolean;
-                readonly uploaded_document: App.ClientPortal.Data.PortalUploadedDocumentData | null;
+                readonly uploaded_documents: App.ClientPortal.Data.PortalUploadedDocumentData[];
             };
             export type PortalDossierData = {
                 readonly title: string;
@@ -111,6 +134,7 @@ declare namespace App {
                 readonly next_incomplete: App.ClientPortal.Data.PortalNextIncompleteData | null;
             };
             export type PortalUploadedDocumentData = {
+                readonly id: number;
                 readonly original_filename: string;
                 readonly size_bytes: number;
                 readonly uploaded_at: string;
@@ -119,6 +143,12 @@ declare namespace App {
         namespace Enums {
             export type ClientAccessGrantPermission =
                 'client_access.grant' | 'client_access.revoke';
+            export type NewPortalDeviceAction = 'notify' | 'block' | 'ignore';
+            export type PortalDeviceOutcome =
+                | 'first_use'
+                | 'recognised'
+                | 'new_device_allowed'
+                | 'new_device_blocked';
         }
     }
     namespace Clients {
@@ -169,72 +199,6 @@ declare namespace App {
         }
     }
     namespace DocumentProcessing {
-        namespace Data {
-            export type PipelineData = {
-                readonly id: number;
-                readonly type: App.DocumentProcessing.Enums.PipelineType;
-                readonly status: App.DocumentProcessing.Enums.PipelineStatus;
-                readonly current_stage: string | null;
-                readonly attempt_number: number;
-                readonly last_activity_at: string | null;
-                readonly steps: App.DocumentProcessing.Data.PipelineStepData[];
-            };
-            export type PipelineIndexRowData = {
-                readonly id: number;
-                readonly type: App.DocumentProcessing.Enums.PipelineType;
-                readonly status: App.DocumentProcessing.Enums.PipelineStatus;
-                readonly current_stage: string | null;
-                readonly attempt_number: number;
-                readonly last_activity_at: string | null;
-                readonly created_at: string;
-                readonly subject_type: string;
-                readonly subject_id: number;
-            };
-            export type PipelineShowData = {
-                readonly id: number;
-                readonly type: App.DocumentProcessing.Enums.PipelineType;
-                readonly status: App.DocumentProcessing.Enums.PipelineStatus;
-                readonly current_stage: string | null;
-                readonly provider: string | null;
-                readonly provider_job_id: string | null;
-                readonly attempt_number: number;
-                readonly error_code: string | null;
-                readonly error_message: string | null;
-                readonly metadata: Record<string, any> | null;
-                readonly started_at: string | null;
-                readonly last_activity_at: string | null;
-                readonly next_retry_at: string | null;
-                readonly completed_at: string | null;
-                readonly failed_at: string | null;
-                readonly steps: App.DocumentProcessing.Data.PipelineStepData[];
-                readonly subject: App.DocumentProcessing.Data.PipelineSubjectData;
-            };
-            export type PipelineStepData = {
-                readonly key: string;
-                readonly status: App.DocumentProcessing.Enums.PipelineStepStatus;
-                readonly attempts: number;
-                readonly started_at: string | null;
-                readonly last_activity_at: string | null;
-                readonly completed_at: string | null;
-                readonly error_code: string | null;
-                readonly error_message: string | null;
-            };
-            export type PipelineSubjectData = {
-                readonly type: string;
-                readonly id: number;
-                readonly label: string | null;
-                readonly context: string | null;
-                readonly href: string | null;
-            };
-            export type PipelineUpdatedPayloadData = {
-                readonly pipeline_id: number;
-                readonly type: string;
-                readonly status: string;
-                readonly subject_type: string;
-                readonly subject_id: number;
-                readonly dossier_id: number | null;
-            };
-        }
         namespace Enums {
             export type DocumentProcessingStatus =
                 'pending' | 'processing' | 'completed' | 'failed';
@@ -248,25 +212,8 @@ declare namespace App {
                 | 'phone';
             export type OcrDriver = 'mock' | 'textract';
             export type OcrProcessingOutcome = 'immediate' | 'deferred';
-            export type PipelinePermission =
-                'pipelines.view' | 'pipelines.delete';
-            export type PipelineStatus =
-                | 'pending'
-                | 'running'
-                | 'completed'
-                | 'failed'
-                | 'stuck'
-                | 'cancelled';
-            export type PipelineStepOperation =
-                'start' | 'complete' | 'fail' | 'skip' | 'stuck' | 'heartbeat';
-            export type PipelineStepStatus =
-                | 'pending'
-                | 'running'
-                | 'completed'
-                | 'failed'
-                | 'stuck'
-                | 'skipped';
-            export type PipelineType = 'ocr_document' | 'dossier_export';
+            export type TranscriptionStatus =
+                'pending' | 'processing' | 'completed' | 'failed';
         }
     }
     namespace Dossiers {
@@ -310,7 +257,7 @@ declare namespace App {
                 readonly expires_at: string | null;
                 readonly download_url: string | null;
                 readonly error: string | null;
-                readonly pipeline: App.DocumentProcessing.Data.PipelineData | null;
+                readonly pipeline: App.Pipelines.Data.PipelineData | null;
             };
             export type DossierIndexRowData = {
                 readonly id: number;
@@ -355,6 +302,17 @@ declare namespace App {
                 readonly document_requests: App.Dossiers.Data.StaffDocumentRequestData[];
                 readonly access_grants: App.Dossiers.Data.DossierAccessGrantData[];
                 readonly exports: App.Dossiers.Data.DossierExportData[];
+                readonly audio_recordings: App.Dossiers.Data.StaffAudioRecordingData[];
+            };
+            export type StaffAudioRecordingData = {
+                readonly id: number;
+                readonly original_filename: string;
+                readonly size_bytes: number;
+                readonly uploaded_at: string;
+                readonly transcription_status: App.DocumentProcessing.Enums.TranscriptionStatus;
+                readonly transcription_error: string | null;
+                readonly pipeline: App.Pipelines.Data.PipelineData | null;
+                readonly can_delete: boolean;
             };
             export type StaffDocumentRequestData = {
                 readonly id: number;
@@ -374,7 +332,7 @@ declare namespace App {
                 readonly sort_order: number;
                 readonly is_visible: boolean;
                 readonly is_applicable: boolean;
-                readonly uploaded_document: App.Dossiers.Data.StaffUploadedDocumentData | null;
+                readonly uploaded_documents: App.Dossiers.Data.StaffUploadedDocumentData[];
             };
             export type StaffDocumentRequestRowsData = {
                 readonly rows: App.Dossiers.Data.StaffDocumentRequestData[];
@@ -389,10 +347,16 @@ declare namespace App {
                 readonly uploaded_at: string;
                 readonly processing_status: App.DocumentProcessing.Enums.DocumentProcessingStatus;
                 readonly processing_error: string | null;
-                readonly pipeline: App.DocumentProcessing.Data.PipelineData | null;
+                readonly pipeline: App.Pipelines.Data.PipelineData | null;
+                readonly can_delete: boolean;
             };
         }
         namespace Enums {
+            export type AudioRecordingPermission =
+                | 'audio_recordings.view'
+                | 'audio_recordings.upload'
+                | 'audio_recordings.download'
+                | 'audio_recordings.delete';
             export type DocumentRequestPermission =
                 | 'document_requests.view'
                 | 'document_requests.create'
@@ -419,6 +383,133 @@ declare namespace App {
             export type SubmissionContext = 'portal' | 'staff';
             export type UploadedDocumentPermission =
                 'documents.view' | 'documents.download';
+        }
+    }
+    namespace Pipelines {
+        namespace Data {
+            export type PipelineData = {
+                readonly id: number;
+                readonly type: App.Pipelines.Enums.PipelineType;
+                readonly status: App.Pipelines.Enums.PipelineStatus;
+                readonly current_stage: App.Pipelines.Enums.PipelineStepKey | null;
+                readonly attempt_number: number;
+                readonly last_activity_at: string | null;
+                readonly steps: App.Pipelines.Data.PipelineStepData[];
+            };
+            export type PipelineIndexRowData = {
+                readonly id: number;
+                readonly type: App.Pipelines.Enums.PipelineType;
+                readonly status: App.Pipelines.Enums.PipelineStatus;
+                readonly current_stage: App.Pipelines.Enums.PipelineStepKey | null;
+                readonly attempt_number: number;
+                readonly last_activity_at: string | null;
+                readonly created_at: string;
+                readonly subject_type: string;
+                readonly subject_id: number;
+            };
+            export type PipelineShowData = {
+                readonly id: number;
+                readonly type: App.Pipelines.Enums.PipelineType;
+                readonly status: App.Pipelines.Enums.PipelineStatus;
+                readonly current_stage: App.Pipelines.Enums.PipelineStepKey | null;
+                readonly provider: string | null;
+                readonly provider_job_id: string | null;
+                readonly attempt_number: number;
+                readonly error_code: string | null;
+                readonly error_message: string | null;
+                readonly metadata: Record<string, any> | null;
+                readonly started_at: string | null;
+                readonly last_activity_at: string | null;
+                readonly next_retry_at: string | null;
+                readonly completed_at: string | null;
+                readonly failed_at: string | null;
+                readonly steps: App.Pipelines.Data.PipelineStepData[];
+                readonly subject: App.Pipelines.Data.PipelineSubjectData;
+            };
+            export type PipelineStepData = {
+                readonly key: App.Pipelines.Enums.PipelineStepKey;
+                readonly status: App.Pipelines.Enums.PipelineStepStatus;
+                readonly attempts: number;
+                readonly started_at: string | null;
+                readonly last_activity_at: string | null;
+                readonly completed_at: string | null;
+                readonly error_code: string | null;
+                readonly error_message: string | null;
+            };
+            export type PipelineSubjectData = {
+                readonly type: string;
+                readonly id: number;
+                readonly label: string | null;
+                readonly context: string | null;
+                readonly href: string | null;
+            };
+            export type PipelineUpdatedPayloadData = {
+                readonly pipeline_id: number;
+                readonly type: string;
+                readonly status: string;
+                readonly subject_type: string;
+                readonly subject_id: number;
+                readonly dossier_id: number | null;
+            };
+        }
+        namespace Enums {
+            export type PipelinePermission =
+                | 'pipelines.view'
+                | 'pipelines.retry'
+                | 'pipelines.cancel'
+                | 'pipelines.delete';
+            export type PipelineStatus =
+                | 'pending'
+                | 'running'
+                | 'completed'
+                | 'failed'
+                | 'stuck'
+                | 'cancelled';
+            export type PipelineStepKey =
+                | 'submit'
+                | 'provider_processing'
+                | 'process_results'
+                | 'transcribe'
+                | 'build_archive'
+                | 'store_archive';
+            export type PipelineStepStatus =
+                | 'pending'
+                | 'running'
+                | 'completed'
+                | 'failed'
+                | 'stuck'
+                | 'skipped';
+            export type PipelineType =
+                'ocr_document' | 'dossier_export' | 'audio_transcription';
+        }
+    }
+    namespace Platform {
+        namespace Data {
+            export type DataSubjectRequestData = {
+                readonly id: number;
+                readonly type: string;
+                readonly type_label: string;
+                readonly status: string;
+                readonly status_label: string;
+                readonly client_id: number;
+                readonly client_name: string;
+                readonly requested_at: string;
+                readonly due_at: string;
+                readonly is_overdue: boolean;
+                readonly requested_by_name: string | null;
+                readonly completed_at: string | null;
+                readonly completed_by_name: string | null;
+                readonly refusal_reason: string | null;
+                readonly can_download: boolean;
+            };
+        }
+        namespace Enums {
+            export type DataSubjectPermission =
+                'data_subject.view' | 'data_subject.manage';
+            export type DataSubjectRequestStatus =
+                'pending' | 'completed' | 'refused';
+            export type DataSubjectRequestType = 'export' | 'erasure';
+            export type LegalDocument = 'privacy' | 'cookies' | 'terms';
         }
     }
     namespace Questionnaires {
@@ -538,6 +629,27 @@ declare namespace App {
                 readonly id: number;
                 readonly name: string | null;
             };
+            export type DashboardAgendaItemData = {
+                readonly id: number;
+                readonly title: string;
+                readonly client_name: string;
+                readonly status: App.Dossiers.Enums.DossierStatus;
+                readonly due_date: string;
+                readonly days_remaining: number;
+            };
+            export type DashboardFollowUpItemData = {
+                readonly id: number;
+                readonly title: string;
+                readonly client_name: string;
+                readonly since: string | null;
+                readonly days: number | null;
+            };
+            export type DashboardFollowUpSignalsData = {
+                readonly never_opened: App.Reporting.Data.DashboardFollowUpItemData[];
+                readonly gone_quiet: App.Reporting.Data.DashboardFollowUpItemData[];
+                readonly expiring_links: App.Reporting.Data.DashboardFollowUpItemData[];
+                readonly total_count: number;
+            };
             export type DashboardMetricsData = {
                 readonly clients: number;
                 readonly open_dossiers: number;
@@ -553,6 +665,27 @@ declare namespace App {
                 readonly needs_review_last_week: number;
                 readonly awaiting_client_this_week: number;
                 readonly awaiting_client_last_week: number;
+                readonly weekly_throughput: App.Reporting.Data.DashboardTrendPointData[];
+            };
+            export type DashboardMyWorkData = {
+                readonly assigned_open: number;
+                readonly due_this_week: number;
+                readonly overdue: number;
+                readonly awaiting_my_review: number;
+                readonly agenda: App.Reporting.Data.DashboardAgendaItemData[];
+            };
+            export type DashboardPipelineFailureData = {
+                readonly id: number;
+                readonly type: App.Pipelines.Enums.PipelineType;
+                readonly status: App.Pipelines.Enums.PipelineStatus;
+                readonly error_message: string | null;
+                readonly last_activity_at: string | null;
+                readonly is_retryable: boolean;
+            };
+            export type DashboardProcessingHealthData = {
+                readonly failed: number;
+                readonly stuck: number;
+                readonly recent: App.Reporting.Data.DashboardPipelineFailureData[];
             };
             export type DashboardRecentDossierData = {
                 readonly id: number;
@@ -564,6 +697,10 @@ declare namespace App {
                 readonly responsible_name: string | null;
                 readonly updated_at: string;
             };
+            export type DashboardTrendPointData = {
+                readonly week_start: string;
+                readonly documents_received: number;
+            };
             export type MediaLibraryDocumentRowData = {
                 readonly id: number;
                 readonly title: string;
@@ -571,7 +708,7 @@ declare namespace App {
                 readonly updated_at: string | null;
                 readonly dossier: App.Reporting.Data.MediaLibraryDossierSummaryData;
                 readonly client_name: string;
-                readonly uploaded_document: App.Reporting.Data.MediaLibraryUploadedDocumentData | null;
+                readonly uploaded_documents: App.Reporting.Data.MediaLibraryUploadedDocumentData[];
             };
             export type MediaLibraryDossierSummaryData = {
                 readonly id: number;
@@ -583,10 +720,6 @@ declare namespace App {
                 readonly original_filename: string;
                 readonly size_bytes: number;
                 readonly uploaded_at: string;
-            };
-            export type WorkspaceDashboardPageData = {
-                readonly metrics: App.Reporting.Data.DashboardMetricsData;
-                readonly recent_dossiers: App.Reporting.Data.DashboardRecentDossierData[];
             };
         }
     }
@@ -665,12 +798,14 @@ declare namespace App {
                 | 'dossiers'
                 | 'document_requests'
                 | 'documents'
+                | 'audio_recordings'
                 | 'clients'
                 | 'client_portal'
                 | 'templates'
                 | 'processing'
                 | 'members'
                 | 'audit'
+                | 'data_subject_requests'
                 | 'settings';
             export type Role =
                 | 'owner'
@@ -697,12 +832,14 @@ declare namespace App {
                 readonly id: string;
                 readonly type: string;
                 readonly message: string;
-                readonly dossier_id: number;
-                readonly dossier_title: string;
-                readonly client_name: string;
-                readonly dossier_url: string;
+                readonly url: string;
                 readonly read_at: string | null;
                 readonly created_at: string;
+                readonly dossier_id: number | null;
+                readonly dossier_title: string | null;
+                readonly client_name: string | null;
+                readonly audio_recording_id: number | null;
+                readonly original_filename: string | null;
             };
             export type WorkspaceNotificationsData = {
                 readonly unread_count: number;

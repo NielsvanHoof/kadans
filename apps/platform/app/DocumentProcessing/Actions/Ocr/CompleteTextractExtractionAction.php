@@ -6,14 +6,20 @@ namespace App\DocumentProcessing\Actions\Ocr;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Models\Pipeline;
 use App\DocumentProcessing\Services\Ocr\TextractExtractionPipeline;
+use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
+use App\Pipelines\Actions\ResolveProviderPipelineForSubjectAction;
+use App\Pipelines\Enums\PipelineStepKey;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
+use App\Pipelines\Support\PipelineStepSequence;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
 use function in_array;
@@ -29,10 +35,11 @@ final readonly class CompleteTextractExtractionAction
         private TextractExtractionPipeline $extractionPipeline,
         private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
         private LogAuditActivityAction $logAuditActivity,
-        private PipelineStateAction $pipelineState,
-        private ResolveOcrPipelineForDocumentAction $resolveOcrPipeline,
-        private PrepareOcrPipelineForProviderResultAction $prepareOcrPipeline,
+        private PipelineState $pipelineState,
+        private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
+        private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
+        private UploadedDocumentProcessingTransitions $processingTransitions,
     ) {}
 
     /**
@@ -96,26 +103,32 @@ final readonly class CompleteTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
-            $pipeline = $this->resolveOcrPipeline->handle($document, $jobId);
+            $pipeline = $this->resolveProviderPipeline->handle(
+                $document,
+                PipelineType::OcrDocument,
+                $jobId,
+            );
 
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
                 DocumentProcessingStatus::Failed,
             ], true)) {
-                // Document may already be done while the pipeline stayed pending (nullable DI bug).
+                // Document may already be done while the pipeline stayed pending
                 if (
                     $document->processing_status === DocumentProcessingStatus::Completed
                     && $pipeline instanceof Pipeline
                     && ! $pipeline->status->isTerminal()
                 ) {
-                    $pipeline = $this->prepareOcrPipeline->handle(
+                    $pipeline = $this->prepareProviderPipeline->handle(
                         $pipeline,
-                        (string) config('ocr.driver'),
+                        Config::string('ocr.driver'),
                         $jobId,
+                        PipelineStepKey::ProviderProcessing,
                     );
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+                    $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                        ->complete(PipelineStepKey::ProviderProcessing)
+                        ->start(PipelineStepKey::ProcessResults)
+                        ->complete(PipelineStepKey::ProcessResults));
                 }
 
                 Log::info('OCR: Textract completion already applied — skipping.', [
@@ -132,38 +145,29 @@ final readonly class CompleteTextractExtractionAction
                 'tenant_id' => $document->tenant_id,
                 'textract_job_id' => $jobId,
                 'status' => $status,
-                'original_filename' => $document->original_filename,
             ]);
 
             if ($status === 'SUCCEEDED') {
                 if ($pipeline instanceof Pipeline) {
                     // Catch up submit/provider_processing when the submit job never recorded them.
-                    $pipeline = $this->prepareOcrPipeline->handle(
+                    $pipeline = $this->prepareProviderPipeline->handle(
                         $pipeline,
-                        (string) config('ocr.driver'),
+                        Config::string('ocr.driver'),
                         $jobId,
+                        PipelineStepKey::ProviderProcessing,
                     );
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'provider_processing');
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'process_results');
+                    $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                        ->complete(PipelineStepKey::ProviderProcessing)
+                        ->start(PipelineStepKey::ProcessResults));
                 }
 
                 $startedAt = hrtime(true);
                 $extractedJson = $this->extractionPipeline->run($jobId, $document);
                 $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
 
-                $updated = UploadedDocument::query()
-                    ->whereKey($document->id)
-                    ->where('path', $document->path)
-                    ->where('textract_job_id', $jobId)
-                    ->where('processing_status', DocumentProcessingStatus::Processing->value)
-                    ->update([
-                        'processing_status' => DocumentProcessingStatus::Completed->value,
-                        'extracted_text' => $extractedJson,
-                        'processing_error' => null,
-                        'processing_finished_at' => now(),
-                    ]);
+                $updated = $this->processingTransitions->complete($document, $jobId, $extractedJson);
 
-                if ($updated !== 1) {
+                if (! $updated) {
                     Log::warning('OCR: discarded stale Textract completion.', [
                         'uploaded_document_id' => $document->id,
                         'tenant_id' => $document->tenant_id,
@@ -177,7 +181,7 @@ final readonly class CompleteTextractExtractionAction
                 $document->refresh();
 
                 if ($pipeline instanceof Pipeline) {
-                    $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'process_results');
+                    $this->pipelineState->complete($pipeline, PipelineStepKey::ProcessResults);
                 }
 
                 $this->logAuditActivity->handle(
@@ -211,10 +215,9 @@ final readonly class CompleteTextractExtractionAction
                 $this->markTextractExtractionFailed->handle($document, $jobId, $error, $status);
 
                 if ($pipeline instanceof Pipeline) {
-                    $this->pipelineState->handle(
+                    $this->pipelineState->fail(
                         $pipeline,
-                        PipelineStepOperation::Fail,
-                        'provider_processing',
+                        PipelineStepKey::ProviderProcessing,
                         errorCode: 'textract_'.$status,
                         errorMessage: $error,
                     );

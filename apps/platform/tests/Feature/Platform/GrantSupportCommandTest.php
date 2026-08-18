@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 use App\Accounts\Enums\PlatformRole;
 use App\Accounts\Models\User;
+use App\Platform\Console\Commands\GrantSupportCommand;
+use App\Platform\Console\Commands\RevokeSupportCommand;
+
+covers(GrantSupportCommand::class, RevokeSupportCommand::class);
 
 test('platform grant-support assigns the support role', function (): void {
     $user = User::factory()->create(['email' => 'eng@example.com']);

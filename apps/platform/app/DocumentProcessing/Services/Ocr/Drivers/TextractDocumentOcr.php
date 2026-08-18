@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Services\Ocr\Drivers;
 
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\UploadedDocument;
 use Aws\Textract\TextractClient;
@@ -20,7 +20,7 @@ use function is_string;
  * Starts async Textract AnalyzeDocument (FORMS + TABLES) for a PDF in S3.
  * Completion arrives later via SNS → SQS → CompleteTextractExtractionAction.
  */
-final readonly class TextractDocumentOcr implements StartsDocumentOcr
+final readonly class TextractDocumentOcr implements DocumentOcr
 {
     public function __construct(
         private TextractClient $textract,

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Platform\Console\Commands\Retention;
 
-use App\DocumentProcessing\Actions\Pipelines\DeletePipelinesForSubjectsAction;
 use App\Dossiers\Models\DossierExport;
+use App\Pipelines\Actions\DeletePipelinesForSubjectsAction;
 use App\Platform\Actions\Retention\DeleteStoredDossierExportFilesAction;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;

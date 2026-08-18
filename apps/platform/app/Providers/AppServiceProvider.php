@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Accounts\Models\User;
+use App\AudioProcessing\Enums\TranscriptionDriver;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Models\Pipeline;
-use App\DocumentProcessing\Models\PipelineStep;
+use App\DocumentProcessing\Enums\OcrDriver;
+use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Models\PipelineStep;
+use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Support\DebugbarStorageOpen;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
@@ -25,8 +29,11 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Telescope\TelescopeServiceProvider;
@@ -61,10 +68,28 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureTrustedProxies();
         $this->configureMorphMap();
         $this->configureDefaults();
         $this->configureFactoryDiscovery();
         $this->configureDevCommands();
+    }
+
+    /**
+     * Apply TRUSTED_PROXIES after config is loaded. trustProxies(at:) cannot
+     * take a deferred closure (unlike trustHosts), so bootstrap only sets
+     * forwarded headers and this boots the concrete proxy list.
+     *
+     * Production must use LB/VPC CIDRs or PRIVATE_SUBNETS — never REMOTE_ADDR.
+     */
+    private function configureTrustedProxies(): void
+    {
+        // May be null when unset — typed string() rejects null.
+        $proxies = Config::get('production.trusted_proxies');
+
+        if (is_string($proxies) && $proxies !== '') {
+            TrustProxies::at($proxies);
+        }
     }
 
     /**
@@ -73,6 +98,17 @@ final class AppServiceProvider extends ServiceProvider
     private function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        // Reset links and other absolute URLs must ignore the request Host
+        // header in production: a spoofed header must never redirect a
+        // legitimate user's email link to an attacker-controlled domain.
+        // forceRootUrl() alone leaves the scheme derived from the request
+        // (UrlGenerator::formatScheme falls back to $request->getScheme()),
+        // so it must be paired with forceScheme().
+        if (app()->isProduction()) {
+            URL::useOrigin(Config::string('app.url'));
+            URL::forceScheme('https');
+        }
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
@@ -90,7 +126,7 @@ final class AppServiceProvider extends ServiceProvider
 
         Model::shouldBeStrict();
 
-        Model::preventLazyLoading(! app()->isProduction());
+        Model::automaticallyEagerLoadRelationships();
     }
 
     /**
@@ -123,8 +159,10 @@ final class AppServiceProvider extends ServiceProvider
     {
         Relation::enforceMorphMap([
             'activity' => Activity::class,
+            'audio_recording' => AudioRecording::class,
             'client' => Client::class,
             'client_access_grant' => ClientAccessGrant::class,
+            'data_subject_request' => DataSubjectRequest::class,
             'document_request' => DocumentRequest::class,
             'dossier' => Dossier::class,
             'dossier_export' => DossierExport::class,
@@ -150,13 +188,12 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function configureDebugbarStorageOpen(): void
     {
-        $open = config('debugbar.storage.open');
+        // Default is null (and may later be bool/class) — typed string() rejects that.
+        $open = Config::get('debugbar.storage.open');
 
         // .env values are strings; cast so Debugbar treats them as bools.
         if (is_string($open) && in_array(mb_strtolower($open), ['true', 'false', '1', '0'], true)) {
-            config([
-                'debugbar.storage.open' => filter_var($open, FILTER_VALIDATE_BOOLEAN),
-            ]);
+            Config::set('debugbar.storage.open', filter_var($open, FILTER_VALIDATE_BOOLEAN));
 
             return;
         }
@@ -166,9 +203,7 @@ final class AppServiceProvider extends ServiceProvider
         }
 
         // Class string stays serializable; Debugbar calls ::resolve($request).
-        config([
-            'debugbar.storage.open' => DebugbarStorageOpen::class,
-        ]);
+        Config::set('debugbar.storage.open', DebugbarStorageOpen::class);
     }
 
     /**
@@ -177,11 +212,56 @@ final class AppServiceProvider extends ServiceProvider
     private function configureDevCommands(): void
     {
         DevCommands::except('server');
+        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=ocr', 'ocr');
+        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=transcription', 'transcription');
+        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=dossier-export', 'dossier-export');
+        DevCommands::artisan('schedule:work', 'scheduled-tasks');
 
-        if (config('broadcasting.default') !== 'reverb') {
+        // Only when the real drivers are on. Leftover Pulumi queue URLs with
+        // OCR_DRIVER=mock + Floci must not start consumers against missing queues.
+        if ($this->shouldRunTranscribeConsume()) {
+            DevCommands::artisan('transcribe:consume', 'transcribe-consume');
+        }
+
+        if ($this->shouldRunTextractConsume()) {
+            DevCommands::artisan('textract:consume', 'textract-consume');
+        }
+
+        // phpunit sets BROADCAST_CONNECTION=null → env converts to PHP null.
+        if (Config::get('broadcasting.default') !== 'reverb') {
             return;
         }
 
         DevCommands::artisan('reverb:start', 'reverb');
+    }
+
+    /**
+     * Amazon Transcribe completion listener for `php artisan dev`.
+     */
+    private function shouldRunTranscribeConsume(): bool
+    {
+        if (Config::string('transcription.driver') !== TranscriptionDriver::Transcribe->value) {
+            return false;
+        }
+
+        // Queue URL is optional/null while drivers stay on mock.
+        $queueUrl = Config::get('transcription.transcribe.results_queue_url');
+
+        return is_string($queueUrl) && $queueUrl !== '';
+    }
+
+    /**
+     * Textract SNS→SQS completion listener for `php artisan dev`.
+     */
+    private function shouldRunTextractConsume(): bool
+    {
+        if (Config::string('ocr.driver') !== OcrDriver::Textract->value) {
+            return false;
+        }
+
+        // Queue URL is optional/null while drivers stay on mock.
+        $queueUrl = Config::get('ocr.textract.results_queue_url');
+
+        return is_string($queueUrl) && $queueUrl !== '';
     }
 }

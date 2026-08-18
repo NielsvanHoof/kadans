@@ -7,7 +7,7 @@ use Illuminate\Foundation\Vite;
 
 use function Pest\Laravel\get;
 
-it('sends the baseline hardening headers on web responses', function (): void {
+test('sends the baseline hardening headers on web responses', function (): void {
     $response = get('/login');
 
     $response->assertOk();
@@ -22,7 +22,7 @@ it('sends the baseline hardening headers on web responses', function (): void {
         ->toContain('geolocation=()');
 });
 
-it('sends a nonce-based content security policy that blocks inline scripts', function (): void {
+test('sends a nonce-based content security policy that blocks inline scripts', function (): void {
     $response = get('/login');
 
     $policy = $response->headers->get('Content-Security-Policy');
@@ -37,7 +37,7 @@ it('sends a nonce-based content security policy that blocks inline scripts', fun
         ->not->toContain("script-src 'self' 'unsafe-inline'");
 });
 
-it('emits the nonce from the policy header into the root document', function (): void {
+test('emits the nonce from the policy header into the root document', function (): void {
     $response = get('/login');
 
     $policy = (string) $response->headers->get('Content-Security-Policy');
@@ -50,7 +50,7 @@ it('emits the nonce from the policy header into the root document', function ():
     $response->assertSee('nonce="'.$matches[1].'"', escape: false);
 });
 
-it('nonces every executable script and style in the document', function (): void {
+test('nonces every executable script and style in the document', function (): void {
     $response = get('/login');
 
     preg_match_all('/<(script|style)[^>]*>/i', (string) $response->getContent(), $tags);
@@ -67,18 +67,18 @@ it('nonces every executable script and style in the document', function (): void
         ->toBeEmpty();
 });
 
-it('rotates the nonce between requests', function (): void {
+test('rotates the nonce between requests', function (): void {
     $first = (string) get('/login')->headers->get('Content-Security-Policy');
     $second = (string) get('/login')->headers->get('Content-Security-Policy');
 
     expect($first)->not->toBe($second);
 });
 
-it('omits strict transport security on plaintext requests', function (): void {
+test('omits strict transport security on plaintext requests', function (): void {
     get('/login')->assertHeaderMissing('Strict-Transport-Security');
 });
 
-it('sends strict transport security over https', function (): void {
+test('sends strict transport security over https', function (): void {
     config()->set('app.url', 'https://qompose.test');
 
     $response = get('https://qompose.test/login');
@@ -88,17 +88,31 @@ it('sends strict transport security over https', function (): void {
         ->toContain('includeSubDomains');
 });
 
-it('can be switched to report-only without changing the policy', function (): void {
+test('can be switched to report-only without changing the policy', function (): void {
+    // Report-Only is a no-op without a sink — browsers require report-uri/report-to.
     config()->set('security.csp.report_only', true);
+    config()->set('security.csp.report_uri', 'https://csp.example.test/report');
 
     $response = get('/login');
 
     $response->assertHeaderMissing('Content-Security-Policy');
     expect($response->headers->get('Content-Security-Policy-Report-Only'))
+        ->toContain("frame-ancestors 'none'")
+        ->toContain('report-uri https://csp.example.test/report');
+});
+
+test('report-only without a report uri falls back to enforcing', function (): void {
+    config()->set('security.csp.report_only', true);
+    config()->set('security.csp.report_uri');
+
+    $response = get('/login');
+
+    $response->assertHeaderMissing('Content-Security-Policy-Report-Only');
+    expect($response->headers->get('Content-Security-Policy'))
         ->toContain("frame-ancestors 'none'");
 });
 
-it('can be disabled entirely while keeping the baseline headers', function (): void {
+test('can be disabled entirely while keeping the baseline headers', function (): void {
     config()->set('security.csp.enabled', false);
 
     $response = get('/login');
@@ -108,7 +122,7 @@ it('can be disabled entirely while keeping the baseline headers', function (): v
 });
 
 describe('policy assembly', function (): void {
-    it('allows the reverb websocket the browser actually connects to', function (): void {
+    test('allows the reverb websocket the browser actually connects to', function (): void {
         config()->set('broadcasting.connections.reverb.options', [
             'host' => 'ws.qompose.test',
             'port' => 443,
@@ -119,7 +133,7 @@ describe('policy assembly', function (): void {
             ->toContain('wss://ws.qompose.test:443');
     });
 
-    it('allows the s3 host that signed document urls redirect to', function (): void {
+    test('allows the s3 host that signed document urls redirect to', function (): void {
         config()->set('filesystems.disks.s3', [
             'driver' => 's3',
             'bucket' => 'qompose-documents',
@@ -134,25 +148,44 @@ describe('policy assembly', function (): void {
             ->toContain('https://qompose-documents.s3.eu-west-1.amazonaws.com');
     });
 
-    it('prefers an explicit public endpoint over the derived aws host', function (): void {
+    test('prefers an explicit public endpoint over the derived aws host', function (): void {
         config()->set('filesystems.disks.s3', [
             'driver' => 's3',
             'bucket' => 'local',
             'region' => 'eu-west-1',
-            'url' => 'http://localhost:9000',
+            'url' => 'http://localhost:4566',
         ]);
 
         expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
-            ->toContain('http://localhost:9000')
+            ->toContain('http://localhost:4566')
             ->not->toContain('amazonaws.com');
     });
 
-    it('allows data uris for images so the two-factor qr code renders', function (): void {
+    test('allows the sentry ingest host the browser sdk reports to', function (): void {
+        config()->set('services.sentry.browser_dsn', 'https://publickey@o4507.ingest.de.sentry.io/9');
+
+        $policy = resolve(ContentSecurityPolicy::class)->build('abc123');
+
+        // Only the origin — the DSN's public key is userinfo and must not be
+        // copied into a response header.
+        expect($policy)
+            ->toMatch('/connect-src [^;]*https:\/\/o4507\.ingest\.de\.sentry\.io/')
+            ->not->toContain('publickey');
+    });
+
+    test('omits the sentry ingest host when the frontend has no dsn', function (): void {
+        config()->set('services.sentry.browser_dsn', null);
+
+        expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
+            ->not->toContain('sentry.io');
+    });
+
+    test('allows data uris for images so the two-factor qr code renders', function (): void {
         expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
             ->toMatch('/img-src [^;]*data:/');
     });
 
-    it('allows the vite dev server on every directive it serves when running hot', function (): void {
+    test('allows the vite dev server on every directive it serves when running hot', function (): void {
         $vite = Mockery::mock(Vite::class);
         $vite->shouldReceive('isRunningHot')->andReturnTrue();
         $vite->shouldReceive('asset')->with('')->andReturn('http://localhost:5173/');
@@ -179,12 +212,12 @@ describe('policy assembly', function (): void {
             ->and($directives['img-src'])->not->toContain('ws://');
     });
 
-    it('never leaks the dev server into the policy when not running hot', function (): void {
+    test('never leaks the dev server into the policy when not running hot', function (): void {
         expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
             ->not->toContain('localhost:5173');
     });
 
-    it('appends operator-configured extra sources', function (): void {
+    test('appends operator-configured extra sources', function (): void {
         config()->set('security.csp.extra_sources', [
             'connect-src' => ['https://o0.ingest.sentry.io'],
         ]);

@@ -6,7 +6,7 @@ namespace App\DocumentProcessing\Services\Ocr;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Contracts\Ocr\StartsDocumentOcr;
+use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\OcrProcessingOutcome;
 use App\Dossiers\Models\UploadedDocument;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 final readonly class OcrOrchestrator
 {
     public function __construct(
-        private StartsDocumentOcr $ocr,
+        private DocumentOcr $ocr,
         private LogAuditActivityAction $logAuditActivity,
     ) {}
 
@@ -28,7 +28,6 @@ final readonly class OcrOrchestrator
         Log::info('OCR: orchestrator starting document processing.', [
             'uploaded_document_id' => $document->id,
             'tenant_id' => $document->tenant_id,
-            'original_filename' => $document->original_filename,
             'processing_status' => $document->processing_status->value,
         ]);
 

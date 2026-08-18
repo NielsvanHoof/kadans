@@ -22,6 +22,8 @@ final readonly class RemoveTenantMemberAction
     public function handle(TenantMembership $membership, User $removedBy): void
     {
         DB::transaction(function () use ($membership, $removedBy): void {
+            $this->memberRoles->lockOwnerMutations($membership->tenant_id);
+
             $membershipQuery = TenantMembership::query()->whereKey($membership->getKey());
             $membershipQuery->getQuery()->lockForUpdate();
             $locked = $membershipQuery->firstOrFail();

@@ -12,24 +12,16 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 /**
  * @return array{owner: User, tenant: mixed, client: Client, dossier: Dossier, plainTextToken: string, grant: ClientAccessGrant}
  */
 function createConditionalFormsContext(): array
 {
-    $owner = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-    $tenant->makeCurrent();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
@@ -55,7 +47,7 @@ function createConditionalFormsContext(): array
 
 test('hidden fields do not block dossier completion and retain answers for audit', function (): void {
     $context = createConditionalFormsContext();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $sourceFieldKey = (string) Str::ulid();
     $dependentFieldKey = (string) Str::ulid();
@@ -126,7 +118,7 @@ test('hidden fields do not block dossier completion and retain answers for audit
 
 test('multi-select visibility matches when any selected option overlaps', function (): void {
     $context = createConditionalFormsContext();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $sourceFieldKey = (string) Str::ulid();
     $dependentFieldKey = (string) Str::ulid();
@@ -189,7 +181,7 @@ test('multi-select visibility matches when any selected option overlaps', functi
 
 test('visibility cannot depend on a later field', function (): void {
     $context = createConditionalFormsContext();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $earlierKey = (string) Str::ulid();
     $laterKey = (string) Str::ulid();
@@ -244,7 +236,7 @@ test('visibility cannot depend on a later field', function (): void {
 
 test('a new field cannot be created with visibility depending on a later field', function (): void {
     $context = createConditionalFormsContext();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $laterKey = (string) Str::ulid();
     $optionId = (string) Str::uuid();
@@ -293,7 +285,7 @@ test('a new field cannot be created with visibility depending on a later field',
 
 test('an answer is rejected when it selects an option the field does not offer', function (): void {
     $context = createConditionalFormsContext();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     $configuredOptionId = (string) Str::uuid();
 
@@ -334,7 +326,7 @@ test('an answer is rejected when it selects an option the field does not offer',
 
 test('completing a dossier fails when an applicable field is still pending', function (): void {
     $context = createConditionalFormsContext();
-    $context['tenant']->makeCurrent();
+    actingInWorkspace($context['tenant']);
 
     DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,

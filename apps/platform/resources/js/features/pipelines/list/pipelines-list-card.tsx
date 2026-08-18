@@ -1,25 +1,17 @@
 import { Link } from '@inertiajs/react';
 import { Activity, ArrowRight } from 'lucide-react';
-import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import type { DataTableColumn } from '@/components/data/data-table';
+import IndexDataCard from '@/components/data/index-data-card';
 import EmptyState from '@/components/primitives/empty-state';
-import { Badge } from '@/components/ui/badge';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    pipelineStatusBadgeVariant,
-    pipelineStatusLabel,
     pipelineStepLabel,
     pipelineTypeLabel,
 } from '@/features/pipelines/status/pipeline-status';
+import PipelineStatusBadge from '@/features/pipelines/status/pipeline-status-badge';
 import type { PipelineIndexRow } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showPipeline } from '@/routes/workspaces/pipelines';
 import type { Paginated } from '@/types/pagination';
 
@@ -29,7 +21,8 @@ export default function PipelinesListCard({
     pipelines: Paginated<PipelineIndexRow>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     const columns: DataTableColumn<PipelineIndexRow>[] = [
         {
@@ -72,9 +65,7 @@ export default function PipelinesListCard({
             key: 'status',
             header: t('Status'),
             cell: (pipeline) => (
-                <Badge variant={pipelineStatusBadgeVariant(pipeline.status)}>
-                    {pipelineStatusLabel(pipeline.status, t)}
-                </Badge>
+                <PipelineStatusBadge status={pipeline.status} />
             ),
         },
         {
@@ -96,8 +87,8 @@ export default function PipelinesListCard({
             cell: (pipeline) => (
                 <span className="text-sm text-muted-foreground">
                     {pipeline.last_activity_at
-                        ? formatDateTime(pipeline.last_activity_at, locale)
-                        : formatDateTime(pipeline.created_at, locale)}
+                        ? formatDateTime(pipeline.last_activity_at)
+                        : formatDateTime(pipeline.created_at)}
                 </span>
             ),
         },
@@ -121,31 +112,25 @@ export default function PipelinesListCard({
     ];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('Pipeline runs')}</CardTitle>
-                <CardDescription>
-                    {pipelines.total === 1
-                        ? t('1 pipeline run')
-                        : t(':count pipeline runs', { count: pipelines.total })}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DataTable
-                    columns={columns}
-                    rows={pipelines.data}
-                    rowKey={(pipeline) => pipeline.id}
-                    emptyState={
-                        <EmptyState
-                            icon={Activity}
-                            title={t('No pipeline runs found.')}
-                            description={t(
-                                'Long-running OCR and export processes will appear here as they run.',
-                            )}
-                        />
-                    }
+        <IndexDataCard
+            title={t('Pipeline runs')}
+            description={
+                pipelines.total === 1
+                    ? t('1 pipeline run')
+                    : t(':count pipeline runs', { count: pipelines.total })
+            }
+            columns={columns}
+            rows={pipelines.data}
+            rowKey={(pipeline) => pipeline.id}
+            emptyState={
+                <EmptyState
+                    icon={Activity}
+                    title={t('No pipeline runs found.')}
+                    description={t(
+                        'Long-running OCR and export processes will appear here as they run.',
+                    )}
                 />
-            </CardContent>
-        </Card>
+            }
+        />
     );
 }

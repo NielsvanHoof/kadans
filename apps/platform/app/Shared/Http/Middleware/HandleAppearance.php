@@ -9,8 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\Response;
 
+use function in_array;
+use function is_string;
+
 final class HandleAppearance
 {
+    /** @var list<string> */
+    private const array AllowedAppearances = ['light', 'dark', 'system'];
+
     /**
      * Handle an incoming request.
      *
@@ -18,7 +24,14 @@ final class HandleAppearance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('appearance', $request->cookie('appearance') ?? 'system');
+        // Cookie is unencrypted and interpolated into the dark-mode bootstrap
+        // script — only the three client-known values may reach the view.
+        $appearance = $request->cookie('appearance');
+        $safeAppearance = is_string($appearance) && in_array($appearance, self::AllowedAppearances, true)
+            ? $appearance
+            : 'system';
+
+        View::share('appearance', $safeAppearance);
 
         return $next($request);
     }

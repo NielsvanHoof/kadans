@@ -6,9 +6,6 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
-use App\DocumentProcessing\Enums\PipelineType;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Actions\GenerateDossierExportAction;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Jobs\GenerateDossierExportJob;
@@ -16,14 +13,15 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
     Storage::fake('local');
     config(['exports.disk' => 'local']);
 });
@@ -34,7 +32,6 @@ test('a permitted staff member can queue a dossier export and it is audited', fu
     Queue::fake();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.exports.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -55,7 +52,12 @@ test('a permitted staff member can queue a dossier export and it is audited', fu
 
     expect($pipeline)->toBeInstanceOf(Pipeline::class);
 
-    Queue::assertPushed(GenerateDossierExportJob::class, fn (GenerateDossierExportJob $job): bool => $job->pipelineId === $pipeline->id);
+    Queue::assertPushed(
+        GenerateDossierExportJob::class,
+        fn (GenerateDossierExportJob $job): bool => $job->pipelineId === $pipeline->id
+            // Off the default queue — ZIP packaging must not stall unrelated jobs.
+            && $job->queue === 'dossier-export',
+    );
 });
 
 test('the export job creates a ZIP manifest and copies uploaded documents', function (): void {
@@ -103,7 +105,7 @@ test('the export job creates a ZIP manifest and copies uploaded documents', func
     unlink($archivePath);
 
     expect($manifest['dossier']['id'])->toBe($dossier->id)
-        ->and($manifest['documents'][0]['archive_path'])->toBe('documents/001-payslip-january.pdf')
+        ->and($manifest['documents'][0]['files'][0]['archive_path'])->toBe('documents/001-payslip-january.pdf')
         ->and(Activity::query()
             ->where('event', AuditEvent::DossierExportCompleted->value)
             ->where('subject_id', $export->id)
@@ -121,10 +123,7 @@ test('reviewers cannot request or download dossier exports', function (): void {
     Storage::disk('local')->put($export->path, 'archive');
 
     $this->actingAs($reviewer)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->post(workspaceRoute('workspaces.dossiers.exports.store', $tenant, ['dossier' => $dossier]))
         ->assertForbidden();
 
@@ -153,10 +152,7 @@ test('a signed export download is tenant-scoped, password-protected, and audited
     );
 
     $this->actingAs($owner)
-        ->withSession([
-            'active_tenant_id' => $tenant->id,
-            'auth.password_confirmed_at' => now()->getTimestamp(),
-        ])
+        ->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
         ->get($url)
         ->assertOk()
         ->assertHeader('content-disposition', 'attachment; filename=confidential-dossier-export.zip')
@@ -169,7 +165,6 @@ test('a signed export download is tenant-scoped, password-protected, and audited
 
     $otherWorkspace = provisionWorkspace('Other Accountants');
     $this->actingAs($otherWorkspace['owner'])
-        ->withSession(['active_tenant_id' => $otherWorkspace['tenant']->id])
         ->get($url)
         ->assertNotFound();
 });
@@ -241,7 +236,6 @@ test('export status island returns json for a dossier export', function (): void
     resolve(CreatePipelineAction::class)->handle($export, PipelineType::DossierExport, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->getJson(workspaceRoute('workspaces.dossiers.exports.show', $tenant, [
             'dossier' => $dossier,
             'export' => $export,

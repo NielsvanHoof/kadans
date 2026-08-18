@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
-use App\DocumentProcessing\Data\PipelineIndexRowData;
-use App\DocumentProcessing\Enums\PipelineStatus;
-use App\DocumentProcessing\Enums\PipelineType;
-use App\DocumentProcessing\Models\Pipeline;
+use App\Pipelines\Data\PipelineIndexRowData;
+use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use App\Shared\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
@@ -30,7 +31,7 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{filters: list<array<string, mixed>>, sorts: list<array{key: string, label: string}>, defaults: array{sort: string, per_page: int}}
+     * @return array{filters: list<array<string, mixed>>, sorts: list<array{key: string, label: string}>, defaults: array{sort: string}}
      */
     public function toolbarMetadata(): array
     {
@@ -43,7 +44,7 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
                     'options' => array_map(
                         static fn (PipelineStatus $status): array => [
                             'value' => $status->value,
-                            'label' => __(str_replace('_', ' ', ucfirst($status->value))),
+                            'label' => __(Str::headline($status->value)),
                         ],
                         PipelineStatus::cases(),
                     ),
@@ -55,9 +56,7 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
                     'options' => array_map(
                         static fn (PipelineType $type): array => [
                             'value' => $type->value,
-                            'label' => $type === PipelineType::OcrDocument
-                                ? __('OCR document')
-                                : __('Dossier export'),
+                            'label' => $type->label(),
                         ],
                         PipelineType::cases(),
                     ),
@@ -73,7 +72,6 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
             ],
             'defaults' => [
                 'sort' => '-created_at',
-                'per_page' => 15,
             ],
         ];
     }

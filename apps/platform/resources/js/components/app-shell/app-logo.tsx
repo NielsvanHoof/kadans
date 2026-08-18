@@ -13,9 +13,8 @@ export default function AppLogo() {
                 <AppLogoIcon className="size-5" />
             </div>
             <div className="ml-1 grid flex-1 text-left">
-                {/* Wordmark: display face, tracked in tight so it reads as a
-                    set logotype rather than a label in the nav. */}
-                <span className="mb-0.5 truncate font-display text-[0.9375rem] leading-tight font-bold tracking-[-0.03em]">
+                {/* Wordmark: Poppins bold, matching qompose.nl logotype weight. */}
+                <span className="mb-0.5 truncate font-display text-[0.9375rem] leading-tight font-bold tracking-[-0.02em]">
                     Qompose
                 </span>
             </div>

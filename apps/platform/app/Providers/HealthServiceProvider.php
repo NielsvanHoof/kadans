@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Platform\Services\Health\FailedQueueJobsCheck;
+use App\Platform\Services\Health\StuckPipelinesCheck;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
 use Spatie\Health\Checks\Checks\QueueCheck;
@@ -20,6 +22,11 @@ final class HealthServiceProvider extends ServiceProvider
             RedisCheck::new(),
             QueueCheck::new()->failWhenHealthJobTakesLongerThanMinutes(3),
             ScheduleCheck::new()->heartbeatMaxAgeInMinutes(3),
+            // QueueCheck proves a worker is consuming; these two prove the work
+            // actually finishes. Without them, exhausted jobs and stalled
+            // pipelines leave a document "processing" forever with no alert.
+            FailedQueueJobsCheck::new()->within(60),
+            StuckPipelinesCheck::new(),
         ]);
     }
 }

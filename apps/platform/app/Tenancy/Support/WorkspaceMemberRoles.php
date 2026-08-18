@@ -10,10 +10,10 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
-use function array_key_exists;
 use function getPermissionsTeamId;
 use function in_array;
 use function is_string;
@@ -58,10 +58,10 @@ final class WorkspaceMemberRoles
             return [];
         }
 
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
-        $rolesTable = (string) config('permission.table_names.roles');
-        $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
-        $modelKey = (string) config('permission.column_names.model_morph_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
+        $rolesTable = Config::string('permission.table_names.roles');
+        $modelHasRolesTable = Config::string('permission.table_names.model_has_roles');
+        $modelKey = Config::string('permission.column_names.model_morph_key');
 
         /** @var array<int, string> $roleNames */
         $roleNames = [];
@@ -112,23 +112,17 @@ final class WorkspaceMemberRoles
         }
 
         /** @var list<int> $missingUserIds */
-        $missingUserIds = [];
-
-        foreach ($userIds as $userId) {
-            if (! array_key_exists($userId, $roleNamesByUserId)) {
-                $missingUserIds[] = $userId;
-            }
-        }
+        $missingUserIds = array_values(array_diff($userIds, array_keys($roleNamesByUserId)));
 
         return $roleNamesByUserId + $this->roleNamesByUserId($tenant, $missingUserIds);
     }
 
     public function activeOwnerCount(Tenant $tenant): int
     {
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
-        $rolesTable = (string) config('permission.table_names.roles');
-        $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
-        $modelKey = (string) config('permission.column_names.model_morph_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
+        $rolesTable = Config::string('permission.table_names.roles');
+        $modelHasRolesTable = Config::string('permission.table_names.model_has_roles');
+        $modelKey = Config::string('permission.column_names.model_morph_key');
 
         // Count via joins instead of Spatie's role() scope — Attribute/macro
         // scopes trip phpstan-strict-rules (staticMethod.dynamicCall).
@@ -233,5 +227,23 @@ final class WorkspaceMemberRoles
             ->where('user_id', $userId)
             ->lockForUpdate()
             ->exists();
+    }
+
+    /**
+     * Serialize last-owner checks across concurrent membership mutations.
+     *
+     * Call inside DB::transaction() before locking the target membership row.
+     * A lock on that row alone does not serialize two mutations on different
+     * owners (remove A + demote B): both count 2 under READ COMMITTED and both
+     * commit, leaving zero owners. The tenant row is the shared key.
+     */
+    public function lockOwnerMutations(int $tenantId): void
+    {
+        $row = DB::table('tenants')
+            ->where('id', $tenantId)
+            ->lockForUpdate()
+            ->first(['id']);
+
+        throw_unless($row !== null, RuntimeException::class, 'Tenant not found.');
     }
 }

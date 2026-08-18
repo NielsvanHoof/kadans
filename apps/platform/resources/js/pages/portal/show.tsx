@@ -3,9 +3,9 @@ import StatusMessage from '@/components/primitives/status-message';
 import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
 import PortalProgressOverview from '@/features/portal/portal-progress-overview';
 import type { PortalDossier } from '@/features/portal/types';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import PortalShell from '@/layouts/portal/portal-shell';
-import { formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Client portal dossier page — magic-link access, no staff layout.
@@ -17,7 +17,8 @@ export default function PortalShow({
     firm: { name: string };
     dossier: PortalDossier;
 }) {
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
 
     const subtitle = [
         t('For :name', { name: dossier.client.name }),
@@ -30,7 +31,7 @@ export default function PortalShow({
 
     const meta = dossier.expires_at
         ? t('Access expires :date', {
-              date: formatDateTime(dossier.expires_at, locale),
+              date: formatDateTime(dossier.expires_at),
           })
         : undefined;
 

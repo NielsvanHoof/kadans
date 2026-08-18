@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-use App\DocumentProcessing\Console\Commands\Pipelines\MonitorPipelinesCommand;
 use App\Dossiers\Console\Commands\SendScheduledDossierRemindersCommand;
+use App\Pipelines\Console\Commands\MonitorPipelinesCommand;
+use App\Pipelines\Console\Commands\RetryDuePipelinesCommand;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schedule;
 use Spatie\Health\Commands\DispatchQueueCheckJobsCommand;
 use Spatie\Health\Commands\RunHealthChecksCommand;
@@ -22,12 +24,16 @@ Schedule::command(MonitorPipelinesCommand::class)
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
+Schedule::command(RetryDuePipelinesCommand::class)
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
 Schedule::command('queue:prune-failed', [
-    '--hours' => config('retention.failed_jobs_hours'),
+    '--hours' => Config::integer('retention.failed_jobs_hours'),
 ])->daily()->at('02:00')->withoutOverlapping();
 
 Schedule::command('queue:prune-batches', [
-    '--hours' => config('retention.job_batches_hours'),
+    '--hours' => Config::integer('retention.job_batches_hours'),
 ])->daily()->at('02:00')->withoutOverlapping();
 
 Schedule::command('model:prune')->daily()->at('02:00')->withoutOverlapping();

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Http\Controllers;
 
+use App\ClientPortal\Actions\RegisterClientPortalDeviceAction;
 use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Support\PortalDeviceFingerprint;
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpFoundation\Response;
 
 use function max;
@@ -21,14 +24,26 @@ final class ClientPortalSessionController extends Controller
         Request $request,
         string $token,
         ResolveClientAccessGrantFromTokenAction $resolveClientAccessGrantFromToken,
+        RegisterClientPortalDeviceAction $registerClientPortalDevice,
     ): RedirectResponse {
         $grant = $resolveClientAccessGrantFromToken->handle($token);
 
         abort_unless($grant instanceof ClientAccessGrant, Response::HTTP_NOT_FOUND);
 
+        // Redemption is the security event, so the device is checked here rather
+        // than per request: once a session exists the device cannot change.
+        $outcome = $registerClientPortalDevice->handle(
+            $grant,
+            PortalDeviceFingerprint::fromRequest($request),
+        );
+
+        // Concealed as a 404 like every other portal denial, so a probe cannot
+        // tell a blocked device from a token that never existed.
+        abort_if($outcome->isBlocked(), Response::HTTP_NOT_FOUND);
+
         $lifetimeMinutes = max(1, min(
             60,
-            (int) config('portal.session_lifetime_minutes', 15),
+            Config::integer('portal.session_lifetime_minutes', 15),
         ));
         $sessionExpiresAt = now()->addMinutes($lifetimeMinutes);
 

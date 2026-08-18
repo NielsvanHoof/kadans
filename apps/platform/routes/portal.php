@@ -32,6 +32,11 @@ Route::middleware([
                 ->where('documentRequest', '[0-9]+')
                 ->name('document-requests.upload');
 
+            Route::delete('document-requests/{documentRequest}/uploaded-documents/{uploadedDocument}', [ClientPortalUploadController::class, 'destroy'])
+                ->where('documentRequest', '[0-9]+')
+                ->where('uploadedDocument', '[0-9]+')
+                ->name('document-requests.uploaded-documents.destroy');
+
             Route::post('document-requests/{documentRequest}/answer', [ClientPortalAnswerController::class, 'store'])
                 ->where('documentRequest', '[0-9]+')
                 ->name('document-requests.answer');

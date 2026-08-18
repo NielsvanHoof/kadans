@@ -142,11 +142,7 @@ export default function Profile({
                             )}
 
                             <Field orientation="horizontal">
-                                <Button
-                                    type="submit"
-                                    isDisabled={processing}
-                                    data-test="update-profile-button"
-                                >
+                                <Button type="submit" isDisabled={processing}>
                                     {processing && <Spinner />}
                                     {t('Save')}
                                 </Button>

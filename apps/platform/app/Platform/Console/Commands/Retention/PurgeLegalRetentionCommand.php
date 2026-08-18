@@ -14,6 +14,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
 use function Laravel\Prompts\info;
@@ -29,7 +30,7 @@ final class PurgeLegalRetentionCommand extends Command
         PurgeExpiredClientAction $purgeExpiredClient,
     ): int {
         $limit = max(1, (int) $this->option('limit'));
-        $cutoff = now()->subDays((int) config('retention.archived_days'));
+        $cutoff = now()->subDays(Config::integer('retention.archived_days'));
         $dossierSummary = [
             'purged' => 0,
             'activity_rows_deleted' => 0,

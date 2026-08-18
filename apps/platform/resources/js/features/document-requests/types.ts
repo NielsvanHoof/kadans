@@ -15,6 +15,8 @@ export type QuestionnaireOption = { id: string; label: string };
 
 export type QuestionnaireItemConfiguration = {
     is_required: boolean;
+    /** File items only: accept and keep more than one uploaded file. */
+    allow_multiple?: boolean;
     options?: QuestionnaireOption[];
     visibility?: {
         source_field_key: string;

@@ -3,7 +3,7 @@ import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/
 import ErrorState from '@/components/primitives/error-state';
 import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants, LinkButton } from '@/components/ui/button';
+import { Button, buttonVariants, LinkButton } from '@/components/ui/button';
 import DocumentExtractionView from '@/features/document-requests/staff/review/document-extraction-view';
 import DocumentPreviewPanel, {
     documentPreviewKind,
@@ -11,9 +11,9 @@ import DocumentPreviewPanel, {
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
 type UploadedDocumentDetail = UploadedDocumentShowProps['uploaded_document'];
@@ -29,7 +29,8 @@ export default function UploadedDocumentShowContent({
     can_download: canDownload,
 }: UploadedDocumentShowProps) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const [uploadedDocument, setUploadedDocument] = useState(
         initialUploadedDocument,
     );
@@ -72,10 +73,15 @@ export default function UploadedDocumentShowContent({
           })
         : null;
 
-    const showPreview =
+    const canShowPreview =
         previewUrl !== null &&
         documentPreviewKind(uploadedDocument.original_filename) !==
             'unsupported';
+
+    // Collapsing hands the full width back to the extraction panel, which is
+    // otherwise squeezed into half a column.
+    const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(false);
+    const showPreview = canShowPreview && !isPreviewCollapsed;
 
     return (
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
@@ -99,6 +105,20 @@ export default function UploadedDocumentShowContent({
                             ' ',
                         )}
                     </Badge>
+                    {canShowPreview && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                setIsPreviewCollapsed(!isPreviewCollapsed)
+                            }
+                        >
+                            {isPreviewCollapsed
+                                ? t('Show preview')
+                                : t('Hide preview')}
+                        </Button>
+                    )}
                     {dossier && (
                         <LinkButton
                             variant="outline"
@@ -129,7 +149,7 @@ export default function UploadedDocumentShowContent({
 
             <p className="font-data text-sm text-muted-foreground">
                 {formatBytes(uploadedDocument.size_bytes)} · {t('uploaded')}{' '}
-                {formatDateTime(uploadedDocument.uploaded_at, locale)}
+                {formatDateTime(uploadedDocument.uploaded_at)}
             </p>
 
             {uploadedDocument.processing_status === 'failed' &&

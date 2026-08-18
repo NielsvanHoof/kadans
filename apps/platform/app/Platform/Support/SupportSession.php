@@ -6,10 +6,10 @@ namespace App\Platform\Support;
 
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditPermission;
-use App\DocumentProcessing\Enums\PipelinePermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
+use App\Pipelines\Enums\PipelinePermission;
 use App\Questionnaires\Enums\QuestionnaireTemplatePermission;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;

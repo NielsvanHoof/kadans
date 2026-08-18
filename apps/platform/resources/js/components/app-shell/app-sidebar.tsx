@@ -8,6 +8,7 @@ import {
     ListChecks,
     ScrollText,
     ShieldCheck,
+    ShieldQuestion,
     UserPlus,
     Users,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ import { index as platformSupportIndex } from '@/routes/platform/support';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { index as activityIndex } from '@/routes/workspaces/activity';
 import { index as clientIndex } from '@/routes/workspaces/clients';
+import { index as dataSubjectRequestIndex } from '@/routes/workspaces/data-subject-requests';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
 import { index as membersIndex } from '@/routes/workspaces/members';
@@ -108,6 +110,15 @@ export function AppSidebar() {
                       href: activityIndex(currentFirm),
                       icon: ScrollText,
                   },
+                  ...(can('data_subject.view')
+                      ? [
+                            {
+                                title: t('Data-subject requests'),
+                                href: dataSubjectRequestIndex(currentFirm),
+                                icon: ShieldQuestion,
+                            },
+                        ]
+                      : []),
                   ...(can('pipelines.view')
                       ? [
                             {

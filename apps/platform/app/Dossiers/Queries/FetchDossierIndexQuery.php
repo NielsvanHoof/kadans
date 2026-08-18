@@ -9,8 +9,11 @@ use App\Dossiers\Data\DossierIndexRowData;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
+use App\Shared\Data\PersonOptionData;
 use App\Shared\Queries\Filters\ScoutSearchFilter;
 use App\Shared\Queries\PaginatedIndexQuery;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Queries\FetchResponsibleStaffOptionsQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -18,6 +21,7 @@ use RuntimeException;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
+use function array_map;
 use function in_array;
 use function is_string;
 
@@ -26,6 +30,10 @@ use function is_string;
  */
 final class FetchDossierIndexQuery extends PaginatedIndexQuery
 {
+    public function __construct(
+        private readonly FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
+    ) {}
+
     /**
      * @return LengthAwarePaginator<int, array{
      *     id: int,
@@ -47,7 +55,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
      * @return array{
      *     filters: list<array<string, mixed>>,
      *     sorts: list<array{key: string, label: string}>,
-     *     defaults: array{sort: string, per_page: int}
+     *     defaults: array{sort: string}
      * }
      */
     public function toolbarMetadata(): array
@@ -77,6 +85,12 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
                         ['value' => 'overdue', 'label' => __('Overdue')],
                     ],
                 ],
+                [
+                    'key' => 'responsible',
+                    'type' => 'select',
+                    'label' => __('Responsible'),
+                    'options' => $this->responsibleOptions(),
+                ],
             ],
             'sorts' => [
                 ['key' => '-updated_at', 'label' => __('Recently updated')],
@@ -91,7 +105,6 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             ],
             'defaults' => [
                 'sort' => '-updated_at',
-                'per_page' => 15,
             ],
         ];
     }
@@ -120,12 +133,16 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             ScoutSearchFilter::make(Dossier::class),
             AllowedFilter::exact('status'),
             AllowedFilter::partial('client', 'client.name'),
+            AllowedFilter::exact('responsible', 'responsible_user_id'),
             AllowedFilter::callback('queue', function (Builder $query, mixed $value): void {
                 if (! is_string($value)) {
                     return;
                 }
 
-                $this->applyWorkflowQueue($query, $value);
+                // Spatie's callback types the builder as Model; narrow for our Dossier query.
+                /** @var Builder<Dossier> $dossierQuery */
+                $dossierQuery = $query;
+                $this->applyWorkflowQueue($dossierQuery, $value);
             }),
         ];
     }
@@ -169,15 +186,39 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
         )->toArray();
     }
 
+    /**
+     * Staff who can be set as responsible, as toolbar select options.
+     *
+     * Empty outside a tenant context — toolbarMetadata() is only reached from
+     * tenant routes, but the query itself carries no tenant argument.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function responsibleOptions(): array
+    {
+        $tenant = Tenant::current();
+
+        if (! $tenant instanceof Tenant) {
+            return [];
+        }
+
+        return array_map(
+            static fn (PersonOptionData $staff): array => [
+                'value' => (string) $staff->id,
+                'label' => $staff->name,
+            ],
+            $this->fetchResponsibleStaffOptions->handle($tenant),
+        );
+    }
+
     /** @param Builder<Dossier> $query */
     private function applyWorkflowQueue(Builder $query, string $queue): void
     {
         if ($queue === 'needs_review') {
-            $query
-                ->whereNot('status', DossierStatus::Completed)
-                ->whereHas('documentRequests', fn (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery) => $documentRequestQuery
-                    ->getQuery()
-                    ->where('status', DocumentRequestStatus::Submitted->value));
+            $query->whereHas('documentRequests', fn (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery) => $documentRequestQuery
+                ->getQuery()
+                ->where('status', DocumentRequestStatus::Submitted->value));
+            $query->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
             return;
         }
@@ -186,14 +227,13 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             return;
         }
 
-        $query
-            ->whereNot('status', DossierStatus::Completed)
-            ->whereHas('documentRequests', function (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery): void {
-                $documentRequestQuery->getQuery()->whereIn('status', [
-                    DocumentRequestStatus::Pending->value,
-                    DocumentRequestStatus::Rejected->value,
-                ]);
-            });
+        $query->whereHas('documentRequests', function (\Illuminate\Contracts\Database\Query\Builder $documentRequestQuery): void {
+            $documentRequestQuery->getQuery()->whereIn(
+                'status',
+                DocumentRequestStatus::awaitingClientValues(),
+            );
+        });
+        $query->getQuery()->whereNotIn('status', DossierStatus::lockedValues());
 
         if ($queue === 'overdue') {
             $query->getQuery()

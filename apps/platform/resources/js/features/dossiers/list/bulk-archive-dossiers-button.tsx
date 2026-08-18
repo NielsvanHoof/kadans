@@ -38,18 +38,12 @@ export default function BulkArchiveDossiersButton({
                     ? t('Archive dossier')
                     : t('Archive :count dossiers', { count })
             }
-            confirmTestId="confirm-bulk-archive-dossiers-button"
             form={{
                 ...DossierController.bulkArchive.form(currentWorkspace),
                 onSuccess,
             }}
             trigger={
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    data-test="bulk-archive-dossiers-button"
-                >
+                <Button type="button" size="sm" variant="destructive">
                     <Archive aria-hidden="true" />
                     {t('Archive')}
                 </Button>

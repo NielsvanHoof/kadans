@@ -9,11 +9,11 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import type { DashboardRecentDossier } from '@/features/dashboard/types';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
-import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDate } from '@/lib/format-date-time';
 import {
     create as createDossier,
     index as dossierIndex,
@@ -26,11 +26,12 @@ import {
 export default function RecentDossiersCard({
     dossiers,
 }: {
-    dossiers: DossierSummary[];
+    dossiers: DashboardRecentDossier[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
     // Locale-aware UTC formatting — matches dossier index and avoids SSR/local drift.
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDate } = useFormatters();
 
     return (
         <Card>
@@ -91,7 +92,6 @@ export default function RecentDossiersCard({
                                                 ? t('Due :date', {
                                                       date: formatDate(
                                                           dossier.due_date,
-                                                          locale,
                                                       ),
                                                   })
                                                 : t('No due date')}

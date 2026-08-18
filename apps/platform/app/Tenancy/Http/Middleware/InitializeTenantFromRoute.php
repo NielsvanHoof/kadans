@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Http\Middleware;
 
 use App\Accounts\Models\User;
+use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
@@ -12,8 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 use function is_string;
 
-final class InitializeTenantFromRoute
+final readonly class InitializeTenantFromRoute
 {
+    public function __construct(private SupportSessionState $supportSession) {}
+
     /**
      * @param  Closure(Request): Response  $next
      */
@@ -35,6 +38,8 @@ final class InitializeTenantFromRoute
         abort_unless($tenant instanceof Tenant, Response::HTTP_NOT_FOUND);
 
         $user->loadMissing('tenantMemberships');
+
+        $this->supportSession->clearIfExpired($user);
 
         // Membership or active platform support session for this firm.
         abort_unless($user->canAccessTenant($tenant), Response::HTTP_NOT_FOUND);

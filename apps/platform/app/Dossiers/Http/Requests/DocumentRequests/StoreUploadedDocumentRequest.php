@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Dossiers\Http\Requests\DocumentRequests;
 
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Support\DocumentUploadLimits;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -31,11 +32,20 @@ final class StoreUploadedDocumentRequest extends FormRequest
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
+        $documentRequest = $this->route('documentRequest');
+        $allowMultiple = $documentRequest instanceof DocumentRequest
+            && $documentRequest->allowsMultipleUploads();
+
         return [
-            'document' => [
+            'documents' => [
                 'required',
+                'array',
+                'min:1',
+                'max:'.($allowMultiple ? DocumentUploadLimits::MAX_FILES_WHEN_MULTIPLE : 1),
+            ],
+            'documents.*' => [
                 File::types(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx'])
-                    ->max('20mb'),
+                    ->max(DocumentUploadLimits::MAX_FILE_SIZE),
             ],
         ];
     }

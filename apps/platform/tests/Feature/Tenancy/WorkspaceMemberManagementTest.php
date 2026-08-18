@@ -253,19 +253,44 @@ test('the last owner cannot be demoted or removed', function (): void {
         ->where('user_id', $owner->id)
         ->firstOrFail();
 
+    // Self role changes are forbidden at the policy layer (not validation).
     $this->actingAs($owner)
         ->patch(workspaceRoute('workspaces.members.update', $tenant, [
             'membership' => $membership,
         ]), [
             'role' => Role::Administrator->value,
         ])
-        ->assertSessionHasErrors('role');
+        ->assertForbidden();
 
     $this->actingAs($owner)
         ->delete(workspaceRoute('workspaces.members.destroy', $tenant, [
             'membership' => $membership,
         ]))
         ->assertForbidden();
+});
+
+// Policy allows an Administrator with AssignMemberRoles to update someone
+// else's membership; the FormRequest last-owner rule is what refuses this.
+test('an administrator cannot demote the sole owner', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $admin = workspaceMember($tenant, Role::Administrator);
+    $ownerMembership = TenantMembership::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $owner->id)
+        ->firstOrFail();
+
+    $this->actingAs($admin)
+        ->patch(workspaceRoute('workspaces.members.update', $tenant, [
+            'membership' => $ownerMembership,
+        ]), [
+            'role' => Role::Administrator->value,
+        ])
+        ->assertSessionHasErrors([
+            'role' => 'The workspace must keep at least one owner.',
+        ]);
+
+    actingInWorkspace($tenant);
+    expect($owner->fresh()->hasRole(Role::Owner->value))->toBeTrue();
 });
 
 test('owners can suspend and remove another member', function (): void {

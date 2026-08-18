@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/card';
 import type { ActivityLogEntry } from '@/features/audit/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 import type { Paginated } from '@/types/pagination';
 
@@ -29,7 +29,8 @@ export default function ActivityLogCard({
     activities: Paginated<ActivityLogEntry>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const rows = activities.data;
     const total = activities.total;
 
@@ -69,7 +70,6 @@ export default function ActivityLogCard({
                                         <span className="text-xs text-muted-foreground">
                                             {formatDateTime(
                                                 activity.created_at,
-                                                locale,
                                             )}
                                         </span>
                                     )}

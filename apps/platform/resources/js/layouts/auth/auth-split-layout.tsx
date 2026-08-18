@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import BrandHeroPanel from '@/components/brand/brand-hero-panel';
+import LegalFooterLinks from '@/features/legal/legal-footer-links';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -39,8 +40,8 @@ export default function AuthSplitLayout({
                 </div>
             </BrandHeroPanel>
 
-            <div className="w-full lg:p-8">
-                <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <div className="flex w-full flex-col lg:p-8">
+                <div className="mx-auto flex w-full flex-1 flex-col justify-center space-y-6 sm:w-[350px]">
                     <Link
                         href={dashboard()}
                         aria-label={name}
@@ -65,6 +66,9 @@ export default function AuthSplitLayout({
                         </div>
                         {children}
                     </main>
+                </div>
+                <div className="mx-auto w-full max-w-sm py-6 sm:w-[350px]">
+                    <LegalFooterLinks />
                 </div>
             </div>
         </div>

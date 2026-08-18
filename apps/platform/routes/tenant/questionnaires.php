@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Questionnaires\Http\Controllers\QuestionnaireChecklistDraftController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,9 @@ Route::post('templates/{template}/items/reorder', [QuestionnaireTemplateItemCont
     ->name('templates.items.reorder');
 Route::post('templates/{template}/items', [QuestionnaireTemplateItemController::class, 'store'])
     ->name('templates.items.store');
+Route::post('templates/{template}/draft-items', [QuestionnaireChecklistDraftController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('templates.draft-items.store');
 
 // Nested item routes: item must belong to the parent template.
 Route::scopeBindings()->group(function (): void {

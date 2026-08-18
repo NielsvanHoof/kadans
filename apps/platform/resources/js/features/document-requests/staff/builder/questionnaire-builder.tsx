@@ -40,7 +40,9 @@ import type {
     DossierStatus,
 } from '@/features/dossiers/types';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+import { builder as dossierBuilder } from '@/routes/workspaces/dossiers';
 
 /** Desktop three-pane layout (matches Tailwind `xl`). */
 const DESKTOP_QUERY = '(min-width: 1280px)';
@@ -67,6 +69,7 @@ export default function QuestionnaireBuilder({
     backHref: string;
 }) {
     const { t } = useTranslation();
+    const currentWorkspace = useCurrentWorkspace();
     // Prefer desktop on first paint so wide screens do not flash the gate.
     const isDesktop = useMediaQuery(DESKTOP_QUERY, {
         defaultValue: true,
@@ -134,7 +137,10 @@ export default function QuestionnaireBuilder({
     // Intercept Inertia visits (including Back) when the draft has unsaved changes.
     // Release the lock only when the visit actually proceeds (not when cancelled).
     useEffect(() => {
-        const builderPath = `/dossiers/${dossierId}/builder`;
+        const builderPath = dossierBuilder.url({
+            tenant: currentWorkspace,
+            dossier: dossierId,
+        });
 
         return router.on('before', (event) => {
             if (allowLeaveRef.current) {
@@ -169,7 +175,7 @@ export default function QuestionnaireBuilder({
                 releaseLock();
             }
         });
-    }, [state.isDirty, dossierId, releaseLock]);
+    }, [state.isDirty, dossierId, currentWorkspace, releaseLock]);
 
     if (!isDesktop) {
         return <DesktopRequiredGate backHref={backHref} />;

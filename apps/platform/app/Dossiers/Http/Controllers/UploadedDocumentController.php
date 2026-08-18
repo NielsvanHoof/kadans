@@ -6,6 +6,7 @@ namespace App\Dossiers\Http\Controllers;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Actions\DocumentRequests\UploadStaffDocumentAction;
 use App\Dossiers\Data\StaffUploadedDocumentData;
@@ -20,10 +21,14 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+
+use function sprintf;
 
 /**
  * Staff upload + OCR extraction page + document download.
@@ -62,13 +67,16 @@ final class UploadedDocumentController extends Controller
         // (dossier → documentRequest). Tenant scope is already applied.
         $this->authorize('view', $dossier);
 
-        $file = $request->file('document');
+        /** @var list<UploadedFile> $files */
+        $files = $request->file('documents', []);
 
-        if ($file === null) {
-            return back()->withErrors(['document' => __('A document file is required.')]);
+        if ($files === []) {
+            return back()->withErrors(['documents' => __('At least one file is required.')]);
         }
 
-        $uploadStaffDocument->handle($documentRequest, $file);
+        foreach ($files as $file) {
+            $uploadStaffDocument->handle($documentRequest, $file);
+        }
 
         Toast::success(__('Document uploaded.'));
 
@@ -88,6 +96,7 @@ final class UploadedDocumentController extends Controller
         Request $request,
         UploadedDocument $uploadedDocument,
         FetchUploadedDocumentShowQuery $fetchUploadedDocumentShow,
+        LogAuditActivityAction $logAuditActivity,
     ): Response|JsonResponse {
         $this->authorize('view', $uploadedDocument);
 
@@ -98,6 +107,15 @@ final class UploadedDocumentController extends Controller
                 'uploaded_document' => $props['uploaded_document'],
             ]);
         }
+
+        $logAuditActivity->handle(
+            AuditEvent::DocumentViewed,
+            $uploadedDocument,
+            [
+                'surface' => 'extraction',
+                'original_filename' => $uploadedDocument->original_filename,
+            ],
+        );
 
         return Inertia::render('uploaded-documents/show', $props);
     }
@@ -141,20 +159,47 @@ final class UploadedDocumentController extends Controller
     }
 
     /**
-     * Inline file response for in-page PDF/image previews (no download audit).
+     * Inline file response for in-page PDF/image previews.
      */
     public function preview(
         Tenant $tenant,
         UploadedDocument $uploadedDocument,
+        LogAuditActivityAction $logAuditActivity,
         ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
     ): RedirectResponse|StreamedResponse {
         $this->authorize('download', $uploadedDocument);
+
+        $logAuditActivity->handle(
+            AuditEvent::DocumentViewed,
+            $uploadedDocument,
+            [
+                'surface' => 'preview',
+                'original_filename' => $uploadedDocument->original_filename,
+            ],
+        );
 
         return $this->serveDocument(
             $uploadedDocument,
             $resolveDocumentTemporaryUrl,
             disposition: 'inline',
         );
+    }
+
+    /**
+     * Remove one file from a multi-file document request.
+     */
+    public function destroy(
+        Tenant $tenant,
+        UploadedDocument $uploadedDocument,
+        DeleteUploadedDocumentAction $deleteUploadedDocument,
+    ): RedirectResponse {
+        $this->authorize('delete', $uploadedDocument);
+
+        $deleteUploadedDocument->handle($uploadedDocument);
+
+        Toast::success(__('Document removed.'));
+
+        return back();
     }
 
     /**
@@ -165,7 +210,23 @@ final class UploadedDocumentController extends Controller
         ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
         string $disposition,
     ): RedirectResponse|StreamedResponse {
-        if ($resolveDocumentTemporaryUrl->supportsTemporaryUrl($uploadedDocument)) {
+        $driver = $resolveDocumentTemporaryUrl->diskDriver($uploadedDocument);
+
+        if ($driver === null) {
+            // The row names a disk that is no longer configured, so the bytes
+            // are unreachable. Fail closed as a miss rather than a 500: the
+            // caller cannot act on it either way, but operators still need to
+            // know a row outlived its disk, so it is reported.
+            report(new RuntimeException(sprintf(
+                'Uploaded document %d is stored on disk "%s", which is not configured.',
+                $uploadedDocument->id,
+                $uploadedDocument->disk,
+            )));
+
+            abort(404);
+        }
+
+        if ($driver === 's3') {
             $url = $resolveDocumentTemporaryUrl->handle(
                 $uploadedDocument,
                 now()->addMinutes(5),

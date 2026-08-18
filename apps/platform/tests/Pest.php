@@ -6,6 +6,7 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
 use App\Dossiers\Models\Dossier;
+use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Reporting\Queries\ActivityLogRowMapper;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Queries\PaginatedIndexQuery;
@@ -16,7 +17,9 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
 use Illuminate\Support\Str;
+use Inertia\Support\Header;
 use Tests\TestCase;
 
 /*
@@ -35,13 +38,10 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
-// Policy and Query unit tests need the Laravel app + database.
-pest()->extend(TestCase::class)
-    ->use(RefreshDatabase::class)
-    ->in('Unit/Policies', 'Unit/Queries', 'Unit/Transitions');
-
 // Model unit tests need the Laravel app for Eloquent, but not the database.
-// The rest of Unit/ stays pure PHP (file inspection, mappers, config checks).
+// The rest of Unit/ stays pure PHP (file inspection, mappers, config checks) — Unit tests
+// must never touch the database, cache, or HTTP; Policy/Query/Transition coverage lives
+// in Feature/{Domain} instead, since those need RefreshDatabase.
 pest()->extend(TestCase::class)
     ->in('Unit/Models');
 
@@ -138,20 +138,29 @@ pest()->presets()->custom('qompose', fn (): array => [
     |   L1  Accounts
     |   L2  Tenancy
     |   L3  Questionnaires
-    |   L4  Clients, Dossiers, DocumentProcessing
+    |   L4  Clients, Dossiers, DocumentProcessing, AudioProcessing, Pipelines
     |   L5  ClientPortal
     |   L6  Reporting, Platform, WorkspaceNotifications
     |
     |   Cross-cutting: Audit — any domain may log activity; Audit itself may
     |   only reach Accounts and Tenancy (enforced separately below).
     |
-    | Three pairs share a layer because their dependency really is mutual, and
+    | Several pairs share a layer because their dependency really is mutual, and
     | pretending otherwise only produced permanent "debt" entries:
     |
-    |   Clients <-> Dossiers            a dossier is a case FOR a client; deleting
-    |                                   a client cascades to its dossiers
-    |   Dossiers <-> DocumentProcessing OCR/export pipelines act on uploads and
-    |                                   dossiers, and are part of their lifecycle
+    |   Clients <-> Dossiers             a dossier is a case FOR a client; deleting
+    |                                    a client cascades to its dossiers
+    |   Dossiers <-> DocumentProcessing  uploads carry OCR state that is part of
+    |                                    their lifecycle
+    |   Dossiers <-> AudioProcessing     audio recordings carry transcription state
+    |                                    the same way
+    |   Dossiers <-> Pipelines           export runs are pipelines owned by a
+    |                                    dossier; PipelinePolicy::download also
+    |                                    gates on DossierPermission
+    |
+    | DocumentProcessing and AudioProcessing each depend on Pipelines one-way (run
+    | tracking), registering a PipelineRunner into Pipelines' registry rather
+    | than Pipelines knowing about OCR/transcription specifics.
     |
     | Audit was likewise modelled as a layer (L3) and generated ~20 violations,
     | because logging is genuinely cross-cutting: every domain writes activity,
@@ -169,10 +178,12 @@ pest()->presets()->custom('qompose', fn (): array => [
         ->not->toUse([
             'App\Accounts',
             'App\Audit',
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\WorkspaceNotifications',
             'App\Platform',
             'App\Questionnaires',
@@ -184,10 +195,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // separately below. Audit is cross-cutting and deliberately absent.
     expect('App\Accounts')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -201,10 +214,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // User above would let any upward dependency hide inside the hub.
     expect(User::class)
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -215,10 +230,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // standing exception; Platform is inverted behind SupportSessionState.
     expect('App\Tenancy')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\DocumentProcessing',
             'App\Dossiers',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -230,10 +247,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     // Audit itself may only reach Accounts and Tenancy.
     expect('App\Audit')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
@@ -252,17 +271,20 @@ pest()->presets()->custom('qompose', fn (): array => [
 
     expect('App\Questionnaires')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\ClientPortal',
             'App\DocumentProcessing',
             'App\Dossiers',
+            'App\Pipelines',
             'App\Platform',
             'App\Reporting',
             'App\WorkspaceNotifications',
         ]),
 
-    // Clients and DocumentProcessing are layer siblings (mutual by design).
-    // ClientPortal is reached only through DossierArchived / DocumentRequestRejected
-    // events and the ClientPortalReminders contract; the Dossier model keeps its
+    // Clients, DocumentProcessing, AudioProcessing, and Pipelines are layer
+    // siblings (mutual by design). ClientPortal is reached only through
+    // DossierArchived / DocumentRequestRejected events and the
+    // ClientPortalReminders contract; the Dossier model keeps its
     // ClientAccessGrant relation under the standing exception.
     expect('App\Dossiers')
         ->not->toUse([
@@ -281,27 +303,36 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\WorkspaceNotifications',
         ]),
 
+    // Registers a PipelineRunner into Pipelines' registry; otherwise
+    // unremarkable as an L4 sibling.
+    expect('App\AudioProcessing')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Platform',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    // Depends on Dossiers only for PipelinePolicy::download's DossierPermission
+    // check; OCR/transcription specifics stay inverted behind PipelineRunner.
+    expect('App\Pipelines')
+        ->not->toUse([
+            'App\ClientPortal',
+            'App\Platform',
+            'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
     expect('App\ClientPortal')
         ->not->toUse([
+            'App\AudioProcessing',
             'App\DocumentProcessing',
+            'App\Pipelines',
             'App\Platform',
             'App\Reporting',
             'App\WorkspaceNotifications',
         ]),
 ]);
-
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
-
-expect()->extend('toBeOne', fn () => $this->toBe(1));
 
 /*
 |--------------------------------------------------------------------------
@@ -371,6 +402,84 @@ function workspaceMember(Tenant $tenant, Role $role, ?User $user = null): User
     $user->assignRole($role->value);
 
     return $user->fresh();
+}
+
+/**
+ * Re-evaluate a config file under temporary environment variables.
+ *
+ * For config that branches on the environment (`env('APP_ENV') === 'production'`)
+ * and so cannot be exercised through `config()`, which is already resolved.
+ *
+ * Two traps this exists to contain:
+ *
+ * 1. Laravel's env repository stacks three adapters — `$_SERVER`, `$_ENV`, and
+ *    `getenv()` (putenv is enabled by default) — so all three must move together
+ *    or whichever stale one is read first wins.
+ * 2. Restoring matters more than setting. PHPUnit's `<env>` entries do not
+ *    necessarily populate `$_SERVER`, so a naive `$previous = $_SERVER[$key]`
+ *    captures null and "restores" APP_ENV to an empty string. Every later test
+ *    in that process then runs with no environment, failing in ways that look
+ *    nothing like an env problem (mismatched CSRF tokens, for instance).
+ *
+ * @param  array<string, string|null>  $overrides  Null removes the variable.
+ * @return array<string, mixed>
+ */
+function configFileWithEnv(string $configFile, array $overrides): array
+{
+    // Writes go to $_ENV/$_SERVER/putenv directly. Env::get() is a *read* through
+    // an immutable repository — `unset(Env::get($key))` is not valid PHP ("cannot
+    // use method return value in write context") and takes the whole suite down
+    // before a single test boots. Do not reintroduce it.
+    $write = static function (string $key, ?string $value): void {
+        if ($value === null) {
+            unset($_ENV[$key], $_SERVER[$key]);
+            putenv($key);
+
+            return;
+        }
+
+        $_ENV[$key] = $value;
+        $_SERVER[$key] = $value;
+        putenv("{$key}={$value}");
+    };
+
+    $previous = [];
+
+    foreach ($overrides as $key => $value) {
+        // Read back through Env so the captured value is whatever config would
+        // have seen, across all three adapters.
+        $existing = Env::get($key);
+        $previous[$key] = $existing === null || $existing === false ? null : (string) $existing;
+        $write($key, $value);
+    }
+
+    try {
+        return require base_path("config/{$configFile}.php");
+    } finally {
+        foreach ($previous as $key => $value) {
+            $write($key, $value);
+        }
+    }
+}
+
+/**
+ * Headers for the follow-up request that resolves an Inertia deferred prop.
+ *
+ * Deferred props are absent from the first response by design, so asserting on
+ * one means replaying the request the client makes after paint. A plain
+ * `?only[]=` query string does not do this — Inertia reads the partial headers.
+ *
+ * @return array<string, string>
+ */
+function deferredPropHeaders(string $prop, string $component = 'workspaces/dashboard'): array
+{
+    return [
+        Header::INERTIA => 'true',
+        // Inertia answers 409 when the asset version header is missing or stale.
+        Header::VERSION => resolve(HandleInertiaRequests::class)->version(request()) ?? '',
+        Header::PARTIAL_COMPONENT => $component,
+        Header::PARTIAL_ONLY => $prop,
+    ];
 }
 
 /**

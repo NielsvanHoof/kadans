@@ -19,6 +19,7 @@ use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 
 use function is_string;
 
@@ -73,10 +74,10 @@ final readonly class FetchWorkspaceMembersQuery
             ->oldest('joined_at');
 
         if (is_string($roleFilter) && $roleFilter !== '') {
-            $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
-            $rolesTable = (string) config('permission.table_names.roles');
-            $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
-            $modelKey = (string) config('permission.column_names.model_morph_key');
+            $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
+            $rolesTable = Config::string('permission.table_names.roles');
+            $modelHasRolesTable = Config::string('permission.table_names.model_has_roles');
+            $modelKey = Config::string('permission.column_names.model_morph_key');
 
             $membershipsQuery->getQuery()->whereExists(function (Builder $query) use ($tenant, $roleFilter, $teamForeignKey, $rolesTable, $modelHasRolesTable, $modelKey): void {
                 $query->selectRaw('1')

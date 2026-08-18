@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Config;
 use Laravel\Scout\Builder as ScoutBuilder;
 use Laravel\Scout\Searchable;
 use Override;
@@ -57,6 +58,8 @@ use function is_string;
  * @property-read int|null $client_access_grants_count
  * @property-read EloquentCollection<int, DocumentRequest> $documentRequests
  * @property-read int|null $document_requests_count
+ * @property-read EloquentCollection<int, AudioRecording> $audioRecordings
+ * @property-read int|null $audio_recordings_count
  * @property-read EloquentCollection<int, DossierExport> $exports
  * @property-read int|null $exports_count
  * @property-read User|null $responsibleUser
@@ -84,6 +87,9 @@ use function is_string;
  * @method static EloquentBuilder<static>|Dossier whereUpdatedAt($value)
  * @method static EloquentBuilder<static>|Dossier withTrashed(bool $withTrashed = true)
  * @method static EloquentBuilder<static>|Dossier withoutTrashed()
+ * @method static EloquentBuilder<static>|Dossier whereBuilderLockExpiresAt($value)
+ * @method static EloquentBuilder<static>|Dossier whereBuilderLockToken($value)
+ * @method static EloquentBuilder<static>|Dossier whereBuilderLockedByUserId($value)
  *
  * @mixin \Eloquent
  */
@@ -156,7 +162,7 @@ final class Dossier extends TenantOwnedModel
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName(config('activitylog.default_log_name'))
+            ->useLogName(Config::string('activitylog.default_log_name'))
             ->logOnly($this->auditableAttributes())
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
@@ -246,6 +252,14 @@ final class Dossier extends TenantOwnedModel
         $query->getQuery()->orderBy('id');
 
         return $query->get();
+    }
+
+    /**
+     * @return HasMany<AudioRecording, $this>
+     */
+    public function audioRecordings(): HasMany
+    {
+        return $this->hasMany(AudioRecording::class);
     }
 
     /**

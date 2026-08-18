@@ -6,6 +6,7 @@ use App\Dossiers\Http\Controllers\DocumentRequestController;
 use App\Dossiers\Http\Controllers\DocumentRequestReviewController;
 use App\Dossiers\Http\Controllers\UploadedDocumentController;
 use Illuminate\Auth\Middleware\RequirePassword;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -44,16 +45,18 @@ Route::get('uploaded-documents/{uploadedDocument}/live', [UploadedDocumentContro
     ->name('uploaded-documents.live');
 Route::get('uploaded-documents/{uploadedDocument}', [UploadedDocumentController::class, 'show'])
     ->middleware(RequirePassword::using(
-        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('uploaded-documents.show');
 Route::get('uploaded-documents/{uploadedDocument}/preview', [UploadedDocumentController::class, 'preview'])
     ->middleware(RequirePassword::using(
-        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('uploaded-documents.preview');
 Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentController::class, 'download'])
     ->middleware(RequirePassword::using(
-        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('uploaded-documents.download');
+Route::delete('uploaded-documents/{uploadedDocument}', [UploadedDocumentController::class, 'destroy'])
+    ->name('uploaded-documents.destroy');

@@ -13,7 +13,7 @@ use Spatie\Permission\Models\Permission as PermissionModel;
 
 use function Pest\Laravel\artisan;
 
-it('creates a permission row for every registered permission', function (): void {
+test('creates a permission row for every registered permission', function (): void {
     resolve(SyncTenantRolesAction::class)->handle();
 
     $stored = PermissionModel::query()->where('guard_name', 'web')->pluck('name')->all();
@@ -21,7 +21,7 @@ it('creates a permission row for every registered permission', function (): void
     expect($stored)->toEqualCanonicalizing(resolve(PermissionRegistry::class)->values());
 });
 
-it('is a no-op when run twice', function (): void {
+test('is a no-op when run twice', function (): void {
     resolve(SyncTenantRolesAction::class)->handle();
 
     $second = resolve(SyncTenantRolesAction::class)->handle();
@@ -30,7 +30,7 @@ it('is a no-op when run twice', function (): void {
         ->and($second['roles_created'])->toBe(0);
 });
 
-it('gives each role exactly the permissions the registry declares', function (): void {
+test('gives each role exactly the permissions the registry declares', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $registry = resolve(PermissionRegistry::class);
@@ -49,7 +49,7 @@ it('gives each role exactly the permissions the registry declares', function ():
     }
 });
 
-it('grants a permission that a role is newly entitled to', function (): void {
+test('grants a permission that a role is newly entitled to', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $role = RoleModel::query()
@@ -69,7 +69,7 @@ it('grants a permission that a role is newly entitled to', function (): void {
         ->toContain(DossierPermission::View->value);
 });
 
-it('revokes a permission a role should no longer hold', function (): void {
+test('revokes a permission a role should no longer hold', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $role = RoleModel::query()
@@ -87,7 +87,7 @@ it('revokes a permission a role should no longer hold', function (): void {
         ->not->toContain(DossierPermission::Delete->value);
 });
 
-it('reaches firms that already existed before a permission was added', function (): void {
+test('reaches firms that already existed before a permission was added', function (): void {
     ['tenant' => $tenantA] = provisionWorkspace('Firm A');
     ['tenant' => $tenantB] = provisionWorkspace('Firm B');
 
@@ -114,7 +114,7 @@ it('reaches firms that already existed before a permission was added', function 
     }
 });
 
-it('prunes permissions that are no longer declared in code only when asked', function (): void {
+test('prunes permissions that are no longer declared in code only when asked', function (): void {
     resolve(SyncTenantRolesAction::class)->handle();
 
     PermissionModel::query()->create(['name' => 'legacy.permission', 'guard_name' => 'web']);
@@ -130,7 +130,7 @@ it('prunes permissions that are no longer declared in code only when asked', fun
         ->and(PermissionModel::query()->where('name', 'legacy.permission')->exists())->toBeFalse();
 });
 
-it('restores the previous permission team context after syncing', function (): void {
+test('restores the previous permission team context after syncing', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $before = getPermissionsTeamId();
@@ -140,7 +140,7 @@ it('restores the previous permission team context after syncing', function (): v
     expect(getPermissionsTeamId())->toBe($before);
 });
 
-it('resolves a role assignment into the individual permissions it grants', function (): void {
+test('resolves a role assignment into the individual permissions it grants', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $adviser = workspaceMember($tenant, Role::Adviser);
@@ -153,7 +153,7 @@ it('resolves a role assignment into the individual permissions it grants', funct
         ->and($adviser->hasTenantPermission(AuditPermission::View, $tenant))->toBeFalse();
 });
 
-it('reports what it changed via the console command', function (): void {
+test('reports what it changed via the console command', function (): void {
     artisan('tenancy:sync-roles')
         ->assertSuccessful();
 
@@ -161,7 +161,7 @@ it('reports what it changed via the console command', function (): void {
         ->assertSuccessful();
 });
 
-it('marks every role it seeds as owned by code', function (): void {
+test('marks every role it seeds as owned by code', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $roles = RoleModel::query()->where('tenant_id', $tenant->id)->get();
@@ -170,7 +170,7 @@ it('marks every role it seeds as owned by code', function (): void {
         ->and($roles->every(fn (RoleModel $role): bool => $role->is_system))->toBeTrue();
 });
 
-it('repairs a system role that predates the is_system column', function (): void {
+test('repairs a system role that predates the is_system column', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $role = RoleModel::query()
@@ -191,7 +191,7 @@ it('repairs a system role that predates the is_system column', function (): void
             ->count())->toBe(1);
 });
 
-it('leaves a firm-authored role alone', function (): void {
+test('leaves a firm-authored role alone', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
 
     $custom = RoleModel::query()->create([

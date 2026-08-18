@@ -11,6 +11,7 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\PermissionRegistrar;
@@ -21,10 +22,10 @@ final readonly class DeleteTenantRoleAction
 
     public function handle(Tenant $tenant, TenantRole $role, User $deletedBy): void
     {
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
-        $rolesTable = (string) config('permission.table_names.roles');
-        $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
-        $modelKey = (string) config('permission.column_names.model_morph_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
+        $rolesTable = Config::string('permission.table_names.roles');
+        $modelHasRolesTable = Config::string('permission.table_names.model_has_roles');
+        $modelKey = Config::string('permission.column_names.model_morph_key');
 
         $isAssignedToActiveMember = DB::table('tenant_memberships')
             ->join($modelHasRolesTable, function ($join) use ($tenant, $teamForeignKey, $modelHasRolesTable, $modelKey): void {

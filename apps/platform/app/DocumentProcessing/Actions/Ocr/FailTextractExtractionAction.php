@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Actions\Ocr;
 
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
+use App\Pipelines\Actions\ResolveProviderPipelineForSubjectAction;
+use App\Pipelines\Enums\PipelineStepKey;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -23,9 +27,9 @@ final readonly class FailTextractExtractionAction
 {
     public function __construct(
         private MarkTextractExtractionFailedAction $markTextractExtractionFailed,
-        private PipelineStateAction $pipelineState,
-        private ResolveOcrPipelineForDocumentAction $resolveOcrPipeline,
-        private PrepareOcrPipelineForProviderResultAction $prepareOcrPipeline,
+        private PipelineState $pipelineState,
+        private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
+        private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
         private TenantContext $tenantContext,
     ) {}
 
@@ -56,7 +60,11 @@ final readonly class FailTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $exception, $jobId): bool {
-            $pipeline = $this->resolveOcrPipeline->handle($document, $jobId);
+            $pipeline = $this->resolveProviderPipeline->handle(
+                $document,
+                PipelineType::OcrDocument,
+                $jobId,
+            );
 
             if (in_array($document->processing_status, [
                 DocumentProcessingStatus::Completed,
@@ -79,14 +87,14 @@ final readonly class FailTextractExtractionAction
             );
 
             if ($pipeline instanceof Pipeline) {
-                $pipeline = $this->prepareOcrPipeline->handle(
+                $pipeline = $this->prepareProviderPipeline->handle(
                     $pipeline,
-                    (string) config('ocr.driver'),
+                    Config::string('ocr.driver'),
                     $jobId,
+                    PipelineStepKey::ProviderProcessing,
                 );
-                $this->pipelineState->handle(
+                $this->pipelineState->fail(
                     $pipeline,
-                    PipelineStepOperation::Fail,
                     $pipeline->current_stage,
                     errorCode: 'result_processing_failed',
                     errorMessage: $error,

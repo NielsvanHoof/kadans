@@ -4,17 +4,16 @@
 
 /** Wire payload of the workspace `pipeline.updated` broadcast. */
 export type PipelineUpdatedPayload =
-    App.DocumentProcessing.Data.PipelineUpdatedPayloadData;
+    App.Pipelines.Data.PipelineUpdatedPayloadData;
 
-export type PipelineStatus = App.DocumentProcessing.Enums.PipelineStatus;
+export type PipelineStatus = App.Pipelines.Enums.PipelineStatus;
 
-export type PipelineStepStatus =
-    App.DocumentProcessing.Enums.PipelineStepStatus;
+export type PipelineStepStatus = App.Pipelines.Enums.PipelineStepStatus;
 
-export type PipelineIndexRow = App.DocumentProcessing.Data.PipelineIndexRowData;
+export type PipelineIndexRow = App.Pipelines.Data.PipelineIndexRowData;
 
-export type PipelineSubject = App.DocumentProcessing.Data.PipelineSubjectData;
+export type PipelineSubject = App.Pipelines.Data.PipelineSubjectData;
 
-export type PipelineStepDetail = App.DocumentProcessing.Data.PipelineStepData;
+export type PipelineStepDetail = App.Pipelines.Data.PipelineStepData;
 
-export type PipelineDetail = App.DocumentProcessing.Data.PipelineShowData;
+export type PipelineDetail = App.Pipelines.Data.PipelineShowData;

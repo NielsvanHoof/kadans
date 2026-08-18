@@ -7,6 +7,7 @@ namespace App\Dossiers\Actions\Builder;
 use App\Accounts\Models\User;
 use App\Dossiers\Data\DossierBuilderLockData;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class ReleaseDossierBuilderLockAction
 {
+    public function __construct(
+        private DossierLocks $dossierLocks,
+    ) {}
+
     /**
      * Only clears when the token still matches the holder's lease.
      * Safe no-op when already expired or stolen by timeout + re-acquire.
@@ -21,9 +26,7 @@ final readonly class ReleaseDossierBuilderLockAction
     public function handle(Dossier $dossier, User $user, string $token): DossierBuilderLockData
     {
         return DB::transaction(function () use ($dossier, $user, $token): DossierBuilderLockData {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             if (
                 (int) $lockedDossier->builder_locked_by_user_id === (int) $user->getKey()

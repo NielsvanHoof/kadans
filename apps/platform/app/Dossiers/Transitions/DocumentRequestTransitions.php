@@ -6,7 +6,6 @@ namespace App\Dossiers\Transitions;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -16,12 +15,12 @@ use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 use function count;
-use function in_array;
 
 /**
  * Guarded status transitions for questionnaire items on a dossier.
  *
  * Allowed flow: pending/rejected/submitted → submitted → accepted|rejected.
+ * Submitted → pending when the last multi-file upload is removed (reopenForSubmission).
  * Accepted items cannot be submitted again.
  * Portal submissions are locked while an item awaits review; staff may replace submitted uploads.
  */
@@ -38,21 +37,63 @@ final class DocumentRequestTransitions
         if ($context === SubmissionContext::Portal) {
             $dossier ??= $documentRequest->dossier;
 
-            if (! $dossier instanceof Dossier || $dossier->status === DossierStatus::Completed) {
+            if (! $dossier instanceof Dossier || $dossier->status->isLocked()) {
                 return false;
             }
 
-            return in_array($documentRequest->status, [
-                DocumentRequestStatus::Pending,
-                DocumentRequestStatus::Rejected,
-            ], true);
+            // A request accepting multiple files stays open for further
+            // uploads while awaiting review, instead of locking after the
+            // first file like a single-file request does.
+            if (
+                $documentRequest->allowsMultipleUploads()
+                && $documentRequest->status === DocumentRequestStatus::Submitted
+            ) {
+                return true;
+            }
+
+            return $documentRequest->status->isAwaitingClient();
         }
 
-        return in_array($documentRequest->status, [
-            DocumentRequestStatus::Pending,
-            DocumentRequestStatus::Rejected,
-            DocumentRequestStatus::Submitted,
-        ], true);
+        return $documentRequest->status->isAwaitingClient()
+            || $documentRequest->status === DocumentRequestStatus::Submitted;
+    }
+
+    /**
+     * Whether an uploaded file may be removed in the given context.
+     *
+     * Staff and clients deliberately do NOT get the same rule, and the
+     * asymmetry is the decision rather than an oversight:
+     *
+     * - A client may only remove a file they just added to a request that
+     *   accepts several and is still awaiting review. Once an item is accepted
+     *   or rejected the answer is part of a reviewed record, and a client
+     *   pulling a file out from under that would leave the review describing
+     *   something that is no longer there.
+     * - Staff may remove any upload while the dossier is open. They are named
+     *   in the audit trail, and fixing a client's mistake — the wrong payslip
+     *   on an accepted item — is ordinary work that otherwise requires
+     *   rejecting and re-requesting a document the client already sent.
+     *
+     * Both are bounded by the dossier being unlocked: a completed dossier is a
+     * closed record for everyone.
+     */
+    public function canDeleteUpload(
+        DocumentRequest $documentRequest,
+        SubmissionContext $context,
+        ?Dossier $dossier = null,
+    ): bool {
+        $dossier ??= $documentRequest->dossier;
+
+        if (! $dossier instanceof Dossier || $dossier->status->isLocked()) {
+            return false;
+        }
+
+        if ($context === SubmissionContext::Staff) {
+            return true;
+        }
+
+        return $documentRequest->allowsMultipleUploads()
+            && $documentRequest->status === DocumentRequestStatus::Submitted;
     }
 
     /**
@@ -149,6 +190,31 @@ final class DocumentRequestTransitions
             'reviewed_by' => $reviewer->id,
             'reviewed_at' => now(),
             'rejection_reason' => $normalizedRejectionReason,
+        ]);
+    }
+
+    /**
+     * Reopen a submitted file request after its last upload was removed.
+     * Clears answered_at so the item is ready for a new submission.
+     */
+    public function reopenForSubmission(DocumentRequest $documentRequest): void
+    {
+        if ($documentRequest->status !== DocumentRequestStatus::Submitted) {
+            throw ValidationException::withMessages([
+                'document_request' => 'Only a submitted item can be reopened for submission.',
+            ]);
+        }
+
+        // Callers delete the last upload first; refuse if files still remain.
+        if ($documentRequest->uploadedDocuments()->toBase()->exists()) {
+            throw ValidationException::withMessages([
+                'document_request' => 'Remove all uploaded files before reopening the request.',
+            ]);
+        }
+
+        $documentRequest->update([
+            'status' => DocumentRequestStatus::Pending,
+            'answered_at' => null,
         ]);
     }
 

@@ -33,7 +33,7 @@ enum Role: string
      */
     public static function values(): array
     {
-        return array_map(fn (self $role) => $role->value, self::cases());
+        return array_column(self::cases(), 'value');
     }
 
     public function label(): string

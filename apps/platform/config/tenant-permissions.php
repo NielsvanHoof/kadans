@@ -5,10 +5,12 @@ declare(strict_types=1);
 use App\Audit\Enums\AuditPermission;
 use App\ClientPortal\Enums\ClientAccessGrantPermission;
 use App\Clients\Enums\ClientPermission;
-use App\DocumentProcessing\Enums\PipelinePermission;
+use App\Dossiers\Enums\AudioRecordingPermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
+use App\Pipelines\Enums\PipelinePermission;
+use App\Platform\Enums\DataSubjectPermission;
 use App\Questionnaires\Enums\QuestionnaireTemplatePermission;
 use App\Tenancy\Enums\WorkspacePermission;
 
@@ -33,11 +35,13 @@ return [
         DossierPermission::class,
         DocumentRequestPermission::class,
         UploadedDocumentPermission::class,
+        AudioRecordingPermission::class,
         ClientPermission::class,
         ClientAccessGrantPermission::class,
         QuestionnaireTemplatePermission::class,
         PipelinePermission::class,
         AuditPermission::class,
         WorkspacePermission::class,
+        DataSubjectPermission::class,
     ],
 ];

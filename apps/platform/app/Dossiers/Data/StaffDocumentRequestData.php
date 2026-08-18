@@ -17,18 +17,21 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class StaffDocumentRequestData extends Data
 {
+    /**
+     * @param  array<string, mixed>|null  $configuration
+     * @param  list<string>|null  $answerOptionIds
+     * @param  list<StaffUploadedDocumentData>  $uploadedDocuments
+     */
     public function __construct(
         public readonly int $id,
         public readonly QuestionnaireItemType $type,
         public readonly string $fieldKey,
         public readonly string $title,
         public readonly ?string $instructions,
-        /** @var array<string, mixed>|null */
         public readonly ?array $configuration,
         public readonly DocumentRequestStatus $status,
         public readonly ?string $answerText,
         public readonly ?bool $answerBoolean,
-        /** @var list<string>|null */
         public readonly ?array $answerOptionIds,
         public readonly ?string $answeredAt,
         public readonly ?string $reviewedAt,
@@ -39,18 +42,20 @@ final class StaffDocumentRequestData extends Data
         public readonly bool $isVisible,
         /** Whether this field counts toward progress, review, and completion. */
         public readonly bool $isApplicable,
-        public readonly ?StaffUploadedDocumentData $uploadedDocument,
+        public readonly array $uploadedDocuments,
     ) {}
 
     /**
      * Builder-island payload for a single questionnaire item (no dossier graph).
      * Fresh creates are visible/applicable until the next full show reload.
+     *
+     * @param  list<StaffUploadedDocumentData>  $uploadedDocuments
      */
     public static function fromModel(
         DocumentRequest $documentRequest,
         bool $isVisible = true,
         bool $isApplicable = true,
-        ?StaffUploadedDocumentData $uploadedDocument = null,
+        array $uploadedDocuments = [],
     ): self {
         $reviewer = $documentRequest->relationLoaded('reviewedBy')
             ? $documentRequest->reviewedBy
@@ -74,7 +79,7 @@ final class StaffDocumentRequestData extends Data
             sortOrder: $documentRequest->sort_order,
             isVisible: $isVisible,
             isApplicable: $isApplicable,
-            uploadedDocument: $uploadedDocument,
+            uploadedDocuments: $uploadedDocuments,
         );
     }
 }

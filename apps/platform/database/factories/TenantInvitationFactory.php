@@ -26,7 +26,7 @@ final class TenantInvitationFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => fn (): mixed => Tenant::current()?->getKey() ?? Tenant::factory(),
             'email' => fake()->unique()->safeEmail(),
             'role' => Role::Adviser,
             'token' => TenantInvitation::hashToken(Str::random(64)),

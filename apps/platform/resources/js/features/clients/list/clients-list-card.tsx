@@ -1,16 +1,9 @@
 import { Link } from '@inertiajs/react';
-import { useState } from 'react';
-import DataTable, { type DataTableColumn } from '@/components/data/data-table';
+import type { DataTableColumn } from '@/components/data/data-table';
 import DataTableBulkToolbar from '@/components/data/data-table-bulk-toolbar';
+import IndexDataCard from '@/components/data/index-data-card';
 import EmptyState from '@/components/primitives/empty-state';
 import { LinkButton } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import BulkArchiveClientsButton from '@/features/clients/list/bulk-archive-clients-button';
 import ArchiveClientButton from '@/features/clients/manage/archive-client-button';
 import type { ClientSummary } from '@/features/clients/types';
@@ -36,17 +29,6 @@ export default function ClientsListCard({
     const { t } = useTranslation();
     const rows = clients.data;
     const total = clients.total;
-    const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
-        new Set(),
-    );
-
-    // Resolve selected rows for the bulk archive confirmation copy.
-    const selectedIds = rows
-        .filter((client) => selectedKeys.has(client.id))
-        .map((client) => client.id);
-    const totalDossiersCount = rows
-        .filter((client) => selectedKeys.has(client.id))
-        .reduce((sum, client) => sum + client.dossiers_count, 0);
 
     const columns: DataTableColumn<ClientSummary>[] = [
         {
@@ -60,6 +42,7 @@ export default function ClientsListCard({
                             tenant: currentWorkspace,
                             client: client.id,
                         })}
+                        prefetch
                         className="font-medium hover:underline"
                     >
                         {client.name}
@@ -109,55 +92,51 @@ export default function ClientsListCard({
     ];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('All clients')}</CardTitle>
-                <CardDescription>
-                    {total === 1
-                        ? t('1 client')
-                        : t(':count clients', { count: total })}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DataTable
-                    columns={columns}
-                    rows={rows}
-                    rowKey={(client) => client.id}
-                    selectedKeys={canManage ? selectedKeys : undefined}
-                    onSelectionChange={canManage ? setSelectedKeys : undefined}
-                    toolbar={
-                        canManage ? (
-                            <DataTableBulkToolbar
-                                selectedCount={selectedIds.length}
-                                actions={
-                                    <BulkArchiveClientsButton
-                                        selectedIds={selectedIds}
-                                        totalDossiersCount={totalDossiersCount}
-                                        onSuccess={() =>
-                                            setSelectedKeys(new Set())
-                                        }
-                                    />
-                                }
-                            />
-                        ) : undefined
-                    }
-                    emptyState={
-                        <EmptyState
-                            title={t(
-                                'Add your first client to create a dossier.',
-                            )}
-                            action={
-                                <LinkButton
-                                    size="sm"
-                                    href={createClient(currentWorkspace).url}
-                                >
-                                    {t('New client')}
-                                </LinkButton>
-                            }
-                        />
+        <IndexDataCard
+            title={t('All clients')}
+            description={
+                total === 1
+                    ? t('1 client')
+                    : t(':count clients', { count: total })
+            }
+            columns={columns}
+            rows={rows}
+            rowKey={(client) => client.id}
+            bulkActions={
+                canManage
+                    ? ({ selectedRows, clearSelection }) => (
+                          <DataTableBulkToolbar
+                              selectedCount={selectedRows.length}
+                              actions={
+                                  <BulkArchiveClientsButton
+                                      selectedIds={selectedRows.map(
+                                          (client) => client.id,
+                                      )}
+                                      totalDossiersCount={selectedRows.reduce(
+                                          (sum, client) =>
+                                              sum + client.dossiers_count,
+                                          0,
+                                      )}
+                                      onSuccess={clearSelection}
+                                  />
+                              }
+                          />
+                      )
+                    : undefined
+            }
+            emptyState={
+                <EmptyState
+                    title={t('Add your first client to create a dossier.')}
+                    action={
+                        <LinkButton
+                            size="sm"
+                            href={createClient(currentWorkspace).url}
+                        >
+                            {t('New client')}
+                        </LinkButton>
                     }
                 />
-            </CardContent>
-        </Card>
+            }
+        />
     );
 }

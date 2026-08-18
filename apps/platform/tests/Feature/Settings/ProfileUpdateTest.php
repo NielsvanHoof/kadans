@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
+use App\Audit\Enums\AuditEvent;
+use App\Audit\Models\Activity;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('profile page is displayed', function (): void {
@@ -18,13 +18,9 @@ test('profile page is displayed', function (): void {
 });
 
 test('profile page keeps the active firm in shared props for sidebar navigation', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    $user = User::factory()->create();
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    ['owner' => $user, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($user)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(route('profile.edit'))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
@@ -88,6 +84,16 @@ test('user can delete their account', function (): void {
 
     $this->assertGuest();
     expect($user->fresh())->toBeNull();
+
+    // The account row is gone, so the trail entry is the only remaining record
+    // that the deletion happened — and who asked for it.
+    $activity = Activity::query()
+        ->where('event', AuditEvent::UserDeleted->value)
+        ->latest('id')
+        ->first();
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->causer_id)->toBe($user->id);
 });
 
 test('correct password must be provided to delete account', function (): void {

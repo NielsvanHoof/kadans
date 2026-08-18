@@ -7,19 +7,23 @@ namespace App\Dossiers\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
-use App\DocumentProcessing\Enums\PipelineType;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
+use App\Pipelines\Actions\StartPipelineAction;
+use App\Pipelines\Enums\PipelineType;
 use Illuminate\Support\Facades\DB;
 
 final readonly class CreateDossierExportAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
-        private CreatePipelineAction $createPipeline,
+        private StartPipelineAction $startPipeline,
     ) {}
 
+    /**
+     * Queues the archive job itself, so callers only ask for an export rather
+     * than remembering which job backs it.
+     */
     public function handle(Dossier $dossier, User $requestedBy): DossierExport
     {
         return DB::transaction(function () use ($dossier, $requestedBy): DossierExport {
@@ -27,7 +31,7 @@ final readonly class CreateDossierExportAction
                 'requested_by' => $requestedBy->id,
             ]);
 
-            $this->createPipeline->handle(
+            $this->startPipeline->handle(
                 $export,
                 PipelineType::DossierExport,
                 $requestedBy,

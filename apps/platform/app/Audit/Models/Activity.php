@@ -64,7 +64,42 @@ final class Activity extends SpatieActivity
     use Searchable;
 
     /**
+     * The audit trail for one firm.
+     *
+     * This model extends Spatie's, not TenantOwnedModel, so it carries a
+     * tenant_id column but no TenantScope — a bare `Activity::query()` reads
+     * every firm's trail. Start tenant-facing reads here so the filter cannot
+     * be forgotten; cross-tenant callers say so with queryAcrossTenants().
+     * AuditLogTenantScopeTest enforces that no bare query() survives.
+     *
+     * @return Builder<Activity>
+     */
+    public static function queryForTenant(Tenant $tenant): Builder
+    {
+        return self::query()->where('tenant_id', $tenant->getKey());
+    }
+
+    /**
+     * Explicit, greppable escape hatch for platform paths that legitimately span
+     * firms — retention purges, data-subject export and anonymisation. These stay
+     * safe by filtering on subject_type/subject_id instead of tenant_id.
+     *
+     * Mirrors TenantOwnedModel::queryWithoutTenantScope(): the point is that the
+     * intent is stated at the callsite rather than inferred from its absence.
+     *
+     * @return Builder<Activity>
+     */
+    public static function queryAcrossTenants(): Builder
+    {
+        return self::query();
+    }
+
+    /**
      * Columns Scout's database engine searches with LIKE.
+     *
+     * tenant_id is a Scout where() on the table column (ScoutSearchFilter
+     * $wheres), not a searchable key. DatabaseEngine LIKEs every key here, so
+     * putting tenant_id in this array would make a search of "1" match tenant 12.
      *
      * @return array{id: int, description: string, event: string}
      */

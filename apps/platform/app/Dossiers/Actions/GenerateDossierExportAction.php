@@ -6,11 +6,12 @@ namespace App\Dossiers\Actions;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Actions\Pipelines\PipelineStateAction;
-use App\DocumentProcessing\Enums\PipelineStepOperation;
-use App\DocumentProcessing\Models\Pipeline;
-use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Transitions\DossierExportTransitions;
+use App\Pipelines\Enums\PipelineStepKey;
+use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineState;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -24,21 +25,22 @@ final readonly class GenerateDossierExportAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
-        private PipelineStateAction $pipelineState,
+        private PipelineState $pipelineState,
+        private DossierExportTransitions $transitions,
     ) {}
 
     public function handle(int $pipelineId): void
     {
         $pipeline = Pipeline::query()->with([
             'pipelineable.dossier.client',
-            'pipelineable.dossier.documentRequests.uploadedDocument',
+            'pipelineable.dossier.documentRequests.uploadedDocuments',
             'pipelineable.dossier.documentRequests.reviewedBy',
         ])->findOrFail($pipelineId);
         $export = $pipeline->pipelineable;
 
         throw_unless($export instanceof DossierExport, RuntimeException::class, 'Dossier export pipeline subject is invalid.');
 
-        if ($export->status === DossierExportStatus::Completed) {
+        if (! $this->transitions->canStart($export)) {
             return;
         }
 
@@ -47,15 +49,11 @@ final readonly class GenerateDossierExportAction
             $query->getQuery()->lockForUpdate();
             $locked = $query->firstOrFail();
 
-            if ($locked->status === DossierExportStatus::Completed) {
+            if (! $this->transitions->canStart($locked)) {
                 return null;
             }
 
-            $locked->forceFill([
-                'status' => DossierExportStatus::Processing,
-                'error' => null,
-                'failed_at' => null,
-            ])->saveQuietly();
+            $this->transitions->start($locked);
 
             return $locked;
         });
@@ -65,16 +63,20 @@ final readonly class GenerateDossierExportAction
         }
 
         $archivePath = 'dossier-exports/'.$claimed->tenant_id.'/'.$claimed->dossier_id.'/'.$claimed->id.'.zip';
-        $disk = (string) config('exports.disk');
+        $disk = Config::string('exports.disk');
         $temporaryPath = Storage::disk('local')->path(
             'dossier-export-tmp-'.bin2hex(random_bytes(16)).'.zip',
         );
 
+        // Source files are staged here so ZipArchive can read them lazily at
+        // close(). One directory means one cleanup, wherever the build threw.
+        $stagingDirectory = 'dossier-export-staging-'.bin2hex(random_bytes(16));
+
         try {
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'build_archive');
-            $this->buildArchive($temporaryPath, $export);
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'build_archive');
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Start, 'store_archive');
+            $this->pipelineState->start($pipeline, PipelineStepKey::BuildArchive);
+            $this->buildArchive($temporaryPath, $export, $stagingDirectory);
+            $this->pipelineState->complete($pipeline, PipelineStepKey::BuildArchive);
+            $this->pipelineState->start($pipeline, PipelineStepKey::StoreArchive);
 
             $stream = fopen($temporaryPath, 'rb');
 
@@ -86,15 +88,9 @@ final readonly class GenerateDossierExportAction
             throw_if($stored === false, RuntimeException::class, 'Unable to store the dossier export archive.');
 
             $completedAt = now();
-            $expiresAt = $completedAt->copy()->addMinutes((int) config('exports.expires_in_minutes'));
+            $expiresAt = $completedAt->copy()->addMinutes(Config::integer('exports.expires_in_minutes'));
 
-            $claimed->forceFill([
-                'status' => DossierExportStatus::Completed,
-                'disk' => $disk,
-                'path' => $archivePath,
-                'expires_at' => $expiresAt,
-                'completed_at' => $completedAt,
-            ])->saveQuietly();
+            $this->transitions->complete($claimed, $disk, $archivePath, $completedAt, $expiresAt);
 
             $this->logAuditActivity->handle(
                 AuditEvent::DossierExportCompleted,
@@ -106,7 +102,7 @@ final readonly class GenerateDossierExportAction
                 includeRequestContext: false,
             );
 
-            $this->pipelineState->handle($pipeline, PipelineStepOperation::Complete, 'store_archive');
+            $this->pipelineState->complete($pipeline, PipelineStepKey::StoreArchive);
         } catch (Throwable $exception) {
             if (Storage::disk($disk)->exists($archivePath)) {
                 Storage::disk($disk)->delete($archivePath);
@@ -114,11 +110,18 @@ final readonly class GenerateDossierExportAction
 
             throw $exception;
         } finally {
-            unlink($temporaryPath);
+            Storage::disk('local')->deleteDirectory($stagingDirectory);
+
+            // Guarded: buildArchive() can throw before ZipArchive::open()
+            // creates the file — a dossier without a client does — and a bare
+            // unlink() then warns on top of the real exception.
+            if (file_exists($temporaryPath)) {
+                unlink($temporaryPath);
+            }
         }
     }
 
-    private function buildArchive(string $temporaryPath, DossierExport $export): void
+    private function buildArchive(string $temporaryPath, DossierExport $export, string $stagingDirectory): void
     {
         $dossier = $export->dossier;
 
@@ -133,7 +136,6 @@ final readonly class GenerateDossierExportAction
         $documentNumber = 0;
 
         foreach ($dossier->documentRequests as $documentRequest) {
-            $uploadedDocument = $documentRequest->uploadedDocument;
             $document = [
                 'id' => $documentRequest->id,
                 'type' => $documentRequest->type->value,
@@ -146,29 +148,38 @@ final readonly class GenerateDossierExportAction
                 'reviewed_at' => $documentRequest->reviewed_at?->toIso8601String(),
                 'reviewed_by' => $documentRequest->reviewedBy?->name,
                 'rejection_reason' => $documentRequest->rejection_reason,
+                'files' => [],
             ];
 
-            if ($uploadedDocument !== null) {
+            foreach ($documentRequest->uploadedDocuments as $uploadedDocument) {
                 $documentNumber++;
                 $filename = $this->archiveFilename($documentNumber, $uploadedDocument->original_filename);
-                $contents = Storage::disk($uploadedDocument->disk)->get($uploadedDocument->path);
 
-                if ($contents === null) {
+                try {
+                    $stagedPath = $this->stageForArchive(
+                        $uploadedDocument->disk,
+                        $uploadedDocument->path,
+                        $stagingDirectory.'/'.$documentNumber,
+                    );
+                } catch (Throwable $exception) {
                     $archive->close();
-                    throw new RuntimeException('Unable to read an uploaded document for export.');
+
+                    throw $exception;
                 }
 
-                if (! $archive->addFromString($filename, $contents)) {
+                if (! $archive->addFile($stagedPath, $filename)) {
                     $archive->close();
                     throw new RuntimeException('Unable to add an uploaded document to the export.');
                 }
 
-                $document['archive_path'] = $filename;
-                $document['original_filename'] = $uploadedDocument->original_filename;
-                $document['mime_type'] = $uploadedDocument->mime_type;
-                $document['size_bytes'] = $uploadedDocument->size_bytes;
-                $document['uploaded_at'] = $uploadedDocument->uploaded_at->toIso8601String();
-                $document['processing_status'] = $uploadedDocument->processing_status->value;
+                $document['files'][] = [
+                    'archive_path' => $filename,
+                    'original_filename' => $uploadedDocument->original_filename,
+                    'mime_type' => $uploadedDocument->mime_type,
+                    'size_bytes' => $uploadedDocument->size_bytes,
+                    'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
+                    'processing_status' => $uploadedDocument->processing_status->value,
+                ];
             }
 
             $documents[] = $document;
@@ -192,6 +203,32 @@ final readonly class GenerateDossierExportAction
         ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
 
         throw_if(! $archive->addFromString('manifest.json', $manifest) || ! $archive->close(), RuntimeException::class, 'Unable to finalize the dossier export archive.');
+    }
+
+    /**
+     * Copy a stored object to local disk and return its real path.
+     *
+     * The archive used to be built with addFromString(), which makes
+     * ZipArchive hold every file's bytes until close() — 400 MB of scans meant
+     * ~400 MB of RSS on a queue worker with no memory hint. addFile() reads
+     * lazily at close() instead, and the copy itself streams, so peak memory
+     * is one stream buffer rather than one whole document.
+     */
+    private function stageForArchive(string $sourceDisk, string $sourcePath, string $stagedPath): string
+    {
+        $source = Storage::disk($sourceDisk)->readStream($sourcePath);
+
+        throw_if($source === null, RuntimeException::class, 'Unable to read an uploaded document for export.');
+
+        try {
+            $staged = Storage::disk('local')->writeStream($stagedPath, $source);
+        } finally {
+            fclose($source);
+        }
+
+        throw_if(! $staged, RuntimeException::class, 'Unable to stage an uploaded document for export.');
+
+        return Storage::disk('local')->path($stagedPath);
     }
 
     private function archiveFilename(int $number, string $originalFilename): string

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Config;
 use Override;
 
 /**
@@ -25,6 +26,8 @@ use Override;
  * @property CarbonImmutable $expires_at
  * @property CarbonImmutable|null $revoked_at
  * @property CarbonImmutable|null $last_used_at
+ * @property string|null $device_fingerprint
+ * @property CarbonImmutable|null $new_device_seen_at
  * @property int $created_by
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -47,6 +50,8 @@ use Override;
  * @method static Builder<static>|ClientAccessGrant whereTenantId($value)
  * @method static Builder<static>|ClientAccessGrant whereToken($value)
  * @method static Builder<static>|ClientAccessGrant whereUpdatedAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereDeviceFingerprint($value)
+ * @method static Builder<static>|ClientAccessGrant whereNewDeviceSeenAt($value)
  *
  * @mixin \Eloquent
  */
@@ -66,6 +71,8 @@ final class ClientAccessGrant extends TenantOwnedModel
         'expires_at',
         'revoked_at',
         'last_used_at',
+        'device_fingerprint',
+        'new_device_seen_at',
         'created_by',
     ];
 
@@ -75,6 +82,8 @@ final class ClientAccessGrant extends TenantOwnedModel
     #[Override]
     protected $hidden = [
         'token',
+        // A hash, not a secret — but nothing client-facing has any use for it.
+        'device_fingerprint',
     ];
 
     public static function hashToken(string $plainTextToken): string
@@ -118,7 +127,7 @@ final class ClientAccessGrant extends TenantOwnedModel
      */
     public function prunable(): Builder
     {
-        $cutoff = now()->subDays((int) config('retention.portal_grants_days'));
+        $cutoff = now()->subDays(Config::integer('retention.portal_grants_days'));
 
         return self::queryWithoutTenantScope()
             ->where(function (Builder $query) use ($cutoff): void {
@@ -155,6 +164,7 @@ final class ClientAccessGrant extends TenantOwnedModel
             'expires_at' => 'datetime',
             'revoked_at' => 'datetime',
             'last_used_at' => 'datetime',
+            'new_device_seen_at' => 'datetime',
         ];
     }
 }

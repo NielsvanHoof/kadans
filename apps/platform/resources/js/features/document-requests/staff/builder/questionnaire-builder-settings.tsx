@@ -97,6 +97,8 @@ export default function QuestionnaireBuilderSettings({
                     <FieldLabel htmlFor={`builder-type-${documentRequest.id}`}>
                         {t('Type')}
                     </FieldLabel>
+                    {/* React Aria Select ignores FieldLabel+htmlFor
+                        (LabelContext is nulled when htmlFor is set). */}
                     <Select
                         selectedKey={form.type}
                         isDisabled={!canEdit}
@@ -106,6 +108,7 @@ export default function QuestionnaireBuilderSettings({
                                 buildDefaultOptions(t),
                             )
                         }
+                        aria-label={t('Type')}
                     >
                         <SelectTrigger
                             id={`builder-type-${documentRequest.id}`}
@@ -199,6 +202,37 @@ export default function QuestionnaireBuilderSettings({
                         {t('Required')}
                     </FieldLabel>
                 </Field>
+
+                {form.type === 'file' ? (
+                    <Field
+                        orientation="horizontal"
+                        data-disabled={!canEdit}
+                        className="items-center"
+                    >
+                        <Checkbox
+                            id={`builder-allow-multiple-${documentRequest.id}`}
+                            isSelected={
+                                form.configuration.allow_multiple === true
+                            }
+                            isDisabled={!canEdit}
+                            onChange={(checked) =>
+                                form.updateConfiguration(
+                                    {
+                                        ...form.configuration,
+                                        allow_multiple: checked === true,
+                                    },
+                                    true,
+                                )
+                            }
+                        />
+                        <FieldLabel
+                            htmlFor={`builder-allow-multiple-${documentRequest.id}`}
+                            className="font-normal"
+                        >
+                            {t('Allow multiple files')}
+                        </FieldLabel>
+                    </Field>
+                ) : null}
 
                 {storesAnswerOptionIds(form.type) ? (
                     <FieldOptionsEditor

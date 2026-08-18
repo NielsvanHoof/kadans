@@ -4,7 +4,7 @@ import { ShieldAlert, ShieldOff, TriangleAlert, Wrench } from 'lucide-react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import { LinkButton } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
-import { dashboard, login } from '@/routes';
+import { errorPageHomeRoute } from '@/lib/error-page-home-route';
 
 type ErrorStatus = 403 | 404 | 500 | 503;
 
@@ -26,6 +26,8 @@ export default function ErrorPage({ status }: Props) {
     const { t } = useTranslation();
     const { auth, name } = usePage().props;
     const isAuthenticated = auth.user !== null;
+    // One destination for logo + CTA — avoids the inverted-ternary drift.
+    const home = errorPageHomeRoute(isAuthenticated);
 
     const copyByStatus: Record<ErrorStatus, ErrorCopy> = {
         403: {
@@ -68,7 +70,7 @@ export default function ErrorPage({ status }: Props) {
                     className="flex w-full max-w-md flex-col items-center text-center"
                 >
                     <Link
-                        href={isAuthenticated ? login() : dashboard()}
+                        href={home}
                         aria-label={name}
                         className="mb-10 flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground"
                     >
@@ -93,10 +95,7 @@ export default function ErrorPage({ status }: Props) {
                         {copy.description}
                     </p>
 
-                    <LinkButton
-                        className="mt-8"
-                        href={isAuthenticated ? dashboard().url : login().url}
-                    >
+                    <LinkButton className="mt-8" href={home.url}>
                         {isAuthenticated
                             ? t('Go to dashboard')
                             : t('Go to login')}

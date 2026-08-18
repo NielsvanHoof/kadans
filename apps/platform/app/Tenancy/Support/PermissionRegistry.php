@@ -7,6 +7,7 @@ namespace App\Tenancy\Support;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Enums\PermissionGroup;
 use App\Tenancy\Enums\Role;
+use Illuminate\Support\Arr;
 use InvalidArgumentException;
 
 use function get_debug_type;
@@ -58,9 +59,7 @@ final class PermissionRegistry
                 );
             }
 
-            foreach ($enum::cases() as $case) {
-                $permissions[] = $case;
-            }
+            array_push($permissions, ...$enum::cases());
         }
 
         $this->guardAgainstDuplicateValues($permissions);
@@ -75,21 +74,15 @@ final class PermissionRegistry
      */
     public function values(): array
     {
-        return array_map(
-            static fn (TenantPermission $permission): string => $permission->value,
-            $this->all(),
-        );
+        return $this->valuesOf($this->all());
     }
 
     public function tryFrom(string $value): ?TenantPermission
     {
-        foreach ($this->all() as $permission) {
-            if ($permission->value === $value) {
-                return $permission;
-            }
-        }
-
-        return null;
+        return Arr::first(
+            $this->all(),
+            static fn (TenantPermission $permission): bool => $permission->value === $value,
+        );
     }
 
     public function isRegistered(string $value): bool
@@ -119,16 +112,36 @@ final class PermissionRegistry
     }
 
     /**
+     * Owner-only permissions use empty defaultRoles(); owners still receive
+     * them via Role::grantsAllPermissions(). They must never appear on
+     * firm-authored (non-system) roles — that is the escalation path.
+     */
+    public function isOwnerOnly(TenantPermission $permission): bool
+    {
+        return $permission->defaultRoles() === [];
+    }
+
+    /**
+     * Spatie names that may be granted on a firm-authored role.
+     *
+     * @return list<string>
+     */
+    public function firmAssignableValues(): array
+    {
+        return $this->valuesOf(array_values(array_filter(
+            $this->all(),
+            fn (TenantPermission $permission): bool => ! $this->isOwnerOnly($permission),
+        )));
+    }
+
+    /**
      * Spatie permission names a role holds by default.
      *
      * @return list<string>
      */
     public function valuesForRole(Role $role): array
     {
-        return array_map(
-            static fn (TenantPermission $permission): string => $permission->value,
-            $this->forRole($role),
-        );
+        return $this->valuesOf($this->forRole($role));
     }
 
     /**
@@ -159,6 +172,20 @@ final class PermissionRegistry
         }
 
         return $grouped;
+    }
+
+    /**
+     * Spatie permission names for a set of permissions.
+     *
+     * @param  list<TenantPermission>  $permissions
+     * @return list<string>
+     */
+    private function valuesOf(array $permissions): array
+    {
+        return array_map(
+            static fn (TenantPermission $permission): string => $permission->value,
+            $permissions,
+        );
     }
 
     /**

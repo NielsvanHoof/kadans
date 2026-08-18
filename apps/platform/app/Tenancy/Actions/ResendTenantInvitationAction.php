@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Actions;
 
 use App\Accounts\Models\User;
+use App\Accounts\Support\DisplayTimezones;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
@@ -52,6 +53,11 @@ final class ResendTenantInvitationAction
             ? $inviteeLocale
             : app()->getLocale();
 
+        $inviteeTimezone = User::query()->where('email', $invitation->email)->value('timezone');
+        $displayTimezone = DisplayTimezones::sanitize(
+            is_string($inviteeTimezone) ? $inviteeTimezone : null,
+        ) ?? DisplayTimezones::default();
+
         Notification::route('mail', $invitation->email)
             ->notify(
                 new WorkspaceMemberInviteNotification(
@@ -60,6 +66,7 @@ final class ResendTenantInvitationAction
                     role: $invitation->role,
                     acceptUrl: $acceptUrl,
                     expiresAt: $expiresAt,
+                    displayTimezone: $displayTimezone,
                 )->locale($locale),
             );
 

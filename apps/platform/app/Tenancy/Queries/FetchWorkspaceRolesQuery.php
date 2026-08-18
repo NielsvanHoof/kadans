@@ -17,9 +17,9 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Support\PermissionRegistry;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
-use function array_key_exists;
 use function in_array;
 
 /**
@@ -150,13 +150,7 @@ final readonly class FetchWorkspaceRolesQuery
 
         foreach ($roles as $role) {
             foreach ($role->permissions as $permission) {
-                $permissionName = $permission->name;
-
-                if (! array_key_exists($permissionName, $roleNamesByPermission)) {
-                    $roleNamesByPermission[$permissionName] = [];
-                }
-
-                $roleNamesByPermission[$permissionName][] = $role->name;
+                $roleNamesByPermission[$permission->name][] = $role->name;
             }
         }
 
@@ -174,10 +168,10 @@ final readonly class FetchWorkspaceRolesQuery
      */
     private function activeMemberCountsByRoleName(Tenant $tenant): array
     {
-        $teamForeignKey = (string) config('permission.column_names.team_foreign_key');
-        $rolesTable = (string) config('permission.table_names.roles');
-        $modelHasRolesTable = (string) config('permission.table_names.model_has_roles');
-        $modelKey = (string) config('permission.column_names.model_morph_key');
+        $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
+        $rolesTable = Config::string('permission.table_names.roles');
+        $modelHasRolesTable = Config::string('permission.table_names.model_has_roles');
+        $modelKey = Config::string('permission.column_names.model_morph_key');
 
         $rows = DB::table('tenant_memberships')
             ->join($modelHasRolesTable, function ($join) use ($tenant, $teamForeignKey, $modelHasRolesTable, $modelKey): void {

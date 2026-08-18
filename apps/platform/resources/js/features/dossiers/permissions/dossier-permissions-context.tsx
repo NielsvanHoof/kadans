@@ -16,6 +16,9 @@ export type DossierCapabilities = {
     canStaffUploadFallback: boolean;
     /** Invite the client after the questionnaire has at least one field. */
     canCreateInvite: boolean;
+    /** Upload an audio recording (server already accounts for dossier status). */
+    canUploadAudio: boolean;
+    canDownloadAudio: boolean;
     dossierStatus: DossierStatus;
 };
 
@@ -26,6 +29,8 @@ export type DossierCapabilitiesInput = {
     canDownload: boolean;
     canEditDetails: boolean;
     canSendReminder: boolean;
+    canUploadAudio: boolean;
+    canDownloadAudio: boolean;
     dossierStatus: DossierStatus;
     hasFormItems: boolean;
 };
@@ -44,6 +49,8 @@ export function deriveDossierCapabilities(
         canSendReminder: input.canSendReminder,
         canStaffUploadFallback: canEditStructure,
         canCreateInvite: canEditStructure && input.hasFormItems,
+        canUploadAudio: input.canUploadAudio,
+        canDownloadAudio: input.canDownloadAudio,
         dossierStatus: input.dossierStatus,
     };
 }
@@ -58,6 +65,8 @@ export function DossierPermissionsProvider({
     canDownload,
     canEditDetails,
     canSendReminder,
+    canUploadAudio,
+    canDownloadAudio,
     dossierStatus,
     hasFormItems,
     children,
@@ -70,6 +79,8 @@ export function DossierPermissionsProvider({
                 canDownload,
                 canEditDetails,
                 canSendReminder,
+                canUploadAudio,
+                canDownloadAudio,
                 dossierStatus,
                 hasFormItems,
             }),
@@ -79,6 +90,8 @@ export function DossierPermissionsProvider({
             canDownload,
             canEditDetails,
             canSendReminder,
+            canUploadAudio,
+            canDownloadAudio,
             dossierStatus,
             hasFormItems,
         ],
@@ -102,11 +115,3 @@ export function useDossierCapabilities(): DossierCapabilities {
 
     return value;
 }
-
-/** @deprecated Prefer useDossierCapabilities. */
-export function useDossierPermissions(): DossierCapabilities {
-    return useDossierCapabilities();
-}
-
-/** @deprecated Prefer DossierCapabilities. */
-export type DossierPermissions = DossierCapabilities;

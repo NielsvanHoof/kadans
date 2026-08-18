@@ -35,22 +35,6 @@ export function pipelineStepStatusLabel(
     return t(PIPELINE_STEP_STATUS_LABELS[status]);
 }
 
-export function pipelineStatusBadgeVariant(
-    status: PipelineStatus,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
-    switch (status) {
-        case 'completed':
-            return 'default';
-        case 'failed':
-        case 'stuck':
-            return 'destructive';
-        case 'running':
-            return 'secondary';
-        default:
-            return 'outline';
-    }
-}
-
 /** True while the run is still active and should be polled on the show page. */
 export function pipelineIsInFlight(status: PipelineStatus): boolean {
     return status === 'pending' || status === 'running';
@@ -76,13 +60,13 @@ export function pipelineTypeLabel(
     type: string,
     t: (key: string) => string,
 ): string {
-    return t(
-        type === 'ocr_document'
-            ? 'OCR document'
-            : type === 'dossier_export'
-              ? 'Dossier export'
-              : type,
-    );
+    const labels: Record<string, string> = {
+        ocr_document: 'OCR document',
+        dossier_export: 'Dossier export',
+        audio_transcription: 'Audio transcription',
+    };
+
+    return t(labels[type] ?? type);
 }
 
 export function pipelineStepLabel(
@@ -95,6 +79,7 @@ export function pipelineStepLabel(
         process_results: 'Process results',
         build_archive: 'Build archive',
         store_archive: 'Store archive',
+        transcribe: 'Transcribe',
     };
 
     return t(labels[key] ?? key);

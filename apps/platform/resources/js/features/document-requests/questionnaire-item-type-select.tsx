@@ -30,7 +30,17 @@ export default function QuestionnaireItemTypeSelect({
     return (
         <Field data-invalid={Boolean(error)}>
             <FieldLabel htmlFor={id}>{t('Type')}</FieldLabel>
-            <Select isRequired defaultValue={defaultValue} name="type">
+            {/*
+              React Aria Select ignores FieldLabel+htmlFor (LabelContext is
+              nulled when htmlFor is set). Pass aria-label so the trigger
+              stays labelled without nesting a RAC Label inside Select.
+            */}
+            <Select
+                isRequired
+                defaultValue={defaultValue}
+                name="type"
+                aria-label={t('Type')}
+            >
                 <SelectTrigger
                     id={id}
                     className="w-full"

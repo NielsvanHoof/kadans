@@ -12,6 +12,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Queries\MapStaffDocumentRequestRowsQuery;
+use App\Dossiers\Support\DossierLocks;
 use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Filesystem\FilesystemManager;
@@ -34,6 +35,7 @@ final readonly class SyncDossierDocumentRequestsAction
         private MapStaffDocumentRequestRowsQuery $mapStaffDocumentRequestRows,
         private LogAuditActivityAction $logAuditActivity,
         private FilesystemManager $filesystems,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
@@ -44,13 +46,11 @@ final readonly class SyncDossierDocumentRequestsAction
     {
         /** @var list<array{disk: string, path: string}> $filesToDelete */
         $filesToDelete = DB::transaction(function () use ($dossier, $items): array {
-            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->dossier($dossier);
 
             $existing = DocumentRequest::query()
                 ->whereBelongsTo($lockedDossier)
-                ->with(['uploadedDocument', 'reviewedBy:id,name'])
+                ->with(['uploadedDocuments', 'reviewedBy:id,name'])
                 ->get()
                 ->keyBy('id');
 
@@ -126,8 +126,8 @@ final readonly class SyncDossierDocumentRequestsAction
         $dossier->unsetRelation('documentRequests');
         $documentRequests = DocumentRequest::query()
             ->whereBelongsTo($dossier)
-            ->with(['uploadedDocument', 'reviewedBy:id,name'])
-            ->with('uploadedDocument.pipelines.steps')
+            ->with(['uploadedDocuments', 'reviewedBy:id,name'])
+            ->with('uploadedDocuments.pipelines.steps')
             ->oldest('sort_order')
             ->get();
 
@@ -147,15 +147,12 @@ final readonly class SyncDossierDocumentRequestsAction
      */
     private function deleteDocumentRequest(DocumentRequest $documentRequest): array
     {
-        $uploadedDocument = $documentRequest->uploadedDocument;
-        $files = [];
-
-        if ($uploadedDocument instanceof UploadedDocument) {
-            $files[] = [
+        $files = array_values($documentRequest->uploadedDocuments
+            ->map(fn (UploadedDocument $uploadedDocument): array => [
                 'disk' => $uploadedDocument->disk,
                 'path' => $uploadedDocument->path,
-            ];
-        }
+            ])
+            ->all());
 
         $this->logAuditActivity->handle(
             AuditEvent::DocumentRequestDeleted,

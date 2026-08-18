@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Actions\DocumentRequests;
 
-use App\DocumentProcessing\Actions\Pipelines\CreatePipelineAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Enums\PipelineType;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Pipelines\Actions\StartPipelineAction;
+use App\Pipelines\Enums\PipelineType;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Closure;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
@@ -32,14 +32,23 @@ final readonly class UploadDocumentForRequestAction
     public function __construct(
         private FilesystemManager $filesystems,
         private DocumentRequestTransitions $documentRequestTransitions,
-        private CreatePipelineAction $createPipeline,
+        private StartPipelineAction $startPipeline,
+        private DossierLocks $dossierLocks,
     ) {}
 
     /**
      * Store a file for a document request and mark the request as submitted.
-     * Replaces any previous upload for the same request.
+     * Replaces any previous upload for the same request, unless the request's
+     * `allow_multiple` configuration is enabled, in which case the file is
+     * appended alongside any existing uploads instead.
      *
-     * @param  (Closure(UploadedDocument, DocumentRequest): void)|null  $afterPersist
+     * The dossier is locked here, before the request, and handed to
+     * $afterPersist. Both callers need it — staff and portal uploads each move
+     * the dossier to in-review — and when they locked it themselves inside the
+     * callback the transaction ended up holding the request before the dossier,
+     * the reverse of every other path. See DossierLocks.
+     *
+     * @param  (Closure(UploadedDocument, DocumentRequest, Dossier): void)|null  $afterPersist
      */
     public function handle(
         DocumentRequest $documentRequest,
@@ -49,18 +58,16 @@ final readonly class UploadDocumentForRequestAction
     ): UploadedDocument {
         throw_if($documentRequest->type !== QuestionnaireItemType::File, InvalidArgumentException::class, 'Only file items accept uploads.');
 
-        $disk = (string) config('filesystems.default', 'local');
+        $disk = Config::string('filesystems.default', 'local');
         $directory = sprintf(
             'tenants/%d/dossiers/%d',
             $documentRequest->tenant_id,
             $documentRequest->dossier_id,
         );
 
-        $extension = $file->getClientOriginalExtension();
-        $filename = Str::uuid()->toString().($extension !== '' ? '.'.$extension : '');
         $path = $this->filesystems
             ->disk($disk)
-            ->putFileAs($directory, $file, $filename);
+            ->putFile($directory, $file);
 
         throw_if(! is_string($path) || $path === '', RuntimeException::class, 'Failed to store the uploaded document.');
 
@@ -68,7 +75,6 @@ final readonly class UploadDocumentForRequestAction
 
         /** @var array{disk: string, path: string}|null $replacedFile */
         $replacedFile = null;
-        $pipeline = null;
 
         try {
             $uploadedDocument = DB::transaction(function () use (
@@ -79,17 +85,17 @@ final readonly class UploadDocumentForRequestAction
                 $sizeBytes,
                 $afterPersist,
                 $context,
-                &$pipeline,
                 &$replacedFile,
             ): UploadedDocument {
-                $documentRequestQuery = DocumentRequest::query()
-                    ->whereKey($documentRequest->getKey());
-                $documentRequestQuery->getQuery()->lockForUpdate();
+                [$lockedDossier, $lockedDocumentRequest] = $this->dossierLocks
+                    ->documentRequestWithDossier($documentRequest);
 
-                $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
-                $existing = UploadedDocument::query()
-                    ->where('document_request_id', $lockedDocumentRequest->id)
-                    ->first();
+                $allowMultiple = $lockedDocumentRequest->allowsMultipleUploads();
+                $existing = $allowMultiple
+                    ? null
+                    : UploadedDocument::query()
+                        ->where('document_request_id', $lockedDocumentRequest->id)
+                        ->first();
 
                 $attributes = [
                     'disk' => $disk,
@@ -119,17 +125,17 @@ final readonly class UploadDocumentForRequestAction
                     $uploadedDocument = $existing;
                 } else {
                     $uploadedDocument = $lockedDocumentRequest
-                        ->uploadedDocument()
+                        ->uploadedDocuments()
                         ->create($attributes);
                 }
 
                 $this->documentRequestTransitions->submitUpload($lockedDocumentRequest, $context);
 
                 if ($afterPersist instanceof Closure) {
-                    $afterPersist($uploadedDocument, $lockedDocumentRequest);
+                    $afterPersist($uploadedDocument, $lockedDocumentRequest, $lockedDossier);
                 }
 
-                $pipeline = $this->createPipeline->handle(
+                $this->startPipeline->handle(
                     $uploadedDocument,
                     PipelineType::OcrDocument,
                     metadata: [
@@ -157,10 +163,6 @@ final readonly class UploadDocumentForRequestAction
                 'Failed to remove the file replaced by a newer document upload.',
             );
         }
-
-        throw_if(! $pipeline instanceof Pipeline, RuntimeException::class, 'Failed to create the document processing pipeline.');
-
-        dispatch(new ProcessUploadedDocumentJob($uploadedDocument->id, $uploadedDocument->path, $pipeline->id));
 
         return $uploadedDocument;
     }

@@ -29,5 +29,6 @@ interface ClientPortalReminders
         Dossier $dossier,
         User $grantCreator,
         DossierReminderSource $source,
+        ?string $customMessage = null,
     ): int;
 }

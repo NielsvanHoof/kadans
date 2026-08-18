@@ -19,10 +19,35 @@ use function sprintf;
  *
  * The date segment rolls over at midnight so time-relative metrics (overdue,
  * weekly trends) stay correct even when no data mutates.
+ *
+ * Two things must never be stored here:
+ *
+ * Per-user data. The key has no user segment, so the first member to load the
+ * dashboard would populate the blob and every other member of the firm would
+ * read that person's numbers until the TTL expired. My-work counters therefore
+ * bypass this cache entirely.
+ *
+ * Pipeline and portal-grant data. Only Client, Dossier and DocumentRequest use
+ * InvalidatesTenantCaches, so a failed job or a client opening their link would
+ * not evict the entry. Adding the trait to those models would be worse — both
+ * write far more often than dossiers do, and each write would throw away the
+ * expensive aggregate counts this cache exists to hold. Those widgets use
+ * Inertia::defer() and stay live.
  */
 final class WorkspaceDashboardCache
 {
     private const int TTL_SECONDS = 300;
+
+    /**
+     * Bump whenever DashboardMetricsData gains, drops, or renames a field.
+     *
+     * Storing a plain array keeps a shape change from failing to unserialize, but
+     * fromArray() still reads every key it expects: without a version segment, a
+     * deploy that adds a metric reads pre-deploy entries that lack it and the
+     * dashboard errors for the rest of the TTL, for every tenant already cached.
+     * A new segment simply misses instead, and the old entries age out on TTL.
+     */
+    private const string SCHEMA_VERSION = 'v3';
 
     /**
      * @param  Closure(): DashboardMetricsData  $callback
@@ -46,14 +71,16 @@ final class WorkspaceDashboardCache
              *     needs_review_this_week: int,
              *     needs_review_last_week: int,
              *     awaiting_client_this_week: int,
-             *     awaiting_client_last_week: int
+             *     awaiting_client_last_week: int,
+             *     weekly_throughput: list<array{week_start: string, documents_received: int}>
              * } $cached */
             return DashboardMetricsData::fromArray($cached);
         }
 
         $metrics = $callback();
 
-        // Store a plain array so deploys that change the DTO shape stay safe.
+        // Plain array, not a serialized DTO: the class shape is free to move
+        // between deploys. SCHEMA_VERSION covers the array's own shape.
         Cache::put(self::key($tenantId), $metrics->toArray(), self::TTL_SECONDS);
 
         return $metrics;
@@ -69,6 +96,11 @@ final class WorkspaceDashboardCache
      */
     private static function key(int $tenantId): string
     {
-        return sprintf('dashboard:metrics:%d:%s', $tenantId, today()->toDateString());
+        return sprintf(
+            'dashboard:metrics:%s:%d:%s',
+            self::SCHEMA_VERSION,
+            $tenantId,
+            today()->toDateString(),
+        );
     }
 }

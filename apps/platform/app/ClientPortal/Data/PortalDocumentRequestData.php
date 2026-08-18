@@ -15,6 +15,11 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 final class PortalDocumentRequestData extends Data
 {
+    /**
+     * @param  list<string>|null  $answerOptionIds
+     * @param  array<string, mixed>|null  $configuration
+     * @param  list<PortalUploadedDocumentData>  $uploadedDocuments
+     */
     public function __construct(
         public readonly int $id,
         public readonly QuestionnaireItemType $type,
@@ -24,12 +29,10 @@ final class PortalDocumentRequestData extends Data
         public readonly DocumentRequestStatus $status,
         public readonly ?string $answerText,
         public readonly ?bool $answerBoolean,
-        /** @var list<string>|null */
         public readonly ?array $answerOptionIds,
-        /** @var array<string, mixed>|null */
         public readonly ?array $configuration,
         public readonly ?string $rejectionReason,
         public readonly bool $canRespond,
-        public readonly ?PortalUploadedDocumentData $uploadedDocument,
+        public readonly array $uploadedDocuments,
     ) {}
 }

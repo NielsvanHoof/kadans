@@ -22,6 +22,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_DISPLAY_TIMEZONE" value="Europe/Amsterdam"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
@@ -31,17 +32,32 @@
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <!-- Pin above GenerateDataSubjectExportJob::TIMEOUT_SECONDS (600). A
+             developer's local REDIS_QUEUE_RETRY_AFTER=180 would otherwise hide
+             the production boot check. -->
+        <env name="REDIS_QUEUE_RETRY_AFTER" value="660"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="PERMISSION_TESTING" value="true"/>
         <env name="OCR_DRIVER" value="mock"/>
+        <env name="TRANSCRIPTION_DRIVER" value="mock"/>
         <env name="SCOUT_DRIVER" value="collection"/>
         <!-- Assert against the enforcing policy regardless of a developer's local
              SECURITY_CSP_* overrides; individual tests opt into report-only. -->
         <env name="SECURITY_CSP_ENABLED" value="true"/>
         <env name="SECURITY_CSP_REPORT_ONLY" value="false"/>
+        <!-- The browser Sentry DSN feeds connect-src. Empty here so a developer
+             with a real DSN in .env cannot make the policy assertions pass on an
+             origin CI would not have; the tests about it set it explicitly. -->
+        <env name="VITE_SENTRY_DSN" value=""/>
+        <!-- Pin 2FA enforcement so a developer's local .env cannot change it.
+             Factory users are created "now", so the 14-day grace window means
+             enforcement stays dormant for the rest of the suite; the tests that
+             exercise it set security.two_factor.* explicitly. -->
+        <env name="SECURITY_TWO_FACTOR_ENFORCEMENT" value="all"/>
+        <env name="SECURITY_TWO_FACTOR_GRACE_DAYS" value="14"/>
         <!-- Same idea for HSTS: assert the production-shaped header regardless of
              a developer's (or .env.ci) SECURITY_HSTS_* overrides. -->
         <env name="SECURITY_HSTS_ENABLED" value="true"/>

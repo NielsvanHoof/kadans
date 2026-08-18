@@ -124,7 +124,6 @@ final class DocumentRequestController extends Controller
 
         $documentRequests = $syncDossierDocumentRequests->handle($dossier, $items);
 
-        // Same flash shape as redirecting mutations — JSON clients apply it via router.flash().
         $toast = Toast::flash('success', __('Form saved.'));
 
         return response()->json([

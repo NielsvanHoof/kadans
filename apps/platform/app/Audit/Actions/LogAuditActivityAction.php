@@ -7,8 +7,11 @@ namespace App\Audit\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
+use App\Shared\Observability\ObservabilityContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Context;
 
 use function is_array;
 use function is_string;
@@ -29,7 +32,7 @@ final readonly class LogAuditActivityAction
     ): Activity {
         $context = $includeRequestContext ? $this->requestContext() : [];
 
-        $logger = activity(config('activitylog.default_log_name'))
+        $logger = activity(Config::string('activitylog.default_log_name'))
             ->event($event->value)
             ->withProperties($this->withoutSensitiveProperties([...$context, ...$properties]));
 
@@ -60,6 +63,8 @@ final readonly class LogAuditActivityAction
             'ip' => $this->request->ip(),
             'user_agent' => is_string($userAgent) ? mb_substr($userAgent, 0, 512) : null,
             'route' => $this->request->route()?->getName(),
+            // Ties an audit entry back to the log records for the same request.
+            'request_id' => Context::get(ObservabilityContext::RequestId),
         ];
     }
 

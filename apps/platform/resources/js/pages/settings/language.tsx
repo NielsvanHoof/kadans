@@ -1,6 +1,7 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/primitives/heading';
 import LocaleTabs from '@/features/settings/locale-tabs';
+import TimezoneSelect from '@/features/settings/timezone-select';
 import { useTranslation } from '@/hooks/use-translation';
 import { edit as editLanguage } from '@/routes/language';
 
@@ -32,6 +33,16 @@ export default function Language() {
                     )}
                 />
                 <LocaleTabs />
+
+                <Heading
+                    level={2}
+                    variant="small"
+                    title={t('Timezone')}
+                    description={t(
+                        'Dates and times are shown in this timezone. Detected from your browser unless you choose one.',
+                    )}
+                />
+                <TimezoneSelect />
             </div>
         </>
     );

@@ -102,7 +102,64 @@ function frontendTranslationKeysUsedInDirectory(string $directory): array
     return array_values(array_unique($keys));
 }
 
-it('keeps English and Dutch translation keys fully aligned', function (): void {
+/**
+ * Extract English strings from frontend label maps that are later passed to t().
+ *
+ * Catches `_LABELS` / `labels` object literals (e.g. pipeline status modules)
+ * that never appear as literal t('…') calls and would otherwise escape coverage.
+ *
+ * @return list<string>
+ */
+function frontendLabelMapTranslationKeysUsedInDirectory(string $directory): array
+{
+    $keys = [];
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($directory),
+    );
+
+    foreach ($iterator as $file) {
+        if (! $file->isFile()) {
+            continue;
+        }
+
+        $extension = $file->getExtension();
+
+        if ($extension !== 'ts' && $extension !== 'tsx') {
+            continue;
+        }
+
+        $contents = (string) file_get_contents($file->getPathname());
+
+        // const FOO_LABELS = { … } / export const FOO_LABELS: Record<…> = { … }
+        // and inline `const labels: Record<string, string> = { … }`.
+        if (preg_match_all(
+            '/(?:export\s+)?const\s+(?:\w+_LABELS|labels)\b[^=]*=\s*\{(.*?)\};/s',
+            $contents,
+            $mapMatches,
+        ) === false) {
+            continue;
+        }
+
+        foreach ($mapMatches[1] as $mapBody) {
+            if (preg_match_all("/:\\s*(['\"])(.*?)\\1/s", $mapBody, $valueMatches) === false) {
+                continue;
+            }
+
+            foreach ($valueMatches[2] as $value) {
+                $normalized = preg_replace('/\s+/', ' ', $value);
+
+                if (is_string($normalized) && $normalized !== '') {
+                    $keys[] = mb_trim($normalized);
+                }
+            }
+        }
+    }
+
+    return array_values(array_unique($keys));
+}
+
+test('keeps English and Dutch translation keys fully aligned', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
 
@@ -121,7 +178,7 @@ it('keeps English and Dutch translation keys fully aligned', function (): void {
         ->toBeEmpty('Missing keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
-it('covers every backend translation key in both locale files', function (): void {
+test('covers every backend translation key in both locale files', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
     $englishKeys = array_keys($translations['english']);
@@ -135,13 +192,16 @@ it('covers every backend translation key in both locale files', function (): voi
         ->toBeEmpty('Missing backend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
-it('covers every frontend translation key in both locale files', function (): void {
+test('covers every frontend translation key in both locale files', function (): void {
     $projectRoot = dirname(__DIR__, 2);
     $translations = loadTranslationFiles($projectRoot);
     $englishKeys = array_keys($translations['english']);
     $dutchKeys = array_keys($translations['dutch']);
 
-    $frontendKeys = frontendTranslationKeysUsedInDirectory($projectRoot.'/resources/js');
+    $frontendKeys = array_values(array_unique([
+        ...frontendTranslationKeysUsedInDirectory($projectRoot.'/resources/js'),
+        ...frontendLabelMapTranslationKeysUsedInDirectory($projectRoot.'/resources/js'),
+    ]));
 
     $missingInEnglish = array_values(array_diff($frontendKeys, $englishKeys));
     $missingInDutch = array_values(array_diff($frontendKeys, $dutchKeys));
@@ -150,6 +210,38 @@ it('covers every frontend translation key in both locale files', function (): vo
         ->toBeEmpty('Missing frontend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
         ->and($missingInDutch)
         ->toBeEmpty('Missing frontend keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
+});
+
+test('requires pipeline label-map strings in both locale files', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+    $translations = loadTranslationFiles($projectRoot);
+
+    $labelMapKeys = frontendLabelMapTranslationKeysUsedInDirectory(
+        $projectRoot.'/resources/js/features/pipelines',
+    );
+
+    // Guard the eight strings that previously escaped literal t() scanning.
+    $requiredPipelineLabels = [
+        'Running',
+        'Stuck',
+        'Cancelled',
+        'Skipped',
+        'Submit',
+        'Provider processing',
+        'Process results',
+        'Transcribe',
+    ];
+
+    expect($labelMapKeys)
+        ->toContain(...$requiredPipelineLabels);
+
+    $missingInEnglish = array_values(array_diff($requiredPipelineLabels, array_keys($translations['english'])));
+    $missingInDutch = array_values(array_diff($requiredPipelineLabels, array_keys($translations['dutch'])));
+
+    expect($missingInEnglish)
+        ->toBeEmpty('Missing pipeline label keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
+        ->and($missingInDutch)
+        ->toBeEmpty('Missing pipeline label keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
 });
 
 /**
@@ -186,7 +278,7 @@ function flattenValidationKeys(array $lines): array
     return $keys;
 }
 
-it('keeps English and Dutch validation rule keys aligned', function (): void {
+test('keeps English and Dutch validation rule keys aligned', function (): void {
     $projectRoot = dirname(__DIR__, 2);
 
     /** @var array<string, mixed> $englishValidation */

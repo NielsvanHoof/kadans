@@ -8,10 +8,16 @@ use App\ClientPortal\Actions\SubmitPortalUploadAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Http\Requests\StorePortalUploadedDocumentRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
+use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 
 final class ClientPortalUploadController extends Controller
 {
@@ -29,24 +35,63 @@ final class ClientPortalUploadController extends Controller
 
         abort_unless($documentRequestModel->dossier_id === $grant->dossier_id, 404);
 
-        $file = $request->file('document');
+        /** @var list<UploadedFile> $files */
+        $files = $request->file('documents', []);
 
-        if ($file === null) {
-            return back()->withErrors(['document' => __('A document file is required.')]);
+        if ($files === []) {
+            return back()->withErrors(['documents' => __('A document file is required.')]);
         }
 
-        $submitPortalUpload->handle(
-            $documentRequestModel,
-            $grant,
-            $file,
-        );
+        foreach ($files as $file) {
+            $submitPortalUpload->handle(
+                $documentRequestModel,
+                $grant,
+                $file,
+            );
+        }
 
         Toast::success(__('Document uploaded. Thank you.'));
 
         return to_route('portal.show');
     }
 
-    private function grantFromRequest(StorePortalUploadedDocumentRequest $request): ClientAccessGrant
+    /**
+     * Remove one file from a multi-file document request, before it's reviewed.
+     */
+    public function destroy(
+        Request $request,
+        int $documentRequest,
+        int $uploadedDocument,
+        DeleteUploadedDocumentAction $deleteUploadedDocument,
+        DocumentRequestTransitions $documentRequestTransitions,
+    ): RedirectResponse {
+        $grant = $this->grantFromRequest($request);
+
+        $documentRequestModel = DocumentRequest::query()->findOrFail($documentRequest);
+        abort_unless($documentRequestModel->dossier_id === $grant->dossier_id, 404);
+
+        $uploadedDocumentModel = UploadedDocument::query()->findOrFail($uploadedDocument);
+        abort_unless($uploadedDocumentModel->document_request_id === $documentRequestModel->id, 404);
+
+        // Concealed as 404 rather than a validation error: a request that
+        // doesn't accept multiple files, or one already under review, offers
+        // no delete button in the UI, so reaching here means a stale page.
+        abort_unless(
+            $documentRequestTransitions->canDeleteUpload(
+                $documentRequestModel,
+                SubmissionContext::Portal,
+            ),
+            404,
+        );
+
+        $deleteUploadedDocument->handle($uploadedDocumentModel);
+
+        Toast::success(__('Document removed.'));
+
+        return to_route('portal.show');
+    }
+
+    private function grantFromRequest(Request $request): ClientAccessGrant
     {
         $grant = $request->attributes->get(ResolveClientPortalGrant::REQUEST_ATTRIBUTE);
 

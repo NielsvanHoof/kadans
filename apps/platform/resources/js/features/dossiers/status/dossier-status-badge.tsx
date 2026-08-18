@@ -1,11 +1,8 @@
-import AuditMark, {
-    type AuditMarkVariant,
-} from '@/components/brand/audit-mark';
-import { Badge } from '@/components/ui/badge';
+import type { AuditMarkVariant } from '@/components/brand/audit-mark';
+import StatusBadge from '@/components/brand/status-badge';
 import { dossierStatusLabel } from '@/features/dossiers/status/dossier-status';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { cn } from '@/lib/utils';
 
 /**
  * The same four margin marks used on document requests, so a dossier and the
@@ -42,16 +39,11 @@ export default function DossierStatusBadge({
     const { t } = useTranslation();
 
     return (
-        <Badge
-            variant="outline"
-            className={cn(
-                'shrink-0 gap-1.5',
-                STATUS_CLASSES[status],
-                className,
-            )}
-        >
-            <AuditMark variant={STATUS_MARKS[status]} tone="inherit" />
-            {dossierStatusLabel(status, t)}
-        </Badge>
+        <StatusBadge
+            mark={STATUS_MARKS[status]}
+            statusClassName={STATUS_CLASSES[status]}
+            label={dossierStatusLabel(status, t)}
+            className={className}
+        />
     );
 }

@@ -19,6 +19,7 @@ final class DossierShowData extends Data
      * @param  list<StaffDocumentRequestData>  $documentRequests
      * @param  list<DossierAccessGrantData>  $accessGrants
      * @param  list<DossierExportData>  $exports
+     * @param  list<StaffAudioRecordingData>  $audioRecordings
      */
     public function __construct(
         public readonly int $id,
@@ -38,5 +39,6 @@ final class DossierShowData extends Data
         public readonly array $documentRequests,
         public readonly array $accessGrants,
         public readonly array $exports,
+        public readonly array $audioRecordings,
     ) {}
 }

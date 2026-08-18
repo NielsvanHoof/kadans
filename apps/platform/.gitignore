@@ -1,5 +1,6 @@
 /.phpunit.cache
 /coverage
+/tests/Browser/Screenshots
 
 # barryvdh/laravel-ide-helper (generated locally; model PHPDocs are written into models)
 /_ide_helper.php
@@ -18,13 +19,14 @@
 /resources/js/routes
 /resources/js/wayfinder
 /vendor
-.agents/
-.cursor/skills/
 .DS_Store
 /.env
 /.env.*
 !/.env.example
 !/.env.ci
+# Cached real-AWS overlay (secrets); Floci profile under env/profiles/ is committed.
+/env/profiles/aws.env
+# Local Phpactor configuration
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -37,11 +39,30 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/skills-lock.json
 
 **/caddy
-frankenphp
+/frankenphp
 frankenphp-worker.php
 
-.claude
+# Agent / AI coding tools (local, machine-specific)
+# Exclude .ai/ contents rather than the directory itself: git cannot re-include a
+# path from an excluded directory, and .ai/rules below must stay trackable.
+.ai/*
+# Committed: shared, reviewable project rules that agents and teammates both read.
+!.ai/rules/
+.agents/
+.claude/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.github/copilot-instructions.md
+.mcp.json
+.windsurf/
+/skills-lock.json
+AGENTS.md
 CLAUDE.md
+boost.json
+
+# Backlog.md is shared task/decision history. Keep only local lock files out.
+backlog/.locks/

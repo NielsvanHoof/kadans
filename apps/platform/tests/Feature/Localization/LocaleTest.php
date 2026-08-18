@@ -8,8 +8,6 @@ use App\ClientPortal\Notifications\ClientPortalInviteNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -140,13 +138,10 @@ test('questionnaire template category labels are translated for the active local
 });
 
 test('validation errors use translated sentences for dutch locale', function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
     $user = User::factory()->create(['locale' => 'nl']);
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+    ['owner' => $user, 'tenant' => $tenant] = provisionWorkspace(owner: $user);
 
     $response = $this->actingAs($user)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.clients.store', $tenant), [
             'name' => '',
             'email' => 'not-an-email',
@@ -213,12 +208,10 @@ test('user preferred locale falls back to the app locale when unset', function (
 
 test('portal invite notification is queued with the staff users locale', function (): void {
     Notification::fake();
-    $this->seed(RolesAndPermissionsSeeder::class);
 
     $owner = User::factory()->create(['locale' => 'nl']);
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace(owner: $owner);
 
-    $tenant->makeCurrent();
     $client = Client::factory()->create([
         'tenant_id' => $tenant->id,
         'email' => 'locale-client@example.com',
@@ -229,7 +222,6 @@ test('portal invite notification is queued with the staff users locale', functio
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
             'dossier' => $dossier,
         ]), [

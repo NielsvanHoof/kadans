@@ -33,9 +33,21 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+// Card titles are section headings under the page h1. Keep card typography
+// (`text-sm font-medium`); only the element changes for the outline.
+type CardTitleProps = React.ComponentProps<"h2"> & {
+  level?: 1 | 2 | 3 | 4 | 5 | 6
+}
+
+function CardTitle({
+  className,
+  level = 2,
+  ...props
+}: CardTitleProps) {
+  const TitleTag = `h${level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
+
   return (
-    <div
+    <TitleTag
       data-slot="card-title"
       className={cn("text-sm font-medium", className)}
       {...props}

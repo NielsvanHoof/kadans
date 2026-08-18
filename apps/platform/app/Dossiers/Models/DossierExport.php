@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Dossiers\Models;
 
 use App\Accounts\Models\User;
-use App\DocumentProcessing\Models\Pipeline;
 use App\Dossiers\Enums\DossierExportStatus;
+use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;

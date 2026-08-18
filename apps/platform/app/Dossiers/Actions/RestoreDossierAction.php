@@ -9,19 +9,21 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final readonly class RestoreDossierAction
 {
-    public function __construct(private LogAuditActivityAction $logAuditActivity) {}
+    public function __construct(
+        private LogAuditActivityAction $logAuditActivity,
+        private DossierLocks $dossierLocks,
+    ) {}
 
     public function handle(Dossier $dossier, User $restoredBy): void
     {
         DB::transaction(function () use ($dossier, $restoredBy): void {
-            $dossierQuery = Dossier::withTrashed()->whereKey($dossier->getKey());
-            $dossierQuery->getQuery()->lockForUpdate();
-            $lockedDossier = $dossierQuery->firstOrFail();
+            $lockedDossier = $this->dossierLocks->trashedDossier($dossier);
 
             if (! $lockedDossier->trashed()) {
                 return;

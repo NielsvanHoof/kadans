@@ -8,9 +8,11 @@ Multi-tenant platform for accounting and advisory firms to collect documents and
 - **Frontend:** Inertia v3 + React 19, Tailwind CSS 4, shadcn/ui, Wayfinder (typed routes)
 - **Tooling:** Laravel Sail, Pest 4, Pint, Larastan, Biome + Prettier, Vite 8
 
+
+
 ## Documentation
 
-Longer guides live under [`docs/`](docs/):
+Longer guides live under `[docs/](docs/)`:
 
 - [Getting started](docs/getting-started.md) — Sail boot, first owner, day-to-day commands
 - [Architecture](docs/architecture.md) — domains, composition root, request flow
@@ -18,7 +20,7 @@ Longer guides live under [`docs/`](docs/):
 - [Security](docs/security.md) — threat model, tenant isolation, portal tokens, response hardening
 - [Adding a domain](docs/adding-a-domain.md) — checklist for a new feature area
 
-[`CONTEXT.md`](CONTEXT.md) is the short domain glossary (entities and workflow terms).
+`[CONTEXT.md](CONTEXT.md)` is the short domain glossary (entities and workflow terms).
 
 ## Getting started
 
@@ -47,7 +49,29 @@ vendor/bin/sail bin pint --dirty         # PHP formatting
 ```
 
 Octane reloads its workers automatically when backend files change. After changing
-`compose.yaml`, rebuild the local image with `vendor/bin/sail build --no-cache`.
+`compose.yaml` or anything in `docker/8.5/`, rebuild the local image with
+`vendor/bin/sail build --no-cache`.
+
+## Containers
+
+`docker/` holds one directory per environment:
+
+| Path | Purpose |
+| --- | --- |
+| `docker/8.5/` | The local Sail image (`sail:publish` output) plus the Octane Caddyfile. Edit here to add a PHP extension or system package. |
+| `docker/base/` | Shared build for the deployed image: PHP extensions, Composer install, Vite build. |
+| `docker/staging/`, `docker/production/` | Per-environment `Dockerfile`, `Caddyfile`, `php.ini` and `entrypoint.sh`. |
+
+Deployed images build through Buildx Bake, which wires `docker/base` into each
+environment's `Dockerfile` as a named context so the PHP version and extension
+set cannot drift:
+
+```bash
+REVERB_PUBLIC_KEY=… VITE_REVERB_HOST=… docker buildx bake -f docker-bake.hcl --load production
+```
+
+One image serves several roles — `web` (default), `worker`, `reverb`, `schedule`,
+`migrate` — passed as the container command.
 
 ## Domain overview
 
@@ -57,7 +81,7 @@ Octane reloads its workers automatically when backend files change. After changi
 - **Questionnaire template** — reusable set of items (system-wide or firm-owned) that can be applied to a dossier.
 - **Client portal** — token-based magic-link page (no account) where clients answer requests.
 
-Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). Domain bindings and policies live in each domain’s `*ServiceProvider`; `AppServiceProvider` keeps cross-cutting defaults. See [architecture](docs/architecture.md).
+Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, …). Domain bindings and policies live in each domain’s `*ServiceProvider`; `AppServiceProvider` keeps cross-cutting defaults. See [architecture](docs/architecture.md) and [backend conventions](docs/backend.md).
 
 ## Frontend architecture
 
@@ -65,18 +89,21 @@ Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, �
 
 Run `vendor/bin/sail npm run dev` (or `npm run build`) so Wayfinder generates those folders — required for IDE type resolution and `npm run types:check`.
 
-Key conventions (enforced by Biome; full rules in [`.cursor/rules/frontend-architecture.mdc`](.cursor/rules/frontend-architecture.mdc)):
+Key conventions (enforced by Biome; see [Frontend](docs/frontend.md) and `[biome.json](biome.json)`):
 
 - Payload types are generated from the PHP `*Data` objects into `types/generated/` — `features/<domain>/types.ts` mostly aliases them.
 - Shared `components/` never import from `features/`, and are grouped by role (`ui/`, `primitives/`, `data/`, `forms/`, `feedback/`, `brand/`, `app-shell/`).
 - `hooks/` and `lib/` are app-wide only; domain hooks live in `features/<domain>/hooks/`.
 - Staff and portal document-request renderers never import each other; the item-type registries wire both sides.
 
+
+
 ## Testing
 
-Feature tests live in `tests/Feature` (Pest). Run the ones near your change:
+Feature tests live in `tests/Feature` (Pest). See [testing conventions](docs/testing.md). Run the ones near your change:
 
 ```bash
 vendor/bin/sail artisan test --compact tests/Feature/Dossiers/
 vendor/bin/sail artisan test --compact --filter='portal'
 ```
+

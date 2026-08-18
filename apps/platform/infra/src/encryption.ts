@@ -7,13 +7,17 @@ export interface OcrEncryption {
 
 /**
  * KMS key used by the documents bucket, Textract SNS topic, and SQS queues.
+ *
+ * Amazon Transcribe reads media and writes JSON transcripts into the same
+ * CMK-encrypted bucket, so the service principal must be able to use this key.
+ * EventBridge also needs the key to deliver job events into the encrypted queue.
  */
 export function createOcrEncryption(config: PlatformConfig): OcrEncryption {
   const { environment } = config;
   const account = aws.getCallerIdentityOutput();
 
   const encryptionKey = new aws.kms.Key(environment.resourceName("ocr-key"), {
-    description: `Qompose ${environment.name} OCR document encryption`,
+    description: `Qompose ${environment.name} OCR / Transcribe document encryption`,
     enableKeyRotation: true,
     deletionWindowInDays: environment.kmsDeletionWindowInDays,
     policy: account.accountId.apply((accountId) => JSON.stringify({
@@ -28,9 +32,28 @@ export function createOcrEncryption(config: PlatformConfig): OcrEncryption {
         Sid: "AllowAwsServicesToPublishEncryptedMessages",
         Effect: "Allow",
         Principal: {
-          Service: ["cloudwatch.amazonaws.com", "sns.amazonaws.com"],
+          Service: [
+            "cloudwatch.amazonaws.com",
+            "sns.amazonaws.com",
+            // EventBridge delivers Transcribe job events into the encrypted SQS queue.
+            "events.amazonaws.com",
+          ],
         },
         Action: ["kms:Decrypt", "kms:GenerateDataKey"],
+        Resource: "*",
+        Condition: {
+          StringEquals: {
+            "aws:SourceAccount": accountId,
+          },
+        },
+      }, {
+        // Transcribe service-linked role decrypts media and encrypts transcript JSON.
+        Sid: "AllowAmazonTranscribeToUseKey",
+        Effect: "Allow",
+        Principal: {
+          Service: "transcribe.amazonaws.com",
+        },
+        Action: ["kms:Decrypt", "kms:GenerateDataKey", "kms:CreateGrant"],
         Resource: "*",
         Condition: {
           StringEquals: {

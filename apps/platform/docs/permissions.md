@@ -142,8 +142,11 @@ discriminator that keeps `tenancy:sync-roles` off those rows.
 
 `WorkspacePermission::ManageRoles` (`roles.manage`) exists with
 `defaultRoles() => []`, making it owner-only by the same convention as
-`ManageSettings`. It gates no endpoint yet; it is registered so writes can be
-added without a second permission-sync deploy.
+`ManageSettings`. Firm-authored (non-system) roles may only include permissions
+that are not owner-only and that the actor already holds — see
+`PermissionRegistry::firmAssignableValues()` and the store/update role requests.
+That blocks the path where an Administrator is assigned a custom role carrying
+`roles.manage` and then escalates further.
 
 ## Adding permissions
 
@@ -155,3 +158,5 @@ added without a second permission-sync deploy.
 | After any of the above | Run `tenancy:sync-roles` (and cover with feature tests) |
 
 Adding a permission alone does not expose UI or routes — still wire policies, controllers, and frontend capability checks as needed.
+
+On the frontend, pass `can_*` boolean props from controllers and gate UI with those props. Use `usePermissions()` only for shell/navigation. See [Frontend](frontend.md#permissions-in-the-ui).

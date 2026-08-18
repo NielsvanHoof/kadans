@@ -7,14 +7,8 @@ use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierBuilderLock;
-use App\Tenancy\Actions\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Str;
-
-beforeEach(function (): void {
-    $this->seed(RolesAndPermissionsSeeder::class);
-});
 
 /**
  * @return array{owner: User, tenant: mixed, dossier: Dossier}
@@ -22,10 +16,7 @@ beforeEach(function (): void {
 function createBuilderLockContext(): array
 {
     $owner = User::factory()->create(['name' => 'Alice Owner']);
-    $tenant = resolve(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
-
-    $tenant->makeCurrent();
-    setPermissionsTeamId($tenant->id);
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace(owner: $owner);
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -50,7 +41,6 @@ test('opening the builder acquires the lock for the visitor', function (): void 
     ] = createBuilderLockContext();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
@@ -79,7 +69,6 @@ test('second adviser sees locked by holder and cannot sync', function (): void {
     $adviser->forceFill(['name' => 'Bob Adviser'])->save();
 
     $this->actingAs($adviser)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
@@ -88,7 +77,6 @@ test('second adviser sees locked by holder and cannot sync', function (): void {
             ->where('builder_lock.holder.name', 'Alice Owner'));
 
     $this->actingAs($adviser)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->putJson(workspaceRoute('workspaces.dossiers.document-requests.sync', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -110,7 +98,6 @@ test('heartbeat extends the lock expiry for the holder', function (): void {
     ])->save();
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.builder-lock.heartbeat', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -135,7 +122,6 @@ test('release clears the lock for the holder token', function (): void {
     $token = grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.builder-lock.destroy', $tenant, [
             'dossier' => $dossier,
         ]), [
@@ -165,7 +151,6 @@ test('expired lock can be acquired by another adviser', function (): void {
     $adviser->forceFill(['name' => 'Bob Adviser'])->save();
 
     $this->actingAs($adviser)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->postJson(workspaceRoute('workspaces.dossiers.builder-lock.store', $tenant, [
             'dossier' => $dossier,
         ]))
@@ -186,7 +171,6 @@ test('same user re-entering the builder refreshes their own lock', function (): 
     $token = grantDossierBuilderLock($dossier, $owner);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page

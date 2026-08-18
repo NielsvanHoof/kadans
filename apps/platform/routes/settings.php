@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Accounts\Http\Controllers\LocaleController;
 use App\Accounts\Http\Controllers\ProfileController;
 use App\Accounts\Http\Controllers\SecurityController;
+use App\Accounts\Http\Controllers\TimezoneController;
 use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -43,6 +44,8 @@ Route::middleware([
 
     Route::get('settings/language', [LocaleController::class, 'edit'])->name('language.edit');
     Route::patch('settings/language', [LocaleController::class, 'update'])->name('language.update');
+    // Shares the language screen — locale and timezone are one regional concern.
+    Route::patch('settings/timezone', [TimezoneController::class, 'update'])->name('timezone.update');
 });
 
 Route::get('.well-known/passkey-endpoints', fn () => response()->json([

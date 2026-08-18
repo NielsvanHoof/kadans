@@ -1,7 +1,9 @@
+import { Trash2 } from 'lucide-react';
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
+import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import ErrorState from '@/components/primitives/error-state';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants, LinkButton } from '@/components/ui/button';
+import { Button, buttonVariants, LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { documentProcessingStatusLabel } from '@/features/document-requests/status/document-processing-status';
 import type {
@@ -9,9 +11,9 @@ import type {
     UploadedDocument,
 } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
 
 /**
  * Compact file strip on the dossier: status + download + link to extraction page.
@@ -19,12 +21,16 @@ import { formatDateTime } from '@/lib/format-date-time';
 export default function DocumentProcessingPanel({
     uploadedDocument,
     canDownload,
+    canRemove = false,
 }: {
     uploadedDocument: UploadedDocument;
     canDownload: boolean;
+    /** Only offered on multi-file requests, where removing one file leaves the rest intact. */
+    canRemove?: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t, locale } = useTranslation();
+    const { t } = useTranslation();
+    const { formatDateTime } = useFormatters();
     const isComplete = uploadedDocument.processing_status === 'completed';
 
     return (
@@ -50,7 +56,7 @@ export default function DocumentProcessingPanel({
                     </div>
                     <p className="text-muted-foreground">
                         {formatBytes(uploadedDocument.size_bytes)} ·{' '}
-                        {formatDateTime(uploadedDocument.uploaded_at, locale)}
+                        {formatDateTime(uploadedDocument.uploaded_at)}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -79,6 +85,34 @@ export default function DocumentProcessingPanel({
                         >
                             {t('Download')}
                         </a>
+                    )}
+                    {canRemove && (
+                        <ConfirmDestroyDialog
+                            title={t('Remove :filename?', {
+                                filename: uploadedDocument.original_filename,
+                            })}
+                            description={t(
+                                'This file will be permanently removed from the request.',
+                            )}
+                            confirmLabel={t('Remove file')}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon-sm"
+                                    aria-label={t('Remove :filename', {
+                                        filename:
+                                            uploadedDocument.original_filename,
+                                    })}
+                                >
+                                    <Trash2 aria-hidden />
+                                </Button>
+                            }
+                            form={UploadedDocumentController.destroy.form({
+                                tenant: currentWorkspace,
+                                uploadedDocument: uploadedDocument.id,
+                            })}
+                        />
                     )}
                 </div>
             </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Notifications;
 
+use App\Accounts\Support\DisplayTimezones;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use Carbon\CarbonInterface;
@@ -73,7 +74,9 @@ final class ClientPortalInviteNotification extends Notification implements Shoul
             ->line(__('Open the secure portal with the button below. No account or password is required.'))
             ->action(__('Open document portal'), $this->portalUrl)
             ->line(__('This link expires on :expires.', [
-                'expires' => $this->expiresAt->timezone(config('app.timezone'))->format('j F Y, H:i'),
+                'expires' => $this->expiresAt
+                    ->timezone(DisplayTimezones::default())
+                    ->format('j F Y, H:i (T)'),
             ]))
             ->line(__('If you did not expect this email, you can ignore it.'))
             ->tag('client_portal_invite')

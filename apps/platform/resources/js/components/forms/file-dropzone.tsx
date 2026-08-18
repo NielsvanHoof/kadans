@@ -1,6 +1,10 @@
 import { Upload, X } from 'lucide-react';
 import type { DragEvent } from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+    fileTypeLabel,
+    validateFileSize,
+} from '@/components/forms/validate-upload-file';
 import InputError from '@/components/primitives/input-error';
 import {
     Attachment,
@@ -13,6 +17,7 @@ import {
     AttachmentTrigger,
 } from '@/components/ui/attachment';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { fileIconForFilename } from '@/lib/file-icon-for-filename';
@@ -23,7 +28,7 @@ import { cn } from '@/lib/utils';
 export const DEFAULT_FILE_ACCEPT =
     '.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx';
 
-export const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
+export const DEFAULT_MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 type FileDropzoneProps = {
     inputId: string;
@@ -60,13 +65,6 @@ function resolveAttachmentState(
     }
 
     return 'idle';
-}
-
-/** Short type label for the attachment description (e.g. PDF · 1.2 MB). */
-function fileTypeLabel(file: File): string {
-    const extension = file.name.split('.').pop()?.toUpperCase();
-
-    return extension && extension.length <= 5 ? extension : 'FILE';
 }
 
 /**
@@ -127,12 +125,10 @@ export default function FileDropzone({
                 return;
             }
 
-            if (nextFile.size > maxBytes) {
-                setLocalError(
-                    t('File is too large. Maximum size is :size.', {
-                        size: formatBytes(maxBytes),
-                    }),
-                );
+            const sizeError = validateFileSize(nextFile, maxBytes, t);
+
+            if (sizeError) {
+                setLocalError(sizeError);
                 onFileChange(null);
                 return;
             }
@@ -257,6 +253,13 @@ export default function FileDropzone({
                                 <AttachmentDescription>
                                     {attachmentDescription}
                                 </AttachmentDescription>
+                            ) : null}
+                            {attachmentState === 'uploading' ? (
+                                <Progress
+                                    value={progressPercent ?? 0}
+                                    aria-label={t('Uploading…')}
+                                    className="mt-1.5"
+                                />
                             ) : null}
                         </AttachmentContent>
 

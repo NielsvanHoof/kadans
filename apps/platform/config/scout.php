@@ -22,6 +22,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Search Key Hydration Limit
+    |--------------------------------------------------------------------------
+    |
+    | ScoutSearchFilter asks the engine for matching primary keys, then applies
+    | whereKey() on the Eloquent index query. Without a limit, the database
+    | engine hydrates every match (Octane keeps the peak RSS) and an IN list
+    | past 65535 binds is a PostgreSQL fatal. Stay well below that.
+    |
+    */
+
+    'key_limit' => (int) env('SCOUT_KEY_LIMIT', 1000),
+
+    /*
+    |--------------------------------------------------------------------------
     | Index Prefix
     |--------------------------------------------------------------------------
     |

@@ -30,6 +30,11 @@ final readonly class TenantMembershipPolicy
      */
     public function update(User $user, TenantMembership $membership): bool
     {
+        // Mirror suspend: never let a member change their own role assignment.
+        if ($membership->user_id === $user->id) {
+            return false;
+        }
+
         return $this->holdsPermissionInMembershipTenant(
             $user,
             $membership,
@@ -79,6 +84,10 @@ final readonly class TenantMembershipPolicy
 
     public function assignRole(User $user, TenantMembership $membership, Role|string $role): bool
     {
+        if ($membership->user_id === $user->id) {
+            return false;
+        }
+
         if (! $this->holdsPermissionInMembershipTenant($user, $membership, WorkspacePermission::AssignMemberRoles)) {
             return false;
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Builder;
 
+use App\Dossiers\Http\Requests\Concerns\AuthorizesDocumentRequestReplacement;
 use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -15,6 +16,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 use function is_array;
+use function is_numeric;
 use function is_string;
 
 /**
@@ -22,12 +24,14 @@ use function is_string;
  */
 final class SyncDocumentRequestsRequest extends FormRequest
 {
+    use AuthorizesDocumentRequestReplacement;
     use AuthorizesDossierBuilderMutation;
     use LocalizesValidationAttributes;
 
     public function authorize(): bool
     {
-        return $this->userHoldsBuilderLockForMutation();
+        return $this->userHoldsBuilderLockForMutation()
+            && $this->userMayReplaceExistingDocumentRequests();
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */
@@ -44,6 +48,7 @@ final class SyncDocumentRequestsRequest extends FormRequest
             'items.*.instructions' => ['nullable', 'string', 'max:2000'],
             'items.*.configuration' => ['nullable', 'array'],
             'items.*.configuration.is_required' => ['sometimes', 'boolean'],
+            'items.*.configuration.allow_multiple' => ['sometimes', 'boolean'],
             'items.*.configuration.options' => ['sometimes', 'array', 'max:50'],
             'items.*.configuration.options.*.id' => ['required_with:items.*.configuration.options', 'uuid', 'distinct'],
             'items.*.configuration.options.*.label' => ['required_with:items.*.configuration.options', 'string', 'max:255'],
