@@ -59,6 +59,7 @@ export async function runStack(
     "qompose-platform:reverbAppSecret": "reverb-secret",
     "qompose-platform:sentryDsn": "https://public@sentry.example.com/1",
     "qompose-platform:cacheAuthToken": "cache-auth-token-0123456789",
+    "qompose-platform:originVerifySecret": "origin-verify-secret-0123456789",
     ...configOverrides,
   }, []);
 
@@ -74,6 +75,21 @@ export async function runStack(
 
       if (args.token.includes("getAvailabilityZones")) {
         return { names: [`${REGION}a`, `${REGION}b`, `${REGION}c`] };
+      }
+
+      // CloudFront's managed policies and the CloudFront origin-facing prefix
+      // list. Without these the lookups resolve to their own inputs, the id comes
+      // back undefined, and the resulting throw inside an `apply` surfaces as
+      // "Promise resolution is still pending" — a hang, not a readable failure.
+      if (
+        args.token.includes("getCachePolicy")
+        || args.token.includes("getOriginRequestPolicy")
+      ) {
+        return { id: `managed-${String(args.inputs.name)}` };
+      }
+
+      if (args.token.includes("getManagedPrefixList")) {
+        return { id: "pl-cloudfront-origin-facing", name: args.inputs.name };
       }
 
       if (args.token.includes("getPolicyDocument")) {
@@ -97,7 +113,7 @@ export async function runStack(
       resources.push({
         type: args.type,
         name: args.name,
-        inputs: args.inputs as Record<string, unknown>,
+        inputs: unwrapSecrets(args.inputs) as Record<string, unknown>,
       });
 
       return { id: `${args.name}-id`, state };
@@ -166,6 +182,40 @@ function typeSpecificState(type: string, name: string): Record<string, unknown> 
     default:
       return {};
   }
+}
+
+/**
+ * Pulumi's marker for a wrapped value, and the signature that means "secret".
+ *
+ * A single secret anywhere inside a property wraps the **whole property** in
+ * `{ [SPECIAL_SIG]: SECRET_SIG, value: … }` — so one secret inside a listener
+ * rule's conditions turns the entire conditions *array* into an object, and an
+ * assertion indexing it reads undefined. That surfaces as "cannot read
+ * properties of undefined", which points at the assertion rather than at the
+ * wrapper actually responsible.
+ */
+const SPECIAL_SIG_KEY = "4dabf18193072939515e22adb298388d";
+const SECRET_SIG = "1b47061264138c4ac30d75fd1eb44270";
+
+/** Strip those wrappers recursively so assertions read the values themselves. */
+function unwrapSecrets(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(unwrapSecrets);
+  }
+
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (record[SPECIAL_SIG_KEY] === SECRET_SIG) {
+    return unwrapSecrets(record.value);
+  }
+
+  return Object.fromEntries(
+    Object.entries(record).map(([key, entry]) => [key, unwrapSecrets(entry)]),
+  );
 }
 
 /** Container definitions are serialised JSON; assertions need them back as objects. */

@@ -36,7 +36,8 @@ will find it. The whole production/staging delta should be a two-file diff.
 | `webDesiredCount` / `workerDesiredCount` | 2 / 2 | 1 / 1 |
 | `logRetentionDays` | 90 | 14 |
 | `dnsSubdomain` | `null` | `staging` |
-| `edgeEnabled` (TASK-34.3) | `true` | `false` |
+| `edgeEnabled` (CloudFront + origin lockdown) | `true` | `false` |
+| `wafEnabled` (overridable via config) | `true` | `false` |
 | `crossRegionSnapshotCopy` (TASK-34.4) | `true` | `false` |
 | `localOperatorAccess` | `true` | `false` |
 
@@ -90,6 +91,10 @@ and then fails with an exec-format error at first task start, so
 client sees an open WebSocket and every connection drops after a minute. A WebSocket
 is idle by definition between messages.
 
+**Edge (production only).** CloudFront fronts the ALB for both hostnames. See
+[The edge](#the-edge) below — the certificate region and the WAF exclusions are
+the two things that will bite.
+
 **Malware scanning and audit.** GuardDuty Malware Protection scans every object
 landing in the documents bucket and tags it with the verdict; the application reads
 that tag at download and preview time and refuses anything not explicitly clean
@@ -104,6 +109,71 @@ each object, into a separate log bucket with validation digests.
 Secrets Manager secret; ECS pulls individual keys (`arn:APP_KEY::`). The database
 password is deliberately *not* in there — RDS manages and rotates its own secret, and
 a copy would go stale at the first rotation. Nothing puts a password in Pulumi state.
+
+## The edge
+
+CloudFront sits in front of the ALB in production (`edgeEnabled`). Staging runs
+without it: the saving is real and staging does not need edge caching, but it does
+mean staging's load balancer is its own public surface, which the stack tests
+assert rather than leave implied.
+
+**The certificate must be issued in us-east-1.** CloudFront reads its certificate
+from that region and only that region, whatever region the distribution serves.
+So there are two certificates for the same two names — a regional one for the ALB
+and a us-east-1 one for the edge, created through a second provider in `edge.ts`.
+Reusing the regional certificate fails at apply time with an error that names the
+certificate rather than the region, and is the most common reason a CloudFront
+stack does not come up.
+
+**Only the hashed bundle is cached.** `/build/*` gets `Managed-CachingOptimized`;
+everything else, including `/app/*` for Reverb's WebSocket, gets
+`Managed-CachingDisabled` with `Managed-AllViewer`. That is not a missed
+optimisation: an Inertia response carries the signed-in user's workspace, and a
+shared cache entry would hand one firm's dossier list to another. Caching
+`/build/*` is safe precisely because Vite emits content-hashed filenames — a
+changed asset is a different path, so no deploy-time invalidation is needed.
+
+**The origin is not addressable directly.** Two controls, neither sufficient
+alone. The ALB security group accepts only AWS's `com.amazonaws.global.cloudfront
+.origin-facing` prefix list, which narrows it to CloudFront — but that covers
+*everyone's* distributions. So CloudFront also adds a shared secret header, and
+the listener forwards only to rules that require it, with a fixed `403` as the
+default action. The ALB grammar matches conditions positively, so "reject requests
+without the header" has to be written as "forward only requests with it".
+
+**WAF: two managed rules are counted, not blocked.** Enabling
+`AWSManagedRulesCommonRuleSet` unmodified breaks this application, and the failure
+looks like an unexplained 403 from CloudFront:
+
+| Rule | Why it is overridden |
+|---|---|
+| `SizeRestrictions_BODY` | rejects bodies over 8 KB; document uploads go to 20 MB |
+| `CrossSiteScripting_BODY` | trips on client correspondence pasted into notes and answers |
+
+Both are set to `count` rather than removed, so they still record what they would
+have blocked and the decision stays visible in CloudWatch instead of becoming a
+silent hole. `wafEnabled` is a config override on top of the environment setting,
+because this is the knob you reach for when a managed rule starts refusing a
+legitimate upload: `pulumi config set wafEnabled false` beats a code change.
+
+### DNS cutover
+
+The `app` and wildcard alias records point at **CloudFront** when the edge is on
+and at the ALB when it is not, and the stack never writes both. Going from one to
+the other is a `pulumi up`, but the ordering matters:
+
+1. Deploy with `edgeEnabled` **false** first if the hostnames are already live.
+   The ALB is public, the records point at it, everything serves.
+2. Set `edgeEnabled` true and deploy. In one apply the distribution is created,
+   the ALB security group narrows to CloudFront, the listener starts requiring the
+   origin header, and the alias records move.
+3. There is a propagation gap: DNS still resolves to the ALB for up to the record
+   TTL, and the ALB now refuses those requests with `403 Direct origin access is
+   not permitted`. Lower the record TTL a day ahead, or accept a short window.
+4. `pulumi stack output edgeDomainName` gives the distribution's own name, which
+   works immediately and is the way to verify the edge before DNS catches up.
+
+Rolling back is the same sequence in reverse, and the same gap applies.
 
 ## Hostnames
 
@@ -152,6 +222,8 @@ pulumi config set --secret reverbAppId qompose
 pulumi config set --secret reverbAppSecret "$(openssl rand -hex 32)"
 pulumi config set --secret sentryDsn https://...
 pulumi config set --secret cacheAuthToken "$(openssl rand -hex 24)"
+# Only needed when edgeEnabled is true; the ALB refuses anything without it.
+pulumi config set --secret originVerifySecret "$(openssl rand -hex 32)"
 
 # Plain, not a secret: this one is compiled into the JavaScript bundle and served
 # to every visitor. Storing it encrypted would mean decrypting a value in order to
@@ -255,7 +327,9 @@ would let the stack deploy green and then refuse every request.
 | Output | Purpose |
 |--------|---------|
 | `appHostname` / `tenantHostnamePattern` | Hostnames this stack serves |
-| `loadBalancerDnsName` / `certificateArn` | ALB target and its certificate |
+| `loadBalancerDnsName` / `certificateArn` | ALB target and its regional certificate |
+| `edgeDomainName` / `edgeDistributionId` | CloudFront distribution; the domain works before DNS moves |
+| `edgeCertificateArn` / `edgeWebAclArn` | us-east-1 certificate and the WAF ACL |
 | `dnsRecordsToCreate` | Records to add by hand when `hostedZoneId` is unset |
 | `containerRepositoryUrl` | ECR repository to push the image to |
 | `reverbPublicKey` | Baked into the JS bundle at image build time |

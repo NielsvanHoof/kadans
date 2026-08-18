@@ -54,8 +54,23 @@ export interface EnvironmentSettings {
    */
   readonly dnsSubdomain: string | null;
 
-  /** CloudFront + optional WAF in front of the ALB (TASK-34.3). */
+  /**
+   * CloudFront in front of the ALB (TASK-34.3).
+   *
+   * Also changes who may reach the load balancer: with the edge on, the ALB
+   * accepts traffic only from CloudFront's origin-facing prefix list and only
+   * with the shared origin secret, so the origin cannot be addressed directly.
+   */
   readonly edgeEnabled: boolean;
+  /**
+   * AWS managed WAF rules on the distribution.
+   *
+   * Separate from `edgeEnabled` because the WAF is the part most likely to need
+   * turning off in a hurry — a managed rule that starts refusing a legitimate
+   * upload is an outage, and `pulumi config set wafEnabled false` overrides this
+   * without a code change.
+   */
+  readonly wafEnabled: boolean;
   /** Cross-region RDS snapshot copies for cheap DR (TASK-34.4). */
   readonly crossRegionSnapshotCopy: boolean;
   /** Monthly AWS Budgets threshold in USD (TASK-34.4). */

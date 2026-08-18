@@ -14,6 +14,7 @@ import {
   createOcrEncryption,
   createPlatformEncryption,
 } from "./shared/encryption.js";
+import { createEdge } from "./shared/edge.js";
 import { createLoadBalancer } from "./shared/loadBalancer.js";
 import { createServiceLogGroups } from "./shared/logs.js";
 import { createMail } from "./shared/mail.js";
@@ -72,8 +73,16 @@ const cache = createCache(config, network, platformEncryption.encryptionKey);
 const secrets = createPlatformSecrets(config, platformEncryption.encryptionKey);
 const mail = createMail(config);
 const logGroups = createServiceLogGroups(config, platformEncryption.encryptionKey);
-const edge = createLoadBalancer(config, network);
-const dns = createPlatformDns(config, edge, mail);
+const loadBalancer = createLoadBalancer(config, network);
+/*
+ * CloudFront in front of the ALB. When it is on, the load balancer's security
+ * group only accepts CloudFront's origin-facing ranges and its listener only
+ * forwards requests carrying the shared origin header — so DNS must point at the
+ * distribution, not the ALB, or the hostnames resolve to something that will
+ * refuse them.
+ */
+const edge = environment.settings.edgeEnabled ? createEdge(config, loadBalancer) : undefined;
+const dns = createPlatformDns(config, loadBalancer, mail, edge);
 
 // SES is attached to the task role only, never to the shared policy — see mail.ts.
 const application = createApplicationIdentity(config, accessPolicy, [mail.sendPolicy]);
@@ -85,7 +94,7 @@ const execution = createExecutionIdentity(
 
 const compute = createCompute(config, {
   network,
-  edge,
+  edge: loadBalancer,
   database,
   cache,
   secrets,
@@ -166,7 +175,10 @@ export const migrateTaskDefinitionArn = compute.migrateTaskDefinition.arn;
 // Edge
 export const appHostname = config.appHostname;
 export const tenantHostnamePattern = config.tenantHostnamePattern;
-export const loadBalancerDnsName = edge.loadBalancer.dnsName;
+export const loadBalancerDnsName = loadBalancer.loadBalancer.dnsName;
+export const edgeDomainName = edge?.distribution.domainName;
+export const edgeDistributionId = edge?.distribution.id;
+export const edgeWebAclArn = edge?.webAcl?.arn;
 /**
  * Build inputs for the JavaScript bundle.
  *
@@ -176,7 +188,8 @@ export const loadBalancerDnsName = edge.loadBalancer.dnsName;
  * runs perfectly and silently fails to open a WebSocket.
  */
 export const reverbPublicKey = config.reverbPublicKey;
-export const certificateArn = edge.certificate.arn;
+export const certificateArn = loadBalancer.certificate.arn;
+export const edgeCertificateArn = edge?.certificate.arn;
 /**
  * Records to create by hand when the zone is not in Route53. Empty when
  * `hostedZoneId` is configured, because the stack wrote them itself.

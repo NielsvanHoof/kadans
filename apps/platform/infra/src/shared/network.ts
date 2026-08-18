@@ -85,22 +85,10 @@ export function createNetwork(config: PlatformConfig): Network {
     environment.resourceName("alb-sg"),
     {
       vpcId: vpc.id,
-      description: "Public HTTP/HTTPS ingress for the platform load balancer",
-      ingress: [{
-        protocol: "tcp",
-        fromPort: 80,
-        toPort: 80,
-        cidrBlocks: ["0.0.0.0/0"],
-        ipv6CidrBlocks: ["::/0"],
-        description: "HTTP, redirected to HTTPS by the listener",
-      }, {
-        protocol: "tcp",
-        fromPort: 443,
-        toPort: 443,
-        cidrBlocks: ["0.0.0.0/0"],
-        ipv6CidrBlocks: ["::/0"],
-        description: "HTTPS",
-      }],
+      description: environment.settings.edgeEnabled
+        ? "CloudFront-only ingress for the platform load balancer"
+        : "Public HTTP/HTTPS ingress for the platform load balancer",
+      ingress: loadBalancerIngress(environment.settings.edgeEnabled),
       egress: [allowAllEgress("Forward to the task security group")],
       tags: { Name: environment.resourceName("alb-sg") },
     },
@@ -166,6 +154,56 @@ export function createNetwork(config: PlatformConfig): Network {
     databaseSecurityGroup,
     cacheSecurityGroup,
   };
+}
+
+/**
+ * Who may reach the load balancer.
+ *
+ * With CloudFront in front, the origin should not be addressable directly —
+ * otherwise the WAF, the TLS policy and the edge caching are all one `curl` at
+ * the ALB's DNS name away from being bypassed.
+ *
+ * AWS publishes a managed prefix list of the addresses CloudFront uses to reach
+ * origins, which narrows this to "some CloudFront distribution". That is most of
+ * the job but not all of it: the list covers *everyone's* distributions, so
+ * anyone with a CloudFront account is inside it. The shared origin header added
+ * in `edge.ts` and required by the listener rules in `loadBalancer.ts` is what
+ * narrows it the rest of the way to ours. Neither control is sufficient alone,
+ * which is why both are here.
+ *
+ * Port 80 is not opened in this mode: CloudFront talks HTTPS to the origin, and
+ * the redirect that made a plain-HTTP listener useful happens at the edge.
+ */
+function loadBalancerIngress(edgeEnabled: boolean): aws.types.input.ec2.SecurityGroupIngress[] {
+  if (edgeEnabled) {
+    const cloudFront = aws.ec2.getManagedPrefixListOutput({
+      name: "com.amazonaws.global.cloudfront.origin-facing",
+    });
+
+    return [{
+      protocol: "tcp",
+      fromPort: 443,
+      toPort: 443,
+      prefixListIds: [cloudFront.id],
+      description: "HTTPS from CloudFront origin-facing ranges only",
+    }];
+  }
+
+  return [{
+    protocol: "tcp",
+    fromPort: 80,
+    toPort: 80,
+    cidrBlocks: ["0.0.0.0/0"],
+    ipv6CidrBlocks: ["::/0"],
+    description: "HTTP, redirected to HTTPS by the listener",
+  }, {
+    protocol: "tcp",
+    fromPort: 443,
+    toPort: 443,
+    cidrBlocks: ["0.0.0.0/0"],
+    ipv6CidrBlocks: ["::/0"],
+    description: "HTTPS",
+  }];
 }
 
 function allowAllEgress(description: string): aws.types.input.ec2.SecurityGroupEgress {

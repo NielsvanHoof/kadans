@@ -36,6 +36,7 @@ export const stagingSettings: EnvironmentSettings = {
   dnsSubdomain: "staging",
 
   edgeEnabled: false,
+  wafEnabled: false,
   crossRegionSnapshotCopy: false,
   monthlyBudgetUsd: 75,
 

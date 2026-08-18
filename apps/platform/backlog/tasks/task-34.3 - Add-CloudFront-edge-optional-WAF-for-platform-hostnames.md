@@ -1,10 +1,11 @@
 ---
 id: TASK-34.3
 title: Add CloudFront edge (optional WAF) for platform hostnames
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@NielsvanHoof'
 created_date: '2026-08-11 16:54'
-updated_date: '2026-08-11 16:55'
+updated_date: '2026-08-18 13:09'
 labels:
   - infra
   - aws
@@ -37,6 +38,39 @@ Serves app.qompose.nl and *.qompose.nl at the edge (TLS, cache static /build ass
 - [ ] #2 TLS works for central and tenant hostnames via ACM at the edge
 - [ ] #3 Static build assets can be cached at the edge without breaking authenticated app traffic
 - [ ] #4 Optional managed WAF rules can be enabled without blocking legitimate staff or portal use
-- [ ] #5 DNS cutover path for app and tenant wildcard is documented
-- [ ] #6 Infra docs cover CloudFront/WAF configuration and operational notes
+- [x] #5 DNS cutover path for app and tenant wildcard is documented
+- [x] #6 Infra docs cover CloudFront/WAF configuration and operational notes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. edge.ts: CloudFront distribution over the ALB with a us-east-1 provider for the ACM certificate and the CLOUDFRONT-scoped WAF; /build/* cached, default and /app/* pass-through.
+2. Origin lockdown: ALB security group restricted to CloudFront's origin-facing prefix list, plus a shared origin header the listener requires with a fixed 403 default.
+3. dns.ts: alias records follow the edge when it is on, and never point at the ALB as well.
+4. WAF: managed common/bad-inputs/ip-reputation rule groups, with SizeRestrictions_BODY and CrossSiteScripting_BODY counted so uploads and pasted client text are not blocked.
+5. Knobs: edgeEnabled and wafEnabled per environment; wafEnabled overridable as Pulumi config for incident response.
+6. Tests and docs: stack assertions for all of the above, plus the DNS cutover path in infra/README.md.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+CloudFront edge implemented, production only (staging stays edge-free; the saving is real and staging does not need edge caching, but it means staging's ALB is its own public surface — asserted in the staging stack test rather than left implied).
+
+**Three things that would each have broken a real deploy, now asserted by tests.**
+
+1. *The certificate must be in us-east-1.* CloudFront reads its certificate from that region only, whatever region it serves, so `edge.ts` carries its own `aws.Provider` and there are two certificates for the same two names. Reusing the regional one fails at apply time with an error naming the certificate rather than the region. Same constraint applies to the CLOUDFRONT-scoped WebACL.
+2. *AWSManagedRulesCommonRuleSet breaks this app unmodified.* `SizeRestrictions_BODY` rejects bodies over 8KB and uploads go to 20MB; `CrossSiteScripting_BODY` trips on client correspondence pasted into notes and questionnaire answers. Both overridden to `count` rather than removed, so they still report what they would have blocked. The symptom would have been an unexplained 403 from CloudFront.
+3. *Caching scope.* Only `/build/*` is cached (`Managed-CachingOptimized`), safe because Vite emits content-hashed filenames so no deploy invalidation is needed. Default and `/app/*` use CachingDisabled + AllViewer: an Inertia response carries the signed-in user's workspace, and a shared cache entry would hand one firm's dossier list to another.
+
+**Origin lockdown needs both halves.** The `com.amazonaws.global.cloudfront.origin-facing` prefix list narrows the ALB to CloudFront, but that covers everyone's distributions — so CloudFront also adds a shared secret header and the listener forwards only to rules requiring it, with a fixed 403 default. ALB rules match conditions positively, so "reject without the header" has to be written as "forward only with it". Port 80 is closed in this mode; the redirect happens at the edge.
+
+**Two latent problems found and fixed while building.** `ORIGIN_VERIFY_HEADER` started in `edge.ts`, which `loadBalancer.ts` needed as a runtime value while `edge.ts` needed the `LoadBalancer` type back — a require cycle that was inert only because TypeScript elides type-only imports, and would have made the constant undefined the moment anyone used a value in the other direction. Moved to `config.ts`. And the test harness was silently mis-reading inputs: a single secret anywhere inside a property wraps the *whole* property in a secret envelope, so one secret in a listener rule's conditions turned the conditions array into an object and assertions read undefined. The harness now unwraps them.
+
+`originVerifySecret` is required only when `edgeEnabled`, so staging is not made to invent a secret nothing reads; `requireOriginVerifySecret()` states that invariant once and fails during preview with a sentence rather than a TypeError inside a resource definition.
+
+**Acceptance criteria evidence.** #5 and #6 checked: infra/README.md has a "The edge" section covering the certificate region, cache scope, origin lockdown and WAF exclusions, plus a four-step DNS cutover with the propagation gap called out (DNS resolves to the ALB for up to the record TTL while the ALB has already started refusing direct traffic — lower the TTL a day ahead, and use `edgeDomainName` to verify before DNS catches up). #1-#4 are declared by the program and asserted by 51 infra tests but need a deploy to be true; nothing has been applied.
+
+Verified: 51 infra tests, 8 bootstrap tests. No application code changed.
+<!-- SECTION:NOTES:END -->

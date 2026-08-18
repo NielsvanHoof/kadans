@@ -20,7 +20,7 @@ before(async () => {
   });
 });
 
-test("the app hostname and the tenant wildcard both point at the load balancer", () => {
+test("the app hostname and the tenant wildcard both point at the edge", () => {
   for (const component of ["app-record", "tenants-record"]) {
     const record = stack.named(component);
 
@@ -30,10 +30,42 @@ test("the app hostname and the tenant wildcard both point at the load balancer",
     const aliases = record.inputs.aliases as Array<Record<string, unknown>>;
 
     assert.equal(aliases.length, 1, "records must be aliases, not CNAMEs");
+    // CloudFront has no health to evaluate; an alias to it must say so, and an
+    // alias that claims otherwise is rejected at apply time.
+    assert.equal(aliases[0].evaluateTargetHealth, false);
   }
 
   assert.equal(stack.named("app-record")?.inputs.name, "app.qompose.nl");
   assert.equal(stack.named("tenants-record")?.inputs.name, "*.qompose.nl");
+
+  /*
+   * The origin must not keep a name of its own. Production restricts the ALB to
+   * CloudFront's ranges and the shared header, so a leftover alias would resolve
+   * to something that refuses it — and if that restriction were ever relaxed, the
+   * record would quietly become a way around the edge.
+   */
+  const albAlias = stack.ofType("aws:route53/record:Record").find((record) =>
+    ((record.inputs.aliases ?? []) as Array<Record<string, any>>)
+      .some((alias) => String(alias.name).includes("elb.amazonaws.com"))
+  );
+
+  assert.equal(albAlias, undefined, "no DNS record may point straight at the load balancer");
+});
+
+/*
+ * The edge certificate lives in us-east-1 and is a different certificate, but it
+ * covers the same two names — so ACM asks for the same validation records, and
+ * writing them twice is a Route53 conflict rather than a second confirmation.
+ */
+test("both certificates validate against one set of records", () => {
+  const validations = stack.ofType("aws:acm/certificateValidation:CertificateValidation");
+
+  assert.equal(validations.length, 2, "regional and edge certificates both validate");
+
+  const records = stack.ofType("aws:route53/record:Record")
+    .filter((record) => record.name.includes("certificate-validation"));
+
+  assert.equal(records.length, 2, "one record per certificate name, not per certificate");
 });
 
 /*

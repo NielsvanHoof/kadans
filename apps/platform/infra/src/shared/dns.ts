@@ -1,6 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { PlatformConfig } from "../config.js";
+import { Edge } from "./edge.js";
 import { LoadBalancer } from "./loadBalancer.js";
 import { Mail } from "./mail.js";
 
@@ -16,6 +17,19 @@ export interface PlatformDns {
 
 /** One certificate, two names — so exactly two ACM validation records. */
 const CERTIFICATE_NAME_COUNT = 2;
+
+/**
+ * Where `app.` and the tenant wildcard resolve to.
+ *
+ * CloudFront when the edge is on, the load balancer when it is not — and the ALB
+ * must not keep an alias record once the edge exists, or the origin stays
+ * publicly addressable by name and the WAF and TLS policy at the edge become
+ * optional for anyone who knows that name.
+ */
+interface AliasTarget {
+  dnsName: pulumi.Output<string>;
+  zoneId: pulumi.Output<string>;
+}
 /** SES issues a fixed set of three DKIM tokens per domain. */
 const DKIM_TOKEN_COUNT = 3;
 
@@ -39,13 +53,27 @@ const DKIM_TOKEN_COUNT = 3;
  */
 export function createPlatformDns(
   config: PlatformConfig,
-  edge: LoadBalancer,
+  loadBalancer: LoadBalancer,
   mail: Mail,
+  edge?: Edge,
 ): PlatformDns {
   const { environment, hostedZoneId, appHostname, tenantHostnamePattern } = config;
 
+  const target: AliasTarget = edge === undefined
+    ? {
+      dnsName: loadBalancer.loadBalancer.dnsName,
+      zoneId: loadBalancer.loadBalancer.zoneId,
+    }
+    : {
+      dnsName: edge.distribution.domainName,
+      zoneId: edge.distribution.hostedZoneId,
+    };
+
   if (hostedZoneId === undefined) {
-    return { certificateValidated: false, manualRecords: describeRecords(config, edge, mail) };
+    return {
+      certificateValidated: false,
+      manualRecords: describeRecords(config, loadBalancer, mail, target),
+    };
   }
 
   /*
@@ -64,7 +92,7 @@ export function createPlatformDns(
    * conflict.
    */
   const validationFqdns = Array.from({ length: CERTIFICATE_NAME_COUNT }, (_unused, index) => {
-    const validation = edge.certificate.domainValidationOptions[index];
+    const validation = loadBalancer.certificate.domainValidationOptions[index];
 
     return new aws.route53.Record(
       environment.resourceName(`certificate-validation-${index}`),
@@ -80,9 +108,23 @@ export function createPlatformDns(
   });
 
   new aws.acm.CertificateValidation(environment.resourceName("certificate-validation"), {
-    certificateArn: edge.certificate.arn,
+    certificateArn: loadBalancer.certificate.arn,
     validationRecordFqdns: validationFqdns,
   });
+
+  /*
+   * The edge certificate lives in us-east-1 and is a different certificate, but it
+   * covers the same two names — so ACM issues the same validation record values,
+   * and the records written above already satisfy it. Only the validation
+   * resource is separate, and it is pointed at the records that already exist
+   * rather than writing duplicates Route53 would reject.
+   */
+  if (edge !== undefined) {
+    new aws.acm.CertificateValidation(environment.resourceName("edge-certificate-validation"), {
+      certificateArn: edge.certificate.arn,
+      validationRecordFqdns: validationFqdns,
+    });
+  }
 
   for (let index = 0; index < DKIM_TOKEN_COUNT; index += 1) {
     const token = mail.dkimTokens[index];
@@ -104,9 +146,10 @@ export function createPlatformDns(
       name: hostname,
       type: "A",
       aliases: [{
-        name: edge.loadBalancer.dnsName,
-        zoneId: edge.loadBalancer.zoneId,
-        evaluateTargetHealth: true,
+        name: target.dnsName,
+        zoneId: target.zoneId,
+        // CloudFront has no health to evaluate; an alias to it must say so.
+        evaluateTargetHealth: edge === undefined,
       }],
     });
   }
@@ -117,17 +160,18 @@ export function createPlatformDns(
 /** The records a human has to create when the zone lives somewhere other than Route53. */
 function describeRecords(
   config: PlatformConfig,
-  edge: LoadBalancer,
+  loadBalancer: LoadBalancer,
   mail: Mail,
+  target: AliasTarget,
 ): pulumi.Output<Array<{ name: string; type: string; value: string }>> {
   return pulumi
     .all([
-      edge.certificate.domainValidationOptions,
+      loadBalancer.certificate.domainValidationOptions,
       mail.dkimTokens,
       mail.domainIdentity.domain,
-      edge.loadBalancer.dnsName,
+      target.dnsName,
     ])
-    .apply(([validations, dkimTokens, mailDomain, albDnsName]) => [
+    .apply(([validations, dkimTokens, mailDomain, aliasDnsName]) => [
       ...validations.map((validation) => ({
         name: validation.resourceRecordName,
         type: validation.resourceRecordType,
@@ -138,7 +182,7 @@ function describeRecords(
         type: "CNAME",
         value: `${token}.dkim.amazonses.com`,
       })),
-      { name: config.appHostname, type: "CNAME", value: albDnsName },
-      { name: config.tenantHostnamePattern, type: "CNAME", value: albDnsName },
+      { name: config.appHostname, type: "CNAME", value: aliasDnsName },
+      { name: config.tenantHostnamePattern, type: "CNAME", value: aliasDnsName },
     ]);
 }

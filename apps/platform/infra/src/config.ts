@@ -17,6 +17,17 @@ import {
  */
 export interface PlatformSecrets {
   appKey: pulumi.Output<string>;
+  /**
+   * Shared secret CloudFront adds as a header and the ALB requires.
+   *
+   * CloudFront's origin-facing prefix list narrows the load balancer to CloudFront
+   * — but that is *every* CloudFront distribution, including anyone else's. This
+   * header is what narrows it to ours.
+   *
+   * Absent in environments with no edge, so staging is not made to invent a
+   * secret nothing reads. Reach it through `requireOriginVerifySecret()`.
+   */
+  originVerifySecret?: pulumi.Output<string>;
   reverbAppId: pulumi.Output<string>;
   reverbAppSecret: pulumi.Output<string>;
   sentryDsn: pulumi.Output<string>;
@@ -64,6 +75,14 @@ export interface PlatformConfig {
   /** Envelope sender for SES; must be inside `domain` for DKIM to align. */
   mailFromAddress: string;
   /**
+   * AWS managed WAF rules on the edge distribution.
+   *
+   * Defaults to the environment's setting but is overridable as config, because
+   * this is the knob you reach for at 2am when a managed rule starts refusing a
+   * legitimate upload. `pulumi config set wafEnabled false` beats a code change.
+   */
+  wafEnabled: boolean;
+  /**
    * Reverb's client-facing application key.
    *
    * Plain config, not a secret, because it is not one: it is compiled into the
@@ -99,15 +118,51 @@ export function loadPlatformConfig(): PlatformConfig {
     imageTag: config.get("imageTag") ?? "bootstrap",
     mailFromAddress: config.get("mailFromAddress") ?? `no-reply@${zone}`,
     reverbPublicKey: config.require("reverbPublicKey"),
+    wafEnabled: config.getBoolean("wafEnabled") ?? environment.settings.wafEnabled,
 
     secrets: {
       appKey: config.requireSecret("appKey"),
+      originVerifySecret: environment.settings.edgeEnabled
+        ? config.requireSecret("originVerifySecret")
+        : undefined,
       reverbAppId: config.requireSecret("reverbAppId"),
       reverbAppSecret: config.requireSecret("reverbAppSecret"),
       sentryDsn: config.requireSecret("sentryDsn"),
       cacheAuthToken: config.requireSecret("cacheAuthToken"),
     },
   };
+}
+
+/**
+ * Header CloudFront adds and the load balancer insists on.
+ *
+ * Lives here rather than in `edge.ts` because both halves of the contract need
+ * it, and `loadBalancer.ts` importing a *value* from `edge.ts` — which imports
+ * `LoadBalancer` back — is a require cycle waiting to happen. It is inert today
+ * only because TypeScript elides type-only imports; the first value used in the
+ * other direction would make the constant undefined at module-eval time, which
+ * would show up as a listener rule matching an empty header.
+ */
+export const ORIGIN_VERIFY_HEADER = "X-Qompose-Origin-Verify";
+
+/**
+ * The origin secret, for the two places that may only run with the edge on.
+ *
+ * A function rather than a non-null assertion at each call site: this states the
+ * invariant once, and fails during preview with a sentence that says what to do
+ * instead of a TypeError deep inside a resource definition.
+ */
+export function requireOriginVerifySecret(config: PlatformConfig): pulumi.Output<string> {
+  const secret = config.secrets.originVerifySecret;
+
+  if (secret === undefined) {
+    throw new Error(
+      "originVerifySecret must be set when edgeEnabled is true: "
+        + "pulumi config set --secret originVerifySecret <value>",
+    );
+  }
+
+  return secret;
 }
 
 /**

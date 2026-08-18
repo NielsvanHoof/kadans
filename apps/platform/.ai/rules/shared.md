@@ -19,3 +19,16 @@ paths:
 **No password reaches Pulumi state.** RDS uses `manageMasterUserPassword`; ECS reads `${masterSecretArn}:password::`. App secrets are one JSON secret with per-key `valueFrom`.
 
 Derive `automaticFailoverEnabled`/`multiAzEnabled` from `cacheNodeCount` — ElastiCache rejects both on a single node, so separate knobs could only be set to an invalid pair.
+
+## CloudFront edge traps: us-east-1 certificate, cache scope, WAF exclusions
+**The CloudFront certificate must be issued in us-east-1**, whatever region the distribution serves. `edge.ts` carries its own `aws.Provider` for that, so there are two certificates for the same names. Reusing the regional one fails at apply time with an error naming the certificate, not the region — the most common reason a CloudFront stack does not come up. The CLOUDFRONT-scoped `wafv2.WebAcl` has the same constraint.
+
+**Cache only `/build/*`.** Every application response is per-user; a shared cache entry on the default behaviour hands one tenant's data to another. Default and `/app/*` (Reverb WebSocket) use `Managed-CachingDisabled` + `Managed-AllViewer`. `/build/*` is safe under `Managed-CachingOptimized` only because Vite emits content-hashed filenames, so no deploy-time invalidation is needed.
+
+**`AWSManagedRulesCommonRuleSet` breaks this app unmodified.** `SizeRestrictions_BODY` rejects bodies over 8 KB (uploads go to 20 MB) and `CrossSiteScripting_BODY` trips on client correspondence pasted into notes. Both are overridden to `count`, not removed, so they still report. Symptom is an unexplained 403 from CloudFront. `wafEnabled` is a config override on the environment setting so it can be flipped without a code change.
+
+**Origin lockdown needs both halves.** The `com.amazonaws.global.cloudfront.origin-facing` prefix list on the ALB security group narrows the origin to CloudFront — which covers *everyone's* distributions — so CloudFront also adds `ORIGIN_VERIFY_HEADER` and the listener forwards only to rules requiring it, with a fixed 403 default. ALB rules match conditions positively, so "reject without the header" must be written as "forward only with it".
+
+`ORIGIN_VERIFY_HEADER` lives in `config.ts`, not `edge.ts`: `loadBalancer.ts` needs the value and `edge.ts` needs the `LoadBalancer` type, which is a require cycle that is inert only while TypeScript elides the type-only import.
+
+**Test harness:** a single secret anywhere inside a property wraps the *whole* property in `{[specialSig]: secretSig, value: …}`, so one secret in a listener rule's conditions turns the conditions array into an object. `testing/harness.ts` unwraps these; without it assertions read `undefined` and blame themselves.

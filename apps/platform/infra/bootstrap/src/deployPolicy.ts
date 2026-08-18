@@ -93,6 +93,10 @@ export function deployRolePolicy(
         "cloudtrail:Describe*",
         "cloudtrail:Get*",
         "cloudtrail:List*",
+        "cloudfront:Get*",
+        "cloudfront:List*",
+        "wafv2:Get*",
+        "wafv2:List*",
       ],
       resources: ["*"],
     }, {
@@ -318,6 +322,34 @@ export function deployRolePolicy(
         "cloudtrail:PutEventSelectors",
         "cloudtrail:AddTags",
         "cloudtrail:RemoveTags",
+      ],
+      resources: ["*"],
+    }, {
+      /*
+       * CloudFront and the CLOUDFRONT-scoped WAF (TASK-34.3).
+       *
+       * Both are global services whose ARNs are not in the qompose namespace —
+       * a distribution is identified by a generated id — so neither can be
+       * scoped here. `cloudfront:UpdateDistribution` is the one that matters:
+       * without it a deploy that changes a cache behaviour fails halfway, having
+       * already updated the WAF.
+       */
+      sid: "ManagePlatformEdge",
+      effect: "Allow",
+      actions: [
+        "cloudfront:CreateDistribution",
+        "cloudfront:UpdateDistribution",
+        "cloudfront:DeleteDistribution",
+        "cloudfront:TagResource",
+        "cloudfront:UntagResource",
+        "cloudfront:CreateInvalidation",
+        "wafv2:CreateWebACL",
+        "wafv2:UpdateWebACL",
+        "wafv2:DeleteWebACL",
+        "wafv2:AssociateWebACL",
+        "wafv2:DisassociateWebACL",
+        "wafv2:TagResource",
+        "wafv2:UntagResource",
       ],
       resources: ["*"],
     }, {

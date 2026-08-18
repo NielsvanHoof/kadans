@@ -74,6 +74,7 @@ jobs:
           ALARM_EMAIL_ADDRESS: ${{ vars.ALARM_EMAIL_ADDRESS }}
           HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
           IMAGE_TAG: ${{ vars.IMAGE_TAG }}
+          WAF_ENABLED: ${{ vars.WAF_ENABLED }}
         run: |
           npx pulumi config set aws:region "$AWS_REGION"
 
@@ -93,6 +94,12 @@ jobs:
           # Rolling back is setting this to an older SHA, not reverting a commit.
           if [ -n "$IMAGE_TAG" ]; then
             npx pulumi config set imageTag "$IMAGE_TAG"
+          fi
+
+          # The escape hatch for a managed WAF rule refusing legitimate traffic.
+          # Unset leaves the environment's own setting in place.
+          if [ -n "$WAF_ENABLED" ]; then
+            npx pulumi config set wafEnabled "$WAF_ENABLED"
           fi
 
           npm run up -- --yes --non-interactive

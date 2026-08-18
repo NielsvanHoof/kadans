@@ -474,6 +474,159 @@ test("the deployed container runs with the download gate switched on", () => {
   assert.equal(variables.SECURITY_MALWARE_SCANNING_ENABLED, "true");
 });
 
+/*
+ * The certificate CloudFront uses must be issued in us-east-1, whatever region
+ * the distribution serves. Reusing the regional ALB certificate fails at apply
+ * time with an error naming the certificate rather than the region, which is the
+ * most common way a CloudFront stack does not come up.
+ */
+test("the edge certificate is a separate us-east-1 certificate", () => {
+  const provider = stack.ofType("pulumi:providers:aws")
+    .find((resource) => resource.name.includes("us-east-1"));
+
+  assert.ok(provider, "expected a us-east-1 provider for CloudFront resources");
+  assert.equal(provider.inputs.region, "us-east-1");
+
+  const edgeCertificate = stack.named("edge-certificate");
+
+  assert.ok(edgeCertificate);
+  assert.equal(edgeCertificate.inputs.domainName, "app.qompose.nl");
+  assert.deepEqual(edgeCertificate.inputs.subjectAlternativeNames, ["*.qompose.nl"]);
+
+  // Distinct from the regional certificate the load balancer uses.
+  assert.ok(stack.named("certificate"));
+});
+
+test("the distribution serves both hostnames over TLS", () => {
+  const distribution = stack.named("edge");
+
+  assert.ok(distribution);
+  assert.deepEqual(distribution.inputs.aliases, ["app.qompose.nl", "*.qompose.nl"]);
+
+  const viewerCertificate = distribution.inputs.viewerCertificate as Record<string, unknown>;
+
+  assert.equal(viewerCertificate.minimumProtocolVersion, "TLSv1.2_2021");
+  assert.ok(viewerCertificate.acmCertificateArn);
+
+  // HTTPS to the origin as well, so the leg CloudFront adds is not the weak one.
+  const origin = (distribution.inputs.origins as Array<Record<string, any>>)[0];
+
+  assert.equal(origin.customOriginConfig.originProtocolPolicy, "https-only");
+});
+
+/*
+ * Every application response is per-user. A shared cache entry on the default
+ * behaviour would hand one firm's dossier list to another, so only the hashed
+ * bundle may be cached — and it is safe precisely because a changed asset is a
+ * different path.
+ */
+test("only the hashed bundle is cached; app responses never are", () => {
+  const distribution = stack.named("edge");
+
+  assert.ok(distribution);
+
+  const defaultBehaviour = distribution.inputs.defaultCacheBehavior as Record<string, any>;
+  const ordered = distribution.inputs.orderedCacheBehaviors as Array<Record<string, any>>;
+  const build = ordered.find((behaviour) => behaviour.pathPattern === "/build/*");
+  const websocket = ordered.find((behaviour) => behaviour.pathPattern === "/app/*");
+
+  assert.ok(build);
+  assert.ok(websocket, "Reverb's path needs its own uncached behaviour");
+
+  assert.equal(defaultBehaviour.cachePolicyId, "managed-Managed-CachingDisabled");
+  assert.equal(websocket.cachePolicyId, "managed-Managed-CachingDisabled");
+  assert.equal(build.cachePolicyId, "managed-Managed-CachingOptimized");
+
+  // Cookies, headers and query strings must reach the origin on app traffic.
+  assert.equal(defaultBehaviour.originRequestPolicyId, "managed-Managed-AllViewer");
+});
+
+/*
+ * Turning on AWSManagedRulesCommonRuleSet unmodified breaks this application:
+ * SizeRestrictions_BODY rejects bodies over 8KB and uploads go to 20MB, while
+ * CrossSiteScripting_BODY trips on client correspondence pasted into a note.
+ * Counted rather than removed, so the decision stays visible in the metrics.
+ */
+test("managed WAF rules do not block uploads or pasted client text", () => {
+  const acl = stack.named("edge-waf");
+
+  assert.ok(acl);
+  assert.equal(acl.inputs.scope, "CLOUDFRONT");
+  assert.deepEqual(acl.inputs.defaultAction, { allow: {} });
+
+  const rules = acl.inputs.rules as Array<Record<string, any>>;
+  const common = rules.find((rule) => rule.name === "common-rules");
+
+  assert.ok(common);
+
+  const overrides = common.statement.managedRuleGroupStatement.ruleActionOverrides as
+    Array<Record<string, any>>;
+  const overridden = overrides.map((override) => override.name);
+
+  assert.ok(overridden.includes("SizeRestrictions_BODY"));
+  assert.ok(overridden.includes("CrossSiteScripting_BODY"));
+
+  for (const override of overrides) {
+    assert.deepEqual(override.actionToUse, { count: {} }, "overrides must count, not allow");
+  }
+
+  assert.ok(rules.find((rule) => rule.name === "known-bad-inputs"));
+  assert.ok(rules.find((rule) => rule.name === "ip-reputation"));
+});
+
+/*
+ * If the ALB stays reachable by name, the WAF, the TLS policy and the caching at
+ * the edge are all one curl away from being bypassed. The prefix list narrows the
+ * origin to CloudFront; the header narrows it to *our* distribution, since the
+ * prefix list covers everyone else's too.
+ */
+test("the origin cannot be reached except through our distribution", () => {
+  const albSecurityGroup = stack.named("alb-sg");
+
+  assert.ok(albSecurityGroup);
+
+  const ingress = albSecurityGroup.inputs.ingress as Array<Record<string, any>>;
+
+  assert.equal(ingress.length, 1, "no plain-HTTP ingress once the edge terminates TLS");
+  assert.equal(ingress[0].fromPort, 443);
+  assert.deepEqual(ingress[0].prefixListIds, ["pl-cloudfront-origin-facing"]);
+  assert.equal(ingress[0].cidrBlocks, undefined);
+
+  // The listener refuses anything without the shared header, and the ALB grammar
+  // only matches conditions positively — so the default action is the refusal.
+  const listener = stack.ofType("aws:lb/listener:Listener")
+    .find((candidate) => candidate.inputs.port === 443);
+
+  assert.ok(listener);
+
+  const defaultAction = (listener.inputs.defaultActions as Array<Record<string, any>>)[0];
+
+  assert.equal(defaultAction.type, "fixed-response");
+  assert.equal(defaultAction.fixedResponse.statusCode, "403");
+
+  for (const component of ["reverb-rule", "web-rule"]) {
+    const rule = stack.named(component);
+
+    assert.ok(rule, `expected ${component}`);
+
+    const conditions = rule.inputs.conditions as Array<Record<string, any>>;
+
+    assert.ok(
+      conditions.some((condition) => condition.httpHeader?.httpHeaderName),
+      `${component} must require the origin header`,
+    );
+  }
+});
+
+test("DNS points at the distribution, not the origin", () => {
+  const distribution = stack.named("edge");
+
+  assert.ok(distribution);
+  // Without a hosted zone this stack writes no records; the alias target is
+  // asserted in stack.dns.test.ts, which runs the Route53 branch.
+  assert.equal(stack.ofType("aws:route53/record:Record").length, 0);
+});
+
 test("production mints the local Sail IAM user", () => {
   assert.equal(stack.hasType("aws:iam/user:User"), true);
   assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), true);

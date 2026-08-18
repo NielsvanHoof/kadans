@@ -30,6 +30,7 @@ export const productionSettings: EnvironmentSettings = {
   dnsSubdomain: null,
 
   edgeEnabled: true,
+  wafEnabled: true,
   crossRegionSnapshotCopy: true,
   monthlyBudgetUsd: 200,
 

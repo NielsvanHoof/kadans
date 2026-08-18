@@ -106,6 +106,40 @@ test("staging hostnames sit under their own label", () => {
  * scripts/sync-ocr-credentials.sh reads production. A key here would be a standing
  * credential with no consumer — the worst kind.
  */
+/*
+ * Staging runs without the edge, which is a cost decision — but it changes the
+ * security posture, so it should be visible rather than implied: with no
+ * CloudFront in front, the load balancer is the public surface and must accept
+ * public traffic directly.
+ */
+test("staging has no edge, and its load balancer is reachable without one", () => {
+  assert.equal(stack.hasType("aws:cloudfront/distribution:Distribution"), false);
+  assert.equal(stack.hasType("aws:wafv2/webAcl:WebAcl"), false);
+  assert.equal(stack.named("edge-certificate"), undefined);
+
+  const albSecurityGroup = stack.named("alb-sg");
+
+  assert.ok(albSecurityGroup);
+
+  const ingress = albSecurityGroup.inputs.ingress as Array<Record<string, any>>;
+
+  assert.equal(ingress.length, 2, "HTTP and HTTPS from the internet");
+  assert.ok(ingress.every((rule) => Array.isArray(rule.cidrBlocks)));
+  assert.ok(ingress.every((rule) => rule.prefixListIds === undefined));
+
+  // No origin header to require, so the listener forwards by default instead of
+  // refusing — and there is no separate web rule.
+  const listener = stack.ofType("aws:lb/listener:Listener")
+    .find((candidate) => candidate.inputs.port === 443);
+
+  assert.ok(listener);
+  assert.equal(
+    (listener.inputs.defaultActions as Array<Record<string, any>>)[0].type,
+    "forward",
+  );
+  assert.equal(stack.named("web-rule"), undefined);
+});
+
 test("staging mints no long-lived IAM credentials", () => {
   assert.equal(stack.hasType("aws:iam/user:User"), false);
   assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), false);
