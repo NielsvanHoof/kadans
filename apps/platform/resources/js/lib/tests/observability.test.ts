@@ -20,7 +20,7 @@ vi.mock('@inertiajs/react', () => ({
     router: { on: vi.fn() },
 }));
 
-const TOKEN = 'k7Fq2ZmX9pLdN4vRt8Ws';
+const TOKEN = 'testPortalToken123456';
 
 describe('redactPortalTokens', () => {
     it('strips a portal grant token from a path', () => {
