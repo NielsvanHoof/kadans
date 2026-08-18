@@ -2,7 +2,7 @@
 id: decision-2
 title: Accept no application compute in Pulumi for v1.0
 date: '2026-08-11 10:05'
-status: accepted
+status: superseded
 ---
 ## Context
 
@@ -23,3 +23,7 @@ code-complete without a production app runtime in Pulumi yet.
   production traffic without owned compute/deploy is not acceptable past that point.
 - Blocks eliminating static local IAM credentials (decision-3): the ECS task role path
   already exists in policy form but cannot replace local keys until compute exists.
+
+## Superseded
+
+Superseded by decision-8.
