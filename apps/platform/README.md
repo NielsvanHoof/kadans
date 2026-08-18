@@ -49,7 +49,29 @@ vendor/bin/sail bin pint --dirty         # PHP formatting
 ```
 
 Octane reloads its workers automatically when backend files change. After changing
-`compose.yaml`, rebuild the local image with `vendor/bin/sail build --no-cache`.
+`compose.yaml` or anything in `docker/8.5/`, rebuild the local image with
+`vendor/bin/sail build --no-cache`.
+
+## Containers
+
+`docker/` holds one directory per environment:
+
+| Path | Purpose |
+| --- | --- |
+| `docker/8.5/` | The local Sail image (`sail:publish` output) plus the Octane Caddyfile. Edit here to add a PHP extension or system package. |
+| `docker/base/` | Shared build for the deployed image: PHP extensions, Composer install, Vite build. |
+| `docker/staging/`, `docker/production/` | Per-environment `Dockerfile`, `Caddyfile`, `php.ini` and `entrypoint.sh`. |
+
+Deployed images build through Buildx Bake, which wires `docker/base` into each
+environment's `Dockerfile` as a named context so the PHP version and extension
+set cannot drift:
+
+```bash
+REVERB_PUBLIC_KEY=… VITE_REVERB_HOST=… docker buildx bake -f docker-bake.hcl --load production
+```
+
+One image serves several roles — `web` (default), `worker`, `reverb`, `schedule`,
+`migrate` — passed as the container command.
 
 ## Domain overview
 

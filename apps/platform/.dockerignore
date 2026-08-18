@@ -2,15 +2,25 @@
 .env.*
 !.env.example
 !.env.ci
+# Host-only AWS profile overlays. env/profiles/aws.env carries real IAM keys and
+# is gitignored, but `COPY . .` would still bake it into a locally built image.
+env
 .git
 .github
 .idea
 .vscode
 .cursor
 .agents
+.ai
+.claude
+backlog
+docs
+tests
 coverage
 infra
 frankenphp
+_ide_helper.php
+.phpstorm.meta.php
 public/frankenphp-worker.php
 **/caddy
 node_modules

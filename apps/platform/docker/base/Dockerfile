@@ -1,3 +1,14 @@
+# syntax=docker/dockerfile:1
+
+# Shared build for every deployed environment. docker/staging/Dockerfile and
+# docker/production/Dockerfile consume the final `app-base` stage through a
+# buildx named context (see docker-bake.hcl), so the PHP version, the extension
+# set and the asset build cannot drift between the two.
+#
+# The VITE_REVERB_* values are compiled into the JavaScript bundle and cannot be
+# swapped at runtime, so this base is built once per environment invocation
+# rather than shared across both.
+
 FROM node:24-bookworm-slim AS node
 
 FROM dunglas/frankenphp:php8.5-bookworm AS php-base
@@ -48,21 +59,14 @@ RUN composer run-script post-autoload-dump \
         storage/logs \
     && chown -R www-data:www-data bootstrap/cache storage
 
-FROM php-base AS runtime
+FROM php-base AS app-base
 
 WORKDIR /var/www/html
 
 COPY --from=build --chown=www-data:www-data /var/www/html /var/www/html
 
-COPY docker/production/php.ini /usr/local/etc/php/conf.d/production.ini
-COPY docker/production/entrypoint.sh /usr/local/bin/qompose-entrypoint
-
 ENV XDG_CONFIG_HOME=/tmp/caddy/config
 ENV XDG_DATA_HOME=/tmp/caddy/data
 
-USER www-data
-
+# Octane web and Reverb both bind 8080; they run as separate containers.
 EXPOSE 8080
-
-ENTRYPOINT ["qompose-entrypoint"]
-CMD ["php", "artisan", "octane:start", "--server=frankenphp", "--host=0.0.0.0", "--port=8080", "--admin-port=2019", "--caddyfile=/var/www/html/docker/production/Caddyfile"]

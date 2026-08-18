@@ -262,24 +262,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      # bake, not build-push-action: docker/production/Dockerfile starts at
+      # `FROM base`, which is docker/base/Dockerfile wired in as a named build
+      # context. Only bake can resolve `target:base` without a registry.
       - name: Build the production image
         id: build
-        uses: docker/build-push-action@v7
+        uses: docker/bake-action@v6
         with:
-          context: apps/platform
-          file: apps/platform/Dockerfile.production
-          platforms: linux/amd64
-          build-args: |
-            REVERB_PUBLIC_KEY=ci-${{ env.SOURCE_SHA }}
-            VITE_REVERB_HOST=ci.invalid
-          labels: |
-            org.opencontainers.image.revision=${{ env.SOURCE_SHA }}
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-          outputs: type=oci,dest=${{ runner.temp }}/qompose-production-${{ env.SOURCE_SHA }}.tar
-          cache-from: type=gha,scope=platform-production-image
-          cache-to: type=gha,mode=max,scope=platform-production-image
+          workdir: apps/platform
+          files: docker-bake.hcl
+          targets: production
           provenance: mode=max
           sbom: true
+          set: |
+            *.platform=linux/amd64
+            *.cache-from=type=gha,scope=platform-production-image
+            *.cache-to=type=gha,mode=max,scope=platform-production-image
+            production.labels.org.opencontainers.image.revision=${{ env.SOURCE_SHA }}
+            production.labels.org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            production.output=type=oci,dest=${{ runner.temp }}/qompose-production-${{ env.SOURCE_SHA }}.tar
+        env:
+          REVERB_PUBLIC_KEY: ci-${{ env.SOURCE_SHA }}
+          VITE_REVERB_HOST: ci.invalid
+          TAG: ${{ env.SOURCE_SHA }}
 
       # Scan the OCI tarball in place — no registry. Explicit gate: HIGH/CRITICAL
       # with a published fix (ignore-unfixed). Default Trivy severity is all levels
@@ -305,11 +310,15 @@ jobs:
           retention-days: 7
 
       - name: Report artifact identity
+        env:
+          # bake-action reports per-target metadata as JSON, not a bare digest.
+          BAKE_METADATA: ${{ steps.build.outputs.metadata }}
         run: |
+          OCI_DIGEST="$(printf '%s' "$BAKE_METADATA" | jq -r '.production["containerimage.digest"] // empty')"
           echo "### Immutable production image" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- Source commit: \`${SOURCE_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- OCI digest: \`${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- OCI digest: \`${OCI_DIGEST:-unavailable}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Artifact digest: \`${{ steps.upload.outputs.artifact-digest }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Download: ${{ steps.upload.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Image scan: Trivy HIGH/CRITICAL (fixable) fails the job" >> "$GITHUB_STEP_SUMMARY"

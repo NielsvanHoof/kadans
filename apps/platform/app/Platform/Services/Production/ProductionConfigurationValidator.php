@@ -52,6 +52,14 @@ final readonly class ProductionConfigurationValidator
      */
     private const array FILE_LOG_DRIVERS = ['single', 'daily'];
 
+    /**
+     * Environments this validator guards. Staging ships the same image and
+     * serves the same kind of data as production, so it gets the same checks.
+     *
+     * @var list<string>
+     */
+    private const array SHIPPED_ENVIRONMENTS = ['production', 'staging'];
+
     public function __construct(
         private Application $application,
         private Repository $config,
@@ -59,7 +67,7 @@ final readonly class ProductionConfigurationValidator
 
     public function validate(): void
     {
-        if (! $this->application->isProduction() || $this->isPackageDiscovery()) {
+        if (! $this->runsUnderShippedEnvironment() || $this->isPackageDiscovery()) {
             return;
         }
 
@@ -370,6 +378,19 @@ final readonly class ProductionConfigurationValidator
         $origins = $this->config->get('reverb.apps.apps.0.allowed_origins');
 
         return is_array($origins) && $origins !== [] && ! in_array('*', $origins, true);
+    }
+
+    /**
+     * Environments that face real traffic and real client data.
+     *
+     * `isProduction()` alone would let a staging container boot with debug on,
+     * plaintext Redis, mock OCR drivers or the checked-in Reverb keys — the
+     * exact failures this class exists to catch. Staging is meant to be a
+     * rehearsal of production, so it is held to the same configuration.
+     */
+    private function runsUnderShippedEnvironment(): bool
+    {
+        return $this->application->environment(self::SHIPPED_ENVIRONMENTS);
     }
 
     private function isPackageDiscovery(): bool

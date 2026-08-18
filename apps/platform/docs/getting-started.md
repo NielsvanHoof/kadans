@@ -27,7 +27,7 @@ Then start the long-running side processes (queue, logs, Reverb, Vite):
 vendor/bin/sail artisan dev
 ```
 
-After changing `compose.yaml`, rebuild:
+After changing `compose.yaml` or the local image files in `docker/8.5/`, rebuild:
 
 ```bash
 vendor/bin/sail build --no-cache

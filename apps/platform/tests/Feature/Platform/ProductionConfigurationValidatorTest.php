@@ -174,6 +174,17 @@ test('non-production environments may use local services', function (): void {
     expect(true)->toBeTrue();
 });
 
+test('staging is held to the same configuration as production', function (): void {
+    // Staging ships the same image and serves the same kind of data, so it must
+    // not be able to boot with development services (.ai/rules/config.md).
+    $this->app->instance('env', 'staging');
+
+    config(['filesystems.default' => 'local']);
+
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
+        ->toThrow(LogicException::class, 'filesystems.default');
+});
+
 test('production rejects retry_after at or below the transcription job timeout', function (): void {
     config([
         'queue.connections.redis.retry_after' => 180,
