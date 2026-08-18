@@ -84,6 +84,7 @@ use function is_string;
  * @method static Builder<static>|User withoutPermission($permissions)
  * @method static Builder<static>|User withoutRole($roles, ?string $guard = null)
  * @method static Builder<static>|User withoutTeam($teams)
+ * @method static Builder<static>|User whereTimezone($value)
  *
  * @mixin \Eloquent
  */
