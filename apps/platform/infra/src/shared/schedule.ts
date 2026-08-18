@@ -1,4 +1,5 @@
 import * as aws from "@pulumi/aws";
+import * as pulumi from "@pulumi/pulumi";
 import { PlatformConfig } from "../config.js";
 import { Compute } from "./compute.js";
 import { Network } from "./network.js";
@@ -53,7 +54,12 @@ export function createSchedule(
         sid: "RunScheduleTask",
         effect: "Allow",
         actions: ["ecs:RunTask"],
-        resources: [compute.scheduleTaskDefinition.arn.apply((arn) => `${arn}:*`)],
+        // AWS matches RunTask against family:* or family:revision. Pulumi's
+        // .arn already includes the revision, so appending :* produced
+        // family:1:* which does not match family:1.
+        resources: [
+          pulumi.interpolate`${compute.scheduleTaskDefinition.arnWithoutRevision}:*`,
+        ],
         conditions: [{
           test: "ArnEquals",
           variable: "ecs:cluster",

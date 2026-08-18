@@ -56,6 +56,7 @@ export async function runStack(
     "qompose-platform:appKey": "base64:0000000000000000000000000000000000000000000=",
     "qompose-platform:reverbAppId": "qompose",
     "qompose-platform:reverbPublicKey": "reverb-key",
+    "qompose-platform:sentryBrowserDsn": "https://browser@sentry.example.com/2",
     "qompose-platform:reverbAppSecret": "reverb-secret",
     "qompose-platform:sentryDsn": "https://public@sentry.example.com/1",
     "qompose-platform:cacheAuthToken": "cache-auth-token-0123456789",
@@ -107,7 +108,7 @@ export async function runStack(
         name: args.inputs.name ?? args.name,
         id: args.inputs.name ?? args.name,
         secret: "test-secret-access-key",
-        ...typeSpecificState(args.type, args.name),
+        ...typeSpecificState(args.type, args.name, args.inputs),
       };
 
       resources.push({
@@ -140,8 +141,23 @@ export async function runStack(
  * TypeError somewhere unrelated rather than as a missing mock — so keep this in step
  * with what the components actually dereference.
  */
-function typeSpecificState(type: string, name: string): Record<string, unknown> {
+function typeSpecificState(
+  type: string,
+  name: string,
+  inputs: Record<string, unknown>,
+): Record<string, unknown> {
   switch (type) {
+    case "aws:ecs/taskDefinition:TaskDefinition": {
+      // RunTask IAM matches family:* or family:revision. The scheduler policy
+      // uses arnWithoutRevision; without this the mock ARN is the generic test
+      // shape and the assertion cannot see the family wildcard.
+      const family = String(inputs.family ?? name);
+
+      return {
+        arn: `arn:aws:ecs:${REGION}:${ACCOUNT_ID}:task-definition/${family}:1`,
+        arnWithoutRevision: `arn:aws:ecs:${REGION}:${ACCOUNT_ID}:task-definition/${family}`,
+      };
+    }
     case "aws:s3/bucketV2:BucketV2":
       return { bucket: `${name}-bucket` };
     case "aws:sqs/queue:Queue":

@@ -6,11 +6,14 @@ export interface OcrEncryption {
 }
 
 /**
- * KMS key used by the documents bucket, Textract SNS topic, and SQS queues.
+ * KMS key used by the documents bucket, Textract SNS topic, SQS queues, and the
+ * operations alerts topic.
  *
  * Amazon Transcribe reads media and writes JSON transcripts into the same
  * CMK-encrypted bucket, so the service principal must be able to use this key.
  * EventBridge also needs the key to deliver job events into the encrypted queue.
+ * CloudWatch, RDS, Budgets and EventBridge need it to publish onto the encrypted
+ * alerts topic — a topic policy grant without these KMS actions is a silent no-op.
  */
 export function createOcrEncryption(config: PlatformConfig): OcrEncryption {
   const { environment } = config;
@@ -35,11 +38,18 @@ export function createOcrEncryption(config: PlatformConfig): OcrEncryption {
           Service: [
             "cloudwatch.amazonaws.com",
             "sns.amazonaws.com",
-            // EventBridge delivers Transcribe job events into the encrypted SQS queue.
+            // EventBridge delivers Transcribe job events into the encrypted SQS
+            // queue, and malware findings onto the alerts topic.
             "events.amazonaws.com",
+            // The alerts topic is this CMK. Without these, RDS event
+            // subscriptions and Budgets match, fire, and silently fail to
+            // publish — the monitoring looks healthy because nothing arrives.
+            "rds.amazonaws.com",
+            "events.rds.amazonaws.com",
+            "budgets.amazonaws.com",
           ],
         },
-        Action: ["kms:Decrypt", "kms:GenerateDataKey"],
+        Action: ["kms:Decrypt", "kms:GenerateDataKey*"],
         Resource: "*",
         Condition: {
           StringEquals: {

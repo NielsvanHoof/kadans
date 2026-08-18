@@ -51,12 +51,12 @@ export function createCompute(
   const cluster = new aws.ecs.Cluster(environment.resourceName("cluster"), {
     name: environment.resourceName("cluster"),
     settings: [{
-      // Off deliberately: Container Insights bills per metric and per log line, and
-      // on a five-service stack it can outrun the compute it is watching. The log
-      // groups and the ALB metrics carry the load until there is a question they
-      // cannot answer.
+      // On because the worker-stopped alarm reads RunningTaskCount, which AWS
+      // only publishes under ECS/ContainerInsights. Without this the metric
+      // never exists, treatMissingData is notBreaching, and a dead worker never
+      // pages. The cost is real; the alternative is an alarm that cannot fire.
       name: "containerInsights",
-      value: "disabled",
+      value: "enabled",
     }],
   });
 
@@ -264,6 +264,19 @@ function taskEnvironment(
         MAIL_FROM_ADDRESS: config.mailFromAddress,
         MAIL_FROM_NAME: "Qompose",
 
+        /*
+         * The browser Sentry DSN, needed server-side for two things the bundle
+         * cannot do: allow the ingest origin in the Content-Security-Policy, and
+         * satisfy ProductionConfigurationValidator, which fails boot when
+         * `services.sentry.browser_dsn` is empty. The bundle carries its own
+         * inlined copy from build time — see docker-bake.hcl.
+         */
+        VITE_SENTRY_DSN: config.sentryBrowserDsn,
+        VITE_SENTRY_ENVIRONMENT: environment.name,
+        // Ties an issue to the exact build that produced it.
+        SENTRY_RELEASE: config.imageTag,
+        VITE_SENTRY_RELEASE: config.imageTag,
+
         SCOUT_DRIVER: "database",
         OCTANE_SERVER: "frankenphp",
 
@@ -284,7 +297,7 @@ function taskSecrets(
     .apply(([appSecretArn, masterSecretArn]) => [
       ...dependencies.secrets.keys.map((key) => ({
         // `arn:JSON_KEY::` pulls one key out of the JSON secret — the reason
-        // secrets.ts stores one secret rather than six. See secrets.ts.
+        // secrets.ts stores one secret rather than one per value. See secrets.ts.
         name: key,
         valueFrom: `${appSecretArn}:${key}::`,
       })),

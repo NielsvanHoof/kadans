@@ -103,6 +103,21 @@ export interface PlatformConfig {
    */
   wafEnabled: boolean;
   /**
+   * Sentry DSN for the browser SDK.
+   *
+   * A *different* DSN from `secrets.sentryDsn` — that one is the Laravel project,
+   * this one is the JavaScript project. Plain config, not a secret, for the same
+   * reason as `reverbPublicKey`: Vite inlines it into the bundle at build time and
+   * serves it to every visitor.
+   *
+   * Required rather than optional, because the application refuses to boot
+   * without it: `ProductionConfigurationValidator` rejects an empty
+   * `services.sentry.browser_dsn`, and `ContentSecurityPolicy` derives the
+   * allowed ingest origin from the same value — so an empty one means the browser
+   * SDK could not report even if it were configured.
+   */
+  sentryBrowserDsn: string;
+  /**
    * Reverb's client-facing application key.
    *
    * Plain config, not a secret, because it is not one: it is compiled into the
@@ -141,6 +156,7 @@ export function loadPlatformConfig(): PlatformConfig {
     mailFromAddress: config.get("mailFromAddress") ?? `no-reply@${zone}`,
     reverbPublicKey: config.require("reverbPublicKey"),
     wafEnabled: config.getBoolean("wafEnabled") ?? environment.settings.wafEnabled,
+    sentryBrowserDsn: config.require("sentryBrowserDsn"),
 
     secrets: {
       appKey: config.requireSecret("appKey"),

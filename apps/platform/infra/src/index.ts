@@ -206,6 +206,7 @@ export const edgeWebAclArn = edge?.webAcl?.arn;
  * runs perfectly and silently fails to open a WebSocket.
  */
 export const reverbPublicKey = config.reverbPublicKey;
+export const sentryBrowserDsn = config.sentryBrowserDsn;
 export const certificateArn = loadBalancer.certificate.arn;
 export const edgeCertificateArn = edge?.certificate.arn;
 /**

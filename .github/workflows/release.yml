@@ -88,6 +88,7 @@ jobs:
             echo "cluster=$(npx pulumi stack output clusterName)"
             echo "app_hostname=$(npx pulumi stack output appHostname)"
             echo "reverb_public_key=$(npx pulumi stack output reverbPublicKey)"
+            echo "sentry_browser_dsn=$(npx pulumi stack output sentryBrowserDsn)"
           } >> "$GITHUB_OUTPUT"
 
       - name: Authenticate to ECR
@@ -129,6 +130,12 @@ jobs:
         env:
           REVERB_PUBLIC_KEY: ${{ steps.stack.outputs.reverb_public_key }}
           VITE_REVERB_HOST: ${{ steps.stack.outputs.app_hostname }}
+          # A different DSN from the Laravel one: the JavaScript project's. Inlined
+          # into the bundle here, and also set at runtime so the CSP can allow the
+          # ingest origin and the boot-time config check passes.
+          VITE_SENTRY_DSN: ${{ steps.stack.outputs.sentry_browser_dsn }}
+          VITE_SENTRY_ENVIRONMENT: ${{ inputs.stack }}
+          VITE_SENTRY_RELEASE: ${{ github.sha }}
           TAG: ${{ github.sha }}
 
       # Phase 2a — point ONLY the migrate task definition at the new image.

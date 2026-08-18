@@ -240,6 +240,8 @@ export function createPlatformAlarms(
   /*
    * A queue worker that has stopped is silent by nature: jobs pile up in Redis
    * and nothing errors. Running count below desired is the only outward sign.
+   * RunningTaskCount lives on ECS/ContainerInsights, so the cluster must have
+   * Insights enabled or this alarm never receives data.
    */
   new aws.cloudwatch.MetricAlarm(environment.resourceName("worker-stopped-alarm"), {
     name: environment.resourceName("worker-stopped-alarm"),

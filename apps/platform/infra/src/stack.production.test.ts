@@ -218,6 +218,27 @@ test("the scheduler runs every minute via RunTask, with no retries", () => {
 });
 
 /*
+ * AWS matches ecs:RunTask against family:* or family:revision. Appending :* to
+ * Pulumi's revisioned .arn produced family:1:*, which does not match family:1
+ * and EventBridge would get AccessDenied every minute.
+ */
+test("the scheduler may run any revision of the schedule task definition", () => {
+  const document = stack.policyDocuments.find((policyDocument) =>
+    JSON.stringify(policyDocument).includes("RunScheduleTask")
+  );
+
+  assert.ok(document);
+
+  const statements = document.statements as Array<Record<string, any>>;
+  const runTask = statements.find((statement) => statement.sid === "RunScheduleTask");
+
+  assert.ok(runTask);
+  assert.deepEqual(runTask.resources, [
+    `arn:aws:ecs:eu-west-1:123456789012:task-definition/qompose-production-schedule:*`,
+  ]);
+});
+
+/*
  * The task role only works if the SDK is allowed to fall through to the container
  * credential provider, which it does only when these are absent.
  */
@@ -270,6 +291,18 @@ test("task environment satisfies the production configuration validator", () => 
   assert.equal(variables.TRUSTED_PROXIES, "10.0.0.0/16");
   assert.equal(variables.LOG_STACK.includes("single"), false);
   assert.equal(variables.LOG_STACK.includes("daily"), false);
+
+  /*
+   * The browser Sentry DSN, which this stack originally omitted entirely — the
+   * container would have deployed green and then failed boot on
+   * `services.sentry.browser_dsn`, because config/services.php reads it from this
+   * variable. It is also what ContentSecurityPolicy derives the allowed ingest
+   * origin from, so an empty one silences the browser SDK twice over.
+   *
+   * Distinct from SENTRY_LARAVEL_DSN: separate Sentry projects, separate DSNs.
+   */
+  assert.ok(variables.VITE_SENTRY_DSN, "the browser DSN must reach the container");
+  assert.equal(variables.VITE_SENTRY_ENVIRONMENT, "production");
 });
 
 test("secrets are resolved by ECS, never written into the task definition", () => {
@@ -284,6 +317,7 @@ test("secrets are resolved by ECS, never written into the task definition", () =
   assert.deepEqual(secretNames.sort(), [
     "APP_KEY",
     "DB_PASSWORD",
+    "REDIS_PASSWORD",
     "REVERB_APP_ID",
     "REVERB_APP_SECRET",
     "SENTRY_LARAVEL_DSN",
@@ -298,14 +332,32 @@ test("secrets are resolved by ECS, never written into the task definition", () =
 
   assert.equal(variableNamesIncludingReverb.includes("REVERB_APP_KEY"), true);
 
-  // The JSON-key form is the whole reason one secret holds five values.
+  // The JSON-key form is the whole reason one secret holds these values.
   const appKey = container.secrets.find((secret: { name: string }) => secret.name === "APP_KEY");
 
   assert.ok(appKey.valueFrom.endsWith(":APP_KEY::"));
 
+  const redisPassword = container.secrets.find(
+    (secret: { name: string }) => secret.name === "REDIS_PASSWORD",
+  );
+
+  assert.ok(redisPassword.valueFrom.endsWith(":REDIS_PASSWORD::"));
+
   const variableNames = container.environment.map((variable: { name: string }) => variable.name);
 
   assert.equal(variableNames.includes("APP_KEY"), false);
+  assert.equal(variableNames.includes("REDIS_PASSWORD"), false);
+});
+
+test("the app secret JSON includes the Valkey AUTH token as REDIS_PASSWORD", () => {
+  const version = stack.named("app-secrets-version");
+
+  assert.ok(version);
+
+  const parsed = JSON.parse(version.inputs.secretString as string);
+
+  assert.equal(typeof parsed.REDIS_PASSWORD, "string");
+  assert.equal(parsed.REDIS_PASSWORD.length > 0, true);
 });
 
 /*
@@ -413,6 +465,28 @@ test("malware findings are routed somewhere a human will see them", () => {
 
   assert.ok(topicPolicy, "expected an SNS topic policy allowing events.amazonaws.com");
   assert.ok(JSON.stringify(topicPolicy).includes("events.amazonaws.com"));
+});
+
+/*
+ * The alerts topic is encrypted with the OCR CMK. An SNS topic policy that allows
+ * RDS and Budgets to Publish is not enough: they also need kms:Decrypt /
+ * kms:GenerateDataKey* on the key, or they match, fire, and silently fail.
+ */
+test("the alerts encryption key lets RDS and Budgets publish", () => {
+  const key = stack.named("ocr-key");
+
+  assert.ok(key);
+
+  const policy = JSON.parse(key.inputs.policy as string);
+  const publish = policy.Statement.find(
+    (statement: { Sid: string }) => statement.Sid === "AllowAwsServicesToPublishEncryptedMessages",
+  );
+
+  assert.ok(publish);
+  assert.ok(publish.Principal.Service.includes("rds.amazonaws.com"));
+  assert.ok(publish.Principal.Service.includes("events.rds.amazonaws.com"));
+  assert.ok(publish.Principal.Service.includes("budgets.amazonaws.com"));
+  assert.ok(publish.Action.includes("kms:GenerateDataKey*"));
 });
 
 /*
@@ -714,11 +788,21 @@ test("RDS failover is subscribed as an event, not watched as a metric", () => {
 });
 
 // A stopped queue worker is silent by nature: jobs pile up in Redis and nothing
-// errors. Running count below desired is the only outward sign.
+// errors. Running count below desired is the only outward sign — and that metric
+// only exists when Container Insights is on.
 test("a stopped queue worker raises an alarm", () => {
+  const cluster = stack.named("cluster");
+
+  assert.ok(cluster);
+  assert.deepEqual(cluster.inputs.settings, [{
+    name: "containerInsights",
+    value: "enabled",
+  }]);
+
   const alarm = stack.named("worker-stopped-alarm");
 
   assert.ok(alarm);
+  assert.equal(alarm.inputs.namespace, "ECS/ContainerInsights");
   assert.equal(alarm.inputs.metricName, "RunningTaskCount");
   assert.equal(alarm.inputs.comparisonOperator, "LessThanThreshold");
 });

@@ -43,3 +43,9 @@ Derive `automaticFailoverEnabled`/`multiAzEnabled` from `cacheNodeCount` — Ela
 **RDS failover has no metric.** It is an `rds.EventSubscription` on the `failover` category — the whole point of Multi-AZ is that the application survives it, so it is invisible in CPU and connection graphs.
 
 **eu-west-1 is the region for everything, with one deliberate exception**: the cross-region automated-backup replica, which defaults to eu-central-1 (EU data residency). A backup in the same region as its database is a second copy of one failure domain, not disaster recovery. The replication resource is created *in the destination region*, so it needs its own provider, and the KMS key is left unset because keys are regional and the source key cannot encrypt the replica. CloudFront's certificate and WebACL are also forced into us-east-1 by AWS, but hold no data. Set `crossRegionSnapshotCopy: false` to keep a stack single-region (staging does).
+
+## Valkey AUTH token is REDIS_PASSWORD
+ElastiCache sets authToken from cacheAuthToken. Laravel reads REDIS_PASSWORD. Put that token in the app JSON secret as REDIS_PASSWORD and inject it via ECS valueFrom. Leaving it only on the replication group deploys green; /ready then fails AUTH.
+
+## Scheduler RunTask IAM uses arnWithoutRevision
+ecs:RunTask IAM must be task-definition/family:* or family:revision. Pulumi TaskDefinition.arn already includes the revision, so `${arn}:*` becomes family:1:* and matches nothing. Use arnWithoutRevision + :*.

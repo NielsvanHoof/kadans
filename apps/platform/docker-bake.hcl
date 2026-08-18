@@ -32,6 +32,22 @@ variable "VITE_REVERB_SCHEME" {
   default = "https"
 }
 
+# The browser Sentry DSN is a different DSN from the Laravel one — a separate
+# Sentry project for the JavaScript SDK — and is likewise inlined at build time.
+# The application also refuses to boot without it: ProductionConfigurationValidator
+# rejects an empty services.sentry.browser_dsn, which reads the same value.
+variable "VITE_SENTRY_DSN" {
+  default = ""
+}
+
+variable "VITE_SENTRY_ENVIRONMENT" {
+  default = ""
+}
+
+variable "VITE_SENTRY_RELEASE" {
+  default = ""
+}
+
 group "default" {
   targets = ["production"]
 }
@@ -42,10 +58,13 @@ target "base" {
   target     = "app-base"
 
   args = {
-    REVERB_PUBLIC_KEY  = REVERB_PUBLIC_KEY
-    VITE_REVERB_HOST   = VITE_REVERB_HOST
-    VITE_REVERB_PORT   = VITE_REVERB_PORT
-    VITE_REVERB_SCHEME = VITE_REVERB_SCHEME
+    REVERB_PUBLIC_KEY       = REVERB_PUBLIC_KEY
+    VITE_REVERB_HOST        = VITE_REVERB_HOST
+    VITE_REVERB_PORT        = VITE_REVERB_PORT
+    VITE_REVERB_SCHEME      = VITE_REVERB_SCHEME
+    VITE_SENTRY_DSN         = VITE_SENTRY_DSN
+    VITE_SENTRY_ENVIRONMENT = VITE_SENTRY_ENVIRONMENT
+    VITE_SENTRY_RELEASE     = VITE_SENTRY_RELEASE
   }
 }
 

@@ -231,6 +231,12 @@ pulumi config set --secret originVerifySecret "$(openssl rand -hex 32)"
 # produce a public asset. `reverbAppSecret` above is the one that authenticates.
 pulumi config set reverbPublicKey "$(openssl rand -hex 16)"
 
+# Also plain, and also inlined into the bundle: the browser Sentry DSN. This is a
+# DIFFERENT DSN from the secret below — that one is the Laravel project, this one
+# is the JavaScript project. Required, not optional: config/services.php reads it
+# server-side too, and the app refuses to boot with it empty.
+pulumi config set sentryBrowserDsn "https://<key>@<org>.ingest.sentry.io/<js-project>"
+
 pulumi config set hostedZoneId <zone-id>    # optional, see Hostnames
 pulumi config set alarmEmailAddress ops@example.com   # required for any alerting
 pulumi config set alarmSmsNumber +31600000000         # optional, page-worthy only
@@ -277,12 +283,16 @@ Between 2 and 3, `aws ecs run-task` runs the migration and the workflow checks t
 container's exit code — a stopped task is not a successful one, and without that
 check a failed migration is invisible and the rollout proceeds anyway.
 
-The image build reads `VITE_REVERB_HOST` and `REVERB_PUBLIC_KEY` from **stack
-outputs**, not from repository variables. Those values are compiled into the
-JavaScript bundle and cannot be changed afterwards, so an image built against the
-wrong pair runs perfectly and silently fails to open a WebSocket. Reading them off
-the stack being released to is what makes that mismatch impossible rather than
-merely unlikely.
+The image build reads `VITE_REVERB_HOST`, `REVERB_PUBLIC_KEY` and
+`VITE_SENTRY_DSN` from **stack outputs**, not from repository variables. Those
+values are compiled into the JavaScript bundle and cannot be changed afterwards,
+so an image built against the wrong ones runs perfectly and silently fails — no
+WebSocket, or no browser error reporting. Reading them off the stack being
+released to is what makes that mismatch impossible rather than merely unlikely.
+
+`tests/Feature/Platform/ContainerImageLayoutTest.php` scans `resources/js` for
+every `import.meta.env.VITE_*` and fails if one is not a build argument, because a
+missing one is invisible until it is expensive.
 
 ## Local `.env` (production stack only)
 
@@ -384,7 +394,7 @@ would let the stack deploy green and then refuse every request.
 | `edgeCertificateArn` / `edgeWebAclArn` | us-east-1 certificate and the WAF ACL |
 | `dnsRecordsToCreate` | Records to add by hand when `hostedZoneId` is unset |
 | `containerRepositoryUrl` | ECR repository to push the image to |
-| `reverbPublicKey` | Baked into the JS bundle at image build time |
+| `reverbPublicKey` / `sentryBrowserDsn` | Baked into the JS bundle at image build time |
 | `clusterName` / `migrateTaskDefinitionArn` | `aws ecs run-task` for migrations |
 | `publicSubnetIds` / `taskSecurityGroupId` | Network placement for `run-task` |
 | `databaseEndpoint` / `databaseMasterSecretArn` | Postgres host and RDS-managed secret |

@@ -5,9 +5,11 @@
 # buildx named context (see docker-bake.hcl), so the PHP version, the extension
 # set and the asset build cannot drift between the two.
 #
-# The VITE_REVERB_* values are compiled into the JavaScript bundle and cannot be
-# swapped at runtime, so this base is built once per environment invocation
-# rather than shared across both.
+# The VITE_* values are compiled into the JavaScript bundle and cannot be swapped
+# at runtime, so this base is built once per environment invocation rather than
+# shared across both. That covers the Reverb host and key, and the browser Sentry
+# DSN — which is a different DSN from the Laravel one and belongs to the
+# JavaScript project.
 
 FROM node:24-bookworm-slim AS node
 
@@ -41,6 +43,9 @@ ARG REVERB_PUBLIC_KEY
 ARG VITE_REVERB_HOST
 ARG VITE_REVERB_PORT=443
 ARG VITE_REVERB_SCHEME=https
+ARG VITE_SENTRY_DSN
+ARG VITE_SENTRY_ENVIRONMENT
+ARG VITE_SENTRY_RELEASE
 
 RUN composer run-script post-autoload-dump \
     && APP_ENV=local \
@@ -48,6 +53,9 @@ RUN composer run-script post-autoload-dump \
         VITE_REVERB_HOST="$VITE_REVERB_HOST" \
         VITE_REVERB_PORT="$VITE_REVERB_PORT" \
         VITE_REVERB_SCHEME="$VITE_REVERB_SCHEME" \
+        VITE_SENTRY_DSN="$VITE_SENTRY_DSN" \
+        VITE_SENTRY_ENVIRONMENT="$VITE_SENTRY_ENVIRONMENT" \
+        VITE_SENTRY_RELEASE="$VITE_SENTRY_RELEASE" \
         npm run build \
     && rm -rf node_modules \
     && mkdir -p \

@@ -87,6 +87,12 @@ test("staging keeps every guarantee the config validator checks", () => {
   assert.equal(variables.REDIS_SCHEME, "tls");
   assert.equal(variables.FILESYSTEM_DISK, "s3");
   assert.equal(variables.MAIL_MAILER, "ses");
+
+  const secretNames = containerDefinitions(web)[0].secrets.map(
+    (secret: { name: string }) => secret.name,
+  );
+
+  assert.equal(secretNames.includes("REDIS_PASSWORD"), true);
 });
 
 /*
