@@ -1,146 +1,276 @@
-# Qompose document / audio infrastructure (production only)
+# Qompose platform infrastructure
 
-This Pulumi project provisions **only** the AWS pieces needed for local/Sail OCR
-and Amazon Transcribe:
+One Pulumi program, one stack per environment. It provisions the whole deployed
+platform: the documents/OCR plane that predates compute, and — since TASK-34.2 —
+the network, data stores, edge and ECS services the Laravel application runs on.
 
-- Private S3 documents bucket (KMS encrypted, versioned) — shared by uploads, OCR, and transcripts
-- Textract completion SNS topic → SQS results queue (+ DLQ)
-- Amazon Transcribe job state changes → EventBridge rule → SQS results queue (+ consumer DLQ and EventBridge delivery DLQ)
-- IAM role Textract assumes to publish SNS (trust pinned with SourceAccount / SourceArn)
-- IAM user + access key for local Textract + Transcribe + Bedrock + S3/SQS (synced into `.env`)
-- **ECS task role** carrying the same permissions, ready for when compute lands
-- Optional DLQ email alarms (Textract + Transcribe consumer/delivery DLQs), SNS encrypted with the OCR CMK
-
-No VPC, ECS, ALB, RDS, Redis, or ECR.
-
-The GitHub OIDC provider and the CI deploy roles live in a separate project —
-see [`bootstrap/`](bootstrap/README.md).
-
-```mermaid
-flowchart LR
-  Sail[Sail / local app] -->|upload| S3[Documents S3]
-  Sail -->|StartDocumentAnalysis| Textract[Amazon Textract]
-  Textract --> TTopic[Textract SNS]
-  TTopic --> TQueue[Textract SQS]
-  Sail -->|textract:consume| TQueue
-  Sail -->|StartTranscriptionJob| Transcribe[Amazon Transcribe]
-  Transcribe --> EB[EventBridge]
-  EB --> AQueue[Transcribe SQS]
-  Sail -->|transcribe:consume| AQueue
-  Sail -->|Converse overview| Bedrock[Bedrock Claude]
+```
+src/
+  shared/           components; the docker/base equivalent
+  environments/     per-environment knobs, data only
+  testing/          Pulumi mock harness for the stack tests
+  index.ts          wires shared components with this stack's settings
 ```
 
+The GitHub OIDC provider and the CI deploy roles live in a **separate** project —
+see [`bootstrap/`](bootstrap/README.md). That separation is a security boundary, not
+tidiness: the thing that grants CI its access must not itself be deployable by CI.
+
+## Layout, and why it is shaped like `docker/`
+
+`docker/` keeps one shared base image and a thin directory per environment. This
+mirrors it. `src/shared/` builds every component; `src/environments/production.ts`
+and `staging.ts` are pure data.
+
+The rule that keeps it honest: **a component reads a knob from
+`EnvironmentSettings`; it never branches on `environment.name`.** A name check
+hides the difference inside the component, where nobody comparing two environments
+will find it. The whole production/staging delta should be a two-file diff.
+
+| Knob | production | staging |
+|---|---|---|
+| `deletionProtection` | `true` | `false` |
+| `databaseMultiAz` | `true` | `false` |
+| `databaseBackupRetentionDays` | 14 | 3 |
+| `cacheNodeCount` | 2 | 1 |
+| `webDesiredCount` / `workerDesiredCount` | 2 / 2 | 1 / 1 |
+| `logRetentionDays` | 90 | 14 |
+| `dnsSubdomain` | `null` | `staging` |
+| `edgeEnabled` (TASK-34.3) | `true` | `false` |
+| `crossRegionSnapshotCopy` (TASK-34.4) | `true` | `false` |
+| `localOperatorAccess` | `true` | `false` |
+
+`localOperatorAccess` is the one knob that is a correctness constraint rather than a
+cost trade. Exactly one environment mints the long-lived IAM user + access key Sail
+uses locally (decision-3), and `scripts/sync-ocr-credentials.sh` reads production. A
+second key in staging would be a standing credential with nothing consuming it.
+
+## What the stack builds
+
+```mermaid
+flowchart TB
+  Client[Browser] --> ALB[ALB · idle 3600s]
+  ALB -->|default| Web[ECS web · Octane]
+  ALB -->|/app/*| Reverb[ECS reverb]
+  Web --> RDS[(RDS Postgres · Multi-AZ)]
+  Web --> Valkey[(Valkey · TLS)]
+  Web --> S3[Documents S3]
+  Worker[ECS worker] --> Valkey
+  Consumers[ECS textract/transcribe consumers] --> SQS[Textract + Transcribe SQS]
+  EB[EventBridge · rate 1 minute] -->|RunTask| Sched[schedule:run]
+  Web --> SES[SES]
+  ECR[ECR · immutable tags] -.image.-> Web
+```
+
+**Network.** Two public subnets, no NAT gateway, no private subnets. This is the
+biggest cost decision here and the one most likely to be "corrected" later, so:
+the textbook layout needs a NAT per AZ (~€35/month each) or five VPC endpoints
+(~€7/month each) purely so tasks can reach ECR, Secrets Manager and SES — more than
+the database and cache combined, in a stack whose point is to be lean. Confinement
+moves to security groups instead. Tasks carry public IPs, but the only thing that
+may open a connection to port 8080 is the **load balancer's security group** — the
+group, not a CIDR, so it stays true as addresses change. What is given up: a
+misconfigured group is an exposure rather than an inconvenience, and egress is
+unfiltered. If this ever holds something that must not be able to phone out, buy the
+NAT.
+
+**Compute.** One image, five long-running services (`web`, `worker`, `reverb`,
+`textract-consumer`, `transcribe-consumer`) plus two task definitions with no
+service (`migrate`, `schedule`). They differ only in the role passed as the
+container command, which is what `docker/production/entrypoint.sh` dispatches on.
+Migrations stay one-shot and are never run on web start — several web tasks boot
+concurrently.
+
+**ARM64 is a contract with the build.** `docker buildx bake` must produce
+`linux/arm64` (`.github/workflows/platform.yml`). An amd64 image deploys perfectly
+and then fails with an exec-format error at first task start, so
+`stack.production.test.ts` asserts the architecture from this side.
+
+**The ALB idle timeout is 3600, not 60.** The default silently kills Reverb: the
+client sees an open WebSocket and every connection drops after a minute. A WebSocket
+is idle by definition between messages.
+
+**Secrets.** `APP_KEY`, the Reverb credentials and the Sentry DSN live in one JSON
+Secrets Manager secret; ECS pulls individual keys (`arn:APP_KEY::`). The database
+password is deliberately *not* in there — RDS manages and rotates its own secret, and
+a copy would go stale at the first rotation. Nothing puts a password in Pulumi state.
+
+## Hostnames
+
+Production serves `app.qompose.nl` with `*.qompose.nl` on the same certificate;
+staging serves `app.staging.qompose.nl` and `*.staging.qompose.nl`. Separate levels,
+so the two certificates can never claim the same names.
+
+**The marketing site is safe by construction, not by careful ordering.** A DNS
+wildcard only answers a name that has **no explicit record of its own**. `www` has
+one; so does the apex, and so will `mail`, `api` or any other reserved host the
+moment someone creates it. Publishing `*.qompose.nl` cannot capture them. This stack
+simply never writes those names, and there is no carve-out list to maintain.
+
+**Tenant hostnames are provisioned but not yet routed.** Tenancy resolves from the
+path today (`/workspaces/{tenant:slug}`), and `config/production.php` restricts
+`allowed_hosts` to the exact `APP_URL` host — so a `{slug}.qompose.nl` request
+reaches the ALB and is refused by the application until **TASK-34.5** lands. Having
+the certificate ready means that task is an application change, not a 45-minute
+certificate-validation wait.
+
+`hostedZoneId` is optional. Without it the stack still builds the certificate and the
+load balancer and exports `dnsRecordsToCreate` for manual entry; it skips
+`acm.CertificateValidation`, which would otherwise block every `pulumi up` waiting
+for a record nobody is going to write.
+
 ## Deploy
+
+Prerequisites, once per environment:
+
+1. A deploy role from [`bootstrap/`](bootstrap/README.md). It defaults to production
+   only — add staging with `pulumi config set --path environments[1] staging` there
+   before deploying a staging stack.
+2. A GitHub Environment named `production` / `staging` carrying `AWS_DEPLOY_ROLE_ARN`.
 
 ```bash
 cd apps/platform/infra
 npm ci
 pulumi login
-pulumi stack select production   # or: pulumi stack init production
+pulumi stack select production   # or: pulumi stack init staging
+
+# Secrets are pasted, not generated: a value only Pulumi state holds is a value you
+# lose with the stack — and losing APP_KEY means every encrypted column and signed
+# URL becomes unreadable.
+pulumi config set --secret appKey "$(cd .. && php artisan key:generate --show)"
+pulumi config set --secret reverbAppId qompose
+pulumi config set --secret reverbAppSecret "$(openssl rand -hex 32)"
+pulumi config set --secret sentryDsn https://...
+pulumi config set --secret cacheAuthToken "$(openssl rand -hex 24)"
+
+# Plain, not a secret: this one is compiled into the JavaScript bundle and served
+# to every visitor. Storing it encrypted would mean decrypting a value in order to
+# produce a public asset. `reverbAppSecret` above is the one that authenticates.
+pulumi config set reverbPublicKey "$(openssl rand -hex 16)"
+
+pulumi config set hostedZoneId <zone-id>    # optional, see Hostnames
+
 npm run preview
 npm run up
-pulumi stack output
 ```
 
-`npm run preview` / `npm run up` compile TypeScript to `bin/` first. Pulumi runs the compiled JS (avoids ts-node `.js` import issues).
-Optional alarm email:
+`imageTag` is not set by hand — the release workflow sets it to the commit SHA it
+just pushed. Rolling back is `pulumi config set imageTag <older-sha>` and a deploy,
+which is a true statement only because the ECR repository is tag-immutable.
 
-```bash
-pulumi config set alarmEmailAddress you@example.com
-```
+`npm run preview` / `npm run up` compile TypeScript to `bin/` first (Pulumi runs the
+compiled JS, which avoids ts-node `.js` import issues). Both scripts `rm -rf bin`
+before compiling — without it, a renamed or deleted source file leaves stale
+JavaScript behind that keeps running and keeps passing.
 
-Confirm the SNS email subscription after the first deploy if you set that.
+## Releasing
 
-## Wire Sail / `.env`
+Three workflows, and the split is deliberate:
 
-After `pulumi up`, sync stack outputs into a cached AWS profile and apply it **on the host** (not via Sail — Pulumi is not in the container):
+| Workflow | Does | AWS credentials |
+|---|---|---|
+| `platform.yml` | CI: tests, builds an OCI tarball, Trivy-scans it, uploads an artifact | none |
+| `deploy.yml` | Infrastructure only — a knob change, a new alarm, a resize | deploy role |
+| `release.yml` | Build -> push to ECR -> migrate -> roll the services | deploy role |
+
+`release.yml` runs `pulumi up` three times, which looks redundant and is not:
+
+1. **Ensure infrastructure exists.** The ECR repository lives in this stack, so it
+   has to exist before anything can push to it. On a first release this also creates
+   services pointing at a tag that is not in the registry yet — harmless and
+   self-healing, because Pulumi's ECS Service does not wait for steady state, so the
+   deploy succeeds while the tasks retry their pull. Every later release is a no-op
+   diff here.
+2. **Stage the migration image** — `--target` on the migrate task definition alone.
+   This is the ordering that bites: a plain `pulumi up` would update every task
+   definition and roll the services in one step, putting new code in front of an
+   un-migrated schema. Targeting the migrate task first means migrations land before
+   any new-code task takes a request.
+3. **Roll the services**, now that the schema is ahead of them.
+
+Between 2 and 3, `aws ecs run-task` runs the migration and the workflow checks the
+container's exit code — a stopped task is not a successful one, and without that
+check a failed migration is invisible and the rollout proceeds anyway.
+
+The image build reads `VITE_REVERB_HOST` and `REVERB_PUBLIC_KEY` from **stack
+outputs**, not from repository variables. Those values are compiled into the
+JavaScript bundle and cannot be changed afterwards, so an image built against the
+wrong pair runs perfectly and silently fails to open a WebSocket. Reading them off
+the stack being released to is what makes that mismatch impossible rather than
+merely unlikely.
+
+## Local `.env` (production stack only)
+
+After `pulumi up`, sync stack outputs into a cached AWS profile and apply it **on the
+host** (not via Sail — Pulumi is not in the container):
 
 ```bash
 cd apps/platform
-composer env:aws
-# equivalent first-time path:
-#   cd infra && ./scripts/sync-ocr-credentials.sh
+composer env:aws     # or: cd infra && ./scripts/sync-ocr-credentials.sh
+composer env:floci   # back to Sail's local AWS; env:aws re-applies the cached profile
 ```
 
-That writes gitignored `env/profiles/aws.env`, then upserts into `.env`:
+That writes gitignored `env/profiles/aws.env` and upserts `FILESYSTEM_DISK=s3`,
+`OCR_DRIVER=textract`, `TRANSCRIPTION_DRIVER=transcribe`, the IAM keys, the bucket
+and the queue URLs into `.env`, clearing the Floci endpoints.
 
-- `FILESYSTEM_DISK=s3`, `OCR_DRIVER=textract`, `TRANSCRIPTION_DRIVER=transcribe`
-- IAM access keys, documents bucket, Textract SNS/SQS + Transcribe queue URLs
-- clears `AWS_ENDPOINT` / `AWS_URL` / path-style (real AWS, not Floci)
+This stack creates that IAM user and access key **for local development only**. The
+reasoning is worth stating accurately, because it is easy to draw the wrong lesson:
+IAM roles hand temporary credentials to something AWS already recognises — an ECS
+task, an EC2 instance, a Lambda. A PHP process on your laptop is none of those. The
+key is acceptable *because* the policy is narrow: one bucket, the OCR queues, one KMS
+key. It is never how production runs — the ECS task role carries the identical
+managed policy and the container gets credentials from the ECS agent, with no keys
+anywhere.
 
-To flip back to Sail Floci without losing the cached Pulumi profile:
+## Tests
 
 ```bash
-composer env:floci
-composer env:aws    # re-applies the cached profile; re-run sync after infra changes
+npm test              # builds, then node --test "bin/**/*.test.js"
 ```
 
-Optional Bedrock overview model (not part of the profile overlay):
+`stack.production.test.ts` and `stack.staging.test.ts` run the whole program under
+Pulumi's mock runtime and assert what it declared. They are **separate files on
+purpose**: `pulumi.runtime.setMocks` is process-global and `index.js` is
+module-cached, so two stacks in one process would silently share the first one's
+resources. `node --test` forks per file, which is the only isolation available.
 
-```bash
-AI_DOCUMENT_OVERVIEW_MODEL=eu.anthropic.claude-sonnet-4-20250514-v1:0
-```
-
-### Sync OCR / Transcribe IAM credentials
-
-This stack creates an IAM user + long-lived access key for **local development only**.
-
-The reason is worth stating accurately, because it is easy to draw the wrong lesson
-from it. IAM roles hand temporary credentials to something AWS already recognises —
-an ECS task, an EC2 instance, a Lambda. A PHP process on your laptop is none of
-those, so there is nothing to attach a role to. Until the stack grows compute, a
-narrowly scoped IAM user is the honest option for local work.
-
-The key is acceptable *because* the policy is narrow: one bucket, the OCR/Transcribe
-queues, one KMS key, and nothing else. It must never be how production runs —
-`src/application.ts` already holds the identical permissions as an **ECS task role**,
-and the deployed container will get credentials from the ECS agent instead, with no
-keys anywhere. Both credential paths in the app skip explicit credentials when
-`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are empty, so that switch needs **no
-application code changes** — just stop setting those two variables.
-
-> An earlier version of this file said "root cannot assume roles." True, but beside
-> the point: the fix is not using root at all. Enable IAM Identity Center, give
-> yourself an admin user there, and `aws sso login` for short-lived credentials.
-
-Refresh the cached profile from Pulumi (then apply):
-
-```bash
-cd apps/platform/infra
-chmod +x scripts/sync-ocr-credentials.sh
-./scripts/sync-ocr-credentials.sh
-```
-
-That regenerates `env/profiles/aws.env`, applies it onto `.env`, and clears Floci endpoints.
-
-```bash
-vendor/bin/sail artisan config:clear
-vendor/bin/sail artisan textract:consume
-vendor/bin/sail artisan transcribe:consume
-```
-
-(`composer run dev` / Sail already starts both consumers when the real drivers and queue URLs are set.)
+They exist to catch the failures that a successful `pulumi up` does not: ARM vs amd64,
+the 60-second idle timeout, an 8080 ingress written as a CIDR, static AWS credentials
+leaking into a task definition, and the `ProductionConfigurationValidator` keys that
+would let the stack deploy green and then refuse every request.
 
 ## Outputs
 
 | Output | Purpose |
 |--------|---------|
+| `appHostname` / `tenantHostnamePattern` | Hostnames this stack serves |
+| `loadBalancerDnsName` / `certificateArn` | ALB target and its certificate |
+| `dnsRecordsToCreate` | Records to add by hand when `hostedZoneId` is unset |
+| `containerRepositoryUrl` | ECR repository to push the image to |
+| `reverbPublicKey` | Baked into the JS bundle at image build time |
+| `clusterName` / `migrateTaskDefinitionArn` | `aws ecs run-task` for migrations |
+| `publicSubnetIds` / `taskSecurityGroupId` | Network placement for `run-task` |
+| `databaseEndpoint` / `databaseMasterSecretArn` | Postgres host and RDS-managed secret |
+| `cacheEndpoint` | Valkey primary endpoint |
+| `applicationSecretArn` | Secrets Manager secret ECS resolves |
+| `vpcId` / `platformEncryptionKeyArn` | Network and data-at-rest key |
 | `documentsBucketName` | S3 bucket for uploads + Transcribe JSON output |
-| `textractSnsTopicArn` | Textract notification topic |
-| `textractPublishRoleArn` | Role Textract assumes for SNS |
-| `textractResultsQueueUrl` | Textract consumer queue URL |
-| `textractResultsDeadLetterQueueUrl` | Failed Textract messages |
-| `transcribeResultsQueueUrl` | Transcribe consumer queue URL (EventBridge target) |
-| `transcribeResultsDeadLetterQueueUrl` | Failed Transcribe consumer messages |
-| `transcribeDeliveryDeadLetterQueueUrl` | EventBridge FailedInvocations (could not deliver to results queue) |
-| `transcribeCompletionRuleName` | EventBridge rule for job COMPLETED/FAILED |
-| `ocrLocalUserName` | IAM user for local OCR / Transcribe |
-| `ocrAccessKeyId` | Access key id (also via sync script) |
-| `ocrSecretAccessKey` | Secret key (Pulumi secret; use sync script) |
-| `ocrEncryptionKeyArn` | KMS key for bucket/queues |
-| `appTaskRoleArn` | ECS task role — set as `taskRoleArn` on the task definition |
-| `appAccessPolicyArn` | Managed policy shared by Sail IAM user + ECS task role |
+| `textractSnsTopicArn` / `textractPublishRoleArn` | Textract notification topic and its role |
+| `textractResultsQueueUrl` (+ `…DeadLetterQueueUrl`) | Textract consumer queue |
+| `transcribeResultsQueueUrl` (+ `…DeadLetterQueueUrl`) | Transcribe consumer queue |
+| `transcribeDeliveryDeadLetterQueueUrl` | EventBridge FailedInvocations |
+| `appTaskRoleArn` / `appExecutionRoleArn` / `appAccessPolicyArn` | ECS identities |
+| `ocrLocalUserName` / `ocrAccessKeyId` / `ocrSecretAccessKey` | Local Sail credentials (production only) |
+| `ocrEncryptionKeyArn` | KMS key for the documents bucket and queues |
 
 ## Important
 
-Running `pulumi up` against an existing full-platform production stack will **destroy** ECS, RDS, ALB, VPC, etc. that are no longer in this program. Preview carefully before applying.
+`pulumi up` **destroys** any resource the program no longer declares. Read the
+preview diff, especially after a refactor: a moved file that changes a logical
+resource name reads to Pulumi as delete-then-create, and for the database that is not
+a rename.
+
+This platform is a fresh instance — nothing is migrated into it from an earlier
+deployment, so the first `pulumi up` starts from an empty account rather than
+converging on existing resources.

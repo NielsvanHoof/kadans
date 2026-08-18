@@ -1,5 +1,5 @@
 import * as aws from "@pulumi/aws";
-import { PlatformConfig } from "./config.js";
+import { PlatformConfig } from "../config.js";
 import { DocumentInfrastructure } from "./documents.js";
 
 /**

@@ -10,9 +10,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Audit/Models/** | .ai/rules/audit-models.md |
 | app/ClientPortal/** | .ai/rules/client-portal.md |
 | config/**, config/queue.php | .ai/rules/config.md |
-| docker/**, docker-bake.hcl, .dockerignore | .ai/rules/docker.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
+| docker/**, docker-bake.hcl, .dockerignore | .ai/rules/docker.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
 | app/{Dossiers,ClientPortal}/** | .ai/rules/dossiers-client-portal.md |
@@ -22,6 +22,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/features/**/hooks/** | .ai/rules/hooks.md |
 | app/ClientPortal/Http/Controllers/** | .ai/rules/http-controllers.md |
 | app/Shared/Http/** | .ai/rules/http.md |
+| infra/** | .ai/rules/infra.md |
 | app/{DocumentProcessing,AudioProcessing}/{Jobs,Transitions}/** | .ai/rules/jobs-transitions.md |
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
@@ -37,6 +38,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/{Data,Http/Requests,Enums,Policies}/** | .ai/rules/requests-enums-policies.md |
 | app/Platform/Actions/Retention/** | .ai/rules/retention.md |
 | routes/** | .ai/rules/routes.md |
+| infra/src/shared/** | .ai/rules/shared.md |
 | app/Tenancy/** | .ai/rules/tenancy.md |
 | tests/** | .ai/rules/tests.md |
 | app/*/{Transitions,Policies,Http/Controllers}/** | .ai/rules/transitions-policies-http-controllers.md |

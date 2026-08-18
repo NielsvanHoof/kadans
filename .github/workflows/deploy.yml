@@ -1,26 +1,44 @@
-name: Deploy OCR infra
+name: Deploy platform infra
+
+# Infrastructure only: a knob change, a new alarm, a resize, a rollback via
+# `imageTag`. It does NOT build or push an image, so on its own it can never move
+# the running code forward — release.yml is the workflow that ships a commit.
 
 on:
   workflow_dispatch:
+    inputs:
+      stack:
+        description: Pulumi stack to deploy
+        type: choice
+        required: true
+        default: staging
+        options:
+          - staging
+          - production
 
 permissions:
   contents: read
   id-token: write
 
+# Per stack, so a staging deploy never queues behind a production one — and two
+# runs against the same stack never race for the Pulumi lock.
 concurrency:
-  group: deploy-ocr-production
+  group: deploy-infra-${{ inputs.stack }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy production OCR stack
+    name: Deploy ${{ inputs.stack }} stack
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    environment: production
+    timeout-minutes: 45
+    # Names the GitHub Environment whose OIDC subject the deploy role trusts, so a
+    # staging run is structurally incapable of assuming production's role.
+    environment: ${{ inputs.stack }}
     env:
       AWS_REGION: ${{ vars.AWS_REGION || 'eu-west-1' }}
       PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL || 'https://api.pulumi.com' }}
+      STACK: ${{ inputs.stack }}
 
     steps:
       - name: Check out source
@@ -36,31 +54,62 @@ jobs:
         working-directory: apps/platform/infra
         run: npm ci
 
+      # The stack tests run against Pulumi's mock runtime, so they need no
+      # credentials and catch a broken program before it reaches AWS half-applied.
+      - name: Verify the program
+        working-directory: apps/platform/infra
+        run: npm test
+
       - name: Select Pulumi stack
         working-directory: apps/platform/infra
         run: |
           npx pulumi login "$PULUMI_BACKEND_URL"
-          if ! npx pulumi stack select production --non-interactive; then
-            npx pulumi stack init production --non-interactive
+          if ! npx pulumi stack select "$STACK" --non-interactive; then
+            npx pulumi stack init "$STACK" --non-interactive
           fi
 
       - name: Configure and deploy
         working-directory: apps/platform/infra
+        env:
+          ALARM_EMAIL_ADDRESS: ${{ vars.ALARM_EMAIL_ADDRESS }}
+          HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
+          IMAGE_TAG: ${{ vars.IMAGE_TAG }}
         run: |
           npx pulumi config set aws:region "$AWS_REGION"
-          if [ -n "${{ vars.ALARM_EMAIL_ADDRESS }}" ]; then
-            npx pulumi config set alarmEmailAddress "${{ vars.ALARM_EMAIL_ADDRESS }}"
+
+          if [ -n "$ALARM_EMAIL_ADDRESS" ]; then
+            npx pulumi config set alarmEmailAddress "$ALARM_EMAIL_ADDRESS"
           else
             npx pulumi config rm alarmEmailAddress || true
           fi
+
+          # Optional: without it the stack still builds the certificate and exports
+          # the records to create by hand, rather than blocking on ACM validation.
+          if [ -n "$HOSTED_ZONE_ID" ]; then
+            npx pulumi config set hostedZoneId "$HOSTED_ZONE_ID"
+          fi
+
+          # The ECR repository is tag-immutable, so this is a specific build.
+          # Rolling back is setting this to an older SHA, not reverting a commit.
+          if [ -n "$IMAGE_TAG" ]; then
+            npx pulumi config set imageTag "$IMAGE_TAG"
+          fi
+
           npm run up -- --yes --non-interactive
+
       - name: Report outputs
         working-directory: apps/platform/infra
         run: |
           {
-            echo "### OCR stack outputs"
+            echo "### ${STACK} stack outputs"
             echo ""
-            echo "- Bucket: \`$(npx pulumi stack output documentsBucketName)\`"
-            echo "- Results queue: \`$(npx pulumi stack output textractResultsQueueUrl)\`"
-            echo "- OCR user: \`$(npx pulumi stack output ocrLocalUserName)\`"
+            echo "- App hostname: \`$(npx pulumi stack output appHostname)\`"
+            echo "- Load balancer: \`$(npx pulumi stack output loadBalancerDnsName)\`"
+            echo "- Image repository: \`$(npx pulumi stack output containerRepositoryUrl)\`"
+            echo "- Cluster: \`$(npx pulumi stack output clusterName)\`"
+            echo "- Documents bucket: \`$(npx pulumi stack output documentsBucketName)\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+          echo ""
+          echo "DNS records to create (empty when hostedZoneId is set):"
+          npx pulumi stack output dnsRecordsToCreate || true

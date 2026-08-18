@@ -1,0 +1,348 @@
+import assert from "node:assert/strict";
+import test, { before } from "node:test";
+import { CapturedStack, containerDefinitions, runStack } from "./testing/harness.js";
+
+/*
+ * This file replaces the pre-compute stack test, which asserted that no VPC, ECS
+ * cluster, service or RDS instance existed — an executable form of decision-2
+ * ("Accept no application compute in Pulumi for v1.0"). TASK-34.2 retires that
+ * decision, so the guard rail is inverted rather than deleted.
+ *
+ * One stack per file: pulumi.runtime.setMocks is process-global and index.js is
+ * module-cached, so staging lives in stack.staging.test.ts. See testing/harness.ts.
+ */
+
+// Definite assignment: `before` runs ahead of every test in the file, but the
+// compiler cannot see that. Top-level await is unavailable — tsc emits CommonJS.
+let stack!: CapturedStack;
+
+before(async () => {
+  stack = await runStack("production");
+});
+
+test("the data plane still provisions documents, OCR and Transcribe plumbing", () => {
+  assert.equal(stack.hasType("aws:s3/bucketV2:BucketV2"), true);
+  assert.equal(stack.hasType("aws:sns/topic:Topic"), true);
+  // Textract results + DLQ, Transcribe results + DLQ, EventBridge delivery DLQ.
+  assert.equal(stack.ofType("aws:sqs/queue:Queue").length, 5);
+  assert.ok(stack.named("textract-publish-role"));
+  assert.ok(stack.named("transcribe-complete"));
+});
+
+test("compute, edge and data stores are provisioned", () => {
+  assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), true);
+  assert.equal(stack.hasType("aws:ecs/cluster:Cluster"), true);
+  assert.equal(stack.hasType("aws:rds/instance:Instance"), true);
+  assert.equal(stack.hasType("aws:elasticache/replicationGroup:ReplicationGroup"), true);
+  assert.equal(stack.hasType("aws:lb/loadBalancer:LoadBalancer"), true);
+  assert.equal(stack.hasType("aws:ecr/repository:Repository"), true);
+  assert.equal(stack.hasType("aws:secretsmanager/secret:Secret"), true);
+});
+
+// One artifact, five long-running roles, dispatched by docker/production/entrypoint.sh.
+test("every entrypoint role that needs a service has one", () => {
+  const services = stack.ofType("aws:ecs/service:Service").map((service) => service.inputs.name);
+
+  assert.deepEqual(services.sort(), [
+    "qompose-production-reverb",
+    "qompose-production-textract-consumer",
+    "qompose-production-transcribe-consumer",
+    "qompose-production-web",
+    "qompose-production-worker",
+  ]);
+});
+
+// migrate is one-shot on purpose: several web tasks boot concurrently, so running
+// migrations on web start would race them (.ai/rules/docker.md).
+test("migrate and schedule are task definitions without services", () => {
+  const families = stack.ofType("aws:ecs/taskDefinition:TaskDefinition")
+    .map((task) => task.inputs.family);
+
+  assert.ok(families.includes("qompose-production-migrate"));
+  assert.ok(families.includes("qompose-production-schedule"));
+
+  const serviceNames = stack.ofType("aws:ecs/service:Service").map((service) => service.inputs.name);
+
+  assert.equal(serviceNames.includes("qompose-production-migrate"), false);
+  assert.equal(serviceNames.includes("qompose-production-schedule"), false);
+});
+
+/*
+ * ARM64 is a contract with the build, not a preference: CI must bake linux/arm64.
+ * An amd64 image scheduled here fails with an exec-format error at first task
+ * start — long after `pulumi up` reports success.
+ */
+test("task definitions are ARM64", () => {
+  const tasks = stack.ofType("aws:ecs/taskDefinition:TaskDefinition");
+
+  assert.ok(tasks.length > 0);
+
+  for (const task of tasks) {
+    assert.deepEqual(task.inputs.runtimePlatform, {
+      cpuArchitecture: "ARM64",
+      operatingSystemFamily: "LINUX",
+    });
+  }
+});
+
+/*
+ * The 60-second default silently kills Reverb: the socket opens, then drops every
+ * minute. A WebSocket is idle by definition between messages.
+ */
+test("the load balancer keeps WebSocket connections alive", () => {
+  const alb = stack.named("alb");
+
+  assert.ok(alb);
+  assert.equal(alb.inputs.idleTimeout, 3600);
+  assert.equal(alb.inputs.enableDeletionProtection, true);
+});
+
+test("HTTP is redirected to HTTPS and Reverb has its own listener rule", () => {
+  const listeners = stack.ofType("aws:lb/listener:Listener");
+  const http = listeners.find((listener) => listener.inputs.port === 80);
+  const https = listeners.find((listener) => listener.inputs.port === 443);
+
+  assert.ok(http);
+  assert.equal((http.inputs.defaultActions as Array<Record<string, unknown>>)[0].type, "redirect");
+  assert.ok(https);
+
+  const rule = stack.named("reverb-rule");
+
+  assert.ok(rule, "expected a listener rule forwarding /app/* to Reverb");
+  assert.deepEqual(
+    (rule.inputs.conditions as Array<Record<string, any>>)[0].pathPattern.values,
+    ["/app/*"],
+  );
+});
+
+test("the readiness endpoint is what the web target group probes", () => {
+  const targetGroup = stack.named("web-tg");
+
+  assert.ok(targetGroup);
+  assert.equal((targetGroup.inputs.healthCheck as Record<string, unknown>).path, "/ready");
+});
+
+/*
+ * Tasks carry public IPs (no NAT — see network.ts), so an 8080 ingress written as a
+ * CIDR would be the difference between "the load balancer" and "the internet".
+ */
+test("task ingress references the load balancer group, never a CIDR", () => {
+  const taskSecurityGroup = stack.named("task-sg");
+
+  assert.ok(taskSecurityGroup);
+
+  const ingress = (taskSecurityGroup.inputs.ingress as Array<Record<string, any>>)[0];
+
+  assert.equal(ingress.fromPort, 8080);
+  assert.ok(Array.isArray(ingress.securityGroups) && ingress.securityGroups.length === 1);
+  assert.equal(ingress.cidrBlocks, undefined);
+});
+
+test("the database and cache accept connections only from tasks", () => {
+  for (const [name, port] of [["database-sg", 5432], ["cache-sg", 6379]] as const) {
+    const group = stack.named(name);
+
+    assert.ok(group, `expected security group ${name}`);
+
+    const ingress = (group.inputs.ingress as Array<Record<string, any>>)[0];
+
+    assert.equal(ingress.fromPort, port);
+    assert.ok(Array.isArray(ingress.securityGroups) && ingress.securityGroups.length === 1);
+    assert.equal(ingress.cidrBlocks, undefined);
+  }
+});
+
+test("the certificate covers the app hostname and the tenant wildcard", () => {
+  const certificate = stack.named("certificate");
+
+  assert.ok(certificate);
+  assert.equal(certificate.inputs.domainName, "app.qompose.nl");
+  assert.deepEqual(certificate.inputs.subjectAlternativeNames, ["*.qompose.nl"]);
+});
+
+// The marketing site keeps www and the apex. A wildcard only answers names with no
+// explicit record, so the carve-out is "never write those names" — see dns.ts.
+test("no DNS record is created for www or the apex", () => {
+  const records = stack.ofType("aws:route53/record:Record").map((record) => record.inputs.name);
+
+  assert.equal(records.includes("www.qompose.nl"), false);
+  assert.equal(records.includes("qompose.nl"), false);
+});
+
+test("production is Multi-AZ, protected, and refuses plaintext Postgres", () => {
+  const database = stack.named("database");
+
+  assert.ok(database);
+  assert.equal(database.inputs.multiAz, true);
+  assert.equal(database.inputs.deletionProtection, true);
+  assert.equal(database.inputs.storageEncrypted, true);
+  assert.equal(database.inputs.publiclyAccessible, false);
+  // No password in Pulumi state: RDS mints and rotates it into its own secret.
+  assert.equal(database.inputs.manageMasterUserPassword, true);
+  assert.equal(database.inputs.password, undefined);
+
+  const parameters = stack.named("db-params");
+
+  assert.ok(parameters);
+  assert.deepEqual(parameters.inputs.parameters, [{ name: "rds.force_ssl", value: "1" }]);
+});
+
+/*
+ * ProductionConfigurationValidator fails application boot without cache TLS, so an
+ * unencrypted group would deploy green and then refuse every request.
+ */
+test("the cache is encrypted in transit and fails over on two nodes", () => {
+  const cache = stack.named("cache");
+
+  assert.ok(cache);
+  assert.equal(cache.inputs.engine, "valkey");
+  assert.equal(cache.inputs.transitEncryptionEnabled, true);
+  assert.equal(cache.inputs.atRestEncryptionEnabled, true);
+  assert.equal(cache.inputs.numCacheClusters, 2);
+  assert.equal(cache.inputs.automaticFailoverEnabled, true);
+  assert.equal(cache.inputs.multiAzEnabled, true);
+});
+
+test("the scheduler runs every minute via RunTask, with no retries", () => {
+  const rule = stack.named("schedule");
+
+  assert.ok(rule);
+  assert.equal(rule.inputs.scheduleExpression, "rate(1 minute)");
+
+  const target = stack.named("schedule-target");
+
+  assert.ok(target);
+  assert.ok((target.inputs.ecsTarget as Record<string, unknown>).taskDefinitionArn);
+  // Retrying a missed minute is how two schedulers end up running at once.
+  assert.deepEqual(target.inputs.retryPolicy, { maximumRetryAttempts: 0 });
+});
+
+/*
+ * The task role only works if the SDK is allowed to fall through to the container
+ * credential provider, which it does only when these are absent.
+ */
+test("no container receives static AWS credentials", () => {
+  const tasks = stack.ofType("aws:ecs/taskDefinition:TaskDefinition");
+
+  for (const task of tasks) {
+    const names = containerDefinitions(task)[0].environment.map(
+      (variable: { name: string }) => variable.name,
+    );
+
+    assert.equal(names.includes("AWS_ACCESS_KEY_ID"), false);
+    assert.equal(names.includes("AWS_SECRET_ACCESS_KEY"), false);
+  }
+});
+
+/*
+ * ProductionConfigurationValidator fails boot in production and staging on any of
+ * these (.ai/rules/config.md). Getting one wrong deploys cleanly and then serves
+ * nothing, so they are asserted rather than assumed.
+ */
+test("task environment satisfies the production configuration validator", () => {
+  const web = stack.ofType("aws:ecs/taskDefinition:TaskDefinition")
+    .find((task) => task.inputs.family === "qompose-production-web");
+
+  assert.ok(web);
+
+  const container = containerDefinitions(web)[0];
+  const variables = Object.fromEntries(
+    container.environment.map((variable: { name: string; value: string }) =>
+      [variable.name, variable.value]
+    ),
+  );
+
+  assert.equal(variables.APP_ENV, "production");
+  assert.equal(variables.APP_DEBUG, "false");
+  assert.equal(variables.APP_URL, "https://app.qompose.nl");
+  assert.equal(variables.CACHE_STORE, "redis");
+  assert.equal(variables.QUEUE_CONNECTION, "redis");
+  assert.equal(variables.SESSION_DRIVER, "redis");
+  assert.equal(variables.SESSION_ENCRYPT, "true");
+  assert.equal(variables.SESSION_SECURE_COOKIE, "true");
+  assert.equal(variables.REDIS_SCHEME, "tls");
+  assert.equal(variables.FILESYSTEM_DISK, "s3");
+  assert.equal(variables.BROADCAST_CONNECTION, "reverb");
+  assert.equal(variables.OCR_DRIVER, "textract");
+  assert.equal(variables.TRANSCRIPTION_DRIVER, "transcribe");
+  assert.equal(variables.MAIL_MAILER, "ses");
+  // Rejected when unset, REMOTE_ADDR, or "*".
+  assert.equal(variables.TRUSTED_PROXIES, "10.0.0.0/16");
+  assert.equal(variables.LOG_STACK.includes("single"), false);
+  assert.equal(variables.LOG_STACK.includes("daily"), false);
+});
+
+test("secrets are resolved by ECS, never written into the task definition", () => {
+  const web = stack.ofType("aws:ecs/taskDefinition:TaskDefinition")
+    .find((task) => task.inputs.family === "qompose-production-web");
+
+  assert.ok(web);
+
+  const container = containerDefinitions(web)[0];
+  const secretNames = container.secrets.map((secret: { name: string }) => secret.name);
+
+  assert.deepEqual(secretNames.sort(), [
+    "APP_KEY",
+    "DB_PASSWORD",
+    "REVERB_APP_ID",
+    "REVERB_APP_SECRET",
+    "SENTRY_LARAVEL_DSN",
+  ]);
+
+  // REVERB_APP_KEY is deliberately NOT here: it is compiled into the JavaScript
+  // bundle and served to every visitor, so treating it as a secret would mean
+  // decrypting one to produce a public asset. See config.ts.
+  const variableNamesIncludingReverb = container.environment.map(
+    (variable: { name: string }) => variable.name,
+  );
+
+  assert.equal(variableNamesIncludingReverb.includes("REVERB_APP_KEY"), true);
+
+  // The JSON-key form is the whole reason one secret holds five values.
+  const appKey = container.secrets.find((secret: { name: string }) => secret.name === "APP_KEY");
+
+  assert.ok(appKey.valueFrom.endsWith(":APP_KEY::"));
+
+  const variableNames = container.environment.map((variable: { name: string }) => variable.name);
+
+  assert.equal(variableNames.includes("APP_KEY"), false);
+});
+
+/*
+ * SES deliberately does NOT join the managed policy shared with the local Sail IAM
+ * user. Parity exists so production is never less capable than local; it is not a
+ * reason to put company-domain mail credentials on a laptop. See mail.ts.
+ */
+test("SES send is attached to the task role but stays out of the shared policy", () => {
+  assert.ok(stack.named("mail-send"), "expected a dedicated SES send policy");
+  assert.ok(stack.named("app-task-extra-0"), "expected SES attached to the task role");
+
+  const shared = stack.policyDocuments.find((document) =>
+    JSON.stringify(document).includes("ListDocumentsBucket")
+  );
+
+  assert.ok(shared);
+  assert.equal(JSON.stringify(shared).includes("ses:SendEmail"), false);
+});
+
+test("the execution role is scoped to the two secrets it resolves", () => {
+  assert.ok(stack.named("app-execution-role"));
+
+  const document = stack.policyDocuments.find((policyDocument) =>
+    JSON.stringify(policyDocument).includes("ResolveTaskSecrets")
+  );
+
+  assert.ok(document);
+
+  const statements = document.statements as Array<Record<string, any>>;
+  const resolve = statements.find((statement) => statement.sid === "ResolveTaskSecrets");
+
+  assert.ok(resolve);
+  assert.equal(resolve.resources.length, 2);
+  assert.equal(resolve.resources.includes("*"), false);
+});
+
+test("production mints the local Sail IAM user", () => {
+  assert.equal(stack.hasType("aws:iam/user:User"), true);
+  assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), true);
+});
