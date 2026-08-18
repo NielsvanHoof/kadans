@@ -21,6 +21,12 @@ import { createMail } from "./shared/mail.js";
 import { createMalwareProtection } from "./shared/malwareProtection.js";
 import { createNetwork } from "./shared/network.js";
 import {
+  createBudget,
+  createDisasterRecovery,
+  createOperationsAlerting,
+  createPlatformAlarms,
+} from "./shared/ops.js";
+import {
   createOcrOperatorAccess,
   exportOcrOperatorCredentials,
 } from "./shared/operator.js";
@@ -49,7 +55,13 @@ const accessPolicy = createApplicationAccessManagedPolicy(
   documents,
   ocrEncryption.encryptionKey,
 );
-const alarms = createOcrAlarms(config, documents, ocrEncryption.encryptionKey);
+/*
+ * One topic for everything that needs a human. Created before the things that
+ * publish to it, and shared by the DLQ alarms, the malware findings rule, the
+ * budget and the platform alarms — on-call needs a single place to subscribe.
+ */
+const alerting = createOperationsAlerting(config, ocrEncryption.encryptionKey);
+createOcrAlarms(config, documents, alerting.topic);
 
 /*
  * Client uploads are scanned before staff can open them, and every object read is
@@ -60,7 +72,7 @@ const malwareProtection = createMalwareProtection(
   config,
   documents,
   ocrEncryption.encryptionKey,
-  alarms.topic,
+  alerting.topic,
 );
 const auditTrail = createAuditTrail(config, documents);
 
@@ -113,6 +125,11 @@ createSchedule(
   execution.executionRole,
 );
 
+// Spend, the alarms that mean production is not serving, and cheap DR.
+createBudget(config, alerting.topic);
+createPlatformAlarms(config, { loadBalancer, database, cache, compute }, alerting.topic);
+createDisasterRecovery(config, database);
+
 /*
  * Long-lived Sail credentials belong to exactly one environment (decision-3), and
  * scripts/sync-ocr-credentials.sh reads the production stack. A second key in
@@ -154,6 +171,7 @@ export const ocrSecretAccessKey = credentials?.ocrSecretAccessKey;
 
 // Platform
 export const platformEncryptionKeyArn = platformEncryption.encryptionKey.arn;
+export const alertsTopicArn = alerting.topic?.arn;
 export const vpcId = network.vpc.id;
 /**
  * Network placement for `aws ecs run-task` (migrations).

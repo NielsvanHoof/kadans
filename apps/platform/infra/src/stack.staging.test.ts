@@ -140,6 +140,16 @@ test("staging has no edge, and its load balancer is reachable without one", () =
   assert.equal(stack.named("web-rule"), undefined);
 });
 
+// Staging is destroyable and single-region; DR for a rehearsal environment is
+// spend with no recovery objective behind it.
+test("staging has no cross-region backup replication", () => {
+  assert.equal(
+    stack.hasType("aws:rds/instanceAutomatedBackupsReplication:InstanceAutomatedBackupsReplication"),
+    false,
+  );
+  assert.equal(stack.named("database-backup-replica"), undefined);
+});
+
 test("staging mints no long-lived IAM credentials", () => {
   assert.equal(stack.hasType("aws:iam/user:User"), false);
   assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), false);

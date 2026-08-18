@@ -39,8 +39,28 @@ export interface PlatformConfig {
   environment: DeploymentEnvironment;
   /** Region the stack deploys into; also scopes Bedrock model ARNs. */
   region: string;
-  /** Optional email for Textract results DLQ CloudWatch alarms. */
+  /** Optional email for operational alarms and budget notifications. */
   alarmEmailAddress?: string;
+  /**
+   * Optional E.164 number for the alarms that should wake someone.
+   *
+   * Only the page-worthy ones subscribe to SMS. An address that receives every
+   * alarm by text stops being read, which is worse than not having it.
+   */
+  alarmSmsNumber?: string;
+  /**
+   * Region that holds the replicated RDS automated backups.
+   *
+   * eu-west-1 is the region for everything else, and this is the one deliberate
+   * exception — a backup copy in the same region as the database is not disaster
+   * recovery, it is a second copy of the same failure domain. Defaults to
+   * eu-central-1 so the data stays inside the EU. Set `crossRegionSnapshotCopy`
+   * to false in the environment settings to keep everything in one region.
+   *
+   * (CloudFront's certificate and WebACL are forced into us-east-1 by AWS — see
+   * edge.ts — but those hold no data.)
+   */
+  disasterRecoveryRegion: string;
   /**
    * Bedrock resources the application may invoke.
    *
@@ -108,6 +128,8 @@ export function loadPlatformConfig(): PlatformConfig {
     environment,
     region,
     alarmEmailAddress: config.get("alarmEmailAddress") ?? undefined,
+    alarmSmsNumber: config.get("alarmSmsNumber") ?? undefined,
+    disasterRecoveryRegion: config.get("disasterRecoveryRegion") ?? "eu-central-1",
     bedrockModelArns: config.getObject<string[]>("bedrockModelArns")
       ?? defaultBedrockModelArns(region),
 

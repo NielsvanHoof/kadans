@@ -72,6 +72,7 @@ jobs:
         working-directory: apps/platform/infra
         env:
           ALARM_EMAIL_ADDRESS: ${{ vars.ALARM_EMAIL_ADDRESS }}
+          ALARM_SMS_NUMBER: ${{ vars.ALARM_SMS_NUMBER }}
           HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
           IMAGE_TAG: ${{ vars.IMAGE_TAG }}
           WAF_ENABLED: ${{ vars.WAF_ENABLED }}
@@ -82,6 +83,13 @@ jobs:
             npx pulumi config set alarmEmailAddress "$ALARM_EMAIL_ADDRESS"
           else
             npx pulumi config rm alarmEmailAddress || true
+          fi
+
+          # Only the page-worthy alarms are worth a text; unset leaves email only.
+          if [ -n "$ALARM_SMS_NUMBER" ]; then
+            npx pulumi config set alarmSmsNumber "$ALARM_SMS_NUMBER"
+          else
+            npx pulumi config rm alarmSmsNumber || true
           fi
 
           # Optional: without it the stack still builds the certificate and exports

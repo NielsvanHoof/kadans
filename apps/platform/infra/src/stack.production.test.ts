@@ -408,10 +408,11 @@ test("malware findings are routed somewhere a human will see them", () => {
   // EventBridge cannot publish to SNS without an explicit grant; the rule would
   // match, fire, and silently fail to deliver.
   const topicPolicy = stack.policyDocuments.find((policyDocument) =>
-    JSON.stringify(policyDocument).includes("AllowEventBridgeAndCloudWatchPublish")
+    JSON.stringify(policyDocument).includes("AllowServicePublish")
   );
 
   assert.ok(topicPolicy, "expected an SNS topic policy allowing events.amazonaws.com");
+  assert.ok(JSON.stringify(topicPolicy).includes("events.amazonaws.com"));
 });
 
 /*
@@ -625,6 +626,120 @@ test("DNS points at the distribution, not the origin", () => {
   // Without a hosted zone this stack writes no records; the alias target is
   // asserted in stack.dns.test.ts, which runs the Route53 branch.
   assert.equal(stack.ofType("aws:route53/record:Record").length, 0);
+});
+
+/*
+ * One topic, not one per subsystem: on-call needs a single place to subscribe,
+ * and a topic per concern is how an alarm ends up with no subscribers.
+ */
+test("everything that needs a human publishes to one topic", () => {
+  const topics = stack.ofType("aws:sns/topic:Topic")
+    .map((topic) => String(topic.inputs.name))
+    .sort();
+
+  // The Textract topic is a message transport, not a notification channel — it is
+  // the only other topic, and nothing subscribes a human to it.
+  assert.deepEqual(topics, ["qompose-production-alerts", "qompose-production-textract-complete"]);
+
+  const alarms = stack.ofType("aws:cloudwatch/metricAlarm:MetricAlarm");
+
+  assert.ok(alarms.length > 0);
+
+  for (const alarm of alarms) {
+    const actions = alarm.inputs.alarmActions as string[];
+
+    assert.equal(actions.length, 1, `${alarm.name} must notify the alerts topic`);
+  }
+});
+
+test("the budget warns on spend already made and on spend still coming", () => {
+  const budget = stack.named("budget");
+
+  assert.ok(budget);
+  assert.equal(budget.inputs.budgetType, "COST");
+  assert.equal(budget.inputs.timeUnit, "MONTHLY");
+  assert.equal(budget.inputs.limitAmount, "200");
+
+  const notifications = budget.inputs.notifications as Array<Record<string, any>>;
+  const types = notifications.map((notification) => notification.notificationType);
+
+  // ACTUAL says the money is gone; FORECASTED fires early in a month whose run
+  // rate has changed, while there is still time to act.
+  assert.ok(types.includes("ACTUAL"));
+  assert.ok(types.includes("FORECASTED"));
+});
+
+/*
+ * ELB 5xx, not target 5xx: the former means the load balancer could not reach a
+ * healthy target, the latter is the application returning errors — a different
+ * and far noisier conversation.
+ */
+test("the 5xx alarm watches the load balancer, not the application", () => {
+  const alarm = stack.named("alb-5xx-alarm");
+
+  assert.ok(alarm);
+  assert.equal(alarm.inputs.metricName, "HTTPCode_ELB_5XX_Count");
+  // No traffic is not an outage.
+  assert.equal(alarm.inputs.treatMissingData, "notBreaching");
+});
+
+/*
+ * The inverse for health checks: missing data means no target is reporting at
+ * all, which is the dangerous case rather than the quiet one.
+ */
+test("unhealthy-target alarms treat silence as breaching", () => {
+  for (const component of ["web-unhealthy-alarm", "reverb-unhealthy-alarm"]) {
+    const alarm = stack.named(component);
+
+    assert.ok(alarm, `expected ${component}`);
+    assert.equal(alarm.inputs.metricName, "UnHealthyHostCount");
+    assert.equal(alarm.inputs.treatMissingData, "breaching");
+  }
+});
+
+/*
+ * A Multi-AZ failover is invisible in CPU or connection graphs — that is the
+ * point of paying for it — so it is an event subscription, not a metric alarm.
+ */
+test("RDS failover is subscribed as an event, not watched as a metric", () => {
+  const subscription = stack.named("database-events");
+
+  assert.ok(subscription);
+  assert.equal(subscription.inputs.sourceType, "db-instance");
+
+  const categories = subscription.inputs.eventCategories as string[];
+
+  assert.ok(categories.includes("failover"));
+  assert.ok(categories.includes("low storage"));
+});
+
+// A stopped queue worker is silent by nature: jobs pile up in Redis and nothing
+// errors. Running count below desired is the only outward sign.
+test("a stopped queue worker raises an alarm", () => {
+  const alarm = stack.named("worker-stopped-alarm");
+
+  assert.ok(alarm);
+  assert.equal(alarm.inputs.metricName, "RunningTaskCount");
+  assert.equal(alarm.inputs.comparisonOperator, "LessThanThreshold");
+});
+
+/*
+ * A backup in the same region as its database is a second copy of one failure
+ * domain, not disaster recovery — so this is the one deliberate exception to
+ * eu-west-1 holding everything, and the destination stays inside the EU.
+ */
+test("automated backups are replicated out of the primary region", () => {
+  const replica = stack.named("database-backup-replica");
+
+  assert.ok(replica);
+  assert.equal(replica.inputs.retentionPeriod, 14);
+
+  const destination = stack.ofType("pulumi:providers:aws")
+    .find((provider) => provider.name.includes("eu-central-1"));
+
+  assert.ok(destination, "the replication resource lives in the destination region");
+  assert.equal(destination.inputs.region, "eu-central-1");
+  assert.notEqual(destination.inputs.region, "eu-west-1");
 });
 
 test("production mints the local Sail IAM user", () => {

@@ -32,3 +32,14 @@ Derive `automaticFailoverEnabled`/`multiAzEnabled` from `cacheNodeCount` — Ela
 `ORIGIN_VERIFY_HEADER` lives in `config.ts`, not `edge.ts`: `loadBalancer.ts` needs the value and `edge.ts` needs the `LoadBalancer` type, which is a require cycle that is inert only while TypeScript elides the type-only import.
 
 **Test harness:** a single secret anywhere inside a property wraps the *whole* property in `{[specialSig]: secretSig, value: …}`, so one secret in a listener rule's conditions turns the conditions array into an object. `testing/harness.ts` unwraps these; without it assertions read `undefined` and blame themselves.
+
+## Alerting: one topic, few alarms, and the DR region exception
+**One SNS topic** (`ops.ts` → `alertsTopicArn`) for every alarm, the malware findings rule, and the budget. A topic per subsystem is how an alarm ends up with no subscribers. Its topic policy must name `cloudwatch`, `events`, `budgets` and `rds` — only CloudWatch may publish by default, and the others match, fire, and silently fail to deliver.
+
+**Keep the alarm set small.** Every alarm that fires without needing action trains someone to ignore the next one. Add one only when the answer to "what do I do about this" is never "nothing".
+
+`treatMissingData` is the field that decides whether an alarm is useful, and the right value is not uniform: `notBreaching` for the ALB 5xx alarm (no data = no traffic), `breaching` for `UnHealthyHostCount` (no data = no target is reporting at all).
+
+**RDS failover has no metric.** It is an `rds.EventSubscription` on the `failover` category — the whole point of Multi-AZ is that the application survives it, so it is invisible in CPU and connection graphs.
+
+**eu-west-1 is the region for everything, with one deliberate exception**: the cross-region automated-backup replica, which defaults to eu-central-1 (EU data residency). A backup in the same region as its database is a second copy of one failure domain, not disaster recovery. The replication resource is created *in the destination region*, so it needs its own provider, and the KMS key is left unset because keys are regional and the source key cannot encrypt the replica. CloudFront's certificate and WebACL are also forced into us-east-1 by AWS, but hold no data. Set `crossRegionSnapshotCopy: false` to keep a stack single-region (staging does).

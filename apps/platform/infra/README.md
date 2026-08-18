@@ -38,7 +38,8 @@ will find it. The whole production/staging delta should be a two-file diff.
 | `dnsSubdomain` | `null` | `staging` |
 | `edgeEnabled` (CloudFront + origin lockdown) | `true` | `false` |
 | `wafEnabled` (overridable via config) | `true` | `false` |
-| `crossRegionSnapshotCopy` (TASK-34.4) | `true` | `false` |
+| `crossRegionSnapshotCopy` (RDS backups to eu-central-1) | `true` | `false` |
+| `monthlyBudgetUsd` | 200 | 75 |
 | `localOperatorAccess` | `true` | `false` |
 
 `localOperatorAccess` is the one knob that is a correctness constraint rather than a
@@ -231,6 +232,8 @@ pulumi config set --secret originVerifySecret "$(openssl rand -hex 32)"
 pulumi config set reverbPublicKey "$(openssl rand -hex 16)"
 
 pulumi config set hostedZoneId <zone-id>    # optional, see Hostnames
+pulumi config set alarmEmailAddress ops@example.com   # required for any alerting
+pulumi config set alarmSmsNumber +31600000000         # optional, page-worthy only
 
 npm run preview
 npm run up
@@ -305,6 +308,55 @@ key. It is never how production runs — the ECS task role carries the identical
 managed policy and the container gets credentials from the ECS agent, with no keys
 anywhere.
 
+## What is monitored, and what to do about it
+
+Everything that needs a human publishes to **one** SNS topic
+(`pulumi stack output alertsTopicArn`) — deliberately one rather than one per
+subsystem, because on-call needs a single place to subscribe and a topic per
+concern is how an alarm ends up with no subscribers. Email always; SMS only if
+`alarmSmsNumber` is set, and only worth setting for someone who will act on it.
+
+Confirm the email subscription after the first deploy or nothing is delivered.
+
+The set is deliberately small. Every alarm that fires without needing action
+trains someone to ignore the next one, so this is not a dashboard: it is the set
+where the answer to "what do I do about this" is never "nothing".
+
+| Alarm | Means | First move |
+|---|---|---|
+| `alb-5xx-alarm` | The load balancer could not get a response from a healthy target — the app is down or unreachable, not merely erroring | `aws ecs describe-services` for `web`; check the deployment circuit breaker did not roll back onto a broken image |
+| `web-unhealthy-alarm` / `reverb-unhealthy-alarm` | Tasks are failing `/ready` | Read the task's log group; `/ready` hits the database and Redis, so this is often really one of those |
+| `database-events` (failover) | Multi-AZ failover happened and succeeded | Nothing urgent — the app survived it. Find out *why* AWS failed it over |
+| `database-events` (low storage) / `database-storage-alarm` | Under 2 GiB free | Raise `databaseAllocatedStorageGb` and deploy. Postgres stops accepting writes when it fills |
+| `worker-stopped-alarm` | No queue worker tasks running | Jobs are piling up silently in Redis; nothing errors. Check the worker service and its log group |
+| `textract-dlq-alarm` / `transcribe-dlq-alarm` | Provider results failed processing five times | Inspect the DLQ, fix, then redrive. Documents are stuck in processing until you do |
+| `transcribe-delivery-dlq-alarm` | EventBridge could not deliver to the results queue at all | Usually the queue policy or the KMS grant — a permissions problem, not a load one |
+| `malware-findings` | GuardDuty found malware in an upload | The object is already inert: nothing will serve it, because the download gate refuses anything not tagged clean. Preserve it, tell the firm |
+| Budget at 80% actual | The money is already spent | Check for a runaway scheduler or a queue retry loop |
+| Budget at 100% forecast | This month's run rate has changed | Fires early enough to act — usually a service that scaled and never came back down |
+
+**Acknowledging** is by fixing: alarms carry `okActions`, so the same topic gets a
+recovery notification and no state is kept anywhere else. Nothing needs muting.
+**Escalating** means adding a subscriber to that one topic.
+
+### Disaster recovery
+
+RDS automated backups are retained for 14 days in production and replicated
+continuously to **eu-central-1**. That is the one deliberate exception to
+eu-west-1 holding everything, and the reason is not incidental: an automated
+backup lives in the same region as the instance it came from, so a regional
+failure takes the database and its recovery point together. A copy in the same
+region is a second copy of one failure domain, not disaster recovery.
+
+eu-central-1 keeps the data inside the EU. `disasterRecoveryRegion` moves it;
+`crossRegionSnapshotCopy: false` in the environment settings turns it off and
+makes the stack single-region, which is what staging does. It costs storage and
+nothing else — no standby instance, no Aurora.
+
+Recovering means restoring the replicated backup into a new instance in the
+destination region and repointing `DB_HOST`. This has **not been rehearsed**;
+treat the recovery time as unmeasured until it has been.
+
 ## Tests
 
 ```bash
@@ -339,6 +391,7 @@ would let the stack deploy green and then refuse every request.
 | `cacheEndpoint` | Valkey primary endpoint |
 | `applicationSecretArn` | Secrets Manager secret ECS resolves |
 | `vpcId` / `platformEncryptionKeyArn` | Network and data-at-rest key |
+| `alertsTopicArn` | The one topic every alarm publishes to |
 | `documentsBucketName` | S3 bucket for uploads + Transcribe JSON output |
 | `malwareProtectionPlanId` / `malwareFindingsRuleName` | GuardDuty scanning and its findings rule |
 | `auditTrailName` / `auditLogBucketName` | CloudTrail data events for the documents bucket |

@@ -97,6 +97,8 @@ export function deployRolePolicy(
         "cloudfront:List*",
         "wafv2:Get*",
         "wafv2:List*",
+        "budgets:Describe*",
+        "budgets:View*",
       ],
       resources: ["*"],
     }, {
@@ -356,6 +358,33 @@ export function deployRolePolicy(
       sid: "ManageOcrAlarms",
       effect: "Allow",
       actions: ["cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms", "cloudwatch:TagResource"],
+      resources: ["*"],
+    }, {
+      /*
+       * Budgets and the RDS event subscription behind the failover alert
+       * (TASK-34.4). Budgets is a global service whose ARNs are account-scoped
+       * rather than namespaced, so it cannot be narrowed here.
+       */
+      sid: "ManageOperationsAlerting",
+      effect: "Allow",
+      actions: [
+        "budgets:CreateBudget",
+        "budgets:ModifyBudget",
+        "budgets:DeleteBudget",
+        "budgets:CreateNotification",
+        "budgets:DeleteNotification",
+        "budgets:CreateSubscriber",
+        "budgets:DeleteSubscriber",
+        "rds:CreateEventSubscription",
+        "rds:ModifyEventSubscription",
+        "rds:DeleteEventSubscription",
+        "rds:AddSourceIdentifierToSubscription",
+        "rds:RemoveSourceIdentifierFromSubscription",
+        // Cross-region automated backup replication for cheap DR.
+        "rds:StartDBInstanceAutomatedBackupsReplication",
+        "rds:StopDBInstanceAutomatedBackupsReplication",
+        "rds:DescribeDBInstanceAutomatedBackups",
+      ],
       resources: ["*"],
     }, {
       // Needed because the stack provisions the local OCR IAM user and the ECS

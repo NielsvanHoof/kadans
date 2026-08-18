@@ -117,6 +117,7 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
     "CreateServiceLinkedRoles",
     "ManageDocumentScanningAndAudit",
     "ManagePlatformEdge",
+    "ManageOperationsAlerting",
   ]) {
     assert.ok(sids.includes(sid), `deploy policy is missing ${sid}`);
   }
