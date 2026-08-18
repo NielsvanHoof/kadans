@@ -1350,5 +1350,12 @@
     "Privacy policy": "Privacy policy",
     "Cookie statement": "Cookie statement",
     "Terms of service": "Terms of service",
-    "This document is a draft pending legal review. Placeholders must be completed by counsel before relying on it.": "This document is a draft pending legal review. Placeholders must be completed by counsel before relying on it."
+    "This document is a draft pending legal review. Placeholders must be completed by counsel before relying on it.": "This document is a draft pending legal review. Placeholders must be completed by counsel before relying on it.",
+    "File blocked by malware scan": "File blocked by malware scan",
+    "No threats found": "No threats found",
+    "Malware detected": "Malware detected",
+    "File type not scannable": "File type not scannable",
+    "Scanner could not read the file": "Scanner could not read the file",
+    "Scan failed": "Scan failed",
+    "This file has not been cleared by the malware scanner.": "This file has not been cleared by the malware scanner."
 }

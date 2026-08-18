@@ -2,6 +2,11 @@ import * as aws from "@pulumi/aws";
 import { PlatformConfig } from "../config.js";
 import { DocumentInfrastructure } from "./documents.js";
 
+export interface OcrAlarms {
+  /** Absent when no alarm email is configured, so there is nothing to notify. */
+  topic?: aws.sns.Topic;
+}
+
 /**
  * Optional alarms when OCR / Transcribe results land on a dead-letter queue.
  *
@@ -12,11 +17,11 @@ export function createOcrAlarms(
   config: PlatformConfig,
   documents: DocumentInfrastructure,
   encryptionKey: aws.kms.Key,
-): void {
+): OcrAlarms {
   const { environment, alarmEmailAddress } = config;
 
   if (!alarmEmailAddress) {
-    return;
+    return {};
   }
 
   const topic = new aws.sns.Topic(environment.resourceName("ocr-alarms"), {
@@ -27,6 +32,33 @@ export function createOcrAlarms(
     topic: topic.arn,
     protocol: "email",
     endpoint: alarmEmailAddress,
+  });
+
+  /*
+   * CloudWatch may publish here by default; EventBridge may not. The malware
+   * findings rule targets this topic, and without an explicit grant the rule
+   * matches, fires, and silently fails to deliver — which is the worst possible
+   * failure mode for the one alert that says a client uploaded malware.
+   */
+  new aws.sns.TopicPolicy(environment.resourceName("ocr-alarms-policy"), {
+    arn: topic.arn,
+    policy: aws.iam.getPolicyDocumentOutput({
+      statements: [{
+        sid: "AllowEventBridgeAndCloudWatchPublish",
+        effect: "Allow",
+        principals: [{
+          type: "Service",
+          identifiers: ["events.amazonaws.com", "cloudwatch.amazonaws.com"],
+        }],
+        actions: ["sns:Publish"],
+        resources: [topic.arn],
+        conditions: [{
+          test: "StringEquals",
+          variable: "aws:SourceAccount",
+          values: [aws.getCallerIdentityOutput().accountId],
+        }],
+      }],
+    }).json,
   });
 
   new aws.cloudwatch.MetricAlarm(environment.resourceName("textract-dlq-alarm"), {
@@ -74,4 +106,6 @@ export function createOcrAlarms(
     treatMissingData: "notBreaching",
     alarmActions: [topic.arn],
   });
+
+  return { topic };
 }

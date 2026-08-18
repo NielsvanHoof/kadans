@@ -342,6 +342,138 @@ test("the execution role is scoped to the two secrets it resolves", () => {
   assert.equal(resolve.resources.includes("*"), false);
 });
 
+/*
+ * Tagging is DISABLED by default in the GuardDuty API, and that default is the
+ * one failure that looks like success: scanning still runs and findings still
+ * fire, but no object is ever tagged — so the application gate reads nothing,
+ * fails closed, and refuses every download in production.
+ */
+test("malware scanning writes its verdict back onto the object", () => {
+  const plan = stack.named("malware-protection");
+
+  assert.ok(plan);
+  assert.deepEqual(plan.inputs.actions, [{ taggings: [{ status: "ENABLED" }] }]);
+  assert.ok(
+    (plan.inputs.protectedResource as Record<string, any>).s3Bucket.bucketName,
+    "the plan must be attached to the documents bucket",
+  );
+});
+
+/*
+ * The bucket is SSE-KMS with a customer managed key. Without a decrypt grant the
+ * scanner tags every object ACCESS_DENIED, the gate correctly refuses all of them,
+ * and nothing in the resulting outage points at the key policy.
+ */
+test("the scanner can decrypt the documents it is asked to scan", () => {
+  const document = stack.policyDocuments.find((policyDocument) =>
+    JSON.stringify(policyDocument).includes("InspectDocumentsBucket")
+  );
+
+  assert.ok(document);
+
+  const statements = document.statements as Array<Record<string, any>>;
+  const sids = statements.map((statement) => statement.sid);
+
+  assert.ok(sids.includes("TagScannedObjects"));
+  assert.ok(sids.includes("DecryptDocuments"));
+});
+
+// The app reads the verdict; it must never be able to rewrite it.
+test("the application may read scan tags but not write them", () => {
+  const shared = stack.policyDocuments.find((policyDocument) =>
+    JSON.stringify(policyDocument).includes("ListDocumentsBucket")
+  );
+
+  assert.ok(shared);
+
+  const statements = shared.statements as Array<Record<string, any>>;
+  const tagging = statements.find((statement) => statement.sid === "ReadDocumentScanStatus");
+
+  assert.ok(tagging, "expected s3:GetObjectTagging for the download gate");
+  assert.deepEqual(tagging.actions, ["s3:GetObjectTagging"]);
+  assert.equal(JSON.stringify(shared).includes("s3:PutObjectTagging"), false);
+});
+
+test("malware findings are routed somewhere a human will see them", () => {
+  const rule = stack.named("malware-findings");
+
+  assert.ok(rule);
+
+  const pattern = JSON.parse(rule.inputs.eventPattern as string);
+
+  assert.deepEqual(pattern.source, ["aws.guardduty"]);
+  assert.deepEqual(pattern.detail.scanResultDetails.scanResultStatus, ["THREATS_FOUND"]);
+  assert.ok(stack.named("malware-findings-target"));
+
+  // EventBridge cannot publish to SNS without an explicit grant; the rule would
+  // match, fire, and silently fail to deliver.
+  const topicPolicy = stack.policyDocuments.find((policyDocument) =>
+    JSON.stringify(policyDocument).includes("AllowEventBridgeAndCloudWatchPublish")
+  );
+
+  assert.ok(topicPolicy, "expected an SNS topic policy allowing events.amazonaws.com");
+});
+
+/*
+ * S3 data events are opt-in and billed per event. They are the only record of who
+ * actually read a client document, as opposed to who clicked download.
+ */
+test("CloudTrail records object reads on the documents bucket", () => {
+  const trail = stack.named("trail");
+
+  assert.ok(trail);
+  assert.equal(trail.inputs.enableLogFileValidation, true);
+
+  const selectors = trail.inputs.advancedEventSelectors as Array<Record<string, any>>;
+  const dataEvents = selectors.find((selector) => selector.name.includes("Documents bucket"));
+
+  assert.ok(dataEvents, "expected a data-event selector for the documents bucket");
+
+  const fields = dataEvents.fieldSelectors as Array<Record<string, any>>;
+
+  assert.deepEqual(
+    fields.find((field) => field.field === "eventCategory")?.equals,
+    ["Data"],
+  );
+  assert.deepEqual(
+    fields.find((field) => field.field === "resources.type")?.equals,
+    ["AWS::S3::Object"],
+  );
+  // Scoped, not account-wide: otherwise every read of the trail generates another
+  // trail entry, and the bill compounds.
+  assert.ok(fields.find((field) => field.field === "resources.ARN"));
+});
+
+test("the audit log bucket is private and ages its own contents out", () => {
+  assert.ok(stack.named("audit-logs-public-access"));
+  assert.ok(stack.named("audit-logs-lifecycle"));
+
+  const encryption = stack.named("audit-logs-encryption");
+
+  assert.ok(encryption);
+
+  // SSE-S3, not the platform CMK: an audit log encrypted with a key the audited
+  // party controls is weaker evidence, and every reader would need a grant.
+  const rules = encryption.inputs.rules as Array<Record<string, any>>;
+
+  assert.equal(rules[0].applyServerSideEncryptionByDefault.sseAlgorithm, "AES256");
+});
+
+test("the deployed container runs with the download gate switched on", () => {
+  const web = stack.ofType("aws:ecs/taskDefinition:TaskDefinition")
+    .find((task) => task.inputs.family === "qompose-production-web");
+
+  assert.ok(web);
+
+  const variables = Object.fromEntries(
+    containerDefinitions(web)[0].environment.map((
+      variable: { name: string; value: string },
+    ) => [variable.name, variable.value]),
+  );
+
+  assert.equal(variables.SECURITY_MALWARE_SCANNING_ENABLED, "true");
+});
+
 test("production mints the local Sail IAM user", () => {
   assert.equal(stack.hasType("aws:iam/user:User"), true);
   assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), true);

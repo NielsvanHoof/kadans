@@ -153,6 +153,60 @@ At rest, the Pulumi stack gives the documents bucket a **customer-managed KMS ke
 with rotation**, SSE-KMS by default, full public-access block, versioning,
 noncurrent-version expiry, and a bucket policy denying non-TLS transport.
 
+### Malware scanning
+
+GuardDuty Malware Protection scans every object as it lands in the documents
+bucket and writes its verdict back onto the object as a
+`GuardDutyMalwareScanStatus` tag. `download` and `preview` read that tag before
+serving anything — `App\Dossiers\Actions\ResolveMalwareScanStatusAction` — and
+refuse everything that is not explicitly `NO_THREATS_FOUND`. Audio recordings go
+through the same gate: they are client-uploaded bytes in the same bucket.
+
+The gate **fails closed on four cases that are not detections**, and that is the
+part worth understanding:
+
+| Verdict | Served? | Why |
+|---|---|---|
+| `NO_THREATS_FOUND` | yes | the only pass |
+| `THREATS_FOUND` | no | malware |
+| `UNSUPPORTED` | no | GuardDuty cannot scan this type |
+| `ACCESS_DENIED` | no | GuardDuty could not read it — usually a missing KMS grant |
+| `FAILED` | no | the scan errored |
+| *no tag at all* | no | the scan has not run yet |
+
+Scanning is asynchronous, so a document uploaded seconds ago genuinely has no tag,
+and a staff member opening it immediately gets a 403. That is the intended
+behaviour: at the point of delivery, "not yet scanned" carries exactly as much
+assurance as "infected". An S3 error is treated the same way — a gate that opens
+when its dependency is unreachable is not a gate.
+
+Every refusal writes a `file.blocked_by_malware_scan` activity row carrying the
+verdict (null when there is none yet), so an operator can tell a detection apart
+from a scan that has not caught up. Findings also fan out to EventBridge → SNS.
+There is deliberately **no automatic quarantine**: the object is already inert
+once tagged, since nothing will serve it, and moving or deleting it would destroy
+the evidence.
+
+The verdict is read live rather than mirrored into a `scan_status` column. A
+column needs a queue, a consumer and a service to keep it fed, and can still be
+wrong when that consumer lags; the tag is the truth, one API call away, at the
+only moment the answer matters. What it gives up is a "scanning…" state in the UI.
+
+`SECURITY_MALWARE_SCANNING_ENABLED` gates the whole check and defaults to off,
+because a bucket with no GuardDuty attached never tags anything and every download
+would be refused. `ProductionConfigurationValidator` rejects it being off in
+production and staging, so the local default cannot ship.
+
+### Who read what
+
+CloudTrail data events cover object reads and writes on the documents bucket,
+delivered to a separate log bucket with file-validation digests and a 365-day
+lifecycle. This is not a duplicate of the activity log: the activity log records
+that a staff member clicked download, CloudTrail records that S3 served the bytes.
+They diverge exactly where it matters — a presigned URL forwarded to someone else,
+or credentials used outside the application, appear in CloudTrail and nowhere
+else.
+
 ## Response hardening
 
 `App\Shared\Http\Middleware\AddSecurityHeaders` runs on every web route and sets:
@@ -392,9 +446,9 @@ client document enters the system.
 
 | Risk | Why it is acceptable now | Reopen | Decision |
 |---|---|---|---|
-| **No malware scanning on uploads** | MIME allowlist, per-file CSP with `script-src 'none'`, and S3-origin delivery already reduce browser-side exploit risk. Staff still open client files. | Before first real client document (or sooner if a pilot requires scanning by contract). Prefer GuardDuty Malware Protection for S3 or ClamAV gating download/preview on `scan_status`. | decision-1 |
-| **No application compute in Pulumi** | `infra/` owns S3/SNS/SQS/KMS (and related support). CI builds an OCI image with SBOM/provenance but stores it as a short-lived Actions artifact — no registry push. [`deploy.yml`](../../.github/workflows/deploy.yml) is OCR-stack Pulumi only. | Before first real client document — production traffic needs owned compute/deploy. | decision-2 |
-| **Static IAM credentials for local development** | Permissions live in one shared document (`infra/src/policies.ts`) for the local IAM user and a provisioned ECS task role (`infra/src/application.ts`). App code already skips keys when env credentials are empty; CI uses GitHub OIDC. Eliminating local keys is blocked on application compute. | When decision-2 lands — switch local/default path off long-lived keys. | decision-3 |
+| ~~**No malware scanning on uploads**~~ | **Closed by TASK-34.1.** GuardDuty Malware Protection scans every upload and tags it; download and preview refuse anything not tagged clean. See [Malware scanning](#malware-scanning). | n/a — resolved | decision-1 (superseded) |
+| ~~**No application compute in Pulumi**~~ | **Closed by TASK-34.2.** `infra/` now provisions the VPC, ALB, ECS Fargate services, RDS, Valkey, ECR, Secrets Manager and SES; [`release.yml`](../../.github/workflows/release.yml) builds, pushes, migrates and rolls. | n/a — resolved | decision-2 (superseded) |
+| **Static IAM credentials for local development** | Permissions live in one shared managed policy (`infra/src/shared/policies.ts`) carried by both the local IAM user and the ECS task role (`infra/src/shared/application.ts`), so the two cannot drift. App code already skips keys when env credentials are empty; CI uses GitHub OIDC. Only the production stack mints the key (`localOperatorAccess`). | Compute now exists (decision-2 closed), so the deployed path no longer uses keys at all. Remaining scope is the developer laptop. | decision-3 |
 | **Portal grants re-exchangeable and watched, not bound** | Product choice: lost emails and multi-device use made single-use tokens a support burden. New-device redemption is watched (`notify` / `block` / `ignore`); a leaked link from a matching network + browser family can still pass. Canonical rationale stays in [Known tradeoff](#client-portal) above — do not rewrite it here. | Before first real client document: reassess defaulting `block`, shorter TTL, or tighter binding for the first paying firm. | decision-4 |
 | **No browser end-to-end tests** | Vitest line ratchet on the shared-trunk suite; portal behaviour covered at HTTP feature level in `tests/Feature/Portal/`. TASK-14.4 removed dead Playwright/Pest browser scaffolding rather than writing smoke tests. | Before first real client document if portal UX regressions become a release risk, or when browser CI budget is approved. | decision-5 |
 

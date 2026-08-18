@@ -90,6 +90,16 @@ and then fails with an exec-format error at first task start, so
 client sees an open WebSocket and every connection drops after a minute. A WebSocket
 is idle by definition between messages.
 
+**Malware scanning and audit.** GuardDuty Malware Protection scans every object
+landing in the documents bucket and tags it with the verdict; the application reads
+that tag at download and preview time and refuses anything not explicitly clean
+(`docs/security.md`). Two details are easy to get wrong and are asserted by tests:
+tagging is **DISABLED by default** in the GuardDuty API, and the scanner needs a
+`kms:Decrypt` grant on the documents CMK — without it every object is tagged
+`ACCESS_DENIED`, the gate correctly refuses all of them, and nothing in the
+resulting outage points at the key policy. CloudTrail data events record who read
+each object, into a separate log bucket with validation digests.
+
 **Secrets.** `APP_KEY`, the Reverb credentials and the Sentry DSN live in one JSON
 Secrets Manager secret; ECS pulls individual keys (`arn:APP_KEY::`). The database
 password is deliberately *not* in there — RDS manages and rotates its own secret, and
@@ -256,6 +266,8 @@ would let the stack deploy green and then refuse every request.
 | `applicationSecretArn` | Secrets Manager secret ECS resolves |
 | `vpcId` / `platformEncryptionKeyArn` | Network and data-at-rest key |
 | `documentsBucketName` | S3 bucket for uploads + Transcribe JSON output |
+| `malwareProtectionPlanId` / `malwareFindingsRuleName` | GuardDuty scanning and its findings rule |
+| `auditTrailName` / `auditLogBucketName` | CloudTrail data events for the documents bucket |
 | `textractSnsTopicArn` / `textractPublishRoleArn` | Textract notification topic and its role |
 | `textractResultsQueueUrl` (+ `…DeadLetterQueueUrl`) | Textract consumer queue |
 | `transcribeResultsQueueUrl` (+ `…DeadLetterQueueUrl`) | Transcribe consumer queue |

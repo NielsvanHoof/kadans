@@ -87,6 +87,12 @@ export function deployRolePolicy(
         "logs:ListTagsForResource",
         "events:Describe*",
         "events:List*",
+        "guardduty:Get*",
+        "guardduty:List*",
+        "guardduty:Describe*",
+        "cloudtrail:Describe*",
+        "cloudtrail:Get*",
+        "cloudtrail:List*",
       ],
       resources: ["*"],
     }, {
@@ -285,6 +291,35 @@ export function deployRolePolicy(
           "rds.amazonaws.com",
         ],
       }],
+    }, {
+      /*
+       * GuardDuty Malware Protection on the documents bucket, and the CloudTrail
+       * that records who reads out of it (TASK-34.1).
+       *
+       * Unscoped because neither resource has an ARN before it is created — a
+       * malware protection plan is identified by a generated id, and the trail
+       * ARN embeds the region and account rather than the qompose namespace.
+       * `iam:PassRole` for the scanner role is already covered, and narrowly, by
+       * ManageQomposeIdentities below.
+       */
+      sid: "ManageDocumentScanningAndAudit",
+      effect: "Allow",
+      actions: [
+        "guardduty:CreateMalwareProtectionPlan",
+        "guardduty:UpdateMalwareProtectionPlan",
+        "guardduty:DeleteMalwareProtectionPlan",
+        "guardduty:TagResource",
+        "guardduty:UntagResource",
+        "cloudtrail:CreateTrail",
+        "cloudtrail:UpdateTrail",
+        "cloudtrail:DeleteTrail",
+        "cloudtrail:StartLogging",
+        "cloudtrail:StopLogging",
+        "cloudtrail:PutEventSelectors",
+        "cloudtrail:AddTags",
+        "cloudtrail:RemoveTags",
+      ],
+      resources: ["*"],
     }, {
       sid: "ManageOcrAlarms",
       effect: "Allow",

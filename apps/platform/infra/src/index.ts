@@ -1,5 +1,6 @@
 import { loadPlatformConfig } from "./config.js";
 import { createOcrAlarms } from "./shared/alarms.js";
+import { createAuditTrail } from "./shared/auditTrail.js";
 import {
   createApplicationIdentity,
   createExecutionIdentity,
@@ -16,6 +17,7 @@ import {
 import { createLoadBalancer } from "./shared/loadBalancer.js";
 import { createServiceLogGroups } from "./shared/logs.js";
 import { createMail } from "./shared/mail.js";
+import { createMalwareProtection } from "./shared/malwareProtection.js";
 import { createNetwork } from "./shared/network.js";
 import {
   createOcrOperatorAccess,
@@ -46,7 +48,20 @@ const accessPolicy = createApplicationAccessManagedPolicy(
   documents,
   ocrEncryption.encryptionKey,
 );
-createOcrAlarms(config, documents, ocrEncryption.encryptionKey);
+const alarms = createOcrAlarms(config, documents, ocrEncryption.encryptionKey);
+
+/*
+ * Client uploads are scanned before staff can open them, and every object read is
+ * recorded. Both hang off the documents bucket and need no compute, which is why
+ * they sit with the data plane rather than the platform below.
+ */
+const malwareProtection = createMalwareProtection(
+  config,
+  documents,
+  ocrEncryption.encryptionKey,
+  alarms.topic,
+);
+const auditTrail = createAuditTrail(config, documents);
 
 // --- Platform: network, data stores, edge, compute ---
 const platformEncryption = createPlatformEncryption(config);
@@ -115,6 +130,10 @@ export const transcribeResultsDeadLetterQueueUrl = documents.transcribeResultsDe
 export const transcribeDeliveryDeadLetterQueueUrl = documents.transcribeDeliveryDeadLetterQueue.url;
 export const transcribeCompletionRuleName = documents.transcribeCompletionRule.name;
 export const ocrEncryptionKeyArn = ocrEncryption.encryptionKey.arn;
+export const malwareProtectionPlanId = malwareProtection.plan.id;
+export const malwareFindingsRuleName = malwareProtection.findingsRule.name;
+export const auditTrailName = auditTrail.trail.name;
+export const auditLogBucketName = auditTrail.logBucket.bucket;
 
 // Identities
 export const appTaskRoleArn = application.taskRole.arn;

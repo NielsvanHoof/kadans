@@ -249,6 +249,10 @@ function taskEnvironment(
         AWS_DEFAULT_REGION: config.region,
         AWS_BUCKET: bucket,
 
+        // GuardDuty tags every object in this bucket; the gate reads that tag.
+        // ProductionConfigurationValidator fails boot if this is not true here.
+        SECURITY_MALWARE_SCANNING_ENABLED: "true",
+
         OCR_DRIVER: "textract",
         TRANSCRIPTION_DRIVER: "transcribe",
         TEXTRACT_SNS_TOPIC_ARN: textractTopicArn,
