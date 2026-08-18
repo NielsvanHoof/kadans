@@ -6,11 +6,13 @@ import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
-const { default: ThroughputTrendCard } = await import(
-    '@/features/dashboard/throughput-trend-card'
-);
+const { default: ThroughputTrendCard } =
+    await import('@/features/dashboard/throughput-trend-card');
 
-function week(weekStart: string, documentsReceived: number): DashboardTrendPoint {
+function week(
+    weekStart: string,
+    documentsReceived: number,
+): DashboardTrendPoint {
     return { week_start: weekStart, documents_received: documentsReceived };
 }
 
@@ -52,11 +54,15 @@ describe('ThroughputTrendCard', () => {
     });
 
     it('renders a labelled axis tick for every bucket, including empty weeks', () => {
-        const { container } = render(<ThroughputTrendCard trend={eightWeeks} />);
+        const { container } = render(
+            <ThroughputTrendCard trend={eightWeeks} />,
+        );
 
         // A gap on a date axis reads as "no data", which is a different claim
         // from "nothing happened" — so zero weeks must still be plotted.
-        const ticks = container.querySelectorAll('.recharts-cartesian-axis-tick');
+        const ticks = container.querySelectorAll(
+            '.recharts-cartesian-axis-tick',
+        );
 
         expect(ticks.length).toBe(eightWeeks.length);
     });

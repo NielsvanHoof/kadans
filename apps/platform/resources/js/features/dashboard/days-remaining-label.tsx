@@ -42,10 +42,7 @@ export default function DaysRemainingLabel({
     if (daysRemaining === 0) {
         return (
             <span
-                className={cn(
-                    'font-medium text-warning-foreground',
-                    className,
-                )}
+                className={cn('font-medium text-warning-foreground', className)}
             >
                 {t('Due today')}
             </span>

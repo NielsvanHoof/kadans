@@ -29,9 +29,8 @@ vi.mock('@inertiajs/react', () => ({
     ),
 }));
 
-const { default: FollowUpSignalsCard } = await import(
-    '@/features/dashboard/follow-up-signals-card'
-);
+const { default: FollowUpSignalsCard } =
+    await import('@/features/dashboard/follow-up-signals-card');
 
 function item(
     overrides: Partial<DashboardFollowUpItem> = {},
@@ -78,7 +77,9 @@ describe('FollowUpSignalsCard', () => {
         expect(
             screen.queryByText('Portal links expiring soon'),
         ).not.toBeInTheDocument();
-        expect(screen.queryByText('No client activity')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText('No client activity'),
+        ).not.toBeInTheDocument();
     });
 
     it('renders every populated group at once', () => {
@@ -87,7 +88,9 @@ describe('FollowUpSignalsCard', () => {
                 signals={signals({
                     never_opened: [item()],
                     gone_quiet: [item({ id: 2, title: 'VAT return' })],
-                    expiring_links: [item({ id: 3, title: 'Payroll', days: 2 })],
+                    expiring_links: [
+                        item({ id: 3, title: 'Payroll', days: 2 }),
+                    ],
                     total_count: 3,
                 })}
             />,

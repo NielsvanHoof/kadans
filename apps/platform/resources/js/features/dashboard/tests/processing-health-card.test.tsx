@@ -29,9 +29,8 @@ vi.mock('@inertiajs/react', () => ({
     ),
 }));
 
-const { default: ProcessingHealthCard } = await import(
-    '@/features/dashboard/processing-health-card'
-);
+const { default: ProcessingHealthCard } =
+    await import('@/features/dashboard/processing-health-card');
 
 function failure(
     overrides: Partial<DashboardPipelineFailure> = {},
@@ -88,10 +87,7 @@ describe('ProcessingHealthCard', () => {
         // count concatenate here where a browser would separate them.
         expect(
             screen.getByRole('link', { name: /^Failed\s*3$/ }),
-        ).toHaveAttribute(
-            'href',
-            expect.stringContaining('status%5D=failed'),
-        );
+        ).toHaveAttribute('href', expect.stringContaining('status%5D=failed'));
         expect(
             screen.getByRole('link', { name: /^Stuck\s*1$/ }),
         ).toHaveAttribute('href', expect.stringContaining('status%5D=stuck'));

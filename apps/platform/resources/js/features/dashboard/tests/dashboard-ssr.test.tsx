@@ -29,15 +29,12 @@ vi.mock('@inertiajs/react', () => ({
     Link: ({ children }: { children?: unknown }) => children,
 }));
 
-const { default: MyWorkCard } = await import(
-    '@/features/dashboard/my-work-card'
-);
-const { default: FollowUpSignalsCard } = await import(
-    '@/features/dashboard/follow-up-signals-card'
-);
-const { default: ProcessingHealthCard } = await import(
-    '@/features/dashboard/processing-health-card'
-);
+const { default: MyWorkCard } =
+    await import('@/features/dashboard/my-work-card');
+const { default: FollowUpSignalsCard } =
+    await import('@/features/dashboard/follow-up-signals-card');
+const { default: ProcessingHealthCard } =
+    await import('@/features/dashboard/processing-health-card');
 
 const myWork: DashboardMyWork = {
     assigned_open: 2,

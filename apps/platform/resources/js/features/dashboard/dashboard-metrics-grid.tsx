@@ -202,7 +202,6 @@ export default function DashboardMetricsGrid({
                     })}
                 </ol>
             </nav>
-
         </div>
     );
 }

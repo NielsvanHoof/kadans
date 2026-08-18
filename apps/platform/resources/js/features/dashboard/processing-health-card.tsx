@@ -110,10 +110,7 @@ export default function ProcessingHealthCard({
                                     >
                                         <span className="flex flex-wrap items-center justify-between gap-2">
                                             <span className="text-sm font-medium">
-                                                {pipelineTypeLabel(
-                                                    run.type,
-                                                    t,
-                                                )}
+                                                {pipelineTypeLabel(run.type, t)}
                                             </span>
                                             <PipelineStatusBadge
                                                 status={run.status}

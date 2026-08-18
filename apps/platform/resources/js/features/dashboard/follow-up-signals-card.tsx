@@ -9,7 +9,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import type { DashboardFollowUpItem, DashboardFollowUpSignals } from '@/features/dashboard/types';
+import type {
+    DashboardFollowUpItem,
+    DashboardFollowUpSignals,
+} from '@/features/dashboard/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';

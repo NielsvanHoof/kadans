@@ -29,9 +29,8 @@ vi.mock('@inertiajs/react', () => ({
     ),
 }));
 
-const { default: MyWorkCard } = await import(
-    '@/features/dashboard/my-work-card'
-);
+const { default: MyWorkCard } =
+    await import('@/features/dashboard/my-work-card');
 
 function agendaItem(
     overrides: Partial<DashboardAgendaItem> = {},
@@ -80,7 +79,10 @@ describe('MyWorkCard', () => {
             <MyWorkCard
                 myWork={myWork({
                     assigned_open: 2,
-                    agenda: [agendaItem(), agendaItem({ id: 2, title: 'VAT return' })],
+                    agenda: [
+                        agendaItem(),
+                        agendaItem({ id: 2, title: 'VAT return' }),
+                    ],
                 })}
             />,
         );
@@ -93,7 +95,9 @@ describe('MyWorkCard', () => {
     });
 
     it('distinguishes having no deadlines from having no work at all', () => {
-        render(<MyWorkCard myWork={myWork({ assigned_open: 4, agenda: [] })} />);
+        render(
+            <MyWorkCard myWork={myWork({ assigned_open: 4, agenda: [] })} />,
+        );
 
         // Assigned work exists, it simply has no dates in the next week.
         expect(

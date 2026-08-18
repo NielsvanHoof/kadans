@@ -1,5 +1,10 @@
 import { Link } from '@inertiajs/react';
-import { CalendarClock, CircleAlert, FolderOpen, ScanSearch } from 'lucide-react';
+import {
+    CalendarClock,
+    CircleAlert,
+    FolderOpen,
+    ScanSearch,
+} from 'lucide-react';
 import EmptyState from '@/components/primitives/empty-state';
 import {
     Card,
@@ -104,7 +109,9 @@ export default function MyWorkCard({ myWork }: { myWork: DashboardMyWork }) {
 
                         {myWork.agenda.length === 0 ? (
                             <p className="rounded-lg border border-dashed px-3 py-3 text-sm text-muted-foreground">
-                                {t('Nothing of yours is due in the next 7 days.')}
+                                {t(
+                                    'Nothing of yours is due in the next 7 days.',
+                                )}
                             </p>
                         ) : (
                             <ul className="space-y-1.5">
