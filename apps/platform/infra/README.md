@@ -218,28 +218,29 @@ pulumi stack select production   # or: pulumi stack init staging
 # Secrets are pasted, not generated: a value only Pulumi state holds is a value you
 # lose with the stack — and losing APP_KEY means every encrypted column and signed
 # URL becomes unreadable.
-pulumi config set --secret appKey "$(cd .. && php artisan key:generate --show)"
+# Set these values in your shell or paste them directly without committing them.
+pulumi config set --secret appKey "$APP_KEY"
 pulumi config set --secret reverbAppId qompose
-pulumi config set --secret reverbAppSecret "$(openssl rand -hex 32)"
-pulumi config set --secret sentryDsn https://...
-pulumi config set --secret cacheAuthToken "$(openssl rand -hex 24)"
+pulumi config set --secret reverbAppSecret "$REVERB_APP_SECRET"
+pulumi config set --secret sentryDsn "$SENTRY_DSN"
+pulumi config set --secret cacheAuthToken "$CACHE_AUTH_TOKEN"
 # Only needed when edgeEnabled is true; the ALB refuses anything without it.
-pulumi config set --secret originVerifySecret "$(openssl rand -hex 32)"
+pulumi config set --secret originVerifySecret "$ORIGIN_VERIFY_SECRET"
 
 # Plain, not a secret: this one is compiled into the JavaScript bundle and served
 # to every visitor. Storing it encrypted would mean decrypting a value in order to
 # produce a public asset. `reverbAppSecret` above is the one that authenticates.
-pulumi config set reverbPublicKey "$(openssl rand -hex 16)"
+pulumi config set reverbPublicKey "$REVERB_PUBLIC_KEY"
 
 # Also plain, and also inlined into the bundle: the browser Sentry DSN. This is a
 # DIFFERENT DSN from the secret below — that one is the Laravel project, this one
 # is the JavaScript project. Required, not optional: config/services.php reads it
 # server-side too, and the app refuses to boot with it empty.
-pulumi config set sentryBrowserDsn "https://<key>@<org>.ingest.sentry.io/<js-project>"
+pulumi config set sentryBrowserDsn "$SENTRY_BROWSER_DSN"
 
-pulumi config set hostedZoneId <zone-id>    # optional, see Hostnames
-pulumi config set alarmEmailAddress ops@example.com   # required for any alerting
-pulumi config set alarmSmsNumber +31600000000         # optional, page-worthy only
+pulumi config set hostedZoneId "$HOSTED_ZONE_ID"    # optional, see Hostnames
+pulumi config set alarmEmailAddress "$ALARM_EMAIL_ADDRESS"   # required for any alerting
+pulumi config set alarmSmsNumber "$ALARM_SMS_NUMBER"         # optional, page-worthy only
 
 npm run preview
 npm run up

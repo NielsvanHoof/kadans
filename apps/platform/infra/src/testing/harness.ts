@@ -53,14 +53,14 @@ export async function runStack(
     "qompose-platform:alarmEmailAddress": "ops@example.com",
     "qompose-platform:domain": "qompose.nl",
     "qompose-platform:imageTag": "abc1234",
-    "qompose-platform:appKey": "base64:0000000000000000000000000000000000000000000=",
+    "qompose-platform:appKey": "fixture-app-key",
     "qompose-platform:reverbAppId": "qompose",
     "qompose-platform:reverbPublicKey": "reverb-key",
-    "qompose-platform:sentryBrowserDsn": "https://browser@sentry.example.com/2",
-    "qompose-platform:reverbAppSecret": "reverb-secret",
-    "qompose-platform:sentryDsn": "https://public@sentry.example.com/1",
-    "qompose-platform:cacheAuthToken": "cache-auth-token-0123456789",
-    "qompose-platform:originVerifySecret": "origin-verify-secret-0123456789",
+    "qompose-platform:sentryBrowserDsn": "fixture-sentry-browser-value",
+    "qompose-platform:reverbAppSecret": "fixture-reverb-value",
+    "qompose-platform:sentryDsn": "fixture-sentry-value",
+    "qompose-platform:cacheAuthToken": "fixture-cache-value",
+    "qompose-platform:originVerifySecret": "fixture-origin-value",
     ...configOverrides,
   }, []);
 
@@ -107,7 +107,7 @@ export async function runStack(
         arn: `arn:aws:test:${REGION}:${ACCOUNT_ID}:${args.name}`,
         name: args.inputs.name ?? args.name,
         id: args.inputs.name ?? args.name,
-        secret: "test-secret-access-key",
+        secret: "fixture-resource-value",
         ...typeSpecificState(args.type, args.name, args.inputs),
       };
 
@@ -163,7 +163,7 @@ function typeSpecificState(
     case "aws:sqs/queue:Queue":
       return { url: `https://sqs.${REGION}.amazonaws.com/${ACCOUNT_ID}/${name}` };
     case "aws:iam/accessKey:AccessKey":
-      return { id: "AKIATESTACCESSKEY1", secret: "test-secret-access-key" };
+      return { id: "fixture-access-key-id", secret: "fixture-resource-value" };
     case "aws:ecr/repository:Repository":
       return { repositoryUrl: `${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${name}` };
     case "aws:rds/instance:Instance":

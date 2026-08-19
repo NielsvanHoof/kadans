@@ -13,7 +13,7 @@ import {
  * encrypted column and every signed URL becomes unreadable. A value you had to
  * paste in is a value you still have.
  *
- *   pulumi config set --secret appKey "$(php artisan key:generate --show)"
+ *   pulumi config set --secret appKey "$APP_KEY"
  */
 export interface PlatformSecrets {
   appKey: pulumi.Output<string>;
@@ -196,7 +196,7 @@ export function requireOriginVerifySecret(config: PlatformConfig): pulumi.Output
   if (secret === undefined) {
     throw new Error(
       "originVerifySecret must be set when edgeEnabled is true: "
-        + "pulumi config set --secret originVerifySecret <value>",
+        + "pulumi config set --secret originVerifySecret \"$ORIGIN_VERIFY_SECRET\"",
     );
   }
 
