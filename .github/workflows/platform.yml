@@ -117,7 +117,7 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Download frontend build
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: platform-frontend-build
           path: apps/platform/public/build
@@ -273,7 +273,7 @@ jobs:
       # architecture from the other side.
       - name: Build the production image
         id: build
-        uses: docker/bake-action@v6
+        uses: docker/bake-action@v7
         with:
           workdir: apps/platform
           files: docker-bake.hcl
