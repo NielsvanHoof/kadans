@@ -174,7 +174,7 @@ describe('policy assembly', function (): void {
     });
 
     test('omits the sentry ingest host when the frontend has no dsn', function (): void {
-        config()->set('services.sentry.browser_dsn', null);
+        config()->set('services.sentry.browser_dsn');
 
         expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
             ->not->toContain('sentry.io');

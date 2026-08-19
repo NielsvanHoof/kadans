@@ -32,3 +32,10 @@ Migrations are their own one-shot role, never auto-run on web start: several tas
 
 ## Staging is production plus an inert Xdebug
 `docker/staging/php.ini` mirrors production's hardening (`display_errors=Off`, `expose_php=Off`, `session.cookie_*`) and adds `xdebug.mode=off`. Xdebug reads the `XDEBUG_MODE` environment variable and it overrides the ini, so a task is armed by restarting it with `XDEBUG_MODE=profile` — no rebuild. Composer stays `--no-dev`: dev packages would move the container away from the artifact under test. See `.ai/rules/config.md` for why the production config validator also guards staging.
+
+## CI bakes linux/arm64 because ECS Fargate runs ARM tasks
+`.github/workflows/platform.yml` sets `*.platform=linux/arm64`. That is coupled to `infra/src/shared/compute.ts`, whose task definitions declare `cpuArchitecture: ARM64` (TASK-34.2).
+
+Nothing in the build catches a mismatch: an amd64 image builds, scans, deploys, and `pulumi up` reports success — then every task dies with an exec-format error at start. `infra/src/stack.production.test.ts` asserts the architecture from the infra side; if you change one, change the other.
+
+The image is also what ECS pulls from ECR, so the entrypoint roles (`web`, `worker`, `reverb`, `schedule`, `migrate`, `textract-consumer`, `transcribe-consumer`) are now the ECS service and task-definition names, not just a local convenience. Adding or renaming a role means adding or renaming a service in `compute.ts` and `logs.ts`.

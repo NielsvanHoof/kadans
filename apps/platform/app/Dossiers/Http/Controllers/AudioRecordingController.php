@@ -8,6 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Actions\AudioRecordings\DeleteAudioRecordingAction;
 use App\Dossiers\Actions\AudioRecordings\UploadAudioRecordingAction;
+use App\Dossiers\Actions\ResolveMalwareScanStatusAction;
 use App\Dossiers\Data\StaffAudioRecordingData;
 use App\Dossiers\Http\Requests\AudioRecordings\StoreAudioRecordingRequest;
 use App\Dossiers\Models\AudioRecording;
@@ -118,8 +119,27 @@ final class AudioRecordingController extends Controller
         Tenant $tenant,
         AudioRecording $audioRecording,
         LogAuditActivityAction $logAuditActivity,
+        ResolveMalwareScanStatusAction $resolveMalwareScanStatus,
     ): StreamedResponse {
         $this->authorize('download', $audioRecording);
+
+        // Client-uploaded bytes in the same bucket as the documents, so GuardDuty
+        // tags them identically. Gating one path and not the other would leave the
+        // hole open in the same threat model. See UploadedDocumentController.
+        $verdict = $resolveMalwareScanStatus->handle($audioRecording->disk, $audioRecording->path);
+
+        if (! $verdict->permitsDelivery) {
+            $logAuditActivity->handle(
+                AuditEvent::FileBlockedByMalwareScan,
+                $audioRecording,
+                [
+                    'original_filename' => $audioRecording->original_filename,
+                    'scan_status' => $verdict->status?->value,
+                ],
+            );
+
+            abort(403, __('This file has not been cleared by the malware scanner.'));
+        }
 
         $logAuditActivity->handle(
             AuditEvent::AudioRecordingDownloaded,

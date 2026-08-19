@@ -87,3 +87,52 @@ test('the build context cannot carry host AWS credentials into an image layer', 
     expect($entries)->toContain('env')
         ->and(base_path('env/profiles'))->toBeDirectory();
 });
+
+/*
+ * Anything Vite reads is inlined into the bundle at build time and cannot be
+ * changed by redeploying, so every one of them has to arrive as a build argument.
+ *
+ * This exists because VITE_SENTRY_DSN did not. The image built without it, the
+ * bundle shipped with browser error reporting silently off, and the container
+ * then failed boot on `services.sentry.browser_dsn` — which config/services.php
+ * reads from the very same variable. A missing build arg is invisible until it is
+ * expensive, so the check is mechanical rather than remembered.
+ */
+test('every bundle variable the frontend reads arrives as a build argument', function (): void {
+    $root = dirname(__DIR__, 3);
+
+    $sources = '';
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root.'/resources/js', FilesystemIterator::SKIP_DOTS),
+    );
+
+    foreach ($files as $file) {
+        if ($file->isFile() && in_array($file->getExtension(), ['ts', 'tsx'], true)) {
+            $sources .= (string) file_get_contents($file->getPathname());
+        }
+    }
+
+    preg_match_all('/import\.meta\.env\.(VITE_[A-Z0-9_]+)/', $sources, $matches);
+
+    $required = array_values(array_unique($matches[1]));
+
+    expect($required)->not->toBeEmpty();
+
+    $dockerfile = (string) file_get_contents($root.'/docker/base/Dockerfile');
+    $bake = (string) file_get_contents($root.'/docker-bake.hcl');
+
+    // VITE_APP_NAME is baked from a literal in vite.config.ts rather than the
+    // environment, and the traces sample rate has a safe compiled default.
+    $exempt = ['VITE_APP_NAME', 'VITE_SENTRY_TRACES_SAMPLE_RATE'];
+
+    foreach (array_diff($required, $exempt) as $variable) {
+        // REVERB_APP_KEY reaches the build under the REVERB_PUBLIC_KEY arg name,
+        // because the value is public and the name should say so.
+        $argument = $variable === 'VITE_REVERB_APP_KEY' ? 'REVERB_PUBLIC_KEY' : $variable;
+
+        expect($dockerfile)
+            ->toContain('ARG '.$argument)
+            ->and($dockerfile)->toContain($variable.'="$'.$argument.'"')
+            ->and($bake)->toContain($argument);
+    }
+});

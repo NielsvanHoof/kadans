@@ -1,5 +1,5 @@
 import * as aws from "@pulumi/aws";
-import { PlatformConfig } from "./config.js";
+import { PlatformConfig } from "../config.js";
 
 export interface DocumentInfrastructure {
   bucket: aws.s3.BucketV2;
@@ -32,8 +32,9 @@ export function createDocumentInfrastructure(
   const { environment } = config;
   const bucket = new aws.s3.BucketV2(environment.resourceName("documents"), {
     bucketPrefix: `${environment.resourceName("documents")}-`,
-    // Production keeps objects even if the stack is destroyed.
-    forceDestroy: false,
+    // Production keeps objects even if the stack is destroyed; staging must be
+    // destroyable, and a non-empty bucket blocks a stack teardown outright.
+    forceDestroy: !environment.settings.deletionProtection,
   });
   new aws.s3.BucketPublicAccessBlock(environment.resourceName("documents-public-access"), {
     bucket: bucket.id,
@@ -72,7 +73,7 @@ export function createDocumentInfrastructure(
         status: "Enabled",
         filter: {},
         noncurrentVersionExpiration: {
-          noncurrentDays: environment.documentNoncurrentVersionDays,
+          noncurrentDays: environment.settings.documentNoncurrentVersionDays,
         },
         abortIncompleteMultipartUpload: { daysAfterInitiation: 7 },
       }],
