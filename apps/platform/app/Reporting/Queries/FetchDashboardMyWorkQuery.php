@@ -91,7 +91,7 @@ final class FetchDashboardMyWorkQuery
             ->whereNotNull('due_date')
             ->where('due_date', '<=', $horizon)
             // Most urgent first; overdue rows sort above today's.
-            ->orderBy('due_date')
+            ->oldest('due_date')
             ->limit(self::AGENDA_LIMIT);
 
         /** @var list<DashboardAgendaItemData> $rows */

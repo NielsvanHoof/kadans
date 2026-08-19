@@ -96,4 +96,58 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
     (denyStatement.actions as string[]).includes("iam:DeleteOpenIDConnectProvider"),
     true,
   );
+
+  /*
+   * The deploy policy has to keep pace with what infra/src actually creates.
+   * A missing permission fails the deploy halfway — some resources made, some not —
+   * so the compute grants added for TASK-34.2 are asserted here rather than
+   * rediscovered mid-`pulumi up`.
+   */
+  const sids = statements.map((statement) => statement.sid);
+
+  for (const sid of [
+    "ManagePlatformNetwork",
+    "ManagePlatformLoadBalancing",
+    "ManagePlatformCompute",
+    "ManagePlatformDataStores",
+    "ManagePlatformSecrets",
+    "ManagePlatformEdgeNames",
+    "ManagePlatformMail",
+    "ManagePlatformLogs",
+    "CreateServiceLinkedRoles",
+    "ManageDocumentScanningAndAudit",
+    "ManagePlatformEdge",
+    "ManageOperationsAlerting",
+  ]) {
+    assert.ok(sids.includes(sid), `deploy policy is missing ${sid}`);
+  }
+
+  // Service-linked roles are the one iam:* grant outside the qompose namespace, so
+  // it must stay pinned to named services rather than becoming a bare wildcard.
+  const serviceLinked = statements.find(
+    (statement) => statement.sid === "CreateServiceLinkedRoles",
+  );
+
+  assert.ok(serviceLinked);
+
+  const serviceNames = (serviceLinked.conditions as Array<Record<string, unknown>>)
+    .find((condition) => condition.variable === "iam:AWSServiceName");
+
+  assert.ok(serviceNames, "iam:CreateServiceLinkedRole must name the services it covers");
+  assert.equal((serviceNames.values as string[]).includes("*"), false);
+
+  // `docker login` to ECR exchanges this token for a password, and it cannot be
+  // repository-scoped. Without it a push fails at authentication, before the
+  // repository ARN is ever consulted — which reads as a missing repository.
+  const read = statements.find((statement) => statement.sid === "ReadState");
+
+  assert.ok(read);
+  assert.equal((read.actions as string[]).includes("ecr:GetAuthorizationToken"), true);
+
+  // ec2:* would also cover launching instances. This role builds a network, not a fleet.
+  const network = statements.find((statement) => statement.sid === "ManagePlatformNetwork");
+
+  assert.ok(network);
+  assert.equal((network.actions as string[]).includes("ec2:*"), false);
+  assert.equal((network.actions as string[]).includes("ec2:RunInstances"), false);
 });

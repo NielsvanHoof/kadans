@@ -28,6 +28,7 @@ beforeEach(function (): void {
         'mail.from.address' => 'support@example.com',
         'ocr.driver' => 'textract',
         'scout.driver' => 'meilisearch',
+        'security.malware_scanning.enabled' => true,
         'security.two_factor.enforcement' => 'all',
         'sentry.dsn' => 'https://public@sentry.example.com/1',
         'services.sentry.browser_dsn' => 'https://public@o1.ingest.sentry.example.com/2',
@@ -97,6 +98,10 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'missing log channel' => ['logging.default', null],
     'cross-site session cookie' => ['session.same_site', 'none'],
     'unset session same-site' => ['session.same_site', null],
+    // Off is the safe *local* default (no GuardDuty attached to a fake bucket), so
+    // it is exactly the value that must never reach a shipped environment.
+    'disabled malware scanning' => ['security.malware_scanning.enabled', false],
+    'unset malware scanning' => ['security.malware_scanning.enabled', null],
     'optional two-factor authentication' => ['security.two_factor.enforcement', 'off'],
     'unrecognised two-factor mode' => ['security.two_factor.enforcement', 'sometimes'],
     'unset two-factor mode' => ['security.two_factor.enforcement', null],

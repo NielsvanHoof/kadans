@@ -97,6 +97,9 @@ final readonly class ProductionConfigurationValidator
             $this->unshippedLogChannelKey(),
             $this->hasSafeSessionSameSite() ? null : 'session.same_site',
             $this->enforcesTwoFactor() ? null : 'security.two_factor.enforcement',
+            $this->config->get('security.malware_scanning.enabled') === true
+                ? null
+                : 'security.malware_scanning.enabled',
             $this->hasDeliveringMailer() ? null : 'mail.default',
             $this->hasValidMailFromAddress() ? null : 'mail.from.address',
             $this->hasTrustedProxies() ? null : 'production.trusted_proxies',

@@ -265,6 +265,12 @@ jobs:
       # bake, not build-push-action: docker/production/Dockerfile starts at
       # `FROM base`, which is docker/base/Dockerfile wired in as a named build
       # context. Only bake can resolve `target:base` without a registry.
+      #
+      # linux/arm64 because ECS Fargate runs these task definitions on ARM
+      # (infra/src/shared/compute.ts). The mismatch is not caught by anything in
+      # this workflow: an amd64 image deploys cleanly and then fails with an
+      # exec-format error at first task start. infra's stack tests assert the
+      # architecture from the other side.
       - name: Build the production image
         id: build
         uses: docker/bake-action@v6
@@ -275,7 +281,7 @@ jobs:
           provenance: mode=max
           sbom: true
           set: |
-            *.platform=linux/amd64
+            *.platform=linux/arm64
             *.cache-from=type=gha,scope=platform-production-image
             *.cache-to=type=gha,mode=max,scope=platform-production-image
             production.labels.org.opencontainers.image.revision=${{ env.SOURCE_SHA }}

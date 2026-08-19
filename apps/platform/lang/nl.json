@@ -1350,5 +1350,12 @@
     "Privacy policy": "Privacybeleid",
     "Cookie statement": "Cookieverklaring",
     "Terms of service": "Algemene voorwaarden",
-    "This document is a draft pending legal review. Placeholders must be completed by counsel before relying on it.": "Dit document is een concept in afwachting van juridische review. Plaatsaanduidingen moeten door counsel worden ingevuld voordat u erop vertrouwt."
+    "This document is a draft pending legal review. Placeholders must be completed by counsel before relying on it.": "Dit document is een concept in afwachting van juridische review. Plaatsaanduidingen moeten door counsel worden ingevuld voordat u erop vertrouwt.",
+    "File blocked by malware scan": "Bestand geblokkeerd door malwarescan",
+    "No threats found": "Geen bedreigingen gevonden",
+    "Malware detected": "Malware aangetroffen",
+    "File type not scannable": "Bestandstype kan niet worden gescand",
+    "Scanner could not read the file": "Scanner kon het bestand niet lezen",
+    "Scan failed": "Scan mislukt",
+    "This file has not been cleared by the malware scanner.": "Dit bestand is niet vrijgegeven door de malwarescanner."
 }

@@ -3,8 +3,8 @@
   "private": true,
   "main": "bin/index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "npm run build && node --test bin/*.test.js",
+    "build": "rm -rf bin && tsc",
+    "test": "npm run build && node --test \"bin/**/*.test.js\"",
     "preview": "npm run build && pulumi preview",
     "up": "npm run build && pulumi up",
     "destroy": "npm run build && pulumi destroy"

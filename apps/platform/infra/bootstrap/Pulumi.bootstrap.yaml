@@ -1,0 +1,6 @@
+config:
+  qompose-bootstrap:githubRepository: NielsvanHoof/qompose
+  aws:region: eu-west-1
+  qompose-bootstrap:environments:
+    - production
+    - staging
