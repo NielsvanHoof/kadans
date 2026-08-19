@@ -21,13 +21,13 @@ use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use RuntimeException;
 
-final class FetchWorkspaceDashboardQuery
+final readonly class FetchWorkspaceDashboardQuery
 {
     public function __construct(
-        private readonly FetchDashboardMyWorkQuery $fetchMyWork,
-        private readonly FetchDashboardFollowUpSignalsQuery $fetchFollowUpSignals,
-        private readonly FetchDashboardProcessingHealthQuery $fetchProcessingHealth,
-        private readonly FetchDashboardTrendQuery $fetchTrend,
+        private FetchDashboardMyWorkQuery $fetchMyWork,
+        private FetchDashboardFollowUpSignalsQuery $fetchFollowUpSignals,
+        private FetchDashboardProcessingHealthQuery $fetchProcessingHealth,
+        private FetchDashboardTrendQuery $fetchTrend,
     ) {}
 
     /**

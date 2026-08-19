@@ -61,7 +61,7 @@ final class FetchDashboardFollowUpSignalsQuery
             ->whereNull('last_client_opened_at')
             ->where('last_client_message_sent_at', '<=', $threshold)
             // Longest-waiting client first.
-            ->orderBy('last_client_message_sent_at')
+            ->oldest('last_client_message_sent_at')
             ->limit(self::GROUP_LIMIT);
 
         return $this->mapDossiers($query, 'last_client_message_sent_at');
@@ -86,7 +86,7 @@ final class FetchDashboardFollowUpSignalsQuery
             ->whereNotNull('last_client_opened_at')
             ->where('last_client_opened_at', '<=', $threshold)
             // Quietest client first.
-            ->orderBy('last_client_opened_at')
+            ->oldest('last_client_opened_at')
             ->limit(self::GROUP_LIMIT);
 
         return $this->mapDossiers($query, 'last_client_opened_at');
@@ -115,7 +115,7 @@ final class FetchDashboardFollowUpSignalsQuery
             ->whereNotNull('expires_at')
             ->whereBetween('expires_at', [now(), $horizon])
             // Soonest to lapse first.
-            ->orderBy('expires_at')
+            ->oldest('expires_at')
             ->limit(self::GROUP_LIMIT);
 
         /** @var list<DashboardFollowUpItemData> $rows */
@@ -137,7 +137,7 @@ final class FetchDashboardFollowUpSignalsQuery
                 clientName: $client instanceof Client ? $client->name : '',
                 since: $expiresAt?->toIso8601String(),
                 // Days *until* expiry, so the UI can say "expires in 2 days".
-                days: $expiresAt === null ? null : (int) now()->startOfDay()->diffInDays($expiresAt, false),
+                days: $expiresAt === null ? null : (int) today()->diffInDays($expiresAt, false),
             );
         }
 
