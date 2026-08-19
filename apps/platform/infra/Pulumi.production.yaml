@@ -13,3 +13,5 @@ config:
     secure: AAABAFSvQfudE0g0llXL1dWzCPyw5JxyFER8YEgfPNTkHPPHMjk2snUF/8jHr/FZ1+oshBy6NrRhKuJB3sN3iUjxlKW9avlWqbg02c0SFH0eOAuCHWaPSAMV8E8WmEE5
   qompose-platform:sentryDsn:
     secure: AAABAIg2jntUOWybMLSL8cQpka08X673GZVeR0NbC7Dd8CABYCk1KRcTNjYQeCBc1evf0N5DmHEUHWJ68klhswnmuiA/q/oLGVPuuqhI3NLbc8yDhlY390hC2EmfYXgQG76baYGrs9tuoLPdMMxf2azcGVHPGA==
+  qompose-platform:sentryBrowserDsn:
+    secure: AAABALhJPe14J5WChgpVyrKtXaYKkePm1MHx6fSty2Q9F+fiEhhnbkqCaY1sxEFDsFD6tB321RLO0VxO/MpWgQstT5HSHls14/zIbJuYZRZThVIrY7MBm5NHCMTpQxekZ5XhGAtS9TgFkHGchd9H9R5h1YMagg==
