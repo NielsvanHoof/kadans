@@ -81,7 +81,8 @@ declare namespace App {
                 | 'audio_recording.deleted'
                 | 'audio_recording.transcription_started'
                 | 'audio_recording.transcription_completed'
-                | 'audio_recording.transcription_failed';
+                | 'audio_recording.transcription_failed'
+                | 'file.blocked_by_malware_scan';
             export type AuditPermission = 'audit.view';
         }
     }
@@ -380,6 +381,12 @@ declare namespace App {
             export type DossierReminderSource = 'manual' | 'scheduled';
             export type DossierStatus =
                 'draft' | 'awaiting_client' | 'in_review' | 'completed';
+            export type MalwareScanStatus =
+                | 'NO_THREATS_FOUND'
+                | 'THREATS_FOUND'
+                | 'UNSUPPORTED'
+                | 'ACCESS_DENIED'
+                | 'FAILED';
             export type SubmissionContext = 'portal' | 'staff';
             export type UploadedDocumentPermission =
                 'documents.view' | 'documents.download';
