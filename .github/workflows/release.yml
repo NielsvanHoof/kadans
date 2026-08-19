@@ -112,7 +112,7 @@ jobs:
       # only as a named build context. platform.yml scopes its OCI export the same
       # way, for the same reason.
       - name: Build and push the image
-        uses: docker/bake-action@v6
+        uses: docker/bake-action@v7
         with:
           workdir: apps/platform
           files: docker-bake.hcl

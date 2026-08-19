@@ -46,7 +46,7 @@
         "@inertiajs/vite": "^3.0.0",
         "@internationalized/date": "^3.12.3",
         "@laravel/echo-react": "^2.4.0",
-        "@laravel/passkeys": "^0.2.0",
+        "@laravel/passkeys": "^0.4.0",
         "@sentry/react": "^10.70.0",
         "@tailwindcss/vite": "^4.1.11",
         "@types/react": "^19.2.0",
