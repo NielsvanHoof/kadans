@@ -1,6 +1,6 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { PlatformConfig } from "./config.js";
+import { PlatformConfig } from "../config.js";
 import { DocumentInfrastructure } from "./documents.js";
 
 /**
@@ -40,6 +40,19 @@ export function applicationAccessPolicy(
     }, {
       sid: "ReadWriteDocuments",
       actions: ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      resources: [bucketObjects],
+    }, {
+      /*
+       * Separate from s3:GetObject, and required by the download gate:
+       * ResolveMalwareScanStatusAction reads GuardDuty's verdict off the object's
+       * tags before serving it. Without this the gate fails closed on every
+       * request and nothing can be downloaded at all.
+       *
+       * Read only. Nothing in the application writes an object tag, and granting
+       * PutObjectTagging would let the app overwrite the scanner's own verdict.
+       */
+      sid: "ReadDocumentScanStatus",
+      actions: ["s3:GetObjectTagging"],
       resources: [bucketObjects],
     }, {
       // Textract has no resource-level permissions for these actions.

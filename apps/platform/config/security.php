@@ -40,6 +40,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Malware Scanning
+    |--------------------------------------------------------------------------
+    |
+    | GuardDuty Malware Protection scans objects as they land in the documents
+    | bucket and writes its verdict onto the object as a tag. When this is on,
+    | download and preview read that tag first and refuse anything that is not
+    | explicitly clean — including files GuardDuty has not reached yet, since a
+    | scan is asynchronous and "unscanned" is indistinguishable from "infected"
+    | at the point of delivery.
+    |
+    | Off by default because it depends on infrastructure that only exists in a
+    | deployed environment: with no GuardDuty attached to the bucket, no object
+    | ever gets a tag and every download would be refused. Local and CI run on a
+    | non-S3 disk anyway, where there is nothing to tag.
+    |
+    | Production and staging must not run with this off — ProductionConfiguration-
+    | Validator rejects it at boot, so the safe local default cannot ship.
+    |
+    */
+
+    'malware_scanning' => [
+        'enabled' => (bool) env('SECURITY_MALWARE_SCANNING_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Content Security Policy
     |--------------------------------------------------------------------------
     |

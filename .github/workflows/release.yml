@@ -1,0 +1,206 @@
+name: Release platform
+
+# Build the image, push it to ECR, roll the ECS services, and migrate.
+#
+# Separate from platform.yml, which stays a CI gate: it builds an OCI tarball,
+# Trivy-scans it and uploads it as an artifact, with no AWS credentials anywhere.
+# This workflow is the only one that can write to the account.
+on:
+  workflow_dispatch:
+    inputs:
+      stack:
+        description: Pulumi stack to release to
+        type: choice
+        required: true
+        default: staging
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release-${{ inputs.stack }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release to ${{ inputs.stack }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ inputs.stack }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'eu-west-1' }}
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL || 'https://api.pulumi.com' }}
+      STACK: ${{ inputs.stack }}
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Configure AWS workload identity
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Install infrastructure dependencies
+        working-directory: apps/platform/infra
+        run: npm ci
+
+      - name: Verify the infrastructure program
+        working-directory: apps/platform/infra
+        run: npm test
+
+      - name: Select Pulumi stack
+        working-directory: apps/platform/infra
+        run: |
+          npx pulumi login "$PULUMI_BACKEND_URL"
+          if ! npx pulumi stack select "$STACK" --non-interactive; then
+            npx pulumi stack init "$STACK" --non-interactive
+          fi
+
+      # Phase 1 — make sure the infrastructure, and specifically the ECR
+      # repository, exists before anything tries to push to it.
+      #
+      # On a first release this also creates ECS services pointing at an image tag
+      # that is not in the registry yet. That is expected and self-healing: Pulumi's
+      # ECS Service does not wait for steady state, so the deploy succeeds while the
+      # tasks retry their pull, and phase 2 below points them at a real image. On
+      # every later release this step is a no-op diff.
+      - name: Ensure infrastructure exists
+        working-directory: apps/platform/infra
+        run: npm run up -- --yes --non-interactive
+
+      - name: Read stack outputs
+        id: stack
+        working-directory: apps/platform/infra
+        run: |
+          {
+            echo "repository=$(npx pulumi stack output containerRepositoryUrl)"
+            echo "cluster=$(npx pulumi stack output clusterName)"
+            echo "app_hostname=$(npx pulumi stack output appHostname)"
+            echo "reverb_public_key=$(npx pulumi stack output reverbPublicKey)"
+            echo "sentry_browser_dsn=$(npx pulumi stack output sentryBrowserDsn)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to ECR
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin \
+                "$(echo '${{ steps.stack.outputs.repository }}' | cut -d/ -f1)"
+
+      # bake, not build-push-action: docker/production/Dockerfile starts at
+      # `FROM base`, which only bake can resolve as a `target:` context.
+      #
+      # VITE_REVERB_* is compiled into the JavaScript bundle and cannot be changed
+      # afterwards (.ai/rules/docker.md), so these come from the stack being
+      # released to. An image built against the wrong host runs perfectly and
+      # silently fails to open a WebSocket — which is why they are stack outputs
+      # rather than repository variables someone keeps in sync by hand.
+      #
+      # The push is `production.output=type=registry`, not the action's `push: true`.
+      # A bare push sets `*.output=type=registry` across the whole graph, which
+      # sweeps in the `base` target — and `base` carries no tags, because it exists
+      # only as a named build context. platform.yml scopes its OCI export the same
+      # way, for the same reason.
+      - name: Build and push the image
+        uses: docker/bake-action@v7
+        with:
+          workdir: apps/platform
+          files: docker-bake.hcl
+          targets: production
+          provenance: mode=max
+          sbom: true
+          set: |
+            *.platform=linux/arm64
+            *.cache-from=type=gha,scope=platform-production-image
+            *.cache-to=type=gha,mode=max,scope=platform-production-image
+            production.tags=${{ steps.stack.outputs.repository }}:${{ github.sha }}
+            production.labels.org.opencontainers.image.revision=${{ github.sha }}
+            production.labels.org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            production.output=type=registry
+        env:
+          REVERB_PUBLIC_KEY: ${{ steps.stack.outputs.reverb_public_key }}
+          VITE_REVERB_HOST: ${{ steps.stack.outputs.app_hostname }}
+          # A different DSN from the Laravel one: the JavaScript project's. Inlined
+          # into the bundle here, and also set at runtime so the CSP can allow the
+          # ingest origin and the boot-time config check passes.
+          VITE_SENTRY_DSN: ${{ steps.stack.outputs.sentry_browser_dsn }}
+          VITE_SENTRY_ENVIRONMENT: ${{ inputs.stack }}
+          VITE_SENTRY_RELEASE: ${{ github.sha }}
+          TAG: ${{ github.sha }}
+
+      # Phase 2a — point ONLY the migrate task definition at the new image.
+      #
+      # Ordering, stated plainly because it is the part that bites: migrations must
+      # land before any task running the new code serves a request. A plain
+      # `pulumi up` here would update the task definitions and roll the services in
+      # one step, so the new code would be taking traffic against the old schema.
+      #
+      # The URN is deterministic — project name from Pulumi.yaml, resource name from
+      # `environment.resourceName("migrate-task")` — and `--target` without
+      # `--target-dependents` touches nothing else. If this step ever fails to match,
+      # `pulumi stack --show-urns` prints the current value.
+      - name: Stage the migration image
+        working-directory: apps/platform/infra
+        run: |
+          npx pulumi config set imageTag "$IMAGE_TAG"
+          npm run up -- --yes --non-interactive \
+            --target "urn:pulumi:${STACK}::qompose-platform::aws:ecs/taskDefinition:TaskDefinition::qompose-${STACK}-migrate-task"
+
+      - name: Run migrations
+        working-directory: apps/platform/infra
+        run: |
+          CLUSTER="${{ steps.stack.outputs.cluster }}"
+          SUBNETS="$(npx pulumi stack output publicSubnetIds --json | jq -r 'join(",")')"
+          SECURITY_GROUP="$(npx pulumi stack output taskSecurityGroupId)"
+
+          TASK_ARN="$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "$(npx pulumi stack output migrateTaskDefinitionArn)" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUP],assignPublicIp=ENABLED}" \
+            --query 'tasks[0].taskArn' --output text)"
+
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+
+          # A stopped task is not a successful one. Without this check a failed
+          # migration is invisible and the service rollout below proceeds anyway.
+          EXIT_CODE="$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)"
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::Migration task exited with $EXIT_CODE"
+            aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+              --query 'tasks[0].stoppedReason' --output text
+            exit 1
+          fi
+
+      # Phase 2b — now roll the services onto the migrated schema. The ECS
+      # deployment circuit breaker rolls back automatically if tasks will not
+      # stabilise, so a bad image degrades to "no change" rather than an outage.
+      - name: Roll the services
+        working-directory: apps/platform/infra
+        run: npm run up -- --yes --non-interactive
+
+      - name: Report the release
+        working-directory: apps/platform/infra
+        run: |
+          {
+            echo "### Released to ${STACK}"
+            echo ""
+            echo "- Image: \`${{ steps.stack.outputs.repository }}:${IMAGE_TAG}\`"
+            echo "- App: https://$(npx pulumi stack output appHostname)"
+            echo "- Cluster: \`$(npx pulumi stack output clusterName)\`"
+            echo ""
+            echo "Rollback: set \`imageTag\` to an earlier commit SHA and re-run the deploy workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

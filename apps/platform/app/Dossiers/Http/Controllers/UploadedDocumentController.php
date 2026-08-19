@@ -9,6 +9,7 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Actions\DocumentRequests\UploadStaffDocumentAction;
+use App\Dossiers\Actions\ResolveMalwareScanStatusAction;
 use App\Dossiers\Data\StaffUploadedDocumentData;
 use App\Dossiers\Http\Requests\DocumentRequests\StoreUploadedDocumentRequest;
 use App\Dossiers\Models\DocumentRequest;
@@ -142,8 +143,11 @@ final class UploadedDocumentController extends Controller
         UploadedDocument $uploadedDocument,
         LogAuditActivityAction $logAuditActivity,
         ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
+        ResolveMalwareScanStatusAction $resolveMalwareScanStatus,
     ): RedirectResponse|StreamedResponse {
         $this->authorize('download', $uploadedDocument);
+
+        $this->assertScannedClean($uploadedDocument, $logAuditActivity, $resolveMalwareScanStatus);
 
         $logAuditActivity->handle(
             AuditEvent::DocumentDownloaded,
@@ -166,8 +170,11 @@ final class UploadedDocumentController extends Controller
         UploadedDocument $uploadedDocument,
         LogAuditActivityAction $logAuditActivity,
         ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
+        ResolveMalwareScanStatusAction $resolveMalwareScanStatus,
     ): RedirectResponse|StreamedResponse {
         $this->authorize('download', $uploadedDocument);
+
+        $this->assertScannedClean($uploadedDocument, $logAuditActivity, $resolveMalwareScanStatus);
 
         $logAuditActivity->handle(
             AuditEvent::DocumentViewed,
@@ -200,6 +207,44 @@ final class UploadedDocumentController extends Controller
         Toast::success(__('Document removed.'));
 
         return back();
+    }
+
+    /**
+     * Refuse anything GuardDuty has not established as clean.
+     *
+     * Placed ahead of the audit call in both callers rather than inside
+     * serveDocument(), so a blocked request records the block instead of
+     * recording a download that never happened.
+     *
+     * Fails closed on an unscanned file too. Scans are asynchronous, so a
+     * freshly uploaded document has no verdict yet — and at the point of
+     * delivery "not yet scanned" and "infected" are the same fact. The refusal
+     * is audited because a staff member being told no is exactly the sort of
+     * thing an operator needs to see without being asked.
+     */
+    private function assertScannedClean(
+        UploadedDocument $uploadedDocument,
+        LogAuditActivityAction $logAuditActivity,
+        ResolveMalwareScanStatusAction $resolveMalwareScanStatus,
+    ): void {
+        $verdict = $resolveMalwareScanStatus->handle($uploadedDocument->disk, $uploadedDocument->path);
+
+        if ($verdict->permitsDelivery) {
+            return;
+        }
+
+        $logAuditActivity->handle(
+            AuditEvent::FileBlockedByMalwareScan,
+            $uploadedDocument,
+            [
+                'original_filename' => $uploadedDocument->original_filename,
+                // Null reads as "no verdict yet", which is the common case and a
+                // materially different situation from a detection.
+                'scan_status' => $verdict->status?->value,
+            ],
+        );
+
+        abort(403, __('This file has not been cleared by the malware scanner.'));
     }
 
     /**

@@ -72,6 +72,7 @@ enum AuditEvent: string
     case AudioTranscriptionStarted = 'audio_recording.transcription_started';
     case AudioTranscriptionCompleted = 'audio_recording.transcription_completed';
     case AudioTranscriptionFailed = 'audio_recording.transcription_failed';
+    case FileBlockedByMalwareScan = 'file.blocked_by_malware_scan';
 
     public function label(): string
     {
@@ -108,6 +109,7 @@ enum AuditEvent: string
             self::ClientChangesRequestedSent => __('Client changes-requested notification sent'),
             self::ClientChangesRequestedFailed => __('Client changes-requested notification failed'),
             self::AccessDenied => __('Access denied'),
+            self::FileBlockedByMalwareScan => __('File blocked by malware scan'),
             self::MemberInvited => __('Member invited'),
             self::MemberInvitationAccepted => __('Member invitation accepted'),
             self::MemberInvitationRevoked => __('Member invitation revoked'),
@@ -192,7 +194,10 @@ enum AuditEvent: string
             self::ClientChangesRequestedSent,
             self::ClientChangesRequestedFailed => __('Client portal'),
 
-            self::AccessDenied => __('Access'),
+            self::AccessDenied,
+            // A refusal, not a document event: it records that delivery was
+            // withheld, which is the same shape of fact as a denied permission.
+            self::FileBlockedByMalwareScan => __('Access'),
 
             self::MemberInvited,
             self::MemberInvitationAccepted,

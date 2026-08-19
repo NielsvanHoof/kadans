@@ -1,33 +1,17 @@
 import * as aws from "@pulumi/aws";
-import { PlatformConfig } from "./config.js";
+import { PlatformConfig } from "../config.js";
 import { DocumentInfrastructure } from "./documents.js";
 
-/**
- * Optional alarms when OCR / Transcribe results land on a dead-letter queue.
- *
- * The alarm SNS topic uses the same OCR CMK as the messaging plane so CloudWatch
- * can publish encrypted notifications (key policy already grants cloudwatch.amazonaws.com).
- */
 export function createOcrAlarms(
   config: PlatformConfig,
   documents: DocumentInfrastructure,
-  encryptionKey: aws.kms.Key,
+  topic?: aws.sns.Topic,
 ): void {
-  const { environment, alarmEmailAddress } = config;
+  const { environment } = config;
 
-  if (!alarmEmailAddress) {
+  if (topic === undefined) {
     return;
   }
-
-  const topic = new aws.sns.Topic(environment.resourceName("ocr-alarms"), {
-    name: environment.resourceName("ocr-alarms"),
-    kmsMasterKeyId: encryptionKey.arn,
-  });
-  new aws.sns.TopicSubscription(environment.resourceName("ocr-alarms-email"), {
-    topic: topic.arn,
-    protocol: "email",
-    endpoint: alarmEmailAddress,
-  });
 
   new aws.cloudwatch.MetricAlarm(environment.resourceName("textract-dlq-alarm"), {
     name: environment.resourceName("textract-dlq-alarm"),
