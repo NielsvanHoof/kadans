@@ -126,6 +126,19 @@ export function deployRolePolicy(
       ],
       resources: ["*"],
     }, {
+      // AWS services using a customer-managed key create grants during resource
+      // provisioning (ECR does this when repository encryption is configured).
+      // The condition prevents CI from minting arbitrary grants for non-AWS users.
+      sid: "ManageEncryptionGrantsForAwsResources",
+      effect: "Allow",
+      actions: ["kms:CreateGrant", "kms:RetireGrant", "kms:RevokeGrant"],
+      resources: ["*"],
+      conditions: [{
+        test: "Bool",
+        variable: "kms:GrantIsForAWSResource",
+        values: ["true"],
+      }],
+    }, {
       sid: "ManageOcrMessaging",
       effect: "Allow",
       actions: ["sns:*", "sqs:*"],

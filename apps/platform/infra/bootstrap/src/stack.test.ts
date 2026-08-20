@@ -123,6 +123,7 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
   const sids = statements.map((statement) => statement.sid);
 
   for (const sid of [
+    "ManageEncryptionGrantsForAwsResources",
     "ManagePlatformNetwork",
     "ManagePlatformLoadBalancing",
     "ManagePlatformCompute",
@@ -141,6 +142,22 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
 
   // Service-linked roles are the one iam:* grant outside the qompose namespace, so
   // it must stay pinned to named services rather than becoming a bare wildcard.
+  const encryptionGrants = statements.find(
+    (statement) => statement.sid === "ManageEncryptionGrantsForAwsResources",
+  );
+
+  assert.ok(encryptionGrants);
+  assert.deepEqual(encryptionGrants.actions, [
+    "kms:CreateGrant",
+    "kms:RetireGrant",
+    "kms:RevokeGrant",
+  ]);
+  assert.deepEqual(encryptionGrants.conditions, [{
+    test: "Bool",
+    variable: "kms:GrantIsForAWSResource",
+    values: ["true"],
+  }]);
+
   const serviceLinked = statements.find(
     (statement) => statement.sid === "CreateServiceLinkedRoles",
   );
