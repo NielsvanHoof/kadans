@@ -76,8 +76,11 @@ export function createAuditTrail(
         status: "Enabled",
         filter: {},
         // Data events are per-object-access, so this bucket grows with usage
-        // rather than with time. Glacier at 90 days keeps a year affordable.
-        transitions: [{ days: 90, storageClass: "GLACIER" }],
+        // rather than with time. Production transitions at 90 days before expiring
+        // at one year. Staging expires at 30 days and must not transition later.
+        transitions: environment.settings.deletionProtection
+          ? [{ days: 90, storageClass: "GLACIER" }]
+          : [],
         expiration: { days: environment.settings.deletionProtection ? 365 : 30 },
         abortIncompleteMultipartUpload: { daysAfterInitiation: 7 },
       }],

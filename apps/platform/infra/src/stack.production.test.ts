@@ -533,7 +533,14 @@ test("CloudTrail records object reads on the documents bucket", () => {
 
 test("the audit log bucket is private and ages its own contents out", () => {
   assert.ok(stack.named("audit-logs-public-access"));
-  assert.ok(stack.named("audit-logs-lifecycle"));
+  const lifecycle = stack.named("audit-logs-lifecycle");
+
+  assert.ok(lifecycle);
+
+  const lifecycleRules = lifecycle.inputs.rules as Array<Record<string, any>>;
+
+  assert.deepEqual(lifecycleRules[0].transitions, [{ days: 90, storageClass: "GLACIER" }]);
+  assert.deepEqual(lifecycleRules[0].expiration, { days: 365 });
 
   const encryption = stack.named("audit-logs-encryption");
 

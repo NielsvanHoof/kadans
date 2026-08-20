@@ -32,6 +32,7 @@ export function deployRolePolicy(
     `arn:aws:iam::${account}:role/qompose-*`,
     `arn:aws:iam::${account}:role/qompose/*`,
     `arn:aws:iam::${account}:policy/qompose-*`,
+    `arn:aws:iam::${account}:policy/qompose/*`,
   ]);
 
   return aws.iam.getPolicyDocumentOutput({

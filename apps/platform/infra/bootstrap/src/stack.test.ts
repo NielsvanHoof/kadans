@@ -90,6 +90,18 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
     (statement) => statement.sid === "DenyModifyingOwnAccess",
   );
 
+  const identityStatement = statements.find(
+    (statement) => statement.sid === "ManageQomposeIdentities",
+  );
+
+  assert.ok(identityStatement, "deploy policy must manage application identities");
+  assert.ok(
+    (identityStatement.resources as string[]).includes(
+      "arn:aws:iam::123456789012:policy/qompose/*",
+    ),
+    "managed policies under the /qompose/ path must be creatable",
+  );
+
   assert.ok(denyStatement, "deploy policy must deny self-modification");
   assert.equal(denyStatement.effect, "Deny");
   assert.equal(
