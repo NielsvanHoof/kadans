@@ -39,6 +39,18 @@ test("compute, edge and data stores are provisioned", () => {
   assert.equal(stack.hasType("aws:secretsmanager/secret:Secret"), true);
 });
 
+test("IAM role tag values use IAM's restricted character set", () => {
+  const allowed = /^[\p{L}\p{Z}\p{N}_.:/=+\-@]*$/u;
+
+  for (const role of stack.ofType("aws:iam/role:Role")) {
+    const tags = (role.inputs.tags ?? {}) as Record<string, string>;
+
+    for (const [key, value] of Object.entries(tags)) {
+      assert.match(value, allowed, `${role.name} tag ${key} is invalid for IAM`);
+    }
+  }
+});
+
 // One artifact, five long-running roles, dispatched by docker/production/entrypoint.sh.
 test("every entrypoint role that needs a service has one", () => {
   const services = stack.ofType("aws:ecs/service:Service").map((service) => service.inputs.name);
