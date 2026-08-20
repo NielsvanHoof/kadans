@@ -440,6 +440,12 @@ test("the scanner can decrypt the documents it is asked to scan", () => {
 
   assert.ok(sids.includes("TagScannedObjects"));
   assert.ok(sids.includes("DecryptDocuments"));
+
+  const inspect = statements.find((statement) => statement.sid === "InspectDocumentsBucket");
+
+  assert.ok(inspect);
+  assert.ok(inspect.actions.includes("s3:GetBucketNotification"));
+  assert.ok(inspect.actions.includes("s3:PutBucketNotification"));
 });
 
 // The app reads the verdict; it must never be able to rewrite it.

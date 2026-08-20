@@ -90,6 +90,18 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
     (statement) => statement.sid === "DenyModifyingOwnAccess",
   );
 
+  const secretsStatement = statements.find(
+    (statement) => statement.sid === "ManagePlatformSecrets",
+  );
+
+  assert.ok(secretsStatement, "deploy policy must manage platform secrets");
+  assert.ok(
+    (secretsStatement.resources as string[]).includes(
+      "arn:aws:secretsmanager:*:123456789012:secret:rds!db-*",
+    ),
+    "RDS-managed master secrets must be creatable",
+  );
+
   const identityStatement = statements.find(
     (statement) => statement.sid === "ManageQomposeIdentities",
   );

@@ -251,6 +251,11 @@ export function deployRolePolicy(
         pulumi.output(accountId).apply((account) =>
           `arn:aws:secretsmanager:*:${account}:secret:qompose-*`
         ),
+        // RDS creates this secret on the caller's behalf when
+        // manageMasterUserPassword is enabled.
+        pulumi.output(accountId).apply((account) =>
+          `arn:aws:secretsmanager:*:${account}:secret:rds!db-*`
+        ),
       ],
     }, {
       // Certificates and DNS. ACM certificates get a generated id, and the Route53
