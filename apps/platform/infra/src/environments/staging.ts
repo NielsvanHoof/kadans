@@ -41,4 +41,5 @@ export const stagingSettings: EnvironmentSettings = {
   monthlyBudgetUsd: 75,
 
   localOperatorAccess: false,
+  computeEnabled: true,
 };

@@ -36,6 +36,13 @@ export function createPlatformSecrets(
 ): PlatformSecretStore {
   const { environment, secrets } = config;
 
+  if (secrets === undefined) {
+    throw new Error(
+      "Platform secrets are required when computeEnabled is true; "
+        + "set appKey, reverbAppId, reverbAppSecret, sentryDsn, and cacheAuthToken.",
+    );
+  }
+
   const secret = new aws.secretsmanager.Secret(environment.resourceName("app-secrets"), {
     name: environment.resourceName("app-secrets"),
     description: `Qompose ${environment.name} application secrets consumed by ECS`,

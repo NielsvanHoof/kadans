@@ -440,12 +440,39 @@ test("the scanner can decrypt the documents it is asked to scan", () => {
 
   assert.ok(sids.includes("TagScannedObjects"));
   assert.ok(sids.includes("DecryptDocuments"));
+  assert.ok(sids.includes("ManageGuardDutyEventRule"));
+  assert.ok(sids.includes("MonitorGuardDutyEventRule"));
+  assert.ok(sids.includes("AllowPutValidationObject"));
 
   const inspect = statements.find((statement) => statement.sid === "InspectDocumentsBucket");
 
   assert.ok(inspect);
   assert.ok(inspect.actions.includes("s3:GetBucketNotification"));
   assert.ok(inspect.actions.includes("s3:PutBucketNotification"));
+
+  const tagging = statements.find((statement) => statement.sid === "TagScannedObjects");
+
+  assert.ok(tagging);
+  assert.ok(tagging.actions.includes("s3:PutObjectVersionTagging"));
+  assert.ok(tagging.actions.includes("s3:GetObjectVersionTagging"));
+
+  const manageRule = statements.find((statement) => statement.sid === "ManageGuardDutyEventRule");
+
+  assert.ok(manageRule);
+  assert.ok(manageRule.actions.includes("events:PutRule"));
+  assert.ok(manageRule.actions.includes("events:DeleteRule"));
+  assert.ok(manageRule.actions.includes("events:PutTargets"));
+  assert.ok(manageRule.actions.includes("events:RemoveTargets"));
+  assert.ok(
+    JSON.stringify(manageRule).includes("DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3"),
+  );
+  assert.ok(JSON.stringify(manageRule).includes("events:ManagedBy"));
+
+  const monitorRule = statements.find((statement) => statement.sid === "MonitorGuardDutyEventRule");
+
+  assert.ok(monitorRule);
+  assert.ok(monitorRule.actions.includes("events:DescribeRule"));
+  assert.ok(monitorRule.actions.includes("events:ListTargetsByRule"));
 });
 
 // The app reads the verdict; it must never be able to rewrite it.
@@ -851,7 +878,7 @@ test("automated backups are replicated out of the primary region", () => {
   assert.notEqual(destination.inputs.region, "eu-west-1");
 });
 
-test("production mints the local Sail IAM user", () => {
-  assert.equal(stack.hasType("aws:iam/user:User"), true);
-  assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), true);
+test("production does not mint the Sail IAM user (that lives on local)", () => {
+  assert.equal(stack.hasType("aws:iam/user:User"), false);
+  assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), false);
 });

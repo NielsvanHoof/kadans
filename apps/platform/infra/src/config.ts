@@ -129,7 +129,14 @@ export interface PlatformConfig {
    */
   reverbPublicKey: string;
 
-  secrets: PlatformSecrets;
+  /**
+   * Application secrets for the compute plane.
+   *
+   * Absent when `computeEnabled` is false (the `local` documents-only stack), so
+   * a laptop-facing OCR stack is not forced to invent APP_KEY / Reverb / cache
+   * secrets nothing will read.
+   */
+  secrets?: PlatformSecrets;
 }
 
 export function loadPlatformConfig(): PlatformConfig {
@@ -138,6 +145,7 @@ export function loadPlatformConfig(): PlatformConfig {
   const region = new pulumi.Config("aws").get("region") ?? "eu-west-1";
   const domain = config.get("domain") ?? "qompose.nl";
   const zone = hostnameZone(domain, environment.settings.dnsSubdomain);
+  const computeEnabled = environment.settings.computeEnabled;
 
   return {
     environment,
@@ -152,22 +160,30 @@ export function loadPlatformConfig(): PlatformConfig {
     appHostname: config.get("appHostname") ?? `app.${zone}`,
     tenantHostnamePattern: config.get("tenantHostnamePattern") ?? `*.${zone}`,
     hostedZoneId: config.get("hostedZoneId") ?? undefined,
+    // Documents-only stacks never pull an image; keep a harmless default.
     imageTag: config.get("imageTag") ?? "bootstrap",
     mailFromAddress: config.get("mailFromAddress") ?? `no-reply@${zone}`,
-    reverbPublicKey: config.require("reverbPublicKey"),
+    // Reverb / Sentry browser values are only required when compute builds the app.
+    reverbPublicKey: computeEnabled
+      ? config.require("reverbPublicKey")
+      : (config.get("reverbPublicKey") ?? "unused-local"),
     wafEnabled: config.getBoolean("wafEnabled") ?? environment.settings.wafEnabled,
-    sentryBrowserDsn: config.require("sentryBrowserDsn"),
+    sentryBrowserDsn: computeEnabled
+      ? config.require("sentryBrowserDsn")
+      : (config.get("sentryBrowserDsn") ?? "https://unused@localhost/0"),
 
-    secrets: {
-      appKey: config.requireSecret("appKey"),
-      originVerifySecret: environment.settings.edgeEnabled
-        ? config.requireSecret("originVerifySecret")
-        : undefined,
-      reverbAppId: config.requireSecret("reverbAppId"),
-      reverbAppSecret: config.requireSecret("reverbAppSecret"),
-      sentryDsn: config.requireSecret("sentryDsn"),
-      cacheAuthToken: config.requireSecret("cacheAuthToken"),
-    },
+    secrets: computeEnabled
+      ? {
+        appKey: config.requireSecret("appKey"),
+        originVerifySecret: environment.settings.edgeEnabled
+          ? config.requireSecret("originVerifySecret")
+          : undefined,
+        reverbAppId: config.requireSecret("reverbAppId"),
+        reverbAppSecret: config.requireSecret("reverbAppSecret"),
+        sentryDsn: config.requireSecret("sentryDsn"),
+        cacheAuthToken: config.requireSecret("cacheAuthToken"),
+      }
+      : undefined,
   };
 }
 
@@ -191,7 +207,7 @@ export const ORIGIN_VERIFY_HEADER = "X-Qompose-Origin-Verify";
  * instead of a TypeError deep inside a resource definition.
  */
 export function requireOriginVerifySecret(config: PlatformConfig): pulumi.Output<string> {
-  const secret = config.secrets.originVerifySecret;
+  const secret = config.secrets?.originVerifySecret;
 
   if (secret === undefined) {
     throw new Error(

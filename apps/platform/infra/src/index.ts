@@ -38,13 +38,14 @@ import { createPlatformSecrets } from "./shared/secrets.js";
 /*
  * The Qompose platform stack: one program, one stack per environment.
  *
- * Everything that differs between production and staging lives in
+ * Everything that differs between production, staging, and local lives in
  * src/environments/ as data; the components in src/shared/ read those knobs and
  * never branch on the environment name. See src/environments/settings.ts.
  */
 
 const config = loadPlatformConfig();
 const { environment } = config;
+const computeEnabled = environment.settings.computeEnabled;
 
 // --- Data plane: documents, OCR, transcription (predates compute) ---
 const ocrEncryption = createOcrEncryption(config);
@@ -76,64 +77,10 @@ const malwareProtection = createMalwareProtection(
 );
 const auditTrail = createAuditTrail(config, documents);
 
-// --- Platform: network, data stores, edge, compute ---
-const platformEncryption = createPlatformEncryption(config);
-const network = createNetwork(config);
-const registry = createContainerRegistry(config, platformEncryption.encryptionKey);
-const database = createDatabase(config, network, platformEncryption.encryptionKey);
-const cache = createCache(config, network, platformEncryption.encryptionKey);
-const secrets = createPlatformSecrets(config, platformEncryption.encryptionKey);
-const mail = createMail(config);
-const logGroups = createServiceLogGroups(config, platformEncryption.encryptionKey);
-const loadBalancer = createLoadBalancer(config, network);
-/*
- * CloudFront in front of the ALB. When it is on, the load balancer's security
- * group only accepts CloudFront's origin-facing ranges and its listener only
- * forwards requests carrying the shared origin header — so DNS must point at the
- * distribution, not the ALB, or the hostnames resolve to something that will
- * refuse them.
- */
-const edge = environment.settings.edgeEnabled ? createEdge(config, loadBalancer) : undefined;
-const dns = createPlatformDns(config, loadBalancer, mail, edge);
-
-// SES is attached to the task role only, never to the shared policy — see mail.ts.
-const application = createApplicationIdentity(config, accessPolicy, [mail.sendPolicy]);
-const execution = createExecutionIdentity(
-  config,
-  [secrets.secret.arn, database.masterSecretArn],
-  platformEncryption.encryptionKey,
-);
-
-const compute = createCompute(config, {
-  network,
-  edge: loadBalancer,
-  database,
-  cache,
-  secrets,
-  documents,
-  logGroups,
-  taskRole: application.taskRole,
-  executionRole: execution.executionRole,
-  repository: registry.repository,
-});
-
-createSchedule(
-  config,
-  compute,
-  network,
-  application.taskRole,
-  execution.executionRole,
-);
-
-// Spend, the alarms that mean production is not serving, and cheap DR.
-createBudget(config, alerting.topic);
-createPlatformAlarms(config, { loadBalancer, database, cache, compute }, alerting.topic);
-createDisasterRecovery(config, database);
-
 /*
  * Long-lived Sail credentials belong to exactly one environment (decision-3), and
- * scripts/sync-ocr-credentials.sh reads the production stack. A second key in
- * staging would be a standing credential with nothing consuming it.
+ * scripts/sync-ocr-credentials.sh reads the `local` stack. A second key elsewhere
+ * would be a standing credential with nothing consuming it.
  */
 const operator = environment.settings.localOperatorAccess
   ? createOcrOperatorAccess(config, accessPolicy)
@@ -141,6 +88,85 @@ const operator = environment.settings.localOperatorAccess
 const credentials = operator === undefined
   ? undefined
   : exportOcrOperatorCredentials(operator);
+
+/*
+ * Application compute plane. Off for `local`, which exists only so Sail can hit
+ * real Textract / Transcribe without standing up VPC/ALB/ECS/DNS.
+ */
+const platform = computeEnabled
+  ? (() => {
+    const platformEncryption = createPlatformEncryption(config);
+    const network = createNetwork(config);
+    const registry = createContainerRegistry(config, platformEncryption.encryptionKey);
+    const database = createDatabase(config, network, platformEncryption.encryptionKey);
+    const cache = createCache(config, network, platformEncryption.encryptionKey);
+    const secrets = createPlatformSecrets(config, platformEncryption.encryptionKey);
+    const mail = createMail(config);
+    const logGroups = createServiceLogGroups(config, platformEncryption.encryptionKey);
+    const loadBalancer = createLoadBalancer(config, network);
+    /*
+     * CloudFront in front of the ALB. When it is on, the load balancer's security
+     * group only accepts CloudFront's origin-facing ranges and its listener only
+     * forwards requests carrying the shared origin header — so DNS must point at the
+     * distribution, not the ALB, or the hostnames resolve to something that will
+     * refuse them.
+     */
+    const edge = environment.settings.edgeEnabled
+      ? createEdge(config, loadBalancer)
+      : undefined;
+    const dns = createPlatformDns(config, loadBalancer, mail, edge);
+
+    // SES is attached to the task role only, never to the shared policy — see mail.ts.
+    const application = createApplicationIdentity(config, accessPolicy, [mail.sendPolicy]);
+    const execution = createExecutionIdentity(
+      config,
+      [secrets.secret.arn, database.masterSecretArn],
+      platformEncryption.encryptionKey,
+    );
+
+    const compute = createCompute(config, {
+      network,
+      edge: loadBalancer,
+      database,
+      cache,
+      secrets,
+      documents,
+      logGroups,
+      taskRole: application.taskRole,
+      executionRole: execution.executionRole,
+      repository: registry.repository,
+    });
+
+    createSchedule(
+      config,
+      compute,
+      network,
+      application.taskRole,
+      execution.executionRole,
+    );
+
+    // Spend, the alarms that mean production is not serving, and cheap DR.
+    createBudget(config, alerting.topic);
+    createPlatformAlarms(config, { loadBalancer, database, cache, compute }, alerting.topic);
+    createDisasterRecovery(config, database);
+
+    return {
+      platformEncryption,
+      network,
+      registry,
+      database,
+      cache,
+      secrets,
+      mail,
+      loadBalancer,
+      edge,
+      dns,
+      application,
+      execution,
+      compute,
+    };
+  })()
+  : undefined;
 
 // --- Outputs ---
 export const environmentName = environment.name;
@@ -162,17 +188,22 @@ export const auditTrailName = auditTrail.trail.name;
 export const auditLogBucketName = auditTrail.logBucket.bucket;
 
 // Identities
-export const appTaskRoleArn = application.taskRole.arn;
-export const appExecutionRoleArn = execution.executionRole.arn;
 export const appAccessPolicyArn = accessPolicy.arn;
 export const ocrLocalUserName = credentials?.ocrLocalUserName;
 export const ocrAccessKeyId = credentials?.ocrAccessKeyId;
 export const ocrSecretAccessKey = credentials?.ocrSecretAccessKey;
 
-// Platform
-export const platformEncryptionKeyArn = platformEncryption.encryptionKey.arn;
+// Platform (only when computeEnabled — avoid undefined stack-output warnings on `local`)
 export const alertsTopicArn = alerting.topic?.arn;
-export const vpcId = network.vpc.id;
+export const appHostname = config.appHostname;
+export const tenantHostnamePattern = config.tenantHostnamePattern;
+export const reverbPublicKey = config.reverbPublicKey;
+export const sentryBrowserDsn = config.sentryBrowserDsn;
+
+export const appTaskRoleArn = platform?.application.taskRole.arn;
+export const appExecutionRoleArn = platform?.execution.executionRole.arn;
+export const platformEncryptionKeyArn = platform?.platformEncryption.encryptionKey.arn;
+export const vpcId = platform?.network.vpc.id;
 /**
  * Network placement for `aws ecs run-task` (migrations).
  *
@@ -180,23 +211,19 @@ export const vpcId = network.vpc.id;
  * network configuration, so the caller has to supply the same subnets and security
  * group the services use, or the task lands somewhere that cannot reach the database.
  */
-export const publicSubnetIds = network.publicSubnetIds;
-export const taskSecurityGroupId = network.taskSecurityGroup.id;
-export const containerRepositoryUrl = registry.repository.repositoryUrl;
-export const clusterName = compute.cluster.name;
-export const databaseEndpoint = database.instance.address;
-export const databaseMasterSecretArn = database.masterSecretArn;
-export const cacheEndpoint = cache.replicationGroup.primaryEndpointAddress;
-export const applicationSecretArn = secrets.secret.arn;
-export const migrateTaskDefinitionArn = compute.migrateTaskDefinition.arn;
-
-// Edge
-export const appHostname = config.appHostname;
-export const tenantHostnamePattern = config.tenantHostnamePattern;
-export const loadBalancerDnsName = loadBalancer.loadBalancer.dnsName;
-export const edgeDomainName = edge?.distribution.domainName;
-export const edgeDistributionId = edge?.distribution.id;
-export const edgeWebAclArn = edge?.webAcl?.arn;
+export const publicSubnetIds = platform?.network.publicSubnetIds;
+export const taskSecurityGroupId = platform?.network.taskSecurityGroup.id;
+export const containerRepositoryUrl = platform?.registry.repository.repositoryUrl;
+export const clusterName = platform?.compute.cluster.name;
+export const databaseEndpoint = platform?.database.instance.address;
+export const databaseMasterSecretArn = platform?.database.masterSecretArn;
+export const cacheEndpoint = platform?.cache.replicationGroup.primaryEndpointAddress;
+export const applicationSecretArn = platform?.secrets.secret.arn;
+export const migrateTaskDefinitionArn = platform?.compute.migrateTaskDefinition.arn;
+export const loadBalancerDnsName = platform?.loadBalancer.loadBalancer.dnsName;
+export const edgeDomainName = platform?.edge?.distribution.domainName;
+export const edgeDistributionId = platform?.edge?.distribution.id;
+export const edgeWebAclArn = platform?.edge?.webAcl?.arn;
 /**
  * Build inputs for the JavaScript bundle.
  *
@@ -205,12 +232,11 @@ export const edgeWebAclArn = edge?.webAcl?.arn;
  * these off the stack it is deploying to. An image built against the wrong pair
  * runs perfectly and silently fails to open a WebSocket.
  */
-export const reverbPublicKey = config.reverbPublicKey;
-export const sentryBrowserDsn = config.sentryBrowserDsn;
-export const certificateArn = loadBalancer.certificate.arn;
-export const edgeCertificateArn = edge?.certificate.arn;
+export const certificateArn = platform?.loadBalancer.certificate.arn;
+export const edgeCertificateArn = platform?.edge?.certificate.arn;
 /**
  * Records to create by hand when the zone is not in Route53. Empty when
- * `hostedZoneId` is configured, because the stack wrote them itself.
+ * `hostedZoneId` is configured, because the stack wrote them itself. Undefined
+ * when compute is off (no load balancer / mail to describe).
  */
-export const dnsRecordsToCreate = dns.manualRecords;
+export const dnsRecordsToCreate = platform?.dns.manualRecords;
