@@ -10,6 +10,8 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
   pulumi.runtime.setAllConfig({
     "aws:region": "eu-west-1",
     "qompose-bootstrap:githubRepository": "NielsvanHoof/qompose",
+    "qompose-bootstrap:githubRepositoryOwnerId": "26738111",
+    "qompose-bootstrap:githubRepositoryId": "1301716861",
   }, []);
 
   await pulumi.runtime.setMocks({
@@ -59,8 +61,11 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
 
   const serialized = JSON.stringify(policyDocuments);
 
-  // The environment form of the subject claim, exactly — see trust.ts.
-  assert.match(serialized, /repo:NielsvanHoof\/qompose:environment:production/);
+  // The immutable repository prefix and environment suffix, exactly — see trust.ts.
+  assert.match(
+    serialized,
+    /repo:NielsvanHoof@26738111\/qompose@1301716861:environment:production/,
+  );
   // The ref form would silently fail to match deploy.yml's OIDC token.
   assert.equal(serialized.includes("ref:refs/heads"), false);
   // A wildcard subject would open the account to every repository on GitHub.

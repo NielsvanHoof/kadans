@@ -14,24 +14,46 @@ export const GITHUB_OIDC_ISSUER = "token.actions.githubusercontent.com";
 /**
  * Build the `sub` claim for a workflow job that declares `environment: <name>`.
  *
- * **The trap.** Most examples show `repo:owner/repo:ref:refs/heads/main`. That is
- * wrong for our deploy workflow: when a job declares an `environment:`, GitHub
- * replaces the ref portion of the subject with the environment, producing
- * `repo:owner/repo:environment:production`. A trust policy pinned to the ref form
- * will fail with "Not authorized to perform sts:AssumeRoleWithWebIdentity", and
- * the error says nothing about why.
+ * There are two traps here. A job that declares an `environment:` uses an
+ * `environment:<name>` suffix instead of `ref:refs/heads/...`. New repositories
+ * also receive GitHub's immutable subject prefix, which appends the numeric owner
+ * and repository IDs. For this repository the resulting form is:
  *
- * `.github/workflows/deploy.yml` declares `environment: production`, so this is
- * the form we must match.
+ * `repo:owner@ownerId/repo@repositoryId:environment:production`
+ *
+ * A trust policy using either the ref suffix or the legacy name-only prefix fails
+ * with "Not authorized to perform sts:AssumeRoleWithWebIdentity" without saying
+ * which claim differed.
  */
 export function githubEnvironmentSubject(
   repository: string,
   environment: string,
+  repositoryOwnerId?: string,
+  repositoryId?: string,
 ): string {
   assertPinnedRepository(repository);
   assertPinnedEnvironment(environment);
 
-  return `repo:${repository}:environment:${environment}`;
+  const hasOwnerId = repositoryOwnerId !== undefined;
+  const hasRepositoryId = repositoryId !== undefined;
+
+  if (hasOwnerId !== hasRepositoryId) {
+    throw new Error(
+      "githubRepositoryOwnerId and githubRepositoryId must be configured together.",
+    );
+  }
+
+  let repositorySubject = repository;
+
+  if (repositoryOwnerId !== undefined && repositoryId !== undefined) {
+    assertNumericId("githubRepositoryOwnerId", repositoryOwnerId);
+    assertNumericId("githubRepositoryId", repositoryId);
+
+    const [owner, name] = repository.split("/");
+    repositorySubject = `${owner}@${repositoryOwnerId}/${name}@${repositoryId}`;
+  }
+
+  return `repo:${repositorySubject}:environment:${environment}`;
 }
 
 /**
@@ -55,6 +77,12 @@ export function assertPinnedRepository(repository: string): void {
     throw new Error(
       `githubRepository must be in "owner/repo" form, received "${repository}".`,
     );
+  }
+}
+
+function assertNumericId(name: string, value: string): void {
+  if (!/^\d+$/.test(value)) {
+    throw new Error(`${name} must be a numeric GitHub ID, received "${value}".`);
   }
 }
 

@@ -108,7 +108,7 @@ export function createNetwork(config: PlatformConfig): Network {
         securityGroups: [loadBalancerSecurityGroup.id],
         description: "Octane web and Reverb, from the load balancer only",
       }],
-      egress: [allowAllEgress("ECR, Secrets Manager, SES, S3, Bedrock — no NAT, so direct")],
+      egress: [allowAllEgress("ECR, Secrets Manager, SES, S3, Bedrock - no NAT, so direct")],
       tags: { Name: environment.resourceName("task-sg") },
     },
   );
