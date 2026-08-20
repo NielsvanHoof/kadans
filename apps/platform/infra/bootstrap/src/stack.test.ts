@@ -142,6 +142,23 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
 
   // Service-linked roles are the one iam:* grant outside the qompose namespace, so
   // it must stay pinned to named services rather than becoming a bare wildcard.
+  const encryptionKeys = statements.find(
+    (statement) => statement.sid === "ManageEncryptionKeys",
+  );
+
+  assert.ok(encryptionKeys);
+  for (const action of [
+    "kms:Encrypt",
+    "kms:Decrypt",
+    "kms:ReEncrypt*",
+    "kms:GenerateDataKey*",
+  ]) {
+    assert.ok(
+      (encryptionKeys.actions as string[]).includes(action),
+      `deploy policy is missing ${action} for encrypted service provisioning`,
+    );
+  }
+
   const encryptionGrants = statements.find(
     (statement) => statement.sid === "ManageEncryptionGrantsForAwsResources",
   );

@@ -121,6 +121,12 @@ export function deployRolePolicy(
         "kms:EnableKeyRotation",
         "kms:DisableKeyRotation",
         "kms:PutKeyPolicy",
+        // Required when provisioning services that encrypt with the new key.
+        // Secrets Manager calls GenerateDataKey and Decrypt during CreateSecret.
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
         "kms:TagResource",
         "kms:UntagResource",
       ],
