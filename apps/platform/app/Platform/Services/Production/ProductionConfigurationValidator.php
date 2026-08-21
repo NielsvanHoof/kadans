@@ -96,6 +96,7 @@ final readonly class ProductionConfigurationValidator
             $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
             $this->unshippedLogChannelKey(),
             $this->hasSafeSessionSameSite() ? null : 'session.same_site',
+            $this->hasPortalIdleWindowInsideSessionLifetime() ? null : 'portal.session_idle_minutes',
             $this->enforcesTwoFactor() ? null : 'security.two_factor.enforcement',
             $this->config->get('security.malware_scanning.enabled') === true
                 ? null
@@ -145,6 +146,24 @@ final readonly class ProductionConfigurationValidator
             ProcessUploadedDocumentJob::TIMEOUT_SECONDS,
             is_numeric($transcriptionTimeout) ? (int) $transcriptionTimeout : 0,
         );
+    }
+
+    /**
+     * The Laravel session expires on idleness too, so a portal idle window at or
+     * above `session.lifetime` promises the client a window the session store
+     * drops first — they would be bounced to the ended page while the portal
+     * still believed the session was live.
+     */
+    private function hasPortalIdleWindowInsideSessionLifetime(): bool
+    {
+        $idleMinutes = $this->config->get('portal.session_idle_minutes');
+        $sessionLifetime = $this->config->get('session.lifetime');
+
+        if (! is_numeric($idleMinutes) || ! is_numeric($sessionLifetime)) {
+            return false;
+        }
+
+        return (int) $idleMinutes < (int) $sessionLifetime;
     }
 
     private function matches(string $key, string $expected): ?string

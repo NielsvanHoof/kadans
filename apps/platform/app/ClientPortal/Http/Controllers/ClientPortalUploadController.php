@@ -9,15 +9,18 @@ use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Http\Requests\StorePortalUploadedDocumentRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
+use App\Dossiers\Actions\GuardUploadedDocumentDeliveryAction;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\UploadedDocumentResponse;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ClientPortalUploadController extends Controller
 {
@@ -65,13 +68,11 @@ final class ClientPortalUploadController extends Controller
         DeleteUploadedDocumentAction $deleteUploadedDocument,
         DocumentRequestTransitions $documentRequestTransitions,
     ): RedirectResponse {
-        $grant = $this->grantFromRequest($request);
-
-        $documentRequestModel = DocumentRequest::query()->findOrFail($documentRequest);
-        abort_unless($documentRequestModel->dossier_id === $grant->dossier_id, 404);
-
-        $uploadedDocumentModel = UploadedDocument::query()->findOrFail($uploadedDocument);
-        abort_unless($uploadedDocumentModel->document_request_id === $documentRequestModel->id, 404);
+        [$documentRequestModel, $uploadedDocumentModel] = $this->uploadedDocumentOnGrantedDossier(
+            $request,
+            $documentRequest,
+            $uploadedDocument,
+        );
 
         // Concealed as 404 rather than a validation error: a request that
         // doesn't accept multiple files, or one already under review, offers
@@ -89,6 +90,63 @@ final class ClientPortalUploadController extends Controller
         Toast::success(__('Document removed.'));
 
         return to_route('portal.show');
+    }
+
+    /**
+     * Give the client back a file they sent us.
+     *
+     * They could previously see a filename and nothing else, so a client who
+     * uploaded the wrong page of a bank statement had no way to check — and no
+     * way to replace it on a single-file item. This is also their own personal
+     * data, which is an access right, not a courtesy.
+     *
+     * No RequirePassword here, unlike every staff route that streams bytes: a
+     * portal client has no account to re-authenticate with. The gate is the
+     * hashed grant, the short session, and the same malware verdict staff face.
+     */
+    public function download(
+        Request $request,
+        int $documentRequest,
+        int $uploadedDocument,
+        UploadedDocumentResponse $uploadedDocumentResponse,
+        GuardUploadedDocumentDeliveryAction $guardUploadedDocumentDelivery,
+    ): RedirectResponse|StreamedResponse {
+        [, $uploadedDocumentModel] = $this->uploadedDocumentOnGrantedDossier(
+            $request,
+            $documentRequest,
+            $uploadedDocument,
+        );
+
+        // 404 rather than staff's 403: portal denials never disclose a reason.
+        abort_unless($guardUploadedDocumentDelivery->handle($uploadedDocumentModel), 404);
+
+        return $uploadedDocumentResponse->serve($uploadedDocumentModel, disposition: 'attachment');
+    }
+
+    /**
+     * Resolve one upload, proving it hangs off a document request on the very
+     * dossier this grant opens. Everything that does not is a 404 — the portal
+     * conceals cross-dossier probes rather than confirming ids exist.
+     *
+     * Returns the parent too, because deletion has to ask the transitions
+     * whether the item still accepts changes.
+     *
+     * @return array{DocumentRequest, UploadedDocument}
+     */
+    private function uploadedDocumentOnGrantedDossier(
+        Request $request,
+        int $documentRequest,
+        int $uploadedDocument,
+    ): array {
+        $grant = $this->grantFromRequest($request);
+
+        $documentRequestModel = DocumentRequest::query()->findOrFail($documentRequest);
+        abort_unless($documentRequestModel->dossier_id === $grant->dossier_id, 404);
+
+        $uploadedDocumentModel = UploadedDocument::query()->findOrFail($uploadedDocument);
+        abort_unless($uploadedDocumentModel->document_request_id === $documentRequestModel->id, 404);
+
+        return [$documentRequestModel, $uploadedDocumentModel];
     }
 
     private function grantFromRequest(Request $request): ClientAccessGrant

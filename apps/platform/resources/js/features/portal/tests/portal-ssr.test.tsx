@@ -34,6 +34,8 @@ const { default: PortalDocumentRequestsCard } =
     await import('@/features/document-requests/portal/portal-document-requests-card');
 const { default: PortalProgressOverview } =
     await import('@/features/portal/portal-progress-overview');
+const { default: PortalSessionNotice } =
+    await import('@/features/portal/portal-session-notice');
 
 const documentRequests = [
     {
@@ -106,5 +108,31 @@ describe('portal server rendering', () => {
         expect(html).toContain('By email');
         // The Continue affordance is an in-page anchor again, not a wizard jump.
         expect(html).toContain('#request-1');
+    });
+
+    /*
+     * The session countdown is the newest thing on this page and the most
+     * likely to reach for a browser global: it owns a timer. The timer lives in
+     * an effect, which SSR never runs, but the initial seed reads the clock
+     * during render — so it has to use Date.now(), not window.performance.
+     */
+    it('renders the session warning without touching a browser global', () => {
+        const html = renderToString(
+            <PortalSessionNotice
+                idleExpiresAt={new Date(Date.now() + 60_000).toISOString()}
+            />,
+        );
+
+        expect(html).toContain('Your secure session is about to end');
+    });
+
+    it('renders nothing for a session that is not close to ending', () => {
+        const html = renderToString(
+            <PortalSessionNotice
+                idleExpiresAt={new Date(Date.now() + 3_600_000).toISOString()}
+            />,
+        );
+
+        expect(html).toBe('');
     });
 });

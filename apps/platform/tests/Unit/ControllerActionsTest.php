@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
 use App\Clients\Http\Controllers\ClientController;
 use App\Dossiers\Http\Controllers\AudioRecordingController;
 use App\Dossiers\Http\Controllers\DocumentRequestController;
@@ -92,6 +93,10 @@ const CONTROLLER_NON_REST_ACTIONS = [
         'download', 'live',
     ],
     DossierExportController::class => ['download'],
+
+    // The client's own copy of a file they uploaded. Same bytes as the staff
+    // download, reached through the portal grant instead of the Gate.
+    ClientPortalUploadController::class => ['download'],
 
     // A processing run is not a REST resource: `download` streams its payload
     // and `retry` re-queues the run in place rather than creating a new one.

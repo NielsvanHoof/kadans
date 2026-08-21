@@ -60,6 +60,7 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     'portal.document-requests.answer' => 'portal-grant: grant + dossier match + canSubmit + field visibility.',
     'portal.document-requests.upload' => 'portal-grant: grant + dossier match + canSubmit.',
     'portal.document-requests.uploaded-documents.destroy' => 'portal-grant: grant + dossier match + allow_multiple + status check.',
+    'portal.document-requests.uploaded-documents.download' => 'portal-grant: grant + dossier match + parent match + malware verdict. No RequirePassword: a portal client has no account.',
 
     // token-credential — a hashed/signed token is the credential, for guests.
     'invitations.show' => 'token-credential: invitation token.',

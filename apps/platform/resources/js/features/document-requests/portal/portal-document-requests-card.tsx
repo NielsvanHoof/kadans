@@ -44,7 +44,7 @@ export default function PortalDocumentRequestsCard({
                 <EmptyState
                     variant="panel"
                     title={t(
-                        'Nothing has been requested yet. Check back later or contact :firm.',
+                        'Nothing has been requested yet. :firm will let you know when something is needed.',
                         { firm: firmName },
                     )}
                 />

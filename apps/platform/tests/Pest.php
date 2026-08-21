@@ -5,6 +5,10 @@ declare(strict_types=1);
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
+use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Reporting\Queries\ActivityLogRowMapper;
@@ -496,4 +500,41 @@ function grantDossierBuilderLock(Dossier $dossier, User $user): string
     ])->save();
 
     return $token;
+}
+
+/**
+ * A workspace with a client, a draft dossier, and a live portal access grant.
+ *
+ * Shared because the portal is exercised from several angles — session
+ * lifetime, the ended page, uploads, downloads — and each of those needs the
+ * same four rows plus the one-time plaintext token that only exists in the
+ * action's return value.
+ *
+ * @return array{owner: User, tenant: Tenant, client: Client, dossier: Dossier, plainTextToken: string, grant: ClientAccessGrant}
+ */
+function createPortalDossierWithGrant(): array
+{
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create([
+        'tenant_id' => $tenant->id,
+        'email' => 'jane@example.com',
+    ]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => '2025 Payroll dossier',
+        'status' => DossierStatus::Draft,
+    ]);
+
+    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+
+    return [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'client' => $client,
+        'dossier' => $dossier->fresh(),
+        'plainTextToken' => $result['plain_text_token'],
+        'grant' => $result['grant'],
+    ];
 }

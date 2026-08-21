@@ -98,6 +98,11 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'missing log channel' => ['logging.default', null],
     'cross-site session cookie' => ['session.same_site', 'none'],
     'unset session same-site' => ['session.same_site', null],
+    // The Laravel session expires on idleness too, so a portal idle window at or
+    // above session.lifetime promises a window the session store drops first.
+    'portal idle window at the session lifetime' => ['portal.session_idle_minutes', 120],
+    'portal idle window beyond the session lifetime' => ['portal.session_idle_minutes', 240],
+    'unset portal idle window' => ['portal.session_idle_minutes', null],
     // Off is the safe *local* default (no GuardDuty attached to a fake bucket), so
     // it is exactly the value that must never reach a shipped environment.
     'disabled malware scanning' => ['security.malware_scanning.enabled', false],

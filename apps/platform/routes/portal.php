@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\ClientPortal\Http\Controllers\ClientPortalAnswerController;
 use App\ClientPortal\Http\Controllers\ClientPortalController;
+use App\ClientPortal\Http\Controllers\ClientPortalEndedController;
 use App\ClientPortal\Http\Controllers\ClientPortalSessionController;
+use App\ClientPortal\Http\Controllers\ClientPortalSessionExtendController;
 use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
@@ -24,6 +26,11 @@ Route::middleware([
             ->middleware('throttle:10,1')
             ->name('exchange');
 
+        // Outside the resolver group on purpose: this is where the resolver
+        // sends a client whose session ended, so running it here would loop.
+        Route::get('ended', ClientPortalEndedController::class)
+            ->name('ended');
+
         Route::middleware(ResolveClientPortalGrant::class)->group(function (): void {
             Route::get('/', [ClientPortalController::class, 'show'])
                 ->name('show');
@@ -37,8 +44,21 @@ Route::middleware([
                 ->where('uploadedDocument', '[0-9]+')
                 ->name('document-requests.uploaded-documents.destroy');
 
+            // Deliberately no RequirePassword, unlike the staff routes that
+            // stream bytes: a portal client has no account. The gate is the
+            // hashed grant, the short session, and the malware verdict.
+            Route::get('document-requests/{documentRequest}/uploaded-documents/{uploadedDocument}/download', [ClientPortalUploadController::class, 'download'])
+                ->where('documentRequest', '[0-9]+')
+                ->where('uploadedDocument', '[0-9]+')
+                ->name('document-requests.uploaded-documents.download');
+
             Route::post('document-requests/{documentRequest}/answer', [ClientPortalAnswerController::class, 'store'])
                 ->where('documentRequest', '[0-9]+')
                 ->name('document-requests.answer');
+
+            // Passing the resolver is what slides the idle deadline; the
+            // controller only has to send the client back to the form.
+            Route::post('session/extend', ClientPortalSessionExtendController::class)
+                ->name('session.extend');
         });
     });

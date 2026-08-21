@@ -1,7 +1,7 @@
-import { X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
-import { Button } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
 import {
     PortalBooleanDocumentAnswer,
     PortalChoiceDocumentAnswer,
@@ -86,33 +86,53 @@ function PortalUploadedFile({
                     ) : null}
                 </p>
             </div>
-            {canRemove ? (
-                <ConfirmDestroyDialog
-                    title={t('Remove :filename?', {
-                        filename: uploaded.original_filename,
-                    })}
-                    description={t(
-                        'This file will be permanently removed from your submission.',
-                    )}
-                    confirmLabel={t('Remove file')}
-                    trigger={
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label={t('Remove :filename', {
-                                filename: uploaded.original_filename,
-                            })}
-                        >
-                            <X aria-hidden />
-                        </Button>
-                    }
-                    form={ClientPortalUploadController.destroy.form({
+            <div className="flex shrink-0 items-center gap-1">
+                {/*
+                    Clients could previously see only a filename, so there was no
+                    way to check that the right page of a bank statement went up.
+                    It is also their own data, which is an access right.
+                */}
+                <LinkButton
+                    variant="ghost"
+                    size="icon-xs"
+                    href={ClientPortalUploadController.download.url({
                         documentRequest: documentRequest.id,
                         uploadedDocument: uploaded.id,
                     })}
-                />
-            ) : null}
+                    aria-label={t('Download :filename', {
+                        filename: uploaded.original_filename,
+                    })}
+                >
+                    <Download aria-hidden />
+                </LinkButton>
+                {canRemove ? (
+                    <ConfirmDestroyDialog
+                        title={t('Remove :filename?', {
+                            filename: uploaded.original_filename,
+                        })}
+                        description={t(
+                            'This file will be permanently removed from your submission.',
+                        )}
+                        confirmLabel={t('Remove file')}
+                        trigger={
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                aria-label={t('Remove :filename', {
+                                    filename: uploaded.original_filename,
+                                })}
+                            >
+                                <X aria-hidden />
+                            </Button>
+                        }
+                        form={ClientPortalUploadController.destroy.form({
+                            documentRequest: documentRequest.id,
+                            uploadedDocument: uploaded.id,
+                        })}
+                    />
+                ) : null}
+            </div>
         </div>
     );
 }

@@ -2,7 +2,12 @@ import { Head } from '@inertiajs/react';
 import StatusMessage from '@/components/primitives/status-message';
 import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
 import PortalProgressOverview from '@/features/portal/portal-progress-overview';
-import type { PortalDossier } from '@/features/portal/types';
+import PortalSessionNotice from '@/features/portal/portal-session-notice';
+import type {
+    PortalDossier,
+    PortalFirm,
+    PortalSession,
+} from '@/features/portal/types';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import PortalShell from '@/layouts/portal/portal-shell';
@@ -13,9 +18,11 @@ import PortalShell from '@/layouts/portal/portal-shell';
 export default function PortalShow({
     firm,
     dossier,
+    session,
 }: {
-    firm: { name: string };
+    firm: PortalFirm;
     dossier: PortalDossier;
+    session: PortalSession;
 }) {
     const { t } = useTranslation();
     const { formatDateTime } = useFormatters();
@@ -45,6 +52,8 @@ export default function PortalShow({
                 subtitle={subtitle}
                 meta={meta}
             >
+                <PortalSessionNotice idleExpiresAt={session.idle_expires_at} />
+
                 {dossier.status === 'completed' && (
                     <StatusMessage>
                         {t(
@@ -74,12 +83,20 @@ export default function PortalShow({
                     }
                 />
 
-                <p className="text-center text-sm text-pretty text-muted-foreground">
-                    {t(
-                        'This is a secure upload page for :firm. Do not share this link.',
-                        { firm: firm.name },
-                    )}
-                </p>
+                <div className="space-y-1 text-center text-sm text-pretty text-muted-foreground">
+                    <p>
+                        {t(
+                            'This is a secure upload page for :firm. Do not share this link.',
+                            { firm: firm.name },
+                        )}
+                    </p>
+                    <p>
+                        {t('Questions? Contact :name at :email.', {
+                            name: firm.contact_name,
+                            email: firm.contact_email,
+                        })}
+                    </p>
+                </div>
             </PortalShell>
         </>
     );
