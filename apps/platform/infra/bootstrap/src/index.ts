@@ -20,6 +20,8 @@ import {
  *   npm ci
  *   pulumi stack init bootstrap
  *   pulumi config set githubRepository <owner>/<repo>
+ *   pulumi config set githubRepositoryOwnerId <owner-id>
+ *   pulumi config set githubRepositoryId <repository-id>
  *   pulumi config set aws:region eu-west-1
  *   npm run up
  *
@@ -51,7 +53,12 @@ const oidcProviderArn: pulumi.Output<string> = config.existingOidcProviderArn
  * environment in the subject claim.
  */
 const deployRoles = config.environments.map((environment) => {
-  const subject = githubEnvironmentSubject(config.githubRepository, environment);
+  const subject = githubEnvironmentSubject(
+    config.githubRepository,
+    environment,
+    config.githubRepositoryOwnerId,
+    config.githubRepositoryId,
+  );
 
   const assumeRolePolicy = aws.iam.getPolicyDocumentOutput({
     statements: [{

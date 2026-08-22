@@ -73,8 +73,16 @@ jobs:
         env:
           ALARM_EMAIL_ADDRESS: ${{ vars.ALARM_EMAIL_ADDRESS }}
           ALARM_SMS_NUMBER: ${{ vars.ALARM_SMS_NUMBER }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+          CACHE_AUTH_TOKEN: ${{ secrets.CACHE_AUTH_TOKEN }}
           HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
           IMAGE_TAG: ${{ vars.IMAGE_TAG }}
+          ORIGIN_VERIFY_SECRET: ${{ secrets.ORIGIN_VERIFY_SECRET }}
+          REVERB_APP_ID: ${{ secrets.REVERB_APP_ID }}
+          REVERB_APP_SECRET: ${{ secrets.REVERB_APP_SECRET }}
+          REVERB_PUBLIC_KEY: ${{ vars.REVERB_PUBLIC_KEY }}
+          SENTRY_BROWSER_DSN: ${{ vars.SENTRY_BROWSER_DSN }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           WAF_ENABLED: ${{ vars.WAF_ENABLED }}
         run: |
           npx pulumi config set aws:region "$AWS_REGION"
@@ -108,6 +116,31 @@ jobs:
           # Unset leaves the environment's own setting in place.
           if [ -n "$WAF_ENABLED" ]; then
             npx pulumi config set wafEnabled "$WAF_ENABLED"
+          fi
+
+          : "${APP_KEY:?APP_KEY must be configured}"
+          : "${REVERB_APP_ID:?REVERB_APP_ID must be configured}"
+          : "${REVERB_APP_SECRET:?REVERB_APP_SECRET must be configured}"
+          : "${SENTRY_DSN:?SENTRY_DSN must be configured}"
+          : "${CACHE_AUTH_TOKEN:?CACHE_AUTH_TOKEN must be configured}"
+          : "${REVERB_PUBLIC_KEY:?REVERB_PUBLIC_KEY must be configured}"
+          : "${SENTRY_BROWSER_DSN:?SENTRY_BROWSER_DSN must be configured}"
+
+          npx pulumi config set --secret appKey "$APP_KEY"
+          npx pulumi config set --secret reverbAppId "$REVERB_APP_ID"
+          npx pulumi config set --secret reverbAppSecret "$REVERB_APP_SECRET"
+          npx pulumi config set --secret sentryDsn "$SENTRY_DSN"
+          npx pulumi config set --secret cacheAuthToken "$CACHE_AUTH_TOKEN"
+
+          # These must remain plain config — Vite embeds them in the browser bundle.
+          npx pulumi config set reverbPublicKey "$REVERB_PUBLIC_KEY"
+          npx pulumi config set sentryBrowserDsn "$SENTRY_BROWSER_DSN"
+
+          if [ "$STACK" = "production" ]; then
+            : "${ORIGIN_VERIFY_SECRET:?ORIGIN_VERIFY_SECRET must be configured for production}"
+            npx pulumi config set --secret originVerifySecret "$ORIGIN_VERIFY_SECRET"
+          else
+            npx pulumi config rm originVerifySecret || true
           fi
 
           npm run up -- --yes --non-interactive

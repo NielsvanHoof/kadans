@@ -54,18 +54,11 @@ export default function DossierShowDeferredSections({
                 </Deferred>
             ) : null}
 
-            <Deferred
-                data="audio_recordings"
-                fallback={
-                    <BelowFoldSkeleton label={t('Loading audio recordings')} />
-                }
-            >
-                <DeferredAudioCard
-                    dossier={dossier}
-                    canUploadAudio={canUploadAudio}
-                    canDownloadAudio={canDownloadAudio}
-                />
-            </Deferred>
+            <AudioRecordingsSection
+                dossier={dossier}
+                canUploadAudio={canUploadAudio}
+                canDownloadAudio={canDownloadAudio}
+            />
         </>
     );
 }
@@ -83,7 +76,15 @@ function DeferredExportCard({ dossier }: { dossier: Dossier }) {
     );
 }
 
-function DeferredAudioCard({
+/**
+ * Deliberately not wrapped in <Deferred>: the card owns an upload form whose
+ * useForm state must survive the back() redirect of a failed upload, and that
+ * redirect re-declares `audio_recordings` as deferred — so a boundary here
+ * would unmount the form and swallow the validation error (TASK-42). The card
+ * defers its own list instead; this wrapper only keeps it out of the layout for
+ * a read-only viewer with nothing to show.
+ */
+function AudioRecordingsSection({
     dossier,
     canUploadAudio,
     canDownloadAudio,
@@ -92,19 +93,17 @@ function DeferredAudioCard({
     canUploadAudio: boolean;
     canDownloadAudio: boolean;
 }) {
-    const audioRecordings = usePage().props
-        .audio_recordings as AudioRecording[];
+    const audioRecordings = usePage().props.audio_recordings as
+        | AudioRecording[]
+        | undefined;
 
-    if (!canUploadAudio && audioRecordings.length === 0) {
+    if (!canUploadAudio && audioRecordings?.length === 0) {
         return null;
     }
 
     return (
         <AudioRecordingsCard
-            dossier={{
-                ...dossier,
-                audio_recordings: audioRecordings,
-            }}
+            dossier={dossier}
             canUpload={canUploadAudio}
             canDownload={canDownloadAudio}
         />

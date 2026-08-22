@@ -121,7 +121,7 @@ export function createExecutionIdentity(
         actions: ["sts:AssumeRole"],
       }],
     }).json,
-    tags: { Purpose: "ECS execution role: image pull, secret resolution, log writes" },
+    tags: { Purpose: "ECS execution role: image pull / secret resolution / log writes" },
   });
 
   // AWS-managed: ECR pull and CreateLogStream/PutLogEvents. Deliberately the

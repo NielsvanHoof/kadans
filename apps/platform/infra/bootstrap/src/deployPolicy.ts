@@ -32,6 +32,7 @@ export function deployRolePolicy(
     `arn:aws:iam::${account}:role/qompose-*`,
     `arn:aws:iam::${account}:role/qompose/*`,
     `arn:aws:iam::${account}:policy/qompose-*`,
+    `arn:aws:iam::${account}:policy/qompose/*`,
   ]);
 
   return aws.iam.getPolicyDocumentOutput({
@@ -120,10 +121,29 @@ export function deployRolePolicy(
         "kms:EnableKeyRotation",
         "kms:DisableKeyRotation",
         "kms:PutKeyPolicy",
+        // Required when provisioning services that encrypt with the new key.
+        // Secrets Manager calls GenerateDataKey and Decrypt during CreateSecret.
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
         "kms:TagResource",
         "kms:UntagResource",
       ],
       resources: ["*"],
+    }, {
+      // AWS services using a customer-managed key create grants during resource
+      // provisioning (ECR does this when repository encryption is configured).
+      // The condition prevents CI from minting arbitrary grants for non-AWS users.
+      sid: "ManageEncryptionGrantsForAwsResources",
+      effect: "Allow",
+      actions: ["kms:CreateGrant", "kms:RetireGrant", "kms:RevokeGrant"],
+      resources: ["*"],
+      conditions: [{
+        test: "Bool",
+        variable: "kms:GrantIsForAWSResource",
+        values: ["true"],
+      }],
     }, {
       sid: "ManageOcrMessaging",
       effect: "Allow",
@@ -230,6 +250,11 @@ export function deployRolePolicy(
       resources: [
         pulumi.output(accountId).apply((account) =>
           `arn:aws:secretsmanager:*:${account}:secret:qompose-*`
+        ),
+        // RDS creates this secret on the caller's behalf when
+        // manageMasterUserPassword is enabled.
+        pulumi.output(accountId).apply((account) =>
+          `arn:aws:secretsmanager:*:${account}:secret:rds!db-*`
         ),
       ],
     }, {

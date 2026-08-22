@@ -4,6 +4,10 @@ import { assertPinnedRepository } from "./trust.js";
 export interface BootstrapConfig {
   /** "owner/repo" — the only repository allowed to assume the deploy roles. */
   githubRepository: string;
+  /** Immutable GitHub owner ID; configure together with githubRepositoryId. */
+  githubRepositoryOwnerId?: string;
+  /** Immutable GitHub repository ID; configure together with githubRepositoryOwnerId. */
+  githubRepositoryId?: string;
   /** GitHub Environment names to mint a deploy role for. */
   environments: string[];
   region: string;
@@ -25,6 +29,8 @@ export function loadBootstrapConfig(): BootstrapConfig {
 
   return {
     githubRepository,
+    githubRepositoryOwnerId: config.get("githubRepositoryOwnerId") ?? undefined,
+    githubRepositoryId: config.get("githubRepositoryId") ?? undefined,
     environments: config.getObject<string[]>("environments") ?? ["production"],
     region: new pulumi.Config("aws").get("region") ?? "eu-west-1",
     existingOidcProviderArn: config.get("existingOidcProviderArn") ?? undefined,

@@ -28,3 +28,27 @@ ResolveClientAccessGrantFromTokenAction wraps its lookup in Timebox (200ms, matc
 Do NOT add Timebox to ResolveClientPortalGrant middleware. It resolves from SESSION_GRANT_ID, which is only ever written by ClientPortalSessionController after a successful token exchange. A session value behind a signed cookie is not attacker-iterable, so there is no oracle — timeboxing it would only add latency to every portal navigation.
 
 Timebox::usleep() delegates to Sleep::usleep(), so Sleep::fake() + Sleep::assertSleptTimes() test it without real delay.
+
+## Portal sessions slide; only the ceiling is absolute
+Two deadlines, both owned by `PortalSessionWindow` and both clamped by the grant's `expires_at`. `portal.session_idle_minutes` is rewritten by `ResolveClientPortalGrant` on **every** request that resolves a live grant; `portal.session_absolute_minutes` is stamped once in `ClientPortalSessionController` and never touched again.
+
+Do not "simplify" this back to one deadline. A single absolute window is what the sliding window replaced: at 15 minutes it 404'd clients partway through a ten-item questionnaire on a phone, which is the worst failure the product has because the user is an outsider with no account and no support channel.
+
+The idle window must stay below `session.lifetime` — the Laravel session expires on idleness too, so a larger portal window would promise something the session store drops first. `ProductionConfigurationValidator` fails boot on that rather than letting it ship.
+
+`POST portal/session/extend` has an empty controller on purpose: passing the middleware is what extends the session. It exists so the pre-expiry banner has a deliberate user action to call — a background heartbeat would defeat idle expiry entirely. It cannot become an unbounded keep-alive because the ceiling never moves.
+
+## Session end is the one portal denial that is disclosed, not 404'd
+`ResolveClientPortalGrant` redirects to `portal.ended` for exactly two cases — the window elapsed (`PortalSessionEndReason::TimedOut`) and the grant is revoked or expired (`AccessEnded`). Everything else stays a bare 404: no portal session at all, a `grant_id` that resolves to no row, a missing tenant.
+
+This is safe for the same reason the middleware is not timeboxed: `SESSION_GRANT_ID` is only ever written by `ClientPortalSessionController` after a successful token exchange, and it sits behind a signed cookie, so reaching either branch **proves** the visitor already held a legitimate session. There is no oracle for a prober. Do not "restore consistency" by turning the redirect back into `abort(404)` — the app-wide error page offers a guest a "Go to login" button, which is the exact confusion this replaced.
+
+`SESSION_FIRM_NAME` deliberately survives teardown so the ended page stays branded. It is the tenant's public display name, already in the email that brought the client here.
+
+## Client downloads share the staff hardening, not the staff status code
+`ClientPortalUploadController::download` goes through `Dossiers\Support\UploadedDocumentResponse` (S3 signed-URL redirect or local stream, plus `UNTRUSTED_FILE_HEADERS`) and `Dossiers\Actions\GuardUploadedDocumentDeliveryAction` (malware verdict, fail-closed on unscanned, audited refusal). Both are shared with `UploadedDocumentController` — do not fork either.
+
+What differs is the refusal: staff get 403 with a message, the portal gets **404**. That is why the guard returns a bool instead of aborting itself.
+
+This route carries no `RequirePassword`, breaking the `routes.md` rule that every byte-streaming route does. That middleware presumes an account; a portal client has none. The gate is the hashed grant, the short session, and the scan verdict, and it is declared in `AUTHORIZATION_NOT_VIA_GATE`.
+

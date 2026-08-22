@@ -5,7 +5,24 @@ declare(strict_types=1);
 use App\ClientPortal\Enums\NewPortalDeviceAction;
 
 return [
-    'session_lifetime_minutes' => (int) env('PORTAL_SESSION_LIFETIME', 15),
+    /*
+    |--------------------------------------------------------------------------
+    | Portal session window
+    |--------------------------------------------------------------------------
+    |
+    | Two deadlines, not one. The idle window is extended on every portal
+    | request, so a client photographing a payslip between two uploads is not
+    | signed out mid-questionnaire. The absolute window is stamped once at
+    | redemption and never extended, so a stolen session still dies on its own.
+    |
+    | Both are clamped by the grant's own `expires_at`, and the idle window must
+    | stay below `session.lifetime` — the underlying Laravel session is idle
+    | expiring too, and promising a portal window it would drop first is a lie
+    | (ProductionConfigurationValidator fails boot on that).
+    |
+    */
+    'session_idle_minutes' => (int) env('PORTAL_SESSION_IDLE_MINUTES', 15),
+    'session_absolute_minutes' => (int) env('PORTAL_SESSION_ABSOLUTE_MINUTES', 240),
 
     /*
     |--------------------------------------------------------------------------

@@ -59,7 +59,7 @@ export function createCache(
       kmsKeyId: encryptionKey.arn,
       // Required by ProductionConfigurationValidator; REDIS_SCHEME=tls in compute.ts.
       transitEncryptionEnabled: true,
-      authToken: config.secrets.cacheAuthToken,
+      authToken: config.secrets!.cacheAuthToken,
 
       automaticFailoverEnabled: replicated,
       multiAzEnabled: replicated,

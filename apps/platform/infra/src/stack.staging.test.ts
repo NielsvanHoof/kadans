@@ -38,6 +38,17 @@ test("staging is single-AZ and destroyable", () => {
   assert.equal(alb.inputs.enableDeletionProtection, false);
 });
 
+test("staging audit logs expire without a later storage transition", () => {
+  const lifecycle = stack.named("audit-logs-lifecycle");
+
+  assert.ok(lifecycle);
+
+  const rules = lifecycle.inputs.rules as Array<Record<string, any>>;
+
+  assert.deepEqual(rules[0].transitions, []);
+  assert.deepEqual(rules[0].expiration, { days: 30 });
+});
+
 /*
  * ElastiCache rejects automaticFailoverEnabled and multiAzEnabled on a single-node
  * group, which is why cache.ts derives both from cacheNodeCount rather than

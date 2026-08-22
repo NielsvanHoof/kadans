@@ -19,33 +19,35 @@ tidiness: the thing that grants CI its access must not itself be deployable by C
 ## Layout, and why it is shaped like `docker/`
 
 `docker/` keeps one shared base image and a thin directory per environment. This
-mirrors it. `src/shared/` builds every component; `src/environments/production.ts`
-and `staging.ts` are pure data.
+mirrors it. `src/shared/` builds every component; `src/environments/production.ts`,
+`staging.ts`, and `local.ts` are pure data.
 
 The rule that keeps it honest: **a component reads a knob from
 `EnvironmentSettings`; it never branches on `environment.name`.** A name check
 hides the difference inside the component, where nobody comparing two environments
-will find it. The whole production/staging delta should be a two-file diff.
+will find it. The whole production/staging/local delta should be a settings-file diff.
 
-| Knob | production | staging |
-|---|---|---|
-| `deletionProtection` | `true` | `false` |
-| `databaseMultiAz` | `true` | `false` |
-| `databaseBackupRetentionDays` | 14 | 3 |
-| `cacheNodeCount` | 2 | 1 |
-| `webDesiredCount` / `workerDesiredCount` | 2 / 2 | 1 / 1 |
-| `logRetentionDays` | 90 | 14 |
-| `dnsSubdomain` | `null` | `staging` |
-| `edgeEnabled` (CloudFront + origin lockdown) | `true` | `false` |
-| `wafEnabled` (overridable via config) | `true` | `false` |
-| `crossRegionSnapshotCopy` (RDS backups to eu-central-1) | `true` | `false` |
-| `monthlyBudgetUsd` | 200 | 75 |
-| `localOperatorAccess` | `true` | `false` |
+| Knob | production | staging | local |
+|---|---|---|---|
+| `deletionProtection` | `true` | `false` | `false` |
+| `databaseMultiAz` | `true` | `false` | n/a |
+| `databaseBackupRetentionDays` | 14 | 3 | n/a |
+| `cacheNodeCount` | 2 | 1 | n/a |
+| `webDesiredCount` / `workerDesiredCount` | 2 / 2 | 1 / 1 | 0 / 0 |
+| `logRetentionDays` | 90 | 14 | 14 |
+| `dnsSubdomain` | `null` | `staging` | `local` |
+| `edgeEnabled` (CloudFront + origin lockdown) | `true` | `false` | `false` |
+| `wafEnabled` (overridable via config) | `true` | `false` | `false` |
+| `crossRegionSnapshotCopy` (RDS backups to eu-central-1) | `true` | `false` | `false` |
+| `monthlyBudgetUsd` | 200 | 75 | 25 |
+| `computeEnabled` | `true` | `true` | `false` |
+| `localOperatorAccess` | `false` | `false` | `true` |
 
-`localOperatorAccess` is the one knob that is a correctness constraint rather than a
-cost trade. Exactly one environment mints the long-lived IAM user + access key Sail
-uses locally (decision-3), and `scripts/sync-ocr-credentials.sh` reads production. A
-second key in staging would be a standing credential with nothing consuming it.
+`local` is documents/OCR/transcription only (no VPC/ALB/ECS). `localOperatorAccess`
+is the correctness constraint: exactly one environment mints the long-lived IAM
+user + access key Sail uses for real Textract/Transcribe demos (decision-3), and
+`scripts/sync-ocr-credentials.sh` reads the `local` stack. Floci remains the
+everyday local S3 path with mock OCR drivers.
 
 ## What the stack builds
 
@@ -148,7 +150,7 @@ looks like an unexplained 403 from CloudFront:
 
 | Rule | Why it is overridden |
 |---|---|
-| `SizeRestrictions_BODY` | rejects bodies over 8 KB; document uploads go to 20 MB |
+| `SizeRestrictions_BODY` | rejects bodies over 8 KB; document uploads go to 20 MB and audio recordings to 25 MB |
 | `CrossSiteScripting_BODY` | trips on client correspondence pasted into notes and answers |
 
 Both are set to `count` rather than removed, so they still record what they would
@@ -295,14 +297,15 @@ released to is what makes that mismatch impossible rather than merely unlikely.
 every `import.meta.env.VITE_*` and fails if one is not a build argument, because a
 missing one is invisible until it is expensive.
 
-## Local `.env` (production stack only)
+## Local `.env` (`local` stack only)
 
-After `pulumi up`, sync stack outputs into a cached AWS profile and apply it **on the
-host** (not via Sail — Pulumi is not in the container):
+Sail defaults to Floci + mock OCR drivers. For real Textract/Transcribe against AWS,
+bring up the documents-only `local` stack, then sync credentials on the **host**
+(not via Sail — Pulumi is not in the container):
 
 ```bash
-cd apps/platform
-composer env:aws     # or: cd infra && ./scripts/sync-ocr-credentials.sh
+cd apps/platform/infra && pulumi up -s local
+cd apps/platform && composer env:aws     # or: cd infra && ./scripts/sync-ocr-credentials.sh
 composer env:floci   # back to Sail's local AWS; env:aws re-applies the cached profile
 ```
 
@@ -310,8 +313,7 @@ That writes gitignored `env/profiles/aws.env` and upserts `FILESYSTEM_DISK=s3`,
 `OCR_DRIVER=textract`, `TRANSCRIPTION_DRIVER=transcribe`, the IAM keys, the bucket
 and the queue URLs into `.env`, clearing the Floci endpoints.
 
-This stack creates that IAM user and access key **for local development only**. The
-reasoning is worth stating accurately, because it is easy to draw the wrong lesson:
+The `local` stack creates that IAM user and access key **for local development only**.
 IAM roles hand temporary credentials to something AWS already recognises — an ECS
 task, an EC2 instance, a Lambda. A PHP process on your laptop is none of those. The
 key is acceptable *because* the policy is narrow: one bucket, the OCR queues, one KMS
@@ -411,7 +413,7 @@ would let the stack deploy green and then refuse every request.
 | `transcribeResultsQueueUrl` (+ `…DeadLetterQueueUrl`) | Transcribe consumer queue |
 | `transcribeDeliveryDeadLetterQueueUrl` | EventBridge FailedInvocations |
 | `appTaskRoleArn` / `appExecutionRoleArn` / `appAccessPolicyArn` | ECS identities |
-| `ocrLocalUserName` / `ocrAccessKeyId` / `ocrSecretAccessKey` | Local Sail credentials (production only) |
+| `ocrLocalUserName` / `ocrAccessKeyId` / `ocrSecretAccessKey` | Local Sail credentials (`local` stack only) |
 | `ocrEncryptionKeyArn` | KMS key for the documents bucket and queues |
 
 ## Important

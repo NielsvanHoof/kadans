@@ -8,21 +8,33 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 
 /**
- * Shared document upload ceilings for staff and portal FormRequests.
+ * Shared document upload ceilings for staff and portal uploads.
  *
- * Keep in sync with docker/production/php.ini and the frontend dropzone defaults:
- * - per-file max matches upload_max_filesize
- * - post_max_size must cover max files × per-file max (plus form overhead)
+ * These used to have to stay at or below the per-environment php.ini
+ * `upload_max_filesize` / `post_max_size`, because the files arrived as a
+ * multipart body through PHP. They no longer do: the browser PUTs each file
+ * straight to S3 with a presigned URL (see DocumentPresigner), so PHP never
+ * sees the bytes and no ini directive constrains them.
+ *
+ * That removes the silent-failure mode behind TASK-42 — a file over
+ * `upload_max_filesize` used to be dropped with UPLOAD_ERR_INI_SIZE while
+ * `post_max_size` still admitted the body, so there was no 413 and the upload
+ * simply looked like a no-op. It also means these constants are now the *only*
+ * ceiling: ClaimUploadTicketAction checks them against the object S3 actually
+ * stored, and nothing else does.
+ *
+ * `tests/Feature/Platform/UploadLimitsTest.php` pins them to the frontend
+ * dropzone defaults.
  */
 final class DocumentUploadLimits
 {
     public const int MAX_FILES_WHEN_MULTIPLE = 10;
 
-    /** Laravel File::max() / validation size string. */
-    public const string MAX_FILE_SIZE = '20mb';
+    /** Per-file ceiling, checked against the stored object's real size. */
+    public const int MAX_FILE_BYTES = 20 * 1024 * 1024;
 
-    /** Human label for PostTooLargeException messaging (10 × 20 MB). */
-    public const string MAX_POST_SIZE_LABEL = '200 MB';
+    /** Human label for the validation message. */
+    public const string MAX_FILE_SIZE_LABEL = '20 MB';
 
     /**
      * Cumulative portal upload ceiling per dossier (all document requests).

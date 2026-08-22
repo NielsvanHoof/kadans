@@ -11,7 +11,6 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Models\Pipeline;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -39,7 +38,7 @@ test('uploading a document dispatches the mock OCR processing job', function ():
 
     $uploaded = resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
-        UploadedFile::fake()->create('payslip.pdf', 100, 'application/pdf'),
+        stagedUpload($documentRequest->tenant_id, 'payslip.pdf', 'application/pdf', 100 * 1024),
     );
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending)
@@ -76,7 +75,7 @@ test('staff dossier show includes processing fields for uploaded documents', fun
 
     resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
-        UploadedFile::fake()->create('payslip.pdf', 100, 'application/pdf'),
+        stagedUpload($documentRequest->tenant_id, 'payslip.pdf', 'application/pdf', 100 * 1024),
     );
 
     $this->actingAs($owner)

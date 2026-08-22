@@ -11,7 +11,6 @@ use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Actions\AudioRecordings\UploadAudioRecordingAction;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -28,7 +27,7 @@ test('uploading an audio recording stores the file, creates a pipeline, and disp
 
     $audioRecording = $upload->handle(
         $dossier,
-        UploadedFile::fake()->create('call.mp3', 100, 'audio/mpeg'),
+        stagedUpload($dossier->tenant_id, 'call.mp3', 'audio/mpeg', 100 * 1024),
     );
 
     expect($audioRecording->original_filename)->toBe('call.mp3')
@@ -58,7 +57,7 @@ test('a failed upload removes the newly stored file', function (): void {
     try {
         expect(fn () => $upload->handle(
             $dossier,
-            UploadedFile::fake()->create('call.mp3', 100, 'audio/mpeg'),
+            stagedUpload($dossier->tenant_id, 'call.mp3', 'audio/mpeg', 100 * 1024),
         ))->toThrow(RuntimeException::class, 'Simulated database failure.');
     } finally {
         Event::forget($event);
@@ -74,7 +73,7 @@ test('uploading an audio recording writes a tenant scoped audit entry', function
 
     $audioRecording = resolve(UploadAudioRecordingAction::class)->handle(
         $dossier,
-        UploadedFile::fake()->create('call.mp3', 100, 'audio/mpeg'),
+        stagedUpload($dossier->tenant_id, 'call.mp3', 'audio/mpeg', 100 * 1024),
         $uploader,
     );
 
@@ -105,7 +104,7 @@ test('an audio upload rolls back database and storage when its audit record fail
     try {
         expect(fn () => $upload->handle(
             $dossier,
-            UploadedFile::fake()->create('call.mp3', 100, 'audio/mpeg'),
+            stagedUpload($dossier->tenant_id, 'call.mp3', 'audio/mpeg', 100 * 1024),
         ))->toThrow(RuntimeException::class, 'Simulated audit failure.');
     } finally {
         Event::forget($event);

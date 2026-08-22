@@ -190,7 +190,8 @@ function managedPolicyId(
  * than anything a developer would connect to WAF:
  *
  *  - **SizeRestrictions_BODY** rejects request bodies over 8 KB. Document uploads
- *    are allowed up to 20 MB, so every real upload is blocked.
+ *    are allowed up to 20 MB and audio recordings up to 25 MB, so every real
+ *    upload is blocked.
  *  - **CrossSiteScripting_BODY** inspects body content for script-like patterns.
  *    Staff paste client correspondence into notes and questionnaire answers, and
  *    a quoted email signature containing markup is enough to trip it.

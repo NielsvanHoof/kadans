@@ -10,7 +10,6 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -27,13 +26,13 @@ test('replacing an upload commits new metadata before deleting the old file', fu
 
     $original = $upload->handle(
         $documentRequest,
-        UploadedFile::fake()->create('original.pdf', 100, 'application/pdf'),
+        stagedUpload($documentRequest->tenant_id, 'original.pdf', 'application/pdf', 100 * 1024),
     );
     $original->forceFill(['textract_job_id' => 'obsolete-textract-job'])->save();
 
     $replacement = $upload->handle(
         $documentRequest,
-        UploadedFile::fake()->create('replacement.pdf', 120, 'application/pdf'),
+        stagedUpload($documentRequest->tenant_id, 'replacement.pdf', 'application/pdf', 120 * 1024),
     );
 
     expect($replacement->id)->toBe($original->id)
@@ -58,7 +57,7 @@ test('a failed replacement keeps the previous database record and file', functio
 
     $original = $upload->handle(
         $documentRequest,
-        UploadedFile::fake()->create('original.pdf', 100, 'application/pdf'),
+        stagedUpload($documentRequest->tenant_id, 'original.pdf', 'application/pdf', 100 * 1024),
     );
 
     $event = 'eloquent.updating: '.UploadedDocument::class;
@@ -69,7 +68,7 @@ test('a failed replacement keeps the previous database record and file', functio
     try {
         expect(fn () => $upload->handle(
             $documentRequest,
-            UploadedFile::fake()->create('replacement.pdf', 120, 'application/pdf'),
+            stagedUpload($documentRequest->tenant_id, 'replacement.pdf', 'application/pdf', 120 * 1024),
         ))->toThrow(RuntimeException::class, 'Simulated database failure.');
     } finally {
         Event::forget($event);
@@ -94,7 +93,7 @@ test('a failed initial upload removes the newly stored file', function (): void 
     try {
         expect(fn () => $upload->handle(
             $documentRequest,
-            UploadedFile::fake()->create('new.pdf', 100, 'application/pdf'),
+            stagedUpload($documentRequest->tenant_id, 'new.pdf', 'application/pdf', 100 * 1024),
         ))->toThrow(RuntimeException::class, 'Simulated database failure.');
     } finally {
         Event::forget($event);
@@ -110,7 +109,7 @@ test('deleting a document request removes its database graph and stored file', f
     $documentRequest = createDocumentRequestForUploadLifecycleTest();
     $uploadedDocument = resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
-        UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
+        stagedUpload($documentRequest->tenant_id, 'document.pdf', 'application/pdf', 100 * 1024),
     );
 
     resolve(DeleteDocumentRequestAction::class)->handle($documentRequest);
@@ -125,7 +124,7 @@ test('a failed document request deletion leaves its database graph and file inta
     $documentRequest = createDocumentRequestForUploadLifecycleTest();
     $uploadedDocument = resolve(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
-        UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
+        stagedUpload($documentRequest->tenant_id, 'document.pdf', 'application/pdf', 100 * 1024),
     );
 
     $event = 'eloquent.deleting: '.DocumentRequest::class;

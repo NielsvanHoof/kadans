@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\DocumentRequests;
 
 use App\Dossiers\Models\UploadedDocument;
-use Aws\S3\S3Client;
+use App\Dossiers\Support\DocumentPresigner;
 use DateTimeInterface;
-use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\Config;
@@ -24,10 +23,12 @@ use function pathinfo;
 /**
  * Build a short-lived signed URL for a private stored document.
  *
- * When the internal S3 endpoint (e.g. http://floci:4566 inside Docker)
- * differs from the public URL browsers use (e.g. http://localhost:4566),
- * we create a dedicated S3 presigner with the public endpoint so the
- * signature matches the host the browser actually hits.
+ * The signing itself, including the internal-vs-public endpoint split that
+ * local Floci needs, lives in DocumentPresigner — shared with the presigned
+ * uploads that put these documents in the bucket in the first place. What is
+ * specific to downloads, and stays here, is the Content-Disposition header:
+ * it is built from a fully client-controlled filename and is the one part of
+ * a signed URL that an attacker could otherwise shape.
  */
 final readonly class ResolveDocumentTemporaryUrlAction
 {
@@ -46,7 +47,10 @@ final readonly class ResolveDocumentTemporaryUrlAction
      */
     private const int MAX_CONTENT_DISPOSITION_LENGTH = 512;
 
-    public function __construct(private FilesystemManager $filesystems) {}
+    public function __construct(
+        private FilesystemManager $filesystems,
+        private DocumentPresigner $presigner,
+    ) {}
 
     /**
      * The configured driver for the disk this document was stored on, or null
@@ -84,76 +88,16 @@ final readonly class ResolveDocumentTemporaryUrlAction
 
         throw_if($disposition !== 'attachment' && $disposition !== 'inline', RuntimeException::class, 'Document URL disposition must be attachment or inline.');
 
-        $publicUrl = $this->generatePublicPresignedUrl($disk, $document, $expiresAt, $disposition);
-        if ($publicUrl !== null) {
-            return $publicUrl;
-        }
-
-        return $disk->temporaryUrl(
-            $document->path,
-            $expiresAt,
-            [
-                'ResponseContentDisposition' => $this->contentDisposition($disposition, $document->original_filename),
-                'ResponseContentType' => $document->mime_type,
-            ],
-        );
-    }
-
-    /**
-     * Create a presigned URL using the public-facing endpoint directly.
-     *
-     * This avoids the signature mismatch that happens when the SDK signs
-     * for the internal Docker hostname (floci:4566) but the browser
-     * sends the request to localhost:4566.
-     */
-    private function generatePublicPresignedUrl(
-        FilesystemAdapter $disk,
-        UploadedDocument $document,
-        DateTimeInterface $expiresAt,
-        string $disposition,
-    ): ?string {
-        // Endpoint / public URL are optional nulls when disks share one host.
-        $endpoint = Config::get('filesystems.disks.s3.endpoint');
-        $publicBase = Config::get('filesystems.disks.s3.url');
-
-        // Only needed when internal and public endpoints differ.
-        if (! is_string($endpoint) || ! is_string($publicBase) || $endpoint === $publicBase) {
-            return null;
-        }
-
-        if (! $disk instanceof AwsS3V3Adapter) {
-            return null;
-        }
-
-        // AWS_BUCKET carries no default, so the key exists as null when it is
-        // unset — and a default handed to Config::string() is ignored when the
-        // key exists. Only Config::get() plus an explicit check is safe here
-        // (.ai/rules/app.md). A miss falls through to the adapter's own
-        // temporaryUrl(), which is the path used whenever the endpoints match.
-        $bucket = Config::get('filesystems.disks.s3.bucket');
-
-        if (! is_string($bucket) || $bucket === '') {
-            return null;
-        }
-
-        // Build a presigning client that targets the public endpoint.
-        $originalClient = $disk->getClient();
-        $publicClient = new S3Client([
-            'region' => $originalClient->getRegion(),
-            'version' => 'latest',
-            'endpoint' => $publicBase,
-            'use_path_style_endpoint' => Config::boolean('filesystems.disks.s3.use_path_style_endpoint', false),
-            'credentials' => $originalClient->getCredentials()->wait(),
-        ]);
-
-        $command = $publicClient->getCommand('GetObject', [
-            'Bucket' => $bucket,
-            'Key' => $document->path,
+        $overrides = [
             'ResponseContentDisposition' => $this->contentDisposition($disposition, $document->original_filename),
             'ResponseContentType' => $document->mime_type,
-        ]);
+        ];
 
-        return (string) $publicClient->createPresignedRequest($command, $expiresAt)->getUri();
+        // Non-null only when the internal and public S3 endpoints differ, which
+        // is the local Floci setup; see DocumentPresigner for why signing for
+        // the wrong host is otherwise invisible until a browser tries it.
+        return $this->presigner->presignGet($disk, $document->path, $expiresAt, $overrides)
+            ?? $disk->temporaryUrl($document->path, $expiresAt, $overrides);
     }
 
     /**

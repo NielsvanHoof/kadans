@@ -10,7 +10,6 @@ use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -19,6 +18,7 @@ beforeEach(function (): void {
 
 test('document request routes 404 when the request belongs to another dossier', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace('Acme Accountants');
 
@@ -53,7 +53,7 @@ test('document request routes 404 when the request belongs to another dossier', 
         'dossier' => $dossier,
         'documentRequest' => $foreignRequest,
     ]), [
-        'documents' => [UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')],
+        'documents' => [stagedUploadTicket($tenant->id, 'x.pdf', sizeBytes: 10 * 1024)],
     ])->assertNotFound();
 
     $this->post(workspaceRoute('workspaces.dossiers.document-requests.review', $tenant, [

@@ -98,7 +98,18 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            /*
+             * `prefer` negotiates TLS but silently accepts a plaintext
+             * connection and never checks the server's certificate, so it
+             * stops nothing. Shipped environments must set `verify-full`,
+             * which ProductionConfigurationValidator enforces; the default
+             * stays permissive for the local Sail container, which is not
+             * reachable off the Docker network.
+             */
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Path to the RDS CA bundle. Required by verify-full, which has
+            // nothing to verify the server against without it.
+            'sslrootcert' => env('DB_SSLROOTCERT'),
         ],
 
         'sqlsrv' => [

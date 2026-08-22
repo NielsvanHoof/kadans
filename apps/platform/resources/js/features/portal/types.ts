@@ -19,3 +19,9 @@ export type PortalDossier = Omit<
 
 /** Progress counters on the portal overview. */
 export type PortalProgress = App.ClientPortal.Data.PortalProgressData;
+
+/** The firm, plus the staff member the client can actually reach. */
+export type PortalFirm = App.ClientPortal.Data.PortalFirmData;
+
+/** The client's own session deadlines, for the pre-expiry warning. */
+export type PortalSession = App.ClientPortal.Data.PortalSessionData;

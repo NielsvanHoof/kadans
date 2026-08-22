@@ -17,6 +17,10 @@ beforeEach(function (): void {
         'app.url' => 'https://app.example.com',
         'broadcasting.default' => 'reverb',
         'cache.default' => 'redis',
+        'database.connections.pgsql.sslmode' => 'verify-full',
+        // Any readable file will do: the check is that one is configured and
+        // present, not what it contains.
+        'database.connections.pgsql.sslrootcert' => base_path('composer.json'),
         'database.redis.cache.scheme' => 'tls',
         'database.redis.default.scheme' => 'tls',
         'filesystems.default' => 's3',
@@ -72,6 +76,17 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'non-Redis queue' => ['queue.default', 'sync'],
     'retry_after at data-subject export timeout' => ['queue.connections.redis.retry_after', GenerateDataSubjectExportJob::TIMEOUT_SECONDS],
     'retry_after below data-subject export timeout' => ['queue.connections.redis.retry_after', 90],
+    // `prefer` and `require` both look like TLS and neither verifies the
+    // server, which is the whole point once the database is publicly
+    // addressable rather than shut inside a VPC.
+    'unverified database TLS' => ['database.connections.pgsql.sslmode', 'prefer'],
+    'encrypted but unauthenticated database TLS' => ['database.connections.pgsql.sslmode', 'require'],
+    'plaintext database connection' => ['database.connections.pgsql.sslmode', 'disable'],
+    'missing database root certificate' => ['database.connections.pgsql.sslrootcert', null],
+    'empty database root certificate' => ['database.connections.pgsql.sslrootcert', ''],
+    // verify-full with a path that is not there fails at connection time,
+    // not at boot — a deploy that looks healthy and cannot reach its data.
+    'unreadable database root certificate' => ['database.connections.pgsql.sslrootcert', '/nonexistent/rds-ca.pem'],
     'unencrypted Redis cache' => ['database.redis.cache.scheme', 'tcp'],
     'unencrypted Redis connection' => ['database.redis.default.scheme', 'tcp'],
     'non-Redis sessions' => ['session.driver', 'file'],
@@ -98,6 +113,11 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'missing log channel' => ['logging.default', null],
     'cross-site session cookie' => ['session.same_site', 'none'],
     'unset session same-site' => ['session.same_site', null],
+    // The Laravel session expires on idleness too, so a portal idle window at or
+    // above session.lifetime promises a window the session store drops first.
+    'portal idle window at the session lifetime' => ['portal.session_idle_minutes', 120],
+    'portal idle window beyond the session lifetime' => ['portal.session_idle_minutes', 240],
+    'unset portal idle window' => ['portal.session_idle_minutes', null],
     // Off is the safe *local* default (no GuardDuty attached to a fake bucket), so
     // it is exactly the value that must never reach a shipped environment.
     'disabled malware scanning' => ['security.malware_scanning.enabled', false],
