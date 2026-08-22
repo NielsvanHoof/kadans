@@ -6,6 +6,7 @@ namespace App\Dossiers\Http\Requests\AudioRecordings;
 
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\AudioUploadLimits;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,7 +38,7 @@ final class StoreAudioRecordingRequest extends FormRequest
             'audio' => [
                 'required',
                 File::types(['mp3', 'wav', 'm4a', 'ogg', 'webm', 'mp4'])
-                    ->max('25mb'),
+                    ->max(AudioUploadLimits::MAX_FILE_SIZE),
             ],
         ];
     }
@@ -49,7 +50,9 @@ final class StoreAudioRecordingRequest extends FormRequest
         return [
             'audio.required' => __('Choose an audio file to upload.'),
             'audio.mimes' => __('That file type is not supported. Upload an MP3, WAV, M4A, OGG, WebM, or MP4 file.'),
-            'audio.max' => __('That file is too large. The maximum size is 25 MB.'),
+            'audio.max' => __('That file is too large. The maximum size is :max.', [
+                'max' => AudioUploadLimits::MAX_FILE_SIZE_LABEL,
+            ]),
             'audio.uploaded' => __('The file failed to upload. Check your connection and try again.'),
         ];
     }

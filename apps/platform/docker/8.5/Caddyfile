@@ -4,7 +4,13 @@
 	admin {$CADDY_SERVER_ADMIN_HOST}:{$CADDY_SERVER_ADMIN_PORT}
 
 	frankenphp {
-		php_ini upload_max_filesize 20M
+		# These win over docker/8.5/php.ini for the FrankenPHP web SAPI, which
+		# only the CLI ever reads — so `sail php -r 'ini_get(...)'` reports the
+		# php.ini value and hides a mismatch here. Keep upload_max_filesize at or
+		# above AudioUploadLimits/DocumentUploadLimits or PHP drops the file with
+		# UPLOAD_ERR_INI_SIZE and no 413, and the upload silently no-ops (TASK-42).
+		# Asserted by tests/Feature/Platform/UploadLimitsTest.php.
+		php_ini upload_max_filesize 25M
 		php_ini post_max_size 210M
 
 		worker {

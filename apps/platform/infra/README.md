@@ -150,7 +150,7 @@ looks like an unexplained 403 from CloudFront:
 
 | Rule | Why it is overridden |
 |---|---|
-| `SizeRestrictions_BODY` | rejects bodies over 8 KB; document uploads go to 20 MB |
+| `SizeRestrictions_BODY` | rejects bodies over 8 KB; document uploads go to 20 MB and audio recordings to 25 MB |
 | `CrossSiteScripting_BODY` | trips on client correspondence pasted into notes and answers |
 
 Both are set to `count` rather than removed, so they still record what they would

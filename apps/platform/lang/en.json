@@ -1169,7 +1169,7 @@
     "Templates": "Templates",
     "Temporarily block a member from accessing the firm.": "Temporarily block a member from accessing the firm.",
     "Text answer": "Text answer",
-    "That file is too large. The maximum size is 25 MB.": "That file is too large. The maximum size is 25 MB.",
+    "That file is too large. The maximum size is :max.": "That file is too large. The maximum size is :max.",
     "That file type is not supported. Upload an MP3, WAV, M4A, OGG, WebM, or MP4 file.": "That file type is not supported. Upload an MP3, WAV, M4A, OGG, WebM, or MP4 file.",
     "The audio file and its transcript will be permanently removed.": "The audio file and its transcript will be permanently removed.",
     "The client and their dossiers will appear in lists again.": "The client and their dossiers will appear in lists again.",

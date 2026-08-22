@@ -1169,7 +1169,7 @@
     "Templates": "Sjablonen",
     "Temporarily block a member from accessing the firm.": "Een lid tijdelijk de toegang tot het kantoor ontzeggen.",
     "Text answer": "Tekstantwoord",
-    "That file is too large. The maximum size is 25 MB.": "Dit bestand is te groot. De maximale grootte is 25 MB.",
+    "That file is too large. The maximum size is :max.": "Dit bestand is te groot. De maximale grootte is :max.",
     "That file type is not supported. Upload an MP3, WAV, M4A, OGG, WebM, or MP4 file.": "Dit bestandstype wordt niet ondersteund. Upload een MP3-, WAV-, M4A-, OGG-, WebM- of MP4-bestand.",
     "The audio file and its transcript will be permanently removed.": "Het audiobestand en het transcript worden permanent verwijderd.",
     "The client and their dossiers will appear in lists again.": "De klant en hun dossiers verschijnen weer in lijsten.",

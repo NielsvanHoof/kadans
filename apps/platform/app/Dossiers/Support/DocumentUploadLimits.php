@@ -10,9 +10,14 @@ use App\Dossiers\Models\UploadedDocument;
 /**
  * Shared document upload ceilings for staff and portal FormRequests.
  *
- * Keep in sync with docker/production/php.ini and the frontend dropzone defaults:
- * - per-file max matches upload_max_filesize
+ * Keep in sync with the per-environment php.ini / Caddyfile and the frontend
+ * dropzone defaults:
+ * - per-file max must stay at or below upload_max_filesize. Above it PHP fails
+ *   the part with UPLOAD_ERR_INI_SIZE while post_max_size still admits the body,
+ *   so there is no 413 — the upload just looks like a silent no-op (TASK-42).
  * - post_max_size must cover max files × per-file max (plus form overhead)
+ *
+ * `tests/Feature/Platform/UploadLimitsTest.php` fails if these drift apart.
  */
 final class DocumentUploadLimits
 {

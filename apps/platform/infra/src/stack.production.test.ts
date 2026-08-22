@@ -670,7 +670,7 @@ test("only the hashed bundle is cached; app responses never are", () => {
 
 /*
  * Turning on AWSManagedRulesCommonRuleSet unmodified breaks this application:
- * SizeRestrictions_BODY rejects bodies over 8KB and uploads go to 20MB, while
+ * SizeRestrictions_BODY rejects bodies over 8KB and uploads go to 20-25MB, while
  * CrossSiteScripting_BODY trips on client correspondence pasted into a note.
  * Counted rather than removed, so the decision stays visible in the metrics.
  */

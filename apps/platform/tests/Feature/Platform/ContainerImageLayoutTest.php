@@ -66,14 +66,25 @@ test('staging keeps production hardening while carrying an inert Xdebug', functi
         ->toContain('session.cookie_httponly=1');
 });
 
-test('upload limits stay in step across both deployed php.ini files', function (string $environment): void {
-    $ini = (string) file_get_contents(base_path("docker/{$environment}/php.ini"));
+test('upload limits stay in step across both deployed php.ini files', function (): void {
+    // Whether the ceilings are high enough is asserted against the validation
+    // rules in UploadLimitsTest. The concern here is only that the two deployed
+    // environments cannot drift apart, so staging keeps reproducing production's
+    // upload behaviour. Read the values instead of hard-coding them: a literal
+    // here is one more place to forget when a ceiling moves (TASK-42).
+    $limits = collect(['production', 'staging'])->map(function (string $environment): array {
+        $ini = (string) file_get_contents(base_path("docker/{$environment}/php.ini"));
 
-    // DocumentUploadLimits: 20 MB per file, up to 10 files, plus form overhead.
-    expect($ini)
-        ->toContain('upload_max_filesize=20M')
-        ->toContain('post_max_size=210M');
-})->with(['production', 'staging']);
+        preg_match('/^upload_max_filesize=(\S+)/m', $ini, $upload);
+        preg_match('/^post_max_size=(\S+)/m', $ini, $post);
+
+        return ['upload_max_filesize' => $upload[1] ?? null, 'post_max_size' => $post[1] ?? null];
+    });
+
+    expect($limits->first()['upload_max_filesize'])->not->toBeNull()
+        ->and($limits->first()['post_max_size'])->not->toBeNull()
+        ->and($limits->unique())->toHaveCount(1);
+});
 
 test('the build context cannot carry host AWS credentials into an image layer', function (): void {
     // env/profiles/aws.env holds real IAM keys. It is gitignored, but .dockerignore
