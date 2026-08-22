@@ -15,7 +15,6 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Transitions\DossierTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -126,7 +125,7 @@ test('a staff upload reads the dossier before the document request', function ()
     // used to live in UploadStaffDocumentAction's callback, which runs after
     // UploadDocumentForRequestAction has already locked the item.
     $order = lockedTableOrder(fn () => resolve(UploadStaffDocumentAction::class)
-        ->handle($documentRequest, UploadedFile::fake()->create('payslip.pdf', 16)));
+        ->handle($documentRequest, stagedUpload($documentRequest->tenant_id, 'payslip.pdf', 'application/pdf', 16 * 1024)));
 
     expect($order)->toBe(['dossiers', 'document_requests']);
 });

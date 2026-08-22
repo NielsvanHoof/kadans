@@ -12,7 +12,6 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
@@ -59,8 +58,8 @@ test('staff can upload multiple files to a request that allows multiple', functi
             'documentRequest' => $documentRequest,
         ]), [
             'documents' => [
-                UploadedFile::fake()->create('payslip-jan.pdf', 100, 'application/pdf'),
-                UploadedFile::fake()->create('payslip-feb.pdf', 100, 'application/pdf'),
+                stagedUploadTicket($context['tenant']->id, 'payslip-jan.pdf', sizeBytes: 100 * 1024),
+                stagedUploadTicket($context['tenant']->id, 'payslip-feb.pdf', sizeBytes: 100 * 1024),
             ],
         ])
         ->assertRedirect(workspaceRoute('workspaces.dossiers.review', $context['tenant'], [
@@ -81,8 +80,8 @@ test('staff upload is capped at one file when a request does not allow multiple'
             'documentRequest' => $documentRequest,
         ]), [
             'documents' => [
-                UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'),
-                UploadedFile::fake()->create('b.pdf', 10, 'application/pdf'),
+                stagedUploadTicket($context['tenant']->id, 'a.pdf', sizeBytes: 10 * 1024),
+                stagedUploadTicket($context['tenant']->id, 'b.pdf', sizeBytes: 10 * 1024),
             ],
         ])
         ->assertInvalid(['documents']);
@@ -215,8 +214,8 @@ test('portal client can upload multiple files in one submission', function (): v
 
     $this->post(route('portal.document-requests.upload', ['documentRequest' => $documentRequest->id]), [
         'documents' => [
-            UploadedFile::fake()->create('payslip-jan.pdf', 100, 'application/pdf'),
-            UploadedFile::fake()->create('payslip-feb.pdf', 100, 'application/pdf'),
+            stagedUploadTicket($context['tenant']->id, 'payslip-jan.pdf', sizeBytes: 100 * 1024),
+            stagedUploadTicket($context['tenant']->id, 'payslip-feb.pdf', sizeBytes: 100 * 1024),
         ],
     ])->assertRedirect(route('portal.show'));
 
@@ -235,11 +234,11 @@ test('portal client can submit a second batch of files after the first is alread
     $uploadUrl = route('portal.document-requests.upload', ['documentRequest' => $documentRequest->id]);
 
     $this->post($uploadUrl, [
-        'documents' => [UploadedFile::fake()->create('payslip-jan.pdf', 100, 'application/pdf')],
+        'documents' => [stagedUploadTicket($context['tenant']->id, 'payslip-jan.pdf', sizeBytes: 100 * 1024)],
     ])->assertRedirect(route('portal.show'));
 
     $this->post($uploadUrl, [
-        'documents' => [UploadedFile::fake()->create('payslip-feb.pdf', 100, 'application/pdf')],
+        'documents' => [stagedUploadTicket($context['tenant']->id, 'payslip-feb.pdf', sizeBytes: 100 * 1024)],
     ])->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);

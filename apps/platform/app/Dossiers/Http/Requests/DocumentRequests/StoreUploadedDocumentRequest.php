@@ -9,7 +9,6 @@ use App\Dossiers\Support\DocumentUploadLimits;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\File;
 
 final class StoreUploadedDocumentRequest extends FormRequest
 {
@@ -36,6 +35,13 @@ final class StoreUploadedDocumentRequest extends FormRequest
         $allowMultiple = $documentRequest instanceof DocumentRequest
             && $documentRequest->allowsMultipleUploads();
 
+        /*
+         * The files are already in S3 by the time this runs, so there is
+         * nothing here to validate as a file. What arrives is one opaque
+         * upload ticket per document; type and size are checked by
+         * ClaimUploadTicketAction against the object S3 actually stored,
+         * which is the only place either is knowable.
+         */
         return [
             'documents' => [
                 'required',
@@ -43,10 +49,7 @@ final class StoreUploadedDocumentRequest extends FormRequest
                 'min:1',
                 'max:'.($allowMultiple ? DocumentUploadLimits::MAX_FILES_WHEN_MULTIPLE : 1),
             ],
-            'documents.*' => [
-                File::types(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx'])
-                    ->max(DocumentUploadLimits::MAX_FILE_SIZE),
-            ],
+            'documents.*' => ['required', 'string'],
         ];
     }
 }

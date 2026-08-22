@@ -9,14 +9,12 @@ use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\ClientPortal\Support\PortalDeviceFingerprint;
+use App\ClientPortal\Support\PortalSessionWindow;
 use App\Shared\Http\Controllers\Controller;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpFoundation\Response;
-
-use function max;
-use function min;
 
 final class ClientPortalSessionController extends Controller
 {
@@ -41,20 +39,18 @@ final class ClientPortalSessionController extends Controller
         // tell a blocked device from a token that never existed.
         abort_if($outcome->isBlocked(), Response::HTTP_NOT_FOUND);
 
-        $lifetimeMinutes = max(1, min(
-            60,
-            Config::integer('portal.session_lifetime_minutes', 15),
-        ));
-        $sessionExpiresAt = now()->addMinutes($lifetimeMinutes);
-
-        if ($grant->expires_at->lessThan($sessionExpiresAt)) {
-            $sessionExpiresAt = $grant->expires_at;
-        }
+        // Both deadlines are stamped here. Only the idle one moves after this,
+        // and only in ResolveClientPortalGrant.
+        $window = PortalSessionWindow::open($grant);
 
         $request->session()->regenerate(destroy: true);
         $request->session()->put([
             ResolveClientPortalGrant::SESSION_GRANT_ID => $grant->getKey(),
-            ResolveClientPortalGrant::SESSION_EXPIRES_AT => $sessionExpiresAt->getTimestamp(),
+            ResolveClientPortalGrant::SESSION_EXPIRES_AT => $window->idleExpiresAt->getTimestamp(),
+            ResolveClientPortalGrant::SESSION_ABSOLUTE_EXPIRES_AT => $window->absoluteExpiresAt->getTimestamp(),
+            // Kept through session teardown so the ended page stays branded for
+            // a client who has no idea why the page stopped working.
+            ResolveClientPortalGrant::SESSION_FIRM_NAME => $this->firmName($grant),
         ]);
 
         // StartSession stores successful GET URLs after the controller returns.
@@ -62,5 +58,17 @@ final class ClientPortalSessionController extends Controller
         $request->headers->set('X-Requested-With', 'XMLHttpRequest');
 
         return to_route('portal.show');
+    }
+
+    /**
+     * The tenant's public display name. No tenant is current on this route —
+     * the exchange runs before ResolveClientPortalGrant — and Tenant is not
+     * itself tenant-scoped, so this is a plain lookup.
+     */
+    private function firmName(ClientAccessGrant $grant): ?string
+    {
+        $tenant = Tenant::query()->find($grant->tenant_id);
+
+        return $tenant instanceof Tenant ? $tenant->name : null;
     }
 }

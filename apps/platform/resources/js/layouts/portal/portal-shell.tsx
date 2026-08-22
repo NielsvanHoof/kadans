@@ -7,7 +7,8 @@ import PortalLocaleSwitcher from '@/features/portal/portal-locale-switcher';
 import { useTranslation } from '@/hooks/use-translation';
 
 type PortalShellProps = {
-    firmName: string;
+    /** Absent only when a session ended before we ever learned the firm. */
+    firmName?: string | null;
     title: string;
     subtitle?: string;
     meta?: string;
@@ -44,9 +45,11 @@ export default function PortalShell({
                                 <p className="text-xs font-medium tracking-wide text-brand-panel-foreground/85 uppercase">
                                     {t('Secure client portal')}
                                 </p>
-                                <p className="truncate text-base text-brand-panel-foreground">
-                                    {firmName}
-                                </p>
+                                {firmName ? (
+                                    <p className="truncate text-base text-brand-panel-foreground">
+                                        {firmName}
+                                    </p>
+                                ) : null}
                             </div>
                         </div>
                         <PortalLocaleSwitcher variant="onPanel" />

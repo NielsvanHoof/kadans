@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
 use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Listeners\LogClientPortalInviteFailed;
@@ -19,8 +17,8 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Tenancy\Enums\Role;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Illuminate\Notifications\Events\NotificationSent;
@@ -33,36 +31,6 @@ use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Pest\Expectation;
-
-/**
- * @return array{owner: User, tenant: mixed, client: Client, dossier: Dossier, plainTextToken: string, grant: ClientAccessGrant}
- */
-function createPortalDossierWithGrant(): array
-{
-    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
-
-    $client = Client::factory()->create([
-        'tenant_id' => $tenant->id,
-        'email' => 'jane@example.com',
-    ]);
-    $dossier = Dossier::factory()->create([
-        'tenant_id' => $tenant->id,
-        'client_id' => $client->id,
-        'title' => '2025 Payroll dossier',
-        'status' => DossierStatus::Draft,
-    ]);
-
-    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
-
-    return [
-        'owner' => $owner,
-        'tenant' => $tenant,
-        'client' => $client,
-        'dossier' => $dossier->fresh(),
-        'plainTextToken' => $result['plain_text_token'],
-        'grant' => $result['grant'],
-    ];
-}
 
 test('guest exchanges a valid access token for a restricted portal session', function (): void {
     $context = createPortalDossierWithGrant();
@@ -120,6 +88,40 @@ test('guest exchanges a valid access token for a restricted portal session', fun
         ->and((string) json_encode($activity->properties))->not->toContain($context['plainTextToken']);
 });
 
+test('the portal names a staff member the client can actually reach', function (): void {
+    $context = createPortalDossierWithGrant();
+
+    actingInWorkspace($context['tenant']);
+
+    $responsible = workspaceMember($context['tenant'], Role::Administrator);
+    $context['dossier']->forceFill(['responsible_user_id' => $responsible->id])->save();
+
+    $this->get(route('portal.exchange', $context['plainTextToken']));
+
+    $this->get(route('portal.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('portal/show')
+            ->where('firm.contact_name', $responsible->name)
+            ->where('firm.contact_email', $responsible->email));
+});
+
+test('the contact falls back to whoever issued the link', function (): void {
+    $context = createPortalDossierWithGrant();
+
+    // No responsible user set, which is the default for a fresh dossier. The
+    // grant creator is guaranteed to exist: created_by cascades on delete.
+    expect($context['dossier']->responsible_user_id)->toBeNull();
+
+    $this->get(route('portal.exchange', $context['plainTextToken']));
+
+    $this->get(route('portal.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->where('firm.contact_name', $context['owner']->name)
+            ->where('firm.contact_email', $context['owner']->email));
+});
+
 test('invalid or revoked portal tokens are rejected', function (): void {
     $context = createPortalDossierWithGrant();
 
@@ -135,8 +137,11 @@ test('invalid or revoked portal tokens are rejected', function (): void {
     actingInWorkspace($context['tenant']);
     $context['grant']->update(['revoked_at' => now()]);
 
+    // A revoked grant is told its access ended rather than 404'd: the client
+    // proved a legitimate session by holding the signed cookie, and re-opening
+    // the emailed link will not help them.
     $this->get(route('portal.show'))
-        ->assertNotFound()
+        ->assertRedirect(route('portal.ended'))
         ->assertSessionMissing(ResolveClientPortalGrant::SESSION_GRANT_ID);
 
     $this->get(route('portal.exchange', $context['plainTextToken']))
@@ -156,13 +161,15 @@ test('portal routes require a live restricted session', function (): void {
     $this->travel(16)->minutes();
 
     $this->get(route('portal.show'))
-        ->assertNotFound()
+        ->assertRedirect(route('portal.ended'))
         ->assertSessionMissing(ResolveClientPortalGrant::SESSION_GRANT_ID)
-        ->assertSessionMissing(ResolveClientPortalGrant::SESSION_EXPIRES_AT);
+        ->assertSessionMissing(ResolveClientPortalGrant::SESSION_EXPIRES_AT)
+        ->assertSessionMissing(ResolveClientPortalGrant::SESSION_ABSOLUTE_EXPIRES_AT);
 });
 
 test('guest can upload a document through the portal', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -174,7 +181,7 @@ test('guest can upload a document through the portal', function (): void {
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $file = UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf');
+    $ticket = stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024);
 
     $this->get(route('portal.exchange', $context['plainTextToken']));
 
@@ -182,7 +189,7 @@ test('guest can upload a document through the portal', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['documents' => [$file]],
+        ['documents' => [$ticket]],
     )->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);
@@ -196,6 +203,7 @@ test('guest can upload a document through the portal', function (): void {
 
 test('portal cannot upload while a file item awaits review', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -213,7 +221,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
+        ['documents' => [stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024)]],
     )->assertForbidden();
 
     actingInWorkspace($context['tenant']);
@@ -315,6 +323,7 @@ test('a saved choice answer reveals the matching conditional field on the portal
 
 test('portal upload cannot target a document request from another dossier', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -335,12 +344,13 @@ test('portal upload cannot target a document request from another dossier', func
         route('portal.document-requests.upload', [
             'documentRequest' => $foreignRequest->id,
         ]),
-        ['documents' => [UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')]],
+        ['documents' => [stagedUploadTicket($context['tenant']->id, 'x.pdf', sizeBytes: 10 * 1024)]],
     )->assertNotFound();
 });
 
 test('portal upload rolls back database and storage when its audit record fails', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -364,7 +374,7 @@ test('portal upload rolls back database and storage when its audit record fails'
             route('portal.document-requests.upload', [
                 'documentRequest' => $documentRequest->id,
             ]),
-            ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
+            ['documents' => [stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024)]],
         )->assertServerError();
     } finally {
         Event::forget($event);

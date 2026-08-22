@@ -9,7 +9,9 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Actions\AudioRecordings\DeleteAudioRecordingAction;
 use App\Dossiers\Actions\AudioRecordings\UploadAudioRecordingAction;
 use App\Dossiers\Actions\ResolveMalwareScanStatusAction;
+use App\Dossiers\Actions\Uploads\ClaimUploadTicketAction;
 use App\Dossiers\Data\StaffAudioRecordingData;
+use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Http\Requests\AudioRecordings\StoreAudioRecordingRequest;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
@@ -50,15 +52,19 @@ final class AudioRecordingController extends Controller
         StoreAudioRecordingRequest $request,
         Dossier $dossier,
         UploadAudioRecordingAction $uploadAudioRecording,
+        ClaimUploadTicketAction $claimUploadTicket,
     ): RedirectResponse {
-        $file = $request->file('audio');
-
-        if ($file === null) {
-            return back()->withErrors(['audio' => __('Choose an audio file to upload.')]);
-        }
+        // The recording is already in the bucket; this redeems the ticket
+        // naming it and verifies the stored object before anything is written.
+        $upload = $claimUploadTicket->handle(
+            $request->string('audio')->toString(),
+            UploadPurpose::AudioRecording,
+            $tenant->id,
+            'audio',
+        );
 
         try {
-            $uploadAudioRecording->handle($dossier, $file, $request->user());
+            $uploadAudioRecording->handle($dossier, $upload, $request->user());
         } catch (ModelNotFoundException) {
             // The dossier was deleted between resolving the route and taking
             // its row lock. That is a gone resource, not a bug: reporting it

@@ -8,11 +8,13 @@ use App\Platform\Services\Health\FailedQueueJobsCheck;
 use App\Platform\Services\Health\StuckPipelinesCheck;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Health\Enums\Status;
+use Spatie\Health\Facades\Health;
 // Spatie's Status is a spatie/enum class exposing ok()/failed() as static
 // *methods* via __callStatic — there are no Status::OK / Status::FAILED
 // constants, and referencing them is a fatal "undefined constant".
-use Spatie\Health\Enums\Status;
-use Spatie\Health\Facades\Health;
+use Spatie\Health\ResultStores\CacheHealthResultStore;
+use Spatie\Health\ResultStores\InMemoryHealthResultStore;
 
 /**
  * @param  array<string, mixed>  $attributes
@@ -106,4 +108,34 @@ test('health notifications are on by default in production and off locally', fun
 
     expect($read('production'))->toBeTrue()
         ->and($read('local'))->toBeFalse();
+});
+
+/**
+ * The scheduler that writes health results and the web instance that serves
+ * /health are different containers, and on a horizontally scaled platform there
+ * may be several of each. A store that only one instance can read would leave
+ * /health reporting whatever the instance answering the request happened to
+ * know, which is usually nothing.
+ *
+ * In-memory is always instance-local. The cache store is only as shared as the
+ * cache driver behind it, so `file` and `array` are out while `redis` is fine —
+ * checking the class alone would either miss the bad case or ban a good one.
+ */
+test('health results are stored somewhere every instance can read', function (): void {
+    /** @var array<class-string, array<string, mixed>> $stores */
+    $stores = config('health.result_stores');
+
+    expect($stores)->not->toBeEmpty();
+
+    foreach ($stores as $store => $options) {
+        expect($store)->not->toBe(InMemoryHealthResultStore::class);
+
+        if ($store !== CacheHealthResultStore::class) {
+            continue;
+        }
+
+        $driver = config('cache.stores.'.$options['store'].'.driver');
+
+        expect($driver)->not->toBeIn(['file', 'array']);
+    }
 });

@@ -25,6 +25,26 @@ export interface DocumentInfrastructure {
  *
  * App processes (Sail / local) poll the results queues — no ECS consumer yet.
  */
+/**
+ * Where presigned browser uploads land before the application claims them.
+ * Must match IssueUploadTicketAction's key format on the application side.
+ */
+const STAGING_PREFIX = "staging/";
+
+/**
+ * Origins allowed to PUT into the staging prefix.
+ *
+ * The tenant hostname pattern is a wildcard (`*.qompose.nl`), which S3 accepts
+ * verbatim in an allowed origin, so both the app hostname and the tenant
+ * pattern can be listed as-is.
+ */
+function uploadOrigins(config: PlatformConfig): string[] {
+  return [
+    `https://${config.appHostname}`,
+    `https://${config.tenantHostnamePattern}`,
+  ];
+}
+
 export function createDocumentInfrastructure(
   config: PlatformConfig,
   encryptionKey: aws.kms.Key,
@@ -76,6 +96,48 @@ export function createDocumentInfrastructure(
           noncurrentDays: environment.settings.documentNoncurrentVersionDays,
         },
         abortIncompleteMultipartUpload: { daysAfterInitiation: 7 },
+      }, {
+        /*
+         * Presigned uploads land under staging/ and are moved into the dossier
+         * tree once the application has claimed and checked them. Anything left
+         * here is an upload the browser started and never finished, or one that
+         * failed its size or type check on arrival — in both cases nothing in
+         * the database references it and nothing ever will.
+         *
+         * One day rather than a shorter window because the ticket that names
+         * the object stays valid for thirty minutes, and expiring an object out
+         * from under a claim would turn a slow upload into a confusing "did not
+         * finish uploading" error.
+         */
+        id: "expire-unclaimed-staged-uploads",
+        status: "Enabled",
+        filter: { prefix: STAGING_PREFIX },
+        expiration: { days: 1 },
+      }],
+    },
+  );
+
+  /*
+   * The browser PUTs directly to this bucket, so the bucket itself has to
+   * permit the cross-origin request — the application's own CORS settings are
+   * never consulted for it.
+   *
+   * Only PUT, and only from the application's own hostnames: a presigned URL is
+   * a bearer credential, and a wildcard origin would let any page that got hold
+   * of one spend it from anywhere.
+   */
+  new aws.s3.BucketCorsConfigurationV2(
+    environment.resourceName("documents-cors"),
+    {
+      bucket: bucket.id,
+      corsRules: [{
+        allowedMethods: ["PUT"],
+        allowedOrigins: uploadOrigins(config),
+        // Content-Type is part of the presigned signature, so the preflight
+        // has to be allowed to carry it.
+        allowedHeaders: ["content-type"],
+        exposeHeaders: ["ETag"],
+        maxAgeSeconds: 3600,
       }],
     },
   );

@@ -1,12 +1,14 @@
+import { localSettings } from "./local.js";
 import { productionSettings } from "./production.js";
 import { EnvironmentSettings } from "./settings.js";
 import { stagingSettings } from "./staging.js";
 
-export type EnvironmentName = "production" | "staging";
+export type EnvironmentName = "production" | "staging" | "local";
 
 const SETTINGS_BY_ENVIRONMENT: Record<EnvironmentName, EnvironmentSettings> = {
   production: productionSettings,
   staging: stagingSettings,
+  local: localSettings,
 };
 
 /**

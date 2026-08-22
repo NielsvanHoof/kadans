@@ -17,6 +17,7 @@ use function in_array;
 use function is_array;
 use function is_int;
 use function is_numeric;
+use function is_readable;
 use function is_string;
 use function max;
 use function sprintf;
@@ -77,6 +78,8 @@ final readonly class ProductionConfigurationValidator
             $this->matches('cache.default', 'redis'),
             $this->matches('queue.default', 'redis'),
             $this->hasRetryAfterAboveJobTimeouts() ? null : 'queue.connections.redis.retry_after',
+            $this->hasVerifiedDatabaseTls() ? null : 'database.connections.pgsql.sslmode',
+            $this->hasDatabaseRootCertificate() ? null : 'database.connections.pgsql.sslrootcert',
             $this->matches('database.redis.default.scheme', 'tls'),
             $this->matches('database.redis.cache.scheme', 'tls'),
             $this->matches('session.driver', 'redis'),
@@ -96,6 +99,7 @@ final readonly class ProductionConfigurationValidator
             $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
             $this->unshippedLogChannelKey(),
             $this->hasSafeSessionSameSite() ? null : 'session.same_site',
+            $this->hasPortalIdleWindowInsideSessionLifetime() ? null : 'portal.session_idle_minutes',
             $this->enforcesTwoFactor() ? null : 'security.two_factor.enforcement',
             $this->config->get('security.malware_scanning.enabled') === true
                 ? null
@@ -145,6 +149,24 @@ final readonly class ProductionConfigurationValidator
             ProcessUploadedDocumentJob::TIMEOUT_SECONDS,
             is_numeric($transcriptionTimeout) ? (int) $transcriptionTimeout : 0,
         );
+    }
+
+    /**
+     * The Laravel session expires on idleness too, so a portal idle window at or
+     * above `session.lifetime` promises the client a window the session store
+     * drops first — they would be bounced to the ended page while the portal
+     * still believed the session was live.
+     */
+    private function hasPortalIdleWindowInsideSessionLifetime(): bool
+    {
+        $idleMinutes = $this->config->get('portal.session_idle_minutes');
+        $sessionLifetime = $this->config->get('session.lifetime');
+
+        if (! is_numeric($idleMinutes) || ! is_numeric($sessionLifetime)) {
+            return false;
+        }
+
+        return (int) $idleMinutes < (int) $sessionLifetime;
     }
 
     private function matches(string $key, string $expected): ?string
@@ -298,6 +320,40 @@ final readonly class ProductionConfigurationValidator
             && $applicationHost !== ''
             && is_string($sessionDomain)
             && mb_strtolower($sessionDomain) === $applicationHost;
+    }
+
+    /**
+     * The database is reachable from outside its own network, so the
+     * connection has to be both encrypted and authenticated.
+     *
+     * `prefer` — the Laravel default — negotiates TLS and then silently falls
+     * back to plaintext if the server declines, and never checks the
+     * certificate either way. `require` encrypts but still trusts whatever
+     * answers on the port. Only the `verify-*` modes actually prove the host
+     * on the other end is the database.
+     *
+     * This became load-bearing when compute moved off AWS: the instance is no
+     * longer confined to a VPC where the security group was the whole defence.
+     */
+    private function hasVerifiedDatabaseTls(): bool
+    {
+        return in_array(
+            $this->config->get('database.connections.pgsql.sslmode'),
+            ['verify-ca', 'verify-full'],
+            true,
+        );
+    }
+
+    /**
+     * `verify-full` without a root certificate has nothing to verify against,
+     * and libpq fails the connection at runtime rather than at boot — which
+     * would be a healthy-looking deploy that cannot reach its database.
+     */
+    private function hasDatabaseRootCertificate(): bool
+    {
+        $path = $this->config->get('database.connections.pgsql.sslrootcert');
+
+        return is_string($path) && $path !== '' && is_readable($path);
     }
 
     /**

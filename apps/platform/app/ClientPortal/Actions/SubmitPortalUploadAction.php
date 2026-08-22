@@ -13,9 +13,9 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Support\DocumentUploadLimits;
+use App\Dossiers\Support\StagedUpload;
 use App\Dossiers\Transitions\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 
 final readonly class SubmitPortalUploadAction
@@ -30,11 +30,11 @@ final readonly class SubmitPortalUploadAction
     public function handle(
         DocumentRequest $documentRequest,
         ClientAccessGrant $grant,
-        UploadedFile $file,
+        StagedUpload $upload,
     ): UploadedDocument {
         return $this->uploadDocumentForRequest->handle(
             $documentRequest,
-            $file,
+            $upload,
             function (
                 UploadedDocument $uploadedDocument,
                 DocumentRequest $lockedDocumentRequest,

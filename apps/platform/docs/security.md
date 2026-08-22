@@ -64,9 +64,23 @@ Clients never hold an account. Access is a `ClientAccessGrant` scoped to one dos
 
 - Tokens are `Str::random(64)`, stored **SHA-256 hashed**, and marked `$hidden`.
   The plaintext exists only in the outgoing email.
-- Visiting the link exchanges the token for a **server-side session** capped at
-  `portal.session_lifetime_minutes` (15) and never beyond the grant's own expiry.
-  The session is regenerated with `destroy: true` on exchange.
+- Visiting the link exchanges the token for a **server-side session** bounded by
+  two deadlines, both clamped by the grant's own expiry and both owned by
+  `PortalSessionWindow`. `portal.session_idle_minutes` (15) is renewed on every
+  portal request; `portal.session_absolute_minutes` (240) is stamped once at
+  redemption and never extended, so an abandoned or stolen session still dies on
+  schedule. The session is regenerated with `destroy: true` on exchange.
+  The idle window must stay below `session.lifetime` — the Laravel session
+  expires on idleness too, and `ProductionConfigurationValidator` fails boot
+  rather than promise a window the session store would drop first.
+- A session that ends redirects to `portal/ended`, which distinguishes a timeout
+  ("your work is saved, re-open the emailed link") from withdrawn access. This is
+  the **one** deliberate exception to concealing portal denials as 404s, and it
+  is safe for the same reason the session resolver is not timeboxed:
+  `portal.grant_id` is written only after a successful token exchange and sits
+  behind a signed cookie, so reaching that branch proves the visitor already held
+  a legitimate session. Everything else — no session, an unresolvable grant id, a
+  missing tenant — stays a bare 404.
 - After exchange the controller forces `X-Requested-With`, which stops Laravel's
   `StartSession` from copying the redeemed bearer URL into `_previous.url`.
 - Every portal response gets `no-store`, `no-referrer`, and
@@ -80,6 +94,12 @@ Clients never hold an account. Access is a `ClientAccessGrant` scoped to one dos
   Both patterns track the `[A-Za-z0-9]+` route constraint in `routes/portal.php`;
   loosening that constraint means updating all three.
 - Grants are revocable, prunable, and record `last_used_at` under a row lock.
+- **Clients can download their own uploads** (`portal.document-requests.uploaded-documents.download`),
+  through the same `UploadedDocumentResponse` hardening and the same
+  `GuardUploadedDocumentDeliveryAction` malware verdict as staff downloads —
+  refused as a 404 rather than staff's 403. This route deliberately carries no
+  `RequirePassword`: a portal client has no account to re-authenticate with, so
+  the gate is the hashed grant, the short session, and the scan verdict.
 - Rate limits: 30 req/min on the portal, 10 req/min on token exchange.
 - **Per-dossier portal upload quota:** cumulative uploaded bytes across all
   document requests on the dossier are capped at 500 MB

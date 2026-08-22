@@ -1,4 +1,5 @@
 import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
+import UploadTicketController from '@/actions/App/Dossiers/Http/Controllers/UploadTicketController';
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -28,6 +29,9 @@ export default function DocumentRequestUpload({
                 tenant: currentWorkspace,
                 dossier: dossierId,
                 documentRequest: documentRequest.id,
+            })}
+            signUrl={UploadTicketController.store.url({
+                tenant: currentWorkspace,
             })}
             visitOptions={inlineActionOptions}
         />

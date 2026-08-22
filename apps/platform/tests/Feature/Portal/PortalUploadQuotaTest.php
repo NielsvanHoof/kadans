@@ -14,7 +14,6 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Support\DocumentUploadLimits;
 use App\Pipelines\Models\Pipeline;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -52,6 +51,7 @@ function portalQuotaWorkspace(): array
 
 test('portal upload is rejected when the dossier byte quota would be exceeded', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = portalQuotaWorkspace();
     actingInWorkspace($context['tenant']);
@@ -78,15 +78,15 @@ test('portal upload is rejected when the dossier byte quota would be exceeded', 
 
     $this->get(route('portal.exchange', $context['plainTextToken']));
 
-    // Fake size is kilobytes — 120 KB pushes the dossier over the remaining ~1 KB.
-    $file = UploadedFile::fake()->create('statement.pdf', 120, 'application/pdf');
+    // 120 KB pushes the dossier over the remaining ~1 KB.
+    $ticket = stagedUploadTicket($context['tenant']->id, 'statement.pdf', sizeBytes: 120 * 1024);
 
     $this->from(route('portal.show'))
         ->post(
             route('portal.document-requests.upload', [
                 'documentRequest' => $openRequest->id,
             ]),
-            ['documents' => [$file]],
+            ['documents' => [$ticket]],
         )
         ->assertRedirect(route('portal.show'))
         ->assertSessionHasErrors([
@@ -104,13 +104,16 @@ test('portal upload is rejected when the dossier byte quota would be exceeded', 
 | Write-time enforcement
 |--------------------------------------------------------------------------
 |
-| The two tests above go through the FormRequest, which sums bytes *before*
-| the write. That sum cannot hold under concurrency: at throttle:30,1 with 10
-| files of 20 MB per POST, every in-flight request reads the same pre-write
-| total and every one of them passes. The tests below drive
-| SubmitPortalUploadAction directly, which is what a concurrent POST looks
-| like from the cap's point of view — the pre-check already happened, against
-| a total that a sibling request has since invalidated.
+| The tests above go over HTTP, where the cap is checked twice: once when the
+| upload ticket is issued, so a client learns the dossier is full before
+| spending bandwidth on a 20 MB file, and once under the dossier lock on write.
+| Only the second is authoritative. The pre-check sums bytes before the write,
+| and that sum cannot hold under concurrency: at throttle:20,1 with 10 files of
+| 20 MB, every in-flight request reads the same pre-write total and every one
+| of them passes. The tests below drive SubmitPortalUploadAction directly,
+| which is what a concurrent POST looks like from the cap's point of view —
+| the pre-check already happened, against a total a sibling request has since
+| invalidated.
 |
 | A literal two-connection test is not possible here: the suite runs on
 | SQLite :memory:, where lockForUpdate() compiles to nothing. So the lock is
@@ -121,6 +124,7 @@ test('portal upload is rejected when the dossier byte quota would be exceeded', 
 
 test('the write-time cap rejects an upload whose pre-write sum went stale', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = portalQuotaWorkspace();
     actingInWorkspace($context['tenant']);
@@ -149,7 +153,7 @@ test('the write-time cap rejects an upload whose pre-write sum went stale', func
     $submit = static fn (): UploadedDocument => resolve(SubmitPortalUploadAction::class)->handle(
         $openRequest,
         $context['grant'],
-        UploadedFile::fake()->create('statement.pdf', 120, 'application/pdf'),
+        stagedUpload($context['tenant']->id, 'statement.pdf', 'application/pdf', 120 * 1024),
     );
 
     // Assert the message, not just the class: a ValidationException from some
@@ -176,6 +180,7 @@ test('the write-time cap rejects an upload whose pre-write sum went stale', func
 
 test('the write-time cap is summed inside the transaction holding the dossier lock', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
     Queue::fake();
 
     $context = portalQuotaWorkspace();
@@ -198,7 +203,7 @@ test('the write-time cap is summed inside the transaction holding the dossier lo
     resolve(SubmitPortalUploadAction::class)->handle(
         $documentRequest,
         $context['grant'],
-        UploadedFile::fake()->create('payslip.pdf', 10, 'application/pdf'),
+        stagedUpload($context['tenant']->id, 'payslip.pdf', 'application/pdf', 10 * 1024),
     );
 
     $dossierLockIndex = null;
@@ -227,6 +232,7 @@ test('the write-time cap is summed inside the transaction holding the dossier lo
 
 test('portal upload succeeds when the dossier is still under the byte quota', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
     Queue::fake();
 
     $context = portalQuotaWorkspace();
@@ -256,7 +262,7 @@ test('portal upload succeeds when the dossier is still under the byte quota', fu
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
+        ['documents' => [stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024)]],
     )->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);

@@ -81,8 +81,16 @@ export interface EnvironmentSettings {
    * uses locally (see `shared/operator.ts` and decision-3).
    *
    * Exactly one environment may own it. `scripts/sync-ocr-credentials.sh` reads
-   * the production stack's outputs, so a second key in staging would be an extra
+   * the `local` stack's outputs, so a second key elsewhere would be an extra
    * standing credential that nothing consumes — the worst kind.
    */
   readonly localOperatorAccess: boolean;
+
+  /**
+   * Application compute plane: VPC, ALB, ECS, RDS, cache, edge, SES, secrets.
+   *
+   * Off for the `local` stack, which exists only so Sail can hit real Textract /
+   * Transcribe against the documents plane without standing up a full platform.
+   */
+  readonly computeEnabled: boolean;
 }

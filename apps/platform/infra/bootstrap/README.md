@@ -29,6 +29,9 @@ cd apps/platform/infra/bootstrap
 npm ci
 pulumi stack init bootstrap
 pulumi config set githubRepository <owner>/<repo>
+# Required when GitHub reports an immutable subject prefix for the repository:
+pulumi config set githubRepositoryOwnerId <owner-id>
+pulumi config set githubRepositoryId <repository-id>
 pulumi config set aws:region eu-west-1
 npm run preview     # review, then:
 npm run up
@@ -75,27 +78,40 @@ Worth enabling on the `production` environment: **required reviewers**. `pulumi 
 against a stack that later owns a database can destroy it, and an approval click is
 cheap insurance.
 
-## The `sub` claim trap
+## The `sub` claim traps
 
-Most tutorials pin the trust policy to `repo:owner/repo:ref:refs/heads/main`. That is
-**wrong here.** When a workflow job declares `environment:` — as `deploy.yml` does —
-GitHub replaces the ref portion of the subject with the environment:
+A job that declares `environment:` — as `deploy.yml` does — receives an environment
+suffix rather than the ref form shown in many tutorials. GitHub also uses immutable
+owner and repository IDs in the default subject prefix for repositories created or
+renamed after July 15, 2026. Together, that produces:
 
 ```
-repo:<owner>/<repo>:environment:production
+repo:<owner>@<owner-id>/<repo>@<repository-id>:environment:production
 ```
 
-Pinning the ref form fails with `Not authorized to perform
-sts:AssumeRoleWithWebIdentity` and no hint as to why. `src/trust.ts` builds the
-correct form, and `src/trust.test.ts` asserts it.
+Query GitHub for the effective prefix before bootstrapping a repository:
 
-The other half matters more: **the `sub` condition must never be omitted or
-wildcarded.** A trust policy that only checks `aud` can be assumed by *any*
-repository on GitHub. `assertPinnedRepository` throws during `pulumi preview` rather
-than letting that ship, and `src/stack.test.ts` asserts the condition uses
-`StringEquals` rather than `StringLike`.
+```bash
+gh api repos/<owner>/<repo>/actions/oidc/customization/sub
+```
 
-To debug a failed assume, compare what the role accepts against what the token sends:
+When `sub_claim_prefix` contains the numeric IDs, configure both
+`githubRepositoryOwnerId` and `githubRepositoryId`. Omitting them produces a valid
+legacy subject that will nevertheless fail against an immutable token with `Not
+authorized to perform sts:AssumeRoleWithWebIdentity` and no hint about the differing
+claim. `src/trust.ts` builds both forms and requires the immutable IDs as a pair.
+
+The environment suffix matters too: a production job gets
+`:environment:production`, not `:ref:refs/heads/main`.
+
+Finally, **the `sub` condition must never be omitted or wildcarded.** A trust policy
+that only checks `aud` can be assumed by *any* repository on GitHub.
+`assertPinnedRepository` throws during `pulumi preview` rather than letting that
+ship, and `src/stack.test.ts` asserts the condition uses `StringEquals` rather than
+`StringLike`.
+
+To debug a failed assume, compare GitHub's `sub_claim_prefix` with what the role
+accepts:
 
 ```bash
 pulumi stack output acceptedSubjectClaims

@@ -10,6 +10,8 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
   pulumi.runtime.setAllConfig({
     "aws:region": "eu-west-1",
     "qompose-bootstrap:githubRepository": "NielsvanHoof/qompose",
+    "qompose-bootstrap:githubRepositoryOwnerId": "26738111",
+    "qompose-bootstrap:githubRepositoryId": "1301716861",
   }, []);
 
   await pulumi.runtime.setMocks({
@@ -59,8 +61,11 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
 
   const serialized = JSON.stringify(policyDocuments);
 
-  // The environment form of the subject claim, exactly — see trust.ts.
-  assert.match(serialized, /repo:NielsvanHoof\/qompose:environment:production/);
+  // The immutable repository prefix and environment suffix, exactly — see trust.ts.
+  assert.match(
+    serialized,
+    /repo:NielsvanHoof@26738111\/qompose@1301716861:environment:production/,
+  );
   // The ref form would silently fail to match deploy.yml's OIDC token.
   assert.equal(serialized.includes("ref:refs/heads"), false);
   // A wildcard subject would open the account to every repository on GitHub.
@@ -85,6 +90,30 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
     (statement) => statement.sid === "DenyModifyingOwnAccess",
   );
 
+  const secretsStatement = statements.find(
+    (statement) => statement.sid === "ManagePlatformSecrets",
+  );
+
+  assert.ok(secretsStatement, "deploy policy must manage platform secrets");
+  assert.ok(
+    (secretsStatement.resources as string[]).includes(
+      "arn:aws:secretsmanager:*:123456789012:secret:rds!db-*",
+    ),
+    "RDS-managed master secrets must be creatable",
+  );
+
+  const identityStatement = statements.find(
+    (statement) => statement.sid === "ManageQomposeIdentities",
+  );
+
+  assert.ok(identityStatement, "deploy policy must manage application identities");
+  assert.ok(
+    (identityStatement.resources as string[]).includes(
+      "arn:aws:iam::123456789012:policy/qompose/*",
+    ),
+    "managed policies under the /qompose/ path must be creatable",
+  );
+
   assert.ok(denyStatement, "deploy policy must deny self-modification");
   assert.equal(denyStatement.effect, "Deny");
   assert.equal(
@@ -106,6 +135,7 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
   const sids = statements.map((statement) => statement.sid);
 
   for (const sid of [
+    "ManageEncryptionGrantsForAwsResources",
     "ManagePlatformNetwork",
     "ManagePlatformLoadBalancing",
     "ManagePlatformCompute",
@@ -124,6 +154,39 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
 
   // Service-linked roles are the one iam:* grant outside the qompose namespace, so
   // it must stay pinned to named services rather than becoming a bare wildcard.
+  const encryptionKeys = statements.find(
+    (statement) => statement.sid === "ManageEncryptionKeys",
+  );
+
+  assert.ok(encryptionKeys);
+  for (const action of [
+    "kms:Encrypt",
+    "kms:Decrypt",
+    "kms:ReEncrypt*",
+    "kms:GenerateDataKey*",
+  ]) {
+    assert.ok(
+      (encryptionKeys.actions as string[]).includes(action),
+      `deploy policy is missing ${action} for encrypted service provisioning`,
+    );
+  }
+
+  const encryptionGrants = statements.find(
+    (statement) => statement.sid === "ManageEncryptionGrantsForAwsResources",
+  );
+
+  assert.ok(encryptionGrants);
+  assert.deepEqual(encryptionGrants.actions, [
+    "kms:CreateGrant",
+    "kms:RetireGrant",
+    "kms:RevokeGrant",
+  ]);
+  assert.deepEqual(encryptionGrants.conditions, [{
+    test: "Bool",
+    variable: "kms:GrantIsForAWSResource",
+    values: ["true"],
+  }]);
+
   const serviceLinked = statements.find(
     (statement) => statement.sid === "CreateServiceLinkedRoles",
   );

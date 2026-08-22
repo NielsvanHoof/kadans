@@ -7,19 +7,56 @@ import {
   githubEnvironmentSubject,
 } from "./trust.js";
 
-test("the subject uses the environment form, not the ref form", () => {
-  // deploy.yml declares `environment: production`, which makes GitHub emit
-  // `environment:` in the subject instead of `ref:refs/heads/...`. Pinning the
-  // ref form here is the single most common reason AssumeRoleWithWebIdentity
-  // fails, so assert the shape explicitly.
+test("the subject uses the immutable repository and environment form", () => {
+  // deploy.yml declares an environment, and this repository uses GitHub's
+  // immutable owner/repository IDs in its default subject prefix.
   assert.equal(
-    githubEnvironmentSubject("NielsvanHoof/qompose", "production"),
-    "repo:NielsvanHoof/qompose:environment:production",
+    githubEnvironmentSubject(
+      "NielsvanHoof/qompose",
+      "production",
+      "26738111",
+      "1301716861",
+    ),
+    "repo:NielsvanHoof@26738111/qompose@1301716861:environment:production",
   );
 
   assert.equal(
-    githubEnvironmentSubject("NielsvanHoof/qompose", "staging"),
-    "repo:NielsvanHoof/qompose:environment:staging",
+    githubEnvironmentSubject(
+      "NielsvanHoof/qompose",
+      "staging",
+      "26738111",
+      "1301716861",
+    ),
+    "repo:NielsvanHoof@26738111/qompose@1301716861:environment:staging",
+  );
+});
+
+test("legacy repositories can omit immutable IDs", () => {
+  assert.equal(
+    githubEnvironmentSubject("owner/repo", "staging"),
+    "repo:owner/repo:environment:staging",
+  );
+});
+
+test("immutable owner and repository IDs must be configured together", () => {
+  assert.throws(
+    () => githubEnvironmentSubject("owner/repo", "staging", "123"),
+    /must be configured together/,
+  );
+  assert.throws(
+    () => githubEnvironmentSubject("owner/repo", "staging", undefined, "456"),
+    /must be configured together/,
+  );
+});
+
+test("immutable owner and repository IDs must be numeric", () => {
+  assert.throws(
+    () => githubEnvironmentSubject("owner/repo", "staging", "owner", "456"),
+    /githubRepositoryOwnerId must be a numeric GitHub ID/,
+  );
+  assert.throws(
+    () => githubEnvironmentSubject("owner/repo", "staging", "123", "repo"),
+    /githubRepositoryId must be a numeric GitHub ID/,
   );
 });
 

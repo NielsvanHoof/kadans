@@ -29,6 +29,60 @@ test("the data plane still provisions documents, OCR and Transcribe plumbing", (
   assert.ok(stack.named("transcribe-complete"));
 });
 
+test("presigned browser uploads are permitted and swept", () => {
+  const cors = stack.named("documents-cors");
+
+  assert.ok(cors, "expected a CORS configuration on the documents bucket");
+
+  const rule = (cors.inputs.corsRules as Array<Record<string, unknown>>)[0];
+
+  assert.deepEqual(rule.allowedMethods, ["PUT"]);
+  // A presigned URL is a bearer credential; a wildcard origin would let any
+  // page that obtained one spend it.
+  assert.deepEqual(rule.allowedOrigins, [
+    "https://app.qompose.nl",
+    "https://*.qompose.nl",
+  ]);
+  assert.ok(!(rule.allowedOrigins as string[]).includes("*"));
+
+  /*
+   * A presigned PUT carries no server-side-encryption headers — every signed
+   * header is one the browser must reproduce exactly — so the bucket's own
+   * default is what encrypts a direct upload. If that default were ever
+   * removed, uploads would keep succeeding and silently land unencrypted.
+   */
+  const encryption = stack.named("documents-encryption");
+  const encryptionRule = (encryption?.inputs.rules as Array<Record<string, unknown>>)[0];
+
+  assert.equal(
+    (encryptionRule.applyServerSideEncryptionByDefault as Record<string, unknown>).sseAlgorithm,
+    "aws:kms",
+  );
+
+  // ...and no bucket policy may demand an SSE header the browser cannot send.
+  const bucketPolicy = stack.policyDocuments.find((document) =>
+    (document.statements as Array<Record<string, unknown>> | undefined)
+      ?.some((statement) => statement.sid === "DenyInsecureTransport")
+  );
+  const conditions = (bucketPolicy?.statements as Array<Record<string, unknown>>)
+    .flatMap((statement) => (statement.conditions ?? []) as Array<Record<string, unknown>>);
+
+  assert.ok(
+    !conditions.some((condition) =>
+      String(condition.variable).includes("x-amz-server-side-encryption")
+    ),
+    "a bucket policy requiring an SSE header would reject every presigned upload",
+  );
+
+  const lifecycle = stack.named("documents-lifecycle");
+  const rules = lifecycle?.inputs.rules as Array<Record<string, unknown>>;
+  const staging = rules.find((entry) => entry.id === "expire-unclaimed-staged-uploads");
+
+  assert.ok(staging, "expected unclaimed staged uploads to expire");
+  assert.deepEqual(staging.filter, { prefix: "staging/" });
+  assert.deepEqual(staging.expiration, { days: 1 });
+});
+
 test("compute, edge and data stores are provisioned", () => {
   assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), true);
   assert.equal(stack.hasType("aws:ecs/cluster:Cluster"), true);
@@ -37,6 +91,18 @@ test("compute, edge and data stores are provisioned", () => {
   assert.equal(stack.hasType("aws:lb/loadBalancer:LoadBalancer"), true);
   assert.equal(stack.hasType("aws:ecr/repository:Repository"), true);
   assert.equal(stack.hasType("aws:secretsmanager/secret:Secret"), true);
+});
+
+test("IAM role tag values use IAM's restricted character set", () => {
+  const allowed = /^[\p{L}\p{Z}\p{N}_.:/=+\-@]*$/u;
+
+  for (const role of stack.ofType("aws:iam/role:Role")) {
+    const tags = (role.inputs.tags ?? {}) as Record<string, string>;
+
+    for (const [key, value] of Object.entries(tags)) {
+      assert.match(value, allowed, `${role.name} tag ${key} is invalid for IAM`);
+    }
+  }
 });
 
 // One artifact, five long-running roles, dispatched by docker/production/entrypoint.sh.
@@ -428,6 +494,39 @@ test("the scanner can decrypt the documents it is asked to scan", () => {
 
   assert.ok(sids.includes("TagScannedObjects"));
   assert.ok(sids.includes("DecryptDocuments"));
+  assert.ok(sids.includes("ManageGuardDutyEventRule"));
+  assert.ok(sids.includes("MonitorGuardDutyEventRule"));
+  assert.ok(sids.includes("AllowPutValidationObject"));
+
+  const inspect = statements.find((statement) => statement.sid === "InspectDocumentsBucket");
+
+  assert.ok(inspect);
+  assert.ok(inspect.actions.includes("s3:GetBucketNotification"));
+  assert.ok(inspect.actions.includes("s3:PutBucketNotification"));
+
+  const tagging = statements.find((statement) => statement.sid === "TagScannedObjects");
+
+  assert.ok(tagging);
+  assert.ok(tagging.actions.includes("s3:PutObjectVersionTagging"));
+  assert.ok(tagging.actions.includes("s3:GetObjectVersionTagging"));
+
+  const manageRule = statements.find((statement) => statement.sid === "ManageGuardDutyEventRule");
+
+  assert.ok(manageRule);
+  assert.ok(manageRule.actions.includes("events:PutRule"));
+  assert.ok(manageRule.actions.includes("events:DeleteRule"));
+  assert.ok(manageRule.actions.includes("events:PutTargets"));
+  assert.ok(manageRule.actions.includes("events:RemoveTargets"));
+  assert.ok(
+    JSON.stringify(manageRule).includes("DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3"),
+  );
+  assert.ok(JSON.stringify(manageRule).includes("events:ManagedBy"));
+
+  const monitorRule = statements.find((statement) => statement.sid === "MonitorGuardDutyEventRule");
+
+  assert.ok(monitorRule);
+  assert.ok(monitorRule.actions.includes("events:DescribeRule"));
+  assert.ok(monitorRule.actions.includes("events:ListTargetsByRule"));
 });
 
 // The app reads the verdict; it must never be able to rewrite it.
@@ -521,7 +620,14 @@ test("CloudTrail records object reads on the documents bucket", () => {
 
 test("the audit log bucket is private and ages its own contents out", () => {
   assert.ok(stack.named("audit-logs-public-access"));
-  assert.ok(stack.named("audit-logs-lifecycle"));
+  const lifecycle = stack.named("audit-logs-lifecycle");
+
+  assert.ok(lifecycle);
+
+  const lifecycleRules = lifecycle.inputs.rules as Array<Record<string, any>>;
+
+  assert.deepEqual(lifecycleRules[0].transitions, [{ days: 90, storageClass: "GLACIER" }]);
+  assert.deepEqual(lifecycleRules[0].expiration, { days: 365 });
 
   const encryption = stack.named("audit-logs-encryption");
 
@@ -618,7 +724,7 @@ test("only the hashed bundle is cached; app responses never are", () => {
 
 /*
  * Turning on AWSManagedRulesCommonRuleSet unmodified breaks this application:
- * SizeRestrictions_BODY rejects bodies over 8KB and uploads go to 20MB, while
+ * SizeRestrictions_BODY rejects bodies over 8KB and uploads go to 20-25MB, while
  * CrossSiteScripting_BODY trips on client correspondence pasted into a note.
  * Counted rather than removed, so the decision stays visible in the metrics.
  */
@@ -826,7 +932,7 @@ test("automated backups are replicated out of the primary region", () => {
   assert.notEqual(destination.inputs.region, "eu-west-1");
 });
 
-test("production mints the local Sail IAM user", () => {
-  assert.equal(stack.hasType("aws:iam/user:User"), true);
-  assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), true);
+test("production does not mint the Sail IAM user (that lives on local)", () => {
+  assert.equal(stack.hasType("aws:iam/user:User"), false);
+  assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), false);
 });

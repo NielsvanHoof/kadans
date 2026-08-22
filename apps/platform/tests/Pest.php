@@ -5,7 +5,14 @@ declare(strict_types=1);
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
+use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Models\ClientAccessGrant;
+use App\Clients\Models\Client;
+use App\Dossiers\Enums\DossierStatus;
+use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\StagedUpload;
+use App\Dossiers\Support\UploadTicket;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Reporting\Queries\ActivityLogRowMapper;
 use App\Shared\Http\Controllers\Controller;
@@ -18,6 +25,8 @@ use App\Tenancy\Models\TenantMembership;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Env;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Support\Header;
 use Tests\TestCase;
@@ -496,4 +505,111 @@ function grantDossierBuilderLock(Dossier $dossier, User $user): string
     ])->save();
 
     return $token;
+}
+
+/**
+ * A workspace with a client, a draft dossier, and a live portal access grant.
+ *
+ * Shared because the portal is exercised from several angles — session
+ * lifetime, the ended page, uploads, downloads — and each of those needs the
+ * same four rows plus the one-time plaintext token that only exists in the
+ * action's return value.
+ *
+ * @return array{owner: User, tenant: Tenant, client: Client, dossier: Dossier, plainTextToken: string, grant: ClientAccessGrant}
+ */
+function createPortalDossierWithGrant(): array
+{
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create([
+        'tenant_id' => $tenant->id,
+        'email' => 'jane@example.com',
+    ]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => '2025 Payroll dossier',
+        'status' => DossierStatus::Draft,
+    ]);
+
+    $result = resolve(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
+
+    return [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'client' => $client,
+        'dossier' => $dossier->fresh(),
+        'plainTextToken' => $result['plain_text_token'],
+        'grant' => $result['grant'],
+    ];
+}
+
+/**
+ * Stage a file in object storage the way a presigned browser upload would, and
+ * return the sealed ticket that redeems it.
+ *
+ * Uploads no longer travel through PHP, so `UploadedFile::fake()` has nothing
+ * to attach to: by the time a request reaches the application the bytes are
+ * already in the bucket. This helper reproduces that state — object in the
+ * staging prefix, sealed ticket in hand — which is what every upload endpoint
+ * now expects.
+ *
+ * It seals through the real UploadTicket so the format under test is the
+ * format in production; a hand-rolled payload here could drift while every
+ * test kept passing.
+ *
+ * Callers must have faked the disk first (`Storage::fake('s3')`).
+ */
+function stagedUploadTicket(
+    int $tenantId,
+    string $filename = 'statement.pdf',
+    UploadPurpose $purpose = UploadPurpose::Document,
+    int $sizeBytes = 1024,
+    ?string $disk = null,
+): string {
+    $disk ??= Config::string('filesystems.default');
+    $path = stagedUploadPath($tenantId, $filename, $sizeBytes, $disk);
+
+    return new UploadTicket(
+        purpose: $purpose,
+        tenantId: $tenantId,
+        disk: $disk,
+        path: $path,
+        filename: $filename,
+        expiresAt: now()->addMinutes(30),
+    )->seal();
+}
+
+/**
+ * The verified StagedUpload an action receives once a ticket has been claimed.
+ * For tests that exercise the upload actions directly rather than over HTTP.
+ */
+function stagedUpload(
+    int $tenantId,
+    string $filename = 'statement.pdf',
+    string $mimeType = 'application/pdf',
+    int $sizeBytes = 1024,
+    ?string $disk = null,
+): StagedUpload {
+    $disk ??= Config::string('filesystems.default');
+    $path = stagedUploadPath($tenantId, $filename, $sizeBytes, $disk);
+
+    return new StagedUpload(
+        disk: $disk,
+        path: $path,
+        originalFilename: $filename,
+        mimeType: $mimeType,
+        sizeBytes: $sizeBytes,
+    );
+}
+
+/** Write the staged object and return its key. Shared by both helpers above. */
+function stagedUploadPath(int $tenantId, string $filename, int $sizeBytes, string $disk): string
+{
+    $extension = pathinfo($filename, PATHINFO_EXTENSION);
+    $path = sprintf('staging/tenants/%d/%s.%s', $tenantId, (string) Str::ulid(), $extension);
+
+    Storage::disk($disk)->put($path, str_repeat('x', max($sizeBytes, 0)));
+
+    return $path;
 }

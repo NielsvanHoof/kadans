@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ClientPortal\Queries;
 
+use App\Accounts\Models\User;
 use App\ClientPortal\Data\ClientPortalPageData;
 use App\ClientPortal\Data\PortalClientData;
 use App\ClientPortal\Data\PortalDocumentRequestData;
@@ -11,8 +12,10 @@ use App\ClientPortal\Data\PortalDossierData;
 use App\ClientPortal\Data\PortalFirmData;
 use App\ClientPortal\Data\PortalNextIncompleteData;
 use App\ClientPortal\Data\PortalProgressData;
+use App\ClientPortal\Data\PortalSessionData;
 use App\ClientPortal\Data\PortalUploadedDocumentData;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Support\PortalSessionWindow;
 use App\Clients\Models\Client;
 use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
@@ -35,12 +38,15 @@ final readonly class FetchClientPortalQuery
         private DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
-    public function handle(ClientAccessGrant $grant): ClientPortalPageData
-    {
+    public function handle(
+        ClientAccessGrant $grant,
+        PortalSessionWindow $sessionWindow,
+    ): ClientPortalPageData {
         $dossier = Dossier::query()
             ->with([
                 'client:id,name,email',
                 'tenant:id,name',
+                'responsibleUser:id,name,email',
                 'documentRequests' => fn ($query) => $query
                     ->oldest('sort_order')
                     ->oldest('id')
@@ -105,8 +111,14 @@ final readonly class FetchClientPortalQuery
             );
         }
 
+        $contact = $this->resolveContact($dossier, $grant);
+
         return new ClientPortalPageData(
-            firm: new PortalFirmData(name: $tenant->name),
+            firm: new PortalFirmData(
+                name: $tenant->name,
+                contactName: $contact->name,
+                contactEmail: $contact->email,
+            ),
             dossier: new PortalDossierData(
                 title: $dossier->title,
                 reference: $dossier->reference,
@@ -128,7 +140,29 @@ final readonly class FetchClientPortalQuery
                 ),
                 documentRequests: $documentRequests,
             ),
+            session: PortalSessionData::fromWindow($sessionWindow),
         );
+    }
+
+    /**
+     * Who the client should contact. The dossier's responsible staff member
+     * first, then whoever issued the access link — both already correspond with
+     * this client, so neither discloses anything new.
+     *
+     * Always resolves: `created_by` cascades on delete, so a live grant always
+     * has a live creator to fall back to.
+     */
+    private function resolveContact(Dossier $dossier, ClientAccessGrant $grant): User
+    {
+        $responsibleUser = $dossier->responsibleUser;
+
+        if ($responsibleUser instanceof User) {
+            return $responsibleUser;
+        }
+
+        $grant->loadMissing('createdBy:id,name,email');
+
+        return $grant->createdBy;
     }
 
     private function resolveTenant(Dossier $dossier): Tenant

@@ -91,6 +91,7 @@ declare namespace App {
             export type ClientPortalPageData = {
                 readonly firm: App.ClientPortal.Data.PortalFirmData;
                 readonly dossier: App.ClientPortal.Data.PortalDossierData;
+                readonly session: App.ClientPortal.Data.PortalSessionData;
             };
             export type PortalClientData = {
                 readonly name: string;
@@ -122,6 +123,8 @@ declare namespace App {
             };
             export type PortalFirmData = {
                 name: string;
+                readonly contact_name: string;
+                readonly contact_email: string;
             };
             export type PortalNextIncompleteData = {
                 readonly id: number;
@@ -133,6 +136,10 @@ declare namespace App {
                 readonly approved: number;
                 readonly remaining: number;
                 readonly next_incomplete: App.ClientPortal.Data.PortalNextIncompleteData | null;
+            };
+            export type PortalSessionData = {
+                readonly idle_expires_at: string;
+                readonly absolute_expires_at: string;
             };
             export type PortalUploadedDocumentData = {
                 readonly id: number;
@@ -150,6 +157,7 @@ declare namespace App {
                 | 'recognised'
                 | 'new_device_allowed'
                 | 'new_device_blocked';
+            export type PortalSessionEndReason = 'timed_out' | 'access_ended';
         }
     }
     namespace Clients {
@@ -351,6 +359,12 @@ declare namespace App {
                 readonly pipeline: App.Pipelines.Data.PipelineData | null;
                 readonly can_delete: boolean;
             };
+            export type UploadTicketData = {
+                readonly upload_url: string;
+                readonly ticket: string;
+                readonly content_type: string;
+                readonly expires_at: string;
+            };
         }
         namespace Enums {
             export type AudioRecordingPermission =
@@ -388,6 +402,7 @@ declare namespace App {
                 | 'ACCESS_DENIED'
                 | 'FAILED';
             export type SubmissionContext = 'portal' | 'staff';
+            export type UploadPurpose = 'document' | 'audio_recording';
             export type UploadedDocumentPermission =
                 'documents.view' | 'documents.download';
         }

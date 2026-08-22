@@ -16,5 +16,6 @@ final class ClientPortalPageData extends Data
     public function __construct(
         public readonly PortalFirmData $firm,
         public readonly PortalDossierData $dossier,
+        public readonly PortalSessionData $session,
     ) {}
 }

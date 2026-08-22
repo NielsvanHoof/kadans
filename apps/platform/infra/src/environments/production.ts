@@ -34,5 +34,6 @@ export const productionSettings: EnvironmentSettings = {
   crossRegionSnapshotCopy: true,
   monthlyBudgetUsd: 200,
 
-  localOperatorAccess: true,
+  localOperatorAccess: false,
+  computeEnabled: true,
 };
