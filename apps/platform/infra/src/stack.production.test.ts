@@ -29,6 +29,60 @@ test("the data plane still provisions documents, OCR and Transcribe plumbing", (
   assert.ok(stack.named("transcribe-complete"));
 });
 
+test("presigned browser uploads are permitted and swept", () => {
+  const cors = stack.named("documents-cors");
+
+  assert.ok(cors, "expected a CORS configuration on the documents bucket");
+
+  const rule = (cors.inputs.corsRules as Array<Record<string, unknown>>)[0];
+
+  assert.deepEqual(rule.allowedMethods, ["PUT"]);
+  // A presigned URL is a bearer credential; a wildcard origin would let any
+  // page that obtained one spend it.
+  assert.deepEqual(rule.allowedOrigins, [
+    "https://app.qompose.nl",
+    "https://*.qompose.nl",
+  ]);
+  assert.ok(!(rule.allowedOrigins as string[]).includes("*"));
+
+  /*
+   * A presigned PUT carries no server-side-encryption headers — every signed
+   * header is one the browser must reproduce exactly — so the bucket's own
+   * default is what encrypts a direct upload. If that default were ever
+   * removed, uploads would keep succeeding and silently land unencrypted.
+   */
+  const encryption = stack.named("documents-encryption");
+  const encryptionRule = (encryption?.inputs.rules as Array<Record<string, unknown>>)[0];
+
+  assert.equal(
+    (encryptionRule.applyServerSideEncryptionByDefault as Record<string, unknown>).sseAlgorithm,
+    "aws:kms",
+  );
+
+  // ...and no bucket policy may demand an SSE header the browser cannot send.
+  const bucketPolicy = stack.policyDocuments.find((document) =>
+    (document.statements as Array<Record<string, unknown>> | undefined)
+      ?.some((statement) => statement.sid === "DenyInsecureTransport")
+  );
+  const conditions = (bucketPolicy?.statements as Array<Record<string, unknown>>)
+    .flatMap((statement) => (statement.conditions ?? []) as Array<Record<string, unknown>>);
+
+  assert.ok(
+    !conditions.some((condition) =>
+      String(condition.variable).includes("x-amz-server-side-encryption")
+    ),
+    "a bucket policy requiring an SSE header would reject every presigned upload",
+  );
+
+  const lifecycle = stack.named("documents-lifecycle");
+  const rules = lifecycle?.inputs.rules as Array<Record<string, unknown>>;
+  const staging = rules.find((entry) => entry.id === "expire-unclaimed-staged-uploads");
+
+  assert.ok(staging, "expected unclaimed staged uploads to expire");
+  assert.deepEqual(staging.filter, { prefix: "staging/" });
+  assert.deepEqual(staging.expiration, { days: 1 });
+});
+
 test("compute, edge and data stores are provisioned", () => {
   assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), true);
   assert.equal(stack.hasType("aws:ecs/cluster:Cluster"), true);

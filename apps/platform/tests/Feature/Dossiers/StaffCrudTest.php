@@ -13,7 +13,6 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Enums\Role;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -350,14 +349,14 @@ test('staff can upload a document for a document request', function (): void {
         'title' => 'Payslip January 2025',
     ]);
 
-    $file = UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf');
+    $ticket = stagedUploadTicket($tenant->id, 'payslip.pdf', sizeBytes: 120 * 1024);
 
     $this->actingAs($owner)
         ->post(workspaceRoute('workspaces.dossiers.document-requests.upload', $tenant, [
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [
-            'documents' => [$file],
+            'documents' => [$ticket],
         ])
         ->assertRedirect(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]));
 
@@ -383,6 +382,7 @@ test('staff can upload a document for a document request', function (): void {
 
 test('read only staff cannot upload documents', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     ['tenant' => $tenant] = provisionWorkspace();
     $reader = workspaceMember($tenant, Role::ReadOnly);
@@ -407,7 +407,7 @@ test('read only staff cannot upload documents', function (): void {
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [
-            'documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
+            'documents' => [stagedUploadTicket($tenant->id, 'payslip.pdf', sizeBytes: 120 * 1024)],
         ])
         ->assertForbidden();
 

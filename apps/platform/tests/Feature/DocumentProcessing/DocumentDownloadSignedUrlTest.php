@@ -9,6 +9,7 @@ use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DocumentPresigner;
 use Aws\S3\S3Client;
 use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -176,7 +177,7 @@ test('resolve document temporary url generates a presigned url with attachment d
         'mime_type' => 'application/pdf',
     ]);
 
-    $url = new ResolveDocumentTemporaryUrlAction($filesystems)->handle(
+    $url = new ResolveDocumentTemporaryUrlAction($filesystems, new DocumentPresigner($filesystems))->handle(
         $uploaded,
         now()->addMinutes(5),
     );
@@ -207,7 +208,7 @@ test('resolve document temporary url can request inline disposition for previews
         'mime_type' => 'image/png',
     ]);
 
-    $url = new ResolveDocumentTemporaryUrlAction($filesystems)->handle(
+    $url = new ResolveDocumentTemporaryUrlAction($filesystems, new DocumentPresigner($filesystems))->handle(
         $uploaded,
         now()->addMinutes(5),
         'inline',
@@ -253,7 +254,7 @@ test('a hostile filename cannot inject a second content-disposition filename', f
         'mime_type' => 'application/pdf',
     ]);
 
-    new ResolveDocumentTemporaryUrlAction($filesystems)->handle($uploaded, now()->addMinutes(5), $disposition);
+    new ResolveDocumentTemporaryUrlAction($filesystems, new DocumentPresigner($filesystems))->handle($uploaded, now()->addMinutes(5), $disposition);
 })->with(['attachment', 'inline']);
 
 test('non-ASCII, comma and semicolon characters produce a single well-formed filename', function (string $disposition): void {
@@ -274,7 +275,7 @@ test('non-ASCII, comma and semicolon characters produce a single well-formed fil
                 // The real UTF-8 name still reaches modern clients via RFC 5987.
                 ->and($value)->toContain("filename*=utf-8''caf%C3%A9");
 
-            return mb_substr_count((string) $value, 'filename=') === 1;
+            return mb_substr_count($value, 'filename=') === 1;
         })
         ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/file.pdf?X-Amz-Signature=abc');
 
@@ -291,7 +292,7 @@ test('non-ASCII, comma and semicolon characters produce a single well-formed fil
         'mime_type' => 'application/pdf',
     ]);
 
-    new ResolveDocumentTemporaryUrlAction($filesystems)->handle($uploaded, now()->addMinutes(5), $disposition);
+    new ResolveDocumentTemporaryUrlAction($filesystems, new DocumentPresigner($filesystems))->handle($uploaded, now()->addMinutes(5), $disposition);
 })->with(['attachment', 'inline']);
 
 test('an excessively long filename is bounded before reaching the content-disposition header', function (): void {
@@ -307,7 +308,7 @@ test('an excessively long filename is bounded before reaching the content-dispos
 
             expect($value)->toBeString();
 
-            return mb_strlen((string) $value) < 512;
+            return mb_strlen($value) < 512;
         })
         ->andReturn('http://localhost:9000/local/tenants/1/dossiers/1/file.pdf?X-Amz-Signature=abc');
 
@@ -324,7 +325,7 @@ test('an excessively long filename is bounded before reaching the content-dispos
         'mime_type' => 'application/pdf',
     ]);
 
-    new ResolveDocumentTemporaryUrlAction($filesystems)->handle($uploaded, now()->addMinutes(5));
+    new ResolveDocumentTemporaryUrlAction($filesystems, new DocumentPresigner($filesystems))->handle($uploaded, now()->addMinutes(5));
 });
 
 test('s3 disk reports temporary url support while local does not', function (): void {
@@ -429,6 +430,6 @@ test('a missing bucket falls through to the adapter instead of throwing', functi
         'mime_type' => 'application/pdf',
     ]);
 
-    expect(new ResolveDocumentTemporaryUrlAction($filesystems)->handle($uploaded, now()->addMinutes(5)))
+    expect(new ResolveDocumentTemporaryUrlAction($filesystems, new DocumentPresigner($filesystems))->handle($uploaded, now()->addMinutes(5)))
         ->toBe('http://localhost:4566/signed');
 });

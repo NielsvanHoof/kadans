@@ -49,3 +49,8 @@ ElastiCache sets authToken from cacheAuthToken. Laravel reads REDIS_PASSWORD. Pu
 
 ## Scheduler RunTask IAM uses arnWithoutRevision
 ecs:RunTask IAM must be task-definition/family:* or family:revision. Pulumi TaskDefinition.arn already includes the revision, so `${arn}:*` becomes family:1:* and matches nothing. Use arnWithoutRevision + :*.
+
+## The WAF body-size override is no longer about upload size
+`AWSManagedRulesCommonRuleSet`'s `SizeRestrictions_BODY` override in `edge.ts` was originally justified by 20 MB uploads passing through the app. Since TASK-43.1 the browser PUTs files straight to S3 and no request body reaching the origin is large, so that half of the justification is gone. `CrossSiteScripting_BODY` still trips on client correspondence pasted into notes, which is reason enough to keep both overrides at `count`.
+
+Revisit rather than delete: the override is cheap and a managed rule that starts refusing a legitimate request is an outage.

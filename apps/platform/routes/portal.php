@@ -8,6 +8,7 @@ use App\ClientPortal\Http\Controllers\ClientPortalEndedController;
 use App\ClientPortal\Http\Controllers\ClientPortalSessionController;
 use App\ClientPortal\Http\Controllers\ClientPortalSessionExtendController;
 use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
+use App\ClientPortal\Http\Controllers\ClientPortalUploadTicketController;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,13 @@ Route::middleware([
         Route::middleware(ResolveClientPortalGrant::class)->group(function (): void {
             Route::get('/', [ClientPortalController::class, 'show'])
                 ->name('show');
+
+            // Signs a PUT into the staging prefix for the granted dossier's
+            // tenant. Tighter throttle than the group default: this is the one
+            // portal route an unattended client could call in a loop.
+            Route::post('upload-tickets', [ClientPortalUploadTicketController::class, 'store'])
+                ->middleware('throttle:20,1')
+                ->name('upload-tickets.store');
 
             Route::post('document-requests/{documentRequest}/upload', [ClientPortalUploadController::class, 'store'])
                 ->where('documentRequest', '[0-9]+')

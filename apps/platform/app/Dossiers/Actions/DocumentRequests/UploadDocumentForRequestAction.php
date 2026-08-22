@@ -10,21 +10,18 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Support\DossierLocks;
+use App\Dossiers\Support\StagedUpload;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Pipelines\Actions\StartPipelineAction;
 use App\Pipelines\Enums\PipelineType;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Closure;
 use Illuminate\Filesystem\FilesystemManager;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
 
-use function is_int;
-use function is_string;
 use function sprintf;
 
 final readonly class UploadDocumentForRequestAction
@@ -37,10 +34,15 @@ final readonly class UploadDocumentForRequestAction
     ) {}
 
     /**
-     * Store a file for a document request and mark the request as submitted.
+     * Move a staged upload into a document request and mark it submitted.
      * Replaces any previous upload for the same request, unless the request's
      * `allow_multiple` configuration is enabled, in which case the file is
      * appended alongside any existing uploads instead.
+     *
+     * The file is already in the bucket by the time this runs — the browser
+     * PUT it to the staging prefix and ClaimUploadTicketAction verified it
+     * (see StagedUpload). All that is left is to relocate it into the dossier
+     * tree, which is a server-side S3 copy, and record the row.
      *
      * The dossier is locked here, before the request, and handed to
      * $afterPersist. Both callers need it — staff and portal uploads each move
@@ -52,26 +54,21 @@ final readonly class UploadDocumentForRequestAction
      */
     public function handle(
         DocumentRequest $documentRequest,
-        UploadedFile $file,
+        StagedUpload $upload,
         ?Closure $afterPersist = null,
         SubmissionContext $context = SubmissionContext::Staff,
     ): UploadedDocument {
         throw_if($documentRequest->type !== QuestionnaireItemType::File, InvalidArgumentException::class, 'Only file items accept uploads.');
 
-        $disk = Config::string('filesystems.default', 'local');
+        $disk = $upload->disk;
         $directory = sprintf(
             'tenants/%d/dossiers/%d',
             $documentRequest->tenant_id,
             $documentRequest->dossier_id,
         );
 
-        $path = $this->filesystems
-            ->disk($disk)
-            ->putFile($directory, $file);
-
-        throw_if(! is_string($path) || $path === '', RuntimeException::class, 'Failed to store the uploaded document.');
-
-        $sizeBytes = $file->getSize();
+        $stored = $this->moveIntoPlace($upload, $directory);
+        $path = $stored->path;
 
         /** @var array{disk: string, path: string}|null $replacedFile */
         $replacedFile = null;
@@ -81,8 +78,7 @@ final readonly class UploadDocumentForRequestAction
                 $documentRequest,
                 $disk,
                 $path,
-                $file,
-                $sizeBytes,
+                $stored,
                 $afterPersist,
                 $context,
                 &$replacedFile,
@@ -100,9 +96,9 @@ final readonly class UploadDocumentForRequestAction
                 $attributes = [
                     'disk' => $disk,
                     'path' => $path,
-                    'original_filename' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
-                    'size_bytes' => is_int($sizeBytes) ? $sizeBytes : 0,
+                    'original_filename' => $stored->originalFilename,
+                    'mime_type' => $stored->mimeType,
+                    'size_bytes' => $stored->sizeBytes,
                     'uploaded_at' => now(),
                     'reviewed_by' => null,
                     'reviewed_at' => null,
@@ -165,6 +161,24 @@ final readonly class UploadDocumentForRequestAction
         }
 
         return $uploadedDocument;
+    }
+
+    /**
+     * Relocate the staged object into the dossier tree.
+     *
+     * The staging key already ends in a ULID, so the basename carries no
+     * client-supplied text and is collision-free — the same guarantee putFile()
+     * used to provide with its random name.
+     */
+    private function moveIntoPlace(StagedUpload $upload, string $directory): StagedUpload
+    {
+        $path = $directory.'/'.basename($upload->path);
+
+        $moved = $this->filesystems->disk($upload->disk)->move($upload->path, $path);
+
+        throw_if(! $moved, RuntimeException::class, 'Failed to store the uploaded document.');
+
+        return $upload->movedTo($path);
     }
 
     private function deleteFileWithoutMaskingFailure(

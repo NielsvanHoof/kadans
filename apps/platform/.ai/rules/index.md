@@ -43,3 +43,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | tests/** | .ai/rules/tests.md |
 | app/*/{Transitions,Policies,Http/Controllers}/** | .ai/rules/transitions-policies-http-controllers.md |
 | resources/js/components/ui/** | .ai/rules/ui.md |
+| app/Dossiers/Actions/Uploads/** | .ai/rules/uploads.md |

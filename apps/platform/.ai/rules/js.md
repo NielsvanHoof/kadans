@@ -30,3 +30,8 @@ SelectItem is keyed by `id`, not `value` — `value` is ignored and the key fall
 
 ## Select always needs aria-label
 React Aria Select ignores FieldLabel+htmlFor because LabelContext is nulled when htmlFor is set. Every Select must pass aria-label or aria-labelledby (same string as the visible FieldLabel is fine). Missing it floods the browser console with useLabel warnings, especially under Strict Mode / HMR.
+
+## useForm for upload forms is about awaiting presigned PUTs, not multipart
+Uploads no longer post multipart bodies — the browser PUTs each file straight to S3 with a presigned URL and the form submits opaque tickets (see `useDirectUpload` and TASK-43.1). The standing preference for Inertia `<Form>` + Wayfinder `.form()` still holds everywhere else, but `document-file-upload-form.tsx` and `audio-recording-upload-form.tsx` keep `useForm` for a different reason than the old "multipart uploads needing progress": their submit has to await N uploads and abandon itself if any one fails, and there is no declarative form of "await N side effects, then post".
+
+Progress comes from the hook's XHR, not `form.progress` — `fetch()` still cannot report upload progress in any browser.

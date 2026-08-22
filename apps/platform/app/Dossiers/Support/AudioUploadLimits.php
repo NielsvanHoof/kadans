@@ -7,17 +7,20 @@ namespace App\Dossiers\Support;
 /**
  * Per-file ceiling for staff audio recording uploads.
  *
- * Must stay at or below `upload_max_filesize` in every environment
- * (`docker/8.5/Caddyfile`, `docker/staging/php.ini`, `docker/production/php.ini`).
- * Above it, PHP rejects the part with UPLOAD_ERR_INI_SIZE while `post_max_size`
- * still lets the body through, so there is no 413 — the FormRequest just fails
- * on `uploaded` and the upload looks like a silent no-op (TASK-42).
- * `tests/Feature/Platform/UploadLimitsTest.php` fails if the two drift apart.
+ * Recordings now reach S3 through a presigned PUT rather than a multipart
+ * request body, so this is no longer shadowed by php.ini's
+ * `upload_max_filesize` — and no longer subject to the silent
+ * UPLOAD_ERR_INI_SIZE drop that TASK-42 chased down. ClaimUploadTicketAction
+ * checks it against the object S3 actually stored, which is the only place the
+ * real size is known.
+ *
+ * `tests/Feature/Platform/UploadLimitsTest.php` pins it to the frontend
+ * dropzone default.
  */
 final class AudioUploadLimits
 {
-    /** Laravel File::max() / validation size string. */
-    public const string MAX_FILE_SIZE = '25mb';
+    /** Per-file ceiling, checked against the stored object's real size. */
+    public const int MAX_FILE_BYTES = 25 * 1024 * 1024;
 
     /** Human label for the validation message. */
     public const string MAX_FILE_SIZE_LABEL = '25 MB';

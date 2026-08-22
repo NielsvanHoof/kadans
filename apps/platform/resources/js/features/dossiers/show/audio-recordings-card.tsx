@@ -3,6 +3,7 @@ import { Download, Mic, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AudioRecordingController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordingController';
+import UploadTicketController from '@/actions/App/Dossiers/Http/Controllers/UploadTicketController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button, buttonVariants, LinkButton } from '@/components/ui/button';
 import {
@@ -70,6 +71,9 @@ export default function AudioRecordingsCard({
                         actionUrl={AudioRecordingController.store.url({
                             tenant: currentWorkspace,
                             dossier: dossier.id,
+                        })}
+                        signUrl={UploadTicketController.store.url({
+                            tenant: currentWorkspace,
                         })}
                     />
                 ) : null}

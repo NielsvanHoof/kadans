@@ -10,11 +10,11 @@ use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\StagedUpload;
 use App\Dossiers\Transitions\DossierTransitions;
-use Illuminate\Http\UploadedFile;
 
 /**
- * Staff upload: store the file, mark the dossier in review, and audit.
+ * Staff upload: move the staged file into place, mark the dossier in review, and audit.
  */
 final readonly class UploadStaffDocumentAction
 {
@@ -26,11 +26,11 @@ final readonly class UploadStaffDocumentAction
 
     public function handle(
         DocumentRequest $documentRequest,
-        UploadedFile $file,
+        StagedUpload $upload,
     ): UploadedDocument {
         return $this->uploadDocumentForRequest->handle(
             $documentRequest,
-            $file,
+            $upload,
             function (
                 UploadedDocument $uploadedDocument,
                 DocumentRequest $lockedDocumentRequest,

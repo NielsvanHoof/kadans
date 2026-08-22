@@ -9,12 +9,15 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
 use App\Dossiers\Actions\DocumentRequests\UploadStaffDocumentAction;
 use App\Dossiers\Actions\GuardUploadedDocumentDeliveryAction;
+use App\Dossiers\Actions\Uploads\ClaimUploadTicketAction;
 use App\Dossiers\Data\StaffUploadedDocumentData;
+use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Http\Requests\DocumentRequests\StoreUploadedDocumentRequest;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Queries\FetchUploadedDocumentShowQuery;
+use App\Dossiers\Support\StagedUpload;
 use App\Dossiers\Support\UploadedDocumentResponse;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
@@ -22,7 +25,6 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -38,20 +40,30 @@ final class UploadedDocumentController extends Controller
         Dossier $dossier,
         DocumentRequest $documentRequest,
         UploadStaffDocumentAction $uploadStaffDocument,
+        ClaimUploadTicketAction $claimUploadTicket,
     ): RedirectResponse {
         // Parent ownership is enforced by scoped route bindings
         // (dossier → documentRequest). Tenant scope is already applied.
         $this->authorize('view', $dossier);
 
-        /** @var list<UploadedFile> $files */
-        $files = $request->file('documents', []);
+        /*
+         * The files are already in the bucket; what arrives here are the
+         * tickets that name them. Every ticket is claimed before any of them
+         * is stored, so a batch with one bad ticket fails whole rather than
+         * half-importing (each successful handle() dispatches an OCR run).
+         */
+        $uploads = array_map(
+            fn (string $ticket): StagedUpload => $claimUploadTicket->handle(
+                $ticket,
+                UploadPurpose::Document,
+                $tenant->id,
+                'documents',
+            ),
+            $request->array('documents'),
+        );
 
-        if ($files === []) {
-            return back()->withErrors(['documents' => __('At least one file is required.')]);
-        }
-
-        foreach ($files as $file) {
-            $uploadStaffDocument->handle($documentRequest, $file);
+        foreach ($uploads as $upload) {
+            $uploadStaffDocument->handle($documentRequest, $upload);
         }
 
         Toast::success(__('Document uploaded.'));

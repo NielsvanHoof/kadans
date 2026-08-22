@@ -11,17 +11,14 @@ use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierLocks;
+use App\Dossiers\Support\StagedUpload;
 use App\Pipelines\Actions\StartPipelineAction;
 use App\Pipelines\Enums\PipelineType;
 use Illuminate\Filesystem\FilesystemManager;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
 
-use function is_int;
-use function is_string;
 use function sprintf;
 
 final readonly class UploadAudioRecordingAction
@@ -33,29 +30,34 @@ final readonly class UploadAudioRecordingAction
         private DossierLocks $dossierLocks,
     ) {}
 
+    /**
+     * The recording is already in the bucket when this runs: the browser PUT it
+     * to the staging prefix with a presigned URL and ClaimUploadTicketAction
+     * verified its real size and content type against the object. All that is
+     * left here is a server-side move into the dossier tree and the row.
+     */
     public function handle(
         Dossier $dossier,
-        UploadedFile $file,
+        StagedUpload $upload,
         ?User $uploadedBy = null,
     ): AudioRecording {
-        $disk = Config::string('filesystems.default', 'local');
+        $disk = $upload->disk;
         $directory = sprintf('tenants/%d/dossiers/%d/audio', $dossier->tenant_id, $dossier->id);
 
-        $path = $this->filesystems
-            ->disk($disk)
-            ->putFile($directory, $file);
+        // The staging key already ends in a ULID, so the basename carries no
+        // client-supplied text and cannot collide.
+        $path = $directory.'/'.basename($upload->path);
 
-        throw_if(! is_string($path) || $path === '', RuntimeException::class, 'Failed to store the uploaded audio recording.');
+        $moved = $this->filesystems->disk($disk)->move($upload->path, $path);
 
-        $sizeBytes = $file->getSize();
+        throw_if(! $moved, RuntimeException::class, 'Failed to store the uploaded audio recording.');
 
         try {
             $audioRecording = DB::transaction(function () use (
                 $dossier,
                 $disk,
                 $path,
-                $file,
-                $sizeBytes,
+                $upload,
                 $uploadedBy,
             ): AudioRecording {
                 $lockedDossier = $this->dossierLocks->dossier($dossier);
@@ -63,9 +65,9 @@ final readonly class UploadAudioRecordingAction
                 $audioRecording = $lockedDossier->audioRecordings()->create([
                     'disk' => $disk,
                     'path' => $path,
-                    'original_filename' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
-                    'size_bytes' => is_int($sizeBytes) ? $sizeBytes : 0,
+                    'original_filename' => $upload->originalFilename,
+                    'mime_type' => $upload->mimeType,
+                    'size_bytes' => $upload->sizeBytes,
                     'uploaded_at' => now(),
                     'uploaded_by' => $uploadedBy?->id,
                     'transcription_status' => TranscriptionStatus::Pending,

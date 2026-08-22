@@ -1,4 +1,5 @@
 import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadController';
+import ClientPortalUploadTicketController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadTicketController';
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { inlineActionOptions } from '@/lib/inline-action-options';
@@ -23,6 +24,7 @@ export default function PortalDocumentUpload({
             actionUrl={ClientPortalUploadController.store.url({
                 documentRequest: documentRequest.id,
             })}
+            signUrl={ClientPortalUploadTicketController.store.url()}
             visitOptions={inlineActionOptions}
             className="mt-3 space-y-2"
         />

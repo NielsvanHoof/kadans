@@ -47,6 +47,9 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     // membership-check — inline User::canAccessTenant rather than a policy.
     'firms.activate' => 'membership-check: ActiveTenantController asserts User::canAccessTenant.',
 
+    // no-resource — the request names no resource to authorize against.
+    'workspaces.upload-tickets.store' => 'no-resource: signs a PUT into the current workspace staging prefix. The tenant comes from the route binding, which the workspace middleware stack has already validated membership for, and ClaimUploadTicketAction re-checks it when the ticket is spent.',
+
     // middleware — the route group is gated before the controller runs.
     'platform.support.index' => 'middleware: EnsurePlatformSupport.',
     'platform.support.destroy' => 'middleware: EnsurePlatformSupport.',
@@ -61,6 +64,7 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     'portal.document-requests.upload' => 'portal-grant: grant + dossier match + canSubmit.',
     'portal.document-requests.uploaded-documents.destroy' => 'portal-grant: grant + dossier match + allow_multiple + status check.',
     'portal.document-requests.uploaded-documents.download' => 'portal-grant: grant + dossier match + parent match + malware verdict. No RequirePassword: a portal client has no account.',
+    'portal.upload-tickets.store' => 'portal-grant: grant only. A ticket authorises a write into the staging prefix of the granted dossier\'s tenant and nothing more; which dossier it lands on is decided when it is claimed.',
 
     // token-credential — a hashed/signed token is the credential, for guests.
     'invitations.show' => 'token-credential: invitation token.',

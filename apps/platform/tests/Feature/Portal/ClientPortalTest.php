@@ -19,7 +19,6 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Enums\Role;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Illuminate\Notifications\Events\NotificationSent;
@@ -170,6 +169,7 @@ test('portal routes require a live restricted session', function (): void {
 
 test('guest can upload a document through the portal', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -181,7 +181,7 @@ test('guest can upload a document through the portal', function (): void {
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $file = UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf');
+    $ticket = stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024);
 
     $this->get(route('portal.exchange', $context['plainTextToken']));
 
@@ -189,7 +189,7 @@ test('guest can upload a document through the portal', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['documents' => [$file]],
+        ['documents' => [$ticket]],
     )->assertRedirect(route('portal.show'));
 
     actingInWorkspace($context['tenant']);
@@ -203,6 +203,7 @@ test('guest can upload a document through the portal', function (): void {
 
 test('portal cannot upload while a file item awaits review', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -220,7 +221,7 @@ test('portal cannot upload while a file item awaits review', function (): void {
         route('portal.document-requests.upload', [
             'documentRequest' => $documentRequest->id,
         ]),
-        ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
+        ['documents' => [stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024)]],
     )->assertForbidden();
 
     actingInWorkspace($context['tenant']);
@@ -322,6 +323,7 @@ test('a saved choice answer reveals the matching conditional field on the portal
 
 test('portal upload cannot target a document request from another dossier', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -342,12 +344,13 @@ test('portal upload cannot target a document request from another dossier', func
         route('portal.document-requests.upload', [
             'documentRequest' => $foreignRequest->id,
         ]),
-        ['documents' => [UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')]],
+        ['documents' => [stagedUploadTicket($context['tenant']->id, 'x.pdf', sizeBytes: 10 * 1024)]],
     )->assertNotFound();
 });
 
 test('portal upload rolls back database and storage when its audit record fails', function (): void {
     Storage::fake('local');
+    config(['filesystems.default' => 'local']);
 
     $context = createPortalDossierWithGrant();
 
@@ -371,7 +374,7 @@ test('portal upload rolls back database and storage when its audit record fails'
             route('portal.document-requests.upload', [
                 'documentRequest' => $documentRequest->id,
             ]),
-            ['documents' => [UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')]],
+            ['documents' => [stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024)]],
         )->assertServerError();
     } finally {
         Event::forget($event);

@@ -5,10 +5,9 @@ declare(strict_types=1);
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Support\DocumentUploadLimits;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 
-test('an oversized document upload reports the configured post size limit', function (): void {
+test('an oversized POST reports a request-size error rather than a CSRF failure', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
     $dossier = Dossier::factory()->create([
@@ -26,10 +25,14 @@ test('an oversized document upload reports the configured post size limit', func
         'documentRequest' => $documentRequest,
     ]);
 
-    $expected = 'The upload is too large. The maximum total size is '.DocumentUploadLimits::MAX_POST_SIZE_LABEL.'.';
+    $expected = 'That request was too large to process. Try again with less data.';
 
-    // ValidatePostSize compares CONTENT_LENGTH to post_max_size before the body is read.
-    // Visit the form first so the session cookie exists (mirrors a real oversized POST).
+    // Uploads no longer POST their bytes, so this path is now a safety net
+    // rather than an upload concern — but it is still the difference between
+    // a legible error and a bare CSRF failure, because ValidatePostSize
+    // compares CONTENT_LENGTH to post_max_size before the body is read and
+    // PHP has already discarded the token by then.
+    // Visit the form first so the session cookie exists.
     $this->actingAs($owner)
         ->withoutMiddleware(PreventRequestForgery::class)
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))

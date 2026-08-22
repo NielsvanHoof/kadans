@@ -359,6 +359,12 @@ declare namespace App {
                 readonly pipeline: App.Pipelines.Data.PipelineData | null;
                 readonly can_delete: boolean;
             };
+            export type UploadTicketData = {
+                readonly upload_url: string;
+                readonly ticket: string;
+                readonly content_type: string;
+                readonly expires_at: string;
+            };
         }
         namespace Enums {
             export type AudioRecordingPermission =
@@ -396,6 +402,7 @@ declare namespace App {
                 | 'ACCESS_DENIED'
                 | 'FAILED';
             export type SubmissionContext = 'portal' | 'staff';
+            export type UploadPurpose = 'document' | 'audio_recording';
             export type UploadedDocumentPermission =
                 'documents.view' | 'documents.download';
         }

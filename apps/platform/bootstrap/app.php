@@ -6,7 +6,6 @@ use App\Accounts\Http\Middleware\SetLocale;
 use App\Audit\Actions\LogAccessDeniedAction;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
-use App\Dossiers\Support\DocumentUploadLimits;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Shared\Http\Middleware\AddSecurityHeaders;
 use App\Shared\Http\Middleware\HandleAppearance;
@@ -27,6 +26,7 @@ use Illuminate\Session\SessionManager;
 use Illuminate\Support\Facades\Config;
 use Inertia\ExceptionResponse;
 use Sentry\Laravel\Integration;
+use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -59,8 +59,22 @@ return Application::configure(basePath: dirname(__DIR__))
             at: fn (): array => Config::array('production.allowed_hosts'),
             subdomains: false,
         );
+        /*
+         * The same three headers HEADER_X_FORWARDED_AWS_ELB aliased, spelled
+         * out now that no ELB is involved: Laravel Cloud fronts the app with
+         * Cloudflare and its own ingress, both of which send the standard
+         * X-Forwarded-* set. X-Forwarded-Host is deliberately not trusted —
+         * trustHosts() above pins the host to APP_URL, and a trusted Host
+         * header would let a proxy-side mistake undo that.
+         *
+         * The proxy list itself is applied in AppServiceProvider from
+         * production.trusted_proxies, because trustProxies(at:) cannot take a
+         * deferred closure.
+         */
         $middleware->trustProxies(
-            headers: Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_AWS_ELB,
+            headers: SymfonyRequest::HEADER_X_FORWARDED_FOR
+                | SymfonyRequest::HEADER_X_FORWARDED_PROTO
+                | SymfonyRequest::HEADER_X_FORWARDED_PORT,
         );
         // Written by client-side JS in plaintext, so they must not be encrypted —
         // EncryptCookies would fail to decrypt and silently drop them.
@@ -134,12 +148,14 @@ return Application::configure(basePath: dirname(__DIR__))
             return null;
         });
 
-        // Oversized POSTs never reach FormRequest validation — PHP empties the
-        // body — so name the limit explicitly instead of a CSRF/missing-file error.
+        // Since uploads PUT straight to S3, nothing the app serves legitimately
+        // posts a large body any more, and PHP's post_max_size is whatever the
+        // platform sets rather than something we control. This is a safety net
+        // for the case that is left: an oversized POST empties the body before
+        // FormRequest validation runs, so without it the user sees a CSRF or
+        // missing-field error that says nothing about what went wrong.
         $exceptions->render(function (PostTooLargeException $exception, Request $request) {
-            $message = __('The upload is too large. The maximum total size is :size.', [
-                'size' => DocumentUploadLimits::MAX_POST_SIZE_LABEL,
-            ]);
+            $message = __('That request was too large to process. Try again with less data.');
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 413);

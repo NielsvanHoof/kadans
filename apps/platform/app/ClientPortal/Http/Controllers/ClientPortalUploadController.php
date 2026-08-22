@@ -10,16 +10,18 @@ use App\ClientPortal\Http\Requests\StorePortalUploadedDocumentRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
 use App\Dossiers\Actions\GuardUploadedDocumentDeliveryAction;
+use App\Dossiers\Actions\Uploads\ClaimUploadTicketAction;
 use App\Dossiers\Enums\SubmissionContext;
+use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\StagedUpload;
 use App\Dossiers\Support\UploadedDocumentResponse;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ClientPortalUploadController extends Controller
@@ -31,6 +33,7 @@ final class ClientPortalUploadController extends Controller
         StorePortalUploadedDocumentRequest $request,
         int $documentRequest,
         SubmitPortalUploadAction $submitPortalUpload,
+        ClaimUploadTicketAction $claimUploadTicket,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 
@@ -38,18 +41,26 @@ final class ClientPortalUploadController extends Controller
 
         abort_unless($documentRequestModel->dossier_id === $grant->dossier_id, 404);
 
-        /** @var list<UploadedFile> $files */
-        $files = $request->file('documents', []);
+        /*
+         * The ticket's tenant must be the dossier's tenant, so a ticket minted
+         * against one workspace cannot be redeemed through another workspace's
+         * portal grant. Claim the whole batch before storing any of it.
+         */
+        $uploads = array_map(
+            fn (string $ticket): StagedUpload => $claimUploadTicket->handle(
+                $ticket,
+                UploadPurpose::Document,
+                $documentRequestModel->tenant_id,
+                'documents',
+            ),
+            $request->array('documents'),
+        );
 
-        if ($files === []) {
-            return back()->withErrors(['documents' => __('A document file is required.')]);
-        }
-
-        foreach ($files as $file) {
+        foreach ($uploads as $upload) {
             $submitPortalUpload->handle(
                 $documentRequestModel,
                 $grant,
-                $file,
+                $upload,
             );
         }
 
