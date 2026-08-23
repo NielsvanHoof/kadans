@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Config;
 use RuntimeException;
 
 use function is_string;
+use function rawurlencode;
 
 /**
  * Presigning against the documents bucket, for both reads and writes.
@@ -160,6 +161,40 @@ final readonly class DocumentPresigner
                 ? $contentType
                 : 'application/octet-stream',
         ];
+    }
+
+    /**
+     * Relocate a staged object into the dossier tree.
+     *
+     * Flysystem's move() copies with an ACL and reads the source object's ACL
+     * first so it can retain visibility. Our documents bucket uses
+     * BucketOwnerEnforced, so ACL APIs are off limits — CopyObject must omit
+     * ACL entirely. Same-bucket server-side copy plus delete is equivalent.
+     */
+    public function moveObject(string $disk, string $source, string $destination): void
+    {
+        $adapter = $this->adapter($disk);
+
+        if (! $adapter instanceof AwsS3V3Adapter) {
+            throw_unless($adapter->move($source, $destination), RuntimeException::class, 'Failed to move uploaded object.');
+
+            return;
+        }
+
+        $client = $adapter->getClient();
+        $bucket = $this->bucket();
+
+        $client->copyObject([
+            'Bucket' => $bucket,
+            'Key' => $destination,
+            'CopySource' => rawurlencode($bucket.'/'.$source),
+            'MetadataDirective' => 'COPY',
+        ]);
+
+        $client->deleteObject([
+            'Bucket' => $bucket,
+            'Key' => $source,
+        ]);
     }
 
     /**
