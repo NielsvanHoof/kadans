@@ -25,4 +25,5 @@ export const productionSettings: EnvironmentSettings = {
   databaseEnabled: true,
   databasePubliclyAccessible: true,
   databaseIngressCidrs: LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS,
+  uploadAllowedOrigins: ["https://*.laravel.cloud"],
 };

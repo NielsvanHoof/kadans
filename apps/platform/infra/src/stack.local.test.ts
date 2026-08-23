@@ -21,6 +21,24 @@ test("local builds the documents and OCR plane", () => {
   assert.ok(stack.named("malware-findings"));
 });
 
+test("local documents bucket allows Laravel Cloud browser uploads", () => {
+  const cors = stack.named("documents-cors");
+  assert.ok(cors);
+
+  const rules = cors.inputs.corsRules as Array<{
+    allowedMethods: string[];
+    allowedOrigins: string[];
+    allowedHeaders: string[];
+  }>;
+
+  assert.equal(rules.length, 1);
+  assert.deepEqual(rules[0].allowedMethods, ["PUT"]);
+  assert.ok(rules[0].allowedOrigins.includes("https://app.local.qompose.nl"));
+  assert.ok(rules[0].allowedOrigins.includes("https://*.local.qompose.nl"));
+  assert.ok(rules[0].allowedOrigins.includes("https://*.laravel.cloud"));
+  assert.deepEqual(rules[0].allowedHeaders, ["content-type"]);
+});
+
 test("local builds a public RDS without application compute", () => {
   assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), true);
   assert.equal(stack.hasType("aws:rds/instance:Instance"), true);

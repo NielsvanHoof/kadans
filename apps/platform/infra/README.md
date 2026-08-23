@@ -256,6 +256,7 @@ would let the stack deploy green and then refuse every request.
 | Output | Purpose |
 |--------|---------|
 | `appHostname` / `tenantHostnamePattern` | Hostnames this stack serves (CORS / docs) |
+| `uploadAllowedOrigins` (Pulumi config, optional) | Extra browser origins for presigned PUT uploads |
 | `dnsRecordsToCreate` | Records to add by hand when `hostedZoneId` is unset |
 | `documentsBucketName` | S3 bucket for uploads + Transcribe JSON output |
 | `textractSnsTopicArn` / `textractPublishRoleArn` | Textract notification topic and its role |
