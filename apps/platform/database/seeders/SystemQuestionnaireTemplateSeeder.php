@@ -11,6 +11,13 @@ use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
+/**
+ * Seeds the platform-wide (tenant_id null) questionnaire templates.
+ *
+ * Create-only: re-runs never update description/items or delete rows.
+ * That keeps Cloud/staging/production safe if someone re-runs db:seed.
+ * New templates added in code still appear on the next seed.
+ */
 final class SystemQuestionnaireTemplateSeeder extends Seeder
 {
     public function run(): void
@@ -19,7 +26,7 @@ final class SystemQuestionnaireTemplateSeeder extends Seeder
             $items = $templateData['items'];
             unset($templateData['items']);
 
-            $template = QuestionnaireTemplate::query()->updateOrCreate(
+            $template = QuestionnaireTemplate::query()->firstOrCreate(
                 [
                     'tenant_id' => null,
                     'name' => $templateData['name'],
@@ -30,8 +37,11 @@ final class SystemQuestionnaireTemplateSeeder extends Seeder
                 ],
             );
 
-            // Rebuild items so seeder re-runs stay idempotent.
-            $template->items()->delete();
+            // Only attach items when the template was just created.
+            // Existing templates (and their field_keys) stay untouched.
+            if (! $template->wasRecentlyCreated) {
+                continue;
+            }
 
             foreach ($items as $index => $item) {
                 // Set field_key explicitly: DatabaseSeeder uses WithoutModelEvents,

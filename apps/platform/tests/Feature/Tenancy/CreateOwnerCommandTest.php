@@ -102,3 +102,32 @@ test('tenancy create-owner prompts and skips firm when left blank', function ():
         ->and($user->email_verified_at)->not->toBeNull()
         ->and(Tenant::query()->count())->toBe(0);
 });
+
+test('tenancy create-owner non-interactive defaults role and generates password', function (): void {
+    $this->artisan('tenancy:create-owner', [
+        'name' => 'Ada Owner',
+        'email' => 'ada@example.com',
+        '--firm' => 'Ada Accountants',
+        '--no-interaction' => true,
+    ])->assertSuccessful();
+
+    $user = User::query()->where('email', 'ada@example.com')->firstOrFail();
+    $tenant = Tenant::query()->where('slug', 'ada-accountants')->firstOrFail();
+
+    expect($user->email_verified_at)->not->toBeNull()
+        ->and($user->password)->not->toBeEmpty();
+
+    actingInWorkspace($tenant);
+    expect($user->fresh()->hasRole(Role::Owner->value))->toBeTrue();
+});
+
+test('tenancy create-owner non-interactive fails clearly when name and email are missing', function (): void {
+    $this->artisan('tenancy:create-owner', [
+        '--no-interaction' => true,
+    ])
+        ->expectsOutputToContain('Missing required name')
+        ->assertFailed();
+
+    expect(User::query()->count())->toBe(0)
+        ->and(Tenant::query()->count())->toBe(0);
+});
