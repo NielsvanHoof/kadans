@@ -133,7 +133,7 @@ describe('policy assembly', function (): void {
             ->toContain('wss://ws.qompose.test:443');
     });
 
-    test('allows the s3 host that signed document urls redirect to', function (): void {
+    test('allows the s3 host for presigned uploads and signed document url redirects', function (): void {
         config()->set('filesystems.disks.s3', [
             'driver' => 's3',
             'bucket' => 'qompose-documents',
@@ -141,11 +141,13 @@ describe('policy assembly', function (): void {
         ]);
 
         $policy = resolve(ContentSecurityPolicy::class)->build('abc123');
+        $host = 'https://qompose-documents.s3.eu-west-1.amazonaws.com';
 
-        // PDF previews render in an iframe; images in an <img>.
+        // Direct presigned PUT uploads use connect-src; PDF previews use frame-src; images use img-src.
         expect($policy)
-            ->toContain('frame-src')
-            ->toContain('https://qompose-documents.s3.eu-west-1.amazonaws.com');
+            ->toMatch('/connect-src [^;]*'.preg_quote($host, '/').'/')
+            ->toMatch('/frame-src [^;]*'.preg_quote($host, '/').'/')
+            ->toMatch('/img-src [^;]*'.preg_quote($host, '/').'/');
     });
 
     test('prefers an explicit public endpoint over the derived aws host', function (): void {

@@ -26,8 +26,8 @@ use function str_replace;
  *
  * Everything that varies per environment is derived from existing config rather
  * than restated: the Vite nonce, the Vite dev server (when running hot), the
- * Reverb websocket, the S3 host that signed document URLs redirect to, and the
- * Sentry ingest host the browser SDK reports to.
+ * Reverb websocket, the S3 host for direct presigned uploads and signed download
+ * redirects, and the Sentry ingest host the browser SDK reports to.
  *
  * Two deliberate relaxations, both documented in docs/security.md:
  *
@@ -89,10 +89,11 @@ final readonly class ContentSecurityPolicy
             $connectSources[] = $errorReportingHost;
         }
 
-        // Document download/preview 302s to a signed URL on the storage host.
+        // Direct presigned PUT uploads and download/preview redirects hit the storage host.
         $documentHost = $this->documentStorageOrigin();
 
         if ($documentHost !== null) {
+            $connectSources[] = $documentHost;
             $frameSources[] = $documentHost;
             $imageSources[] = $documentHost;
         }
