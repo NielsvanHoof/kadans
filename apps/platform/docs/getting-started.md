@@ -40,13 +40,44 @@ If Sail is already up and healthy, `composer run setup` is fine for subsequent m
 
 ## First user and firm
 
-Create a verified workspace owner and provision their firm:
+### Local (Sail)
+
+Seed the production-safe baseline (roles + system questionnaire templates), then create a verified workspace owner:
 
 ```bash
+vendor/bin/sail artisan db:seed --force
 vendor/bin/sail artisan tenancy:create-owner
 ```
 
 You can pass arguments/options (`name`, `email`, `--firm`, `--password`, `--role`) or answer the prompts.
+
+Optional local-only entrypoint (same baseline today; reserved for future demo data):
+
+```bash
+vendor/bin/sail artisan db:seed --class=LocalDatabaseSeeder --force
+```
+
+Never run `LocalDatabaseSeeder` on Cloud/staging/production — it aborts outside `local`/`testing`.
+
+### Laravel Cloud (staging / production)
+
+Cloud commands have no TTY, so interactive prompts fail. Pass all values as CLI args:
+
+```bash
+cloud command:run staging -n --cmd='php artisan db:seed --force && php artisan tenancy:create-owner "Your Name" "you@example.com" --firm="Your Firm" --password="…" --role=owner'
+```
+
+- `db:seed` is production-safe: syncs roles and **creates missing** system templates only. It never updates/deletes existing template items and never creates users.
+- `tenancy:create-owner` is a deliberate one-off (not a seeder). Re-running with the same email fails validation.
+- Omit `--password` / `--role` in non-interactive mode to generate a password and default to `owner`.
+
+### Provisioning a new customer later
+
+| Case | How |
+|------|-----|
+| New firm | `tenancy:create-owner` with all args via `cloud command:run` (same as above) |
+| Join existing firm | In-app member invite |
+| Self-serve | Public registration → onboarding creates the firm |
 
 Roles and permissions are synced when a tenant is provisioned. To re-sync every tenant after you change permission enums:
 

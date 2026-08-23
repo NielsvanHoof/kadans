@@ -38,6 +38,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/{Data,Http/Requests,Enums,Policies}/** | .ai/rules/requests-enums-policies.md |
 | app/Platform/Actions/Retention/** | .ai/rules/retention.md |
 | routes/** | .ai/rules/routes.md |
+| database/seeders/** | .ai/rules/seeders.md |
 | infra/src/shared/** | .ai/rules/shared.md |
 | app/Tenancy/** | .ai/rules/tenancy.md |
 | tests/** | .ai/rules/tests.md |

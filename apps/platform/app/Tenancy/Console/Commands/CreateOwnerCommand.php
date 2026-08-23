@@ -35,6 +35,12 @@ final class CreateOwnerCommand extends Command
     ): int {
         $name = $this->resolveName();
         $email = $this->resolveEmail();
+
+        // Fail before any Prompts call when Cloud/CI runs without a TTY.
+        if ($name === '' || $email === '') {
+            return self::FAILURE;
+        }
+
         $firmName = $this->resolveFirm();
         $role = null;
 
@@ -127,12 +133,23 @@ final class CreateOwnerCommand extends Command
         return self::SUCCESS;
     }
 
+    private function isNonInteractive(): bool
+    {
+        return ! $this->input->isInteractive();
+    }
+
     private function resolveName(): string
     {
         $nameArgument = $this->argument('name');
 
         if (is_string($nameArgument) && $nameArgument !== '') {
             return mb_trim($nameArgument);
+        }
+
+        if ($this->isNonInteractive()) {
+            $this->failNonInteractiveMissing('name');
+
+            return '';
         }
 
         return text(
@@ -150,6 +167,12 @@ final class CreateOwnerCommand extends Command
 
         if (is_string($emailArgument) && $emailArgument !== '') {
             return mb_strtolower(mb_trim($emailArgument));
+        }
+
+        if ($this->isNonInteractive()) {
+            $this->failNonInteractiveMissing('email');
+
+            return '';
         }
 
         return mb_strtolower(text(
@@ -175,6 +198,11 @@ final class CreateOwnerCommand extends Command
             }
 
             return $role;
+        }
+
+        // Signature documents default: owner. Cloud has no TTY for select().
+        if ($this->isNonInteractive()) {
+            return Role::Owner;
         }
 
         $selected = select(
@@ -212,6 +240,11 @@ final class CreateOwnerCommand extends Command
             return null;
         }
 
+        // Non-interactive without --firm: skip provisioning (onboarding path).
+        if ($this->isNonInteractive()) {
+            return null;
+        }
+
         // Fully interactive run: allow leaving firm blank to skip provisioning.
         $firm = text(
             label: 'Firm',
@@ -231,6 +264,11 @@ final class CreateOwnerCommand extends Command
 
         if (is_string($passwordOption) && $passwordOption !== '') {
             return $passwordOption;
+        }
+
+        // Match interactive “leave empty → random”, without calling Prompts on Cloud.
+        if ($this->isNonInteractive()) {
+            return Str::password(20);
         }
 
         $password = password(
@@ -253,5 +291,12 @@ final class CreateOwnerCommand extends Command
         );
 
         return $password !== '' ? $password : Str::password(20);
+    }
+
+    private function failNonInteractiveMissing(string $field): void
+    {
+        error("Missing required {$field} in non-interactive mode.");
+        error('Pass name and email as arguments.');
+        error('Example: php artisan tenancy:create-owner "Ada Owner" "ada@example.com" --firm="Ada Accountants" --role=owner');
     }
 }
