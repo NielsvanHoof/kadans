@@ -9,6 +9,7 @@ use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\DocumentPresigner;
 use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Support\StagedUpload;
 use App\Dossiers\Transitions\DocumentRequestTransitions;
@@ -28,6 +29,7 @@ final readonly class UploadDocumentForRequestAction
 {
     public function __construct(
         private FilesystemManager $filesystems,
+        private DocumentPresigner $presigner,
         private DocumentRequestTransitions $documentRequestTransitions,
         private StartPipelineAction $startPipeline,
         private DossierLocks $dossierLocks,
@@ -174,9 +176,7 @@ final readonly class UploadDocumentForRequestAction
     {
         $path = $directory.'/'.basename($upload->path);
 
-        $moved = $this->filesystems->disk($upload->disk)->move($upload->path, $path);
-
-        throw_if(! $moved, RuntimeException::class, 'Failed to store the uploaded document.');
+        $this->presigner->moveObject($upload->disk, $upload->path, $path);
 
         return $upload->movedTo($path);
     }
