@@ -94,14 +94,8 @@ export default function AudioRecordingsCard({
 
 /** Pulsing placeholder for the list while the deferred prop resolves. */
 function RecordingsListSkeleton() {
-    const { t } = useTranslation();
-
     return (
-        <div
-            aria-busy="true"
-            aria-label={t('Loading audio recordings')}
-            className="space-y-3 rounded-md border px-4 py-3"
-        >
+        <div aria-busy="true" className="space-y-3 rounded-md border px-4 py-3">
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-4 w-64" />
         </div>
