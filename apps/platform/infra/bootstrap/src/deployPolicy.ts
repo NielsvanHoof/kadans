@@ -3,23 +3,23 @@ import * as pulumi from "@pulumi/pulumi";
 
 /**
  * Permissions the GitHub Actions deploy role needs to run `pulumi up` against the
- * OCR stack, plus the guard that stops it escalating its own privileges.
+ * data-plane stack, plus the guard that stops it escalating its own privileges.
  *
- * Scope reflects what `infra/src/` actually creates: the documents plane (S3, KMS,
- * Textract SNS + Transcribe EventBridge → SQS), and — since TASK-34.2 — the compute
- * platform: a VPC, an ALB, ECS Fargate services, RDS, ElastiCache, ECR, Secrets
- * Manager, ACM, Route53, SES and CloudWatch Logs.
+ * Scope reflects what `infra/src/` actually creates after TASK-43.3: the documents
+ * plane (S3, KMS, Textract SNS + Transcribe EventBridge → SQS), public RDS in a
+ * small VPC, SES, optional Route53 DKIM records, budgets/alarms, and the
+ * application IAM user on the `local` stack.
  *
- * A missing permission surfaces as a Pulumi error mid-deploy. That fails safely,
- * but it fails *halfway* — some resources created, some not — so the list is worth
- * keeping ahead of the program rather than behind it.
+ * Compute grants (ECS, ELB, CloudFront, ElastiCache, Secrets Manager, ECR, ACM
+ * for ALB) were removed with the compute plane. A missing permission still fails
+ * mid-deploy — some resources created, some not — so this list must stay ahead of
+ * the program.
  *
- * Two shapes recur below and are deliberate, not laziness:
+ * Two shapes recur below and are deliberate:
  *
- *  - **Network and load-balancer actions cannot be ARN-scoped at creation time.**
- *    You are asking for a VPC id that does not exist yet. AWS's own guidance is to
- *    scope these by condition after the fact; for a single-tenant deploy account
- *    the honest statement is `"*"` with the escalation guard below doing the work.
+ *  - **Network actions cannot be ARN-scoped at creation time.** You are asking
+ *    for a VPC id that does not exist yet. For a single-tenant deploy account the
+ *    honest statement is `"*"` with the escalation guard below doing the work.
  *  - **Read actions are unscoped** because Pulumi refreshes the entire resource
  *    graph on every run.
  */
@@ -31,14 +31,13 @@ export function deployRolePolicy(
     `arn:aws:iam::${account}:user/qompose/*`,
     `arn:aws:iam::${account}:role/qompose-*`,
     `arn:aws:iam::${account}:role/qompose/*`,
+    // Both path and name-prefix forms — IAM wildcards treat `/` as a character.
     `arn:aws:iam::${account}:policy/qompose-*`,
     `arn:aws:iam::${account}:policy/qompose/*`,
   ]);
 
   return aws.iam.getPolicyDocumentOutput({
     statements: [{
-      // Pulumi reads the whole resource graph on every refresh; these are all
-      // read-only and do not support useful resource scoping.
       sid: "ReadState",
       effect: "Allow",
       actions: [
@@ -58,34 +57,13 @@ export function deployRolePolicy(
         "cloudwatch:List*",
         "tag:Get*",
         "ec2:Describe*",
-        "ecs:Describe*",
-        "ecs:List*",
-        "ecr:Describe*",
-        "ecr:List*",
-        "ecr:GetLifecyclePolicy",
-        "ecr:GetRepositoryPolicy",
-        // Not repository-scopable: the token is account-wide by design, and it is
-        // what `docker login` exchanges for a password. Omit it and the push fails
-        // at authentication, before the repository ARN is ever consulted.
-        "ecr:GetAuthorizationToken",
-        "elasticloadbalancing:Describe*",
         "rds:Describe*",
         "rds:ListTagsForResource",
-        "elasticache:Describe*",
-        "elasticache:ListTagsForResource",
-        "secretsmanager:Describe*",
-        "secretsmanager:List*",
-        "secretsmanager:GetResourcePolicy",
-        "acm:Describe*",
-        "acm:List*",
-        "acm:GetCertificate",
         "route53:Get*",
         "route53:List*",
         "ses:Get*",
         "ses:List*",
         "ses:Describe*",
-        "logs:Describe*",
-        "logs:ListTagsForResource",
         "events:Describe*",
         "events:List*",
         "guardduty:Get*",
@@ -94,10 +72,6 @@ export function deployRolePolicy(
         "cloudtrail:Describe*",
         "cloudtrail:Get*",
         "cloudtrail:List*",
-        "cloudfront:Get*",
-        "cloudfront:List*",
-        "wafv2:Get*",
-        "wafv2:List*",
         "budgets:Describe*",
         "budgets:View*",
       ],
@@ -108,8 +82,6 @@ export function deployRolePolicy(
       actions: ["s3:*"],
       resources: ["arn:aws:s3:::qompose-*", "arn:aws:s3:::qompose-*/*"],
     }, {
-      // KMS keys are referenced by generated id, so writes cannot be ARN-scoped at
-      // creation time; the alias namespace keeps the blast radius readable.
       sid: "ManageEncryptionKeys",
       effect: "Allow",
       actions: [
@@ -121,8 +93,6 @@ export function deployRolePolicy(
         "kms:EnableKeyRotation",
         "kms:DisableKeyRotation",
         "kms:PutKeyPolicy",
-        // Required when provisioning services that encrypt with the new key.
-        // Secrets Manager calls GenerateDataKey and Decrypt during CreateSecret.
         "kms:Encrypt",
         "kms:Decrypt",
         "kms:ReEncrypt*",
@@ -132,9 +102,6 @@ export function deployRolePolicy(
       ],
       resources: ["*"],
     }, {
-      // AWS services using a customer-managed key create grants during resource
-      // provisioning (ECR does this when repository encryption is configured).
-      // The condition prevents CI from minting arbitrary grants for non-AWS users.
       sid: "ManageEncryptionGrantsForAwsResources",
       effect: "Allow",
       actions: ["kms:CreateGrant", "kms:RetireGrant", "kms:RevokeGrant"],
@@ -153,11 +120,9 @@ export function deployRolePolicy(
         pulumi.output(accountId).apply((account) => `arn:aws:sqs:*:${account}:qompose-*`),
       ],
     }, {
-      // EventBridge rule that forwards Transcribe job state changes to SQS.
       sid: "ManageTranscribeEventRules",
       effect: "Allow",
       actions: [
-        // The Laravel scheduler rule (rate(1 minute) → RunTask) also lands here.
         "events:PutRule",
         "events:DeleteRule",
         "events:DescribeRule",
@@ -172,12 +137,6 @@ export function deployRolePolicy(
         pulumi.output(accountId).apply((account) => `arn:aws:events:*:${account}:rule/qompose-*`),
       ],
     }, {
-      /*
-       * Network. Unscoped because a VPC, subnet or security group has no ARN until
-       * it exists — there is nothing to name in the policy at creation time.
-       * `ec2:*` would also cover launching instances, so the actions are listed
-       * explicitly: this deploy role can build a network, not a fleet.
-       */
       sid: "ManagePlatformNetwork",
       effect: "Allow",
       actions: [
@@ -208,65 +167,16 @@ export function deployRolePolicy(
       ],
       resources: ["*"],
     }, {
-      // Load balancers, target groups and listeners are created before they can be
-      // named; the ALB itself is confined by the security groups it is given.
-      sid: "ManagePlatformLoadBalancing",
-      effect: "Allow",
-      actions: ["elasticloadbalancing:*"],
-      resources: ["*"],
-    }, {
-      sid: "ManagePlatformCompute",
-      effect: "Allow",
-      actions: ["ecs:*", "ecr:*"],
-      resources: [
-        pulumi.output(accountId).apply((account) => `arn:aws:ecs:*:${account}:*/qompose-*`),
-        pulumi.output(accountId).apply((account) => `arn:aws:ecr:*:${account}:repository/qompose-*`),
-      ],
-    }, {
-      // ECS RunTask for the migrate role and the scheduler needs the cluster's own
-      // ARN as well as the task definition's.
-      sid: "RunPlatformTasks",
-      effect: "Allow",
-      actions: ["ecs:RunTask", "ecs:StopTask", "ecs:DescribeTasks"],
-      resources: ["*"],
-    }, {
       sid: "ManagePlatformDataStores",
       effect: "Allow",
-      actions: ["rds:*", "elasticache:*"],
+      actions: ["rds:*"],
       resources: ["*"],
     }, {
-      sid: "ManagePlatformSecrets",
+      // DKIM CNAMEs when the zone is in Route53. Unscoped because the zone id is
+      // not always owned by this account's naming scheme.
+      sid: "ManagePlatformDns",
       effect: "Allow",
       actions: [
-        "secretsmanager:CreateSecret",
-        "secretsmanager:DeleteSecret",
-        "secretsmanager:UpdateSecret",
-        "secretsmanager:PutSecretValue",
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:TagResource",
-        "secretsmanager:UntagResource",
-        "secretsmanager:RestoreSecret",
-      ],
-      resources: [
-        pulumi.output(accountId).apply((account) =>
-          `arn:aws:secretsmanager:*:${account}:secret:qompose-*`
-        ),
-        // RDS creates this secret on the caller's behalf when
-        // manageMasterUserPassword is enabled.
-        pulumi.output(accountId).apply((account) =>
-          `arn:aws:secretsmanager:*:${account}:secret:rds!db-*`
-        ),
-      ],
-    }, {
-      // Certificates and DNS. ACM certificates get a generated id, and the Route53
-      // zone belongs to whoever owns the domain, so neither can be pinned here.
-      sid: "ManagePlatformEdgeNames",
-      effect: "Allow",
-      actions: [
-        "acm:RequestCertificate",
-        "acm:DeleteCertificate",
-        "acm:AddTagsToCertificate",
-        "acm:RemoveTagsFromCertificate",
         "route53:ChangeResourceRecordSets",
         "route53:ChangeTagsForResource",
       ],
@@ -284,30 +194,7 @@ export function deployRolePolicy(
       ],
       resources: ["*"],
     }, {
-      sid: "ManagePlatformLogs",
-      effect: "Allow",
-      actions: [
-        "logs:CreateLogGroup",
-        "logs:DeleteLogGroup",
-        "logs:PutRetentionPolicy",
-        "logs:DeleteRetentionPolicy",
-        "logs:AssociateKmsKey",
-        "logs:DisassociateKmsKey",
-        "logs:TagResource",
-        "logs:UntagResource",
-      ],
-      resources: [
-        pulumi.output(accountId).apply((account) =>
-          `arn:aws:logs:*:${account}:log-group:/qompose/*`
-        ),
-      ],
-    }, {
-      /*
-       * ECS, ElastiCache and RDS each create an account-wide service-linked role on
-       * first use. Without this the very first deploy fails on a role the deploy
-       * role was never asked to make — and the error names the service, not the
-       * missing permission.
-       */
+      // RDS creates an account-wide service-linked role on first use.
       sid: "CreateServiceLinkedRoles",
       effect: "Allow",
       actions: ["iam:CreateServiceLinkedRole"],
@@ -315,24 +202,9 @@ export function deployRolePolicy(
       conditions: [{
         test: "StringEquals",
         variable: "iam:AWSServiceName",
-        values: [
-          "ecs.amazonaws.com",
-          "elasticloadbalancing.amazonaws.com",
-          "elasticache.amazonaws.com",
-          "rds.amazonaws.com",
-        ],
+        values: ["rds.amazonaws.com"],
       }],
     }, {
-      /*
-       * GuardDuty Malware Protection on the documents bucket, and the CloudTrail
-       * that records who reads out of it (TASK-34.1).
-       *
-       * Unscoped because neither resource has an ARN before it is created — a
-       * malware protection plan is identified by a generated id, and the trail
-       * ARN embeds the region and account rather than the qompose namespace.
-       * `iam:PassRole` for the scanner role is already covered, and narrowly, by
-       * ManageQomposeIdentities below.
-       */
       sid: "ManageDocumentScanningAndAudit",
       effect: "Allow",
       actions: [
@@ -352,44 +224,11 @@ export function deployRolePolicy(
       ],
       resources: ["*"],
     }, {
-      /*
-       * CloudFront and the CLOUDFRONT-scoped WAF (TASK-34.3).
-       *
-       * Both are global services whose ARNs are not in the qompose namespace —
-       * a distribution is identified by a generated id — so neither can be
-       * scoped here. `cloudfront:UpdateDistribution` is the one that matters:
-       * without it a deploy that changes a cache behaviour fails halfway, having
-       * already updated the WAF.
-       */
-      sid: "ManagePlatformEdge",
-      effect: "Allow",
-      actions: [
-        "cloudfront:CreateDistribution",
-        "cloudfront:UpdateDistribution",
-        "cloudfront:DeleteDistribution",
-        "cloudfront:TagResource",
-        "cloudfront:UntagResource",
-        "cloudfront:CreateInvalidation",
-        "wafv2:CreateWebACL",
-        "wafv2:UpdateWebACL",
-        "wafv2:DeleteWebACL",
-        "wafv2:AssociateWebACL",
-        "wafv2:DisassociateWebACL",
-        "wafv2:TagResource",
-        "wafv2:UntagResource",
-      ],
-      resources: ["*"],
-    }, {
       sid: "ManageOcrAlarms",
       effect: "Allow",
       actions: ["cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms", "cloudwatch:TagResource"],
       resources: ["*"],
     }, {
-      /*
-       * Budgets and the RDS event subscription behind the failover alert
-       * (TASK-34.4). Budgets is a global service whose ARNs are account-scoped
-       * rather than namespaced, so it cannot be narrowed here.
-       */
       sid: "ManageOperationsAlerting",
       effect: "Allow",
       actions: [
@@ -405,15 +244,13 @@ export function deployRolePolicy(
         "rds:DeleteEventSubscription",
         "rds:AddSourceIdentifierToSubscription",
         "rds:RemoveSourceIdentifierFromSubscription",
-        // Cross-region automated backup replication for cheap DR.
         "rds:StartDBInstanceAutomatedBackupsReplication",
         "rds:StopDBInstanceAutomatedBackupsReplication",
         "rds:DescribeDBInstanceAutomatedBackups",
       ],
       resources: ["*"],
     }, {
-      // Needed because the stack provisions the local OCR IAM user and the ECS
-      // task role. Scoped to the qompose naming scheme and paths.
+      // Application IAM user (local stack) and shared managed access policy.
       sid: "ManageQomposeIdentities",
       effect: "Allow",
       actions: [
@@ -428,18 +265,6 @@ export function deployRolePolicy(
         "iam:CreateAccessKey",
         "iam:DeleteAccessKey",
         "iam:UpdateAccessKey",
-        "iam:CreateRole",
-        "iam:DeleteRole",
-        "iam:UpdateRole",
-        "iam:UpdateAssumeRolePolicy",
-        "iam:PutRolePolicy",
-        "iam:DeleteRolePolicy",
-        "iam:AttachRolePolicy",
-        "iam:DetachRolePolicy",
-        "iam:TagRole",
-        "iam:UntagRole",
-        "iam:PassRole",
-        // Shared managed app-access policy (Sail user + ECS task role).
         "iam:CreatePolicy",
         "iam:DeletePolicy",
         "iam:CreatePolicyVersion",
@@ -451,18 +276,12 @@ export function deployRolePolicy(
       resources: iamResources,
     }, {
       /*
-       * The privilege-escalation guard, and the reason bootstrap is a separate
-       * Pulumi project rather than part of the main stack.
+       * Privilege-escalation guard — why bootstrap is a separate Pulumi project.
        *
        * The Allow above matches `role/qompose-*`, and IAM wildcards match `/`, so
-       * without this the deploy role could rewrite its **own** trust policy — and
-       * a workflow compromised via a malicious PR could then grant any GitHub
-       * repository access to this account. An explicit Deny always beats an Allow,
-       * so this closes that path permanently.
-       *
-       * Consequence by design: changing the deploy roles or the OIDC provider
-       * requires running the bootstrap project locally with admin credentials.
-       * CI cannot widen its own access.
+       * without this the deploy role could rewrite its own trust policy. An
+       * explicit Deny always beats an Allow. Changing deploy roles or the OIDC
+       * provider requires running bootstrap locally with admin credentials.
        */
       sid: "DenyModifyingOwnAccess",
       effect: "Deny",

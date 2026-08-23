@@ -1,8 +1,8 @@
 # Qompose platform infrastructure
 
-One Pulumi program, one stack per environment. It provisions the whole deployed
-platform: the documents/OCR plane that predates compute, and — since TASK-34.2 —
-the network, data stores, edge and ECS services the Laravel application runs on.
+One Pulumi program, one stack per environment. After TASK-43.3 it provisions the
+**data plane only**: documents/OCR/Transcribe, public RDS, SES, and (on `local`)
+the application IAM user. Application compute runs on Laravel Cloud.
 
 ```
 src/
@@ -30,153 +30,56 @@ will find it. The whole production/staging/local delta should be a settings-file
 | Knob | production | staging | local |
 |---|---|---|---|
 | `deletionProtection` | `true` | `false` | `false` |
-| `databaseMultiAz` | `true` | `false` | n/a |
-| `databaseBackupRetentionDays` | 14 | 3 | n/a |
-| `cacheNodeCount` | 2 | 1 | n/a |
-| `webDesiredCount` / `workerDesiredCount` | 2 / 2 | 1 / 1 | 0 / 0 |
-| `logRetentionDays` | 90 | 14 | 14 |
+| `databaseMultiAz` | `true` | `false` | `false` |
+| `databaseBackupRetentionDays` | 14 | 3 | 1 |
+| `databaseEnabled` | `true` | `true` | `true` |
+| `databasePubliclyAccessible` | `true` | `true` | `true` |
 | `dnsSubdomain` | `null` | `staging` | `local` |
-| `edgeEnabled` (CloudFront + origin lockdown) | `true` | `false` | `false` |
-| `wafEnabled` (overridable via config) | `true` | `false` | `false` |
-| `crossRegionSnapshotCopy` (RDS backups to eu-central-1) | `true` | `false` | `false` |
+| `crossRegionSnapshotCopy` | `true` | `false` | `false` |
 | `monthlyBudgetUsd` | 200 | 75 | 25 |
-| `computeEnabled` | `true` | `true` | `false` |
-| `localOperatorAccess` | `false` | `false` | `true` |
+| `applicationUserAccess` | `false` | `false` | `true` |
 
-`local` is documents/OCR/transcription only (no VPC/ALB/ECS). `localOperatorAccess`
+Every stack is documents/OCR plus public RDS for Laravel Cloud. `applicationUserAccess`
 is the correctness constraint: exactly one environment mints the long-lived IAM
-user + access key Sail uses for real Textract/Transcribe demos (decision-3), and
-`scripts/sync-ocr-credentials.sh` reads the `local` stack. Floci remains the
-everyday local S3 path with mock OCR drivers.
+user + access key (decision-3), and `scripts/sync-ocr-credentials.sh` reads the
+`local` stack. Floci remains the everyday local S3 path with mock OCR drivers.
 
 ## What the stack builds
 
 ```mermaid
 flowchart TB
-  Client[Browser] --> ALB[ALB · idle 3600s]
-  ALB -->|default| Web[ECS web · Octane]
-  ALB -->|/app/*| Reverb[ECS reverb]
-  Web --> RDS[(RDS Postgres · Multi-AZ)]
-  Web --> Valkey[(Valkey · TLS)]
-  Web --> S3[Documents S3]
-  Worker[ECS worker] --> Valkey
-  Consumers[ECS textract/transcribe consumers] --> SQS[Textract + Transcribe SQS]
-  EB[EventBridge · rate 1 minute] -->|RunTask| Sched[schedule:run]
-  Web --> SES[SES]
-  ECR[ECR · immutable tags] -.image.-> Web
+  Cloud[Laravel Cloud] --> RDS[(Public RDS Postgres)]
+  Cloud --> Docs[S3 documents · OCR · Transcribe]
+  Cloud --> IAM[App IAM user · local stack]
+  Cloud --> SES[SES]
+  Docs --> KMS[KMS]
+  RDS --> VPC[VPC · public subnets · DB SG]
 ```
 
-**Network.** Two public subnets, no NAT gateway, no private subnets. This is the
-biggest cost decision here and the one most likely to be "corrected" later, so:
-the textbook layout needs a NAT per AZ (~€35/month each) or five VPC endpoints
-(~€7/month each) purely so tasks can reach ECR, Secrets Manager and SES — more than
-the database and cache combined, in a stack whose point is to be lean. Confinement
-moves to security groups instead. Tasks carry public IPs, but the only thing that
-may open a connection to port 8080 is the **load balancer's security group** — the
-group, not a CIDR, so it stays true as addresses change. What is given up: a
-misconfigured group is an exposure rather than an inconvenience, and egress is
-unfiltered. If this ever holds something that must not be able to phone out, buy the
-NAT.
+Laravel Cloud runs the app. This stack owns the AWS data plane the app reaches
+over the public internet: the documents bucket and OCR/Transcribe queues, a
+public Postgres instance allowlisted to Cloud egress CIDRs, SES, and — on
+`local` only — the IAM user whose keys Sail and Cloud share.
 
-**Compute.** One image, five long-running services (`web`, `worker`, `reverb`,
-`textract-consumer`, `transcribe-consumer`) plus two task definitions with no
-service (`migrate`, `schedule`). They differ only in the role passed as the
-container command, which is what `docker/production/entrypoint.sh` dispatches on.
-Migrations stay one-shot and are never run on web start — several web tasks boot
-concurrently.
+**Network.** Two public subnets, no NAT. The VPC exists only to host public RDS;
+confinement is the database security group's Laravel Cloud egress allowlist, not
+private subnets. Pulumi logical names (`vpc`, `igw`, `public-routes`, `public-0`,
+`public-1`, `database-sg`, `db-subnets`) must stay byte-identical — a rename reads
+as delete-then-create and would destroy the database.
 
-**ARM64 is a contract with the build.** `docker buildx bake` must produce
-`linux/arm64` (`.github/workflows/platform.yml`). An amd64 image deploys perfectly
-and then fails with an exec-format error at first task start, so
-`stack.production.test.ts` asserts the architecture from this side.
-
-**The ALB idle timeout is 3600, not 60.** The default silently kills Reverb: the
-client sees an open WebSocket and every connection drops after a minute. A WebSocket
-is idle by definition between messages.
-
-**Edge (production only).** CloudFront fronts the ALB for both hostnames. See
-[The edge](#the-edge) below — the certificate region and the WAF exclusions are
-the two things that will bite.
+**Database.** Public Postgres 17 with a static master password from Pulumi config
+secret `databasePassword` (not Secrets Manager). Do not export the password as a
+stack output.
 
 **Malware scanning and audit.** GuardDuty Malware Protection scans every object
 landing in the documents bucket and tags it with the verdict; the application reads
 that tag at download and preview time and refuses anything not explicitly clean
-(`docs/security.md`). Two details are easy to get wrong and are asserted by tests:
-tagging is **DISABLED by default** in the GuardDuty API, and the scanner needs a
-`kms:Decrypt` grant on the documents CMK — without it every object is tagged
-`ACCESS_DENIED`, the gate correctly refuses all of them, and nothing in the
-resulting outage points at the key policy. CloudTrail data events record who read
-each object, into a separate log bucket with validation digests.
+(`docs/security.md`). CloudTrail data events record who read each object.
 
-**Secrets.** `APP_KEY`, the Reverb credentials and the Sentry DSN live in one JSON
-Secrets Manager secret; ECS pulls individual keys (`arn:APP_KEY::`). The database
-password is deliberately *not* in there — RDS manages and rotates its own secret, and
-a copy would go stale at the first rotation. Nothing puts a password in Pulumi state.
+## Applying a stack
 
-## The edge
-
-CloudFront sits in front of the ALB in production (`edgeEnabled`). Staging runs
-without it: the saving is real and staging does not need edge caching, but it does
-mean staging's load balancer is its own public surface, which the stack tests
-assert rather than leave implied.
-
-**The certificate must be issued in us-east-1.** CloudFront reads its certificate
-from that region and only that region, whatever region the distribution serves.
-So there are two certificates for the same two names — a regional one for the ALB
-and a us-east-1 one for the edge, created through a second provider in `edge.ts`.
-Reusing the regional certificate fails at apply time with an error that names the
-certificate rather than the region, and is the most common reason a CloudFront
-stack does not come up.
-
-**Only the hashed bundle is cached.** `/build/*` gets `Managed-CachingOptimized`;
-everything else, including `/app/*` for Reverb's WebSocket, gets
-`Managed-CachingDisabled` with `Managed-AllViewer`. That is not a missed
-optimisation: an Inertia response carries the signed-in user's workspace, and a
-shared cache entry would hand one firm's dossier list to another. Caching
-`/build/*` is safe precisely because Vite emits content-hashed filenames — a
-changed asset is a different path, so no deploy-time invalidation is needed.
-
-**The origin is not addressable directly.** Two controls, neither sufficient
-alone. The ALB security group accepts only AWS's `com.amazonaws.global.cloudfront
-.origin-facing` prefix list, which narrows it to CloudFront — but that covers
-*everyone's* distributions. So CloudFront also adds a shared secret header, and
-the listener forwards only to rules that require it, with a fixed `403` as the
-default action. The ALB grammar matches conditions positively, so "reject requests
-without the header" has to be written as "forward only requests with it".
-
-**WAF: two managed rules are counted, not blocked.** Enabling
-`AWSManagedRulesCommonRuleSet` unmodified breaks this application, and the failure
-looks like an unexplained 403 from CloudFront:
-
-| Rule | Why it is overridden |
-|---|---|
-| `SizeRestrictions_BODY` | rejects bodies over 8 KB; document uploads go to 20 MB and audio recordings to 25 MB |
-| `CrossSiteScripting_BODY` | trips on client correspondence pasted into notes and answers |
-
-Both are set to `count` rather than removed, so they still record what they would
-have blocked and the decision stays visible in CloudWatch instead of becoming a
-silent hole. `wafEnabled` is a config override on top of the environment setting,
-because this is the knob you reach for when a managed rule starts refusing a
-legitimate upload: `pulumi config set wafEnabled false` beats a code change.
-
-### DNS cutover
-
-The `app` and wildcard alias records point at **CloudFront** when the edge is on
-and at the ALB when it is not, and the stack never writes both. Going from one to
-the other is a `pulumi up`, but the ordering matters:
-
-1. Deploy with `edgeEnabled` **false** first if the hostnames are already live.
-   The ALB is public, the records point at it, everything serves.
-2. Set `edgeEnabled` true and deploy. In one apply the distribution is created,
-   the ALB security group narrows to CloudFront, the listener starts requiring the
-   origin header, and the alias records move.
-3. There is a propagation gap: DNS still resolves to the ALB for up to the record
-   TTL, and the ALB now refuses those requests with `403 Direct origin access is
-   not permitted`. Lower the record TTL a day ahead, or accept a short window.
-4. `pulumi stack output edgeDomainName` gives the distribution's own name, which
-   works immediately and is the way to verify the edge before DNS catches up.
-
-Rolling back is the same sequence in reverse, and the same gap applies.
+See [Deploy](#deploy). Set `databasePassword` as a Pulumi config secret on every
+stack that enables RDS. Do not export it.
 
 ## Hostnames
 

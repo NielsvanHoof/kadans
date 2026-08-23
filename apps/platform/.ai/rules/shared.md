@@ -54,3 +54,6 @@ ecs:RunTask IAM must be task-definition/family:* or family:revision. Pulumi Task
 `AWSManagedRulesCommonRuleSet`'s `SizeRestrictions_BODY` override in `edge.ts` was originally justified by 20 MB uploads passing through the app. Since TASK-43.1 the browser PUTs files straight to S3 and no request body reaching the origin is large, so that half of the justification is gone. `CrossSiteScripting_BODY` still trips on client correspondence pasted into notes, which is reason enough to keep both overrides at `count`.
 
 Revisit rather than delete: the override is cheap and a managed rule that starts refusing a legitimate request is an outage.
+
+## Public RDS may use a Pulumi config password
+Private ECS databases still use manageMasterUserPassword so no password enters Pulumi state. Public Laravel Cloud databases are the exception: set Pulumi config secret `databasePassword` and `databasePubliclyAccessible: true` with a non-empty `databaseIngressCidrs` allowlist (Laravel Cloud egress). Do not export that password as a stack output — read it from config when filling Cloud env vars. ECS compute must never run against the public-password mode.

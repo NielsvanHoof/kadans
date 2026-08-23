@@ -1,16 +1,15 @@
+import { LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS } from "../shared/laravelCloudEgress.js";
 import { EnvironmentSettings } from "./settings.js";
 
 /**
- * Local: documents / OCR / transcription only, for Sail demos against real AWS.
+ * Local: documents / OCR / transcription + a public RDS for Laravel Cloud.
  *
  * Floci covers everyday local S3 with mock OCR drivers. This stack is the opt-in
  * path when you need real Textract and Transcribe completion (SNS→SQS /
- * EventBridge→SQS). It deliberately has no VPC, ALB, or ECS — those belong to
- * staging/production once DNS and the full platform are ready.
+ * EventBridge→SQS), and the data plane Laravel Cloud staging points at.
  *
- * `localOperatorAccess` lives here (and only here): sync-ocr-credentials.sh
- * reads this stack. Compute knobs below are unused while `computeEnabled` is
- * false; they exist so the settings shape stays uniform across environments.
+ * `applicationUserAccess` lives here (and only here): sync-ocr-credentials.sh
+ * reads this stack.
  */
 export const localSettings: EnvironmentSettings = {
   deletionProtection: false,
@@ -22,25 +21,13 @@ export const localSettings: EnvironmentSettings = {
   databaseBackupRetentionDays: 1,
   databaseAllocatedStorageGb: 20,
 
-  cacheNodeType: "cache.t4g.micro",
-  cacheNodeCount: 1,
-
-  webDesiredCount: 0,
-  workerDesiredCount: 0,
-  reverbDesiredCount: 0,
-  consumerDesiredCount: 0,
-  taskCpu: "256",
-  taskMemory: "512",
-
-  logRetentionDays: 14,
-  // Own DNS label so a future compute turn-on cannot collide with staging/prod certs.
   dnsSubdomain: "local",
 
-  edgeEnabled: false,
-  wafEnabled: false,
   crossRegionSnapshotCopy: false,
   monthlyBudgetUsd: 25,
 
-  localOperatorAccess: true,
-  computeEnabled: false,
+  applicationUserAccess: true,
+  databaseEnabled: true,
+  databasePubliclyAccessible: true,
+  databaseIngressCidrs: LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS,
 };
