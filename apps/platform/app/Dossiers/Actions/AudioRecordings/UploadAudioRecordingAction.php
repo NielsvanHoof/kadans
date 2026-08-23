@@ -10,6 +10,7 @@ use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Support\DocumentPresigner;
 use App\Dossiers\Support\DossierLocks;
 use App\Dossiers\Support\StagedUpload;
 use App\Pipelines\Actions\StartPipelineAction;
@@ -24,6 +25,7 @@ use function sprintf;
 final readonly class UploadAudioRecordingAction
 {
     public function __construct(
+        private DocumentPresigner $presigner,
         private FilesystemManager $filesystems,
         private StartPipelineAction $startPipeline,
         private LogAuditActivityAction $logAuditActivity,
@@ -48,9 +50,7 @@ final readonly class UploadAudioRecordingAction
         // client-supplied text and cannot collide.
         $path = $directory.'/'.basename($upload->path);
 
-        $moved = $this->filesystems->disk($disk)->move($upload->path, $path);
-
-        throw_if(! $moved, RuntimeException::class, 'Failed to store the uploaded audio recording.');
+        $this->presigner->moveObject($disk, $upload->path, $path);
 
         try {
             $audioRecording = DB::transaction(function () use (
