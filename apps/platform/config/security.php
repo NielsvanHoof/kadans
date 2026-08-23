@@ -151,7 +151,7 @@ return [
     |
     | The client portal overrides this with `no-referrer` in
     | App\ClientPortal\Http\Middleware\HardenClientPortalResponse.
-    | PHP owns this header — docker/production/Caddyfile must not set it.
+    | PHP owns this header — the application layer sets Referrer-Policy per route.
     |
     */
 

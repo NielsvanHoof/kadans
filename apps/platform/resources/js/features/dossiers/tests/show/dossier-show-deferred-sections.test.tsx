@@ -37,7 +37,9 @@ vi.mock('@inertiajs/react', () => ({
 
 vi.mock('@/features/dossiers/show/audio-recordings-card', () => ({
     default: ({ canUpload }: { canUpload: boolean }) => (
-        <div data-testid="audio-card">{canUpload ? 'can-upload' : 'read-only'}</div>
+        <div data-testid="audio-card">
+            {canUpload ? 'can-upload' : 'read-only'}
+        </div>
     ),
 }));
 
@@ -45,9 +47,8 @@ vi.mock('@/features/dossiers/show/dossier-export-card', () => ({
     default: () => <div data-testid="export-card" />,
 }));
 
-const { default: DossierShowDeferredSections } = await import(
-    '@/features/dossiers/show/dossier-show-deferred-sections'
-);
+const { default: DossierShowDeferredSections } =
+    await import('@/features/dossiers/show/dossier-show-deferred-sections');
 
 const dossier = { id: 7 } as Dossier;
 
