@@ -88,6 +88,10 @@ createInertiaApp({
              * anchor and navigate natively — which would turn every in-app link
              * into a full page load. RouterProvider hands that navigation to
              * Inertia instead, so `href` stays a client-side visit.
+             *
+             * Exception: file downloads that 302 to a signed S3 URL must use a
+             * plain <a>, not LinkButton. An Inertia visit follows the redirect
+             * as XHR and fails the bucket CORS preflight (uploads only allow PUT).
              */
             <RouterProvider
                 navigate={(href, options) => router.visit(href, options)}
