@@ -12,7 +12,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/**, config/queue.php | .ai/rules/config.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
-| docker/**, docker-bake.hcl, .dockerignore | .ai/rules/docker.md |
+| docker/**, .dockerignore | .ai/rules/docker.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
 | app/{Dossiers,ClientPortal}/** | .ai/rules/dossiers-client-portal.md |

@@ -19,6 +19,7 @@ use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Support\DebugbarStorageOpen;
+use App\Platform\Support\WorkerQueues;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use App\Tenancy\Models\Tenant;
@@ -212,9 +213,11 @@ final class AppServiceProvider extends ServiceProvider
     private function configureDevCommands(): void
     {
         DevCommands::except('server');
-        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=ocr', 'ocr');
-        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=transcription', 'transcription');
-        DevCommands::artisan('queue:listen --tries=1 --timeout=0 --queue=dossier-export', 'dossier-export');
+
+        foreach (WorkerQueues::dedicatedNames() as $queue) {
+            DevCommands::artisan("queue:listen --tries=1 --timeout=0 --queue={$queue}", $queue);
+        }
+
         DevCommands::artisan('schedule:work', 'scheduled-tasks');
 
         // Only when the real drivers are on. Leftover Pulumi queue URLs with

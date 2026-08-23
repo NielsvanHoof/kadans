@@ -6,7 +6,7 @@ the application IAM user. Application compute runs on Laravel Cloud.
 
 ```
 src/
-  shared/           components; the docker/base equivalent
+  shared/           reusable Pulumi components
   environments/     per-environment knobs, data only
   testing/          Pulumi mock harness for the stack tests
   index.ts          wires shared components with this stack's settings
@@ -96,14 +96,12 @@ simply never writes those names, and there is no carve-out list to maintain.
 **Tenant hostnames are provisioned but not yet routed.** Tenancy resolves from the
 path today (`/workspaces/{tenant:slug}`), and `config/production.php` restricts
 `allowed_hosts` to the exact `APP_URL` host — so a `{slug}.qompose.nl` request
-reaches the ALB and is refused by the application until **TASK-34.5** lands. Having
-the certificate ready means that task is an application change, not a 45-minute
+reaches Laravel Cloud and is refused by the application until **TASK-34.5** lands.
+Having the certificate ready means that task is an application change, not a
 certificate-validation wait.
 
-`hostedZoneId` is optional. Without it the stack still builds the certificate and the
-load balancer and exports `dnsRecordsToCreate` for manual entry; it skips
-`acm.CertificateValidation`, which would otherwise block every `pulumi up` waiting
-for a record nobody is going to write.
+`hostedZoneId` is optional. Without it the stack still builds SES and exports
+`dnsRecordsToCreate` for manual entry.
 
 ## Deploy
 
@@ -112,7 +110,8 @@ Prerequisites, once per environment:
 1. A deploy role from [`bootstrap/`](bootstrap/README.md). It defaults to production
    only — add staging with `pulumi config set --path environments[1] staging` there
    before deploying a staging stack.
-2. A GitHub Environment named `production` / `staging` carrying `AWS_DEPLOY_ROLE_ARN`.
+2. A GitHub Environment named `production` / `staging` carrying `AWS_DEPLOY_ROLE_ARN`
+   and `DATABASE_PASSWORD`.
 
 ```bash
 cd apps/platform/infra
@@ -120,28 +119,8 @@ npm ci
 pulumi login
 pulumi stack select production   # or: pulumi stack init staging
 
-# Secrets are pasted, not generated: a value only Pulumi state holds is a value you
-# lose with the stack — and losing APP_KEY means every encrypted column and signed
-# URL becomes unreadable.
-# Set these values in your shell or paste them directly without committing them.
-pulumi config set --secret appKey "$APP_KEY"
-pulumi config set --secret reverbAppId qompose
-pulumi config set --secret reverbAppSecret "$REVERB_APP_SECRET"
-pulumi config set --secret sentryDsn "$SENTRY_DSN"
-pulumi config set --secret cacheAuthToken "$CACHE_AUTH_TOKEN"
-# Only needed when edgeEnabled is true; the ALB refuses anything without it.
-pulumi config set --secret originVerifySecret "$ORIGIN_VERIFY_SECRET"
-
-# Plain, not a secret: this one is compiled into the JavaScript bundle and served
-# to every visitor. Storing it encrypted would mean decrypting a value in order to
-# produce a public asset. `reverbAppSecret` above is the one that authenticates.
-pulumi config set reverbPublicKey "$REVERB_PUBLIC_KEY"
-
-# Also plain, and also inlined into the bundle: the browser Sentry DSN. This is a
-# DIFFERENT DSN from the secret below — that one is the Laravel project, this one
-# is the JavaScript project. Required, not optional: config/services.php reads it
-# server-side too, and the app refuses to boot with it empty.
-pulumi config set sentryBrowserDsn "$SENTRY_BROWSER_DSN"
+pulumi config set aws:region eu-west-1
+pulumi config set --secret databasePassword "$DATABASE_PASSWORD"
 
 pulumi config set hostedZoneId "$HOSTED_ZONE_ID"    # optional, see Hostnames
 pulumi config set alarmEmailAddress "$ALARM_EMAIL_ADDRESS"   # required for any alerting
@@ -151,9 +130,8 @@ npm run preview
 npm run up
 ```
 
-`imageTag` is not set by hand — the release workflow sets it to the commit SHA it
-just pushed. Rolling back is `pulumi config set imageTag <older-sha>` and a deploy,
-which is a true statement only because the ECR repository is tag-immutable.
+Application secrets (`APP_KEY`, Reverb, Sentry, etc.) live in **Laravel Cloud**,
+not in this stack.
 
 `npm run preview` / `npm run up` compile TypeScript to `bin/` first (Pulumi runs the
 compiled JS, which avoids ts-node `.js` import issues). Both scripts `rm -rf bin`
@@ -162,43 +140,29 @@ JavaScript behind that keeps running and keeps passing.
 
 ## Releasing
 
-Three workflows, and the split is deliberate:
+Two workflows, and the split is deliberate:
 
 | Workflow | Does | AWS credentials |
 |---|---|---|
-| `platform.yml` | CI: tests, builds an OCI tarball, Trivy-scans it, uploads an artifact | none |
-| `deploy.yml` | Infrastructure only — a knob change, a new alarm, a resize | deploy role |
-| `release.yml` | Build -> push to ECR -> migrate -> roll the services | deploy role |
+| `platform.yml` | CI: tests, quality, migrations | none |
+| `deploy.yml` | Data-plane Pulumi only — RDS, documents/OCR, SES, alarms | deploy role |
 
-`release.yml` runs `pulumi up` three times, which looks redundant and is not:
+Application code deploys via **Laravel Cloud push-to-deploy** when `staging` or
+`main` is pushed. Rollback is redeploying an older commit in Cloud — not setting
+an `imageTag`.
 
-1. **Ensure infrastructure exists.** The ECR repository lives in this stack, so it
-   has to exist before anything can push to it. On a first release this also creates
-   services pointing at a tag that is not in the registry yet — harmless and
-   self-healing, because Pulumi's ECS Service does not wait for steady state, so the
-   deploy succeeds while the tasks retry their pull. Every later release is a no-op
-   diff here.
-2. **Stage the migration image** — `--target` on the migrate task definition alone.
-   This is the ordering that bites: a plain `pulumi up` would update every task
-   definition and roll the services in one step, putting new code in front of an
-   un-migrated schema. Targeting the migrate task first means migrations land before
-   any new-code task takes a request.
-3. **Roll the services**, now that the schema is ahead of them.
+Infra deploys manually via `deploy.yml` (workflow dispatch). Each GitHub
+Environment (`staging`, `production`) must have `DATABASE_PASSWORD` configured;
+the workflow writes it to Pulumi config secret `databasePassword`. One-time CLI
+alternative:
 
-Between 2 and 3, `aws ecs run-task` runs the migration and the workflow checks the
-container's exit code — a stopped task is not a successful one, and without that
-check a failed migration is invisible and the rollout proceeds anyway.
+```bash
+cd apps/platform/infra
+pulumi config set --secret databasePassword '…' --stack staging
+```
 
-The image build reads `VITE_REVERB_HOST`, `REVERB_PUBLIC_KEY` and
-`VITE_SENTRY_DSN` from **stack outputs**, not from repository variables. Those
-values are compiled into the JavaScript bundle and cannot be changed afterwards,
-so an image built against the wrong ones runs perfectly and silently fails — no
-WebSocket, or no browser error reporting. Reading them off the stack being
-released to is what makes that mismatch impossible rather than merely unlikely.
-
-`tests/Feature/Platform/ContainerImageLayoutTest.php` scans `resources/js` for
-every `import.meta.env.VITE_*` and fails if one is not a build argument, because a
-missing one is invisible until it is expensive.
+The workflow removes obsolete compute-era config keys (`imageTag`, `appKey`,
+Reverb/Sentry/cache secrets) on each run.
 
 ## Local `.env` (`local` stack only)
 
@@ -240,11 +204,8 @@ where the answer to "what do I do about this" is never "nothing".
 
 | Alarm | Means | First move |
 |---|---|---|
-| `alb-5xx-alarm` | The load balancer could not get a response from a healthy target — the app is down or unreachable, not merely erroring | `aws ecs describe-services` for `web`; check the deployment circuit breaker did not roll back onto a broken image |
-| `web-unhealthy-alarm` / `reverb-unhealthy-alarm` | Tasks are failing `/ready` | Read the task's log group; `/ready` hits the database and Redis, so this is often really one of those |
 | `database-events` (failover) | Multi-AZ failover happened and succeeded | Nothing urgent — the app survived it. Find out *why* AWS failed it over |
 | `database-events` (low storage) / `database-storage-alarm` | Under 2 GiB free | Raise `databaseAllocatedStorageGb` and deploy. Postgres stops accepting writes when it fills |
-| `worker-stopped-alarm` | No queue worker tasks running | Jobs are piling up silently in Redis; nothing errors. Check the worker service and its log group |
 | `textract-dlq-alarm` / `transcribe-dlq-alarm` | Provider results failed processing five times | Inspect the DLQ, fix, then redrive. Documents are stuck in processing until you do |
 | `transcribe-delivery-dlq-alarm` | EventBridge could not deliver to the results queue at all | Usually the queue policy or the KMS grant — a permissions problem, not a load one |
 | `malware-findings` | GuardDuty found malware in an upload | The object is already inert: nothing will serve it, because the download gate refuses anything not tagged clean. Preserve it, tell the firm |
@@ -294,30 +255,22 @@ would let the stack deploy green and then refuse every request.
 
 | Output | Purpose |
 |--------|---------|
-| `appHostname` / `tenantHostnamePattern` | Hostnames this stack serves |
-| `loadBalancerDnsName` / `certificateArn` | ALB target and its regional certificate |
-| `edgeDomainName` / `edgeDistributionId` | CloudFront distribution; the domain works before DNS moves |
-| `edgeCertificateArn` / `edgeWebAclArn` | us-east-1 certificate and the WAF ACL |
+| `appHostname` / `tenantHostnamePattern` | Hostnames this stack serves (CORS / docs) |
 | `dnsRecordsToCreate` | Records to add by hand when `hostedZoneId` is unset |
-| `containerRepositoryUrl` | ECR repository to push the image to |
-| `reverbPublicKey` / `sentryBrowserDsn` | Baked into the JS bundle at image build time |
-| `clusterName` / `migrateTaskDefinitionArn` | `aws ecs run-task` for migrations |
-| `publicSubnetIds` / `taskSecurityGroupId` | Network placement for `run-task` |
-| `databaseEndpoint` / `databaseMasterSecretArn` | Postgres host and RDS-managed secret |
-| `cacheEndpoint` | Valkey primary endpoint |
-| `applicationSecretArn` | Secrets Manager secret ECS resolves |
-| `vpcId` / `platformEncryptionKeyArn` | Network and data-at-rest key |
-| `alertsTopicArn` | The one topic every alarm publishes to |
 | `documentsBucketName` | S3 bucket for uploads + Transcribe JSON output |
-| `malwareProtectionPlanId` / `malwareFindingsRuleName` | GuardDuty scanning and its findings rule |
-| `auditTrailName` / `auditLogBucketName` | CloudTrail data events for the documents bucket |
 | `textractSnsTopicArn` / `textractPublishRoleArn` | Textract notification topic and its role |
 | `textractResultsQueueUrl` (+ `…DeadLetterQueueUrl`) | Textract consumer queue |
 | `transcribeResultsQueueUrl` (+ `…DeadLetterQueueUrl`) | Transcribe consumer queue |
 | `transcribeDeliveryDeadLetterQueueUrl` | EventBridge FailedInvocations |
-| `appTaskRoleArn` / `appExecutionRoleArn` / `appAccessPolicyArn` | ECS identities |
+| `malwareProtectionPlanId` / `malwareFindingsRuleName` | GuardDuty scanning and its findings rule |
+| `auditTrailName` / `auditLogBucketName` | CloudTrail data events for the documents bucket |
+| `alertsTopicArn` | The one topic every alarm publishes to |
+| `appAccessPolicyArn` | Managed policy for the Laravel Cloud / local IAM user |
 | `ocrLocalUserName` / `ocrAccessKeyId` / `ocrSecretAccessKey` | Local Sail credentials (`local` stack only) |
-| `ocrEncryptionKeyArn` | KMS key for the documents bucket and queues |
+| `ocrEncryptionKeyArn` / `platformEncryptionKeyArn` | KMS keys for documents and RDS |
+| `vpcId` | VPC hosting public RDS |
+| `databaseEndpoint` / `databasePort` / `databaseName` / `databaseUsername` | Postgres connection (password in Pulumi config secret `databasePassword`, not exported) |
+| `mailDomain` | SES domain identity |
 
 ## Important
 
