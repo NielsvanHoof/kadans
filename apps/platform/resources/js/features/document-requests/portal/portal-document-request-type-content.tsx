@@ -1,7 +1,7 @@
 import { Download, X } from 'lucide-react';
 import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
-import { Button, LinkButton } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     PortalBooleanDocumentAnswer,
     PortalChoiceDocumentAnswer,
@@ -17,6 +17,7 @@ import { storesAnswerText } from '@/features/document-requests/types';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
+import { cn } from '@/lib/utils';
 
 export type PortalDocumentRequestTypeProps = {
     documentRequest: PortalDocumentRequest;
@@ -91,10 +92,17 @@ function PortalUploadedFile({
                     Clients could previously see only a filename, so there was no
                     way to check that the right page of a bank statement went up.
                     It is also their own data, which is an access right.
+
+                    Plain <a>, not LinkButton: app.tsx wires React Aria's
+                    navigate to router.visit, so LinkButton would XHR this URL,
+                    follow the signed S3 redirect, and fail the CORS preflight
+                    (bucket CORS only allows PUT for uploads). Staff downloads
+                    use the same plain-anchor pattern for that reason.
                 */}
-                <LinkButton
-                    variant="ghost"
-                    size="icon-xs"
+                <a
+                    className={cn(
+                        buttonVariants({ variant: 'ghost', size: 'icon-xs' }),
+                    )}
                     href={ClientPortalUploadController.download.url({
                         documentRequest: documentRequest.id,
                         uploadedDocument: uploaded.id,
@@ -104,7 +112,7 @@ function PortalUploadedFile({
                     })}
                 >
                     <Download aria-hidden />
-                </LinkButton>
+                </a>
                 {canRemove ? (
                     <ConfirmDestroyDialog
                         title={t('Remove :filename?', {
