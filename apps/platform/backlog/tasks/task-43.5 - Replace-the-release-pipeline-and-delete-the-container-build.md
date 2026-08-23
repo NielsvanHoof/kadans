@@ -1,9 +1,10 @@
 ---
 id: TASK-43.5
 title: Replace the release pipeline and delete the container build
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-22 16:05'
+updated_date: '2026-08-23 13:33'
 labels: []
 dependencies: []
 parent_task_id: TASK-43
@@ -28,9 +29,21 @@ Laravel Cloud builds and deploys from git, so the bake-based image pipeline and 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Pushing to the deployment branch deploys via Laravel Cloud with no image build in CI
-- [ ] #2 No workflow references ECR, bake, ecs run-task or the three-phase pulumi release
-- [ ] #3 A test still fails when a job is added on a queue the worker command does not drain
-- [ ] #4 docker/8.5, docker/pgsql, docker/floci and compose.yaml still provide a working local environment
-- [ ] #5 infra/README.md, .ai/rules/docker.md and .ai/rules/infra.md describe the deployed architecture accurately
+- [x] #1 Pushing to the deployment branch deploys via Laravel Cloud with no image build in CI
+- [x] #2 No workflow references ECR, bake, ecs run-task or the three-phase pulumi release
+- [x] #3 A test still fails when a job is added on a queue the worker command does not drain
+- [x] #4 docker/8.5, docker/pgsql, docker/floci and compose.yaml still provide a working local environment
+- [x] #5 infra/README.md, .ai/rules/docker.md and .ai/rules/infra.md describe the deployed architecture accurately
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Deleted release.yml, deployment-artifact job, docker/{production,staging,base}, docker-bake.hcl. Narrowed deploy.yml to databasePassword + data-plane outputs. Added WorkerQueues constant + WorkerQueueCoverageTest. Updated docker/infra rules and infra/README. Verified: WorkerQueueCoverageTest (2), infra npm test (25).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed ECS/bake release path; Laravel Cloud push-to-deploy is the app release mechanism. CI is platform.yml + data-plane deploy.yml only. WorkerQueues::csv() is the queue drain contract for Cloud workers.
+<!-- SECTION:FINAL_SUMMARY:END -->

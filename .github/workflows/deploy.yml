@@ -1,8 +1,7 @@
 name: Deploy platform infra
 
-# Infrastructure only: a knob change, a new alarm, a resize, a rollback via
-# `imageTag`. It does NOT build or push an image, so on its own it can never move
-# the running code forward — release.yml is the workflow that ships a commit.
+# Data-plane Pulumi only (RDS, documents/OCR, SES, alarms). Application compute
+# and deploys live on Laravel Cloud — push to staging/main triggers Cloud builds.
 
 on:
   workflow_dispatch:
@@ -73,17 +72,8 @@ jobs:
         env:
           ALARM_EMAIL_ADDRESS: ${{ vars.ALARM_EMAIL_ADDRESS }}
           ALARM_SMS_NUMBER: ${{ vars.ALARM_SMS_NUMBER }}
-          APP_KEY: ${{ secrets.APP_KEY }}
-          CACHE_AUTH_TOKEN: ${{ secrets.CACHE_AUTH_TOKEN }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
           HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
-          IMAGE_TAG: ${{ vars.IMAGE_TAG }}
-          ORIGIN_VERIFY_SECRET: ${{ secrets.ORIGIN_VERIFY_SECRET }}
-          REVERB_APP_ID: ${{ secrets.REVERB_APP_ID }}
-          REVERB_APP_SECRET: ${{ secrets.REVERB_APP_SECRET }}
-          REVERB_PUBLIC_KEY: ${{ vars.REVERB_PUBLIC_KEY }}
-          SENTRY_BROWSER_DSN: ${{ vars.SENTRY_BROWSER_DSN }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          WAF_ENABLED: ${{ vars.WAF_ENABLED }}
         run: |
           npx pulumi config set aws:region "$AWS_REGION"
 
@@ -106,42 +96,13 @@ jobs:
             npx pulumi config set hostedZoneId "$HOSTED_ZONE_ID"
           fi
 
-          # The ECR repository is tag-immutable, so this is a specific build.
-          # Rolling back is setting this to an older SHA, not reverting a commit.
-          if [ -n "$IMAGE_TAG" ]; then
-            npx pulumi config set imageTag "$IMAGE_TAG"
-          fi
+          : "${DATABASE_PASSWORD:?DATABASE_PASSWORD must be configured for this stack}"
+          npx pulumi config set --secret databasePassword "$DATABASE_PASSWORD"
 
-          # The escape hatch for a managed WAF rule refusing legitimate traffic.
-          # Unset leaves the environment's own setting in place.
-          if [ -n "$WAF_ENABLED" ]; then
-            npx pulumi config set wafEnabled "$WAF_ENABLED"
-          fi
-
-          : "${APP_KEY:?APP_KEY must be configured}"
-          : "${REVERB_APP_ID:?REVERB_APP_ID must be configured}"
-          : "${REVERB_APP_SECRET:?REVERB_APP_SECRET must be configured}"
-          : "${SENTRY_DSN:?SENTRY_DSN must be configured}"
-          : "${CACHE_AUTH_TOKEN:?CACHE_AUTH_TOKEN must be configured}"
-          : "${REVERB_PUBLIC_KEY:?REVERB_PUBLIC_KEY must be configured}"
-          : "${SENTRY_BROWSER_DSN:?SENTRY_BROWSER_DSN must be configured}"
-
-          npx pulumi config set --secret appKey "$APP_KEY"
-          npx pulumi config set --secret reverbAppId "$REVERB_APP_ID"
-          npx pulumi config set --secret reverbAppSecret "$REVERB_APP_SECRET"
-          npx pulumi config set --secret sentryDsn "$SENTRY_DSN"
-          npx pulumi config set --secret cacheAuthToken "$CACHE_AUTH_TOKEN"
-
-          # These must remain plain config — Vite embeds them in the browser bundle.
-          npx pulumi config set reverbPublicKey "$REVERB_PUBLIC_KEY"
-          npx pulumi config set sentryBrowserDsn "$SENTRY_BROWSER_DSN"
-
-          if [ "$STACK" = "production" ]; then
-            : "${ORIGIN_VERIFY_SECRET:?ORIGIN_VERIFY_SECRET must be configured for production}"
-            npx pulumi config set --secret originVerifySecret "$ORIGIN_VERIFY_SECRET"
-          else
-            npx pulumi config rm originVerifySecret || true
-          fi
+          # Remove compute-era keys that no longer exist in the program.
+          for key in imageTag wafEnabled appKey reverbAppId reverbAppSecret reverbPublicKey sentryDsn sentryBrowserDsn cacheAuthToken originVerifySecret; do
+            npx pulumi config rm "$key" || true
+          done
 
           npm run up -- --yes --non-interactive
 
@@ -152,10 +113,9 @@ jobs:
             echo "### ${STACK} stack outputs"
             echo ""
             echo "- App hostname: \`$(npx pulumi stack output appHostname)\`"
-            echo "- Load balancer: \`$(npx pulumi stack output loadBalancerDnsName)\`"
-            echo "- Image repository: \`$(npx pulumi stack output containerRepositoryUrl)\`"
-            echo "- Cluster: \`$(npx pulumi stack output clusterName)\`"
             echo "- Documents bucket: \`$(npx pulumi stack output documentsBucketName)\`"
+            echo "- Database endpoint: \`$(npx pulumi stack output databaseEndpoint)\`"
+            echo "- Alerts topic: \`$(npx pulumi stack output alertsTopicArn)\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
           echo ""

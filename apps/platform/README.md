@@ -54,24 +54,16 @@ Octane reloads its workers automatically when backend files change. After changi
 
 ## Containers
 
-`docker/` holds one directory per environment:
+Local development uses Sail only:
 
 | Path | Purpose |
 | --- | --- |
 | `docker/8.5/` | The local Sail image (`sail:publish` output) plus the Octane Caddyfile. Edit here to add a PHP extension or system package. |
-| `docker/base/` | Shared build for the deployed image: PHP extensions, Composer install, Vite build. |
-| `docker/staging/`, `docker/production/` | Per-environment `Dockerfile`, `Caddyfile`, `php.ini` and `entrypoint.sh`. |
+| `docker/pgsql/`, `docker/floci/` | Sail service helpers (Postgres init, Floci bucket bootstrap). |
 
-Deployed images build through Buildx Bake, which wires `docker/base` into each
-environment's `Dockerfile` as a named context so the PHP version and extension
-set cannot drift:
+Application deploys run on Laravel Cloud (push-to-deploy from `staging` / `main`). There is no bake/ECR image pipeline.
 
-```bash
-REVERB_PUBLIC_KEY=… VITE_REVERB_HOST=… docker buildx bake -f docker-bake.hcl --load production
-```
-
-One image serves several roles — `web` (default), `worker`, `reverb`, `schedule`,
-`migrate` — passed as the container command.
+Queue workers on Cloud must drain `App\Platform\Support\WorkerQueues::csv()` (`default,ocr,transcription,dossier-export`).
 
 ## Domain overview
 

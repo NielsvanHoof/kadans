@@ -1,8 +1,7 @@
 /**
  * Every knob that differs between deployed environments, in one place.
  *
- * This is the `docker/base` split applied to infrastructure: `src/shared/`
- * builds the components, and each file under `src/environments/` is *data only*
+ * `src/shared/` builds the components, and each file under `src/environments/` is *data only*
  * — no resources, no branching. A new environment is then a settings object, not
  * a fork of the program, and a reviewer can see the whole production/staging
  * delta by diffing two files.
