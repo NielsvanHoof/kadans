@@ -48,19 +48,12 @@ export async function runStack(
   const resources: CapturedResource[] = [];
   const policyDocuments: Array<Record<string, unknown>> = [];
 
-  pulumi.runtime.setAllConfig({
+    pulumi.runtime.setAllConfig({
     "aws:region": REGION,
     "qompose-platform:alarmEmailAddress": "ops@example.com",
     "qompose-platform:domain": "qompose.nl",
-    "qompose-platform:imageTag": "abc1234",
-    "qompose-platform:appKey": "fixture-app-key",
-    "qompose-platform:reverbAppId": "qompose",
-    "qompose-platform:reverbPublicKey": "reverb-key",
-    "qompose-platform:sentryBrowserDsn": "fixture-sentry-browser-value",
-    "qompose-platform:reverbAppSecret": "fixture-reverb-value",
-    "qompose-platform:sentryDsn": "fixture-sentry-value",
-    "qompose-platform:cacheAuthToken": "fixture-cache-value",
-    "qompose-platform:originVerifySecret": "fixture-origin-value",
+    "qompose-platform:mailFromAddress": "no-reply@qompose.nl",
+    "qompose-platform:databasePassword": "fixture-database-password",
     ...configOverrides,
   }, []);
 

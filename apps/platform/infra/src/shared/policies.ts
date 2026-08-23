@@ -6,14 +6,9 @@ import { DocumentInfrastructure } from "./documents.js";
 /**
  * Everything the Qompose application needs from AWS at runtime.
  *
- * Deliberately defined once and attached to two principals via a managed policy:
- *
- *  - the local IAM user (`operator.ts`), used by Sail on a developer machine
- *  - the ECS task role (`application.ts`), used by the deployed container
- *
- * They must stay identical — if local and production diverge, OCR/Transcribe
- * breaks in production only, which is the worst place to find out. Sharing one
- * managed policy makes that impossible by construction rather than by discipline.
+ * Defined once and attached to the long-lived IAM user Sail and Laravel Cloud
+ * share (`operator.ts`). There is no ECS task role anymore — application compute
+ * runs on Laravel Cloud (TASK-43.3).
  *
  * Managed (not inline) because IAM user inline policies cap at 2048 bytes; this
  * document exceeds that once Textract + Transcribe + Bedrock statements land.
@@ -112,7 +107,7 @@ export function applicationAccessPolicy(
 }
 
 /**
- * Customer managed policy shared by the local IAM user and the ECS task role.
+ * Customer managed policy for the Sail / Laravel Cloud IAM user.
  */
 export function createApplicationAccessManagedPolicy(
   config: PlatformConfig,
@@ -124,7 +119,7 @@ export function createApplicationAccessManagedPolicy(
   return new aws.iam.Policy(environment.resourceName("app-access"), {
     name: environment.resourceName("app-access"),
     path: "/qompose/",
-    description: "Shared Sail + ECS access for S3, Textract, Transcribe, Bedrock, SQS, KMS",
+    description: "Sail + Laravel Cloud access for S3, Textract, Transcribe, Bedrock, SQS, KMS",
     policy: applicationAccessPolicy(config, documents, encryptionKey),
   });
 }

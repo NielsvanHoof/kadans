@@ -8,29 +8,25 @@ export interface OcrOperatorAccess {
 }
 
 /**
- * IAM user + long-lived access key for local Sail development.
+ * IAM user + long-lived access key for Sail and Laravel Cloud.
  *
- * These are static credentials, which is not how production should work — but the
- * reason is worth stating accurately, because it is easy to draw the wrong lesson.
+ * These are static credentials. That is not how an in-VPC workload should
+ * authenticate — but Laravel Cloud (and a PHP process on a laptop) are not
+ * something AWS can hand a role to, so there is nothing to attach a role to.
+ * A scoped IAM user is the honest option for both.
  *
- * IAM roles hand out temporary credentials to something AWS already recognises: an
- * ECS task, an EC2 instance, a Lambda. A PHP process on a developer's laptop is
- * none of those, so there is nothing to attach a role to. Until the stack grows
- * compute (see `application.ts` for the task role that is already waiting), a
- * scoped IAM user is the honest option for local work.
+ * The key is acceptable *because* the policy is narrow — documents bucket,
+ * OCR/Transcribe queues, Bedrock, KMS, and (separately) SES send. Exactly one
+ * environment mints it (`applicationUserAccess`); `scripts/sync-ocr-credentials.sh`
+ * reads the `local` stack.
  *
- * The key is acceptable *because* the policy is narrow — it reaches one bucket,
- * the OCR/Transcribe queues, and one KMS key, and nothing else. It is not
- * acceptable in production, and the deployed app must never use it:
- * `application.ts` attaches the same managed policy as a task role, and the
- * container gets credentials from the ECS agent instead.
- *
- * (An earlier version of this comment said "root cannot assume roles". True, but
- * beside the point: the real fix is not using root at all — see infra/README.md.)
+ * Resource names (`ocr-local-user`, `ocr-local`, …) stay byte-identical so Pulumi
+ * does not recreate the user and rotate the key out from under `.env` files.
  */
 export function createOcrOperatorAccess(
   config: PlatformConfig,
   accessPolicy: aws.iam.Policy,
+  mailSendPolicy?: aws.iam.Policy,
 ): OcrOperatorAccess {
   const { environment } = config;
 
@@ -38,7 +34,7 @@ export function createOcrOperatorAccess(
     name: environment.resourceName("ocr-local"),
     path: "/qompose/",
     tags: {
-      Purpose: "Local Sail Textract + Transcribe + Bedrock",
+      Purpose: "Sail + Laravel Cloud Textract / Transcribe / Bedrock / SES",
     },
   });
 
@@ -48,7 +44,14 @@ export function createOcrOperatorAccess(
     policyArn: accessPolicy.arn,
   });
 
-  // Access key secret is stored in Pulumi state — sync into .env with the helper script.
+  if (mailSendPolicy !== undefined) {
+    new aws.iam.UserPolicyAttachment(environment.resourceName("ocr-local-mail"), {
+      user: user.name,
+      policyArn: mailSendPolicy.arn,
+    });
+  }
+
+  // Access key secret lives in Pulumi state — sync into .env with the helper script.
   const accessKey = new aws.iam.AccessKey(environment.resourceName("ocr-local-access-key"), {
     user: user.name,
   });
@@ -56,7 +59,7 @@ export function createOcrOperatorAccess(
   return { user, accessKey };
 }
 
-/** Secret stack outputs for local .env sync. */
+/** Secret stack outputs for local / Cloud credential sync. */
 export function exportOcrOperatorCredentials(access: OcrOperatorAccess): {
   ocrLocalUserName: pulumi.Output<string>;
   ocrAccessKeyId: pulumi.Output<string>;

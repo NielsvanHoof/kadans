@@ -5,27 +5,27 @@ import { PlatformConfig } from "../config.js";
 export interface Mail {
   domainIdentity: aws.ses.DomainIdentity;
   dkimTokens: pulumi.Output<string[]>;
-  /** Attached to the task role only — never to the shared app-access policy. */
+  /**
+   * Attached to the application IAM user (Sail / Laravel Cloud credentials).
+   *
+   * Kept as a separate policy so OCR/Transcribe access and mail send stay
+   * independently reviewable — and so stacks without `applicationUserAccess`
+   * can still create the SES identity for DKIM without minting a send grant.
+   */
   sendPolicy: aws.iam.Policy;
 }
 
 /**
- * SES as the production mailer, with DKIM on the sending domain.
+ * SES as the application mailer, with DKIM on the sending domain.
  *
- * The send permission is a **separate policy attached only to the ECS task role**,
- * and not added to the shared managed policy in `policies.ts`. That file argues at
- * length that the local IAM user and the task role must carry identical
- * permissions, and the argument is right — for OCR and Transcribe, where a gap
- * would surface in production and nowhere else.
+ * Always created (TASK-43.3): Laravel Cloud sends through SES with the shared
+ * application IAM user, so mail is no longer gated on ECS compute. The send
+ * permission is a **separate policy** attached to that IAM user in `index.ts`,
+ * not folded into the shared OCR access policy — a laptop key that can also
+ * send as the company domain is a deliberate, reviewable grant.
  *
- * Mail inverts it. Local development sends to Mailpit, so there is no gap to
- * discover; what parity would actually buy is a long-lived access key on a laptop
- * that can send mail as the company domain. The rule exists to stop production
- * being *less* capable than local, not to require local to be as dangerous as
- * production.
- *
- * The `ses:FromAddress` condition narrows it further: even the task role can only
- * send as the configured envelope sender.
+ * The `ses:FromAddress` condition narrows it further: the user can only send as
+ * the configured envelope sender.
  */
 export function createMail(config: PlatformConfig): Mail {
   const { environment, mailFromAddress } = config;
@@ -43,7 +43,7 @@ export function createMail(config: PlatformConfig): Mail {
   const sendPolicy = new aws.iam.Policy(environment.resourceName("mail-send"), {
     name: environment.resourceName("mail-send"),
     path: "/qompose/",
-    description: "SES send for the deployed application container only",
+    description: "SES send for the Sail / Laravel Cloud application IAM user",
     policy: aws.iam.getPolicyDocumentOutput({
       statements: [{
         sid: "SendApplicationMail",
