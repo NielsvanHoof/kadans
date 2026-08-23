@@ -42,6 +42,8 @@ function uploadOrigins(config: PlatformConfig): string[] {
   return [
     `https://${config.appHostname}`,
     `https://${config.tenantHostnamePattern}`,
+    ...config.environment.settings.uploadAllowedOrigins,
+    ...config.uploadAllowedOrigins,
   ];
 }
 
