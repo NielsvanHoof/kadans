@@ -15,44 +15,49 @@ test("production keeps deletion protection, Multi-AZ, and long retention", () =>
   assert.equal(environment.settings.databaseMultiAz, true);
   assert.equal(environment.settings.documentNoncurrentVersionDays, 90);
   assert.equal(environment.settings.kmsDeletionWindowInDays, 30);
-  assert.equal(environment.settings.computeEnabled, true);
+  assert.equal(environment.settings.databaseEnabled, true);
+  assert.equal(environment.settings.databasePubliclyAccessible, true);
+  assert.equal(environment.settings.applicationUserAccess, false);
 });
 
-test("staging is the cheap, destroyable shape", () => {
+test("staging is the cheap, destroyable public-RDS shape", () => {
   const environment = deploymentEnvironmentFromStack("staging");
 
   assert.equal(environment.name, "staging");
   assert.equal(environment.settings.deletionProtection, false);
   assert.equal(environment.settings.databaseMultiAz, false);
-  assert.equal(environment.settings.cacheNodeCount, 1);
-  assert.equal(environment.settings.edgeEnabled, false);
   assert.equal(environment.settings.crossRegionSnapshotCopy, false);
-  assert.equal(environment.settings.computeEnabled, true);
+  assert.equal(environment.settings.databaseEnabled, true);
+  assert.equal(environment.settings.databasePubliclyAccessible, true);
+  assert.equal(environment.settings.applicationUserAccess, false);
+  assert.equal(environment.settings.dnsSubdomain, "staging");
 });
 
-test("local is documents-only for Sail OCR demos", () => {
+test("local is the OCR data plane plus public RDS, and owns the app IAM user", () => {
   const environment = deploymentEnvironmentFromStack("local");
 
   assert.equal(environment.name, "local");
-  assert.equal(environment.settings.computeEnabled, false);
+  assert.equal(environment.settings.databaseEnabled, true);
+  assert.equal(environment.settings.databasePubliclyAccessible, true);
   assert.equal(environment.settings.deletionProtection, false);
-  assert.equal(environment.settings.edgeEnabled, false);
+  assert.equal(environment.settings.applicationUserAccess, true);
   assert.equal(environment.settings.dnsSubdomain, "local");
+  assert.ok(environment.settings.databaseIngressCidrs.length > 0);
 });
 
 // Exactly one environment may mint the long-lived Sail access key (decision-3);
 // scripts/sync-ocr-credentials.sh reads the local stack.
-test("only local mints the Sail IAM user", () => {
+test("only local mints the application IAM user", () => {
   assert.equal(
-    deploymentEnvironmentFromStack("local").settings.localOperatorAccess,
+    deploymentEnvironmentFromStack("local").settings.applicationUserAccess,
     true,
   );
   assert.equal(
-    deploymentEnvironmentFromStack("production").settings.localOperatorAccess,
+    deploymentEnvironmentFromStack("production").settings.applicationUserAccess,
     false,
   );
   assert.equal(
-    deploymentEnvironmentFromStack("staging").settings.localOperatorAccess,
+    deploymentEnvironmentFromStack("staging").settings.applicationUserAccess,
     false,
   );
 });

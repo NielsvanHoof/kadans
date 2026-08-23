@@ -5,13 +5,8 @@ import { Network } from "./network.js";
 
 export interface Database {
   instance: aws.rds.Instance;
-  /**
-   * ARN of the Secrets Manager secret RDS manages for the master user.
-   *
-   * JSON-shaped `{"username": …, "password": …}`, which is why the ECS task
-   * definition reads `${arn}:password::` rather than the whole secret.
-   */
-  masterSecretArn: pulumi.Output<string>;
+  /** Static master password from Pulumi config secret `databasePassword`. */
+  masterPassword: pulumi.Output<string>;
   databaseName: string;
   username: string;
 }
@@ -22,12 +17,13 @@ const MASTER_USERNAME = "qompose";
 /**
  * Postgres 17 on RDS, sized to match the local Sail container.
  *
- * The master password uses `manageMasterUserPassword`, so RDS mints and rotates it
- * into its own Secrets Manager secret and Pulumi never sees the value. That is
- * worth more than it sounds: the usual alternatives either put a real password in
- * Pulumi state (recoverable by anyone who can read the stack) or add a random
- * provider whose output is *also* in state. Here there is nothing to leak, and
- * ECS resolves the secret at task start with the execution role.
+ * Always public for Laravel Cloud: password comes from Pulumi config secret
+ * `databasePassword` (not Secrets Manager), because Cloud pastes env vars and
+ * cannot resolve a Secrets Manager ARN at boot without extra AWS wiring. The
+ * secret still lives in encrypted Pulumi config / state, not in git.
+ *
+ * Do not export the password as a stack output — read it from config when filling
+ * Cloud env vars.
  */
 export function createDatabase(
   config: PlatformConfig,
@@ -36,6 +32,12 @@ export function createDatabase(
 ): Database {
   const { environment } = config;
   const { settings } = environment;
+
+  if (!settings.databasePubliclyAccessible) {
+    throw new Error(
+      "createDatabase requires databasePubliclyAccessible after TASK-43.3.",
+    );
+  }
 
   const subnetGroup = new aws.rds.SubnetGroup(environment.resourceName("db-subnets"), {
     name: environment.resourceName("db-subnets"),
@@ -55,6 +57,9 @@ export function createDatabase(
     }],
   });
 
+  const pulumiConfig = new pulumi.Config();
+  const masterPassword = pulumiConfig.requireSecret("databasePassword");
+
   const instance = new aws.rds.Instance(environment.resourceName("database"), {
     identifier: environment.resourceName("database"),
     engine: "postgres",
@@ -68,14 +73,13 @@ export function createDatabase(
 
     dbName: DATABASE_NAME,
     username: MASTER_USERNAME,
-    manageMasterUserPassword: true,
-    masterUserSecretKmsKeyId: encryptionKey.keyId,
+    // Omit manageMasterUserPassword entirely — AWS rejects it paired with password.
+    password: masterPassword,
 
     dbSubnetGroupName: subnetGroup.name,
     parameterGroupName: parameterGroup.name,
     vpcSecurityGroupIds: [network.databaseSecurityGroup.id],
-    // No public IP: the instance is only reachable from the task security group.
-    publiclyAccessible: false,
+    publiclyAccessible: true,
 
     multiAz: settings.databaseMultiAz,
     backupRetentionPeriod: settings.databaseBackupRetentionDays,
@@ -96,8 +100,10 @@ export function createDatabase(
     tags: { Name: environment.resourceName("database") },
   });
 
-  // Present only because manageMasterUserPassword is on; index 0 is the current secret.
-  const masterSecretArn = instance.masterUserSecrets.apply((secrets) => secrets[0].secretArn);
-
-  return { instance, masterSecretArn, databaseName: DATABASE_NAME, username: MASTER_USERNAME };
+  return {
+    instance,
+    masterPassword,
+    databaseName: DATABASE_NAME,
+    username: MASTER_USERNAME,
+  };
 }

@@ -108,8 +108,14 @@ return [
              */
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             // Path to the RDS CA bundle. Required by verify-full, which has
-            // nothing to verify the server against without it.
-            'sslrootcert' => env('DB_SSLROOTCERT'),
+            // nothing to verify the server against without it. Relative paths
+            // resolve from the app root — prefer the committed file at
+            // certs/rds-global-bundle.pem (see certs/README.md).
+            'sslrootcert' => ($sslRootCert = env('DB_SSLROOTCERT'))
+                ? (str_starts_with((string) $sslRootCert, '/')
+                    ? $sslRootCert
+                    : base_path((string) $sslRootCert))
+                : null,
         ],
 
         'sqlsrv' => [

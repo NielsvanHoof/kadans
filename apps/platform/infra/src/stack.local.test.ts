@@ -21,14 +21,21 @@ test("local builds the documents and OCR plane", () => {
   assert.ok(stack.named("malware-findings"));
 });
 
-test("local does not build application compute", () => {
-  assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), false);
+test("local builds a public RDS without application compute", () => {
+  assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), true);
+  assert.equal(stack.hasType("aws:rds/instance:Instance"), true);
   assert.equal(stack.hasType("aws:ecs/cluster:Cluster"), false);
-  assert.equal(stack.hasType("aws:rds/instance:Instance"), false);
   assert.equal(stack.hasType("aws:elasticache/replicationGroup:ReplicationGroup"), false);
   assert.equal(stack.hasType("aws:lb/loadBalancer:LoadBalancer"), false);
   assert.equal(stack.hasType("aws:acm/certificate:Certificate"), false);
+  assert.equal(stack.hasType("aws:cloudfront/distribution:Distribution"), false);
+  assert.equal(stack.hasType("aws:ecr/repository:Repository"), false);
+  assert.equal(stack.hasType("aws:secretsmanager/secret:Secret"), false);
   assert.equal(stack.ofType("aws:ecs/service:Service").length, 0);
+
+  const database = stack.named("database");
+  assert.ok(database);
+  assert.equal(database.inputs.publiclyAccessible, true);
 });
 
 /*
@@ -39,6 +46,12 @@ test("local mints the Sail OCR operator credentials", () => {
   assert.equal(stack.hasType("aws:iam/user:User"), true);
   assert.equal(stack.hasType("aws:iam/accessKey:AccessKey"), true);
   assert.ok(stack.named("ocr-local-user"));
+});
+
+test("local creates SES for application mail without compute", () => {
+  assert.equal(stack.hasType("aws:ses/domainIdentity:DomainIdentity"), true);
+  assert.equal(stack.hasType("aws:ses/domainDkim:DomainDkim"), true);
+  assert.ok(stack.named("mail-send"));
 });
 
 test("local scanner policy includes GuardDuty EventBridge managed-rule access", () => {

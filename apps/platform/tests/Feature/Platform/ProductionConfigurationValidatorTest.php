@@ -64,6 +64,16 @@ test('safe production configuration passes validation', function (): void {
         ->toBeGreaterThan((int) config('transcription.timeouts.job'));
 });
 
+test('the committed RDS CA bundle is present for shipped DB_SSLROOTCERT', function (): void {
+    // Build-time downloads into storage/ do not survive Laravel Cloud's runtime
+    // volume, so verify-full needs this file in the deploy artifact.
+    $path = base_path('certs/rds-global-bundle.pem');
+
+    expect($path)->toBeFile()
+        ->and(is_readable($path))->toBeTrue()
+        ->and((string) file_get_contents($path))->toContain('BEGIN CERTIFICATE');
+});
+
 test('production rejects unsafe configuration', function (string $key, mixed $value): void {
     config([$key => $value]);
 

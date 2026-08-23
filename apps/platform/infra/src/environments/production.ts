@@ -1,10 +1,10 @@
+import { LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS } from "../shared/laravelCloudEgress.js";
 import { EnvironmentSettings } from "./settings.js";
 
 /**
- * Production: Multi-AZ where failover matters, long retention, protected from
- * deletion. The sizes are deliberately small — the lean stack is a t4g.micro
- * database and 0.25 vCPU tasks — because headroom here is a scaling decision,
- * not a correctness one, and idle capacity is the easiest money to waste.
+ * Production data plane: documents/OCR + public RDS for Laravel Cloud production.
+ *
+ * Multi-AZ Postgres and longer retention; application compute is on Laravel Cloud.
  */
 export const productionSettings: EnvironmentSettings = {
   deletionProtection: true,
@@ -16,24 +16,13 @@ export const productionSettings: EnvironmentSettings = {
   databaseBackupRetentionDays: 14,
   databaseAllocatedStorageGb: 20,
 
-  cacheNodeType: "cache.t4g.micro",
-  cacheNodeCount: 2,
-
-  webDesiredCount: 2,
-  workerDesiredCount: 2,
-  reverbDesiredCount: 1,
-  consumerDesiredCount: 1,
-  taskCpu: "256",
-  taskMemory: "512",
-
-  logRetentionDays: 90,
   dnsSubdomain: null,
 
-  edgeEnabled: true,
-  wafEnabled: true,
   crossRegionSnapshotCopy: true,
   monthlyBudgetUsd: 200,
 
-  localOperatorAccess: false,
-  computeEnabled: true,
+  applicationUserAccess: false,
+  databaseEnabled: true,
+  databasePubliclyAccessible: true,
+  databaseIngressCidrs: LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS,
 };

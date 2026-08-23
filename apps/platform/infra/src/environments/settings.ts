@@ -11,9 +11,12 @@
  * environment, it reads a field from here. It must never branch on
  * `environment.name`, because that hides the difference inside the component
  * where nobody comparing environments will find it.
+ *
+ * Compute (ECS/ALB/edge/cache) was removed in TASK-43.3 — Laravel Cloud owns the
+ * application runtime. This stack is the data plane plus public RDS.
  */
 export interface EnvironmentSettings {
-  /** RDS / ALB deletion protection. Off in staging so the stack can be torn down. */
+  /** RDS deletion protection. Off in staging/local so the stack can be torn down. */
   readonly deletionProtection: boolean;
   /** How long superseded document versions survive in the S3 bucket. */
   readonly documentNoncurrentVersionDays: number;
@@ -25,72 +28,48 @@ export interface EnvironmentSettings {
   readonly databaseBackupRetentionDays: number;
   readonly databaseAllocatedStorageGb: number;
 
-  readonly cacheNodeType: string;
-  /**
-   * Valkey nodes in the replication group.
-   *
-   * Load-bearing beyond cost: ElastiCache rejects `automaticFailoverEnabled` and
-   * `multiAzEnabled` on a single-node group, so `cache.ts` derives both from this
-   * rather than exposing them as separate knobs that could be set inconsistently.
-   */
-  readonly cacheNodeCount: number;
-
-  readonly webDesiredCount: number;
-  readonly workerDesiredCount: number;
-  readonly reverbDesiredCount: number;
-  readonly consumerDesiredCount: number;
-  readonly taskCpu: string;
-  readonly taskMemory: string;
-
-  readonly logRetentionDays: number;
-
   /**
    * DNS label inserted before the apex domain, or null for the apex itself.
    *
-   * Production is `null` (`app.qompose.nl`, tenants at `*.qompose.nl`); staging is
-   * `"staging"` (`app.staging.qompose.nl`, `*.staging.qompose.nl`). Keeping the two
-   * wildcards on separate levels is what stops a staging certificate and a
-   * production certificate from claiming the same names.
+   * Used for SES From-domain / hostname helpers. Production is `null`
+   * (`qompose.nl`); staging is `"staging"`.
    */
   readonly dnsSubdomain: string | null;
 
-  /**
-   * CloudFront in front of the ALB (TASK-34.3).
-   *
-   * Also changes who may reach the load balancer: with the edge on, the ALB
-   * accepts traffic only from CloudFront's origin-facing prefix list and only
-   * with the shared origin secret, so the origin cannot be addressed directly.
-   */
-  readonly edgeEnabled: boolean;
-  /**
-   * AWS managed WAF rules on the distribution.
-   *
-   * Separate from `edgeEnabled` because the WAF is the part most likely to need
-   * turning off in a hurry — a managed rule that starts refusing a legitimate
-   * upload is an outage, and `pulumi config set wafEnabled false` overrides this
-   * without a code change.
-   */
-  readonly wafEnabled: boolean;
   /** Cross-region RDS snapshot copies for cheap DR (TASK-34.4). */
   readonly crossRegionSnapshotCopy: boolean;
   /** Monthly AWS Budgets threshold in USD (TASK-34.4). */
   readonly monthlyBudgetUsd: number;
 
   /**
-   * Whether this environment mints the long-lived IAM user + access key that Sail
-   * uses locally (see `shared/operator.ts` and decision-3).
+   * Whether this environment mints the long-lived IAM user + access key that
+   * Sail and Laravel Cloud share for S3/OCR/Transcribe/SES.
    *
    * Exactly one environment may own it. `scripts/sync-ocr-credentials.sh` reads
    * the `local` stack's outputs, so a second key elsewhere would be an extra
    * standing credential that nothing consumes — the worst kind.
    */
-  readonly localOperatorAccess: boolean;
+  readonly applicationUserAccess: boolean;
 
   /**
-   * Application compute plane: VPC, ALB, ECS, RDS, cache, edge, SES, secrets.
+   * Provision RDS (and the VPC it needs).
    *
-   * Off for the `local` stack, which exists only so Sail can hit real Textract /
-   * Transcribe against the documents plane without standing up a full platform.
+   * On for every deployed environment. Public access + ingress CIDRs are how
+   * Laravel Cloud reaches Postgres.
    */
-  readonly computeEnabled: boolean;
+  readonly databaseEnabled: boolean;
+
+  /**
+   * Give the RDS instance a public address and open 5432 to
+   * `databaseIngressCidrs`.
+   *
+   * Required for Laravel Cloud, which sits outside our VPC.
+   */
+  readonly databasePubliclyAccessible: boolean;
+
+  /**
+   * CIDRs allowed to reach Postgres when `databasePubliclyAccessible` is true.
+   * Empty is rejected at create time for public databases.
+   */
+  readonly databaseIngressCidrs: readonly string[];
 }

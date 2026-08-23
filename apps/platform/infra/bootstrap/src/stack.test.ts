@@ -90,18 +90,6 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
     (statement) => statement.sid === "DenyModifyingOwnAccess",
   );
 
-  const secretsStatement = statements.find(
-    (statement) => statement.sid === "ManagePlatformSecrets",
-  );
-
-  assert.ok(secretsStatement, "deploy policy must manage platform secrets");
-  assert.ok(
-    (secretsStatement.resources as string[]).includes(
-      "arn:aws:secretsmanager:*:123456789012:secret:rds!db-*",
-    ),
-    "RDS-managed master secrets must be creatable",
-  );
-
   const identityStatement = statements.find(
     (statement) => statement.sid === "ManageQomposeIdentities",
   );
@@ -128,28 +116,32 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
 
   /*
    * The deploy policy has to keep pace with what infra/src actually creates.
-   * A missing permission fails the deploy halfway — some resources made, some not —
-   * so the compute grants added for TASK-34.2 are asserted here rather than
-   * rediscovered mid-`pulumi up`.
+   * Compute grants (ECS/ELB/edge/cache/secrets) were dropped in TASK-43.3 — assert
+   * the data-plane surface here so mid-deploy permission failures stay rare.
    */
   const sids = statements.map((statement) => statement.sid);
 
   for (const sid of [
     "ManageEncryptionGrantsForAwsResources",
     "ManagePlatformNetwork",
-    "ManagePlatformLoadBalancing",
-    "ManagePlatformCompute",
     "ManagePlatformDataStores",
-    "ManagePlatformSecrets",
-    "ManagePlatformEdgeNames",
+    "ManagePlatformDns",
     "ManagePlatformMail",
-    "ManagePlatformLogs",
     "CreateServiceLinkedRoles",
     "ManageDocumentScanningAndAudit",
-    "ManagePlatformEdge",
     "ManageOperationsAlerting",
   ]) {
     assert.ok(sids.includes(sid), `deploy policy is missing ${sid}`);
+  }
+
+  for (const removed of [
+    "ManagePlatformLoadBalancing",
+    "ManagePlatformCompute",
+    "ManagePlatformSecrets",
+    "ManagePlatformEdge",
+    "ManagePlatformLogs",
+  ]) {
+    assert.equal(sids.includes(removed), false, `deploy policy must not retain ${removed}`);
   }
 
   // Service-linked roles are the one iam:* grant outside the qompose namespace, so
@@ -199,13 +191,10 @@ test("the bootstrap stack pins the trust policy and blocks self-escalation", asy
   assert.ok(serviceNames, "iam:CreateServiceLinkedRole must name the services it covers");
   assert.equal((serviceNames.values as string[]).includes("*"), false);
 
-  // `docker login` to ECR exchanges this token for a password, and it cannot be
-  // repository-scoped. Without it a push fails at authentication, before the
-  // repository ARN is ever consulted — which reads as a missing repository.
   const read = statements.find((statement) => statement.sid === "ReadState");
 
   assert.ok(read);
-  assert.equal((read.actions as string[]).includes("ecr:GetAuthorizationToken"), true);
+  assert.equal((read.actions as string[]).includes("ecr:GetAuthorizationToken"), false);
 
   // ec2:* would also cover launching instances. This role builds a network, not a fleet.
   const network = statements.find((statement) => statement.sid === "ManagePlatformNetwork");

@@ -1,10 +1,10 @@
 ---
 id: TASK-43.4
 title: Stand up Laravel Cloud environments
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-08-22 16:05'
-updated_date: '2026-08-22 16:55'
+updated_date: '2026-08-22 20:26'
 labels: []
 dependencies: []
 parent_task_id: TASK-43
@@ -56,4 +56,27 @@ Blocked on the user for two things only they can do:
 - `cloud auth -n`, which opens a browser; alternatively set LARAVEL_CLOUD_TOKEN
 
 Neither is done yet: `cloud` is not on PATH, there is no ~/.config/cloud/config.json and no repo-local .cloud/config.json.
+
+## Progress (2026-08-22)
+
+- Auth is working (`cloud` on PATH via ~/.composer/vendor/bin; token present). Application list is empty after delete.
+- Attempted recreate in `eu-west-1` via CLI. Blocked: this repo is a monorepo (Laravel app lives at `apps/platform`). Cloud probes the git root and finds no app there.
+- Official docs: monorepo root-directory selection is an interactive step during application creation (dashboard/UI). See https://laravel.com/cloud/docs/monorepos
+- Confirmed `laravel/cloud-cli` **0.5.2** has no monorepo concept:
+  - `CreateApplicationRequestData` sends only `repository`, `name`, `region`
+  - `application:create` / `ship` / `environment:update` expose no `--base-directory` / root-directory flag
+- Implication: first app create for this monorepo must be done in the Laravel Cloud dashboard (select `apps/platform`). After that, remaining topology (envs, Valkey, Reverb, workers, vars, deploy) can stay on the CLI.
+
+## Progress (2026-08-22 evening)
+
+Production:
+- Valkey + Reverb attached; Octane + scheduler; hibernation off (use --scale-to-zero=0, not false)
+- Deploy: php artisan migrate --force
+- BG processes on App: queue (default,ocr,transcription,dossier-export), textract:consume, transcribe:consume
+- Domain skipped (vanity laravel.cloud)
+
+Staging:
+- Env on branch staging with own Valkey + Reverb app; same topology as production
+
+Blocked for deploy: env vars beyond APP_KEY (DB/AWS/S3/etc).
 <!-- SECTION:NOTES:END -->
