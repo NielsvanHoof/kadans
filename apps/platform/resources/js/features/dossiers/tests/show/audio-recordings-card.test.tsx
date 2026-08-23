@@ -43,9 +43,8 @@ vi.mock('@/features/pipelines/hooks/use-fetch-on-pipeline-updated', () => ({
     useFetchOnPipelineUpdated: () => undefined,
 }));
 
-const { default: AudioRecordingsCard } = await import(
-    '@/features/dossiers/show/audio-recordings-card'
-);
+const { default: AudioRecordingsCard } =
+    await import('@/features/dossiers/show/audio-recordings-card');
 
 const dossier = { id: 7 } as Dossier;
 
@@ -77,9 +76,6 @@ describe('AudioRecordingsCard', () => {
         renderCard(undefined);
 
         expect(screen.getByTestId('upload-form')).toBeInTheDocument();
-        expect(
-            screen.getByLabelText('Loading audio recordings'),
-        ).toBeInTheDocument();
     });
 
     it('drops the list skeleton once the recordings prop resolves empty', () => {

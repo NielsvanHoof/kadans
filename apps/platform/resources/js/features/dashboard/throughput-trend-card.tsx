@@ -67,7 +67,7 @@ export default function ThroughputTrendCard({
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={config} className="h-[180px] w-full">
+                <ChartContainer config={config} className="h-45 w-full">
                     <BarChart data={data} accessibilityLayer>
                         <CartesianGrid vertical={false} />
                         <XAxis
