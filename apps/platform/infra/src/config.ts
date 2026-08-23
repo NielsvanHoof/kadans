@@ -62,6 +62,11 @@ export interface PlatformConfig {
   hostedZoneId?: string;
   /** Envelope sender for SES; must be inside `domain` for DKIM to align. */
   mailFromAddress: string;
+  /**
+   * Additional browser origins for presigned document uploads (merged with the
+   * environment defaults and the derived app/tenant hostnames).
+   */
+  uploadAllowedOrigins: string[];
 }
 
 export function loadPlatformConfig(): PlatformConfig {
@@ -85,6 +90,7 @@ export function loadPlatformConfig(): PlatformConfig {
     tenantHostnamePattern: config.get("tenantHostnamePattern") ?? `*.${zone}`,
     hostedZoneId: config.get("hostedZoneId") ?? undefined,
     mailFromAddress: config.get("mailFromAddress") ?? `no-reply@${zone}`,
+    uploadAllowedOrigins: config.getObject<string[]>("uploadAllowedOrigins") ?? [],
   };
 }
 

@@ -71,4 +71,13 @@ export interface EnvironmentSettings {
    * Empty is rejected at create time for public databases.
    */
   readonly databaseIngressCidrs: readonly string[];
+
+  /**
+   * Extra browser origins permitted to PUT into the documents bucket.
+   *
+   * Presigned uploads are bearer credentials; list only hostnames the application
+   * actually runs on. Laravel Cloud vanity URLs live here until custom domains
+   * replace them.
+   */
+  readonly uploadAllowedOrigins: readonly string[];
 }
