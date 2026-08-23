@@ -94,8 +94,7 @@ function AudioRecordingsSection({
     canDownloadAudio: boolean;
 }) {
     const audioRecordings = usePage().props.audio_recordings as
-        | AudioRecording[]
-        | undefined;
+        AudioRecording[] | undefined;
 
     if (!canUploadAudio && audioRecordings?.length === 0) {
         return null;
