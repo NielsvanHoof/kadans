@@ -57,24 +57,24 @@ enum PipelineStatus: string
     }
 
     /**
-     * A failed or stuck run may be restarted. Completed and cancelled stay closed.
+     * A failed, stuck, or cancelled run may be restarted.
      */
     public function isRetryable(): bool
     {
         return match ($this) {
-            self::Failed, self::Stuck => true,
-            self::Pending, self::Running, self::Completed, self::Cancelled => false,
+            self::Failed, self::Stuck, self::Cancelled => true,
+            self::Pending, self::Running, self::Completed => false,
         };
     }
 
     /**
-     * Finished and not retryable: the run produced a result or was cancelled.
+     * Finished and not retryable: the run produced a result.
      */
     public function isSettled(): bool
     {
         return match ($this) {
-            self::Completed, self::Cancelled => true,
-            self::Pending, self::Running, self::Failed, self::Stuck => false,
+            self::Completed => true,
+            self::Pending, self::Running, self::Failed, self::Stuck, self::Cancelled => false,
         };
     }
 }

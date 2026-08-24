@@ -16,8 +16,8 @@ use function in_array;
 /**
  * Guarded lifecycle transitions for a pipeline as a whole.
  *
- * A pipeline may be retried from failed or stuck states, while completed and
- * cancelled pipelines remain closed. Step-level transitions that also touch
+ * A pipeline may be retried from failed, stuck, or cancelled states, while
+ * completed pipelines remain closed. Step-level transitions that also touch
  * their parent pipeline live in PipelineStepTransitions instead.
  *
  * Every write here is quiet (saveQuietly): Pipeline does not use LogsActivity,
@@ -32,7 +32,7 @@ final readonly class PipelineTransitions
     public function __construct(private PipelineRetryBackoff $backoff) {}
 
     /**
-     * Restart a failed or stuck run on the same row, replaying it from its
+     * Restart a failed, stuck, or cancelled run on the same row, replaying it from its
      * first step. Step `attempts` stays cumulative so the timeline keeps a
      * record of how often each stage has been tried.
      */
@@ -40,7 +40,7 @@ final readonly class PipelineTransitions
     {
         if (! $pipeline->status->isRetryable()) {
             throw ValidationException::withMessages([
-                'pipeline' => 'Only a failed or stuck pipeline can be retried.',
+                'pipeline' => 'Only a failed, stuck, or cancelled pipeline can be retried.',
             ]);
         }
 
@@ -140,7 +140,7 @@ final readonly class PipelineTransitions
         ?string $errorMessage,
         ?string $errorCode,
     ): Pipeline {
-        if ($pipeline->status->isSettled()) {
+        if ($pipeline->status->isTerminal()) {
             throw ValidationException::withMessages([
                 'pipeline' => 'A closed pipeline cannot be marked stuck.',
             ]);

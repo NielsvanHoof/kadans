@@ -5,6 +5,7 @@ import ErrorState from '@/components/primitives/error-state';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants, LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ocrProcessingMessage } from '@/features/document-requests/staff/review/ocr-processing-copy';
 import { documentProcessingStatusLabel } from '@/features/document-requests/status/document-processing-status';
 import type {
     DocumentProcessingStatus,
@@ -130,7 +131,7 @@ export default function DocumentProcessingPanel({
                 uploadedDocument.processing_status === 'processing') && (
                 <div className="space-y-2" aria-live="polite">
                     <p className="text-muted-foreground">
-                        {t('Analyzing document structure (forms and tables)…')}
+                        {t(ocrProcessingMessage(uploadedDocument))}
                     </p>
                     <Skeleton className="h-4 w-full max-w-md" />
                     <Skeleton className="h-4 w-2/3" />

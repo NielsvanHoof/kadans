@@ -25,7 +25,7 @@ test('owner may view pipelines in the current workspace', function (): void {
         ->and((new PipelinePolicy)->view($owner, $pipeline))->toBeTrue();
 });
 
-test('owner may retry a failed or stuck run', function (PipelineStatus $status): void {
+test('owner may retry a failed, stuck, or cancelled run', function (PipelineStatus $status): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $pipeline = Pipeline::factory()->create([
@@ -37,6 +37,7 @@ test('owner may retry a failed or stuck run', function (PipelineStatus $status):
 })->with([
     'failed' => PipelineStatus::Failed,
     'stuck' => PipelineStatus::Stuck,
+    'cancelled' => PipelineStatus::Cancelled,
 ]);
 
 test('roles holding pipelines.retry may retry a failed run', function (Role $role): void {
@@ -69,7 +70,7 @@ test('roles without pipelines.retry may not retry a failed run', function (Role 
     'read only' => Role::ReadOnly,
 ]);
 
-test('a run that is not failed or stuck may never be retried', function (PipelineStatus $status): void {
+test('a run that is not failed, stuck, or cancelled may never be retried', function (PipelineStatus $status): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $pipeline = Pipeline::factory()->create([
@@ -82,7 +83,6 @@ test('a run that is not failed or stuck may never be retried', function (Pipelin
     'pending' => PipelineStatus::Pending,
     'running' => PipelineStatus::Running,
     'completed' => PipelineStatus::Completed,
-    'cancelled' => PipelineStatus::Cancelled,
 ]);
 
 test('a failed run in another tenant may not be retried', function (): void {

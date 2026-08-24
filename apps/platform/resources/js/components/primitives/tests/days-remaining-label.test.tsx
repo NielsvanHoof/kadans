@@ -5,7 +5,7 @@ import { mockUseTranslation } from '@/test/mocks';
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 const { default: DaysRemainingLabel } =
-    await import('@/features/dashboard/days-remaining-label');
+    await import('@/components/primitives/days-remaining-label');
 
 /**
  * The day count arrives signed from the server so the browser never redoes date

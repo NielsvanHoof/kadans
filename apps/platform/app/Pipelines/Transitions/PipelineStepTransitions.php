@@ -174,7 +174,7 @@ final readonly class PipelineStepTransitions
 
     private function ensureCanRun(Pipeline $pipeline): void
     {
-        if ($pipeline->status->isSettled()) {
+        if (in_array($pipeline->status, [PipelineStatus::Completed, PipelineStatus::Cancelled], true)) {
             throw ValidationException::withMessages([
                 'pipeline' => 'A completed or cancelled pipeline cannot run another step.',
             ]);

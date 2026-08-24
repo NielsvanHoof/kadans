@@ -73,6 +73,11 @@ final readonly class FetchDossierShowQuery
             'clientAccessGrants' => fn ($query) => $query->latest(),
         ]);
 
+        // Counted, not loaded: the rows themselves arrive as deferred props, but
+        // the tab strip needs both totals on first paint so labels and tab
+        // visibility never shift once those props land.
+        $dossier->loadCount(['exports', 'audioRecordings']);
+
         $client = $this->resolveClient($dossier);
         $mapped = $this->mapStaffDocumentRequestRowsQuery->handle(
             $dossier->status,
@@ -111,6 +116,12 @@ final readonly class FetchDossierShowQuery
             nextReminderAt: $dossier->next_reminder_at?->toIso8601String(),
             lastClientMessageSentAt: $dossier->last_client_message_sent_at?->toIso8601String(),
             lastClientOpenedAt: $dossier->last_client_opened_at?->toIso8601String(),
+            // Signed here, not in the browser: calendar days are deliberately not
+            // zone-converted, and recomputing client-side reintroduces the drift
+            // (same contract as FetchDashboardMyWorkQuery's agenda rows).
+            daysRemaining: $dossier->due_date === null
+                ? null
+                : (int) today()->diffInDays($dossier->due_date, false),
             hasOutstandingClientItems: $mapped->hasOutstandingClientItems,
             readyToComplete: $mapped->readyToComplete,
             reviewSummary: $mapped->reviewSummary,
@@ -123,6 +134,8 @@ final readonly class FetchDossierShowQuery
             // Filled by deferred top-level props after first paint.
             exports: [],
             audioRecordings: [],
+            exportsCount: $dossier->exports_count ?? 0,
+            audioRecordingsCount: $dossier->audio_recordings_count ?? 0,
         );
     }
 

@@ -5,6 +5,7 @@ import {
     FolderOpen,
     ScanSearch,
 } from 'lucide-react';
+import DaysRemainingLabel from '@/components/primitives/days-remaining-label';
 import EmptyState from '@/components/primitives/empty-state';
 import {
     Card,
@@ -13,7 +14,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import DaysRemainingLabel from '@/features/dashboard/days-remaining-label';
 import type { DashboardMyWork } from '@/features/dashboard/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

@@ -1,18 +1,11 @@
 import { Deferred, usePage } from '@inertiajs/react';
-import { Download, Mic, Trash2 } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AudioRecordingController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordingController';
 import UploadTicketController from '@/actions/App/Dossiers/Http/Controllers/UploadTicketController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button, buttonVariants, LinkButton } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import AudioRecordingUploadForm from '@/features/audio-recordings/audio-recording-upload-form';
@@ -48,47 +41,33 @@ export default function AudioRecordingsCard({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Mic aria-hidden="true" />
-                    {t('Audio recordings')}
-                </CardTitle>
-                <CardDescription>
-                    {t(
-                        'Upload a call recording or voice note to have it transcribed automatically.',
-                    )}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {canUpload ? (
-                    <AudioRecordingUploadForm
-                        inputId="audio-recording-upload"
-                        className="mt-0"
-                        actionUrl={AudioRecordingController.store.url({
-                            tenant: currentWorkspace,
-                            dossier: dossier.id,
-                        })}
-                        signUrl={UploadTicketController.store.url({
-                            tenant: currentWorkspace,
-                        })}
-                    />
-                ) : null}
+        <div className="space-y-4">
+            {canUpload ? (
+                <AudioRecordingUploadForm
+                    inputId="audio-recording-upload"
+                    className="mt-0"
+                    actionUrl={AudioRecordingController.store.url({
+                        tenant: currentWorkspace,
+                        dossier: dossier.id,
+                    })}
+                    signUrl={UploadTicketController.store.url({
+                        tenant: currentWorkspace,
+                    })}
+                />
+            ) : null}
 
-                <Deferred
-                    data="audio_recordings"
-                    fallback={<RecordingsListSkeleton />}
-                >
-                    <AudioRecordingsList
-                        dossierId={dossier.id}
-                        canDownload={canDownload}
-                    />
-                </Deferred>
-            </CardContent>
-        </Card>
+            <Deferred
+                data="audio_recordings"
+                fallback={<RecordingsListSkeleton />}
+            >
+                <AudioRecordingsList
+                    dossierId={dossier.id}
+                    canDownload={canDownload}
+                />
+            </Deferred>
+        </div>
     );
 }
 

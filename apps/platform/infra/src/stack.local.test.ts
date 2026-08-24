@@ -35,6 +35,8 @@ test("local documents bucket allows Laravel Cloud browser uploads", () => {
   assert.deepEqual(rules[0].allowedMethods, ["PUT"]);
   assert.ok(rules[0].allowedOrigins.includes("https://app.local.qompose.nl"));
   assert.ok(rules[0].allowedOrigins.includes("https://*.local.qompose.nl"));
+  assert.ok(rules[0].allowedOrigins.includes("http://localhost"));
+  assert.ok(rules[0].allowedOrigins.includes("http://127.0.0.1"));
   assert.ok(rules[0].allowedOrigins.includes("https://*.laravel.cloud"));
   assert.deepEqual(rules[0].allowedHeaders, ["content-type"]);
 });

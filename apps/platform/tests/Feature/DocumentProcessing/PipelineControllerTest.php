@@ -231,6 +231,18 @@ test('a stuck run is retryable too', function (): void {
     Queue::assertPushed(ProcessUploadedDocumentJob::class);
 });
 
+test('a cancelled run is retryable too', function (): void {
+    Queue::fake();
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $pipeline = failedPipelineForController($tenant->id, PipelineStatus::Cancelled);
+
+    $this->actingAs($owner)
+        ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
+        ->assertRedirect(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]));
+
+    Queue::assertPushed(ProcessUploadedDocumentJob::class);
+});
+
 test('members without the retry permission cannot retry a run', function (): void {
     Queue::fake();
     ['tenant' => $tenant] = provisionWorkspace();
@@ -274,9 +286,15 @@ test('a run belonging to another workspace cannot be retried', function (): void
 test('the show page reports whether the run may be retried', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $failed = failedPipelineForController($tenant->id);
+    $cancelled = failedPipelineForController($tenant->id, PipelineStatus::Cancelled);
 
     $this->actingAs($owner)
         ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $failed]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page->where('can_retry', true));
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $cancelled]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page->where('can_retry', true));
 
@@ -308,9 +326,21 @@ function failedPipelineForController(
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
     $state = resolve(PipelineState::class);
     $state->start($pipeline, PipelineStepKey::Submit);
-    $endState === PipelineStatus::Stuck
-        ? $state->stuck($pipeline, PipelineStepKey::Submit, errorCode: 'test_failure', errorMessage: 'Test failure.')
-        : $state->fail($pipeline, PipelineStepKey::Submit, errorCode: 'test_failure', errorMessage: 'Test failure.');
+    match ($endState) {
+        PipelineStatus::Stuck => $state->stuck(
+            $pipeline,
+            PipelineStepKey::Submit,
+            errorCode: 'test_failure',
+            errorMessage: 'Test failure.',
+        ),
+        PipelineStatus::Cancelled => $state->cancel($pipeline),
+        default => $state->fail(
+            $pipeline,
+            PipelineStepKey::Submit,
+            errorCode: 'test_failure',
+            errorMessage: 'Test failure.',
+        ),
+    };
 
     return $pipeline->fresh();
 }

@@ -323,6 +323,7 @@ describe('retry', function (): void {
     })->with([
         'failed' => [PipelineStatus::Failed],
         'stuck' => [PipelineStatus::Stuck],
+        'cancelled' => [PipelineStatus::Cancelled],
     ]);
 
     it('clears the diagnostics left behind by the previous attempt', function (): void {
@@ -395,7 +396,7 @@ describe('retry', function (): void {
             ->failed_at->toBeNull();
     });
 
-    it('refuses to retry a run that is not failed or stuck', function (PipelineStatus $status): void {
+    it('refuses to retry a run that is not failed, stuck, or cancelled', function (PipelineStatus $status): void {
         $pipeline = pipelineWith($status);
 
         expect(fn () => $this->transitions->retry($pipeline))
@@ -404,7 +405,6 @@ describe('retry', function (): void {
         'pending' => [PipelineStatus::Pending],
         'running' => [PipelineStatus::Running],
         'completed' => [PipelineStatus::Completed],
-        'cancelled' => [PipelineStatus::Cancelled],
     ]);
 
     it('leaves a rejected run completely untouched', function (): void {
