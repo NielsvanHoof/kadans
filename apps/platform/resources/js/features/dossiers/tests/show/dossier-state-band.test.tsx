@@ -26,11 +26,6 @@ vi.mock('@inertiajs/react', () => ({
     ),
 }));
 
-// The follow-up rows have their own test; the band only has to place them.
-vi.mock('@/features/dossiers/follow-up/dossier-follow-up-card', () => ({
-    default: () => <div data-testid="follow-up" />,
-}));
-
 const { default: DossierStateBand } =
     await import('@/features/dossiers/show/dossier-state-band');
 
@@ -60,13 +55,12 @@ function renderBand(overrides: Partial<Dossier> = {}) {
 }
 
 describe('DossierStateBand', () => {
-    it('places the three workflow stages and the follow-up rows on one band', () => {
+    it('places the three workflow stages on one strip', () => {
         renderBand();
 
         expect(screen.getByText('Build Form')).toBeInTheDocument();
         expect(screen.getByText('Send Invite')).toBeInTheDocument();
         expect(screen.getByText('Review')).toBeInTheDocument();
-        expect(screen.getByTestId('follow-up')).toBeInTheDocument();
     });
 
     /**
