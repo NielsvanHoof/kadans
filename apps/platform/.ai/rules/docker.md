@@ -19,3 +19,6 @@ Production/staging workers run as Laravel Cloud background processes. The worker
 
 ## Sail Caddyfile must not set Referrer-Policy
 The application owns Referrer-Policy exclusively. docker/8.5/Caddyfile is the only remaining Caddyfile after deployed images were removed (TASK-43.5) and must not set the header — Caddy's bare `header` directive replaces the field and would downgrade portal `no-referrer`. Guarded by tests/Feature/Security/ProductionCaddyfileTest.php. Do not reintroduce docker/production or docker/staging Caddyfiles; Laravel Cloud builds from git.
+
+## Floci bucket CORS is required for browser PUTs
+The browser PUTs to Floci at http://localhost:4566 from http://localhost, which is cross-origin. docker/floci/init/ready.d/01-create-local-bucket.sh must put-bucket-cors with PUT + content-type for http://localhost and http://127.0.0.1 (same allowlist as infra local uploadAllowedOrigins). Do not use a wildcard origin: a presigned URL is a bearer credential. The Laravel app CORS/CSP settings are never consulted for this request — a missing bucket rule is a 403 preflight. The script is bind-mounted; applying CORS to a bucket that already exists still needs a Floci restart or a one-shot aws s3api put-bucket-cors, because ready.d only runs at container start.

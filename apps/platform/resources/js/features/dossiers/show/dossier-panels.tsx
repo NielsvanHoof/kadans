@@ -1,5 +1,7 @@
 import { Deferred, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
@@ -17,7 +19,7 @@ import PortalLinkBanner from '@/features/portal/portal-link-banner';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
- * The dossier workbench: four panels behind one tab strip.
+ * The dossier workbench: four panels behind one pill tab strip.
  *
  * The strip doubles as a status readout — every label carries its own count in
  * mono numerals, so "what is in this dossier" is answered without opening
@@ -60,125 +62,157 @@ export default function DossierPanels({
     const activePanel = visiblePanels.includes(panel) ? panel : 'waiting';
 
     return (
-        <Tabs
-            selectedKey={activePanel}
-            onSelectionChange={(key) =>
-                onSelectPanel(String(key) as DossierPanel)
-            }
-        >
-            <div className="-mx-4 overflow-x-auto border-b border-ledger-rule px-4 pb-1.5 md:mx-0 md:px-0">
-                <TabsList variant="line" aria-label={t('Dossier panels')}>
-                    <TabsTrigger id="waiting" className="gap-1.5 text-sm">
-                        {t('Waiting')}
-                        <PanelCount
-                            value={
-                                waitingDocumentRequests(
-                                    dossier.document_requests,
-                                ).length
-                            }
-                        />
-                    </TabsTrigger>
-                    <TabsTrigger id="access" className="gap-1.5 text-sm">
-                        {t('Access')}
-                        <PanelCount
-                            value={
-                                validAccessGrants(dossier.access_grants).length
-                            }
-                        />
-                    </TabsTrigger>
-                    {showRecordings ? (
-                        <TabsTrigger
-                            id="recordings"
-                            className="gap-1.5 text-sm"
-                        >
-                            {t('Recordings')}
-                            <PanelCount
-                                value={dossier.audio_recordings_count}
-                            />
-                        </TabsTrigger>
-                    ) : null}
-                    {showExports ? (
-                        <TabsTrigger id="exports" className="gap-1.5 text-sm">
-                            {t('Exports')}
-                            <PanelCount value={dossier.exports_count} />
-                        </TabsTrigger>
-                    ) : null}
-                </TabsList>
-            </div>
+        <Card className="min-w-0 gap-0 overflow-hidden py-0">
+            <Tabs
+                selectedKey={activePanel}
+                onSelectionChange={(key) =>
+                    onSelectPanel(String(key) as DossierPanel)
+                }
+                className="gap-0"
+            >
+                <CardHeader className="sticky top-0 z-10 border-b bg-card py-3 touch-manipulation lg:static">
+                    <ScrollArea className="w-full">
+                        <TabsList aria-label={t('Dossier panels')}>
+                            <TabsTrigger
+                                id="waiting"
+                                className="gap-1.5 text-sm"
+                            >
+                                {t('Waiting')}
+                                <PanelCount
+                                    value={
+                                        waitingDocumentRequests(
+                                            dossier.document_requests,
+                                        ).length
+                                    }
+                                />
+                            </TabsTrigger>
+                            <TabsTrigger
+                                id="access"
+                                className="gap-1.5 text-sm"
+                            >
+                                {t('Access')}
+                                <PanelCount
+                                    value={
+                                        validAccessGrants(dossier.access_grants)
+                                            .length
+                                    }
+                                />
+                            </TabsTrigger>
+                            {showRecordings ? (
+                                <TabsTrigger
+                                    id="recordings"
+                                    className="gap-1.5 text-sm"
+                                >
+                                    {t('Recordings')}
+                                    <PanelCount
+                                        value={dossier.audio_recordings_count}
+                                    />
+                                </TabsTrigger>
+                            ) : null}
+                            {showExports ? (
+                                <TabsTrigger
+                                    id="exports"
+                                    className="gap-1.5 text-sm"
+                                >
+                                    {t('Exports')}
+                                    <PanelCount value={dossier.exports_count} />
+                                </TabsTrigger>
+                            ) : null}
+                        </TabsList>
+                    </ScrollArea>
+                </CardHeader>
 
-            {/*
-             * No lead here on purpose: the tab already says Waiting and the rows
-             * below say what is waiting. The other panels each explain something
-             * their body cannot.
-             */}
-            <TabsContent id="waiting" className="pt-5">
-                <WaitingItemsSummary
-                    dossier={dossier}
-                    onSelectAccess={() => onSelectPanel('access')}
-                />
-            </TabsContent>
-
-            <TabsContent id="access" className="pt-5">
-                <PanelBody
-                    lead={t(
-                        'Email a magic link so :name can upload documents without an account.',
-                        { name: dossier.client.name },
-                    )}
-                >
-                    {accessGrantPortalUrl ? (
-                        <PortalLinkBanner
-                            portalUrl={accessGrantPortalUrl}
-                            token={accessGrantToken}
-                        />
-                    ) : null}
-
-                    {!hasFormItems ? (
-                        <p className="rounded-md border border-ledger-rule bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                            {t(
-                                'Add at least one form field before inviting the client.',
-                            )}
-                        </p>
-                    ) : null}
-
-                    <ClientAccessCard
-                        dossierId={dossier.id}
-                        clientEmail={dossier.client.email}
-                        accessGrants={dossier.access_grants}
-                        canCreate={canCreateInvite}
-                    />
-                </PanelBody>
-            </TabsContent>
-
-            {showRecordings ? (
-                <TabsContent id="recordings" className="pt-5">
-                    <PanelBody
-                        lead={t(
-                            'Upload a call recording or voice note to have it transcribed automatically.',
-                        )}
+                {/*
+                 * No lead here on purpose: the tab already says Waiting and the
+                 * rows below say what is waiting. The other panels each explain
+                 * something their body cannot.
+                 */}
+                <CardContent className="py-5">
+                    <TabsContent
+                        id="waiting"
+                        className="scroll-mt-20 outline-none"
                     >
-                        <AudioRecordingsCard
+                        <WaitingItemsSummary
                             dossier={dossier}
-                            canUpload={canUploadAudio}
-                            canDownload={canDownloadAudio}
+                            onSelectAccess={() => onSelectPanel('access')}
                         />
-                    </PanelBody>
-                </TabsContent>
-            ) : null}
+                    </TabsContent>
 
-            {showExports ? (
-                <TabsContent id="exports" className="pt-5">
-                    <PanelBody
-                        lead={t(
-                            'Create a secure ZIP archive containing the dossier answers and uploaded documents.',
-                        )}
+                    <TabsContent
+                        id="access"
+                        className="scroll-mt-20 outline-none"
                     >
-                        <Deferred data="exports" fallback={<ExportsSkeleton />}>
-                            <DeferredExportCard dossier={dossier} />
-                        </Deferred>
-                    </PanelBody>
-                </TabsContent>
-            ) : null}
-        </Tabs>
+                        <PanelBody
+                            lead={t(
+                                'Email a magic link so :name can upload documents without an account.',
+                                { name: dossier.client.name },
+                            )}
+                        >
+                            {accessGrantPortalUrl ? (
+                                <PortalLinkBanner
+                                    portalUrl={accessGrantPortalUrl}
+                                    token={accessGrantToken}
+                                />
+                            ) : null}
+
+                            {!hasFormItems ? (
+                                <p className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                                    {t(
+                                        'Add at least one form field before inviting the client.',
+                                    )}
+                                </p>
+                            ) : null}
+
+                            <ClientAccessCard
+                                dossierId={dossier.id}
+                                clientEmail={dossier.client.email}
+                                accessGrants={dossier.access_grants}
+                                canCreate={canCreateInvite}
+                            />
+                        </PanelBody>
+                    </TabsContent>
+
+                    {showRecordings ? (
+                        <TabsContent
+                            id="recordings"
+                            className="scroll-mt-20 outline-none"
+                        >
+                            <PanelBody
+                                lead={t(
+                                    'Upload a call recording or voice note to have it transcribed automatically.',
+                                )}
+                            >
+                                <AudioRecordingsCard
+                                    dossier={dossier}
+                                    canUpload={canUploadAudio}
+                                    canDownload={canDownloadAudio}
+                                />
+                            </PanelBody>
+                        </TabsContent>
+                    ) : null}
+
+                    {showExports ? (
+                        <TabsContent
+                            id="exports"
+                            className="scroll-mt-20 outline-none"
+                        >
+                            <PanelBody
+                                lead={t(
+                                    'Create a secure ZIP archive containing the dossier answers and uploaded documents.',
+                                )}
+                            >
+                                <Deferred
+                                    data="exports"
+                                    fallback={<ExportsSkeleton />}
+                                >
+                                    <DeferredExportCard dossier={dossier} />
+                                </Deferred>
+                            </PanelBody>
+                        </TabsContent>
+                    ) : null}
+                </CardContent>
+            </Tabs>
+        </Card>
     );
 }
 

@@ -5,16 +5,15 @@ import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 /**
- * The chase, as one line.
+ * The chase, as one ribbon.
  *
- * These four dates are not four facts — they are one story: you sent it, the
- * client opened it, a reminder is queued, the deadline lands. Presented as
- * separate stat cells they read as unrelated; on a line, "sent but not opened,
+ * These four dates are one story: you sent it, the client opened it, a
+ * reminder is queued, the deadline lands. On a line, "sent but not opened,
  * reminder queued" is legible from the marks alone.
  *
- * Deliberately evenly spaced rather than to scale. Gaps between these dates are
- * irregular and any of them can be missing, so a proportional axis would be a
- * lie — the line carries order, not duration.
+ * Deliberately evenly spaced rather than to scale. Gaps between these dates
+ * are irregular and any of them can be missing, so a proportional axis would
+ * be a lie — the line carries order, not duration.
  */
 type ChaseMark = {
     key: string;
@@ -24,7 +23,22 @@ type ChaseMark = {
     placeholder: string;
 };
 
-export default function DossierChaseLine({ dossier }: { dossier: Dossier }) {
+export default function DossierChaseLine({
+    dossier,
+    orientation = 'horizontal',
+    showMeta = true,
+    showDueRemaining = true,
+    className,
+}: {
+    dossier: Dossier;
+    /** Vertical in the context rail; horizontal when the chase stands alone. */
+    orientation?: 'horizontal' | 'vertical';
+    /** Owner and cadence. The rail shows these in their own section. */
+    showMeta?: boolean;
+    /** The rail already prints remaining days on the due section. */
+    showDueRemaining?: boolean;
+    className?: string;
+}) {
     const { t } = useTranslation();
     const { formatDate } = useFormatters();
 
@@ -61,77 +75,133 @@ export default function DossierChaseLine({ dossier }: { dossier: Dossier }) {
         },
     ];
 
-    return (
-        <div className="space-y-3 px-4 py-3">
-            <ol className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 sm:gap-y-0">
-                {marks.map((mark, index) => (
-                    <li key={mark.key} className="min-w-0">
-                        <span className="block truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                            {mark.label}
-                        </span>
+    const isVertical = orientation === 'vertical';
 
-                        {/*
-                         * Connectors only from `sm` up, where all four marks share
-                         * a row. Stacked two-up they would join marks that are not
-                         * adjacent in the chase. The last mark carries none — the
-                         * deadline ends the line rather than continuing it.
-                         */}
-                        <span className="relative mt-1.5 mb-1.5 hidden h-3 items-center sm:flex">
-                            {index < marks.length - 1 ? (
-                                <span
-                                    aria-hidden="true"
-                                    className="absolute top-1/2 -right-4 left-3.5 h-px -translate-y-1/2 bg-border"
-                                />
-                            ) : null}
-                            <ChaseMarkGlyph
+    return (
+        <div className={cn('space-y-3', className)}>
+            <ol
+                className={cn(
+                    isVertical
+                        ? 'flex flex-col gap-3'
+                        : 'grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 sm:gap-y-0',
+                )}
+            >
+                {marks.map((mark, index) => (
+                    <li
+                        key={mark.key}
+                        className={cn(
+                            'min-w-0',
+                            isVertical && 'flex items-start gap-3',
+                        )}
+                    >
+                        {isVertical ? (
+                            <VerticalMark
                                 reached={mark.value !== null}
                                 terminal={index === marks.length - 1}
                                 daysRemaining={dossier.days_remaining}
+                                showConnector={index < marks.length - 1}
                             />
-                        </span>
+                        ) : null}
 
-                        <span
-                            className={cn(
-                                'block truncate font-data text-sm',
-                                mark.value === null
-                                    ? 'text-muted-foreground'
-                                    : 'font-medium',
-                            )}
-                            title={mark.value ?? mark.placeholder}
-                        >
-                            {mark.value ?? mark.placeholder}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                {mark.label}
+                            </span>
 
-                        {mark.key === 'due' &&
-                            dossier.days_remaining !== null && (
-                                <DaysRemainingLabel
-                                    daysRemaining={dossier.days_remaining}
-                                    className="mt-0.5 text-xs"
-                                />
-                            )}
+                            {/*
+                             * Connectors only from `sm` up, where all four marks
+                             * share a row. Stacked two-up they would join marks
+                             * that are not adjacent in the chase.
+                             */}
+                            {!isVertical ? (
+                                <span className="relative mt-1.5 mb-1.5 hidden h-3 items-center sm:flex">
+                                    {index < marks.length - 1 ? (
+                                        <span
+                                            aria-hidden="true"
+                                            className="absolute top-1/2 -right-4 left-3.5 h-px -translate-y-1/2 bg-border"
+                                        />
+                                    ) : null}
+                                    <ChaseMarkGlyph
+                                        reached={mark.value !== null}
+                                        terminal={index === marks.length - 1}
+                                        daysRemaining={dossier.days_remaining}
+                                    />
+                                </span>
+                            ) : null}
+
+                            <span
+                                className={cn(
+                                    'block truncate font-data text-sm',
+                                    mark.value === null
+                                        ? 'text-muted-foreground'
+                                        : 'font-medium',
+                                    isVertical && 'mt-0.5',
+                                )}
+                                title={mark.value ?? mark.placeholder}
+                            >
+                                {mark.value ?? mark.placeholder}
+                            </span>
+                            {showDueRemaining &&
+                                mark.key === 'due' &&
+                                dossier.days_remaining !== null && (
+                                    <DaysRemainingLabel
+                                        daysRemaining={dossier.days_remaining}
+                                        className="mt-0.5 text-xs"
+                                    />
+                                )}
+                        </div>
                     </li>
                 ))}
             </ol>
 
-            {/*
-             * Standing configuration, not a moment in the chase. Two facts, so
-             * two elements — owner and cadence are separately addressable rather
-             * than one run of text joined by a separator.
-             */}
-            <p className="text-xs text-muted-foreground">
-                <span>
-                    {dossier.responsible_staff?.name ?? t('Unassigned')}
-                </span>
-                {' · '}
-                <span>
-                    {dossier.reminder_interval_days
-                        ? t('reminder every :days days', {
-                              days: dossier.reminder_interval_days,
-                          })
-                        : t('Automatic reminders off')}
-                </span>
-            </p>
+            {showMeta ? (
+                <p className="text-xs text-muted-foreground">
+                    <span>
+                        {dossier.responsible_staff?.name ?? t('Unassigned')}
+                    </span>
+                    {' · '}
+                    <span>
+                        {dossier.reminder_interval_days
+                            ? t('reminder every :days days', {
+                                  days: dossier.reminder_interval_days,
+                              })
+                            : t('Automatic reminders off')}
+                    </span>
+                </p>
+            ) : null}
         </div>
+    );
+}
+
+/**
+ * Vertical spine: a filled or hollow mark, with a connector that joins it to
+ * the next moment. The last mark is a stop, not a step.
+ */
+function VerticalMark({
+    reached,
+    terminal,
+    daysRemaining,
+    showConnector,
+}: {
+    reached: boolean;
+    terminal: boolean;
+    daysRemaining: number | null;
+    showConnector: boolean;
+}) {
+    return (
+        <span className="relative flex w-3 shrink-0 flex-col items-center">
+            <ChaseMarkGlyph
+                reached={reached}
+                terminal={terminal}
+                daysRemaining={daysRemaining}
+            />
+            {showConnector ? (
+                <span
+                    aria-hidden="true"
+                    className="absolute top-3 bottom-[-0.75rem] w-px bg-border"
+                />
+            ) : null}
+        </span>
     );
 }
 
