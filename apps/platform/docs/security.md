@@ -247,10 +247,9 @@ portal's `no-referrer` survives this middleware. Tuning lives in `config/securit
 
 **Referrer-Policy ownership:** the application owns this header exclusively
 (`AddSecurityHeaders` for the baseline, `HardenClientPortalResponse` for
-`no-referrer` on portal routes). The production Caddyfile must not set
+`no-referrer` on portal routes). `docker/8.5/Caddyfile` must not set
 `Referrer-Policy` — Caddy's bare `header` directive *replaces* the field and would
-downgrade portal responses back to `strict-origin-when-cross-origin`. Caddy may
-still set `X-Content-Type-Options: nosniff` (idempotent) and strip `Server`.
+downgrade portal responses back to `strict-origin-when-cross-origin`.
 A regression test in `tests/Feature/Security/ProductionCaddyfileTest.php` guards
 the Caddyfile.
 

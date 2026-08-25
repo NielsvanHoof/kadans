@@ -8,6 +8,7 @@ import DocumentExtractionView from '@/features/document-requests/staff/review/do
 import DocumentPreviewPanel, {
     documentPreviewKind,
 } from '@/features/document-requests/staff/review/document-preview-panel';
+import { ocrRunningBannerMessage } from '@/features/document-requests/staff/review/ocr-processing-copy';
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -164,9 +165,7 @@ export default function UploadedDocumentShowContent({
             {(uploadedDocument.processing_status === 'pending' ||
                 uploadedDocument.processing_status === 'processing') && (
                 <p className="text-sm text-muted-foreground">
-                    {t(
-                        'Analysis is still running. Results will appear automatically.',
-                    )}
+                    {t(ocrRunningBannerMessage(uploadedDocument))}
                 </p>
             )}
 

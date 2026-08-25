@@ -25,7 +25,7 @@ test('retryable membership is named on the enum', function (PipelineStatus $stat
     'completed' => [PipelineStatus::Completed, false],
     'failed' => [PipelineStatus::Failed, true],
     'stuck' => [PipelineStatus::Stuck, true],
-    'cancelled' => [PipelineStatus::Cancelled, false],
+    'cancelled' => [PipelineStatus::Cancelled, true],
 ]);
 
 test('settled membership is named on the enum', function (PipelineStatus $status, bool $settled): void {
@@ -36,15 +36,15 @@ test('settled membership is named on the enum', function (PipelineStatus $status
     'completed' => [PipelineStatus::Completed, true],
     'failed' => [PipelineStatus::Failed, false],
     'stuck' => [PipelineStatus::Stuck, false],
-    'cancelled' => [PipelineStatus::Cancelled, true],
+    'cancelled' => [PipelineStatus::Cancelled, false],
 ]);
 
 test('settled values are derived from matching cases in declaration order', function (): void {
-    expect(PipelineStatus::settledValues())->toBe(['completed', 'cancelled']);
+    expect(PipelineStatus::settledValues())->toBe(['completed']);
 });
 
 test('retryable values are derived from matching cases in declaration order', function (): void {
-    expect(PipelineStatus::retryableValues())->toBe(['failed', 'stuck']);
+    expect(PipelineStatus::retryableValues())->toBe(['failed', 'stuck', 'cancelled']);
 });
 
 test('retryable and settled values never overlap', function (): void {

@@ -16,3 +16,6 @@ Deployed images and bake targets were removed in TASK-43.5 — Laravel Cloud bui
 
 ## Queue workers on Cloud
 Production/staging workers run as Laravel Cloud background processes. The worker queue field must equal `App\Platform\Support\WorkerQueues::csv()` (`default,ocr,transcription,dossier-export`). Adding a job on a new queue means updating `WorkerQueues::NAMES`; `tests/Feature/Platform/WorkerQueueCoverageTest.php` fails if a dedicated `onQueue()` literal is missing.
+
+## Sail Caddyfile must not set Referrer-Policy
+The application owns Referrer-Policy exclusively. docker/8.5/Caddyfile is the only remaining Caddyfile after deployed images were removed (TASK-43.5) and must not set the header — Caddy's bare `header` directive replaces the field and would downgrade portal `no-referrer`. Guarded by tests/Feature/Security/ProductionCaddyfileTest.php. Do not reintroduce docker/production or docker/staging Caddyfiles; Laravel Cloud builds from git.

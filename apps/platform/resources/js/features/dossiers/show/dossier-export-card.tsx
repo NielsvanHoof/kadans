@@ -3,13 +3,6 @@ import { Archive, Download, LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/DossierExportController';
 import { Button, buttonVariants } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import type { Dossier, DossierExport } from '@/features/dossiers/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import {
@@ -63,120 +56,96 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
     });
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Archive aria-hidden="true" />
-                    {t('Export dossier')}
-                </CardTitle>
-                <CardDescription>
-                    {t(
-                        'Create a secure ZIP archive containing the dossier answers and uploaded documents.',
-                    )}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <Form
-                    {...DossierExportController.store.form({
-                        tenant: currentWorkspace,
-                        dossier: dossier.id,
-                    })}
-                >
-                    {({ processing }) => (
-                        <Button type="submit" isDisabled={processing}>
-                            {processing ? (
-                                <LoaderCircle
-                                    className="animate-spin"
-                                    aria-hidden="true"
-                                />
-                            ) : (
-                                <Archive aria-hidden="true" />
-                            )}
-                            {t('Create export')}
-                        </Button>
-                    )}
-                </Form>
+        <div className="space-y-4">
+            <Form
+                {...DossierExportController.store.form({
+                    tenant: currentWorkspace,
+                    dossier: dossier.id,
+                })}
+            >
+                {({ processing }) => (
+                    <Button type="submit" isDisabled={processing}>
+                        {processing ? (
+                            <LoaderCircle
+                                className="animate-spin"
+                                aria-hidden="true"
+                            />
+                        ) : (
+                            <Archive aria-hidden="true" />
+                        )}
+                        {t('Create export')}
+                    </Button>
+                )}
+            </Form>
 
-                {exports.length > 0 ? (
-                    <div className="divide-y rounded-md border">
-                        {exports.map((exportItem) => (
-                            <div
-                                key={exportItem.id}
-                                className="px-4 py-3 text-sm"
-                            >
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                    <div>
-                                        <p className="font-medium">
-                                            {t(
-                                                exportItem.status ===
-                                                    'completed'
-                                                    ? 'Ready'
-                                                    : exportItem.status ===
-                                                        'failed'
-                                                      ? 'Failed'
-                                                      : 'Preparing',
-                                            )}
+            {exports.length > 0 ? (
+                <div className="divide-y rounded-md border">
+                    {exports.map((exportItem) => (
+                        <div key={exportItem.id} className="px-4 py-3 text-sm">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <p className="font-medium">
+                                        {t(
+                                            exportItem.status === 'completed'
+                                                ? 'Ready'
+                                                : exportItem.status === 'failed'
+                                                  ? 'Failed'
+                                                  : 'Preparing',
+                                        )}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                        {t('Requested :datetime', {
+                                            datetime: formatDateTime(
+                                                exportItem.created_at,
+                                            ),
+                                        })}
+                                        {exportItem.expires_at
+                                            ? ` · ${t('Expires :datetime', {
+                                                  datetime: formatDateTime(
+                                                      exportItem.expires_at,
+                                                  ),
+                                              })}`
+                                            : null}
+                                    </p>
+                                    {exportItem.error ? (
+                                        <p className="text-destructive">
+                                            {exportItem.error}
                                         </p>
-                                        <p className="text-muted-foreground">
-                                            {t('Requested :datetime', {
-                                                datetime: formatDateTime(
-                                                    exportItem.created_at,
-                                                ),
-                                            })}
-                                            {exportItem.expires_at
-                                                ? ` · ${t('Expires :datetime', {
-                                                      datetime: formatDateTime(
-                                                          exportItem.expires_at,
-                                                      ),
-                                                  })}`
-                                                : null}
-                                        </p>
-                                        {exportItem.error ? (
-                                            <p className="text-destructive">
-                                                {exportItem.error}
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                    {exportItem.download_url ? (
-                                        <a
-                                            className={buttonVariants({
-                                                variant: 'outline',
-                                                size: 'sm',
-                                            })}
-                                            href={exportItem.download_url}
-                                        >
-                                            <Download aria-hidden="true" />
-                                            {t('Download')}
-                                        </a>
                                     ) : null}
                                 </div>
-                                {exportItem.pipeline ? (
-                                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                        {exportItem.pipeline.steps.map(
-                                            (step) => (
-                                                <span
-                                                    key={step.key}
-                                                    className="rounded-full border px-2 py-1"
-                                                >
-                                                    {pipelineStepLabel(
-                                                        step.key,
-                                                        t,
-                                                    )}
-                                                    :{' '}
-                                                    {pipelineStepStatusLabel(
-                                                        step.status,
-                                                        t,
-                                                    )}
-                                                </span>
-                                            ),
-                                        )}
-                                    </div>
+                                {exportItem.download_url ? (
+                                    <a
+                                        className={buttonVariants({
+                                            variant: 'outline',
+                                            size: 'sm',
+                                        })}
+                                        href={exportItem.download_url}
+                                    >
+                                        <Download aria-hidden="true" />
+                                        {t('Download')}
+                                    </a>
                                 ) : null}
                             </div>
-                        ))}
-                    </div>
-                ) : null}
-            </CardContent>
-        </Card>
+                            {exportItem.pipeline ? (
+                                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                    {exportItem.pipeline.steps.map((step) => (
+                                        <span
+                                            key={step.key}
+                                            className="rounded-full border px-2 py-1"
+                                        >
+                                            {pipelineStepLabel(step.key, t)}:{' '}
+                                            {pipelineStepStatusLabel(
+                                                step.status,
+                                                t,
+                                            )}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
+                    ))}
+                </div>
+            ) : null}
+        </div>
     );
 }

@@ -23,6 +23,7 @@ function uploadedDocument(
         uploaded_at: '2026-01-01T10:00:00Z',
         processing_status: 'completed',
         processing_error: null,
+        pipeline: null,
         ...overrides,
     } as UploadedDocument;
 }
@@ -76,6 +77,32 @@ describe('DocumentProcessingPanel', () => {
         expect(errorLine?.textContent).toBe(
             'Processing failed: Textract timed out',
         );
+    });
+
+    it('explains when OCR is waiting on Textract', () => {
+        render(
+            <DocumentProcessingPanel
+                uploadedDocument={uploadedDocument({
+                    processing_status: 'processing',
+                    pipeline: {
+                        id: 99,
+                        type: 'ocr_document',
+                        status: 'running',
+                        current_stage: 'provider_processing',
+                        attempt_number: 1,
+                        last_activity_at: '2026-01-01T10:05:00Z',
+                        steps: [],
+                    },
+                })}
+                canDownload={false}
+            />,
+        );
+
+        expect(
+            screen.getByText(
+                'Waiting for AWS Textract to finish (often a few minutes). Results will update automatically.',
+            ),
+        ).toBeInTheDocument();
     });
 
     it('hides download when the user lacks permission', () => {

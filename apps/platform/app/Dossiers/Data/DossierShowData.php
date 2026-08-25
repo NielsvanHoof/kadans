@@ -32,6 +32,8 @@ final class DossierShowData extends Data
         public readonly ?string $nextReminderAt,
         public readonly ?string $lastClientMessageSentAt,
         public readonly ?string $lastClientOpenedAt,
+        /** Signed days to the due date; negative once it has passed, null without one. */
+        public readonly ?int $daysRemaining,
         public readonly bool $hasOutstandingClientItems,
         public readonly bool $readyToComplete,
         public readonly DossierReviewSummaryData $reviewSummary,
@@ -40,5 +42,7 @@ final class DossierShowData extends Data
         public readonly array $accessGrants,
         public readonly array $exports,
         public readonly array $audioRecordings,
+        public readonly int $exportsCount,
+        public readonly int $audioRecordingsCount,
     ) {}
 }

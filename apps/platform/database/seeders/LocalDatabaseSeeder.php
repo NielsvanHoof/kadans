@@ -19,11 +19,7 @@ final class LocalDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
-            throw new RuntimeException(
-                'LocalDatabaseSeeder can only run when APP_ENV is local or testing.',
-            );
-        }
+        throw_unless(app()->environment(['local', 'testing']), RuntimeException::class, 'LocalDatabaseSeeder can only run when APP_ENV is local or testing.');
 
         $this->call(DatabaseSeeder::class);
 

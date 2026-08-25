@@ -33,9 +33,19 @@ test('only runs that need a human are counted', function (): void {
 
     $health = processingHealth($tenant);
 
+    $recentStatuses = array_map(
+        static fn (object $row): PipelineStatus => $row->status,
+        $health->recent,
+    );
+
+    // Counters stay failed/stuck only. The row list is every retryable run,
+    // which now includes Cancelled as well as Failed and Stuck.
     expect($health->failed)->toBe(2)
         ->and($health->stuck)->toBe(1)
-        ->and($health->recent)->toHaveCount(3);
+        ->and($recentStatuses)->toHaveCount(4)
+        ->and($recentStatuses)->toContain(PipelineStatus::Cancelled)
+        ->and($recentStatuses)->not->toContain(PipelineStatus::Completed)
+        ->and($recentStatuses)->not->toContain(PipelineStatus::Running);
 });
 
 test('a healthy workspace skips the row query entirely', function (): void {

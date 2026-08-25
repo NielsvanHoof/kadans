@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight, Check } from 'lucide-react';
+import type { ReactNode } from 'react';
 import {
-    type DossierWorkflowStage,
     dossierStageCompletion,
     dossierStageHint,
     dossierStageLabel,
@@ -17,13 +17,21 @@ import {
 } from '@/routes/workspaces/dossiers';
 
 /**
- * Overview hub links into Build Form / Send Invite / Review.
- * Invite stays on this page (#dossier-invite); the others open dedicated routes.
+ * Top row of the dossier state band: Build Form → Send Invite → Review.
+ *
+ * Build Form and Review open dedicated routes; Send Invite selects the Access
+ * panel on this page, so it is a button rather than a link.
+ *
+ * Only the current stage carries its hint. Hints on every stage are what made
+ * this rail bulky enough to need its own card — and a hint on a finished stage
+ * tells the reader nothing they can act on.
  */
 export default function DossierWorkflowLinks({
     dossier,
+    onSelectInvite,
 }: {
     dossier: Dossier;
+    onSelectInvite: () => void;
 }) {
     const { t } = useTranslation();
     const currentWorkspace = useCurrentWorkspace();
@@ -34,69 +42,33 @@ export default function DossierWorkflowLinks({
         dossier: dossier.id,
     };
 
-    const hrefFor = (stage: DossierWorkflowStage): string => {
-        if (stage === 'prepare') {
-            return builderDossier(routeArgs).url;
-        }
-
-        if (stage === 'review') {
-            return reviewDossier(routeArgs).url;
-        }
-
-        return '#dossier-invite';
-    };
+    const currentStage =
+        STAGE_ORDER.find((stage) => completion[stage] === 'incomplete') ?? null;
 
     return (
         <nav aria-label={t('Dossier workflow progress')}>
-            <ol className="grid gap-3 md:grid-cols-3">
+            <ol className="grid sm:grid-cols-3">
                 {STAGE_ORDER.map((stage, index) => {
                     const done = completion[stage] === 'completed';
-                    // Review needs a form; invite section still explains the empty case.
+                    const current = stage === currentStage;
+                    // Review needs a form; the Waiting panel explains the empty case.
                     const disabled = stage === 'review' && !hasFormItems;
-                    const href = hrefFor(stage);
-                    const isAnchor = stage === 'invite';
-                    const className = cn(
-                        'flex min-w-0 flex-col gap-2 rounded-xl border p-4 text-left transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
-                        disabled
-                            ? 'cursor-not-allowed border-border/50 opacity-60'
-                            : 'border-border/70 hover:border-border hover:bg-muted/40',
-                        done && 'border-success-border/60 bg-success-muted/40',
-                    );
 
                     const body = (
-                        <>
-                            <div className="flex items-center gap-2">
-                                <span
-                                    className={cn(
-                                        'flex size-6 shrink-0 items-center justify-center rounded-full border text-xs',
-                                        done
-                                            ? 'border-success-border bg-success-muted text-success-foreground'
-                                            : 'border-border bg-background text-muted-foreground',
-                                    )}
-                                >
-                                    {done ? (
-                                        <Check
-                                            className="size-3.5"
-                                            aria-hidden="true"
-                                        />
-                                    ) : (
-                                        index + 1
-                                    )}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                                    {dossierStageLabel(stage, t)}
-                                </span>
-                                {!disabled && !isAnchor ? (
-                                    <ArrowRight
-                                        className="size-4 shrink-0 text-muted-foreground"
-                                        aria-hidden="true"
-                                    />
-                                ) : null}
-                            </div>
-                            <p className="text-xs text-pretty text-muted-foreground">
-                                {dossierStageHint(stage, t)}
-                            </p>
-                        </>
+                        <StageBody
+                            index={index}
+                            label={dossierStageLabel(stage, t)}
+                            done={done}
+                            current={current}
+                            showArrow={!disabled && stage !== 'invite'}
+                        />
+                    );
+
+                    const className = cn(
+                        'flex h-full min-w-0 items-center gap-2 border-t border-ledger-rule px-4 py-3 text-left transition-colors first:border-t-0 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none sm:border-t-0 sm:border-l sm:first:border-l-0',
+                        disabled
+                            ? 'cursor-not-allowed opacity-60'
+                            : 'hover:bg-muted/40',
                     );
 
                     return (
@@ -110,12 +82,25 @@ export default function DossierWorkflowLinks({
                                 >
                                     {body}
                                 </div>
-                            ) : isAnchor ? (
-                                <a href={href} className={className}>
+                            ) : stage === 'invite' ? (
+                                <button
+                                    type="button"
+                                    onClick={onSelectInvite}
+                                    className={cn(className, 'w-full')}
+                                    aria-current={current ? 'step' : undefined}
+                                >
                                     {body}
-                                </a>
+                                </button>
                             ) : (
-                                <Link href={href} className={className}>
+                                <Link
+                                    href={
+                                        stage === 'prepare'
+                                            ? builderDossier(routeArgs).url
+                                            : reviewDossier(routeArgs).url
+                                    }
+                                    className={className}
+                                    aria-current={current ? 'step' : undefined}
+                                >
                                     {body}
                                 </Link>
                             )}
@@ -123,6 +108,70 @@ export default function DossierWorkflowLinks({
                     );
                 })}
             </ol>
+
+            {/*
+             * One hint, for the stage you are on, on its own line. Inside the
+             * cells it made a single column taller than its siblings and the row
+             * stopped reading as a sequence.
+             */}
+            {currentStage !== null ? (
+                <p className="border-t border-ledger-rule px-4 py-2 text-xs text-pretty text-muted-foreground">
+                    {dossierStageHint(currentStage, t)}
+                </p>
+            ) : null}
         </nav>
+    );
+}
+
+function StageBody({
+    index,
+    label,
+    done,
+    current,
+    showArrow,
+}: {
+    index: number;
+    label: string;
+    done: boolean;
+    current: boolean;
+    showArrow: boolean;
+}): ReactNode {
+    return (
+        <>
+            <span
+                className={cn(
+                    'flex size-5 shrink-0 items-center justify-center rounded-full border font-data text-[0.6875rem] tabular-nums',
+                    done
+                        ? 'border-success-border bg-success-muted text-success-foreground'
+                        : current
+                          ? 'border-foreground/70 text-foreground'
+                          : 'border-border text-muted-foreground',
+                )}
+            >
+                {done ? (
+                    <Check className="size-3" aria-hidden="true" />
+                ) : (
+                    index + 1
+                )}
+            </span>
+            <span
+                className={cn(
+                    'min-w-0 truncate text-sm',
+                    current
+                        ? 'font-semibold'
+                        : done
+                          ? 'font-medium'
+                          : 'font-medium text-muted-foreground',
+                )}
+            >
+                {label}
+            </span>
+            {showArrow ? (
+                <ArrowRight
+                    className="size-3.5 shrink-0 text-muted-foreground/60"
+                    aria-hidden="true"
+                />
+            ) : null}
+        </>
     );
 }
