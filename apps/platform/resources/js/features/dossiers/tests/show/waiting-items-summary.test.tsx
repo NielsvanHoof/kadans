@@ -10,6 +10,10 @@ const useDossierCapabilities = vi.fn();
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
+vi.mock('@/hooks/use-current-workspace', () => ({
+    useCurrentWorkspace: () => ({ slug: 'acme', name: 'Acme' }),
+}));
+
 vi.mock('@/features/dossiers/permissions/dossier-permissions-context', () => ({
     useDossierCapabilities,
 }));

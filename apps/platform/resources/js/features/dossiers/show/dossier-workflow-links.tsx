@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { ArrowRight, Check } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import {
     dossierStageCompletion,
@@ -17,14 +17,14 @@ import {
 } from '@/routes/workspaces/dossiers';
 
 /**
- * Top row of the dossier state band: Build Form → Send Invite → Review.
+ * Compact Build Form → Send Invite → Review strip.
  *
  * Build Form and Review open dedicated routes; Send Invite selects the Access
  * panel on this page, so it is a button rather than a link.
  *
- * Only the current stage carries its hint. Hints on every stage are what made
- * this rail bulky enough to need its own card — and a hint on a finished stage
- * tells the reader nothing they can act on.
+ * Only the current stage carries its hint. Hints on every stage made this
+ * bulky enough to need its own card — and a hint on a finished stage tells
+ * the reader nothing they can act on.
  */
 export default function DossierWorkflowLinks({
     dossier,
@@ -46,8 +46,8 @@ export default function DossierWorkflowLinks({
         STAGE_ORDER.find((stage) => completion[stage] === 'incomplete') ?? null;
 
     return (
-        <nav aria-label={t('Dossier workflow progress')}>
-            <ol className="grid sm:grid-cols-3">
+        <nav aria-label={t('Dossier workflow progress')} className="min-w-0">
+            <ol className="flex min-w-0 flex-wrap items-center gap-0.5">
                 {STAGE_ORDER.map((stage, index) => {
                     const done = completion[stage] === 'completed';
                     const current = stage === currentStage;
@@ -60,19 +60,19 @@ export default function DossierWorkflowLinks({
                             label={dossierStageLabel(stage, t)}
                             done={done}
                             current={current}
-                            showArrow={!disabled && stage !== 'invite'}
                         />
                     );
 
                     const className = cn(
-                        'flex h-full min-w-0 items-center gap-2 border-t border-ledger-rule px-4 py-3 text-left transition-colors first:border-t-0 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none sm:border-t-0 sm:border-l sm:first:border-l-0',
+                        'flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-[color,background-color] focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
                         disabled
                             ? 'cursor-not-allowed opacity-60'
                             : 'hover:bg-muted/40',
+                        current && 'bg-muted/50 ring-1 ring-primary/40',
                     );
 
                     return (
-                        <li key={stage} className="min-w-0">
+                        <li key={stage} className="flex min-w-0 items-center">
                             {disabled ? (
                                 <div
                                     className={className}
@@ -86,7 +86,7 @@ export default function DossierWorkflowLinks({
                                 <button
                                     type="button"
                                     onClick={onSelectInvite}
-                                    className={cn(className, 'w-full')}
+                                    className={className}
                                     aria-current={current ? 'step' : undefined}
                                 >
                                     {body}
@@ -104,18 +104,19 @@ export default function DossierWorkflowLinks({
                                     {body}
                                 </Link>
                             )}
+                            {index < STAGE_ORDER.length - 1 ? (
+                                <ChevronRight
+                                    className="mx-0.5 size-3.5 shrink-0 text-muted-foreground/50"
+                                    aria-hidden="true"
+                                />
+                            ) : null}
                         </li>
                     );
                 })}
             </ol>
 
-            {/*
-             * One hint, for the stage you are on, on its own line. Inside the
-             * cells it made a single column taller than its siblings and the row
-             * stopped reading as a sequence.
-             */}
             {currentStage !== null ? (
-                <p className="border-t border-ledger-rule px-4 py-2 text-xs text-pretty text-muted-foreground">
+                <p className="mt-1.5 text-xs text-pretty text-muted-foreground">
                     {dossierStageHint(currentStage, t)}
                 </p>
             ) : null}
@@ -128,13 +129,11 @@ function StageBody({
     label,
     done,
     current,
-    showArrow,
 }: {
     index: number;
     label: string;
     done: boolean;
     current: boolean;
-    showArrow: boolean;
 }): ReactNode {
     return (
         <>
@@ -144,7 +143,7 @@ function StageBody({
                     done
                         ? 'border-success-border bg-success-muted text-success-foreground'
                         : current
-                          ? 'border-foreground/70 text-foreground'
+                          ? 'border-primary text-primary'
                           : 'border-border text-muted-foreground',
                 )}
             >
@@ -166,12 +165,6 @@ function StageBody({
             >
                 {label}
             </span>
-            {showArrow ? (
-                <ArrowRight
-                    className="size-3.5 shrink-0 text-muted-foreground/60"
-                    aria-hidden="true"
-                />
-            ) : null}
         </>
     );
 }

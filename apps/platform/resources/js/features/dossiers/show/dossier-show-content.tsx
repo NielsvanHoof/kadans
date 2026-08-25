@@ -6,12 +6,16 @@ import {
     useDossierCapabilities,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
 import DossierActionsMenu from '@/features/dossiers/show/dossier-actions-menu';
+import DossierContextRail, {
+    DossierContextRailBody,
+} from '@/features/dossiers/show/dossier-context-rail';
 import {
     type DossierPanel,
     isDossierPanel,
 } from '@/features/dossiers/show/dossier-panel';
 import DossierPanels from '@/features/dossiers/show/dossier-panels';
 import DossierStateBand from '@/features/dossiers/show/dossier-state-band';
+import DossierStatusSheet from '@/features/dossiers/show/dossier-status-sheet';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { Dossier } from '@/features/dossiers/types';
 import type { Firm } from '@/features/workspaces/types';
@@ -41,7 +45,7 @@ type PrimaryAction =
     | { kind: 'panel'; label: string; panel: DossierPanel };
 
 /**
- * Staff dossier overview hub — a state band over a tabbed workbench.
+ * Staff dossier overview — a compact stepper over a workbench and status rail.
  */
 export default function DossierShowContent({
     dossier,
@@ -188,14 +192,13 @@ function DossierShowBody({
     );
 
     return (
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                     {/*
                      * The reference, not a decorative eyebrow: it is how the firm
-                     * names a dossier, it appears on every other dossier surface,
-                     * and font-data carries slashed-zero precisely so 0 and O stay
-                     * apart in codes like this one.
+                     * names a dossier, and font-data carries slashed-zero so 0
+                     * and O stay apart in codes like this one.
                      */}
                     {dossier.reference ? (
                         <p className="mb-1 font-data text-xs tracking-[0.08em] text-muted-foreground uppercase">
@@ -231,6 +234,9 @@ function DossierShowBody({
                             </Button>
                         )
                     ) : null}
+                    <DossierStatusSheet>
+                        <DossierContextRailBody dossier={dossier} />
+                    </DossierStatusSheet>
                     <DossierActionsMenu
                         dossierId={dossier.id}
                         dossierTitle={dossier.title}
@@ -245,14 +251,22 @@ function DossierShowBody({
                 onSelectInvite={() => setPanel('access')}
             />
 
-            <DossierPanels
-                dossier={dossier}
-                panel={panel}
-                onSelectPanel={setPanel}
-                accessGrantToken={accessGrantToken}
-                accessGrantPortalUrl={accessGrantPortalUrl}
-                hasFormItems={hasFormItems}
-            />
+            <div className="grid min-w-0 gap-6 lg:grid-cols-12">
+                <div className="min-w-0 lg:col-span-8">
+                    <DossierPanels
+                        dossier={dossier}
+                        panel={panel}
+                        onSelectPanel={setPanel}
+                        accessGrantToken={accessGrantToken}
+                        accessGrantPortalUrl={accessGrantPortalUrl}
+                        hasFormItems={hasFormItems}
+                    />
+                </div>
+                <DossierContextRail
+                    dossier={dossier}
+                    className="hidden self-start lg:sticky lg:top-4 lg:col-span-4 lg:block"
+                />
+            </div>
         </div>
     );
 }

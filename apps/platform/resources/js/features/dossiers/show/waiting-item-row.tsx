@@ -1,21 +1,24 @@
 import AuditMark from '@/components/brand/audit-mark';
 import { Badge } from '@/components/ui/badge';
+import {
+    Item,
+    ItemContent,
+    ItemDescription,
+    ItemMedia,
+    ItemTitle,
+} from '@/components/ui/item';
 import { getQuestionnaireItemTypeIcon } from '@/features/document-requests/item-types/icons';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
+import { cn } from '@/lib/utils';
 
 /**
  * One line of the outstanding-items schedule.
  *
- * The row is ruled like working paper: a 2.5rem margin carrying the audit mark,
- * then the item itself. That inset is not arbitrary — it is where
- * `LedgerField` draws the coral margin rule, so the marks land in the margin
- * this brand's paper already has.
- *
- * The mark is `aria-hidden` by contract, so the row never states its status in
- * the margin alone: the group heading above it names the status in words for
- * every row underneath.
+ * The audit mark sits in ItemMedia so it lines up with the brand's paper
+ * margin. It is aria-hidden by contract: the group heading above names the
+ * status in words for every row underneath.
  */
 export default function WaitingItemRow({
     request,
@@ -32,36 +35,38 @@ export default function WaitingItemRow({
     const isOptional = request.configuration?.is_required === false;
 
     return (
-        <li className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start py-3 pr-4 even:bg-ledger-stripe">
-            <span className="flex h-5 items-center justify-center">
+        <Item
+            role="listitem"
+            variant="default"
+            size="sm"
+            className="rounded-none border-0 even:bg-ledger-stripe"
+        >
+            <ItemMedia>
                 <AuditMark variant={isRejected ? 'queried' : 'open'} />
-            </span>
+            </ItemMedia>
 
-            <div className="min-w-0">
-                <div className="flex min-w-0 items-center gap-2">
+            <ItemContent className="min-w-0">
+                <ItemTitle className="min-w-0 text-sm">
                     <Icon
                         className="size-3.5 shrink-0 text-muted-foreground"
                         aria-hidden
                     />
-                    <span className="min-w-0 truncate font-medium">
-                        {request.title}
-                    </span>
+                    <span className="min-w-0 truncate">{request.title}</span>
                     {isOptional && !notApplicable ? (
                         <Badge variant="secondary" className="shrink-0">
                             {t('Optional')}
                         </Badge>
                     ) : null}
-                </div>
+                </ItemTitle>
 
-                {/* What the client was actually told to send. */}
                 {request.instructions && !notApplicable ? (
-                    <p className="mt-1 line-clamp-2 text-xs text-pretty text-muted-foreground">
+                    <ItemDescription className="text-pretty">
                         {request.instructions}
-                    </p>
+                    </ItemDescription>
                 ) : null}
 
                 {notApplicable ? (
-                    <p className="mt-1 text-xs text-pretty text-muted-foreground">
+                    <ItemDescription className="text-pretty">
                         {request.is_visible
                             ? t(
                                   'Optional and unanswered — does not block progress.',
@@ -69,17 +74,20 @@ export default function WaitingItemRow({
                             : t(
                                   'Hidden by a visibility rule. Any past answer is kept for audit.',
                               )}
-                    </p>
+                    </ItemDescription>
                 ) : null}
 
                 {/*
                  * The firm's own note in the margin, and the one place coral
                  * appears in this panel. The reason is mandatory server-side, so
-                 * a returned row always has something to say here — and the
-                 * person chasing tomorrow is rarely the person who rejected it.
+                 * a returned row always has something to say here.
                  */}
                 {isRejected && !notApplicable && request.rejection_reason ? (
-                    <div className="mt-2 border-l-2 border-brand-border pl-3">
+                    <div
+                        className={cn(
+                            'mt-1.5 border-l-2 border-brand-border pl-3',
+                        )}
+                    >
                         <p className="text-xs text-pretty">
                             {request.rejection_reason}
                         </p>
@@ -88,16 +96,20 @@ export default function WaitingItemRow({
                                 {request.reviewed_by_name
                                     ? t('Returned by :name on :date', {
                                           name: request.reviewed_by_name,
-                                          date: formatDate(request.reviewed_at),
+                                          date: formatDate(
+                                              request.reviewed_at,
+                                          ),
                                       })
                                     : t('Returned on :date', {
-                                          date: formatDate(request.reviewed_at),
+                                          date: formatDate(
+                                              request.reviewed_at,
+                                          ),
                                       })}
                             </p>
                         ) : null}
                     </div>
                 ) : null}
-            </div>
-        </li>
+            </ItemContent>
+        </Item>
     );
 }
