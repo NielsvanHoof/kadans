@@ -248,7 +248,7 @@ describe('bookkeeping', function (): void {
 });
 
 describe('guards', function (): void {
-    it('refuses a run that is not failed or stuck and queues nothing', function (PipelineStatus $status): void {
+    it('refuses a run that is not failed, stuck, or cancelled and queues nothing', function (PipelineStatus $status): void {
         Queue::fake();
         $pipeline = failedPipelineFor(retryOcrDocument($this->tenant), PipelineType::OcrDocument, $status);
 
@@ -261,7 +261,6 @@ describe('guards', function (): void {
         'pending' => [PipelineStatus::Pending],
         'running' => [PipelineStatus::Running],
         'completed' => [PipelineStatus::Completed],
-        'cancelled' => [PipelineStatus::Cancelled],
     ]);
 
     it('refuses a run whose subject has been deleted', function (): void {
@@ -300,6 +299,23 @@ function failedPipelineFor(
 
     return $pipeline->fresh();
 }
+
+test('a cancelled run is retryable too', function (): void {
+    Queue::fake();
+    $pipeline = failedPipelineFor(
+        retryOcrDocument($this->tenant),
+        PipelineType::OcrDocument,
+        PipelineStatus::Cancelled,
+    );
+
+    $this->retry->handle($pipeline, $this->owner);
+
+    expect($pipeline->fresh())
+        ->status->toBe(PipelineStatus::Pending)
+        ->attempt_number->toBe(2);
+
+    Queue::assertPushed(ProcessUploadedDocumentJob::class);
+});
 
 function retrySubjectFor(PipelineType $type, Tenant $tenant): Model
 {

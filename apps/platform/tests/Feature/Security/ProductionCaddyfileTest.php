@@ -7,16 +7,16 @@ declare(strict_types=1);
  * on the way out. Referrer-Policy must stay application-owned so portal
  * HardenClientPortalResponse can keep `no-referrer`.
  *
- * Staging is checked alongside production: it serves the same portal to the
- * same kind of client, so the edge must not reclaim the header there either.
+ * Deployed Caddyfiles went away with the container bake (TASK-43.5). The
+ * remaining Sail Caddyfile is still an Octane edge, so it must not reclaim
+ * the header either.
  */
-test('deployed Caddyfiles do not replace the application Referrer-Policy', function (string $environment): void {
-    $caddyfile = (string) file_get_contents(base_path("docker/{$environment}/Caddyfile"));
+test('the Sail Caddyfile does not replace the application Referrer-Policy', function (): void {
+    $caddyfile = (string) file_get_contents(base_path('docker/8.5/Caddyfile'));
 
     // Match a directive that sets Referrer-Policy (bare or deferred ?), with
     // or without quotes — any of these would reclaim ownership from PHP.
     expect($caddyfile)
-        ->not->toMatch('/(?m)^\s*\??Referrer-Policy\b/')
-        ->and($caddyfile)->toContain('X-Content-Type-Options nosniff')
-        ->and($caddyfile)->toContain('-Server');
-})->with(['production', 'staging']);
+        ->toContain('frankenphp')
+        ->not->toMatch('/(?m)^\s*\??Referrer-Policy\b/');
+});

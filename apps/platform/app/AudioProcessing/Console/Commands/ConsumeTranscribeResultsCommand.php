@@ -27,7 +27,6 @@ use function Laravel\Prompts\warning;
 
 /**
  * Long-polls the Amazon Transcribe results SQS queue (EventBridge payloads).
- * Not a Laravel job queue — messages are raw EventBridge JSON.
  */
 #[Signature('transcribe:consume {--once : Process one SQS batch then exit}')]
 #[Description('Consume Amazon Transcribe EventBridge/SQS completion messages and store transcripts')]

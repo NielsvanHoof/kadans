@@ -6,6 +6,7 @@ import Heading from '@/components/primitives/heading';
 import { LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
+import { ocrReviewBannerMessage } from '@/features/document-requests/staff/review/ocr-processing-copy';
 import ReviewItemsPanel from '@/features/document-requests/staff/review/review-items-panel';
 import type {
     DocumentRequest,
@@ -87,6 +88,15 @@ export default function ReviewDossier({
         ),
     );
 
+    const firstInFlightDocument =
+        documentRequests
+            .flatMap((request) => request.uploaded_documents)
+            .find(
+                (uploadedDocument) =>
+                    uploadedDocument.processing_status === 'pending' ||
+                    uploadedDocument.processing_status === 'processing',
+            ) ?? null;
+
     useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocument }>({
         enabled: hasInFlightProcessing,
         match: (event) =>
@@ -156,7 +166,11 @@ export default function ReviewDossier({
                             <div className="min-w-0 flex-1 space-y-2">
                                 <p className="text-sm text-muted-foreground">
                                     {t(
-                                        'Document analysis is still running. Results will update automatically.',
+                                        firstInFlightDocument === null
+                                            ? 'Document analysis is still running. Results will update automatically.'
+                                            : ocrReviewBannerMessage(
+                                                  firstInFlightDocument,
+                                              ),
                                     )}
                                 </p>
                                 <Skeleton className="h-3 w-full max-w-md" />

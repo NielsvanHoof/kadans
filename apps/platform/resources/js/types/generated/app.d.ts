@@ -304,6 +304,7 @@ declare namespace App {
                 readonly next_reminder_at: string | null;
                 readonly last_client_message_sent_at: string | null;
                 readonly last_client_opened_at: string | null;
+                readonly days_remaining: number | null;
                 readonly has_outstanding_client_items: boolean;
                 readonly ready_to_complete: boolean;
                 readonly review_summary: App.Dossiers.Data.DossierReviewSummaryData;
@@ -312,6 +313,8 @@ declare namespace App {
                 readonly access_grants: App.Dossiers.Data.DossierAccessGrantData[];
                 readonly exports: App.Dossiers.Data.DossierExportData[];
                 readonly audio_recordings: App.Dossiers.Data.StaffAudioRecordingData[];
+                readonly exports_count: number;
+                readonly audio_recordings_count: number;
             };
             export type StaffAudioRecordingData = {
                 readonly id: number;

@@ -18,7 +18,7 @@ Two deliberate relaxations, do not "fix" them: `style-src` allows `'unsafe-inlin
 
 `SECURITY_CSP_REPORT_ONLY=true` only switches to `Content-Security-Policy-Report-Only` when `SECURITY_CSP_REPORT_URI` is also set. Report-Only without a sink is ignored by browsers (console warning, no enforcement); `headerName()` falls back to the enforcing header in that case.
 
-The application owns `Referrer-Policy` exclusively. The production Caddyfile must not set it — Caddy's bare `header` directive replaces the field and would downgrade portal responses. Guarded by `tests/Feature/Security/ProductionCaddyfileTest.php`.
+The application owns `Referrer-Policy` exclusively. `docker/8.5/Caddyfile` (the only remaining Caddyfile after deployed images were removed) must not set it — Caddy's bare `header` directive replaces the field and would downgrade portal responses. Guarded by `tests/Feature/Security/ProductionCaddyfileTest.php`.
 
 ## CSP report-only needs a report_uri
 SECURITY_CSP_REPORT_ONLY only switches to Content-Security-Policy-Report-Only when SECURITY_CSP_REPORT_URI is also set. Report-Only without a sink is ignored by browsers (console warning, no enforcement). ContentSecurityPolicy::headerName() falls back to the enforcing header in that case — do not "fix" that by sending bare Report-Only.

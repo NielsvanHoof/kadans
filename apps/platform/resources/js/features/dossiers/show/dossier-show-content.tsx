@@ -1,22 +1,23 @@
 import { ArrowRight, Mail, Plus } from 'lucide-react';
 import Heading from '@/components/primitives/heading';
-import { buttonVariants, LinkButton } from '@/components/ui/button';
-import DossierFollowUpCard from '@/features/dossiers/follow-up/dossier-follow-up-card';
+import { Button, LinkButton } from '@/components/ui/button';
 import {
     DossierPermissionsProvider,
     useDossierCapabilities,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
 import DossierActionsMenu from '@/features/dossiers/show/dossier-actions-menu';
-import DossierShowDeferredSections from '@/features/dossiers/show/dossier-show-deferred-sections';
-import DossierWorkflowLinks from '@/features/dossiers/show/dossier-workflow-links';
-import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
+import {
+    type DossierPanel,
+    isDossierPanel,
+} from '@/features/dossiers/show/dossier-panel';
+import DossierPanels from '@/features/dossiers/show/dossier-panels';
+import DossierStateBand from '@/features/dossiers/show/dossier-state-band';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { Dossier } from '@/features/dossiers/types';
-import ClientAccessCard from '@/features/portal/client-access-card';
-import PortalLinkBanner from '@/features/portal/portal-link-banner';
 import type { Firm } from '@/features/workspaces/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+import { useUrlTab } from '@/hooks/use-url-tab';
 import {
     builder as builderDossier,
     review as reviewDossier,
@@ -37,10 +38,10 @@ type DossierShowContentProps = {
 
 type PrimaryAction =
     | { kind: 'link'; label: string; href: string }
-    | { kind: 'anchor'; label: string; href: string };
+    | { kind: 'panel'; label: string; panel: DossierPanel };
 
 /**
- * Staff dossier overview hub — follow-up, invite, and links out to builder/review.
+ * Staff dossier overview hub — a state band over a tabbed workbench.
  */
 export default function DossierShowContent({
     dossier,
@@ -115,13 +116,36 @@ function resolvePrimaryAction(
 
     if (!hasValidInvite) {
         return {
-            kind: 'anchor',
+            kind: 'panel',
             label: t('Invite client'),
-            href: '#dossier-invite',
+            panel: 'access',
         };
     }
 
     return null;
+}
+
+/**
+ * Which panel opens when the URL does not name one.
+ *
+ * A freshly created portal link is shown once and cannot be recovered, so the
+ * redirect that carries it must land on the panel that displays it. A completed
+ * dossier has nothing left to chase — the archive is the only useful action.
+ */
+function defaultPanel(
+    dossier: Dossier,
+    accessGrantPortalUrl: string | null,
+    canDownload: boolean,
+): DossierPanel {
+    if (accessGrantPortalUrl !== null) {
+        return 'access';
+    }
+
+    if (dossier.status === 'completed' && canDownload) {
+        return 'exports';
+    }
+
+    return 'waiting';
 }
 
 function DossierShowBody({
@@ -136,16 +160,19 @@ function DossierShowBody({
     hasFormItems: boolean;
 }) {
     const { t } = useTranslation();
-    const {
-        canManage,
-        canReview,
-        canDownload,
-        canEditDetails,
-        canCreateInvite,
-        canUploadAudio,
-        canDownloadAudio,
-    } = useDossierCapabilities();
+    const { canManage, canReview, canDownload, canEditDetails } =
+        useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
+
+    // Panel state lives here, above every panel body, and is seeded from the URL
+    // exactly once. A rejected audio upload redirects back to a URL with no
+    // ?tab=, and re-deriving the panel from that URL would unmount the upload
+    // form before its inline error could paint (TASK-42).
+    const [panel, setPanel] = useUrlTab<DossierPanel>(
+        'tab',
+        isDossierPanel,
+        defaultPanel(dossier, accessGrantPortalUrl, canDownload),
+    );
 
     const routeArgs = {
         tenant: currentWorkspace,
@@ -163,13 +190,26 @@ function DossierShowBody({
     return (
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
-                <Heading
-                    level={1}
-                    className="mb-0"
-                    title={dossier.title}
-                    description={`${dossier.client.name} · ${dossier.client.email}`}
-                    badge={<DossierStatusBadge status={dossier.status} />}
-                />
+                <div className="min-w-0">
+                    {/*
+                     * The reference, not a decorative eyebrow: it is how the firm
+                     * names a dossier, it appears on every other dossier surface,
+                     * and font-data carries slashed-zero precisely so 0 and O stay
+                     * apart in codes like this one.
+                     */}
+                    {dossier.reference ? (
+                        <p className="mb-1 font-data text-xs tracking-[0.08em] text-muted-foreground uppercase">
+                            {dossier.reference}
+                        </p>
+                    ) : null}
+                    <Heading
+                        level={1}
+                        className="mb-0"
+                        title={dossier.title}
+                        description={`${dossier.client.name} · ${dossier.client.email}`}
+                        badge={<DossierStatusBadge status={dossier.status} />}
+                    />
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {primaryAction ? (
                         primaryAction.kind === 'link' ? (
@@ -182,15 +222,13 @@ function DossierShowBody({
                                 {primaryAction.label}
                             </LinkButton>
                         ) : (
-                            // Plain anchor: this is an in-page `#…` jump, and
-                            // RouterProvider would hand it to Inertia.
-                            <a
-                                className={buttonVariants()}
-                                href={primaryAction.href}
+                            <Button
+                                type="button"
+                                onClick={() => setPanel(primaryAction.panel)}
                             >
                                 <Mail aria-hidden />
                                 {primaryAction.label}
-                            </a>
+                            </Button>
                         )
                     ) : null}
                     <DossierActionsMenu
@@ -202,55 +240,19 @@ function DossierShowBody({
                 </div>
             </div>
 
-            <DossierFollowUpCard dossier={dossier} />
-
-            {accessGrantPortalUrl ? (
-                <PortalLinkBanner
-                    portalUrl={accessGrantPortalUrl}
-                    token={accessGrantToken}
-                />
-            ) : null}
-
-            <DossierWorkflowLinks dossier={dossier} />
-
-            <DossierShowDeferredSections
+            <DossierStateBand
                 dossier={dossier}
-                canDownload={canDownload}
-                canUploadAudio={canUploadAudio}
-                canDownloadAudio={canDownloadAudio}
+                onSelectInvite={() => setPanel('access')}
             />
 
-            <section
-                id="dossier-invite"
-                className="grid scroll-mt-6 gap-6 lg:grid-cols-[1fr_20rem]"
-                aria-labelledby="dossier-invite-heading"
-            >
-                <div className="space-y-3">
-                    <h2
-                        id="dossier-invite-heading"
-                        className="text-base font-semibold tracking-tight"
-                    >
-                        {t('Send Invite')}
-                    </h2>
-                    {!hasFormItems ? (
-                        <p className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                            {t(
-                                'Add at least one form field before inviting the client.',
-                            )}
-                        </p>
-                    ) : null}
-                    <ClientAccessCard
-                        dossierId={dossier.id}
-                        clientName={dossier.client.name}
-                        clientEmail={dossier.client.email}
-                        accessGrants={dossier.access_grants}
-                        canCreate={canCreateInvite}
-                    />
-                </div>
-                <WaitingItemsSummary
-                    documentRequests={dossier.document_requests}
-                />
-            </section>
+            <DossierPanels
+                dossier={dossier}
+                panel={panel}
+                onSelectPanel={setPanel}
+                accessGrantToken={accessGrantToken}
+                accessGrantPortalUrl={accessGrantPortalUrl}
+                hasFormItems={hasFormItems}
+            />
         </div>
     );
 }

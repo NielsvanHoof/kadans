@@ -9,6 +9,7 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\DossierExport;
 use App\Tenancy\Enums\Role;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -353,4 +354,84 @@ test('dossier overview with multiple audio recordings resolves can_delete withou
                 ->has('audio_recordings', 2)
                 ->where('audio_recordings.0.can_delete', true)
                 ->where('audio_recordings.1.can_delete', true)));
+});
+
+test('dossier overview exposes synchronous export and recording counts for the tab strip', function (): void {
+    [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+    ] = createDossierShowContext(DossierStatus::InReview);
+
+    AudioRecording::factory()->count(2)->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
+    DossierExport::factory()->count(3)->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
+    // The rows themselves stay deferred; only the totals are needed up front so
+    // the workbench tab strip cannot change shape after first paint.
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/show')
+            ->where('dossier.audio_recordings_count', 2)
+            ->where('dossier.exports_count', 3)
+            ->where('dossier.audio_recordings', [])
+            ->where('dossier.exports', [])
+            ->missing('audio_recordings')
+            ->missing('exports'));
+});
+
+test('dossier overview counts are zero when nothing has been exported or recorded', function (): void {
+    [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+    ] = createDossierShowContext(DossierStatus::AwaitingClient);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/show')
+            ->where('dossier.audio_recordings_count', 0)
+            ->where('dossier.exports_count', 0));
+});
+
+test('dossier overview signs the days remaining on the due date', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    // Signed on the server so the browser never redoes calendar-day maths
+    // across timezones — same contract as the dashboard agenda rows.
+    $cases = [
+        'future' => [now()->addDays(12)->toDateString(), 12],
+        'today' => [today()->toDateString(), 0],
+        'past' => [now()->subDays(9)->toDateString(), -9],
+        'none' => [null, null],
+    ];
+
+    foreach ($cases as $label => [$dueDate, $expected]) {
+        $dossier = Dossier::factory()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'title' => 'Jaarrekening '.$label,
+            'status' => DossierStatus::AwaitingClient,
+            'due_date' => $dueDate,
+        ]);
+
+        $this->actingAs($owner)
+            ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page): Assert => $page
+                ->component('dossiers/show')
+                ->where('dossier.days_remaining', $expected));
+    }
 });

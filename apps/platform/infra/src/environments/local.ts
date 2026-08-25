@@ -30,5 +30,11 @@ export const localSettings: EnvironmentSettings = {
   databaseEnabled: true,
   databasePubliclyAccessible: true,
   databaseIngressCidrs: LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS,
-  uploadAllowedOrigins: ["https://*.laravel.cloud"],
+  // Sail local runs with `APP_URL=http://localhost` in `.env.example`, so
+  // real AWS presigned-browser PUTs need an explicit non-HTTPS origin match.
+  uploadAllowedOrigins: [
+    "https://*.laravel.cloud",
+    "http://localhost",
+    "http://127.0.0.1",
+  ],
 };

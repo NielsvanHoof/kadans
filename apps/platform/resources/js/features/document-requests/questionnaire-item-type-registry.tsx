@@ -1,15 +1,6 @@
-import {
-    AlignLeft,
-    Calendar,
-    CheckSquare,
-    CircleDot,
-    FileUp,
-    Hash,
-    ListChecks,
-    type LucideIcon,
-    Type,
-} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
+import { getQuestionnaireItemTypeIcon } from '@/features/document-requests/item-types/icons';
 import {
     BuilderBooleanPreview,
     BuilderChoicePreview,
@@ -73,49 +64,49 @@ export type QuestionnaireItemTypeStaffRegistryEntry = {
 
 const questionnaireItemTypeStaffRegistry = {
     file: {
-        icon: FileUp,
+        icon: getQuestionnaireItemTypeIcon('file'),
         BuilderPreview: BuilderFilePreview,
         StaffContent: StaffFileRequestContent,
         StaffAnswerForm: null,
     },
     text: {
-        icon: Type,
+        icon: getQuestionnaireItemTypeIcon('text'),
         BuilderPreview: BuilderTextPreview,
         StaffContent: StaffTextRequestContent,
         StaffAnswerForm: StaffTextAnswerForm,
     },
     textarea: {
-        icon: AlignLeft,
+        icon: getQuestionnaireItemTypeIcon('textarea'),
         BuilderPreview: BuilderTextareaPreview,
         StaffContent: StaffTextRequestContent,
         StaffAnswerForm: StaffTextAnswerForm,
     },
     date: {
-        icon: Calendar,
+        icon: getQuestionnaireItemTypeIcon('date'),
         BuilderPreview: BuilderDatePreview,
         StaffContent: StaffTextRequestContent,
         StaffAnswerForm: StaffTextAnswerForm,
     },
     number: {
-        icon: Hash,
+        icon: getQuestionnaireItemTypeIcon('number'),
         BuilderPreview: BuilderNumberPreview,
         StaffContent: StaffTextRequestContent,
         StaffAnswerForm: StaffTextAnswerForm,
     },
     boolean: {
-        icon: CheckSquare,
+        icon: getQuestionnaireItemTypeIcon('boolean'),
         BuilderPreview: BuilderBooleanPreview,
         StaffContent: StaffBooleanRequestContent,
         StaffAnswerForm: StaffBooleanAnswerForm,
     },
     choice: {
-        icon: CircleDot,
+        icon: getQuestionnaireItemTypeIcon('choice'),
         BuilderPreview: BuilderChoicePreview,
         StaffContent: StaffChoiceRequestContent,
         StaffAnswerForm: StaffChoiceAnswerForm,
     },
     multi_select: {
-        icon: ListChecks,
+        icon: getQuestionnaireItemTypeIcon('multi_select'),
         BuilderPreview: BuilderMultiSelectPreview,
         StaffContent: StaffMultiSelectRequestContent,
         StaffAnswerForm: StaffMultiSelectAnswerForm,

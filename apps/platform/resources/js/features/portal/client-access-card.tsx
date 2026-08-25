@@ -3,13 +3,6 @@ import { useState } from 'react';
 import ClientAccessGrantController from '@/actions/App/ClientPortal/Http/Controllers/ClientAccessGrantController';
 import EmptyState from '@/components/primitives/empty-state';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
@@ -29,16 +22,15 @@ import { inlineActionOptions } from '@/lib/inline-action-options';
 
 /**
  * Lists access grants and creates a new 7-day portal link (optionally emailed).
+ * The dossier workbench names and describes the panel; this renders the body.
  */
 export default function ClientAccessCard({
     dossierId,
-    clientName,
     clientEmail,
     accessGrants,
     canCreate,
 }: {
     dossierId: number;
-    clientName: string;
     clientEmail: string;
     accessGrants: AccessGrant[];
     canCreate: boolean;
@@ -49,116 +41,101 @@ export default function ClientAccessCard({
     const [sendInvite, setSendInvite] = useState(true);
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('Client access')}</CardTitle>
-                <CardDescription>
-                    {t(
-                        'Email a magic link so :name can upload documents without an account.',
-                        { name: clientName },
-                    )}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {accessGrants.length === 0 ? (
-                    <EmptyState title={t('No access grants yet.')} />
-                ) : (
-                    <div className="divide-y rounded-md border">
-                        {accessGrants.map((grant) => (
-                            <div
-                                key={grant.id}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                            >
-                                <div className="text-sm">
-                                    <p>
-                                        {t('Expires :datetime', {
+        <div className="space-y-4">
+            {accessGrants.length === 0 ? (
+                <EmptyState title={t('No access grants yet.')} />
+            ) : (
+                <div className="divide-y rounded-md border">
+                    {accessGrants.map((grant) => (
+                        <div
+                            key={grant.id}
+                            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                        >
+                            <div className="text-sm">
+                                <p>
+                                    {t('Expires :datetime', {
+                                        datetime: formatDateTime(
+                                            grant.expires_at,
+                                        ),
+                                    })}
+                                </p>
+                                <p className="text-muted-foreground">
+                                    {grant.is_valid
+                                        ? t('Active')
+                                        : grant.revoked_at
+                                          ? t('Revoked')
+                                          : t('Expired')}
+                                    {grant.last_used_at &&
+                                        ` · ${t('Last used :datetime', {
                                             datetime: formatDateTime(
-                                                grant.expires_at,
+                                                grant.last_used_at,
                                             ),
-                                        })}
-                                    </p>
-                                    <p className="text-muted-foreground">
-                                        {grant.is_valid
-                                            ? t('Active')
-                                            : grant.revoked_at
-                                              ? t('Revoked')
-                                              : t('Expired')}
-                                        {grant.last_used_at &&
-                                            ` · ${t('Last used :datetime', {
-                                                datetime: formatDateTime(
-                                                    grant.last_used_at,
-                                                ),
-                                            })}`}
-                                    </p>
-                                </div>
-                                {grant.is_valid && (
-                                    <RevokeAccessGrantButton
-                                        grantId={grant.id}
-                                    />
-                                )}
+                                        })}`}
+                                </p>
                             </div>
-                        ))}
-                    </div>
-                )}
+                            {grant.is_valid && (
+                                <RevokeAccessGrantButton grantId={grant.id} />
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
 
-                {canCreate && (
-                    <Form
-                        {...ClientAccessGrantController.store.form({
-                            tenant: currentWorkspace,
-                            dossier: dossierId,
-                        })}
-                    >
-                        {({ processing }) => (
-                            <>
-                                <input
-                                    type="hidden"
-                                    name="expires_in_days"
-                                    value="7"
-                                />
-                                {/* Checkbox posts "1" when checked; omitted when unchecked. */}
-                                <input
-                                    type="hidden"
-                                    name="send_invite"
-                                    value={sendInvite ? '1' : '0'}
-                                />
-                                <FieldGroup className="gap-3">
-                                    <Field
-                                        orientation="horizontal"
-                                        className="gap-2"
+            {canCreate && (
+                <Form
+                    {...ClientAccessGrantController.store.form({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                    })}
+                >
+                    {({ processing }) => (
+                        <>
+                            <input
+                                type="hidden"
+                                name="expires_in_days"
+                                value="7"
+                            />
+                            {/* Checkbox posts "1" when checked; omitted when unchecked. */}
+                            <input
+                                type="hidden"
+                                name="send_invite"
+                                value={sendInvite ? '1' : '0'}
+                            />
+                            <FieldGroup className="gap-3">
+                                <Field
+                                    orientation="horizontal"
+                                    className="gap-2"
+                                >
+                                    <Checkbox
+                                        id="send_invite"
+                                        isSelected={sendInvite}
+                                        onChange={(checked) =>
+                                            setSendInvite(checked === true)
+                                        }
+                                    />
+                                    <FieldLabel htmlFor="send_invite">
+                                        {t('Email invite to :email', {
+                                            email: clientEmail,
+                                        })}
+                                    </FieldLabel>
+                                </Field>
+                                <Field orientation="horizontal">
+                                    <Button
+                                        type="submit"
+                                        isDisabled={processing}
+                                        variant="secondary"
                                     >
-                                        <Checkbox
-                                            id="send_invite"
-                                            isSelected={sendInvite}
-                                            onChange={(checked) =>
-                                                setSendInvite(checked === true)
-                                            }
-                                        />
-                                        <FieldLabel htmlFor="send_invite">
-                                            {t('Email invite to :email', {
-                                                email: clientEmail,
-                                            })}
-                                        </FieldLabel>
-                                    </Field>
-                                    <Field orientation="horizontal">
-                                        <Button
-                                            type="submit"
-                                            isDisabled={processing}
-                                            variant="secondary"
-                                        >
-                                            {sendInvite
-                                                ? t(
-                                                      'Create link & email client',
-                                                  )
-                                                : t('Create 7-day portal link')}
-                                        </Button>
-                                    </Field>
-                                </FieldGroup>
-                            </>
-                        )}
-                    </Form>
-                )}
-            </CardContent>
-        </Card>
+                                        {sendInvite
+                                            ? t('Create link & email client')
+                                            : t('Create 7-day portal link')}
+                                    </Button>
+                                </Field>
+                            </FieldGroup>
+                        </>
+                    )}
+                </Form>
+            )}
+        </div>
     );
 }
 
