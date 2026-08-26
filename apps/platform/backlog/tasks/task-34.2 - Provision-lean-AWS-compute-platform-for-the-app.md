@@ -1,11 +1,11 @@
 ---
 id: TASK-34.2
 title: Provision lean AWS compute platform for the app
-status: In Progress
+status: Done
 assignee:
   - '@NielsvanHoof'
 created_date: '2026-08-11 16:54'
-updated_date: '2026-08-18 12:02'
+updated_date: '2026-08-25 21:14'
 labels:
   - infra
   - aws
@@ -83,4 +83,18 @@ Closed the image gap that made the services unrunnable.
 - `deploy.yml` header now states it is infrastructure-only and can never move running code forward.
 
 **Acceptance criteria evidence.** AC#6 checked: infra/README.md documents the lean stack, the hostname layout and the release path. AC#1-#4 are declared by the program and asserted by 36 mock-runtime tests (stack.production / stack.staging / stack.dns / environment), but "provisioned" means deployed and nothing has been applied — local AWS credentials are invalid (InvalidClientTokenId) and this pass was scoped to author + tests. AC#5 needs a live load balancer. Closing #1-#5 requires one `pulumi up` plus a `release.yml` run.
+
+Closed as superseded, not delivered (2026-08-25 reconciliation).
+
+The ECS/ALB/Fargate/Valkey/ECR/Secrets Manager compute plane described here was authored in Pulumi and covered by tests, but never applied — decision-8 said so itself: 'This is a decision about the code, not about a running system. Nothing has been applied.' TASK-43 then handed compute to Laravel Cloud and TASK-43.3 deleted these modules outright rather than leaving them dormant. Verified: no aws.ecs/lb/cloudfront/elasticache/ecr/secretsmanager resource remains anywhere in infra/src outside dead mock branches in testing/harness.ts.
+
+AC#6 (infra docs describe the lean stack) was the only criterion ever met, and the docs it refers to have since been rewritten for the data plane. The remaining five describe resources that no longer exist and are not achievable as written.
+
+Recorded as decision-9 (supersedes decision-8). This task is Done in the sense of closed-and-answered, not shipped — the need it existed to serve is met by Laravel Cloud.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Superseded by TASK-43 / decision-9, not delivered. The Pulumi compute plane was authored but never deployed; Laravel Cloud runs the application and TASK-43.3 deleted these modules. Verified no ECS/ALB/CloudFront/ElastiCache/ECR/Secrets Manager resource remains in infra/src.
+<!-- SECTION:FINAL_SUMMARY:END -->

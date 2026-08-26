@@ -5,9 +5,8 @@ status: To Do
 assignee:
   - cursor-agent
 created_date: '2026-08-11 09:38'
-updated_date: '2026-08-11 10:00'
+updated_date: '2026-08-25 21:16'
 labels: []
-milestone: m-0
 dependencies:
   - TASK-28
 references:
@@ -91,6 +90,12 @@ Verify: ./bin/psalm-taint clean; 11 related feature tests passed.
 User asked to move from 7.0.0-beta19 to Psalm master (7.x-dev) now that sebastian/diff ^9 is merged; attempting to collapse tools/psalm into the root Composer lock.
 
 User deferred: removed all Psalm tooling from the tree. Kept putFile() upload fixes. Restored No PHP SAST open gap in docs/security.md. TASK returned to To Do for a later attempt.
+
+Moved out of the v1.0 milestone (2026-08-25 reconciliation).
+
+This is blocked on something outside the project: Psalm beta19 conflicts with PHPUnit 13's sebastian/diff ^9, and dev-master (which allows ^9) crashes on PHP 8.5. CodeQL is unavailable on a private repo without Advanced Security. Neither is a decision we can take — both are waiting on upstream releases.
+
+Holding m-0 open on a dependency nobody here controls turns the milestone into a permanent 'not yet' rather than a statement about the product. The gap itself is not being dropped: docs/security.md carries it under Remaining tracked work, alongside the container-image-scanning gap that TASK-43.5 opened. Re-milestone it when a tagged Psalm release is installable or CodeQL becomes available.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

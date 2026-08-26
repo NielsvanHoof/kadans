@@ -2,9 +2,11 @@
 # Pull OCR / Transcribe stack outputs from Pulumi into env/profiles/aws.env,
 # then apply that profile onto apps/platform/.env.
 #
-# Local development only. A process on a laptop is not something AWS can hand a
-# role to, so it uses a scoped IAM user instead. The deployed application uses the
-# ECS task role (infra/src/application.ts) and carries no keys at all.
+# A process on a laptop is not something AWS can hand a role to, so it uses a scoped
+# IAM user instead. Neither is a Laravel Cloud container: the deployed application
+# authenticates with the same long-lived key this script syncs (decision-10). Rotating
+# it therefore means updating BOTH copies — see infra/README.md, "Rotating the
+# application access key".
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

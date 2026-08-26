@@ -227,6 +227,47 @@ They diverge exactly where it matters — a presigned URL forwarded to someone e
 or credentials used outside the application, appear in CloudTrail and nowhere
 else.
 
+## AI and inference
+
+Three features send workspace data to a model, and one of them sends document
+content. This section exists because `docs/security.md` documented the KMS key and
+the retention schedule in detail and said nothing about data leaving for inference.
+
+| Feature | What is sent | Config key |
+|---|---|---|
+| Document overview | OCR-extracted **field labels and values** — for a payslip, employer, employee name and pay figures; for an ID card, name, document number, date of birth | `ai.agents.document_overview` |
+| Checklist drafting | A free-text description a staff member typed, which may contain client specifics | `ai.agents.checklist_draft` |
+| Reminder drafting | Client name, dossier title, due date, titles of outstanding items | `ai.agents.dossier_reminder` |
+
+**All three run on AWS Bedrock in-region**, not a separate vendor. The region falls
+through `AWS_BEDROCK_REGION` → `AWS_DEFAULT_REGION` → `eu-west-1`, and the document
+overview agent pins `eu.anthropic.claude-sonnet-4-20250514-v1:0` — the `eu.` prefix
+is a cross-region inference profile that keeps inference inside EU regions.
+Authentication is the same IAM access key as S3, Textract and Transcribe
+(decision-10); `infra/src/shared/policies.ts` already grants Bedrock. So the
+sub-processor here is AWS, which the DPA already names — not a new one.
+
+Two details worth keeping:
+
+- **Tables are minimised, fields are not.** `AgentDocumentOverviewNormalizer::buildContext()`
+  sends tables as shape only (`headers=N rows=N`) but every field as `label: value`.
+  That asymmetry is deliberate — the agent classifies the document, and a table's
+  contents do not help it — but it means the field values of a client's payslip do
+  leave the process. The normalizer logs `context_length` and never the prompt body,
+  for the same reason OCR logs `id` + `tenant_id` only (see *Audit and retention*).
+- **The provider is pinned at boot.** `ai.default` is only a fallback for an agent
+  whose own `provider` slot is blank. Every agent names one, so it is unreachable —
+  which is exactly what made it dangerous: blanking one `AI_*_PROVIDER` env var would
+  have rerouted client document fields to whatever the default named, silently, in
+  production. `ProductionConfigurationValidator` now resolves each agent the same way
+  `ResolvesConfiguredModel` does and refuses to boot on anything outside
+  `APPROVED_AI_PROVIDERS`. The fallback itself is `bedrock`, so the failure mode is
+  degraded-to-correct rather than degraded-to-elsewhere. decision-11.
+
+**Not covered here:** transcription and OCR do not go through this path at all. They
+are AWS Transcribe and Textract, called directly as services, guarded by
+`transcription.driver` and `ocr.driver` in the production configuration guard.
+
 ## Response hardening
 
 `App\Shared\Http\Middleware\AddSecurityHeaders` runs on every web route and sets:
@@ -437,25 +478,30 @@ queue not Redis, Redis not on TLS, sessions not Redis/encrypted/secure/domain-sc
 filesystem not S3 (with throw + report on), broadcasting not Reverb, OCR driver not
 Textract, no delivering mailer, either Sentry DSN empty (the PHP one and the browser
 one — a React render error produces no PHP exception and no log line, so unreported
-its only symptom is a user saying the screen went blank), or trusted proxies unset /
-set to `REMOTE_ADDR` / `*` (must be LB/VPC CIDRs or `PRIVATE_SUBNETS`).
-Misconfiguration cannot reach traffic.
+its only symptom is a user saying the screen went blank), trusted proxies unset /
+set to `REMOTE_ADDR` / `*` (must be LB/VPC CIDRs or `PRIVATE_SUBNETS`), or any AI
+agent resolving to an inference provider outside `APPROVED_AI_PROVIDERS` (see
+[AI and inference](#ai-and-inference)). Misconfiguration cannot reach traffic.
 
 ## Supply chain
 
 CI ([`platform.yml`](../../.github/workflows/platform.yml)) runs `composer audit` and
 `npm audit --audit-level=high` in the quality gate, holds an 87% backend coverage
-floor, tests PostgreSQL migrations and one rollback, and builds an immutable OCI
-image with an SBOM and max provenance. That image is pushed to **no registry** — it
-lands as a GitHub Actions artifact with 7-day retention. Dependabot watches
+floor, and tests PostgreSQL migrations and one rollback. Dependabot watches
 Composer, npm, and Actions weekly.
 
 **SAST:** CodeQL is not enabled (needs a public repository or GitHub Advanced
 Security). PHPStan in `ci:quality` is type analysis, not security SAST.
 
-**Container scanning:** after the OCI tarball is built, Trivy scans it in place
-(`input:` — no registry). The job **fails** on HIGH or CRITICAL findings that have a
-published fix (`severity: HIGH,CRITICAL`, `ignore-unfixed: true`, `exit-code: 1`).
+**Container scanning: none, and this is a regression.** TASK-28 added a Trivy scan
+over an OCI tarball CI built itself, failing on fixable HIGH/CRITICAL findings.
+TASK-43.5 deleted the container build along with the ECS release path (decision-9),
+and the scan went with it — Laravel Cloud builds and runs the image now, and we
+neither produce nor inspect one. What we still scan is the dependency manifests
+(`composer audit`, `npm audit`), which is where our own supply-chain exposure
+actually lives; what we no longer scan is the base image and OS packages
+underneath it, which are now Laravel Cloud's to patch. Tracked, not accepted —
+see Remaining tracked work.
 
 ## Accepted risks (v1.0)
 
@@ -466,8 +512,8 @@ client document enters the system.
 | Risk | Why it is acceptable now | Reopen | Decision |
 |---|---|---|---|
 | ~~**No malware scanning on uploads**~~ | **Closed by TASK-34.1.** GuardDuty Malware Protection scans every upload and tags it; download and preview refuse anything not tagged clean. See [Malware scanning](#malware-scanning). | n/a — resolved | decision-1, superseded by decision-7 |
-| ~~**No application compute in Pulumi**~~ | **Closed by TASK-34.2.** `infra/` now provisions the VPC, ALB, ECS Fargate services, RDS, Valkey, ECR, Secrets Manager and SES; [`release.yml`](../../.github/workflows/release.yml) builds, pushes, migrates and rolls. | n/a — resolved | decision-2, superseded by decision-8 |
-| **Static IAM credentials for local development** | Permissions live in one shared managed policy (`infra/src/shared/policies.ts`) carried by both the local IAM user and the ECS task role (`infra/src/shared/application.ts`), so the two cannot drift. App code already skips keys when env credentials are empty; CI uses GitHub OIDC. Only the production stack mints the key (`localOperatorAccess`). | Compute now exists (decision-2 closed), so the deployed path no longer uses keys at all. Remaining scope is the developer laptop. | decision-3 |
+| ~~**No application compute in Pulumi**~~ | **Resolved differently than decision-8 planned.** The Pulumi compute plane was authored but never deployed; TASK-43 handed compute to Laravel Cloud instead and deleted the ECS/ALB/CloudFront/ElastiCache/ECR/Secrets Manager modules. Deploys are a git push. `infra/` now holds the data plane plus the VPC that hosts RDS. | n/a — resolved | decision-2 → decision-8 → decision-9 |
+| **One static IAM access key shared by local development and Laravel Cloud** | Laravel Cloud is not something AWS can hand a role to, so the deployed application authenticates with a long-lived access key — today the *same* key the `local` stack mints (`applicationUserAccess` is true only there). What bounds the risk is the policy, not the credential: one narrow managed policy (`infra/src/shared/policies.ts`) covering the documents bucket, the OCR/Transcribe queues, Bedrock, one KMS key, and SES send. CI never uses it — GitHub OIDC. Rotation is the whole mitigation: [runbook](../infra/README.md#rotating-the-application-access-key). | When staging and production get their own AWS stacks, so each Laravel Cloud environment carries a key from its matching stack and a laptop stops sharing production's credential. Closing it entirely needs Private Cloud. | decision-3, superseded by decision-10 |
 | **Portal grants re-exchangeable and watched, not bound** | Product choice: lost emails and multi-device use made single-use tokens a support burden. New-device redemption is watched (`notify` / `block` / `ignore`); a leaked link from a matching network + browser family can still pass. Canonical rationale stays in [Known tradeoff](#client-portal) above — do not rewrite it here. | Before first real client document: reassess defaulting `block`, shorter TTL, or tighter binding for the first paying firm. | decision-4 |
 | **No browser end-to-end tests** | Vitest line ratchet on the shared-trunk suite; portal behaviour covered at HTTP feature level in `tests/Feature/Portal/`. TASK-14.4 removed dead Playwright/Pest browser scaffolding rather than writing smoke tests. | Before first real client document if portal UX regressions become a release risk, or when browser CI budget is approved. | decision-5 |
 
@@ -481,6 +527,7 @@ and expired platform support sessions are cleared/audited before tenant access d
 | Item | Status |
 |---|---|
 | **No PHP / JS SAST in CI** | Tracked in **TASK-28.1**. CodeQL is deferred (private repo without Advanced Security). A Psalm + `psalm/plugin-laravel` attempt was deferred: beta19 conflicts with PHPUnit 13’s `sebastian/diff` ^9, and `dev-master` (which allows ^9) crashed on PHP 8.5. Revisit when a tagged Psalm release is installable, or when CodeQL becomes available. PHPStan in `ci:quality` remains type analysis, not security SAST. |
+| **No container image scanning** | Lost with the container build in TASK-43.5 (decision-9). Laravel Cloud builds and patches the runtime image, so the base-image CVE surface moved to them and we have no artifact to scan. Options if we want the control back: Trivy in filesystem mode over the repo (catches dependency CVEs we already catch), or asking Laravel Cloud what they publish about base-image patching. **Needs a task — this row is the only record of it.** |
 
 Nothing in the former open-gaps list should sit outside either an accepted-risk
 decision or a tracked task.

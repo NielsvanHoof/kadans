@@ -19,7 +19,7 @@
 
 - Legal entity name, address, KvK, VAT
 - Privacy contact / DPO (if appointed)
-- Sub-processor list (hosting, email, AI providers, object storage, etc.) with locations and transfer tools (adequacy / SCCs)
+- Sub-processor list (hosting, email, AI providers, object storage, etc.) with locations and transfer tools (adequacy / SCCs). AI inference is AWS Bedrock in eu-west-1 — no separate AI vendor to list, but the processing purpose is distinct and may warrant its own row.
 - Governing law and competent court for ToS
 - Exact controller/processor role split between Qompose and customer firms for each processing activity
 - Whether persistent preference cookies require consent under NL practice
@@ -30,7 +30,13 @@
 - Client portal with device binding (fingerprint stored on access grants)
 - Data subject export / erasure flows (`DataSubjectRequestType`)
 - Retention defaults in `config/retention.php` (e.g. archived records ~1095 days; portal grants ~90 days; DSAR response 30 days)
-- AI features (e.g. audio transcription / document assistance) — disclosed at a high level; refine with actual model vendors
+- AI features — vendor now identified, see decision-11 and [security.md](../security.md#ai-and-inference).
+  All three inference flows (document overview, checklist drafting, reminder drafting)
+  run on **AWS Bedrock in eu-west-1**, under the same AWS sub-processor relationship as
+  S3/Textract/Transcribe — not a separate vendor. The document overview flow sends
+  OCR-extracted **field values** from client payslips, bank statements and identity
+  documents, which counsel should weigh against the Art. 9 note in the privacy policy.
+  Audio transcription is AWS Transcribe, called directly, not through this path.
 - Cookies listed in the inventory; **no consent banner** shipped until non-essential trackers are added
 
 ## Review checklist for counsel

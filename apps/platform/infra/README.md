@@ -180,13 +180,62 @@ That writes gitignored `env/profiles/aws.env` and upserts `FILESYSTEM_DISK=s3`,
 `OCR_DRIVER=textract`, `TRANSCRIPTION_DRIVER=transcribe`, the IAM keys, the bucket
 and the queue URLs into `.env`, clearing the Floci endpoints.
 
-The `local` stack creates that IAM user and access key **for local development only**.
-IAM roles hand temporary credentials to something AWS already recognises — an ECS
-task, an EC2 instance, a Lambda. A PHP process on your laptop is none of those. The
-key is acceptable *because* the policy is narrow: one bucket, the OCR queues, one KMS
-key. It is never how production runs — the ECS task role carries the identical
-managed policy and the container gets credentials from the ECS agent, with no keys
-anywhere.
+The `local` stack creates that IAM user and access key — and, today, **so does the
+deployed application use it**. IAM roles hand temporary credentials to something AWS
+already recognises: an ECS task, an EC2 instance, a Lambda. A PHP process on your
+laptop is none of those, and neither is a Laravel Cloud container. So both
+authenticate the same way, with the same long-lived key: `applicationUserAccess` is
+`true` only in the `local` stack, which is why the user it mints is tagged
+`Purpose: Sail + Laravel Cloud …`.
+
+The key is acceptable *because* the policy is narrow — one bucket, the OCR and
+Transcribe queues, Bedrock, one KMS key, plus SES send attached separately. It is
+not acceptable because it is short-lived, because it is not. **Rotation is the whole
+mitigation** (see below), and the blast radius spans both environments: a key leaked
+from a laptop is production's key. Recorded as decision-10.
+
+When staging and production get their own AWS stacks, each Laravel Cloud environment
+should carry a key minted by its matching stack, and this paragraph should shrink
+back to being about laptops.
+
+### Rotating the application access key
+
+Two copies exist — Pulumi state for the `local` stack, and Laravel Cloud's secret
+store for the deployed environments. **Rotating one and not the other leaves the app
+running on a credential you believe is revoked**, so the order below creates the new
+key before destroying the old one and never leaves a gap.
+
+1. **Mint a replacement alongside the current key.** An IAM user may hold two access
+   keys at once, which is what makes a zero-downtime rotation possible. The user is
+   `qompose-local-ocr-local` (`environment.resourceName("ocr-local")` on the `local`
+   stack) — confirm with `pulumi stack output` rather than trusting this file if the
+   stack has been renamed:
+   ```bash
+   aws iam create-access-key --user-name qompose-local-ocr-local
+   ```
+2. **Update Laravel Cloud first**, because it is the copy that serves traffic. Set
+   `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the environment's variables and
+   redeploy. Confirm with `GET /ready` — it exercises S3 in the same probe, so a
+   broken credential fails it rather than surfacing later on an upload.
+3. **Update local development**: re-run `./scripts/sync-ocr-credentials.sh` if the key
+   is still Pulumi-managed, or edit `env/profiles/aws.env` and re-apply with
+   `composer env:aws`.
+4. **Verify the old key is idle before deleting it.** `LastUsedDate` is the only
+   evidence that nothing still holds it:
+   ```bash
+   aws iam get-access-key-last-used --access-key-id <OLD_KEY_ID>
+   ```
+5. **Deactivate, wait, then delete.** Deactivating is reversible; deleting is not, so
+   leave a window long enough to notice a missed consumer:
+   ```bash
+   aws iam update-access-key --user-name qompose-local-ocr-local \
+     --access-key-id <OLD_KEY_ID> --status Inactive
+   # confirm nothing broke, then:
+   aws iam delete-access-key --user-name qompose-local-ocr-local --access-key-id <OLD_KEY_ID>
+   ```
+
+Rotate on a schedule, and immediately if a laptop holding `env/profiles/aws.env` is
+lost or a key reaches a log, a screenshot or a shell history that leaves the machine.
 
 ## What is monitored, and what to do about it
 
