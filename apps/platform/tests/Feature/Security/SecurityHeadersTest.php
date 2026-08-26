@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Accounts\Models\User;
 use App\Shared\Http\ContentSecurityPolicy;
 use Illuminate\Foundation\Vite;
+use Illuminate\Support\Facades\Gate;
+use Laravel\Telescope\TelescopeServiceProvider;
 
 use function Pest\Laravel\get;
 
@@ -36,7 +38,7 @@ test('sends a nonce-based content security policy that blocks inline scripts', f
         // Scripts are nonce-gated; a bare 'unsafe-inline' would defeat the point.
         ->toMatch("/script-src [^;]*'nonce-[A-Za-z0-9+\/=]+'/")
         ->not->toContain("script-src 'self' 'unsafe-inline'")
-        // Horizon-only relaxations must not leak onto the main app.
+        // Dashboard-only relaxations must not leak onto the main app.
         ->not->toContain("'unsafe-eval'")
         ->not->toContain('fonts.bunny.net');
 });
@@ -53,6 +55,31 @@ test('relaxes csp for the horizon dashboard only', function (): void {
         ->toContain("'unsafe-eval'")
         ->toContain('https://fonts.bunny.net')
         ->toMatch("/script-src [^;]*'nonce-[A-Za-z0-9+\/=]+'/");
+});
+
+test('relaxes csp for the telescope dashboard only', function (): void {
+    $this->app->register(TelescopeServiceProvider::class);
+    $this->app->register(App\Providers\TelescopeServiceProvider::class);
+
+    // The app provider's gate is an empty allow-list; open it for this local-dashboard check.
+    Gate::define('viewTelescope', fn (): bool => true);
+
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get('/telescope')->assertOk();
+    $policy = (string) $response->headers->get('Content-Security-Policy');
+
+    expect($policy)
+        ->toContain("'unsafe-eval'")
+        ->toContain('https://fonts.bunny.net')
+        ->toMatch("/script-src [^;]*'nonce-[A-Za-z0-9+\/=]+'/");
+
+    preg_match("/'nonce-([A-Za-z0-9+\/=]+)'/", $policy, $matches);
+
+    expect($matches)->toHaveKey(1);
+
+    // The inline boot script is blocked unless Telescope stamps this nonce.
+    $response->assertSee('nonce="'.$matches[1].'"', escape: false);
 });
 
 test('emits the nonce from the policy header into the root document', function (): void {
@@ -244,5 +271,11 @@ describe('policy assembly', function (): void {
 
         expect(resolve(ContentSecurityPolicy::class)->build('abc123'))
             ->toContain('https://o0.ingest.sentry.io');
+    });
+
+    test('allows bunny fonts and unsafe-eval for telescope', function (): void {
+        expect(resolve(ContentSecurityPolicy::class)->build('abc123', forTelescope: true))
+            ->toContain('https://fonts.bunny.net')
+            ->toContain("'unsafe-eval'");
     });
 });

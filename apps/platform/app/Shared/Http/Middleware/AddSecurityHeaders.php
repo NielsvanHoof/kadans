@@ -58,7 +58,8 @@ final readonly class AddSecurityHeaders
                 $this->contentSecurityPolicy->headerName(),
                 $this->contentSecurityPolicy->build(
                     $nonce,
-                    forHorizon: $this->isHorizonDashboard($request),
+                    forHorizon: $this->isDashboard($request, 'horizon.path', 'horizon'),
+                    forTelescope: $this->isDashboard($request, 'telescope.path', 'telescope'),
                 ),
             );
         }
@@ -67,11 +68,11 @@ final readonly class AddSecurityHeaders
     }
 
     /**
-     * Horizon's Vue dashboard needs CSP relaxations the main app must not get.
+     * Horizon and Telescope HTML need CSP extras the main app must not get.
      */
-    private function isHorizonDashboard(Request $request): bool
+    private function isDashboard(Request $request, string $configKey, string $default): bool
     {
-        $path = mb_trim((string) $this->config->get('horizon.path', 'horizon'), '/');
+        $path = mb_trim((string) $this->config->get($configKey, $default), '/');
 
         if ($path === '') {
             return false;

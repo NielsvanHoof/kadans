@@ -16,7 +16,7 @@ Adding a fetch directive? Add it to `applyDevelopmentServerOrigins()` too. In ho
 
 Two deliberate relaxations, do not "fix" them: `style-src` allows `'unsafe-inline'` (Tailwind v4 runtime injection + React inline style attributes), and `script-src` is `'self'` + nonce rather than `'strict-dynamic'`. Inertia's page payload is `<script type="application/json">` and carries no nonce by design — the HTML spec never executes or CSP-checks those.
 
-Horizon-only CSP extras (`'unsafe-eval'` + `fonts.bunny.net`) are applied when `AddSecurityHeaders` detects `config('horizon.path')` — never globally. The main app must keep failing SecurityHeadersTest if those leak onto `/login`.
+Dashboard CSP extras stay path-scoped: Horizon and Telescope both get `'unsafe-eval'` + `fonts.bunny.net` when `AddSecurityHeaders` detects `config('horizon.path')` or `config('telescope.path')`. Stamp each dashboard's Blade nonce via `AddHorizonCspNonce` / `AddTelescopeCspNonce`. Never apply those extras globally — the main app must keep failing SecurityHeadersTest if they leak onto `/login`.
 
 `SECURITY_CSP_REPORT_ONLY=true` only switches to `Content-Security-Policy-Report-Only` when `SECURITY_CSP_REPORT_URI` is also set. Report-Only without a sink is ignored by browsers (console warning, no enforcement); `headerName()` falls back to the enforcing header in that case.
 

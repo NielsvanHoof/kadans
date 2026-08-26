@@ -82,7 +82,10 @@ final readonly class ProductionConfigurationValidator
             $this->hasDatabaseRootCertificate() ? null : 'database.connections.pgsql.sslrootcert',
             $this->matches('database.redis.default.scheme', 'tls'),
             $this->matches('database.redis.cache.scheme', 'tls'),
+            $this->matches('database.redis.session.scheme', 'tls'),
             $this->matches('session.driver', 'redis'),
+            $this->hasDedicatedSessionRedisConnection() ? null : 'session.connection',
+            $this->hasSessionRedisIsolatedFromDefault() ? null : 'database.redis.session.database',
             $this->config->get('session.encrypt') === true ? null : 'session.encrypt',
             $this->config->get('session.secure') === true ? null : 'session.secure',
             $this->hasSecureSessionDomain() ? null : 'session.domain',
@@ -121,6 +124,41 @@ final readonly class ProductionConfigurationValidator
                 implode(', ', $invalidKeys),
             ));
         }
+    }
+
+    /**
+     * Sessions on the default Redis connection share FLUSHDB with Horizon
+     * unique locks and the queue. The dedicated `session` connection is
+     * what keeps a `FLUSHDB` on DB 0 from logging everyone out.
+     */
+    private function hasDedicatedSessionRedisConnection(): bool
+    {
+        if ($this->config->get('session.driver') !== 'redis') {
+            return true;
+        }
+
+        return $this->config->get('session.connection') === 'session';
+    }
+
+    /**
+     * Numbered Redis DBs share instance maxmemory — this is logical
+     * isolation, matching cache-on-DB-1. The session DB still must not
+     * be the same number as the default connection.
+     */
+    private function hasSessionRedisIsolatedFromDefault(): bool
+    {
+        if ($this->config->get('session.driver') !== 'redis') {
+            return true;
+        }
+
+        $sessionDatabase = $this->config->get('database.redis.session.database');
+        $defaultDatabase = $this->config->get('database.redis.default.database');
+
+        if ($sessionDatabase === null || $sessionDatabase === '' || $defaultDatabase === null || $defaultDatabase === '') {
+            return false;
+        }
+
+        return (string) $sessionDatabase !== (string) $defaultDatabase;
     }
 
     /**

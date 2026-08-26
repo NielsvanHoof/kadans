@@ -13,7 +13,7 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
-import type { Paginated } from '@/types/pagination';
+import type { SimplePaginated } from '@/types/pagination';
 
 type Translate = (
     key: string,
@@ -26,25 +26,25 @@ type Translate = (
 export default function ActivityLogCard({
     activities,
 }: {
-    activities: Paginated<ActivityLogEntry>;
+    activities: SimplePaginated<ActivityLogEntry>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
     const { formatDateTime } = useFormatters();
     const rows = activities.data;
-    const total = activities.total;
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>{t('Recent activity')}</CardTitle>
+                {/* Page-local copy: a filtered-set total would COUNT(*) activity_log. */}
                 <CardDescription>
-                    {total === 0
+                    {rows.length === 0
                         ? t('No audit events yet')
-                        : total === 1
-                          ? t('1 event')
-                          : t(':count events', {
-                                count: total,
+                        : rows.length === 1
+                          ? t('Latest 1 event')
+                          : t('Latest :count events', {
+                                count: rows.length,
                             })}
                 </CardDescription>
             </CardHeader>

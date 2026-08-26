@@ -31,6 +31,15 @@ use function is_string;
  */
 final readonly class FetchWorkspaceMembersQuery
 {
+    /**
+     * Same cap as the client picker: large enough for any realistic firm,
+     * still a hard bound so this page cannot load every membership row.
+     *
+     * Viewer-specific (isCurrentUser, canAssignOwner), so the payload
+     * stays uncached. Staff dropdowns use StaffOptionsCache instead.
+     */
+    private const int MEMBERS_PAGE_LIMIT = 500;
+
     public function __construct(
         private WorkspaceMemberRoles $memberRoles,
         private Request $request,
@@ -71,7 +80,8 @@ final readonly class FetchWorkspaceMembersQuery
                 TenantMembershipStatus::Active->value,
                 TenantMembershipStatus::Suspended->value,
             ])
-            ->oldest('joined_at');
+            ->oldest('joined_at')
+            ->limit(self::MEMBERS_PAGE_LIMIT);
 
         if (is_string($roleFilter) && $roleFilter !== '') {
             $teamForeignKey = Config::string('permission.column_names.team_foreign_key');
@@ -169,7 +179,8 @@ final readonly class FetchWorkspaceMembersQuery
 
         TenantInvitation::constrainToPending($invitationsQuery);
         $invitationsQuery->getQuery()
-            ->latest();
+            ->latest()
+            ->limit(self::MEMBERS_PAGE_LIMIT);
 
         /** @var list<WorkspaceInvitationData> $invitations */
         $invitations = [];

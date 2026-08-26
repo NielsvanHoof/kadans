@@ -18,6 +18,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
 | app/{Dossiers,ClientPortal}/** | .ai/rules/dossiers-client-portal.md |
+| app/Dossiers/Queries/** | .ai/rules/dossiers-queries.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
 | app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |
@@ -39,6 +40,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Platform/Models/DataSubjectRequest.php | .ai/rules/platform-models.md |
 | app/Providers/** | .ai/rules/providers.md |
 | app/WorkspaceNotifications/Queries/** | .ai/rules/queries.md |
+| app/Reporting/Queries/** | .ai/rules/reporting-queries.md |
 | app/*/{Data,Http/Requests,Enums,Policies}/** | .ai/rules/requests-enums-policies.md |
 | app/Platform/Actions/Retention/** | .ai/rules/retention.md |
 | routes/** | .ai/rules/routes.md |

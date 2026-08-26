@@ -77,7 +77,7 @@ Schedule::command('retention:purge-legal')
     ->onOneServer()
     ->withoutOverlapping();
 
-Schedule::command('activitylog:clean')
+Schedule::command('retention:prune-activity-log')
     ->weeklyOn(0, '05:30')
     ->onOneServer()
     ->withoutOverlapping();

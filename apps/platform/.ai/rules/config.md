@@ -25,3 +25,6 @@ Redis retry_after must be strictly greater than every job timeout (largest: Gene
 
 ## Horizon owns Redis workers on Cloud
 Laravel Cloud runs one custom background process `php artisan horizon` (not queue:work, not Managed Queues). Keep QUEUE_CONNECTION=redis. Supervisors must drain WorkerQueues::NAMES; timeout must sit above GenerateDataSubjectExportJob (600s) and below redis retry_after (660). Dashboard access outside local is HORIZON_ALLOWED_EMAILS. Leave textract:consume / transcribe:consume as separate daemons.
+
+## Sessions live on Redis DB 2
+When session.driver is redis, SESSION_CONNECTION must be the dedicated `session` Redis connection on REDIS_SESSION_DB (default 2), not the default connection (DB 0, queue/Horizon) or cache (DB 1). ProductionConfigurationValidator rejects a missing connection or a session DB that equals default. Numbered DBs share instance maxmemory — this is FLUSHDB isolation, not eviction isolation.

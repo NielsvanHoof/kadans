@@ -20,12 +20,10 @@ vi.mock('@/hooks/use-translation', () => ({
 }));
 vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 
-const { default: DossierContextRail } = await import(
-    '@/features/dossiers/show/dossier-context-rail'
-);
-const { default: DossierStatusSheet } = await import(
-    '@/features/dossiers/show/dossier-status-sheet'
-);
+const { default: DossierContextRail } =
+    await import('@/features/dossiers/show/dossier-context-rail');
+const { default: DossierStatusSheet } =
+    await import('@/features/dossiers/show/dossier-status-sheet');
 
 function dossier(overrides: Partial<Dossier> = {}): Dossier {
     return {

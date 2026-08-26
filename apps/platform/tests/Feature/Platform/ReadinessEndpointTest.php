@@ -136,7 +136,7 @@ test('retention and pruning tasks are scheduled', function (): void {
         ->toContain('model:prune')
         ->toContain('retention:prune-notifications')
         ->toContain('retention:purge-legal')
-        ->toContain('activitylog:clean');
+        ->toContain('retention:prune-activity-log');
 });
 
 // Scheduler-dispatched queue heartbeats have no tenant; they must not be tenant-aware.

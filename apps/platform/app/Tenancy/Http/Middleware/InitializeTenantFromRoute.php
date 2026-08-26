@@ -7,6 +7,7 @@ namespace App\Tenancy\Http\Middleware;
 use App\Accounts\Models\User;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Support\TenantLookup;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,7 +34,7 @@ final readonly class InitializeTenantFromRoute
 
         abort_if($tenantSlug === null, Response::HTTP_NOT_FOUND);
 
-        $tenant = Tenant::query()->where('slug', $tenantSlug)->first();
+        $tenant = TenantLookup::findBySlug($tenantSlug);
 
         abort_unless($tenant instanceof Tenant, Response::HTTP_NOT_FOUND);
 

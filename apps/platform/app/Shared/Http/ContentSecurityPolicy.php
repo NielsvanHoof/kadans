@@ -40,8 +40,8 @@ use function str_replace;
  *    and .js/.html are not accepted file types), so 'self' costs little here and
  *    keeps Vite's dev module graph working without special cases.
  *
- * Horizon's Vue dashboard is a third relaxation, applied only when
- * `$forHorizon` is true: `'unsafe-eval'` (runtime template compiler) and
+ * Local dashboards are a third relaxation, applied only to their own HTML.
+ * Horizon and Telescope both need `'unsafe-eval'` (Vue runtime compiler) and
  * `fonts.bunny.net` for Figtree. Never enable those on the main app.
  */
 final readonly class ContentSecurityPolicy
@@ -69,10 +69,10 @@ final readonly class ContentSecurityPolicy
     /**
      * Build the policy string for this request.
      *
-     * Pass `$forHorizon` only for Laravel Horizon HTML — its Vue runtime
-     * compiles templates via `new Function` and loads Figtree from Bunny.
+     * Pass `$forHorizon` or `$forTelescope` only for those dashboards — both
+     * compile Vue templates via `new Function` and load Figtree from Bunny.
      */
-    public function build(?string $nonce, bool $forHorizon = false): string
+    public function build(?string $nonce, bool $forHorizon = false, bool $forTelescope = false): string
     {
         $scriptSources = ["'self'"];
 
@@ -124,8 +124,8 @@ final readonly class ContentSecurityPolicy
             'frame-ancestors' => ["'none'"],
         ];
 
-        if ($forHorizon) {
-            // Vue 3 runtime compiler (Horizon dashboard) + Figtree stylesheet.
+        if ($forHorizon || $forTelescope) {
+            // Vue runtime compiler + Figtree stylesheet (Horizon and Telescope).
             $directives['script-src'][] = "'unsafe-eval'";
             $directives['style-src'][] = 'https://fonts.bunny.net';
             $directives['font-src'][] = 'https://fonts.bunny.net';

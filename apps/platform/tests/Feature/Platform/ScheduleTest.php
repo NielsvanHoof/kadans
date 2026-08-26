@@ -38,7 +38,7 @@ test('nightly maintenance runs clear of the database backup window', function (s
     ['model:prune', '40 4 * * *'],
     ['retention:prune-notifications', '45 4 * * *'],
     ['retention:purge-legal', '0 5 * * *'],
-    ['activitylog:clean', '30 5 * * 0'],
+    ['retention:prune-activity-log', '30 5 * * 0'],
 ]);
 
 test('horizon snapshot runs every five minutes for dashboard metrics', function (): void {
