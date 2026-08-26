@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Http\Middleware\AddHorizonCspNonce;
 use App\Platform\Support\WorkerQueues;
 use Illuminate\Support\Str;
 
@@ -88,7 +89,7 @@ return [
 
     'middleware' => [
         'web',
-        App\Shared\Http\Middleware\AddHorizonCspNonce::class,
+        AddHorizonCspNonce::class,
     ],
 
     /*
@@ -208,7 +209,7 @@ return [
     */
 
     'allowed_emails' => array_values(array_filter(array_map(
-        static fn (string $email): string => mb_trim($email),
+        mb_trim(...),
         explode(',', (string) env('HORIZON_ALLOWED_EMAILS', '')),
     ))),
 

@@ -5,13 +5,9 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Accounts\Models\User;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Horizon\HorizonApplicationServiceProvider;
 use Override;
-
-use function in_array;
-use function is_string;
 
 final class HorizonServiceProvider extends HorizonApplicationServiceProvider
 {
