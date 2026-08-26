@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Support;
 
-use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-
-use function sprintf;
 
 /**
  * Serves the bytes a client uploaded, to staff and to the client themselves.
@@ -45,7 +40,7 @@ final readonly class UploadedDocumentResponse
     ];
 
     public function __construct(
-        private ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
+        private StoredFileResponse $storedFileResponse,
     ) {}
 
     /**
@@ -57,44 +52,12 @@ final readonly class UploadedDocumentResponse
         UploadedDocument $uploadedDocument,
         string $disposition,
     ): RedirectResponse|StreamedResponse {
-        $driver = $this->resolveDocumentTemporaryUrl->diskDriver($uploadedDocument);
-
-        if ($driver === null) {
-            // The row names a disk that is no longer configured, so the bytes
-            // are unreachable. Fail closed as a miss rather than a 500: the
-            // caller cannot act on it either way, but operators still need to
-            // know a row outlived its disk, so it is reported.
-            report(new RuntimeException(sprintf(
-                'Uploaded document %d is stored on disk "%s", which is not configured.',
-                $uploadedDocument->id,
-                $uploadedDocument->disk,
-            )));
-
-            abort(404);
-        }
-
-        if ($driver === 's3') {
-            $url = $this->resolveDocumentTemporaryUrl->handle(
-                $uploadedDocument,
-                now()->addMinutes(5),
-                $disposition,
-            );
-
-            return redirect()->away($url);
-        }
-
-        // Local/CI disks keep streaming through Laravel (Storage::fake friendly).
-        if ($disposition === 'inline') {
-            return Storage::disk($uploadedDocument->disk)->response(
-                $uploadedDocument->path,
-                $uploadedDocument->original_filename,
-                ['Content-Type' => $uploadedDocument->mime_type] + self::UNTRUSTED_FILE_HEADERS,
-            );
-        }
-
-        return Storage::disk($uploadedDocument->disk)->download(
+        return $this->storedFileResponse->serve(
+            $uploadedDocument->disk,
             $uploadedDocument->path,
             $uploadedDocument->original_filename,
+            $uploadedDocument->mime_type,
+            $disposition,
             self::UNTRUSTED_FILE_HEADERS,
         );
     }
