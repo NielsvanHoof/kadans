@@ -8,6 +8,9 @@ namespace App\Platform\Support;
  * Queues the Laravel Cloud worker background process must drain.
  *
  * Order matters: default first so interactive jobs are not starved behind OCR.
+ * `dossier-export` carries every long-running archive build — dossier exports
+ * and data-subject exports alike — for the same reason: they must not sit in
+ * front of a broadcast or a notification.
  * The Cloud worker command queue field must equal {@see csv()}.
  */
 final class WorkerQueues

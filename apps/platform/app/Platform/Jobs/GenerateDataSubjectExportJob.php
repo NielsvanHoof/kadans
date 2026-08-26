@@ -41,7 +41,10 @@ final class GenerateDataSubjectExportJob implements ShouldBeUnique, ShouldQueue
     /** @var list<int> */
     public const array BACKOFF_SECONDS = [30, 120, 300];
 
-    public function __construct(public int $dataSubjectRequestId) {}
+    public function __construct(public int $dataSubjectRequestId)
+    {
+        $this->onQueue('dossier-export');
+    }
 
     public function uniqueId(): string
     {
