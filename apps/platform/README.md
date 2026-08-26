@@ -63,7 +63,7 @@ Local development uses Sail only:
 
 Application deploys run on Laravel Cloud (push-to-deploy from `staging` / `main`). There is no bake/ECR image pipeline.
 
-Queue workers on Cloud must drain `App\Platform\Support\WorkerQueues::csv()` (`default,ocr,transcription,dossier-export`).
+Cloud runs `php artisan horizon` (custom background process × 1) draining `App\Platform\Support\WorkerQueues::NAMES` via `config/horizon.php`. Keep `textract:consume` / `transcribe:consume` as separate daemons. Do not use Laravel Cloud Managed Queues alongside Horizon (`QUEUE_CONNECTION` stays `redis`).
 
 ## Domain overview
 

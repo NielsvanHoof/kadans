@@ -216,6 +216,19 @@ final class DocumentRequest extends TenantOwnedModel
     }
 
     /**
+     * status drives the submitted / outstanding counts and the dossier-level
+     * awaiting_client and needs_review rollups; answered_at drives the weekly
+     * throughput trend. Title, instructions, sort_order and configuration are
+     * written often and feed nothing cached.
+     *
+     * @return list<string>
+     */
+    protected static function cacheInvalidatingAttributes(): array
+    {
+        return ['status', 'answered_at'];
+    }
+
+    /**
      * @return array<string, string>
      */
     #[Override]

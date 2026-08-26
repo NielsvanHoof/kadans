@@ -6,11 +6,12 @@ let emit: () => void = () => {};
 const routerReload = vi.fn();
 
 vi.mock('@laravel/echo-react', () => ({
+    // lib/echo.ts calls this on import; no-op under tests.
+    configureEcho: vi.fn(),
     useEcho: (_channel: string, _event: string, handler: () => void) => {
         emit = handler;
     },
 }));
-
 vi.mock('@/hooks/use-current-workspace', () => ({
     useCurrentWorkspace: () => ({ slug: 'acme', name: 'Acme' }),
 }));

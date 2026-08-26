@@ -44,7 +44,7 @@ final class FetchDashboardMyWorkQuery
         $overdueQuery = $this->assignedOpenQuery($tenant, $user);
         $overdueQuery->getQuery()
             ->whereNotNull('due_date')
-            ->whereDate('due_date', '<', today());
+            ->where('due_date', '<', today()->toDateString());
 
         $awaitingReviewQuery = $this->assignedOpenQuery($tenant, $user)
             ->whereHas('documentRequests', fn (QueryBuilder $documentRequestQuery) => $documentRequestQuery

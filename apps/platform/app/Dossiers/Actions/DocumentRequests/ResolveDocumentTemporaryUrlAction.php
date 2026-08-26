@@ -64,7 +64,17 @@ final readonly class ResolveDocumentTemporaryUrlAction
      */
     public function diskDriver(UploadedDocument $document): ?string
     {
-        $driver = Config::get('filesystems.disks.'.$document->disk.'.driver');
+        return $this->driverForDisk($document->disk);
+    }
+
+    /**
+     * Same lookup for stored files that are not UploadedDocument rows — audio
+     * recordings and generated export archives — which need the identical
+     * s3-vs-local branch and the identical Content-Disposition hardening.
+     */
+    public function driverForDisk(string $disk): ?string
+    {
+        $driver = Config::get('filesystems.disks.'.$disk.'.driver');
 
         return is_string($driver) && $driver !== '' ? $driver : null;
     }
@@ -82,22 +92,48 @@ final readonly class ResolveDocumentTemporaryUrlAction
         DateTimeInterface $expiresAt,
         string $disposition = 'attachment',
     ): string {
-        $disk = $this->filesystems->disk($document->disk);
+        return $this->forStoredFile(
+            $document->disk,
+            $document->path,
+            $document->original_filename,
+            $document->mime_type,
+            $expiresAt,
+            $disposition,
+        );
+    }
 
-        throw_unless($disk instanceof FilesystemAdapter, RuntimeException::class, 'Disk does not support temporary URLs.');
+    /**
+     * The same signed URL for any stored object.
+     *
+     * The filename is still treated as fully client-controlled: audio
+     * recordings carry an uploaded name exactly as documents do, and routing
+     * every caller through contentDisposition() is the point of sharing this
+     * rather than letting each one build its own header.
+     */
+    public function forStoredFile(
+        string $disk,
+        string $path,
+        string $filename,
+        ?string $mimeType,
+        DateTimeInterface $expiresAt,
+        string $disposition = 'attachment',
+    ): string {
+        $adapter = $this->filesystems->disk($disk);
+
+        throw_unless($adapter instanceof FilesystemAdapter, RuntimeException::class, 'Disk does not support temporary URLs.');
 
         throw_if($disposition !== 'attachment' && $disposition !== 'inline', RuntimeException::class, 'Document URL disposition must be attachment or inline.');
 
         $overrides = [
-            'ResponseContentDisposition' => $this->contentDisposition($disposition, $document->original_filename),
-            'ResponseContentType' => $document->mime_type,
+            'ResponseContentDisposition' => $this->contentDisposition($disposition, $filename),
+            'ResponseContentType' => $mimeType ?? 'application/octet-stream',
         ];
 
         // Non-null only when the internal and public S3 endpoints differ, which
         // is the local Floci setup; see DocumentPresigner for why signing for
         // the wrong host is otherwise invisible until a browser tries it.
-        return $this->presigner->presignGet($disk, $document->path, $expiresAt, $overrides)
-            ?? $disk->temporaryUrl($document->path, $expiresAt, $overrides);
+        return $this->presigner->presignGet($adapter, $path, $expiresAt, $overrides)
+            ?? $adapter->temporaryUrl($path, $expiresAt, $overrides);
     }
 
     /**

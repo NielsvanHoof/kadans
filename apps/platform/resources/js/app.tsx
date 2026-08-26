@@ -1,5 +1,4 @@
 import { createInertiaApp, router } from '@inertiajs/react';
-import { configureEcho } from '@laravel/echo-react';
 import { RouterProvider } from 'react-aria-components';
 import AriaLocaleProvider from '@/components/app-shell/aria-locale-provider';
 import { Toaster } from '@/components/ui/sonner';
@@ -14,17 +13,6 @@ import { initializeObservability } from '@/lib/observability';
 // Before anything else, so a failure in the setup below is itself reported.
 // No-ops on a dev build or when the bundle carries no DSN.
 initializeObservability();
-
-// Reverb WebSocket client — keys come from VITE_REVERB_* (.env).
-configureEcho({
-    broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 80),
-    wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 443),
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
-});
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

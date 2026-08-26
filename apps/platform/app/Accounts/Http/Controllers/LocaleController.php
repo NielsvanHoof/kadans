@@ -44,6 +44,8 @@ final class LocaleController extends Controller
 
         $user->update(['locale' => $locale]);
 
+        $request->session()->flash('inertia.refresh.translations', true);
+
         Toast::success(__('Language updated.'));
 
         return back(fallback: route('language.edit'))

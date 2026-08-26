@@ -182,19 +182,46 @@ return [
     */
 
     'agents' => [
+        // Not on a request path: this one runs inside the Textract result
+        // consumer, so the ceiling is about how long one document may hold up
+        // every other tenant's OCR completion, not about a user waiting.
         'document_overview' => [
             'provider' => env('AI_DOCUMENT_OVERVIEW_PROVIDER', 'bedrock'),
             'model' => env('AI_DOCUMENT_OVERVIEW_MODEL', 'eu.anthropic.claude-sonnet-4-20250514-v1:0'),
+            'timeout' => (int) env('AI_DOCUMENT_OVERVIEW_TIMEOUT', 45),
         ],
 
+        // Called inline from a controller with a user waiting, so the timeout
+        // is really a bound on how long an Octane worker can be held.
         'checklist_draft' => [
             'provider' => env('AI_CHECKLIST_DRAFT_PROVIDER', 'bedrock'),
             'model' => env('AI_CHECKLIST_DRAFT_MODEL'),
+            'timeout' => (int) env('AI_CHECKLIST_DRAFT_TIMEOUT', 30),
         ],
 
+        // Same, and a three-to-five sentence email should need far less.
         'dossier_reminder' => [
             'provider' => env('AI_DOSSIER_REMINDER_PROVIDER', 'bedrock'),
             'model' => env('AI_DOSSIER_REMINDER_MODEL'),
+            'timeout' => (int) env('AI_DOSSIER_REMINDER_TIMEOUT', 20),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conversation persistence
+    |--------------------------------------------------------------------------
+    |
+    | Tables used by RemembersConversations. Writes go through
+    | TenantAwareDatabaseConversationStore, which stamps tenant_id.
+    | IDs are UUID v7 strings; do not switch these tables to bigint.
+    |
+    */
+    'conversations' => [
+        'connection' => null,
+        'tables' => [
+            'conversations' => 'agent_conversations',
+            'messages' => 'agent_conversation_messages',
         ],
     ],
 

@@ -23,6 +23,23 @@ export type Paginated<T> = {
     links: PaginationLink[];
 };
 
+/**
+ * Laravel Paginator (simplePaginate) as serialized to Inertia.
+ *
+ * No total or last_page — those require COUNT(*) of the filtered set.
+ */
+export type SimplePaginated<T> = {
+    data: T[];
+    current_page: number;
+    per_page: number;
+    from: number | null;
+    to: number | null;
+    path: string;
+    first_page_url: string | null;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+};
+
 export type IndexQueryFilterOption = {
     value: string;
     label: string;

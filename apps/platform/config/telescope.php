@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Http\Middleware\AddTelescopeCspNonce;
 use Laravel\Telescope\Http\Middleware\Authorize;
 use Laravel\Telescope\Watchers\BatchWatcher;
 use Laravel\Telescope\Watchers\CacheWatcher;
@@ -113,6 +114,7 @@ return [
 
     'middleware' => [
         'web',
+        AddTelescopeCspNonce::class,
         Authorize::class,
     ],
 

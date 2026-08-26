@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Override;
 
 /**
@@ -40,6 +41,7 @@ use Override;
  * @property CarbonImmutable|null $processing_finished_at
  * @property string|null $textract_job_id
  * @property-read DocumentRequest $documentRequest
+ * @property-read Pipeline|null $latestPipeline
  * @property-read Collection<int, Pipeline> $pipelines
  * @property-read int|null $pipelines_count
  * @property-read User|null $reviewedBy
@@ -123,6 +125,17 @@ final class UploadedDocument extends TenantOwnedModel
     public function pipelines(): MorphMany
     {
         return $this->morphMany(Pipeline::class, 'pipelineable');
+    }
+
+    /**
+     * Most recent run only. Staff list rows show one status chip; loading
+     * every retry's steps is unbounded as documents are reprocessed.
+     *
+     * @return MorphOne<Pipeline, $this>
+     */
+    public function latestPipeline(): MorphOne
+    {
+        return $this->morphOne(Pipeline::class, 'pipelineable')->latestOfMany();
     }
 
     /**

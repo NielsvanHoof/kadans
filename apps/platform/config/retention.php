@@ -20,8 +20,9 @@ return [
     | Activity log retention
     |--------------------------------------------------------------------------
     |
-    | Entries older than this are removed by the scheduled activitylog:clean
-    | command. Kept in sync with archived record retention by default.
+    | Entries older than this are removed by the scheduled
+    | retention:prune-activity-log command. Kept in sync with archived
+    | record retention by default.
     |
     */
     'activity_log_days' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', env('RETENTION_ARCHIVED_DAYS', 1095)),
@@ -46,6 +47,18 @@ return [
     |--------------------------------------------------------------------------
     */
     'notifications_days' => (int) env('RETENTION_NOTIFICATIONS_DAYS', 90),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Agent conversations
+    |--------------------------------------------------------------------------
+    |
+    | Idle conversations (updated_at older than this) are removed by the
+    | scheduled retention:prune-agent-conversations command. Messages cascade.
+    | Operational memory, not a legal archive.
+    |
+    */
+    'agent_conversation_days' => (int) env('RETENTION_AGENT_CONVERSATION_DAYS', 90),
 
     /*
     |--------------------------------------------------------------------------

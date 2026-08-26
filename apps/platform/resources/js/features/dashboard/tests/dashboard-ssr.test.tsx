@@ -9,12 +9,15 @@ import type {
 import { mockUseTranslation } from '@/test/mocks';
 
 /**
- * SSR is enabled in this app, so nothing the dashboard renders may touch a
- * browser global during render.
+ * Guard render-time browser-global safety for dashboard cards.
+ *
+ * Inertia SSR is disabled in this app, but these cards must still survive
+ * `renderToString` (no `window`) so they stay safe if SSR is ever re-enabled
+ * or if a deferred prop resolves on the server later.
  *
  * This file runs in the `node` environment on purpose: no jsdom, so no
- * `window`, exactly like the Inertia SSR bundle. Pages are Inertia entry points
- * rather than libraries, so this renders the same cards the page composes.
+ * `window`. Pages are Inertia entry points rather than libraries, so this
+ * renders the same cards the page composes.
  *
  * The deferred cards are the ones worth pinning. They currently escape server
  * rendering because their props resolve after paint — this test makes sure they

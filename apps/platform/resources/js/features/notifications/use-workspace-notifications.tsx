@@ -2,6 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import { useCallback } from 'react';
 import { usePipelineUpdatedSubscription } from '@/features/pipelines/hooks/use-pipeline-updated-subscription';
+import '@/lib/echo';
 
 /**
  * Subscribe to workspace questionnaire-complete broadcasts.

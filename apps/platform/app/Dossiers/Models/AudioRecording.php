@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Override;
 
 /**
@@ -39,6 +40,7 @@ use Override;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Dossier $dossier
+ * @property-read Pipeline|null $latestPipeline
  * @property-read Collection<int, Pipeline> $pipelines
  * @property-read int|null $pipelines_count
  * @property-read User|null $uploadedBy
@@ -120,6 +122,17 @@ final class AudioRecording extends TenantOwnedModel
     public function pipelines(): MorphMany
     {
         return $this->morphMany(Pipeline::class, 'pipelineable');
+    }
+
+    /**
+     * Most recent run only. The audio list chip shows one status; retry
+     * history lives on the recording show page, not this row.
+     *
+     * @return MorphOne<Pipeline, $this>
+     */
+    public function latestPipeline(): MorphOne
+    {
+        return $this->morphOne(Pipeline::class, 'pipelineable')->latestOfMany();
     }
 
     /**

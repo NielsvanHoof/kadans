@@ -88,3 +88,39 @@ test('an unpinned agent leaves the model unset so the provider default applies',
     expect(resolveProvidersAndModels(new ChecklistDraftAgent('Dutch')))
         ->toBe(['bedrock' => null]);
 });
+
+test('agents resolve their timeout from the ai.agents config slot', function (): void {
+    config([
+        'ai.agents.document_overview.timeout' => 45,
+        'ai.agents.checklist_draft.timeout' => 30,
+        'ai.agents.dossier_reminder.timeout' => 20,
+    ]);
+
+    expect((new DocumentOverviewAgent)->timeout())->toBe(45)
+        ->and(new ChecklistDraftAgent('Dutch')->timeout())->toBe(30)
+        ->and(new DossierReminderDraftAgent('Dutch')->timeout())->toBe(20);
+});
+
+test('an agent slot without a timeout falls back to the shared default', function (): void {
+    config(['ai.agents.dossier_reminder.timeout' => null]);
+
+    // Not laravel/ai's own 60s default: that is long enough for a hung provider
+    // call to hold an Octane worker past OCTANE_MAX_EXECUTION_TIME.
+    expect(new DossierReminderDraftAgent('Dutch')->timeout())->toBe(30);
+});
+
+/**
+ * As with provider()/model() above: Promptable checks for a timeout() method
+ * before falling back to #[Timeout] and then to its own 60s default, so this
+ * proves the SDK actually reaches ours rather than just that the getter works.
+ */
+test('laravel/ai uses the configured timeout rather than its own default', function (): void {
+    config(['ai.agents.dossier_reminder.timeout' => 20]);
+
+    $agent = new DossierReminderDraftAgent('Dutch');
+    $getTimeout = new ReflectionMethod($agent, 'getTimeout');
+
+    expect($getTimeout->invoke($agent, null))->toBe(20)
+        // An explicit per-call timeout still wins, which is the SDK's contract.
+        ->and($getTimeout->invoke($agent, 5))->toBe(5);
+});

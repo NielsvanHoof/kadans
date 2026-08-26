@@ -6,10 +6,11 @@ namespace App\Shared\Concerns;
 
 use Illuminate\Support\Facades\Config;
 
+use function is_int;
 use function is_string;
 
 /**
- * Resolves an agent's provider and model from its `ai.agents.*` config slot.
+ * Resolves an agent's provider, model and timeout from its `ai.agents.*` slot.
  *
  * Laravel\Ai's Promptable trait looks for `provider()` / `model()` methods before
  * falling back to the #[Provider] / #[Model] attributes, which is what makes this
@@ -18,6 +19,11 @@ use function is_string;
  */
 trait ResolvesConfiguredModel
 {
+    /**
+     * Fallback for an agent whose slot does not set one.
+     */
+    private const int DEFAULT_AGENT_TIMEOUT_SECONDS = 30;
+
     /**
      * The agent's key within the `ai.agents` config array.
      */
@@ -42,5 +48,31 @@ trait ResolvesConfiguredModel
         $model = Config::get("ai.agents.{$this->agentConfigKey()}.model");
 
         return is_string($model) && mb_trim($model) !== '' ? $model : null;
+    }
+
+    /**
+     * How long to wait on the provider before giving up.
+     *
+     * Promptable defaults to 60 seconds, which is far too long for the two
+     * agents a controller calls inline: the app runs on Octane with a small
+     * worker pool, so a hung provider call holds a worker that could be
+     * serving pages, and OCTANE_MAX_EXECUTION_TIME would kill the worker
+     * mid-request before the SDK ever gave up. A user waiting on a draft has
+     * given up long before then anyway.
+     *
+     * Per agent and config-driven rather than a #[Timeout] attribute, for the
+     * same reason provider() and model() are methods here: attribute arguments
+     * must be constant expressions and cannot read config.
+     */
+    public function timeout(): int
+    {
+        // Config::get, not Config::integer: the key exists-as-null whenever a
+        // slot omits it or the env var is set but empty, and Config::integer
+        // throws on null while ignoring the default (.ai/rules/app.md).
+        $timeout = Config::get("ai.agents.{$this->agentConfigKey()}.timeout");
+
+        return is_int($timeout) && $timeout > 0
+            ? $timeout
+            : self::DEFAULT_AGENT_TIMEOUT_SECONDS;
     }
 }

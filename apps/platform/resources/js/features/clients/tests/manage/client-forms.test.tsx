@@ -97,7 +97,9 @@ describe('CreateClientForm', () => {
 
         // A second submit would create a duplicate client, and the request is
         // fast enough that an impatient double-click is realistic.
-        expect(screen.getByRole('button', { name: /Create client/ })).toBeDisabled();
+        expect(
+            screen.getByRole('button', { name: /Create client/ }),
+        ).toBeDisabled();
     });
 });
 

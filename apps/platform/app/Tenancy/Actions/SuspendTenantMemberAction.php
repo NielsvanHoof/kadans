@@ -9,6 +9,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Support\StaffOptionsCache;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +23,9 @@ final readonly class SuspendTenantMemberAction
 
     public function handle(TenantMembership $membership, User $suspendedBy): TenantMembership
     {
-        return DB::transaction(function () use ($membership, $suspendedBy): TenantMembership {
+        $tenantId = $membership->tenant_id;
+
+        $result = DB::transaction(function () use ($membership, $suspendedBy): TenantMembership {
             $this->memberRoles->lockOwnerMutations($membership->tenant_id);
 
             $membershipQuery = TenantMembership::query()->whereKey($membership->getKey());
@@ -64,5 +67,9 @@ final readonly class SuspendTenantMemberAction
 
             return $locked->fresh(['user', 'tenant']) ?? $locked;
         });
+
+        StaffOptionsCache::forget($tenantId);
+
+        return $result;
     }
 }

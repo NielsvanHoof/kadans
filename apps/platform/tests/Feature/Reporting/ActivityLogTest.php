@@ -12,6 +12,8 @@ use App\Dossiers\Models\Dossier;
 use App\Reporting\Queries\FetchActivityLogIndexQuery;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
@@ -44,7 +46,7 @@ test('owner can view the activity log with structured audit entries', function (
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('workspaces/activity/index')
             ->has('activities.data', 1)
-            ->where('activities.total', 1)
+            ->missing('activities.total')
             ->has('indexQuery')
             ->where('activities.data.0.event', AuditEvent::DossierViewed->value)
             ->where('activities.data.0.label', AuditEvent::DossierViewed->label())
@@ -295,4 +297,29 @@ test('activity log scout search filters by tenant_id in the engine query', funct
             ->component('workspaces/activity/index')
             ->has('activities.data', 1)
             ->where('activities.data.0.id', $own->id));
+});
+
+test('activity log index does not count the filtered set', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    /** @var list<string> $countQueries */
+    $countQueries = [];
+
+    DB::listen(function (QueryExecuted $query) use (&$countQueries): void {
+        $sql = mb_strtolower($query->sql);
+
+        if (str_contains($sql, 'count(') && str_contains($sql, 'activity_log')) {
+            $countQueries[] = $query->sql;
+        }
+    });
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.activity.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/activity/index')
+            ->missing('activities.total')
+            ->missing('activities.last_page'));
+
+    expect($countQueries)->toBeEmpty();
 });

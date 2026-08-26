@@ -99,4 +99,15 @@ final class Client extends TenantOwnedModel
     {
         return $this->hasMany(Dossier::class);
     }
+
+    /**
+     * Nothing on a client feeds a cached metric except whether it exists: the
+     * dashboard counts clients, it does not read their names.
+     *
+     * @return list<string>
+     */
+    protected static function cacheInvalidatingAttributes(): array
+    {
+        return [];
+    }
 }

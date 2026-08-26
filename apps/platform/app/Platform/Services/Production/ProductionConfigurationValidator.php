@@ -95,7 +95,10 @@ final readonly class ProductionConfigurationValidator
             $this->hasDatabaseRootCertificate() ? null : 'database.connections.pgsql.sslrootcert',
             $this->matches('database.redis.default.scheme', 'tls'),
             $this->matches('database.redis.cache.scheme', 'tls'),
+            $this->matches('database.redis.session.scheme', 'tls'),
             $this->matches('session.driver', 'redis'),
+            $this->hasDedicatedSessionRedisConnection() ? null : 'session.connection',
+            $this->hasSessionRedisIsolatedFromDefault() ? null : 'database.redis.session.database',
             $this->config->get('session.encrypt') === true ? null : 'session.encrypt',
             $this->config->get('session.secure') === true ? null : 'session.secure',
             $this->hasSecureSessionDomain() ? null : 'session.domain',
@@ -109,6 +112,7 @@ final readonly class ProductionConfigurationValidator
             $this->matches('transcription.driver', 'transcribe'),
             $this->hasProductionSearchDriver() ? null : 'scout.driver',
             $this->unapprovedAiProviderKey(),
+            $this->hasHorizonAllowList() ? null : 'horizon.allowed_emails',
             $this->hasErrorReporting() ? null : 'sentry.dsn',
             $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
             $this->unshippedLogChannelKey(),
@@ -135,6 +139,33 @@ final readonly class ProductionConfigurationValidator
                 implode(', ', $invalidKeys),
             ));
         }
+    }
+
+    /**
+     * Somebody must be able to open Horizon, and it must not be everybody.
+     *
+     * The dashboard renders queue payloads and failed-job exception traces and
+     * is not tenant-scoped, so the allowlist is the only boundary around one
+     * firm's job data. An empty list denies everyone, which is safe but silent —
+     * the operator discovers it by being locked out during an incident. Failing
+     * boot instead turns that into a deploy-time error, and matches how every
+     * other externally-visible setting here behaves.
+     */
+    private function hasHorizonAllowList(): bool
+    {
+        $allowed = $this->config->get('horizon.allowed_emails');
+
+        if (! is_array($allowed)) {
+            return false;
+        }
+
+        foreach ($allowed as $email) {
+            if (is_string($email) && mb_trim($email) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -168,6 +199,41 @@ final readonly class ProductionConfigurationValidator
         }
 
         return null;
+    }
+
+    /**
+     * Sessions on the default Redis connection share FLUSHDB with Horizon
+     * unique locks and the queue. The dedicated `session` connection is
+     * what keeps a `FLUSHDB` on DB 0 from logging everyone out.
+     */
+    private function hasDedicatedSessionRedisConnection(): bool
+    {
+        if ($this->config->get('session.driver') !== 'redis') {
+            return true;
+        }
+
+        return $this->config->get('session.connection') === 'session';
+    }
+
+    /**
+     * Numbered Redis DBs share instance maxmemory — this is logical
+     * isolation, matching cache-on-DB-1. The session DB still must not
+     * be the same number as the default connection.
+     */
+    private function hasSessionRedisIsolatedFromDefault(): bool
+    {
+        if ($this->config->get('session.driver') !== 'redis') {
+            return true;
+        }
+
+        $sessionDatabase = $this->config->get('database.redis.session.database');
+        $defaultDatabase = $this->config->get('database.redis.default.database');
+
+        if ($sessionDatabase === null || $sessionDatabase === '' || $defaultDatabase === null || $defaultDatabase === '') {
+            return false;
+        }
+
+        return (string) $sessionDatabase !== (string) $defaultDatabase;
     }
 
     /**
