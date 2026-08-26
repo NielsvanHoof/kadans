@@ -37,3 +37,14 @@ Uri::of() is league/uri and THROWS SyntaxError where parse_url() returns false (
 once() is flushed by FlushOnce on OperationTerminated (config/octane.php), so it must not replace PermissionRegistry's ?array property — that would re-validate the whole registry every request on a per-worker singleton.
 
 Arr::pluck()/Collection::values()->all() return array<int,mixed> and lose list<T>; keep array_map/array_values where a list<> return type is declared.
+
+## Known scaling ceilings, with the trigger that reopens each
+Found in an August 2026 performance audit, deliberately not fixed: they do not bite at tens of firms. Reopen when the trigger fires rather than re-deriving them.
+
+- **Spatie permission cache is one global blob.** `PermissionRegistrar` loads every permission `->with('roles')` into one Redis key and re-hydrates per request. With `teams => true`, `SyncTenantRolesAction` creates 5 roles + ~150 pivot rows per tenant, so the blob grows with platform size, not tenant size. `forgetCachedPermissions()` is global. Trigger: >200 tenants, or a p95 regression.
+- **Production RDS is `db.t4g.micro`**, and `databasePubliclyAccessible: true` means every query from Laravel Cloud crosses the public internet (infra/src/environments/production.ts). Trigger: before the first real client load test.
+- **Reverb is a single node** — `REVERB_SCALING_ENABLED` defaults false and no `REVERB_SCALING_*` keys exist. Trigger: scaling past one app instance.
+- **Schedulers are O(tenants).** `pipelines:monitor` and `pipelines:retry-due` do `Tenant::query()->each()` every 5 minutes. A cross-tenant `GROUP BY tenant_id` returns the same thing. Trigger: >200 tenants.
+- **Scout truncates at 1000 matches.** `ScoutSearchFilter` caps keys and re-applies via `whereKey()`, so paginated totals are wrong past the cap. The pg_trgm indexes fixed the scan cost, not this. Trigger: any tenant exceeding 1000 matches.
+- **`agent_messages`** has no `tenant_id`, a char(36) PK, six TEXT columns and no retention job.
+- **Broadcast fan-out is tenant-wide per pipeline transition** — bulk-uploading 100 documents queues ~500 BroadcastEvent jobs.
