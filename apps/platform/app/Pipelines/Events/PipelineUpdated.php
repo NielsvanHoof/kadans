@@ -24,6 +24,12 @@ final class PipelineUpdated implements ShouldBroadcast
      */
     public bool $afterCommit = true;
 
+    /**
+     * Live-UI events burst — a bulk upload emits hundreds — so they get their
+     * own queue rather than sitting in front of interactive work on `default`.
+     */
+    public string $broadcastQueue = 'broadcasts';
+
     public function __construct(
         public readonly string $tenantSlug,
         public readonly int $pipelineId,

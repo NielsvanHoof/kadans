@@ -45,14 +45,16 @@ final readonly class PipelineState
      */
     public function run(Pipeline $pipeline, callable $steps): Pipeline
     {
-        return $this->locked($pipeline, function (Pipeline $locked) use ($steps): Pipeline {
+        $locked = $this->locked($pipeline, function (Pipeline $locked) use ($steps): Pipeline {
             $steps(new PipelineStepSequence($locked, $this->stepTransitions, $this->lockStep(...)));
-
-            // Notify open workspace pages once, for the sequence as a whole.
-            $this->broadcastPipelineUpdated->handle($locked->fresh() ?? $locked);
 
             return $locked;
         });
+
+        // Notify open workspace pages once, for the sequence as a whole.
+        $this->broadcastAfterCommit($locked);
+
+        return $locked;
     }
 
     public function start(Pipeline $pipeline, PipelineStepKey $stepKey): PipelineStep
@@ -171,14 +173,34 @@ final readonly class PipelineState
      */
     private function lockedAndBroadcast(Pipeline $pipeline, callable $operation): PipelineStep|Pipeline
     {
-        return $this->locked($pipeline, function (Pipeline $locked) use ($operation): PipelineStep|Pipeline {
-            $result = $operation($locked);
+        $result = $this->locked($pipeline, $operation);
 
-            // Notify open workspace pages.
-            $this->broadcastPipelineUpdated->handle($locked->fresh() ?? $locked);
+        // Notify open workspace pages.
+        $this->broadcastAfterCommit($pipeline);
 
-            return $result;
-        });
+        return $result;
+    }
+
+    /**
+     * Assemble and emit the broadcast once the row lock is released.
+     *
+     * Building the payload costs three reads — the refreshed run, its tenant and
+     * its subject — and every one of them used to happen inside the
+     * lockForUpdate transaction, holding the pipeline row for the duration.
+     * Under a bulk upload that is precisely the contention that hurts: many runs
+     * advancing at once, each holding its row for three queries it does not need
+     * the lock for.
+     *
+     * Reading after commit is also the more correct order. The event already
+     * carries $afterCommit, so delivery was never going to happen before the
+     * transaction closed; this just stops the payload being assembled from a
+     * state no other connection could see yet.
+     */
+    private function broadcastAfterCommit(Pipeline $pipeline): void
+    {
+        $refreshed = Pipeline::query()->find($pipeline->id);
+
+        $this->broadcastPipelineUpdated->handle($refreshed instanceof Pipeline ? $refreshed : $pipeline);
     }
 
     /**
