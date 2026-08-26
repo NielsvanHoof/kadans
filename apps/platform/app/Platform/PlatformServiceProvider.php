@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform;
 
+use App\Accounts\Actions\Localization\LoadFrontendTranslationsAction;
 use App\Platform\Console\PruneModelsCommand;
 use App\Platform\Contracts\Production\ReadinessCheck;
 use App\Platform\Models\DataSubjectRequest;
@@ -32,6 +33,7 @@ final class PlatformServiceProvider extends ServiceProvider
 
         // Wraps the HTTP session, so it must not outlive a request under Octane.
         $this->app->scoped(SupportSessionState::class, PlatformSupportSessionState::class);
+        $this->app->singleton(LoadFrontendTranslationsAction::class);
     }
 
     public function boot(ProductionConfigurationValidator $productionConfigurationValidator): void

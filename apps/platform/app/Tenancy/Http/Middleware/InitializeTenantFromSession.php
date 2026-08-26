@@ -73,7 +73,10 @@ final readonly class InitializeTenantFromSession
         }
 
         $tenant->makeCurrent();
-        $request->session()->put('active_tenant_id', $tenant->id);
+
+        if ($request->session()->get('active_tenant_id') !== $tenant->id) {
+            $request->session()->put('active_tenant_id', $tenant->id);
+        }
 
         return $next($request);
     }

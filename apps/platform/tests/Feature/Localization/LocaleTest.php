@@ -7,9 +7,19 @@ use App\Audit\Enums\AuditEvent;
 use App\ClientPortal\Notifications\ClientPortalInviteNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
+use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
+
+/**
+ * The asset version the middleware would compute, so a simulated repeat visit
+ * is not rejected as a version mismatch before once-prop handling runs.
+ */
+function inertiaAssetVersion(): string
+{
+    return (string) app(HandleInertiaRequests::class)->version(request());
+}
 
 test('locale is resolved from the authenticated user preference', function (): void {
     $user = User::factory()->create(['locale' => 'nl']);
@@ -41,6 +51,44 @@ test('locale is resolved from the accept language header as a fallback', functio
         ->assertInertia(fn (Assert $page): Assert => $page
             ->where('locale', 'nl')
             ->where('translations.Save', 'Opslaan'));
+});
+
+test('the translation dictionary is not resent once the client already holds it', function (): void {
+    $user = User::factory()->create(['locale' => 'nl']);
+
+    // What the client sends on every visit after the first: it already has the
+    // once() prop, so ~100 KB of strings must stay off the wire.
+    $this->actingAs($user)
+        ->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => inertiaAssetVersion(),
+            'X-Inertia-Except-Once-Props' => 'translations',
+        ])
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertJsonPath('props.locale', 'nl')
+        ->assertJsonMissingPath('props.translations');
+});
+
+test('changing language resends the dictionary even though the client holds one', function (): void {
+    $user = User::factory()->create(['locale' => 'en']);
+
+    $this->actingAs($user)
+        ->patch(route('language.update'), ['locale' => 'nl'])
+        ->assertRedirect();
+
+    // LocaleController flashes inertia.refresh.translations, so the next
+    // response must override the client's cached English dictionary.
+    $this->actingAs($user)
+        ->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => inertiaAssetVersion(),
+            'X-Inertia-Except-Once-Props' => 'translations',
+        ])
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertJsonPath('props.locale', 'nl')
+        ->assertJsonPath('props.translations.Settings', 'Instellingen');
 });
 
 test('available locales are shared with inertia', function (): void {
