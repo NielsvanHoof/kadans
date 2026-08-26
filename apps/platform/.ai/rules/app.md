@@ -48,3 +48,12 @@ Found in an August 2026 performance audit, deliberately not fixed: they do not b
 - **Scout truncates at 1000 matches.** `ScoutSearchFilter` caps keys and re-applies via `whereKey()`, so paginated totals are wrong past the cap. The pg_trgm indexes fixed the scan cost, not this. Trigger: any tenant exceeding 1000 matches.
 - **`agent_messages`** has no `tenant_id`, a char(36) PK, six TEXT columns and no retention job.
 - **Broadcast fan-out is tenant-wide per pipeline transition** — bulk-uploading 100 documents queues ~500 BroadcastEvent jobs.
+
+## `$factory()->method(...)` is not a lazy callable
+First-class callable syntax evaluates the *receiver expression* immediately and only defers the final method call. So passing `$callback()->toArray(...)` where a lazy `Closure` is expected runs `$callback()` on every invocation.
+
+This shipped briefly in `WorkspaceDashboardCache::rememberMetrics()`, where the callback is the sixteen-aggregate dashboard recompute the cache exists to avoid — so the cache still returned the right value and quietly did all the work on every hit. Nothing failed; only a test asserting the callback did *not* run caught it.
+
+Write `static fn (): array => $callback()->toArray()` instead. Rector's ClosureToArrowFunctionRector rewrites a full closure to that arrow form, which is still lazy and is the shape to keep; do not "simplify" it further to `(...)`.
+
+The general rule: `(...)` is only equivalent to a closure when the part before `->` is a plain variable. Any call, chain, or index in front of it is evaluated eagerly.

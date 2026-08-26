@@ -64,10 +64,21 @@ final class WorkspaceDashboardCache
      */
     public static function rememberMetrics(int $tenantId, Closure $callback): DashboardMetricsData
     {
+        // flexible() rather than get()/put(): it takes a lock around the
+        // recompute and serves the stale entry to everyone else meanwhile, so a
+        // busy firm pays for one recompute instead of one per in-flight request.
+        //
+        // The callback must stay a closure. `$callback()->toArray(...)` looks
+        // like a tidier first-class callable and is not one: that form evaluates
+        // `$callback()` immediately to find the receiver, so the sixteen
+        // aggregate queries this cache exists to avoid would run on every call,
+        // hit or miss. DashboardCacheInvalidationTest is what catches it.
         $cached = Cache::flexible(
             self::key($tenantId),
             [self::FRESH_SECONDS, self::TTL_SECONDS],
-            $callback()->toArray(...),
+            // Plain array, not a serialized DTO: the class shape is free to
+            // move between deploys. SCHEMA_VERSION covers the array's shape.
+            static fn (): array => $callback()->toArray(),
         );
 
         if (is_array($cached)) {
