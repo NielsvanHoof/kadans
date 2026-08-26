@@ -46,7 +46,6 @@ Found in an August 2026 performance audit, deliberately not fixed: they do not b
 - **Reverb is a single node** — `REVERB_SCALING_ENABLED` defaults false and no `REVERB_SCALING_*` keys exist. Trigger: scaling past one app instance.
 - **Schedulers are O(tenants).** `pipelines:monitor` and `pipelines:retry-due` do `Tenant::query()->each()` every 5 minutes. A cross-tenant `GROUP BY tenant_id` returns the same thing. Trigger: >200 tenants.
 - **Scout truncates at 1000 matches.** `ScoutSearchFilter` caps keys and re-applies via `whereKey()`, so paginated totals are wrong past the cap. The pg_trgm indexes fixed the scan cost, not this. Trigger: any tenant exceeding 1000 matches.
-- **`agent_messages`** has no `tenant_id`, a char(36) PK, six TEXT columns and no retention job.
 - **Broadcast fan-out is tenant-wide per pipeline transition** — bulk-uploading 100 documents queues ~500 BroadcastEvent jobs.
 
 ## `$factory()->method(...)` is not a lazy callable

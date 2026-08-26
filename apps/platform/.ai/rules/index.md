@@ -6,9 +6,11 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/*/{Actions,Queries,Services,Transitions}/** | .ai/rules/actions-queries-services-transitions.md |
 | app/*/Actions/** | .ai/rules/actions.md |
+| app/Platform/Ai/** | .ai/rules/ai.md |
 | app/**, app/**/*.php | .ai/rules/app.md |
 | app/Audit/Models/** | .ai/rules/audit-models.md |
 | app/ClientPortal/** | .ai/rules/client-portal.md |
+| app/Platform/Console/Commands/Retention/** | .ai/rules/commands-retention.md |
 | app/{DocumentProcessing,AudioProcessing}/Console/Commands/** | .ai/rules/commands.md |
 | config/**, config/queue.php, config/horizon.php | .ai/rules/config.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |

@@ -50,6 +50,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Agent conversations
+    |--------------------------------------------------------------------------
+    |
+    | Idle conversations (updated_at older than this) are removed by the
+    | scheduled retention:prune-agent-conversations command. Messages cascade.
+    | Operational memory, not a legal archive.
+    |
+    */
+    'agent_conversation_days' => (int) env('RETENTION_AGENT_CONVERSATION_DAYS', 90),
+
+    /*
+    |--------------------------------------------------------------------------
     | Client portal access grants
     |--------------------------------------------------------------------------
     |

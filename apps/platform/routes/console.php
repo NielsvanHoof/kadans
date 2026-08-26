@@ -66,6 +66,12 @@ Schedule::command('retention:prune-notifications')
     ->onOneServer()
     ->withoutOverlapping();
 
+Schedule::command('retention:prune-agent-conversations')
+    ->daily()
+    ->at('04:50')
+    ->onOneServer()
+    ->withoutOverlapping();
+
 Schedule::command('retention:prune-dossier-exports')
     ->hourly()
     ->onOneServer()

@@ -203,4 +203,22 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Conversation persistence
+    |--------------------------------------------------------------------------
+    |
+    | Tables used by RemembersConversations. Writes go through
+    | TenantAwareDatabaseConversationStore, which stamps tenant_id.
+    | IDs are UUID v7 strings; do not switch these tables to bigint.
+    |
+    */
+    'conversations' => [
+        'connection' => null,
+        'tables' => [
+            'conversations' => 'agent_conversations',
+            'messages' => 'agent_conversation_messages',
+        ],
+    ],
+
 ];

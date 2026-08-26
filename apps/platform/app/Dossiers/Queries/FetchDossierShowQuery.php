@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Queries;
 
-use Illuminate\Contracts\Database\Query\Builder;
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Data\DossierAccessGrantData;
@@ -19,6 +18,7 @@ use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Data\PersonOptionData;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use RuntimeException;
@@ -183,9 +183,17 @@ final readonly class FetchDossierShowQuery
      */
     private function accessGrantRows(Dossier $dossier): array
     {
-        $valid = $dossier->clientAccessGrants()->valid()->latest()->get();
+        // HasMany::getQuery() is the Eloquent builder; constraints go on its
+        // base query. phpstan-strict-rules flags Builder::valid()/latest()/
+        // limit()/whereNotNull() as staticMethod.dynamicCall.
+        $validQuery = $dossier->clientAccessGrants()->getQuery();
+        $validQuery->getQuery()
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->latest();
+        $valid = $validQuery->get();
 
-        $historyQuery = $dossier->clientAccessGrants();
+        $historyQuery = $dossier->clientAccessGrants()->getQuery();
         $historyQuery->getQuery()
             ->where(function (Builder $query): void {
                 $query->whereNotNull('revoked_at')

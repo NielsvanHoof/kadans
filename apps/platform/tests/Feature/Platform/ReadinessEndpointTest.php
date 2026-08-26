@@ -135,6 +135,7 @@ test('retention and pruning tasks are scheduled', function (): void {
         ->toContain('queue:prune-batches')
         ->toContain('model:prune')
         ->toContain('retention:prune-notifications')
+        ->toContain('retention:prune-agent-conversations')
         ->toContain('retention:purge-legal')
         ->toContain('retention:prune-activity-log');
 });

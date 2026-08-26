@@ -37,6 +37,7 @@ test('nightly maintenance runs clear of the database backup window', function (s
     ['queue:prune-batches', '35 4 * * *'],
     ['model:prune', '40 4 * * *'],
     ['retention:prune-notifications', '45 4 * * *'],
+    ['retention:prune-agent-conversations', '50 4 * * *'],
     ['retention:purge-legal', '0 5 * * *'],
     ['retention:prune-activity-log', '30 5 * * 0'],
 ]);
