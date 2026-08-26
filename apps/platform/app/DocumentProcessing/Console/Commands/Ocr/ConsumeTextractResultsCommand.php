@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Console\Commands\Ocr;
 
-use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
-use App\DocumentProcessing\Actions\Ocr\FailTextractExtractionAction;
+use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
 use Aws\Sns\Exception\InvalidSnsMessageException;
 use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
@@ -20,7 +19,6 @@ use Throwable;
 
 use function count;
 use function is_array;
-use function is_int;
 use function is_string;
 use function json_decode;
 use function Laravel\Prompts\error;
@@ -28,17 +26,34 @@ use function Laravel\Prompts\info;
 use function Laravel\Prompts\warning;
 
 /**
- * Long-polls the Textract results SQS queue (SNS envelopes) and applies OCR results.
+ * Long-polls the Textract results SQS queue (SNS envelopes) and queues OCR results.
  * Not a Laravel job queue — messages are raw SNS→SQS JSON.
+ *
+ * This command owns the trust boundary and nothing else: verify the SNS
+ * signature, pull out the inner payload, hand it to ApplyTextractResultJob and
+ * delete the message. It deliberately does no work per message, because it is a
+ * single process shared by every tenant — applying results inline meant one
+ * large document blocked all of them, and a batch of five was processed
+ * serially inside one visibility window.
+ *
+ * Giving up is no longer this command's decision either. Transport failures —
+ * a body it cannot parse — are left visible for the queue's own redrive policy
+ * to move to the DLQ (maxReceiveCount 5, infra/src/shared/documents.ts), and
+ * processing failures are the job's attempt budget, ending in
+ * FailTextractExtractionAction from its failed() hook.
  */
 #[Signature('textract:consume {--once : Process one SQS batch then exit}')]
 #[Description('Consume Textract SNS/SQS completion messages and store extracted text')]
 final class ConsumeTextractResultsCommand extends Command
 {
+    /**
+     * Long enough to parse an envelope and dispatch, short enough that a
+     * consumer killed mid-message redelivers promptly.
+     */
+    private const int VISIBILITY_TIMEOUT_SECONDS = 30;
+
     public function handle(
         SqsClient $sqs,
-        CompleteTextractExtractionAction $completeTextractExtraction,
-        FailTextractExtractionAction $failTextractExtraction,
         MessageValidator $snsMessageValidator,
         Repository $config,
     ): int {
@@ -52,7 +67,6 @@ final class ConsumeTextractResultsCommand extends Command
 
         $waitTime = max(0, min(20, (int) $config->get('ocr.textract.sqs_wait_time_seconds', 20)));
         $maxMessages = max(1, min(10, (int) $config->get('ocr.textract.sqs_max_messages', 5)));
-        $maxReceiveCount = max(1, (int) $config->get('ocr.textract.sqs_max_receive_count', 5));
         $once = $this->option('once');
 
         info("Listening for Textract results on {$queueUrl}");
@@ -60,7 +74,6 @@ final class ConsumeTextractResultsCommand extends Command
             'queue_url' => $queueUrl,
             'wait_time_seconds' => $waitTime,
             'max_messages' => $maxMessages,
-            'max_receive_count' => $maxReceiveCount,
             'once' => $once,
         ]);
 
@@ -69,8 +82,10 @@ final class ConsumeTextractResultsCommand extends Command
                 'QueueUrl' => $queueUrl,
                 'MaxNumberOfMessages' => $maxMessages,
                 'WaitTimeSeconds' => $waitTime,
-                'VisibilityTimeout' => 180,
-                'MessageSystemAttributeNames' => ['ApproximateReceiveCount'],
+                // Parse, dispatch, delete — milliseconds. It used to be 180 to
+                // cover applying a whole batch inline, which let the last
+                // messages of a batch reappear while still being worked.
+                'VisibilityTimeout' => self::VISIBILITY_TIMEOUT_SECONDS,
             ]);
 
             $messages = $result->get('Messages') ?? [];
@@ -95,7 +110,7 @@ final class ConsumeTextractResultsCommand extends Command
                 $receiptHandle = $message['ReceiptHandle'] ?? null;
                 $body = $message['Body'] ?? null;
                 $messageId = is_string($message['MessageId'] ?? null) ? $message['MessageId'] : null;
-                $receiveCount = $this->receiveCount($message);
+
                 if (! is_string($receiptHandle)) {
                     continue;
                 }
@@ -112,38 +127,8 @@ final class ConsumeTextractResultsCommand extends Command
                     continue;
                 }
 
-                $notification = null;
-
                 try {
                     $notification = $this->parseSnsEnvelope($body, $snsMessageValidator);
-                    $applied = $completeTextractExtraction->handle($notification);
-
-                    if ($applied) {
-                        $jobId = is_string($notification['JobId'] ?? null)
-                            ? $notification['JobId']
-                            : 'unknown';
-                        info("Applied Textract result for job {$jobId}");
-                        Log::info('OCR: textract:consume applied and deleted SQS message.', [
-                            'textract_job_id' => $jobId,
-                            'sqs_message_id' => $messageId,
-                            'status' => is_string($notification['Status'] ?? null)
-                                ? $notification['Status']
-                                : null,
-                        ]);
-                        $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
-                    } else {
-                        // Leave non-final statuses visible so another poll can retry.
-                        warning('Skipped or deferred Textract SQS message.');
-                        Log::warning('OCR: textract:consume skipped or deferred SQS message.', [
-                            'textract_job_id' => is_string($notification['JobId'] ?? null)
-                                ? $notification['JobId']
-                                : null,
-                            'sqs_message_id' => $messageId,
-                            'status' => is_string($notification['Status'] ?? null)
-                                ? $notification['Status']
-                                : null,
-                        ]);
-                    }
                 } catch (InvalidSnsMessageException $exception) {
                     // Unsigned / forged envelopes will never become valid — drop them.
                     warning('Rejected Textract SQS message with an invalid SNS signature.');
@@ -152,33 +137,48 @@ final class ConsumeTextractResultsCommand extends Command
                         'error' => $exception->getMessage(),
                     ]);
                     $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
+
+                    continue;
                 } catch (Throwable $exception) {
-                    error('Failed to apply Textract message: '.$exception->getMessage());
-                    Log::error('OCR: textract:consume failed to apply SQS message.', [
+                    // Deliberately left visible rather than deleted: an
+                    // unparseable body is a transport-level problem, and the
+                    // queue's redrive policy is what should surface it.
+                    error('Could not parse Textract SQS message: '.$exception->getMessage());
+                    Log::error('OCR: textract:consume could not parse SQS message.', [
                         'sqs_message_id' => $messageId,
-                        'receive_count' => $receiveCount,
-                        'max_receive_count' => $maxReceiveCount,
                         'error' => $exception->getMessage(),
                     ]);
 
-                    $jobId = is_array($notification) && is_string($notification['JobId'] ?? null)
-                        ? $notification['JobId']
-                        : null;
-
-                    if (
-                        $receiveCount >= $maxReceiveCount
-                        && is_string($jobId)
-                        && $jobId !== ''
-                        && $this->failPermanently(
-                            $failTextractExtraction,
-                            $jobId,
-                            $exception,
-                            $messageId,
-                        )
-                    ) {
-                        $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
-                    }
+                    continue;
                 }
+
+                $jobId = is_string($notification['JobId'] ?? null) ? $notification['JobId'] : '';
+
+                if ($jobId === '') {
+                    // Nothing downstream can match this to a document, and no
+                    // number of redeliveries adds a job id to it.
+                    Log::warning('OCR: textract:consume deleted a notification with no JobId.', [
+                        'sqs_message_id' => $messageId,
+                    ]);
+                    $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
+
+                    continue;
+                }
+
+                // Dispatch before delete. The other order loses the result
+                // outright if dispatch fails, whereas a delete that fails after
+                // a successful dispatch only redelivers — and both the job's
+                // uniqueness key and the completion action are idempotent.
+                dispatch(new ApplyTextractResultJob($notification, $jobId));
+
+                info("Queued Textract result for job {$jobId}");
+                Log::info('OCR: textract:consume queued result and deleted SQS message.', [
+                    'textract_job_id' => $jobId,
+                    'sqs_message_id' => $messageId,
+                    'status' => is_string($notification['Status'] ?? null) ? $notification['Status'] : null,
+                ]);
+
+                $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
             }
         } while (! $once);
 
@@ -247,56 +247,5 @@ final class ConsumeTextractResultsCommand extends Command
             'QueueUrl' => $queueUrl,
             'ReceiptHandle' => $receiptHandle,
         ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $message
-     */
-    private function receiveCount(array $message): int
-    {
-        $attributes = $message['Attributes'] ?? null;
-
-        if (! is_array($attributes)) {
-            return 1;
-        }
-
-        $receiveCount = $attributes['ApproximateReceiveCount'] ?? null;
-
-        if (! is_int($receiveCount) && ! is_string($receiveCount)) {
-            return 1;
-        }
-
-        return max(1, (int) $receiveCount);
-    }
-
-    private function failPermanently(
-        FailTextractExtractionAction $failTextractExtraction,
-        string $jobId,
-        Throwable $exception,
-        ?string $messageId,
-    ): bool {
-        try {
-            $failed = $failTextractExtraction->handle($jobId, $exception);
-        } catch (Throwable $finalizationException) {
-            Log::critical('OCR: textract:consume could not persist the terminal failure.', [
-                'textract_job_id' => $jobId,
-                'sqs_message_id' => $messageId,
-                'error' => $finalizationException->getMessage(),
-            ]);
-
-            return false;
-        }
-
-        if (! $failed) {
-            return false;
-        }
-
-        warning("Marked Textract job {$jobId} failed after its final receive attempt.");
-        Log::error('OCR: textract:consume persisted terminal failure before deleting SQS message.', [
-            'textract_job_id' => $jobId,
-            'sqs_message_id' => $messageId,
-        ]);
-
-        return true;
     }
 }

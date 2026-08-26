@@ -6,6 +6,7 @@ use App\Clients\Models\Client;
 use App\DocumentProcessing\Console\Commands\Ocr\ConsumeTextractResultsCommand;
 use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
@@ -19,8 +20,33 @@ use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
+use Illuminate\Support\Facades\Queue;
 
 covers(ConsumeTextractResultsCommand::class);
+
+/**
+ * A signed-looking SNS envelope wrapping a Textract completion.
+ */
+function textractSnsBody(?string $jobId): string
+{
+    $inner = array_filter([
+        'JobId' => $jobId,
+        'Status' => 'SUCCEEDED',
+        'API' => 'StartDocumentAnalysis',
+    ], fn (?string $value): bool => $value !== null);
+
+    return json_encode([
+        'Type' => 'Notification',
+        'MessageId' => 'sns-msg',
+        'TopicArn' => 'arn:aws:sns:eu-west-1:123:textract',
+        'Message' => json_encode($inner, JSON_THROW_ON_ERROR),
+        'Timestamp' => '2026-01-01T00:00:00.000Z',
+        'SignatureVersion' => '1',
+        'Signature' => 'dGVzdA==',
+        'SigningCertURL' => 'https://sns.eu-west-1.amazonaws.com/SimpleNotificationService.pem',
+        'UnsubscribeURL' => 'https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe',
+    ], JSON_THROW_ON_ERROR);
+}
 
 test('textract consume command applies sns envelope and deletes the message', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
@@ -158,7 +184,9 @@ test('textract consume command applies sns envelope and deletes the message', fu
         ]);
 });
 
-test('textract consume command marks a document failed after the final receive attempt', function (): void {
+test('textract consume command queues the result instead of applying it inline', function (): void {
+    Queue::fake();
+
     ['tenant' => $tenant] = provisionWorkspace();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -170,80 +198,115 @@ test('textract consume command marks a document failed after the final receive a
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
     ]);
-    $uploaded = UploadedDocument::factory()->processing()->create([
+    UploadedDocument::factory()->processing()->create([
         'tenant_id' => $tenant->id,
         'document_request_id' => $documentRequest->id,
-        'textract_job_id' => 'job-final-attempt',
+        'textract_job_id' => 'job-queued',
     ]);
 
     config([
         'ocr.textract.results_queue_url' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
         'ocr.textract.sqs_wait_time_seconds' => 0,
         'ocr.textract.sqs_max_messages' => 1,
-        'ocr.textract.sqs_max_receive_count' => 5,
     ]);
-
-    $snsBody = json_encode([
-        'Type' => 'Notification',
-        'MessageId' => 'sns-msg-final',
-        'TopicArn' => 'arn:aws:sns:eu-west-1:123:textract',
-        'Message' => json_encode([
-            'JobId' => 'job-final-attempt',
-            'Status' => 'SUCCEEDED',
-            'API' => 'StartDocumentAnalysis',
-        ], JSON_THROW_ON_ERROR),
-        'Timestamp' => '2026-01-01T00:00:00.000Z',
-        'SignatureVersion' => '1',
-        'Signature' => 'dGVzdA==',
-        'SigningCertURL' => 'https://sns.eu-west-1.amazonaws.com/SimpleNotificationService.pem',
-        'UnsubscribeURL' => 'https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe',
-    ], JSON_THROW_ON_ERROR);
 
     $sqs = Mockery::mock(SqsClient::class);
     $sqs->shouldReceive('receiveMessage')
         ->once()
-        ->with(Mockery::on(fn (array $arguments): bool => ($arguments['MessageSystemAttributeNames'] ?? null) === ['ApproximateReceiveCount']))
+        // The window only has to cover parse-and-dispatch now, not applying a
+        // whole batch, which is what let later messages reappear mid-work.
+        ->with(Mockery::on(fn (array $arguments): bool => ($arguments['VisibilityTimeout'] ?? null) === 30))
         ->andReturn(new Result([
             'Messages' => [[
-                'Body' => $snsBody,
-                'ReceiptHandle' => 'receipt-final-attempt',
-                'Attributes' => ['ApproximateReceiveCount' => '5'],
+                'Body' => textractSnsBody('job-queued'),
+                'ReceiptHandle' => 'receipt-queued',
             ]],
         ]));
-    $sqs->shouldReceive('deleteMessage')
-        ->once()
-        ->with([
-            'QueueUrl' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
-            'ReceiptHandle' => 'receipt-final-attempt',
-        ])
-        ->andReturn(new Result([]));
+    $sqs->shouldReceive('deleteMessage')->once()->andReturn(new Result([]));
 
     $snsValidator = Mockery::mock(MessageValidator::class);
-    $snsValidator->shouldReceive('validate')
-        ->once()
-        ->with(Mockery::type(Message::class));
+    $snsValidator->shouldReceive('validate')->once()->with(Mockery::type(Message::class));
 
+    // The whole point: no Textract call and no Bedrock call happen on the poll
+    // loop, so one large document cannot stall every other tenant's OCR.
     $textract = Mockery::mock(TextractClient::class);
-    $textract->shouldReceive('getDocumentAnalysis')
-        ->once()
-        ->andThrow(new RuntimeException('Persistent Textract result failure.'));
-
-    $overview = Mockery::mock(DocumentOverviewNormalizer::class);
-    $overview->shouldNotReceive('describe');
+    $textract->shouldNotReceive('getDocumentAnalysis');
 
     $this->app->instance(SqsClient::class, $sqs);
     $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
-    $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
-    $this->artisan('textract:consume', ['--once' => true])
-        ->assertSuccessful();
+    $this->artisan('textract:consume', ['--once' => true])->assertSuccessful();
 
-    $uploaded->refresh();
+    Queue::assertPushed(
+        ApplyTextractResultJob::class,
+        fn (ApplyTextractResultJob $job): bool => $job->textractJobId === 'job-queued'
+            && $job->queue === 'ocr'
+            && ($job->notification['Status'] ?? null) === 'SUCCEEDED',
+    );
+});
 
-    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Failed)
-        ->and($uploaded->processing_error)->toBe('Persistent Textract result failure.')
-        ->and($uploaded->processing_finished_at)->not->toBeNull();
+test('textract consume command leaves an unparseable body for the queue redrive policy', function (): void {
+    Queue::fake();
+
+    provisionWorkspace();
+
+    config([
+        'ocr.textract.results_queue_url' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
+        'ocr.textract.sqs_wait_time_seconds' => 0,
+        'ocr.textract.sqs_max_messages' => 1,
+    ]);
+
+    $sqs = Mockery::mock(SqsClient::class);
+    $sqs->shouldReceive('receiveMessage')->once()->andReturn(new Result([
+        'Messages' => [[
+            'Body' => 'not json at all',
+            'ReceiptHandle' => 'receipt-garbage',
+        ]],
+    ]));
+    // Deliberately not deleted. A body this process cannot parse is a transport
+    // problem, and the queue's own redrive policy is what should surface it on
+    // the DLQ rather than this command silently dropping it.
+    $sqs->shouldNotReceive('deleteMessage');
+
+    $this->app->instance(SqsClient::class, $sqs);
+    $this->app->instance(MessageValidator::class, Mockery::mock(MessageValidator::class));
+
+    $this->artisan('textract:consume', ['--once' => true])->assertSuccessful();
+
+    Queue::assertNothingPushed();
+});
+
+test('textract consume command drops a notification carrying no job id', function (): void {
+    Queue::fake();
+
+    provisionWorkspace();
+
+    config([
+        'ocr.textract.results_queue_url' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
+        'ocr.textract.sqs_wait_time_seconds' => 0,
+        'ocr.textract.sqs_max_messages' => 1,
+    ]);
+
+    $sqs = Mockery::mock(SqsClient::class);
+    $sqs->shouldReceive('receiveMessage')->once()->andReturn(new Result([
+        'Messages' => [[
+            'Body' => textractSnsBody(null),
+            'ReceiptHandle' => 'receipt-no-job',
+        ]],
+    ]));
+    // Unlike an unparseable body, redelivery will never add a job id to this.
+    $sqs->shouldReceive('deleteMessage')->once()->andReturn(new Result([]));
+
+    $snsValidator = Mockery::mock(MessageValidator::class);
+    $snsValidator->shouldReceive('validate')->once()->with(Mockery::type(Message::class));
+
+    $this->app->instance(SqsClient::class, $sqs);
+    $this->app->instance(MessageValidator::class, $snsValidator);
+
+    $this->artisan('textract:consume', ['--once' => true])->assertSuccessful();
+
+    Queue::assertNothingPushed();
 });
 
 test('textract consume command rejects an SNS envelope with an invalid signature', function (): void {
