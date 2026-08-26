@@ -10,6 +10,8 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Policies\AudioRecordingPolicy;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\LazyLoadingViolationException;
 
 covers(AudioRecordingPolicy::class);
 
@@ -98,13 +100,60 @@ test('delete authorization works for recordings hydrated in a multi-model collec
         'dossier_id' => $dossier->id,
     ]);
 
-    // Re-query as a collection so preventsLazyLoading is set; automatic eager
-    // loading should still resolve dossier without throwing.
-    $recordings = AudioRecording::query()->where('dossier_id', $dossier->id)->get();
+    // This test is specifically about the production safety net, so it enables
+    // that net for its own duration. AppServiceProvider turns automatic eager
+    // loading on in production only: it rescues a caller that forgot to preload,
+    // but it also swallows the lazy access, which is why it stays off in tests
+    // so preventLazyLoading() can catch a missing preload (see the strict-mode
+    // sibling test below).
+    Model::automaticallyEagerLoadRelationships();
+
+    try {
+        // Re-query as a collection so preventsLazyLoading is set; automatic eager
+        // loading should still resolve dossier without throwing.
+        $recordings = AudioRecording::query()->where('dossier_id', $dossier->id)->get();
+        $policy = new AudioRecordingPolicy;
+
+        expect($recordings)->toHaveCount(2)
+            ->and($recordings->first()?->preventsLazyLoading)->toBeTrue()
+            ->and($policy->delete($owner, $recordings[0]))->toBeTrue()
+            ->and($policy->delete($owner, $recordings[1]))->toBeTrue();
+    } finally {
+        Model::automaticallyEagerLoadRelationships(false);
+    }
+});
+
+test('delete authorization needs dossier preloaded when automatic eager loading is off', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'status' => DossierStatus::InReview,
+    ]);
+
+    AudioRecording::factory()->count(2)->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
     $policy = new AudioRecordingPolicy;
 
-    expect($recordings)->toHaveCount(2)
-        ->and($recordings->first()?->preventsLazyLoading)->toBeTrue()
-        ->and($policy->delete($owner, $recordings[0]))->toBeTrue()
-        ->and($policy->delete($owner, $recordings[1]))->toBeTrue();
+    // The contract callers must honour: hand the policy a recording whose
+    // dossier (and its tenant) are already loaded. FetchDossierShowQuery does
+    // this by assigning the dossier it already holds onto each row.
+    $preloaded = AudioRecording::query()
+        ->where('dossier_id', $dossier->id)
+        ->with('dossier.tenant')
+        ->get();
+
+    expect($policy->delete($owner, $preloaded[0]))->toBeTrue();
+
+    // Without it, the missing preload surfaces as a violation rather than as a
+    // silent extra query per row.
+    $bare = AudioRecording::query()->where('dossier_id', $dossier->id)->get();
+
+    expect(fn (): bool => $policy->delete($owner, $bare[0]))
+        ->toThrow(LazyLoadingViolationException::class);
 });

@@ -34,6 +34,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Models/** | .ai/rules/models.md |
 | app/Pipelines/** | .ai/rules/pipelines.md |
 | app/Platform/Models/DataSubjectRequest.php | .ai/rules/platform-models.md |
+| app/Providers/** | .ai/rules/providers.md |
 | app/WorkspaceNotifications/Queries/** | .ai/rules/queries.md |
 | app/*/{Data,Http/Requests,Enums,Policies}/** | .ai/rules/requests-enums-policies.md |
 | app/Platform/Actions/Retention/** | .ai/rules/retention.md |

@@ -168,9 +168,13 @@ final readonly class FetchDossierShowQuery
             'audioRecordings' => fn ($query) => $query->with('pipelines.steps')->latest(),
         ]);
 
+        $dossier->loadMissing('tenant');
+
         $rows = [];
 
         foreach ($dossier->audioRecordings as $recording) {
+            $recording->setRelation('dossier', $dossier);
+
             $rows[] = StaffAudioRecordingData::fromModel($recording)->toArray();
         }
 
