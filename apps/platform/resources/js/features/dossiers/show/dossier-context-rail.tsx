@@ -1,10 +1,5 @@
 import DaysRemainingLabel from '@/components/primitives/days-remaining-label';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Progress,
     ProgressLabel,

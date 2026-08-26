@@ -70,7 +70,7 @@ export default function DossierPanels({
                 }
                 className="gap-0"
             >
-                <CardHeader className="sticky top-0 z-10 border-b bg-card py-3 touch-manipulation lg:static">
+                <CardHeader className="sticky top-0 z-10 touch-manipulation border-b bg-card py-3 lg:static">
                     <ScrollArea className="w-full">
                         <TabsList aria-label={t('Dossier panels')}>
                             <TabsTrigger
