@@ -39,6 +39,16 @@ final class WorkspaceDashboardCache
     private const int TTL_SECONDS = 300;
 
     /**
+     * How long a stored entry is served without question.
+     *
+     * Past this the entry is still returned, but one request refreshes it after
+     * the response is sent. Without that, every concurrent dashboard load at the
+     * moment of expiry runs getMetrics() — sixteen aggregate counts, four of them
+     * whereHas subqueries — at the same time.
+     */
+    private const int FRESH_SECONDS = 120;
+
+    /**
      * Bump whenever DashboardMetricsData gains, drops, or renames a field.
      *
      * Storing a plain array keeps a shape change from failing to unserialize, but
@@ -54,7 +64,11 @@ final class WorkspaceDashboardCache
      */
     public static function rememberMetrics(int $tenantId, Closure $callback): DashboardMetricsData
     {
-        $cached = Cache::get(self::key($tenantId));
+        $cached = Cache::flexible(
+            self::key($tenantId),
+            [self::FRESH_SECONDS, self::TTL_SECONDS],
+            $callback()->toArray(...),
+        );
 
         if (is_array($cached)) {
             /** @var array{
@@ -77,13 +91,9 @@ final class WorkspaceDashboardCache
             return DashboardMetricsData::fromArray($cached);
         }
 
-        $metrics = $callback();
-
-        // Plain array, not a serialized DTO: the class shape is free to move
-        // between deploys. SCHEMA_VERSION covers the array's own shape.
-        Cache::put(self::key($tenantId), $metrics->toArray(), self::TTL_SECONDS);
-
-        return $metrics;
+        // Unreachable in practice — flexible() returns the callback's value on a
+        // miss — but the store is untyped, so recompute rather than guess.
+        return $callback();
     }
 
     public static function forget(int $tenantId): void
