@@ -30,7 +30,7 @@
         "@types/node": "^26.1.1",
         "@vitest/coverage-v8": "^4.1.10",
         "babel-plugin-react-compiler": "^1.0.0",
-        "concurrently": "^9.0.1",
+        "concurrently": "^10.0.5",
         "jsdom": "^30.0.1",
         "playwright": "^1.62.1",
         "prettier": "^3.4.2",
