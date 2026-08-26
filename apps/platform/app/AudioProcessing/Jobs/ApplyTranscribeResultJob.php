@@ -30,6 +30,9 @@ use function array_sum;
  * recording held up every other tenant's transcription. The command now parses
  * and dispatches; the work happens here, where it can run concurrently and
  * retry with backoff.
+ *
+ * Tenant-aware queues are on, so the tenant current at dispatch rides in the
+ * payload and is restored before handle() — the same arrangement as OCR.
  */
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]

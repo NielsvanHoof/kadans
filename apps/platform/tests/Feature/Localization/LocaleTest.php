@@ -18,7 +18,7 @@ use Inertia\Testing\AssertableInertia as Assert;
  */
 function inertiaAssetVersion(): string
 {
-    return (string) app(HandleInertiaRequests::class)->version(request());
+    return (string) resolve(HandleInertiaRequests::class)->version(request());
 }
 
 test('locale is resolved from the authenticated user preference', function (): void {

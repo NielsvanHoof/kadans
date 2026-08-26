@@ -8,6 +8,7 @@ use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
+use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Sqs\SqsClient;
 use Illuminate\Support\Facades\Queue;
@@ -32,7 +33,7 @@ function transcribeConsumeRecording(string $jobId): AudioRecording
     $path = sprintf('tenants/%d/dossiers/%d/audio/call.m4a', $tenant->id, $dossier->id);
     Storage::disk('local')->put($path, 'fake-audio');
 
-    return AudioRecording::factory()->create([
+    $recording = AudioRecording::factory()->create([
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
         'disk' => 'local',
@@ -40,6 +41,11 @@ function transcribeConsumeRecording(string $jobId): AudioRecording
         'transcription_status' => TranscriptionStatus::Processing,
         'transcribe_job_id' => $jobId,
     ]);
+
+    // Production consume is a landlord daemon — no leftover HTTP tenant.
+    Tenant::forgetCurrent();
+
+    return $recording;
 }
 
 /**
@@ -174,6 +180,24 @@ test('an event carrying no job name is dropped rather than queued', function ():
     fakeTranscribeQueue([[
         'Body' => eventBridgeBody(['TranscriptionJobStatus' => 'COMPLETED']),
         'ReceiptHandle' => 'receipt-nameless',
+    ]], expectDelete: true);
+
+    $this->artisan('transcribe:consume', ['--once' => true])->assertSuccessful();
+
+    Queue::assertNothingPushed();
+});
+
+test('an event whose job name matches no recording is dropped rather than queued', function (): void {
+    Queue::fake();
+
+    transcribeConsumeRecording('transcribe-job-live');
+
+    fakeTranscribeQueue([[
+        'Body' => eventBridgeBody([
+            'TranscriptionJobName' => 'transcribe-job-from-another-era',
+            'TranscriptionJobStatus' => 'COMPLETED',
+        ]),
+        'ReceiptHandle' => 'receipt-orphan',
     ]], expectDelete: true);
 
     $this->artisan('transcribe:consume', ['--once' => true])->assertSuccessful();

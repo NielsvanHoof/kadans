@@ -6,6 +6,9 @@ namespace App\AudioProcessing\Console\Commands;
 
 use App\AudioProcessing\Data\TranscribeCompletionNotification;
 use App\AudioProcessing\Jobs\ApplyTranscribeResultJob;
+use App\Dossiers\Models\AudioRecording;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\TenantContext;
 use Aws\Sqs\SqsClient;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -17,6 +20,7 @@ use Throwable;
 
 use function count;
 use function is_array;
+use function is_numeric;
 use function is_string;
 use function json_decode;
 use function Laravel\Prompts\error;
@@ -43,6 +47,7 @@ final class ConsumeTranscribeResultsCommand extends Command
     public function handle(
         SqsClient $sqs,
         Repository $config,
+        TenantContext $tenantContext,
     ): int {
         $queueUrl = $config->get('transcription.transcribe.results_queue_url');
 
@@ -141,20 +146,57 @@ final class ConsumeTranscribeResultsCommand extends Command
                     continue;
                 }
 
-                dispatch(new ApplyTranscribeResultJob($notification, $jobId));
+                $queued = $this->dispatchResult($tenantContext, $notification, $jobId);
 
-                info("Queued Amazon Transcribe result for job {$jobId}");
-                Log::info('Transcription: transcribe:consume queued result and deleted SQS message.', [
-                    'transcribe_job_id' => $jobId,
-                    'sqs_message_id' => $messageId,
-                    'status' => $completion->status,
-                ]);
+                if ($queued) {
+                    info("Queued Amazon Transcribe result for job {$jobId}");
+                    Log::info('Transcription: transcribe:consume queued result and deleted SQS message.', [
+                        'transcribe_job_id' => $jobId,
+                        'sqs_message_id' => $messageId,
+                        'status' => $completion->status,
+                    ]);
+                } else {
+                    Log::warning('Transcription: transcribe:consume deleted a notification with no matching recording.', [
+                        'transcribe_job_id' => $jobId,
+                        'sqs_message_id' => $messageId,
+                    ]);
+                }
 
                 $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
             }
         } while (! $once);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Same landlord-daemon constraint as the OCR consumer: the job is
+     * tenant-aware, so the tenant must be current at dispatch or Spatie
+     * deletes it on the worker. Lookup is job name → tenant id only.
+     *
+     * @param  array<string, mixed>  $notification
+     */
+    private function dispatchResult(TenantContext $tenantContext, array $notification, string $jobId): bool
+    {
+        $tenantId = AudioRecording::queryWithoutTenantScope()
+            ->where('transcribe_job_id', $jobId)
+            ->value('tenant_id');
+
+        if (! is_numeric($tenantId)) {
+            return false;
+        }
+
+        $tenant = Tenant::query()->find((int) $tenantId);
+
+        if (! $tenant instanceof Tenant) {
+            return false;
+        }
+
+        $tenantContext->runForTenant($tenant, function () use ($notification, $jobId): void {
+            dispatch(new ApplyTranscribeResultJob($notification, $jobId));
+        });
+
+        return true;
     }
 
     /**

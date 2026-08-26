@@ -14,6 +14,7 @@ use App\Pipelines\Actions\CreatePipelineAction;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineStepStatus;
 use App\Pipelines\Enums\PipelineType;
+use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Sns\Exception\InvalidSnsMessageException;
 use Aws\Sns\Message;
@@ -158,8 +159,15 @@ test('textract consume command applies sns envelope and deletes the message', fu
     $this->app->instance(TextractClient::class, $textract);
     $this->app->instance(DocumentOverviewNormalizer::class, $overview);
 
+    // Production consume is a landlord daemon — no leftover HTTP tenant.
+    Tenant::forgetCurrent();
+
     $this->artisan('textract:consume', ['--once' => true])
         ->assertSuccessful();
+
+    // Restore for the assertion queries — the consume loop itself must not
+    // leave a tenant current, but PipelineStep is tenant-scoped.
+    $tenant->makeCurrent();
 
     $uploaded->refresh();
 
@@ -236,6 +244,8 @@ test('textract consume command queues the result instead of applying it inline',
     $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
 
+    Tenant::forgetCurrent();
+
     $this->artisan('textract:consume', ['--once' => true])->assertSuccessful();
 
     Queue::assertPushed(
@@ -272,6 +282,8 @@ test('textract consume command leaves an unparseable body for the queue redrive 
     $this->app->instance(SqsClient::class, $sqs);
     $this->app->instance(MessageValidator::class, Mockery::mock(MessageValidator::class));
 
+    Tenant::forgetCurrent();
+
     $this->artisan('textract:consume', ['--once' => true])->assertSuccessful();
 
     Queue::assertNothingPushed();
@@ -303,6 +315,41 @@ test('textract consume command drops a notification carrying no job id', functio
 
     $this->app->instance(SqsClient::class, $sqs);
     $this->app->instance(MessageValidator::class, $snsValidator);
+
+    Tenant::forgetCurrent();
+
+    $this->artisan('textract:consume', ['--once' => true])->assertSuccessful();
+
+    Queue::assertNothingPushed();
+});
+
+test('textract consume command drops a notification that matches no document', function (): void {
+    Queue::fake();
+
+    provisionWorkspace();
+
+    config([
+        'ocr.textract.results_queue_url' => 'https://sqs.eu-west-1.amazonaws.com/123/textract-results',
+        'ocr.textract.sqs_wait_time_seconds' => 0,
+        'ocr.textract.sqs_max_messages' => 1,
+    ]);
+
+    $sqs = Mockery::mock(SqsClient::class);
+    $sqs->shouldReceive('receiveMessage')->once()->andReturn(new Result([
+        'Messages' => [[
+            'Body' => textractSnsBody('job-from-another-era'),
+            'ReceiptHandle' => 'receipt-orphan',
+        ]],
+    ]));
+    $sqs->shouldReceive('deleteMessage')->once()->andReturn(new Result([]));
+
+    $snsValidator = Mockery::mock(MessageValidator::class);
+    $snsValidator->shouldReceive('validate')->once()->with(Mockery::type(Message::class));
+
+    $this->app->instance(SqsClient::class, $sqs);
+    $this->app->instance(MessageValidator::class, $snsValidator);
+
+    Tenant::forgetCurrent();
 
     $this->artisan('textract:consume', ['--once' => true])->assertSuccessful();
 
@@ -382,6 +429,8 @@ test('textract consume command rejects an SNS envelope with an invalid signature
     $this->app->instance(MessageValidator::class, $snsValidator);
     $this->app->instance(TextractClient::class, $textract);
     $this->app->instance(DocumentOverviewNormalizer::class, $overview);
+
+    Tenant::forgetCurrent();
 
     $this->artisan('textract:consume', ['--once' => true])
         ->assertSuccessful();

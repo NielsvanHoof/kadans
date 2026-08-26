@@ -32,6 +32,10 @@ use function array_sum;
  * The command now only parses, verifies and dispatches; the expensive part
  * happens here, where the queue can run several at once and retry with backoff.
  *
+ * Tenant-aware queues are on, so the tenant current at dispatch rides in the
+ * payload and is restored before handle() — the same arrangement
+ * ProcessUploadedDocumentJob relies on. A scoped query is therefore correct.
+ *
  * Timeout is per document rather than per batch, which is what makes the
  * visibility window and the work it covers the same size again.
  */

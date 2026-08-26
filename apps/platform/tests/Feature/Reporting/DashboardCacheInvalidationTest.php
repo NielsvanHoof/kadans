@@ -70,7 +70,7 @@ beforeEach(function (): void {
 });
 
 test('the harness itself does not evict', function (): void {
-    expect(dashboardCacheSurvives(fn () => null))->toBeTrue();
+    expect(dashboardCacheSurvives(fn (): null => null))->toBeTrue();
 });
 
 test('a write that moves a cached metric evicts', function (Closure $write): void {

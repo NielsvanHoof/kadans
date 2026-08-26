@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\DocumentProcessing\Console\Commands\Ocr;
 
 use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
+use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\TenantContext;
 use Aws\Sns\Exception\InvalidSnsMessageException;
 use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
@@ -19,6 +22,7 @@ use Throwable;
 
 use function count;
 use function is_array;
+use function is_numeric;
 use function is_string;
 use function json_decode;
 use function Laravel\Prompts\error;
@@ -56,6 +60,7 @@ final class ConsumeTextractResultsCommand extends Command
         SqsClient $sqs,
         MessageValidator $snsMessageValidator,
         Repository $config,
+        TenantContext $tenantContext,
     ): int {
         $queueUrl = $config->get('ocr.textract.results_queue_url');
 
@@ -169,20 +174,65 @@ final class ConsumeTextractResultsCommand extends Command
                 // outright if dispatch fails, whereas a delete that fails after
                 // a successful dispatch only redelivers — and both the job's
                 // uniqueness key and the completion action are idempotent.
-                dispatch(new ApplyTextractResultJob($notification, $jobId));
+                $queued = $this->dispatchResult($tenantContext, $notification, $jobId);
 
-                info("Queued Textract result for job {$jobId}");
-                Log::info('OCR: textract:consume queued result and deleted SQS message.', [
-                    'textract_job_id' => $jobId,
-                    'sqs_message_id' => $messageId,
-                    'status' => is_string($notification['Status'] ?? null) ? $notification['Status'] : null,
-                ]);
+                if ($queued) {
+                    info("Queued Textract result for job {$jobId}");
+                    Log::info('OCR: textract:consume queued result and deleted SQS message.', [
+                        'textract_job_id' => $jobId,
+                        'sqs_message_id' => $messageId,
+                        'status' => is_string($notification['Status'] ?? null) ? $notification['Status'] : null,
+                    ]);
+                } else {
+                    // Nothing downstream can match this to a document — old SQS
+                    // leftovers, or a job that was restarted under a new id.
+                    Log::warning('OCR: textract:consume deleted a notification with no matching document.', [
+                        'textract_job_id' => $jobId,
+                        'sqs_message_id' => $messageId,
+                    ]);
+                }
 
                 $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
             }
         } while (! $once);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * This command is a landlord daemon. ApplyTextractResultJob is tenant-aware
+     * (`queues_are_tenant_aware_by_default`), so Spatie stores the tenant that
+     * is current at dispatch and restores it before the job runs. Dispatching
+     * with no tenant puts no `tenantId` on the payload; the worker then deletes
+     * the job (`CurrentTenantCouldNotBeDeterminedInTenantAwareJob`) and OCR
+     * never completes.
+     *
+     * The lookup is the only query this loop is allowed: job id → tenant id.
+     * Block pagination and Bedrock stay on the `ocr` queue.
+     *
+     * @param  array{JobId?: mixed, Status?: mixed, StatusMessage?: mixed, API?: mixed}  $notification
+     */
+    private function dispatchResult(TenantContext $tenantContext, array $notification, string $jobId): bool
+    {
+        $tenantId = UploadedDocument::queryWithoutTenantScope()
+            ->where('textract_job_id', $jobId)
+            ->value('tenant_id');
+
+        if (! is_numeric($tenantId)) {
+            return false;
+        }
+
+        $tenant = Tenant::query()->find((int) $tenantId);
+
+        if (! $tenant instanceof Tenant) {
+            return false;
+        }
+
+        $tenantContext->runForTenant($tenant, function () use ($notification, $jobId): void {
+            dispatch(new ApplyTextractResultJob($notification, $jobId));
+        });
+
+        return true;
     }
 
     /**
