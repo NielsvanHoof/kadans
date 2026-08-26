@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test, { before } from "node:test";
 import { CapturedStack, runStack } from "./testing/harness.js";
+import { LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS } from "./shared/laravelCloudEgress.js";
 
 /*
  * Production in its own file: pulumi.runtime.setMocks is process-global and
@@ -44,6 +45,46 @@ test("production RDS is public, Multi-AZ, and protected", () => {
   assert.equal(database.inputs.multiAz, true);
   assert.equal(database.inputs.deletionProtection, true);
   assert.equal(database.inputs.skipFinalSnapshot, false);
+});
+
+/*
+ * The database is publicly addressable (decision-9: Laravel Cloud is not in our
+ * VPC), so this security group is the only thing between production data and the
+ * open internet. `publiclyAccessible: true` above is safe *because* of this rule
+ * and for no other reason, which is why it is asserted rather than assumed.
+ *
+ * The 0.0.0.0/0 assertion is separate on purpose: a wildcard alongside the real
+ * CIDRs would still satisfy "the allowlist is present" while opening the database
+ * to everyone.
+ */
+test("the database security group admits 5432 only from Laravel Cloud egress", () => {
+  const securityGroup = stack.named("database-sg");
+
+  assert.ok(securityGroup);
+
+  const ingress = securityGroup.inputs.ingress as Array<Record<string, unknown>>;
+
+  assert.ok(Array.isArray(ingress));
+  assert.equal(ingress.length, 1, "exactly one way in");
+
+  const [rule] = ingress;
+
+  assert.equal(rule.protocol, "tcp");
+  assert.equal(rule.fromPort, 5432);
+  assert.equal(rule.toPort, 5432);
+
+  const cidrs = rule.cidrBlocks as string[];
+
+  assert.ok(Array.isArray(cidrs) && cidrs.length > 0, "allowlist must not be empty");
+  assert.deepEqual(
+    [...cidrs].sort(),
+    [...LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS].sort(),
+    "allowlist must be exactly the committed Laravel Cloud egress CIDRs",
+  );
+  assert.ok(
+    !cidrs.includes("0.0.0.0/0"),
+    "the database must never be open to the internet",
+  );
 });
 
 test("production keeps cross-region backup replication", () => {

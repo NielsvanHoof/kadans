@@ -1,0 +1,72 @@
+name: Infra drift
+
+# The database security group allowlists Laravel Cloud's published egress CIDRs
+# (infra/src/shared/laravelCloudEgress.ts). If Cloud rotates that range and the
+# committed constant does not follow, production loses its database — and nothing
+# in the application would report it, because the failure is at the network edge.
+#
+# `deploy.yml` runs these tests too, but only on workflow_dispatch, so between
+# manual infra deploys the guard is dormant. This is the schedule that makes it
+# a guard rather than a file.
+
+on:
+  schedule:
+    # 06:15 UTC daily. Off the hour because scheduled jobs on the hour queue
+    # behind everyone else's.
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "apps/platform/infra/**"
+      - ".github/workflows/infra-drift.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-drift-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/platform/infra
+
+jobs:
+  drift:
+    name: Laravel Cloud egress CIDRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/platform/infra/package-lock.json
+
+      - name: Install infrastructure dependencies
+        run: npm ci
+
+      # Runs against Pulumi's mock runtime, so no AWS credentials are needed. The
+      # drift test is the only one that reaches the network, and it hits a public
+      # endpoint.
+      - name: Run the infra program tests
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.txt
+
+      # The drift test calls t.skip() when cloud.laravel.com is unreachable, so
+      # local runs stay usable offline. On a schedule that would be a placebo: the
+      # job goes green precisely when the check did not happen. Nothing else in
+      # this suite skips, so any skip means the guard did not run.
+      - name: Fail when the drift check skipped instead of running
+        run: |
+          if grep -qE '^# skipped [1-9]' test-output.txt; then
+            echo "::error::The Laravel Cloud egress drift check SKIPPED rather than ran — cloud.laravel.com/api/ip was unreachable or changed shape. The committed CIDRs are unverified; treat this as unknown, not as passing."
+            exit 1
+          fi
+          echo "Drift check ran (no skips)."
