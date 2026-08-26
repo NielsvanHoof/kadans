@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use function is_string;
+use function mb_trim;
 use function sprintf;
 
 /**
@@ -55,11 +56,28 @@ final readonly class AddSecurityHeaders
         if ($this->config->get('security.csp.enabled') === true && $this->shouldSendPolicy($response)) {
             $response->headers->set(
                 $this->contentSecurityPolicy->headerName(),
-                $this->contentSecurityPolicy->build($nonce),
+                $this->contentSecurityPolicy->build(
+                    $nonce,
+                    forHorizon: $this->isHorizonDashboard($request),
+                ),
             );
         }
 
         return $response;
+    }
+
+    /**
+     * Horizon's Vue dashboard needs CSP relaxations the main app must not get.
+     */
+    private function isHorizonDashboard(Request $request): bool
+    {
+        $path = mb_trim((string) $this->config->get('horizon.path', 'horizon'), '/');
+
+        if ($path === '') {
+            return false;
+        }
+
+        return $request->is($path, $path.'/*');
     }
 
     private function applyBaselineHeaders(Response $response): void

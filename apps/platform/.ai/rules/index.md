@@ -10,7 +10,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Audit/Models/** | .ai/rules/audit-models.md |
 | app/ClientPortal/** | .ai/rules/client-portal.md |
 | app/{DocumentProcessing,AudioProcessing}/Console/Commands/** | .ai/rules/commands.md |
-| config/**, config/queue.php | .ai/rules/config.md |
+| config/**, config/queue.php, config/horizon.php | .ai/rules/config.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
 | docker/**, .dockerignore | .ai/rules/docker.md |

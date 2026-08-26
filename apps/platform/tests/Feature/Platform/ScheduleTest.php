@@ -41,6 +41,14 @@ test('nightly maintenance runs clear of the database backup window', function (s
     ['activitylog:clean', '30 5 * * 0'],
 ]);
 
+test('horizon snapshot runs every five minutes for dashboard metrics', function (): void {
+    $event = scheduledEventFor('horizon:snapshot');
+
+    expect($event)->not->toBeNull()
+        ->and($event?->expression)->toBe('*/5 * * * *')
+        ->and($event?->onOneServer)->toBeTrue();
+});
+
 test('every scheduled command elects a single runner', function (): void {
     foreach (scheduledEvents() as $event) {
         // withoutOverlapping() only stops a command overlapping itself; it does

@@ -2,6 +2,7 @@
 paths:
   - 'config/**'
   - config/queue.php
+  - config/horizon.php
 ---
 
 # Config
@@ -21,3 +22,6 @@ Config must stay `config:cache`-serializable — register class names, not Closu
 
 ## Redis retry_after must exceed every job timeout
 Redis retry_after must be strictly greater than every job timeout (largest: GenerateDataSubjectExportJob 600s). Default and .env.example are 660. ProductionConfigurationValidator fails boot when the reservation would expire while a job can still run. Do not lower the DSR export timeout to dodge this — the archive can contain every file for one client.
+
+## Horizon owns Redis workers on Cloud
+Laravel Cloud runs one custom background process `php artisan horizon` (not queue:work, not Managed Queues). Keep QUEUE_CONNECTION=redis. Supervisors must drain WorkerQueues::NAMES; timeout must sit above GenerateDataSubjectExportJob (600s) and below redis retry_after (660). Dashboard access outside local is HORIZON_ALLOWED_EMAILS. Leave textract:consume / transcribe:consume as separate daemons.

@@ -19,6 +19,8 @@ Schedule::command(DispatchQueueCheckJobsCommand::class)->everyMinute()->onOneSer
 Schedule::command(ScheduleCheckHeartbeatCommand::class)->everyMinute()->onOneServer()->withoutOverlapping();
 Schedule::command(RunHealthChecksCommand::class)->everyMinute()->onOneServer()->withoutOverlapping();
 
+Schedule::command('horizon:snapshot')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
+
 Schedule::command(SendScheduledDossierRemindersCommand::class)
     ->hourly()
     ->onOneServer()

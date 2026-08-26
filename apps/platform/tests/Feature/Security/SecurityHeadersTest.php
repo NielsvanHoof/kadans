@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Models\User;
 use App\Shared\Http\ContentSecurityPolicy;
 use Illuminate\Foundation\Vite;
 
@@ -34,7 +35,24 @@ test('sends a nonce-based content security policy that blocks inline scripts', f
         ->toContain("form-action 'self'")
         // Scripts are nonce-gated; a bare 'unsafe-inline' would defeat the point.
         ->toMatch("/script-src [^;]*'nonce-[A-Za-z0-9+\/=]+'/")
-        ->not->toContain("script-src 'self' 'unsafe-inline'");
+        ->not->toContain("script-src 'self' 'unsafe-inline'")
+        // Horizon-only relaxations must not leak onto the main app.
+        ->not->toContain("'unsafe-eval'")
+        ->not->toContain('fonts.bunny.net');
+});
+
+test('relaxes csp for the horizon dashboard only', function (): void {
+    config()->set('horizon.allowed_emails', ['ops@qompose.test']);
+
+    $user = User::factory()->create(['email' => 'ops@qompose.test']);
+
+    $policy = (string) $this->actingAs($user)->get('/horizon')->assertOk()
+        ->headers->get('Content-Security-Policy');
+
+    expect($policy)
+        ->toContain("'unsafe-eval'")
+        ->toContain('https://fonts.bunny.net')
+        ->toMatch("/script-src [^;]*'nonce-[A-Za-z0-9+\/=]+'/");
 });
 
 test('emits the nonce from the policy header into the root document', function (): void {

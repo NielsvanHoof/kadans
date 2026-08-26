@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Platform\Support;
 
 /**
- * Queues the Laravel Cloud worker background process must drain.
+ * Queues Horizon (and local Sail via `php artisan horizon`) must drain.
  *
  * Order matters: default first so interactive jobs are not starved behind OCR.
  * `dossier-export` carries every long-running archive build — dossier exports
  * and data-subject exports alike — for the same reason: they must not sit in
  * front of a broadcast or a notification.
- * The Cloud worker command queue field must equal {@see csv()}.
+ *
+ * `config/horizon.php` supervisors use {@see NAMES}. Laravel Cloud runs a
+ * single custom background process `php artisan horizon` (not queue:work);
+ * the queue CSV field on managed queue:work workers is obsolete.
  */
 final class WorkerQueues
 {
@@ -29,7 +32,7 @@ final class WorkerQueues
     }
 
     /**
-     * Dedicated queues only — default is covered by Sail's primary listener.
+     * Dedicated queues only — default is drained by the same Horizon supervisor.
      *
      * @return list<string>
      */

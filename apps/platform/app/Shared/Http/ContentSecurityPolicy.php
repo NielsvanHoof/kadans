@@ -39,6 +39,10 @@ use function str_replace;
  *    same-origin under /build, uploads never land on this origin (they go to S3,
  *    and .js/.html are not accepted file types), so 'self' costs little here and
  *    keeps Vite's dev module graph working without special cases.
+ *
+ * Horizon's Vue dashboard is a third relaxation, applied only when
+ * `$forHorizon` is true: `'unsafe-eval'` (runtime template compiler) and
+ * `fonts.bunny.net` for Figtree. Never enable those on the main app.
  */
 final readonly class ContentSecurityPolicy
 {
@@ -64,8 +68,11 @@ final readonly class ContentSecurityPolicy
 
     /**
      * Build the policy string for this request.
+     *
+     * Pass `$forHorizon` only for Laravel Horizon HTML — its Vue runtime
+     * compiles templates via `new Function` and loads Figtree from Bunny.
      */
-    public function build(?string $nonce): string
+    public function build(?string $nonce, bool $forHorizon = false): string
     {
         $scriptSources = ["'self'"];
 
@@ -116,6 +123,13 @@ final readonly class ContentSecurityPolicy
             'form-action' => ["'self'"],
             'frame-ancestors' => ["'none'"],
         ];
+
+        if ($forHorizon) {
+            // Vue 3 runtime compiler (Horizon dashboard) + Figtree stylesheet.
+            $directives['script-src'][] = "'unsafe-eval'";
+            $directives['style-src'][] = 'https://fonts.bunny.net';
+            $directives['font-src'][] = 'https://fonts.bunny.net';
+        }
 
         $directives = $this->applyDevelopmentServerOrigins($directives);
         $directives = $this->applyExtraSources($directives);
