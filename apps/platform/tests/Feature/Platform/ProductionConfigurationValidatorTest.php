@@ -152,7 +152,45 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'Reverb TLS disabled' => ['reverb.apps.apps.0.options.useTLS', false],
     'wildcard Reverb allowed origins' => ['reverb.apps.apps.0.allowed_origins', ['*']],
     'empty Reverb allowed origins' => ['reverb.apps.apps.0.allowed_origins', []],
+    'unapproved inference provider for document overview' => ['ai.agents.document_overview.provider', 'openai'],
+    'unapproved inference provider for reminder drafting' => ['ai.agents.dossier_reminder.provider', 'openai'],
+    'agents config replaced wholesale' => ['ai.agents', 'nonsense'],
 ]);
+
+/**
+ * The fallback is the hazard, not the agent slots.
+ *
+ * Every agent names a provider today, so `ai.default` is unreachable and reads as
+ * harmless. Blank one `AI_*_PROVIDER` env var and that agent falls through to it —
+ * which, before decision-11, meant OCR field values from payslips and identity
+ * documents going to whatever the default named, with nothing failing. The
+ * validator resolves the same way `ResolvesConfiguredModel` does so the blank slot
+ * is checked against the value it would actually use.
+ */
+test('a blanked agent provider is rejected when the fallback is unapproved', function (mixed $blank): void {
+    config([
+        'ai.agents.document_overview.provider' => $blank,
+        'ai.default' => 'openai',
+    ]);
+
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
+        ->toThrow(LogicException::class, 'ai.agents.document_overview.provider');
+})->with([
+    'null' => [null],
+    'empty string' => [''],
+    'whitespace' => ['   '],
+]);
+
+test('a blanked agent provider passes when the fallback is approved', function (): void {
+    config([
+        'ai.agents.document_overview.provider' => null,
+        'ai.default' => 'bedrock',
+    ]);
+
+    resolve(ProductionConfigurationValidator::class)->validate();
+
+    expect(true)->toBeTrue();
+});
 
 /**
  * The log check asks whether anything leaves the machine, not that every

@@ -15,7 +15,11 @@ return [
     |
     */
 
-    'default' => 'openai',
+    // Bedrock, in-region, per decision-11. This is the fallback an agent lands on
+    // when its own ai.agents.*.provider slot is blank — every agent sets one today,
+    // so it is unreachable, but a blank env var must not reroute client document
+    // content to a provider nobody chose. ProductionConfigurationValidator pins it.
+    'default' => 'bedrock',
     'default_for_images' => 'gemini',
     'default_for_audio' => 'openai',
     'default_for_transcription' => 'openai',

@@ -20,6 +20,7 @@ use function is_numeric;
 use function is_readable;
 use function is_string;
 use function max;
+use function mb_trim;
 use function sprintf;
 
 final readonly class ProductionConfigurationValidator
@@ -52,6 +53,18 @@ final readonly class ProductionConfigurationValidator
      * @var list<string>
      */
     private const array FILE_LOG_DRIVERS = ['single', 'daily'];
+
+    /**
+     * Inference providers a shipped environment may send workspace data to.
+     *
+     * This is a sub-processor allowlist, not a performance preference. The
+     * document overview agent sends OCR field values from payslips, bank
+     * statements and identity documents, so which provider answers is the same
+     * class of question as which bucket holds the file. decision-11.
+     *
+     * @var list<string>
+     */
+    private const array APPROVED_AI_PROVIDERS = ['bedrock'];
 
     /**
      * Environments this validator guards. Staging ships the same image and
@@ -95,6 +108,7 @@ final readonly class ProductionConfigurationValidator
             // produces fabricated transcripts instead of failing.
             $this->matches('transcription.driver', 'transcribe'),
             $this->hasProductionSearchDriver() ? null : 'scout.driver',
+            $this->unapprovedAiProviderKey(),
             $this->hasErrorReporting() ? null : 'sentry.dsn',
             $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
             $this->unshippedLogChannelKey(),
@@ -121,6 +135,39 @@ final readonly class ProductionConfigurationValidator
                 implode(', ', $invalidKeys),
             ));
         }
+    }
+
+    /**
+     * The first agent configured to send workspace data somewhere unapproved.
+     *
+     * Resolution mirrors `ResolvesConfiguredModel::provider()` exactly — agent
+     * slot first, `ai.default` when it is blank — because the hazard is precisely
+     * that fallback. Every agent names a provider today, so `ai.default` is
+     * unreachable; blank one env var and that agent silently starts sending client
+     * document fields wherever the default points. Checking the resolved value
+     * rather than the literal config catches both halves.
+     */
+    private function unapprovedAiProviderKey(): ?string
+    {
+        $agents = $this->config->get('ai.agents');
+
+        if (! is_array($agents)) {
+            return 'ai.agents';
+        }
+
+        foreach ($agents as $agent => $settings) {
+            $configured = is_array($settings) ? ($settings['provider'] ?? null) : null;
+
+            $resolved = is_string($configured) && mb_trim($configured) !== ''
+                ? $configured
+                : $this->config->get('ai.default');
+
+            if (! is_string($resolved) || ! in_array($resolved, self::APPROVED_AI_PROVIDERS, true)) {
+                return sprintf('ai.agents.%s.provider', (string) $agent);
+            }
+        }
+
+        return null;
     }
 
     /**
