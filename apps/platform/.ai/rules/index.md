@@ -13,7 +13,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/**, config/queue.php, config/horizon.php | .ai/rules/config.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
-| docker/**, .dockerignore | .ai/rules/docker.md |
+| docker/**, .dockerignore, vite.config.ts | .ai/rules/docker.md |
 | app/{DocumentProcessing,AudioProcessing}/Actions/** | .ai/rules/document-processing-audio-processing-actions.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
@@ -29,6 +29,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
 | resources/js/**, resources/js/**/*.{tsx,ts} | .ai/rules/js.md |
+| resources/js/lib/** | .ai/rules/lib.md |
 | app/*/Listeners/** | .ai/rules/listeners.md |
 | compose.yaml, package.json | .ai/rules/local-environment.md |
 | app/Tenancy/Http/Middleware/** | .ai/rules/middleware.md |

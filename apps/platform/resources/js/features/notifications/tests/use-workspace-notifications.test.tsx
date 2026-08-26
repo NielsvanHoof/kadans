@@ -14,6 +14,8 @@ const routerReload = vi.fn();
 let pageProps: Record<string, unknown> = {};
 
 vi.mock('@laravel/echo-react', () => ({
+    // lib/echo.ts calls this on import; no-op under tests.
+    configureEcho: vi.fn(),
     useEcho: (
         _channel: string,
         event: string,

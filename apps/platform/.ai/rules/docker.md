@@ -1,7 +1,8 @@
 ---
 paths:
   - 'docker/**'
-  - '.dockerignore'
+  - .dockerignore
+  - vite.config.ts
 ---
 
 # Docker
@@ -22,3 +23,6 @@ The application owns Referrer-Policy exclusively. docker/8.5/Caddyfile is the on
 
 ## Floci bucket CORS is required for browser PUTs
 The browser PUTs to Floci at http://localhost:4566 from http://localhost, which is cross-origin. docker/floci/init/ready.d/01-create-local-bucket.sh must put-bucket-cors with PUT + content-type for http://localhost and http://127.0.0.1 (same allowlist as infra local uploadAllowedOrigins). Do not use a wildcard origin: a presigned URL is a bearer credential. The Laravel app CORS/CSP settings are never consulted for this request — a missing bucket rule is a 403 preflight. The script is bind-mounted; applying CORS to a bucket that already exists still needs a Floci restart or a one-shot aws s3api put-bucket-cors, because ready.d only runs at container start.
+
+## React Compiler via rolldown Babel; SSR off in Vite
+Wire babel-plugin-react-compiler with @rolldown/plugin-babel + reactCompilerPreset() from @vitejs/plugin-react (v6 dropped inline babel). Keep inertia({ ssr: false }) aligned with config/inertia.php enabled=false — do not reintroduce build:ssr without an SSR entry, production SSR process, and Cloud toggle together.

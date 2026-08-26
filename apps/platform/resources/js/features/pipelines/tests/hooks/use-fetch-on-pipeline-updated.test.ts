@@ -7,6 +7,8 @@ let emit: (event: PipelineUpdatedPayload) => void = () => {};
 const httpGet = vi.fn();
 
 vi.mock('@laravel/echo-react', () => ({
+    // lib/echo.ts calls this on import; no-op under tests.
+    configureEcho: vi.fn(),
     useEcho: (
         _channel: string,
         _event: string,

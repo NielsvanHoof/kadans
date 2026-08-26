@@ -18,16 +18,10 @@ return [
     */
 
     /*
-     * Off, because there is nothing to render with: this application has no
-     * `resources/js/ssr.tsx` entry point, no `npm run build:ssr` in any build,
-     * and no process serving port 13714. Left enabled, Inertia attempts a
-     * connection to that port on every render and falls back to client-side
-     * rendering after it fails — a wasted round trip per page, and one that
-     * gets slower rather than faster on a platform where localhost is a pod.
-     *
-     * Turning it on means: add the entry point, switch the build command to
-     * `npm run build:ssr`, and enable Laravel Cloud's Inertia SSR toggle so
-     * something is listening. All three, or none.
+     * SSR is intentionally off on both layers: this flag (Laravel adapter) and
+     * `inertia({ ssr: false })` in vite.config.ts. Re-enable only together with
+     * an SSR entry/build, a production process on the SSR port, and Laravel
+     * Cloud's Inertia SSR toggle — all three, or none.
      */
     'ssr' => [
         'enabled' => false,

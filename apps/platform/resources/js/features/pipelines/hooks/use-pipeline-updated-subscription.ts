@@ -2,6 +2,7 @@ import { useEcho } from '@laravel/echo-react';
 import { useCallback, useRef } from 'react';
 import type { PipelineUpdatedPayload } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import '@/lib/echo';
 
 export type PipelineUpdatedSubscription = {
     enabled?: boolean;
