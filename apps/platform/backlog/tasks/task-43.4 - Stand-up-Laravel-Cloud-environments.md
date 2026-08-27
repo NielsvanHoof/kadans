@@ -4,7 +4,7 @@ title: Stand up Laravel Cloud environments
 status: In Progress
 assignee: []
 created_date: '2026-08-22 16:05'
-updated_date: '2026-08-22 20:26'
+updated_date: '2026-08-27 20:34'
 labels: []
 dependencies: []
 parent_task_id: TASK-43
@@ -79,4 +79,10 @@ Staging:
 - Env on branch staging with own Valkey + Reverb app; same topology as production
 
 Blocked for deploy: env vars beyond APP_KEY (DB/AWS/S3/etc).
+
+Correction (2026-08-27): the worker topology in this task's description predates the Horizon decision and is wrong as written. Cloud does not run three background processes with queue:work over default,ocr,transcription,dossier-export.
+
+Actual topology: one custom background process 'php artisan horizon', plus textract:consume and transcribe:consume as separate long-poll SQS daemons. Horizon itself forks workers from config/horizon.php, which since TASK-45 has two supervisors — supervisor-interactive over WorkerQueues::INTERACTIVE (default, broadcasts) and supervisor-heavy over WorkerQueues::HEAVY (ocr, transcription, dossier-export). The queue CSV a managed queue:work worker would need is obsolete; do not provision Managed Queues alongside Horizon.
+
+Worker sizing note in the description still holds in spirit but not in numbers: the app cluster is 2 GiB / 1 vCPU and runs web, scheduler and all three background processes together, which hit a 90% memory alert until TASK-45 retuned the supervisors. See .ai/rules/config.md.
 <!-- SECTION:NOTES:END -->

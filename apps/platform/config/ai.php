@@ -195,7 +195,7 @@ return [
         // slower, stronger Nova is affordable here and nowhere else.
         //
         // Anthropic on Bedrock is deliberately not used — see
-        // ProductionConfigurationValidator::DISALLOWED_AI_MODEL_PREFIXES.
+        // ProductionConfigurationValidator::DISALLOWED_AI_MODEL_FRAGMENTS.
         'document_overview' => [
             'provider' => env('AI_DOCUMENT_OVERVIEW_PROVIDER', 'bedrock'),
             'model' => env('AI_DOCUMENT_OVERVIEW_MODEL', 'eu.amazon.nova-pro-v1:0'),
