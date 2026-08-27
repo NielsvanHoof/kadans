@@ -58,8 +58,17 @@ test('worker queues cover every broadcastQueue literal', function (): void {
 });
 
 test('worker queues keep default first for queue work ordering', function (): void {
+    // Pinned as a list rather than through a csv() helper: the comma-separated
+    // form only ever existed for a Managed Queues field this project does not
+    // use. Order still matters — it is the pool Horizon favours when idle.
     expect(WorkerQueues::NAMES[0])->toBe('default')
-        ->and(WorkerQueues::csv())->toBe('default,broadcasts,ocr,transcription,dossier-export');
+        ->and(WorkerQueues::NAMES)->toBe([
+            'default',
+            'broadcasts',
+            'ocr',
+            'transcription',
+            'dossier-export',
+        ]);
 });
 
 test('the interactive and heavy groups partition every worker queue', function (): void {
