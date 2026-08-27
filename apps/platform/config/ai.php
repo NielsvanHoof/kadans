@@ -87,9 +87,12 @@ return [
                 'duration_seconds' => env('AWS_BEDROCK_ASSUME_ROLE_DURATION_SECONDS'),
                 'external_id' => env('AWS_BEDROCK_ASSUME_ROLE_EXTERNAL_ID'),
             ],
-            // Amazon Nova Lite: allowlisted in infra/src/config.ts
+            // Amazon Nova only: allowlisted in infra/src/config.ts
             // (defaultBedrockModelArns) — requires a `pulumi up` deploy of that
-            // change before this actually works against real AWS.
+            // change before this actually works against real AWS. Anthropic
+            // model ids are rejected at boot in shipped environments, because
+            // they need an account-level use-case submission we have not made
+            // (see .ai/rules/ai.md).
             'models' => [
                 'text' => [
                     'default' => env('AI_BEDROCK_MODEL_ID', 'eu.amazon.nova-lite-v1:0'),
@@ -185,9 +188,17 @@ return [
         // Not on a request path: this one runs inside the Textract result
         // consumer, so the ceiling is about how long one document may hold up
         // every other tenant's OCR completion, not about a user waiting.
+        //
+        // Nova Pro rather than the provider's Nova Lite default: this is the
+        // one quality-critical slot (it classifies payslips and bank statements
+        // from Textract field labels), and it is off the request path, so the
+        // slower, stronger Nova is affordable here and nowhere else.
+        //
+        // Anthropic on Bedrock is deliberately not used — see
+        // ProductionConfigurationValidator::DISALLOWED_AI_MODEL_PREFIXES.
         'document_overview' => [
             'provider' => env('AI_DOCUMENT_OVERVIEW_PROVIDER', 'bedrock'),
-            'model' => env('AI_DOCUMENT_OVERVIEW_MODEL', 'eu.anthropic.claude-sonnet-4-20250514-v1:0'),
+            'model' => env('AI_DOCUMENT_OVERVIEW_MODEL', 'eu.amazon.nova-pro-v1:0'),
             'timeout' => (int) env('AI_DOCUMENT_OVERVIEW_TIMEOUT', 45),
         ],
 

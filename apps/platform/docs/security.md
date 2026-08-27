@@ -241,11 +241,20 @@ the retention schedule in detail and said nothing about data leaving for inferen
 
 **All three run on AWS Bedrock in-region**, not a separate vendor. The region falls
 through `AWS_BEDROCK_REGION` → `AWS_DEFAULT_REGION` → `eu-west-1`, and the document
-overview agent pins `eu.anthropic.claude-sonnet-4-20250514-v1:0` — the `eu.` prefix
-is a cross-region inference profile that keeps inference inside EU regions.
-Authentication is the same IAM access key as S3, Textract and Transcribe
-(decision-10); `infra/src/shared/policies.ts` already grants Bedrock. So the
-sub-processor here is AWS, which the DPA already names — not a new one.
+overview agent pins `eu.amazon.nova-pro-v1:0` — the `eu.` prefix is a cross-region
+inference profile that keeps inference inside EU regions. Authentication is the same
+IAM access key as S3, Textract and Transcribe (decision-10);
+`infra/src/shared/policies.ts` already grants Bedrock. So the sub-processor here is
+AWS, which the DPA already names — not a new one.
+
+Anthropic models on Bedrock are **not** used, and are refused in three places so
+that stays true: `infra/src/config.ts` withholds the IAM grant,
+`ProductionConfigurationValidator` fails boot on an `anthropic.` model id in a
+shipped environment, and every agent resolves to Amazon Nova. This is an
+availability constraint rather than a data-protection one — invoking them needs an
+account-level use-case submission we have not made — but it is enforced, not just
+configured, so no env var can quietly widen the set of models client document
+fields reach.
 
 Two details worth keeping:
 

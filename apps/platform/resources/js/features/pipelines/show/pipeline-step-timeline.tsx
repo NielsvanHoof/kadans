@@ -1,5 +1,6 @@
 import { Check, Circle, CircleAlert, Clock3, SkipForward } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import PipelineErrorPanel from '@/features/pipelines/show/pipeline-error-panel';
 import {
     pipelineStepLabel,
     pipelineStepStatusLabel,
@@ -103,20 +104,10 @@ export default function PipelineStepTimeline({
                                 </span>
                             ) : null}
                         </div>
-                        {step.error_message || step.error_code ? (
-                            <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
-                                {step.error_code ? (
-                                    <p className="font-mono text-xs text-destructive">
-                                        {step.error_code}
-                                    </p>
-                                ) : null}
-                                {step.error_message ? (
-                                    <p className="text-destructive">
-                                        {step.error_message}
-                                    </p>
-                                ) : null}
-                            </div>
-                        ) : null}
+                        <PipelineErrorPanel
+                            errorCode={step.error_code}
+                            errorMessage={step.error_message}
+                        />
                     </div>
                 </div>
             ))}
