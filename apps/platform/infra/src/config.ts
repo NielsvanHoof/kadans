@@ -105,14 +105,20 @@ export function hostnameZone(domain: string, subdomain: string | null): string {
 /**
  * Foundation models and inference profiles the OCR overview step may call.
  *
- * Deliberately still family-wide: the app selects models per environment and per
- * agent today, and foundation-model ARNs keep a wildcard region so cross-region
- * inference profiles keep working. The inference-profile ARN is scoped to this
- * stack's region.
+ * Deliberately still family-wide within a vendor: the app selects models per
+ * environment and per agent today, and foundation-model ARNs keep a wildcard
+ * region so cross-region inference profiles keep working. The inference-profile
+ * ARN is scoped to this stack's region.
+ *
+ * Anthropic is absent on purpose. Invoking those models needs an account-level
+ * use-case submission this account has not made, so they answer every request
+ * with a 404 that reads like a bad model id (.ai/rules/ai.md). Withholding the
+ * IAM grant turns that into an AccessDenied naming the model instead, and stops
+ * an env var from routing client document fields at a model we cannot call.
+ * Granting it again is a two-line change once the submission clears.
  */
 export function defaultBedrockModelArns(region: string): string[] {
   return [
-    "arn:aws:bedrock:*::foundation-model/anthropic.*",
     "arn:aws:bedrock:*::foundation-model/openai.*",
     "arn:aws:bedrock:*::foundation-model/amazon.*",
     `arn:aws:bedrock:${region}:*:inference-profile/*`,

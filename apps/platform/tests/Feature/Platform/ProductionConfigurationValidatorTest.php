@@ -163,6 +163,9 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'unapproved inference provider for document overview' => ['ai.agents.document_overview.provider', 'openai'],
     'unapproved inference provider for reminder drafting' => ['ai.agents.dossier_reminder.provider', 'openai'],
     'agents config replaced wholesale' => ['ai.agents', 'nonsense'],
+    'Anthropic model on an agent slot' => ['ai.agents.document_overview.model', 'eu.anthropic.claude-sonnet-4-20250514-v1:0'],
+    'bare Anthropic model id on an agent slot' => ['ai.agents.document_overview.model', 'anthropic.claude-3-5-sonnet-20240620-v1:0'],
+    'Anthropic model as the Bedrock provider default' => ['ai.providers.bedrock.models.text.default', 'us.anthropic.claude-sonnet-4-20250514-v1:0'],
     'empty Horizon allow list' => ['horizon.allowed_emails', []],
     'Horizon allow list of blank strings' => ['horizon.allowed_emails', ['', '   ']],
     'Horizon allow list replaced wholesale' => ['horizon.allowed_emails', 'ops@example.com'],
@@ -202,6 +205,38 @@ test('a blanked agent provider passes when the fallback is approved', function (
 
     expect(true)->toBeTrue();
 });
+
+/**
+ * Anthropic on Bedrock is refused at boot, not at inference time.
+ *
+ * Those models need an account-level use-case submission this account has not
+ * made, and until it clears they answer with a 404 whose body carries the real
+ * reason. That surfaced as three one-second retries and a stuck OCR pipeline
+ * (.ai/rules/ai.md), so the model id is now rejected where the operator can see
+ * it. `infra/src/config.ts` withholds the IAM grant for the same reason.
+ */
+test('every agent falling through to the Bedrock default is caught by the provider default check', function (): void {
+    // Nothing names its own Anthropic model, so only resolving the fallback
+    // catches this — the same shape as the provider check above.
+    config([
+        'ai.agents.document_overview.model' => null,
+        'ai.providers.bedrock.models.text.default' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
+    ]);
+
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
+        ->toThrow(LogicException::class, 'ai.providers.bedrock.models.text.default');
+});
+
+test('the Nova models we can actually invoke pass validation', function (string $model): void {
+    config(['ai.agents.document_overview.model' => $model]);
+
+    resolve(ProductionConfigurationValidator::class)->validate();
+
+    expect(true)->toBeTrue();
+})->with([
+    'Nova Pro' => ['eu.amazon.nova-pro-v1:0'],
+    'Nova Lite' => ['eu.amazon.nova-lite-v1:0'],
+]);
 
 /**
  * The log check asks whether anything leaves the machine, not that every

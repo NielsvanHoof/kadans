@@ -17,19 +17,19 @@ test('agents resolve their provider from the ai.agents config slot', function ()
 });
 
 test('a per-agent model override is applied', function (): void {
-    config(['ai.agents.document_overview.model' => 'eu.anthropic.claude-opus-4-6-v1']);
+    config(['ai.agents.document_overview.model' => 'eu.amazon.nova-premier-v1:0']);
 
-    expect((new DocumentOverviewAgent)->model())->toBe('eu.anthropic.claude-opus-4-6-v1');
+    expect((new DocumentOverviewAgent)->model())->toBe('eu.amazon.nova-premier-v1:0');
 });
 
 test('the OCR agent can use a different model than text generation agents', function (): void {
     config([
-        'ai.agents.document_overview.model' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
+        'ai.agents.document_overview.model' => 'eu.amazon.nova-pro-v1:0',
         'ai.agents.checklist_draft.model' => null,
     ]);
 
     // A null model falls through to the provider's models.text.default.
-    expect((new DocumentOverviewAgent)->model())->toBe('eu.anthropic.claude-sonnet-4-20250514-v1:0')
+    expect((new DocumentOverviewAgent)->model())->toBe('eu.amazon.nova-pro-v1:0')
         ->and(new ChecklistDraftAgent('Dutch')->model())->toBeNull();
 });
 
@@ -69,11 +69,11 @@ function resolveProvidersAndModels(object $agent): array
 test('laravel/ai resolves the configured provider and model for a pinned agent', function (): void {
     config([
         'ai.agents.document_overview.provider' => 'bedrock',
-        'ai.agents.document_overview.model' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
+        'ai.agents.document_overview.model' => 'eu.amazon.nova-pro-v1:0',
     ]);
 
     expect(resolveProvidersAndModels(new DocumentOverviewAgent))
-        ->toBe(['bedrock' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0']);
+        ->toBe(['bedrock' => 'eu.amazon.nova-pro-v1:0']);
 });
 
 test('an unpinned agent leaves the model unset so the provider default applies', function (): void {
