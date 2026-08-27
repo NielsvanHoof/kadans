@@ -99,6 +99,7 @@ export default function ReviewDossier({
 
     useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocument }>({
         enabled: hasInFlightProcessing,
+        scope: { on: 'dossier', dossierId: dossier.id },
         match: (event) =>
             event.dossier_id === dossier.id &&
             event.subject_type === 'uploaded_document',

@@ -47,6 +47,11 @@ export default function UploadedDocumentShowContent({
 
     useFetchOnPipelineUpdated<{ uploaded_document: UploadedDocumentDetail }>({
         enabled: isProcessing,
+        // The dossier is optional on this page, so fall back to the
+        // firm-wide stream rather than going dark when it is absent.
+        scope: dossier
+            ? { on: 'dossier', dossierId: dossier.id }
+            : { on: 'workspace' },
         match: (event) =>
             event.subject_type === 'uploaded_document' &&
             event.subject_id === uploadedDocument.id,

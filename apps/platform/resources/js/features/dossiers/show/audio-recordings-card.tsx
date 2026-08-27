@@ -110,6 +110,7 @@ function AudioRecordingsList({
         audio_recording: (typeof recordings)[number];
     }>({
         enabled: hasInFlightProcessing,
+        scope: { on: 'dossier', dossierId },
         match: (event) =>
             event.dossier_id === dossierId &&
             event.type === 'audio_transcription' &&

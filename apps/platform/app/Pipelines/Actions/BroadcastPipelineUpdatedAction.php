@@ -9,6 +9,7 @@ use App\Pipelines\Events\PipelineUpdated;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Support\TenantLookup;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -25,9 +26,10 @@ final readonly class BroadcastPipelineUpdatedAction
 
     public function handle(Pipeline $pipeline): void
     {
-        $pipeline->loadMissing('tenant');
-
-        $tenant = $pipeline->tenant;
+        // The cached directory rather than loadMissing('tenant'): only the slug
+        // is needed, it does not change, and this runs once per pipeline
+        // transition — hundreds of times during a bulk upload.
+        $tenant = TenantLookup::findById($pipeline->tenant_id);
 
         if (! $tenant instanceof Tenant) {
             return;

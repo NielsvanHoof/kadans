@@ -46,6 +46,9 @@ export default function PipelineShow({
         ],
         {
             enabled: isInFlight,
+            // Firm-wide: a run reached from the pipeline list is not
+            // necessarily one whose dossier this page knows.
+            scope: { on: 'workspace' },
             match: (event) => event.pipeline_id === pipeline.id,
         },
     );

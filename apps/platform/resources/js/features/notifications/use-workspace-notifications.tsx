@@ -1,7 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import { useCallback } from 'react';
-import { usePipelineUpdatedSubscription } from '@/features/pipelines/hooks/use-pipeline-updated-subscription';
 import '@/lib/echo';
 
 /**
@@ -23,13 +22,16 @@ export function useWorkspaceNotifications(tenantSlug: string): void {
         [tenantSlug],
     );
 
-    // Audio transcription has no dedicated broadcast event — it reuses the
-    // existing pipeline.updated stream every other pipeline feature listens to.
-    usePipelineUpdatedSubscription(reloadNotifications, {
-        match: (event) =>
-            event.type === 'audio_transcription' &&
-            event.status === 'completed',
-    });
+    // Transcription completion has its own event now. It used to filter the
+    // whole pipeline.updated stream for it, and because this hook mounts in
+    // AppLayout that made every staff member a subscriber to every run in the
+    // firm, on every page — the reason that stream could not be narrowed.
+    useEcho(
+        `workspaces.${tenantSlug}`,
+        '.audio.transcription.completed',
+        reloadNotifications,
+        [tenantSlug],
+    );
 }
 
 /**

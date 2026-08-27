@@ -1,15 +1,14 @@
 import { render, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PipelineUpdatedPayload } from '@/features/pipelines/types';
 import { mockInertiaPage } from '@/test/mocks';
 
 /**
- * Captured Echo handlers, keyed by event name, so tests can emit broadcasts
- * directly. useWorkspaceNotifications subscribes twice: once itself
- * (questionnaire.completed) and once via usePipelineUpdatedSubscription
- * (pipeline.updated, filtered to completed audio transcriptions).
+ * Captured Echo subscriptions, so tests can emit broadcasts directly and assert
+ * which channels this hook joins. It mounts in AppLayout, so whatever it
+ * subscribes to, every staff member subscribes to on every page.
  */
 const echoHandlers: Record<string, (event: unknown) => void> = {};
+const echoChannels: string[] = [];
 const routerReload = vi.fn();
 let pageProps: Record<string, unknown> = {};
 
@@ -17,11 +16,12 @@ vi.mock('@laravel/echo-react', () => ({
     // lib/echo.ts calls this on import; no-op under tests.
     configureEcho: vi.fn(),
     useEcho: (
-        _channel: string,
+        channel: string,
         event: string,
         handler: (event: unknown) => void,
     ) => {
         echoHandlers[event] = handler;
+        echoChannels.push(channel);
     },
 }));
 
@@ -37,22 +37,9 @@ vi.mock('@inertiajs/react', () => ({
 const { useWorkspaceNotifications, WorkspaceNotifications } =
     await import('@/features/notifications/use-workspace-notifications');
 
-function pipelinePayload(
-    overrides: Partial<PipelineUpdatedPayload> = {},
-): PipelineUpdatedPayload {
-    return {
-        pipeline_id: 1,
-        type: 'audio_transcription',
-        status: 'completed',
-        subject_type: 'audio_recording',
-        subject_id: 1,
-        dossier_id: 1,
-        ...overrides,
-    };
-}
-
 beforeEach(() => {
     routerReload.mockReset();
+    echoChannels.length = 0;
     for (const key of Object.keys(echoHandlers)) {
         delete echoHandlers[key];
     }
@@ -67,33 +54,30 @@ describe('useWorkspaceNotifications', () => {
         expect(routerReload).toHaveBeenCalledWith({ only: ['notifications'] });
     });
 
-    it('reloads on a completed audio transcription pipeline event', () => {
+    it('reloads on a completed audio transcription broadcast', () => {
         renderHook(() => useWorkspaceNotifications('acme'));
 
-        echoHandlers['.pipeline.updated'](
-            pipelinePayload({
-                type: 'audio_transcription',
-                status: 'completed',
-            }),
-        );
+        echoHandlers['.audio.transcription.completed']({
+            audio_recording_id: 1,
+            dossier_id: 1,
+        });
 
-        expect(routerReload).toHaveBeenCalledTimes(1);
+        expect(routerReload).toHaveBeenCalledWith({ only: ['notifications'] });
     });
 
-    it('ignores pipeline events that are not a completed audio transcription', () => {
+    it('does not subscribe to the pipeline stream', () => {
         renderHook(() => useWorkspaceNotifications('acme'));
 
-        echoHandlers['.pipeline.updated'](
-            pipelinePayload({ type: 'ocr', status: 'completed' }),
-        );
-        echoHandlers['.pipeline.updated'](
-            pipelinePayload({
-                type: 'audio_transcription',
-                status: 'processing',
-            }),
-        );
-
-        expect(routerReload).not.toHaveBeenCalled();
+        // The regression this guards: the bell used to filter the whole
+        // pipeline.updated stream for completed transcriptions. Because it
+        // mounts in AppLayout, that subscribed every staff member to every run
+        // in the firm on every page — and the Pusher protocol delivers a
+        // channel's events to all its subscribers whether or not a listener is
+        // bound, so a bulk upload woke every open tab hundreds of times.
+        expect(echoHandlers['.pipeline.updated']).toBeUndefined();
+        // Two useEcho calls, one per event, but only the one channel — Echo
+        // dedupes the underlying subscription.
+        expect([...new Set(echoChannels)]).toEqual(['workspaces.acme']);
     });
 });
 

@@ -13,6 +13,7 @@ import type { PipelineUpdatedPayload } from '@/features/pipelines/types';
 export function useFetchOnPipelineUpdated<TResponse>({
     enabled = true,
     match,
+    scope,
     urlForEvent,
     onData,
 }: PipelineUpdatedSubscription & {
@@ -52,5 +53,5 @@ export function useFetchOnPipelineUpdated<TResponse>({
         }
     }, []);
 
-    usePipelineUpdatedSubscription(fetchAndApply, { enabled, match });
+    usePipelineUpdatedSubscription(fetchAndApply, { enabled, match, scope });
 }

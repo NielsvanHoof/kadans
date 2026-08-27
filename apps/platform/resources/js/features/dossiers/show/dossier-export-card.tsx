@@ -36,6 +36,7 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
 
     useFetchOnPipelineUpdated<{ export: DossierExport }>({
         enabled: hasInFlightProcessing,
+        scope: { on: 'dossier', dossierId: dossier.id },
         match: (event) =>
             event.dossier_id === dossier.id &&
             event.type === 'dossier_export' &&
