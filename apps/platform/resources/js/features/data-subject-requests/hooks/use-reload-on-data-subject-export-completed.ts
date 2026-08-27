@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import { useCallback } from 'react';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import '@/lib/echo';
 
 /**
  * Partial-reload the data-subject request list when a queued export finishes.

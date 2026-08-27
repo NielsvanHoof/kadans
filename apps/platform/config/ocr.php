@@ -37,7 +37,16 @@ return [
         // Long-poll wait for textract:consume (seconds, max 20).
         'sqs_wait_time_seconds' => (int) env('TEXTRACT_SQS_WAIT_TIME', 20),
         'sqs_max_messages' => (int) env('TEXTRACT_SQS_MAX_MESSAGES', 5),
-        // Must match the SQS redrive policy so the last attempt can mark the document failed.
+        /*
+         * Mirrors the queue's redrive policy (infra/src/shared/documents.ts).
+         *
+         * The consumer no longer counts receives to decide when to give up —
+         * that is now split properly: SQS's own redrive moves a message it
+         * cannot parse to the DLQ, and ApplyTextractResultJob's attempt budget
+         * owns processing failures. The value is kept and validated because it
+         * documents the deployed policy, and a mismatch between this and the
+         * queue is worth catching at boot.
+         */
         'sqs_max_receive_count' => (int) env('TEXTRACT_SQS_MAX_RECEIVE_COUNT', 5),
     ],
 

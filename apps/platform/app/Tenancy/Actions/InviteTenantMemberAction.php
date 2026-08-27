@@ -12,6 +12,7 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
+use App\Tenancy\Support\StaffOptionsCache;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ final readonly class InviteTenantMemberAction
             ]);
         }
 
-        return DB::transaction(function () use ($tenant, $invitedBy, $email, $role): array {
+        $result = DB::transaction(function () use ($tenant, $invitedBy, $email, $role): array {
             $existingMemberQuery = TenantMembership::query()
                 ->where('tenant_id', $tenant->id)
                 ->whereHas('user', function (Builder $query) use ($email): void {
@@ -116,5 +117,13 @@ final readonly class InviteTenantMemberAction
                 'plain_text_token' => $plainTextToken,
             ];
         });
+
+        // After commit so a rolled-back invite does not punch a hole in
+        // the cache. Invite itself does not change the active-staff set;
+        // accept does. Forget here anyway so a later accept cannot serve
+        // a stale dropdown if this action is the only write we see.
+        StaffOptionsCache::forget($tenant->id);
+
+        return $result;
     }
 }

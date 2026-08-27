@@ -8,6 +8,7 @@ use App\Platform\Services\Health\FailedQueueJobsCheck;
 use App\Platform\Services\Health\StuckPipelinesCheck;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Health\Checks\Checks\HorizonCheck;
 use Spatie\Health\Enums\Status;
 use Spatie\Health\Facades\Health;
 // Spatie's Status is a spatie/enum class exposing ok()/failed() as static
@@ -39,7 +40,8 @@ test('the registered checks cover work finishing, not just workers running', fun
     );
 
     expect($registered)->toContain(FailedQueueJobsCheck::class)
-        ->and($registered)->toContain(StuckPipelinesCheck::class);
+        ->and($registered)->toContain(StuckPipelinesCheck::class)
+        ->and($registered)->toContain(HorizonCheck::class);
 });
 
 test('the failed job check passes when nothing failed recently', function (): void {

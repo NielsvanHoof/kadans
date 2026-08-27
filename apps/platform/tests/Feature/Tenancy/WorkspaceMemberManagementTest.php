@@ -61,6 +61,30 @@ test('members page does not re-query roles already loaded by authorization', fun
     expect($rolePivotQueries)->toHaveCount(2);
 });
 
+test('members page bounds membership and invitation queries', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $limited = [];
+
+    DB::listen(function (QueryExecuted $query) use (&$limited): void {
+        $sql = mb_strtolower($query->sql);
+
+        if (! str_contains($sql, 'limit 500')) {
+            return;
+        }
+
+        if (str_contains($sql, 'tenant_memberships') || str_contains($sql, 'tenant_invitations')) {
+            $limited[] = $query->sql;
+        }
+    });
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.members.index', $tenant))
+        ->assertOk();
+
+    expect($limited)->toHaveCount(2);
+});
+
 test('administrators see can_assign_owner as false on the members page', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
     $admin = workspaceMember($tenant, Role::Administrator);

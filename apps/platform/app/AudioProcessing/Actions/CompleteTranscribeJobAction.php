@@ -18,8 +18,6 @@ use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
 use App\Pipelines\Support\PipelineStepSequence;
-use App\Tenancy\Models\Tenant;
-use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
@@ -28,6 +26,10 @@ use function mb_strlen;
 
 /**
  * Applies an Amazon Transcribe completion notification to an AudioRecording.
+ *
+ * Tenant is already current: the consume command switches before dispatch so
+ * Spatie restores it onto ApplyTranscribeResultJob. A scoped lookup is therefore
+ * correct.
  */
 final readonly class CompleteTranscribeJobAction
 {
@@ -39,7 +41,6 @@ final readonly class CompleteTranscribeJobAction
         private PipelineState $pipelineState,
         private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
         private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
-        private TenantContext $tenantContext,
         private AudioTranscriptionTransitions $transcriptionTransitions,
     ) {}
 
@@ -67,7 +68,7 @@ final readonly class CompleteTranscribeJobAction
             return false;
         }
 
-        $recording = AudioRecording::queryWithoutTenantScope()
+        $recording = AudioRecording::query()
             ->where('transcribe_job_id', $jobId)
             ->first();
 
@@ -80,92 +81,78 @@ final readonly class CompleteTranscribeJobAction
             return false;
         }
 
-        $tenant = Tenant::query()->find($recording->tenant_id);
+        $pipeline = $this->resolveProviderPipeline->handle(
+            $recording,
+            PipelineType::AudioTranscription,
+            $jobId,
+        );
 
-        if (! $tenant instanceof Tenant) {
-            Log::error('Transcription: Transcribe completion recording has missing tenant.', [
+        if (in_array($recording->transcription_status, [
+            TranscriptionStatus::Completed,
+            TranscriptionStatus::Failed,
+        ], true)) {
+            if (
+                $recording->transcription_status === TranscriptionStatus::Completed
+                && $pipeline instanceof Pipeline
+                && ! $pipeline->status->isTerminal()
+            ) {
+                $pipeline = $this->prepareProviderPipeline->handle(
+                    $pipeline,
+                    Config::string('transcription.driver'),
+                    $jobId,
+                    PipelineStepKey::Transcribe,
+                );
+                $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                    ->complete(PipelineStepKey::Transcribe)
+                    ->start(PipelineStepKey::ProcessResults)
+                    ->complete(PipelineStepKey::ProcessResults));
+            }
+
+            Log::info('Transcription: Transcribe completion already applied — skipping.', [
                 'audio_recording_id' => $recording->id,
                 'tenant_id' => $recording->tenant_id,
                 'transcribe_job_id' => $jobId,
             ]);
 
-            return false;
+            return true;
         }
 
-        return $this->tenantContext->runForTenant($tenant, function () use ($recording, $jobId, $status, $completion): bool {
-            $pipeline = $this->resolveProviderPipeline->handle(
-                $recording,
-                PipelineType::AudioTranscription,
-                $jobId,
-            );
+        Log::info('Transcription: applying Transcribe completion notification.', [
+            'audio_recording_id' => $recording->id,
+            'tenant_id' => $recording->tenant_id,
+            'transcribe_job_id' => $jobId,
+            'status' => $status,
+        ]);
 
-            if (in_array($recording->transcription_status, [
-                TranscriptionStatus::Completed,
-                TranscriptionStatus::Failed,
-            ], true)) {
-                if (
-                    $recording->transcription_status === TranscriptionStatus::Completed
-                    && $pipeline instanceof Pipeline
-                    && ! $pipeline->status->isTerminal()
-                ) {
-                    $pipeline = $this->prepareProviderPipeline->handle(
-                        $pipeline,
-                        Config::string('transcription.driver'),
-                        $jobId,
-                        PipelineStepKey::Transcribe,
-                    );
-                    $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
-                        ->complete(PipelineStepKey::Transcribe)
-                        ->start(PipelineStepKey::ProcessResults)
-                        ->complete(PipelineStepKey::ProcessResults));
-                }
+        if ($completion->isCompleted()) {
+            return $this->completeSuccessfully($recording, $pipeline, $jobId);
+        }
 
-                Log::info('Transcription: Transcribe completion already applied — skipping.', [
-                    'audio_recording_id' => $recording->id,
-                    'tenant_id' => $recording->tenant_id,
-                    'transcribe_job_id' => $jobId,
-                ]);
+        if ($completion->isFailed()) {
+            $error = $completion->failureReason();
 
-                return true;
+            $this->markTranscribeJobFailed->handle($recording, $jobId, $error, $status);
+
+            if ($pipeline instanceof Pipeline) {
+                $this->pipelineState->fail(
+                    $pipeline,
+                    PipelineStepKey::Transcribe,
+                    errorCode: 'transcribe_provider_failed',
+                    errorMessage: $error,
+                );
             }
 
-            Log::info('Transcription: applying Transcribe completion notification.', [
-                'audio_recording_id' => $recording->id,
-                'tenant_id' => $recording->tenant_id,
-                'transcribe_job_id' => $jobId,
-                'status' => $status,
-            ]);
+            return true;
+        }
 
-            if ($completion->isCompleted()) {
-                return $this->completeSuccessfully($recording, $pipeline, $jobId);
-            }
+        // IN_PROGRESS / QUEUED — the job logs this and does not retry.
+        Log::info('Transcription: Transcribe job not terminal yet — deferring.', [
+            'audio_recording_id' => $recording->id,
+            'transcribe_job_id' => $jobId,
+            'status' => $status,
+        ]);
 
-            if ($completion->isFailed()) {
-                $error = $completion->failureReason();
-
-                $this->markTranscribeJobFailed->handle($recording, $jobId, $error, $status);
-
-                if ($pipeline instanceof Pipeline) {
-                    $this->pipelineState->fail(
-                        $pipeline,
-                        PipelineStepKey::Transcribe,
-                        errorCode: 'transcribe_provider_failed',
-                        errorMessage: $error,
-                    );
-                }
-
-                return true;
-            }
-
-            // IN_PROGRESS / QUEUED — leave the SQS message for a later poll.
-            Log::info('Transcription: Transcribe job not terminal yet — deferring.', [
-                'audio_recording_id' => $recording->id,
-                'transcribe_job_id' => $jobId,
-                'status' => $status,
-            ]);
-
-            return false;
-        });
+        return false;
     }
 
     private function completeSuccessfully(

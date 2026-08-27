@@ -96,14 +96,10 @@ export default function WaitingItemRow({
                                 {request.reviewed_by_name
                                     ? t('Returned by :name on :date', {
                                           name: request.reviewed_by_name,
-                                          date: formatDate(
-                                              request.reviewed_at,
-                                          ),
+                                          date: formatDate(request.reviewed_at),
                                       })
                                     : t('Returned on :date', {
-                                          date: formatDate(
-                                              request.reviewed_at,
-                                          ),
+                                          date: formatDate(request.reviewed_at),
                                       })}
                             </p>
                         ) : null}

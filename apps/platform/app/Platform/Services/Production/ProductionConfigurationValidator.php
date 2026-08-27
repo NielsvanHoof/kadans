@@ -20,6 +20,7 @@ use function is_numeric;
 use function is_readable;
 use function is_string;
 use function max;
+use function mb_trim;
 use function sprintf;
 
 final readonly class ProductionConfigurationValidator
@@ -54,6 +55,18 @@ final readonly class ProductionConfigurationValidator
     private const array FILE_LOG_DRIVERS = ['single', 'daily'];
 
     /**
+     * Inference providers a shipped environment may send workspace data to.
+     *
+     * This is a sub-processor allowlist, not a performance preference. The
+     * document overview agent sends OCR field values from payslips, bank
+     * statements and identity documents, so which provider answers is the same
+     * class of question as which bucket holds the file. decision-11.
+     *
+     * @var list<string>
+     */
+    private const array APPROVED_AI_PROVIDERS = ['bedrock'];
+
+    /**
      * Environments this validator guards. Staging ships the same image and
      * serves the same kind of data as production, so it gets the same checks.
      *
@@ -82,7 +95,10 @@ final readonly class ProductionConfigurationValidator
             $this->hasDatabaseRootCertificate() ? null : 'database.connections.pgsql.sslrootcert',
             $this->matches('database.redis.default.scheme', 'tls'),
             $this->matches('database.redis.cache.scheme', 'tls'),
+            $this->matches('database.redis.session.scheme', 'tls'),
             $this->matches('session.driver', 'redis'),
+            $this->hasDedicatedSessionRedisConnection() ? null : 'session.connection',
+            $this->hasSessionRedisIsolatedFromDefault() ? null : 'database.redis.session.database',
             $this->config->get('session.encrypt') === true ? null : 'session.encrypt',
             $this->config->get('session.secure') === true ? null : 'session.secure',
             $this->hasSecureSessionDomain() ? null : 'session.domain',
@@ -95,6 +111,8 @@ final readonly class ProductionConfigurationValidator
             // produces fabricated transcripts instead of failing.
             $this->matches('transcription.driver', 'transcribe'),
             $this->hasProductionSearchDriver() ? null : 'scout.driver',
+            $this->unapprovedAiProviderKey(),
+            $this->hasHorizonAllowList() ? null : 'horizon.allowed_emails',
             $this->hasErrorReporting() ? null : 'sentry.dsn',
             $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
             $this->unshippedLogChannelKey(),
@@ -121,6 +139,101 @@ final readonly class ProductionConfigurationValidator
                 implode(', ', $invalidKeys),
             ));
         }
+    }
+
+    /**
+     * Somebody must be able to open Horizon, and it must not be everybody.
+     *
+     * The dashboard renders queue payloads and failed-job exception traces and
+     * is not tenant-scoped, so the allowlist is the only boundary around one
+     * firm's job data. An empty list denies everyone, which is safe but silent —
+     * the operator discovers it by being locked out during an incident. Failing
+     * boot instead turns that into a deploy-time error, and matches how every
+     * other externally-visible setting here behaves.
+     */
+    private function hasHorizonAllowList(): bool
+    {
+        $allowed = $this->config->get('horizon.allowed_emails');
+
+        if (! is_array($allowed)) {
+            return false;
+        }
+
+        foreach ($allowed as $email) {
+            if (is_string($email) && mb_trim($email) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The first agent configured to send workspace data somewhere unapproved.
+     *
+     * Resolution mirrors `ResolvesConfiguredModel::provider()` exactly — agent
+     * slot first, `ai.default` when it is blank — because the hazard is precisely
+     * that fallback. Every agent names a provider today, so `ai.default` is
+     * unreachable; blank one env var and that agent silently starts sending client
+     * document fields wherever the default points. Checking the resolved value
+     * rather than the literal config catches both halves.
+     */
+    private function unapprovedAiProviderKey(): ?string
+    {
+        $agents = $this->config->get('ai.agents');
+
+        if (! is_array($agents)) {
+            return 'ai.agents';
+        }
+
+        foreach ($agents as $agent => $settings) {
+            $configured = is_array($settings) ? ($settings['provider'] ?? null) : null;
+
+            $resolved = is_string($configured) && mb_trim($configured) !== ''
+                ? $configured
+                : $this->config->get('ai.default');
+
+            if (! is_string($resolved) || ! in_array($resolved, self::APPROVED_AI_PROVIDERS, true)) {
+                return sprintf('ai.agents.%s.provider', (string) $agent);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Sessions on the default Redis connection share FLUSHDB with Horizon
+     * unique locks and the queue. The dedicated `session` connection is
+     * what keeps a `FLUSHDB` on DB 0 from logging everyone out.
+     */
+    private function hasDedicatedSessionRedisConnection(): bool
+    {
+        if ($this->config->get('session.driver') !== 'redis') {
+            return true;
+        }
+
+        return $this->config->get('session.connection') === 'session';
+    }
+
+    /**
+     * Numbered Redis DBs share instance maxmemory — this is logical
+     * isolation, matching cache-on-DB-1. The session DB still must not
+     * be the same number as the default connection.
+     */
+    private function hasSessionRedisIsolatedFromDefault(): bool
+    {
+        if ($this->config->get('session.driver') !== 'redis') {
+            return true;
+        }
+
+        $sessionDatabase = $this->config->get('database.redis.session.database');
+        $defaultDatabase = $this->config->get('database.redis.default.database');
+
+        if ($sessionDatabase === null || $sessionDatabase === '' || $defaultDatabase === null || $defaultDatabase === '') {
+            return false;
+        }
+
+        return (string) $sessionDatabase !== (string) $defaultDatabase;
     }
 
     /**

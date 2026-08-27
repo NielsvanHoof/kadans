@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Platform;
 
+use App\Accounts\Actions\Localization\LoadFrontendTranslationsAction;
+use App\Platform\Ai\TenantAwareDatabaseConversationStore;
 use App\Platform\Console\PruneModelsCommand;
 use App\Platform\Contracts\Production\ReadinessCheck;
 use App\Platform\Models\DataSubjectRequest;
@@ -12,9 +14,13 @@ use App\Platform\Services\Production\InfrastructureReadinessCheck;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
 use App\Platform\Support\PlatformSupportSessionState;
 use App\Tenancy\Contracts\SupportSessionState;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Ai\Contracts\ConversationStore;
 use Override;
+
+use function is_string;
 
 /**
  * Platform infrastructure bindings and production boot checks.
@@ -30,8 +36,20 @@ final class PlatformServiceProvider extends ServiceProvider
 
         $this->app->bind(ReadinessCheck::class, InfrastructureReadinessCheck::class);
 
+        // Replaces the vendor DatabaseConversationStore so every persist and
+        // lookup carries tenant_id. Read Tenant::current() per call — this is
+        // a singleton and must not cache tenant state across Octane requests.
+        $this->app->singleton(ConversationStore::class, function (): TenantAwareDatabaseConversationStore {
+            $connection = Config::get('ai.conversations.connection');
+
+            return new TenantAwareDatabaseConversationStore(
+                is_string($connection) ? $connection : null,
+            );
+        });
+
         // Wraps the HTTP session, so it must not outlive a request under Octane.
         $this->app->scoped(SupportSessionState::class, PlatformSupportSessionState::class);
+        $this->app->singleton(LoadFrontendTranslationsAction::class);
     }
 
     public function boot(ProductionConfigurationValidator $productionConfigurationValidator): void

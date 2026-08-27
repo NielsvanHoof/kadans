@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
+use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
@@ -10,6 +11,9 @@ use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Enums\Role;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -434,4 +438,71 @@ test('dossier overview signs the days remaining on the due date', function (): v
                 ->component('dossiers/show')
                 ->where('dossier.days_remaining', $expected));
     }
+});
+
+test('dossier overview serializes only the latest pipeline per uploaded document', function (): void {
+    [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+    ] = createDossierShowContext(DossierStatus::InReview);
+
+    $documentRequest = $dossier->documentRequests()->sole();
+    $uploadedDocument = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+    ]);
+
+    Pipeline::factory()->create([
+        'tenant_id' => $tenant->id,
+        'type' => PipelineType::OcrDocument,
+        'pipelineable_type' => $uploadedDocument->getMorphClass(),
+        'pipelineable_id' => $uploadedDocument->id,
+    ]);
+    $latestPipeline = Pipeline::factory()->create([
+        'tenant_id' => $tenant->id,
+        'type' => PipelineType::OcrDocument,
+        'pipelineable_type' => $uploadedDocument->getMorphClass(),
+        'pipelineable_id' => $uploadedDocument->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/show')
+            ->where('dossier.document_requests.0.uploaded_documents.0.pipeline.id', $latestPipeline->id));
+});
+
+test('dossier overview keeps every valid grant and bounds expired grant history', function (): void {
+    [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'dossier' => $dossier,
+    ] = createDossierShowContext(DossierStatus::AwaitingClient);
+
+    foreach (range(1, 25) as $daysAgo) {
+        ClientAccessGrant::factory()->create([
+            'tenant_id' => $tenant->id,
+            'dossier_id' => $dossier->id,
+            'created_by' => $owner->id,
+            'expires_at' => now()->subDays($daysAgo),
+        ]);
+    }
+
+    $validGrant = ClientAccessGrant::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'created_by' => $owner->id,
+        'expires_at' => now()->addDays(7),
+    ]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('dossiers/show')
+            ->has('dossier.access_grants', 21)
+            ->where('dossier.access_grants.0.id', $validGrant->id)
+            ->where('dossier.access_grants.0.is_valid', true));
 });

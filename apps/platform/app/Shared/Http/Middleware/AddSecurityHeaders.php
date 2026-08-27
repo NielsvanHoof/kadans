@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use function is_string;
+use function mb_trim;
 use function sprintf;
 
 /**
@@ -55,11 +56,29 @@ final readonly class AddSecurityHeaders
         if ($this->config->get('security.csp.enabled') === true && $this->shouldSendPolicy($response)) {
             $response->headers->set(
                 $this->contentSecurityPolicy->headerName(),
-                $this->contentSecurityPolicy->build($nonce),
+                $this->contentSecurityPolicy->build(
+                    $nonce,
+                    forHorizon: $this->isDashboard($request, 'horizon.path', 'horizon'),
+                    forTelescope: $this->isDashboard($request, 'telescope.path', 'telescope'),
+                ),
             );
         }
 
         return $response;
+    }
+
+    /**
+     * Horizon and Telescope HTML need CSP extras the main app must not get.
+     */
+    private function isDashboard(Request $request, string $configKey, string $default): bool
+    {
+        $path = mb_trim((string) $this->config->get($configKey, $default), '/');
+
+        if ($path === '') {
+            return false;
+        }
+
+        return $request->is($path, $path.'/*');
     }
 
     private function applyBaselineHeaders(Response $response): void

@@ -1,11 +1,11 @@
 ---
 id: TASK-40
 title: Restructure Docker into per-environment folders
-status: In Progress
+status: Done
 assignee:
   - '@NielsvanHoof'
 created_date: '2026-08-18 09:09'
-updated_date: '2026-08-18 09:29'
+updated_date: '2026-08-25 21:15'
 labels:
   - infra
   - docker
@@ -31,7 +31,7 @@ Also closes a credential gap found while scoping: .dockerignore excludes .env an
 - [x] #2 Sail runtime files are published under docker/ and compose.yaml builds from them instead of vendor/
 - [x] #3 docker/base holds the shared PHP extension set and asset build; staging and production Dockerfiles layer only their own config on top
 - [x] #4 A single image serves web, worker and reverb roles, and the worker covers all four production queues
-- [ ] #5 Dockerfile.production is gone and CI still produces the same Trivy-scanned OCI artifact
+- [x] #5 Dockerfile.production and docker-bake.hcl are gone from the repo (CI's Trivy-scanned OCI artifact went with them in TASK-43.5 — recorded as a gap in docs/security.md, not silently dropped)
 - [x] #6 Tests cover the per-environment file layout, the entrypoint role set and the Caddyfile Referrer-Policy invariant for both environments
 <!-- AC:END -->
 
@@ -71,6 +71,12 @@ Verification:
 - Staging Xdebug: inert by default, engages only when the container is started with XDEBUG_MODE set.
 - CI mechanism (on a throwaway docker-container builder, since the OCI exporter needs it): bake produced a 264 MB OCI tarball at the CI path pattern, --metadata-file yielded production.containerimage.digest for the summary step, and the dotted `--set production.labels.org.opencontainers.image.revision=deadbeef` landed on the image config - so buildx `--set` parses dotted label keys correctly.
 - Suite: `artisan test --parallel` 1328 passed. (A first run showed 2 failures - a 1-second timestamp comparison in PipelineTransitionsTest and a config-repository race in TrustedHostsTest - both passed in isolation and on re-run; parallel flakes, not this change.) PHPStan level 9 clean, Pint clean.
+
+Closed in the 2026-08-25 reconciliation. Verified: Dockerfile.production and docker-bake.hcl are absent; docker/ holds 8.5, floci and pgsql; ProductionCaddyfileTest still exists and passes as part of the 1410-test suite, and docs/security.md already points at docker/8.5/Caddyfile rather than the deleted per-environment ones.
+
+AC#5 reworded. The original read 'Dockerfile.production is gone and CI still produces the same Trivy-scanned OCI artifact'. The first half happened; the second became unachievable when TASK-43.5 deleted the container build along with the ECS release path (decision-9). Rather than tick a half-true criterion or leave the task open forever, the criterion now states what is actually true and points at where the lost control is recorded — docs/security.md gained a 'No container image scanning' row under Remaining tracked work, because losing a v1.0 security control deserves a line, not silence.
+
+Worth being explicit about ACs #3 and #6: they stay checked because the work was genuinely delivered, but what they describe — docker/base, docker/staging, docker/production and the two per-environment Caddyfiles — was deleted afterwards by TASK-43.5. This task built a per-environment Docker layout that a later decision made unnecessary. That is not a defect in this task; it is the cost of decision-9 arriving after it.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -82,3 +88,9 @@ created: 2026-08-18 09:29
 AC #5 left unchecked deliberately. Dockerfile.production is gone and the bake build was verified to produce the same OCI tarball and digest metadata locally on a CI-equivalent docker-container builder, but the docker/bake-action@v6 input wiring itself (workdir/files/targets/set) can only be proven by a real pipeline run. Check it once platform.yml has run green on this branch.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Per-environment Docker layout delivered; env/ excluded from the build context, role-dispatch entrypoint, and the Caddyfile Referrer-Policy invariant under test. AC#5 reworded because TASK-43.5 later removed the container build entirely — the lost Trivy scan is now recorded as tracked work in docs/security.md. Verified against the current docker/ tree and a green suite.
+<!-- SECTION:FINAL_SUMMARY:END -->

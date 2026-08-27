@@ -16,6 +16,7 @@ use App\Dossiers\Http\Requests\AudioRecordings\StoreAudioRecordingRequest;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Queries\FetchAudioRecordingShowQuery;
+use App\Dossiers\Support\StoredFileResponse;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
@@ -23,7 +24,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -126,7 +126,8 @@ final class AudioRecordingController extends Controller
         AudioRecording $audioRecording,
         LogAuditActivityAction $logAuditActivity,
         ResolveMalwareScanStatusAction $resolveMalwareScanStatus,
-    ): StreamedResponse {
+        StoredFileResponse $storedFileResponse,
+    ): RedirectResponse|StreamedResponse {
         $this->authorize('download', $audioRecording);
 
         // Client-uploaded bytes in the same bucket as the documents, so GuardDuty
@@ -153,9 +154,12 @@ final class AudioRecordingController extends Controller
             ['original_filename' => $audioRecording->original_filename],
         );
 
-        return Storage::disk($audioRecording->disk)->download(
+        return $storedFileResponse->serve(
+            $audioRecording->disk,
             $audioRecording->path,
             $audioRecording->original_filename,
+            $audioRecording->mime_type,
+            'attachment',
             self::UNTRUSTED_FILE_HEADERS,
         );
     }

@@ -7,6 +7,7 @@ namespace App\Tenancy\Models;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Models\QuestionnaireTemplate;
+use App\Tenancy\Support\TenantLookup;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -110,5 +111,21 @@ final class Tenant extends Model implements IsTenant
         }
 
         return parent::resolveChildRouteBinding($childType, $value, $field);
+    }
+
+    /**
+     * Directory cache lives in TenantLookup. Forget from here — no Observer
+     * class — so a slug rename cannot 404 for the rest of the TTL.
+     */
+    #[Override]
+    protected static function booted(): void
+    {
+        self::updated(static function (Tenant $tenant): void {
+            TenantLookup::forget($tenant);
+        });
+
+        self::deleted(static function (Tenant $tenant): void {
+            TenantLookup::forget($tenant);
+        });
     }
 }

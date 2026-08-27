@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Console\Commands;
 
-use App\AudioProcessing\Actions\CompleteTranscribeJobAction;
-use App\AudioProcessing\Actions\FailTranscribeJobAction;
 use App\AudioProcessing\Data\TranscribeCompletionNotification;
+use App\AudioProcessing\Jobs\ApplyTranscribeResultJob;
+use App\Dossiers\Models\AudioRecording;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\TenantContext;
 use Aws\Sqs\SqsClient;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -18,25 +20,34 @@ use Throwable;
 
 use function count;
 use function is_array;
-use function is_int;
+use function is_numeric;
 use function is_string;
 use function json_decode;
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\info;
-use function Laravel\Prompts\warning;
 
 /**
  * Long-polls the Amazon Transcribe results SQS queue (EventBridge payloads).
+ *
+ * Parses and dispatches only; ApplyTranscribeResultJob does the work. See that
+ * class and its OCR mirror for why applying results inside this loop made one
+ * long recording everyone's problem.
+ *
+ * Transport failures are left visible for the queue's redrive policy
+ * (maxReceiveCount 5, infra/src/shared/documents.ts); processing failures are
+ * the job's attempt budget, ending in FailTranscribeJobAction.
  */
 #[Signature('transcribe:consume {--once : Process one SQS batch then exit}')]
 #[Description('Consume Amazon Transcribe EventBridge/SQS completion messages and store transcripts')]
 final class ConsumeTranscribeResultsCommand extends Command
 {
+    /** Long enough to parse and dispatch; see the OCR consumer. */
+    private const int VISIBILITY_TIMEOUT_SECONDS = 30;
+
     public function handle(
         SqsClient $sqs,
-        CompleteTranscribeJobAction $completeTranscribeJob,
-        FailTranscribeJobAction $failTranscribeJob,
         Repository $config,
+        TenantContext $tenantContext,
     ): int {
         $queueUrl = $config->get('transcription.transcribe.results_queue_url');
 
@@ -48,7 +59,6 @@ final class ConsumeTranscribeResultsCommand extends Command
 
         $waitTime = max(0, min(20, (int) $config->get('transcription.transcribe.sqs_wait_time_seconds', 20)));
         $maxMessages = max(1, min(10, (int) $config->get('transcription.transcribe.sqs_max_messages', 5)));
-        $maxReceiveCount = max(1, (int) $config->get('transcription.transcribe.sqs_max_receive_count', 5));
         $once = $this->option('once');
 
         info("Listening for Amazon Transcribe results on {$queueUrl}");
@@ -56,7 +66,6 @@ final class ConsumeTranscribeResultsCommand extends Command
             'queue_url' => $queueUrl,
             'wait_time_seconds' => $waitTime,
             'max_messages' => $maxMessages,
-            'max_receive_count' => $maxReceiveCount,
             'once' => $once,
         ]);
 
@@ -65,8 +74,7 @@ final class ConsumeTranscribeResultsCommand extends Command
                 'QueueUrl' => $queueUrl,
                 'MaxNumberOfMessages' => $maxMessages,
                 'WaitTimeSeconds' => $waitTime,
-                'VisibilityTimeout' => 180,
-                'MessageSystemAttributeNames' => ['ApproximateReceiveCount'],
+                'VisibilityTimeout' => self::VISIBILITY_TIMEOUT_SECONDS,
             ]);
 
             $messages = $result->get('Messages') ?? [];
@@ -91,7 +99,7 @@ final class ConsumeTranscribeResultsCommand extends Command
                 $receiptHandle = $message['ReceiptHandle'] ?? null;
                 $body = $message['Body'] ?? null;
                 $messageId = is_string($message['MessageId'] ?? null) ? $message['MessageId'] : null;
-                $receiveCount = $this->receiveCount($message);
+
                 if (! is_string($receiptHandle)) {
                     continue;
                 }
@@ -108,66 +116,87 @@ final class ConsumeTranscribeResultsCommand extends Command
                     continue;
                 }
 
-                $notification = null;
-
                 try {
                     $notification = $this->parseQueuePayload($body);
                     // Same parse the action performs, so the two can no longer
                     // disagree about a job name or a status's casing.
                     $completion = TranscribeCompletionNotification::fromEventBridgeDetail($notification);
-                    $applied = $completeTranscribeJob->handle($notification);
-
-                    if ($applied) {
-                        $jobId = $completion->jobId ?? 'unknown';
-                        info("Applied Amazon Transcribe result for job {$jobId}");
-                        Log::info('Transcription: transcribe:consume applied and deleted SQS message.', [
-                            'transcribe_job_id' => $jobId,
-                            'sqs_message_id' => $messageId,
-                            'status' => $completion->status,
-                        ]);
-                        $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
-                    } else {
-                        warning('Skipped or deferred Amazon Transcribe SQS message.');
-                        Log::warning('Transcription: transcribe:consume skipped or deferred SQS message.', [
-                            'transcribe_job_id' => $completion->jobId,
-                            'sqs_message_id' => $messageId,
-                            'status' => $completion->status,
-                        ]);
-                    }
                 } catch (Throwable $exception) {
-                    error('Failed to apply Amazon Transcribe message: '.$exception->getMessage());
-                    Log::error('Transcription: transcribe:consume failed to apply SQS message.', [
+                    // Left visible rather than deleted: an unparseable body is a
+                    // transport-level problem for the redrive policy to surface.
+                    error('Could not parse Amazon Transcribe SQS message: '.$exception->getMessage());
+                    Log::error('Transcription: transcribe:consume could not parse SQS message.', [
                         'sqs_message_id' => $messageId,
-                        'receive_count' => $receiveCount,
-                        'max_receive_count' => $maxReceiveCount,
                         'error' => $exception->getMessage(),
                     ]);
 
-                    // $notification stays null when parseQueuePayload() itself
-                    // threw, so a partially-understood message still yields the
-                    // job id needed to fail it permanently.
-                    $jobId = is_array($notification)
-                        ? TranscribeCompletionNotification::fromEventBridgeDetail($notification)->jobId
-                        : null;
-
-                    if (
-                        $receiveCount >= $maxReceiveCount
-                        && is_string($jobId)
-                        && $jobId !== ''
-                        && $this->failPermanently(
-                            $failTranscribeJob,
-                            $jobId,
-                            $exception,
-                            $messageId,
-                        )
-                    ) {
-                        $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
-                    }
+                    continue;
                 }
+
+                $jobId = $completion->jobId;
+
+                if (! is_string($jobId) || $jobId === '') {
+                    // No job name means nothing downstream can match a recording,
+                    // and redelivery will not add one.
+                    Log::warning('Transcription: transcribe:consume deleted a notification with no job name.', [
+                        'sqs_message_id' => $messageId,
+                    ]);
+                    $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
+
+                    continue;
+                }
+
+                $queued = $this->dispatchResult($tenantContext, $notification, $jobId);
+
+                if ($queued) {
+                    info("Queued Amazon Transcribe result for job {$jobId}");
+                    Log::info('Transcription: transcribe:consume queued result and deleted SQS message.', [
+                        'transcribe_job_id' => $jobId,
+                        'sqs_message_id' => $messageId,
+                        'status' => $completion->status,
+                    ]);
+                } else {
+                    Log::warning('Transcription: transcribe:consume deleted a notification with no matching recording.', [
+                        'transcribe_job_id' => $jobId,
+                        'sqs_message_id' => $messageId,
+                    ]);
+                }
+
+                $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
             }
         } while (! $once);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Same landlord-daemon constraint as the OCR consumer: the job is
+     * tenant-aware, so the tenant must be current at dispatch or Spatie
+     * deletes it on the worker. Lookup is job name → tenant id only.
+     *
+     * @param  array<string, mixed>  $notification
+     */
+    private function dispatchResult(TenantContext $tenantContext, array $notification, string $jobId): bool
+    {
+        $tenantId = AudioRecording::queryWithoutTenantScope()
+            ->where('transcribe_job_id', $jobId)
+            ->value('tenant_id');
+
+        if (! is_numeric($tenantId)) {
+            return false;
+        }
+
+        $tenant = Tenant::query()->find((int) $tenantId);
+
+        if (! $tenant instanceof Tenant) {
+            return false;
+        }
+
+        $tenantContext->runForTenant($tenant, function () use ($notification, $jobId): void {
+            dispatch(new ApplyTranscribeResultJob($notification, $jobId));
+        });
+
+        return true;
     }
 
     /**
@@ -203,56 +232,5 @@ final class ConsumeTranscribeResultsCommand extends Command
             'QueueUrl' => $queueUrl,
             'ReceiptHandle' => $receiptHandle,
         ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $message
-     */
-    private function receiveCount(array $message): int
-    {
-        $attributes = $message['Attributes'] ?? null;
-
-        if (! is_array($attributes)) {
-            return 1;
-        }
-
-        $receiveCount = $attributes['ApproximateReceiveCount'] ?? null;
-
-        if (! is_int($receiveCount) && ! is_string($receiveCount)) {
-            return 1;
-        }
-
-        return max(1, (int) $receiveCount);
-    }
-
-    private function failPermanently(
-        FailTranscribeJobAction $failTranscribeJob,
-        string $jobId,
-        Throwable $exception,
-        ?string $messageId,
-    ): bool {
-        try {
-            $failed = $failTranscribeJob->handle($jobId, $exception);
-        } catch (Throwable $finalizationException) {
-            Log::critical('Transcription: transcribe:consume could not persist the terminal failure.', [
-                'transcribe_job_id' => $jobId,
-                'sqs_message_id' => $messageId,
-                'error' => $finalizationException->getMessage(),
-            ]);
-
-            return false;
-        }
-
-        if (! $failed) {
-            return false;
-        }
-
-        warning("Marked Amazon Transcribe job {$jobId} failed after its final receive attempt.");
-        Log::error('Transcription: transcribe:consume persisted terminal failure before deleting SQS message.', [
-            'transcribe_job_id' => $jobId,
-            'sqs_message_id' => $messageId,
-        ]);
-
-        return true;
     }
 }

@@ -17,3 +17,6 @@ Guarded status changes belong in `Transitions/` (dossiers, document requests, pi
 Services are for infrastructure drivers and orchestrators only, never a substitute for an HTTP use-case Action.
 
 Persist with explicit `create`/`update`/`save`. `updateOrCreate`/`firstOrCreate` are for seeders, not application code.
+
+## Activity log is the paginate() exception
+Filterable workspace indexes use length-aware paginate() except FetchActivityLogIndexQuery, which must call simplePaginate() (no COUNT on activity_log). See reporting-queries.md. Do not 'fix' that index back to paginate().

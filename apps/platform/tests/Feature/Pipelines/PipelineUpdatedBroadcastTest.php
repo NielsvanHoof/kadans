@@ -14,6 +14,7 @@ use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Events\PipelineUpdated;
 use App\Pipelines\Support\PipelineState;
 use App\Pipelines\Support\PipelineStepSequence;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 
@@ -67,7 +68,7 @@ test('pipeline heartbeats do not broadcast pipeline updated', function (): void 
     Event::assertNotDispatched(PipelineUpdated::class);
 });
 
-test('pipeline updated broadcasts on the workspace private channel', function (): void {
+test('pipeline updated stays off the channel every staff member is on', function (): void {
     $event = new PipelineUpdated(
         tenantSlug: 'acme',
         pipelineId: 12,
@@ -78,8 +79,55 @@ test('pipeline updated broadcasts on the workspace private channel', function ()
         dossierId: 56,
     );
 
-    expect($event->broadcastOn())->toHaveCount(1)
-        ->and($event->broadcastOn()[0]->name)->toBe('private-workspaces.acme')
+    $channels = array_map(
+        static fn (PrivateChannel $channel): string => $channel->name,
+        $event->broadcastOn(),
+    );
+
+    // The notification bell mounts in AppLayout, so `workspaces.acme` has every
+    // staff member on it, on every page. Pusher delivers a channel's events to
+    // all its subscribers whether or not a listener is bound, so this stream
+    // being there meant one bulk upload woke every open tab in the firm.
+    expect($channels)->not->toContain('private-workspaces.acme')
+        ->and($channels)->toEqualCanonicalizing([
+            'private-workspaces.acme.pipelines',
+            'private-workspaces.acme.dossiers.56',
+        ]);
+});
+
+test('a run with no dossier still reaches the firm-wide stream', function (): void {
+    $event = new PipelineUpdated(
+        tenantSlug: 'acme',
+        pipelineId: 12,
+        type: PipelineType::OcrDocument->value,
+        status: 'running',
+        subjectType: 'uploaded_document',
+        subjectId: 34,
+        // A purged subject carries no dossier tag, so there is no dossier
+        // channel to publish to — but the pipeline pages must still see it.
+        dossierId: null,
+    );
+
+    expect(array_map(
+        static fn (PrivateChannel $channel): string => $channel->name,
+        $event->broadcastOn(),
+    ))->toBe(['private-workspaces.acme.pipelines']);
+});
+
+test('pipeline updated broadcasts on the scoped private channels', function (): void {
+    $event = new PipelineUpdated(
+        tenantSlug: 'acme',
+        pipelineId: 12,
+        type: PipelineType::OcrDocument->value,
+        status: 'running',
+        subjectType: 'uploaded_document',
+        subjectId: 34,
+        dossierId: 56,
+    );
+
+    expect($event->broadcastOn())->toHaveCount(2)
+        ->and($event->broadcastOn()[0]->name)->toBe('private-workspaces.acme.pipelines')
+        ->and($event->broadcastOn()[1]->name)->toBe('private-workspaces.acme.dossiers.56')
         ->and($event->broadcastWith())->toBe([
             'pipeline_id' => 12,
             'type' => 'ocr_document',

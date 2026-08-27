@@ -10,6 +10,7 @@ use App\Audit\Enums\AuditEvent;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Support\StaffOptionsCache;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,7 +24,9 @@ final readonly class UpdateTenantMemberRoleAction
 
     public function handle(TenantMembership $membership, User $updatedBy, string $role): TenantMembership
     {
-        return DB::transaction(function () use ($membership, $updatedBy, $role): TenantMembership {
+        $tenantId = $membership->tenant_id;
+
+        $result = DB::transaction(function () use ($membership, $updatedBy, $role): TenantMembership {
             $this->memberRoles->lockOwnerMutations($membership->tenant_id);
 
             $membershipQuery = TenantMembership::query()->whereKey($membership->getKey());
@@ -81,5 +84,9 @@ final readonly class UpdateTenantMemberRoleAction
 
             return $locked->fresh(['user', 'tenant']) ?? $locked;
         });
+
+        StaffOptionsCache::forget($tenantId);
+
+        return $result;
     }
 }

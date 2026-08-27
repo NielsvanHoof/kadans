@@ -37,6 +37,10 @@
              the production boot check. -->
         <env name="REDIS_QUEUE_RETRY_AFTER" value="660"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <!-- Pin so a local SESSION_CONNECTION=null cannot hide the production
+             boot check that sessions must use Redis DB 2. -->
+        <env name="SESSION_CONNECTION" value="session"/>
+        <env name="REDIS_SESSION_DB" value="2"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

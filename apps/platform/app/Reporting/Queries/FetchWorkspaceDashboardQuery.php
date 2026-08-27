@@ -112,7 +112,7 @@ final readonly class FetchWorkspaceDashboardQuery
         $overdueQuery = clone $awaitingClientQuery;
         $overdueQuery->getQuery()
             ->whereNotNull('due_date')
-            ->whereDate('due_date', '<', today());
+            ->where('due_date', '<', today()->toDateString());
 
         $thisWeekStart = now()->subDays(7);
         $lastWeekStart = now()->subDays(14);

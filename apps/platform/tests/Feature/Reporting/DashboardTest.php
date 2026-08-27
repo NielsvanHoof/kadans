@@ -283,3 +283,38 @@ test('guests cannot set up a firm', function (): void {
     $this->post(route('onboarding.firm.store'), ['name' => 'Acme Accountants'])
         ->assertRedirect(route('login'));
 });
+
+test('a dossier due today is not counted as overdue', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    actingInWorkspace($tenant);
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    // The boundary the overdue filter has to get right. It compares a `date`
+    // column, so it binds a date string rather than a Carbon: binding a
+    // midnight datetime made "due today" sort before the cutoff and show up as
+    // overdue on the string-comparing driver the test suite uses.
+    // Overdue is a slice of "awaiting client", so each dossier needs an
+    // outstanding item before its due date is even considered.
+    foreach ([today(), today()->subDay()] as $dueDate) {
+        $dossier = Dossier::factory()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'status' => DossierStatus::AwaitingClient,
+            'due_date' => $dueDate,
+        ]);
+
+        DocumentRequest::factory()->create([
+            'tenant_id' => $tenant->id,
+            'dossier_id' => $dossier->id,
+            'status' => DocumentRequestStatus::Pending,
+        ]);
+    }
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dashboard', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->where('metrics.overdue', 1));
+});

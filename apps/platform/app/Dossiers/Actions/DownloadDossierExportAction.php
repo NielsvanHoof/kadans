@@ -5,27 +5,42 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions;
 
 use App\Dossiers\Models\DossierExport;
-use Illuminate\Support\Facades\Storage;
+use App\Dossiers\Support\StoredFileResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Streams a completed export archive as an attachment.
+ * Serves a completed export archive as an attachment.
+ *
+ * An export bundles every document on a dossier, so it is the largest object
+ * this application hands back. On S3 it is delivered as a short-lived signed
+ * URL rather than streamed, so one download does not hold an Octane worker for
+ * the length of the transfer — the same treatment the individual documents
+ * inside the archive already get.
+ *
+ * Note the deliberate asymmetry with DataSubjectRequestController::download(),
+ * which keeps streaming: that archive is everything the firm holds about one
+ * person, and its docblock records why it must not become a link that outlives
+ * the session it was issued in.
  */
-final class DownloadDossierExportAction
+final readonly class DownloadDossierExportAction
 {
-    public function handle(DossierExport $export): StreamedResponse
+    public function __construct(private StoredFileResponse $storedFileResponse) {}
+
+    public function handle(DossierExport $export): RedirectResponse|StreamedResponse
     {
         $disk = $export->disk;
         $path = $export->path;
 
         abort_if(! $export->isDownloadable() || $disk === null || $path === null, HttpResponse::HTTP_NOT_FOUND);
 
-        return Storage::disk($disk)->download(
+        return $this->storedFileResponse->serve(
+            $disk,
             $path,
             $this->filename($export),
-            ['Content-Type' => 'application/zip'],
+            'application/zip',
         );
     }
 

@@ -23,6 +23,9 @@ final class ClientQuestionnaireCompleted implements ShouldBroadcast
      */
     public bool $afterCommit = true;
 
+    /** Broadcasts share one queue; see PipelineUpdated for why. */
+    public string $broadcastQueue = 'broadcasts';
+
     public function __construct(
         public readonly string $tenantSlug,
         public readonly int $dossierId,

@@ -9,6 +9,7 @@ use App\Tenancy\Enums\Role as RoleEnum;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Support\StaffOptionsCache;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -30,7 +31,7 @@ final readonly class ProvisionTenantAction
         $previousPermissionsTeamId = getPermissionsTeamId();
 
         try {
-            return DB::transaction(function () use ($name, $owner, $slug, $ownerRole): Tenant {
+            $tenant = DB::transaction(function () use ($name, $owner, $slug, $ownerRole): Tenant {
                 $tenant = $this->createTenantWithAvailableSlug($name, $slug);
 
                 $this->seedRolesForTenant($tenant);
@@ -50,6 +51,10 @@ final readonly class ProvisionTenantAction
 
                 return $tenant;
             });
+
+            StaffOptionsCache::forget($tenant->id);
+
+            return $tenant;
         } catch (Throwable $exception) {
             setPermissionsTeamId($previousPermissionsTeamId);
             $owner->unsetRelation('roles');

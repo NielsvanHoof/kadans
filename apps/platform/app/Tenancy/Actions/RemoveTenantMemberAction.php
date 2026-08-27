@@ -8,6 +8,7 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Support\StaffOptionsCache;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,8 @@ final readonly class RemoveTenantMemberAction
 
     public function handle(TenantMembership $membership, User $removedBy): void
     {
+        $tenantId = $membership->tenant_id;
+
         DB::transaction(function () use ($membership, $removedBy): void {
             $this->memberRoles->lockOwnerMutations($membership->tenant_id);
 
@@ -60,5 +63,7 @@ final readonly class RemoveTenantMemberAction
             $this->memberRoles->clearRoles($member, $tenant);
             $locked->delete();
         });
+
+        StaffOptionsCache::forget($tenantId);
     }
 }

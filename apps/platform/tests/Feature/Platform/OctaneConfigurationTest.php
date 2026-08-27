@@ -15,12 +15,16 @@ test('uses FrankenPHP with bounded worker lifetimes', function (): void {
         ->toBe(120);
 });
 
-test('lets the Sail supervisor own the local HTTP server', function (): void {
+test('lets the Sail supervisor own the local HTTP server and Horizon own the queues', function (): void {
     $commandNames = collect(DevCommands::commands())->pluck('name');
 
     expect($commandNames)
         ->not->toContain('server')
-        ->toContain('queue', 'ocr', 'transcription', 'dossier-export', 'vite', 'reverb');
+        ->not->toContain('queue')
+        ->not->toContain('ocr')
+        ->not->toContain('transcription')
+        ->not->toContain('dossier-export')
+        ->toContain('horizon', 'vite', 'reverb');
 });
 
 test('skips AWS result consumers while OCR and transcription stay on mock drivers', function (): void {

@@ -8,6 +8,23 @@ use Illuminate\Support\Facades\Config;
 
 covers(PortalSessionWindow::class);
 
+/*
+ * Freeze the clock for every test in this file.
+ *
+ * These assertions compare a deadline the application stamped during a request
+ * against `now()` re-evaluated at assertion time. Both are second-precision, so
+ * whenever the wall clock crossed a second boundary in between, the test failed by
+ * exactly one second — rarely, and never reproducibly. The tests that call
+ * `$this->travel()` were already immune (travel pins Carbon), which is why only the
+ * three that do not were flaky.
+ *
+ * Freezing here rather than in each test keeps a future `now()` assertion from
+ * reintroducing it. `travel()` still works: it moves the frozen instant forward.
+ */
+beforeEach(function (): void {
+    $this->freezeTime();
+});
+
 /**
  * The idle deadline currently held in the portal session.
  */

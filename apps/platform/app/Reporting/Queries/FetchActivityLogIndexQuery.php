@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries;
 
-use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\Shared\Data\PersonOptionData;
 use App\Shared\Queries\Filters\ScoutSearchFilter;
 use App\Shared\Queries\PaginatedIndexQuery;
-use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Queries\FetchResponsibleStaffOptionsQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -34,10 +33,11 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
 
     public function __construct(
         private readonly ActivityLogRowMapper $rowMapper,
+        private readonly FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
     ) {}
 
     /**
-     * @return LengthAwarePaginator<int, array{
+     * @return Paginator<int, array{
      *     id: int,
      *     event: string|null,
      *     label: string,
@@ -49,12 +49,12 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
      *     attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null
      * }>
      */
-    public function handle(Tenant $tenant): LengthAwarePaginator
+    public function handle(Tenant $tenant): Paginator
     {
         $this->tenant = $tenant;
 
-        /** @var LengthAwarePaginator<int, array{id: int, event: string|null, label: string, description: string, causer_name: string|null, subject: array{type: string, id: int, name: string|null}|null, created_at: string|null, properties: array{ip: string|null, route: string|null}, attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null}> */
-        return $this->paginate();
+        /** @var Paginator<int, array{id: int, event: string|null, label: string, description: string, causer_name: string|null, subject: array{type: string, id: int, name: string|null}|null, created_at: string|null, properties: array{ip: string|null, route: string|null}, attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null}> */
+        return $this->simplePaginate();
     }
 
     /**
@@ -211,42 +211,12 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
             return [];
         }
 
-        /** @var list<array{value: string, label: string}> $options */
-        $options = [];
-
-        $memberships = TenantMembership::query()
-            ->where('tenant_id', $this->tenant->id)
-            ->where('status', TenantMembershipStatus::Active)
-            ->with('user:id,name')
-            ->get();
-
-        foreach ($memberships as $membership) {
-            $user = $membership->user;
-
-            if (! $user instanceof User) {
-                continue;
-            }
-
-            $options[] = [
-                'value' => (string) $user->id,
-                'label' => $user->name,
-            ];
-        }
-
-        // Unique by user id, then sort labels for the filter dropdown.
-        $uniqueByValue = [];
-
-        foreach ($options as $option) {
-            $uniqueByValue[$option['value']] = $option;
-        }
-
-        $options = array_values($uniqueByValue);
-
-        usort(
-            $options,
-            static fn (array $left, array $right): int => strcmp($left['label'], $right['label']),
+        return array_map(
+            static fn (PersonOptionData $staff): array => [
+                'value' => (string) $staff->id,
+                'label' => $staff->name,
+            ],
+            $this->fetchResponsibleStaffOptions->handle($this->tenant),
         );
-
-        return $options;
     }
 }

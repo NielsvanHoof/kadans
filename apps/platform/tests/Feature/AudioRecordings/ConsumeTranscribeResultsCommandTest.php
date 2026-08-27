@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 use App\AudioProcessing\Console\Commands\ConsumeTranscribeResultsCommand;
+use App\AudioProcessing\Jobs\ApplyTranscribeResultJob;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
+use App\Tenancy\Models\Tenant;
 use Aws\Result;
 use Aws\Sqs\SqsClient;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 covers(ConsumeTranscribeResultsCommand::class);
@@ -30,7 +33,7 @@ function transcribeConsumeRecording(string $jobId): AudioRecording
     $path = sprintf('tenants/%d/dossiers/%d/audio/call.m4a', $tenant->id, $dossier->id);
     Storage::disk('local')->put($path, 'fake-audio');
 
-    return AudioRecording::factory()->create([
+    $recording = AudioRecording::factory()->create([
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
         'disk' => 'local',
@@ -38,6 +41,11 @@ function transcribeConsumeRecording(string $jobId): AudioRecording
         'transcription_status' => TranscriptionStatus::Processing,
         'transcribe_job_id' => $jobId,
     ]);
+
+    // Production consume is a landlord daemon — no leftover HTTP tenant.
+    Tenant::forgetCurrent();
+
+    return $recording;
 }
 
 /**
@@ -138,4 +146,61 @@ test('an envelope that is not an aws.transcribe event is left on the queue', fun
 
     // Untouched: a message we cannot understand must not silently vanish.
     expect($recording->refresh()->transcription_status)->toBe(TranscriptionStatus::Processing);
+});
+
+test('the transcribe consumer queues the result instead of fetching it inline', function (): void {
+    Queue::fake();
+
+    transcribeConsumeRecording('transcribe-job-queued');
+
+    fakeTranscribeQueue([[
+        'Body' => eventBridgeBody([
+            'TranscriptionJobName' => 'transcribe-job-queued',
+            'TranscriptionJobStatus' => 'COMPLETED',
+        ]),
+        'ReceiptHandle' => 'receipt-queued',
+    ]], expectDelete: true);
+
+    $this->artisan('transcribe:consume', ['--once' => true])->assertSuccessful();
+
+    // The transcript fetch and segment mapping belong on the transcription
+    // queue, not on a poll loop shared by every tenant.
+    Queue::assertPushed(
+        ApplyTranscribeResultJob::class,
+        fn (ApplyTranscribeResultJob $job): bool => $job->transcribeJobId === 'transcribe-job-queued'
+            && $job->queue === 'transcription',
+    );
+});
+
+test('an event carrying no job name is dropped rather than queued', function (): void {
+    Queue::fake();
+
+    transcribeConsumeRecording('transcribe-job-live');
+
+    fakeTranscribeQueue([[
+        'Body' => eventBridgeBody(['TranscriptionJobStatus' => 'COMPLETED']),
+        'ReceiptHandle' => 'receipt-nameless',
+    ]], expectDelete: true);
+
+    $this->artisan('transcribe:consume', ['--once' => true])->assertSuccessful();
+
+    Queue::assertNothingPushed();
+});
+
+test('an event whose job name matches no recording is dropped rather than queued', function (): void {
+    Queue::fake();
+
+    transcribeConsumeRecording('transcribe-job-live');
+
+    fakeTranscribeQueue([[
+        'Body' => eventBridgeBody([
+            'TranscriptionJobName' => 'transcribe-job-from-another-era',
+            'TranscriptionJobStatus' => 'COMPLETED',
+        ]),
+        'ReceiptHandle' => 'receipt-orphan',
+    ]], expectDelete: true);
+
+    $this->artisan('transcribe:consume', ['--once' => true])->assertSuccessful();
+
+    Queue::assertNothingPushed();
 });

@@ -92,7 +92,7 @@ final class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => Config::string('app.name'),
-            ...($this->localeProps)($locale),
+            ...($this->localeProps)($request, $locale),
             ...($this->timezoneProps)($this->resolveApplicationTimezone->handle($request)),
             'auth' => [
                 'user' => $user instanceof User

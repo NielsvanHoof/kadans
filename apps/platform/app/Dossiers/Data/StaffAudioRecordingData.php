@@ -29,13 +29,13 @@ final class StaffAudioRecordingData extends Data
     ) {}
 
     /**
-     * Build the list/live slice from a recording (loads pipelines when needed).
+     * Build the list/live slice from a recording (loads the latest pipeline when needed).
      */
     public static function fromModel(AudioRecording $audioRecording): self
     {
-        $audioRecording->loadMissing('pipelines.steps');
+        $audioRecording->loadMissing('latestPipeline.steps');
 
-        $latestPipeline = $audioRecording->pipelines->sortByDesc('id')->first();
+        $latestPipeline = $audioRecording->latestPipeline;
 
         return new self(
             id: $audioRecording->id,

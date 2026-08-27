@@ -1,14 +1,14 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import IndexPagination from '@/components/data/index-query/index-pagination';
 import IndexQueryResults from '@/components/data/index-query/index-query-results';
 import IndexQueryToolbar from '@/components/data/index-query/index-query-toolbar';
+import SimpleIndexPagination from '@/components/data/index-query/simple-index-pagination';
 import Heading from '@/components/primitives/heading';
 import ActivityLogCard from '@/features/audit/activity-log-card';
 import type { ActivityLogEntry } from '@/features/audit/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as activityIndex } from '@/routes/workspaces/activity';
-import type { IndexQueryConfig, Paginated } from '@/types/pagination';
+import type { IndexQueryConfig, SimplePaginated } from '@/types/pagination';
 
 /**
  * Tenant activity / audit log index.
@@ -17,7 +17,7 @@ export default function ActivityLogIndex({
     activities,
     indexQuery,
 }: {
-    activities: Paginated<ActivityLogEntry>;
+    activities: SimplePaginated<ActivityLogEntry>;
     indexQuery: IndexQueryConfig;
     /** Current Spatie filter bag — consumed by useIndexQuery via usePage(). */
     filters?: Record<string, string>;
@@ -50,7 +50,7 @@ export default function ActivityLogIndex({
                 <IndexQueryToolbar config={indexQuery} />
                 <IndexQueryResults className="space-y-6">
                     <ActivityLogCard activities={activities} />
-                    <IndexPagination paginator={activities} />
+                    <SimpleIndexPagination paginator={activities} />
                 </IndexQueryResults>
             </div>
         </>

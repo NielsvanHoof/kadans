@@ -68,6 +68,31 @@ test("local mints the Sail OCR operator credentials", () => {
   assert.ok(stack.named("ocr-local-user"));
 });
 
+/*
+ * decision-10: this one IAM user is what both Sail and Laravel Cloud authenticate
+ * with, so what it can reach is the whole blast radius. Both attachments matter and
+ * for different reasons — the app-access policy is the shared parity document, while
+ * SES send is deliberately kept out of it and attached separately. Asserting only
+ * that a user exists would pass with either one silently missing.
+ */
+test("the operator user carries both the app-access and SES send policies", () => {
+  const attachments = stack.ofType(
+    "aws:iam/userPolicyAttachment:UserPolicyAttachment",
+  );
+
+  assert.equal(attachments.length, 2, "expected app-access and SES send attachments");
+  assert.ok(stack.named("ocr-local-policy"), "app-access policy is not attached");
+  assert.ok(stack.named("ocr-local-mail"), "SES send policy is not attached");
+
+  const user = stack.named("ocr-local-user");
+  assert.ok(user);
+
+  // Both must land on the same user; attaching SES to a second identity would
+  // read as "SES works" while the app still could not send.
+  const users = new Set(attachments.map((a) => String(a.inputs.user)));
+  assert.equal(users.size, 1, "attachments are split across identities");
+});
+
 test("local creates SES for application mail without compute", () => {
   assert.equal(stack.hasType("aws:ses/domainIdentity:DomainIdentity"), true);
   assert.equal(stack.hasType("aws:ses/domainDkim:DomainDkim"), true);
