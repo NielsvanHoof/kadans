@@ -63,7 +63,9 @@ Local development uses Sail only:
 
 Application deploys run on Laravel Cloud (push-to-deploy from `staging` / `main`). There is no bake/ECR image pipeline.
 
-Cloud runs `php artisan horizon` (custom background process × 1) draining `App\Platform\Support\WorkerQueues::NAMES` via `config/horizon.php`. Keep `textract:consume` / `transcribe:consume` as separate daemons. Do not use Laravel Cloud Managed Queues alongside Horizon (`QUEUE_CONNECTION` stays `redis`).
+Cloud runs `php artisan horizon` (custom background process × 1) plus `textract:consume` / `transcribe:consume` as separate daemons. Do not use Laravel Cloud Managed Queues alongside Horizon (`QUEUE_CONNECTION` stays `redis`).
+
+Horizon runs two supervisors, split by cost profile: `supervisor-interactive` drains `WorkerQueues::INTERACTIVE` (`default`, `broadcasts`) on a low memory threshold, `supervisor-heavy` drains `WorkerQueues::HEAVY` (`ocr`, `transcription`, `dossier-export`) on a higher one and a 630s timeout. Between them they must cover `WorkerQueues::NAMES` exactly, and each `maxProcesses` must stay above its own queue count — `balance => 'auto'` gives every queue its own pool with a `minProcesses` floor, and at or below that floor Horizon can never scale up. `WorkerQueueCoverageTest` enforces both.
 
 ## Domain overview
 
