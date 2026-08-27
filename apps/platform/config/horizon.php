@@ -305,7 +305,10 @@ return [
             'sleep' => 3,
             'rest' => 0,
             'force' => true,
-            'nice' => 0,
+            // Yields the single vCPU to Octane: an OCR worker holding the core
+            // for a Bedrock round trip is a web request waiting behind it, and
+            // these jobs have nobody watching a spinner.
+            'nice' => 10,
         ],
     ],
 

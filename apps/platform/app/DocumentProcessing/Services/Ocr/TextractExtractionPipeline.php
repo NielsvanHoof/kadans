@@ -52,9 +52,12 @@ final readonly class TextractExtractionPipeline
         $structured = $this->fieldSensitivityClassifier->classify($structured);
 
         try {
+            // No JSON_PRETTY_PRINT: this is a database column read back through
+            // the UI, not a file anyone opens, and pretty-printing inflated both
+            // the stored value and the peak string allocation for indentation.
             return json_encode(
                 $structured,
-                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT,
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE,
             );
         } catch (JsonException $exception) {
             throw new RuntimeException('Failed to encode structured OCR JSON.', 0, $exception);

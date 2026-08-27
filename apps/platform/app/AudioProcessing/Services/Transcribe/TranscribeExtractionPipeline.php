@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Services\Transcribe;
 
 use App\AudioProcessing\Data\TranscriptionResult;
+use App\Platform\Support\PeakMemory;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
 
+use function count;
 use function is_array;
 use function is_string;
 use function json_decode;
@@ -27,6 +30,7 @@ final readonly class TranscribeExtractionPipeline
 {
     public function __construct(
         private TranscribeServiceClient $transcribe,
+        private TranscribeTranscriptProjection $projection,
         private TranscribeTranscriptMapper $mapper,
         private FilesystemManager $filesystems,
         private Repository $config,
@@ -64,10 +68,25 @@ final readonly class TranscribeExtractionPipeline
         /** @var mixed $decoded */
         $decoded = json_decode($body, true);
 
+        // The raw JSON and its decoded form are both live until here, and for an
+        // hour of audio each is substantial. Releasing the string before the
+        // projection walks the arrays keeps the two peaks from stacking.
+        unset($body);
+
         throw_unless(is_array($decoded), RuntimeException::class, "Amazon Transcribe transcript JSON for [{$jobId}] was invalid.");
 
         /** @var array<string, mixed> $decoded */
-        return $decoded;
+        $projected = $this->projection->project($decoded);
+
+        Log::info('Transcription: projected Amazon Transcribe payload.', [
+            'transcribe_job_id' => $jobId,
+            'item_count' => is_array($projected['results']['items'] ?? null)
+                ? count($projected['results']['items'])
+                : 0,
+            'peak_memory_mb' => PeakMemory::megabytes(),
+        ]);
+
+        return $projected;
     }
 
     private function downloadTranscriptBody(string $uri, string $jobId): string

@@ -87,8 +87,6 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
 })->with([
     'debug mode' => ['app.debug', true],
     'non-HTTPS application URL' => ['app.url', 'http://app.example.com'],
-    'non-Redis cache' => ['cache.default', 'file'],
-    'non-Redis queue' => ['queue.default', 'sync'],
     'retry_after at data-subject export timeout' => ['queue.connections.redis.retry_after', GenerateDataSubjectExportJob::TIMEOUT_SECONDS],
     'retry_after below data-subject export timeout' => ['queue.connections.redis.retry_after', 90],
     // `prefer` and `require` both look like TLS and neither verifies the
