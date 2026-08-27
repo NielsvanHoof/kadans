@@ -8,7 +8,7 @@ paths:
 # Config
 
 ## Production config is validated at boot — add new unsafe keys to the validator
-`App\Platform\Services\Production\ProductionConfigurationValidator` **fails boot** in production on unsafe config: debug on, non-HTTPS `APP_URL`, cache/queue/session not Redis, Redis without TLS, session not encrypted/secure/domain-scoped or `same_site=none`, filesystem not S3, broadcasting not Reverb, OCR driver not Textract, transcription driver not Transcribe, Scout driver `collection`/`null`, empty Sentry DSN, a log stack of only file channels (`single`/`daily`), non-delivering mailer, dev Reverb credentials, trusted proxies unset or `REMOTE_ADDR`/`*`.
+`App\Platform\Services\Production\ProductionConfigurationValidator` **fails boot** in production on unsafe config: debug on, non-HTTPS `APP_URL`, session not Redis, Redis without TLS, session not encrypted/secure/domain-scoped or `same_site=none`, filesystem not S3, broadcasting not Reverb, OCR driver not Textract, transcription driver not Transcribe, Scout driver `collection`/`null`, empty Sentry DSN, a log stack of only file channels (`single`/`daily`), non-delivering mailer, dev Reverb credentials, trusted proxies unset or `REMOTE_ADDR`/`*`.
 
 The validator guards **production and staging** (`SHIPPED_ENVIRONMENTS`), not production alone. Staging ships the same image and serves the same kind of data, so an `APP_ENV=staging` container that skipped these checks would be a weaker environment wearing production's clothes. Add new environments that face real traffic to that constant.
 
@@ -19,6 +19,8 @@ When you add a config key that would be dangerous with its development default, 
 `phpunit.xml` deliberately pins `SECURITY_CSP_*` and `SECURITY_HSTS_*` so a developer's local `.env` cannot mask a broken policy. Keep new security config pinned the same way.
 
 Config must stay `config:cache`-serializable — register class names, not Closures (see `configureDebugbarStorageOpen`).
+
+`cache.default` and `queue.default` are deliberately **not** checked (removed 2026-08-27). Do not re-add them as "missing" — the omission is a decision, not an oversight. The consequence is accepted and worth knowing: a shipped environment will boot on `QUEUE_CONNECTION=sync`, which runs OCR, Bedrock calls and dossier exports inline in the web request with no Horizon and no retries, and on any `CACHE_STORE`. Both keys are still expected to be `redis` in `.env`; nothing enforces it. (The keys themselves were always correct — `matches()` reads the config path, which `config/cache.php` and `config/queue.php` fill from `CACHE_STORE` / `QUEUE_CONNECTION`; there is no `CACHE_DEFAULT` env var.)
 
 ## Redis retry_after must exceed every job timeout
 Redis retry_after must be strictly greater than every job timeout (largest: GenerateDataSubjectExportJob 600s). Default and .env.example are 660. ProductionConfigurationValidator fails boot when the reservation would expire while a job can still run. Do not lower the DSR export timeout to dodge this — the archive can contain every file for one client.
