@@ -24,7 +24,13 @@ Config must stay `config:cache`-serializable — register class names, not Closu
 Redis retry_after must be strictly greater than every job timeout (largest: GenerateDataSubjectExportJob 600s). Default and .env.example are 660. ProductionConfigurationValidator fails boot when the reservation would expire while a job can still run. Do not lower the DSR export timeout to dodge this — the archive can contain every file for one client.
 
 ## Horizon owns Redis workers on Cloud
-Laravel Cloud runs one custom background process `php artisan horizon` (not queue:work, not Managed Queues). Keep QUEUE_CONNECTION=redis. Supervisors must drain WorkerQueues::NAMES; timeout must sit above GenerateDataSubjectExportJob (600s) and below redis retry_after (660). Dashboard access outside local is HORIZON_ALLOWED_EMAILS. Leave textract:consume / transcribe:consume as separate daemons.
+Laravel Cloud runs one custom background process `php artisan horizon` (not queue:work, not Managed Queues). Keep QUEUE_CONNECTION=redis. Dashboard access outside local is HORIZON_ALLOWED_EMAILS. Leave textract:consume / transcribe:consume as separate daemons.
+
+Two supervisors, `supervisor-interactive` (WorkerQueues::INTERACTIVE) and `supervisor-heavy` (WorkerQueues::HEAVY), must partition WorkerQueues::NAMES exactly — a queue in neither fails nothing, it just piles up unconsumed. The supervisor draining `dossier-export` needs a timeout above GenerateDataSubjectExportJob (600s) and below redis retry_after (660).
+
+Every `maxProcesses` must stay strictly above its own supervisor's queue count. `balance => 'auto'` builds one pool per queue and `minProcesses` is a per-pool floor, so `AutoScaler::scalePool` derives `maxUpShift` from `max(0, maxProcesses - totalProcessCount)`; at or below the floor that is 0 and the supervisor can never scale up, silently, with `balance => 'auto'` still looking correct in the config. One supervisor over all five queues held 5 x 256 MB resident this way and triggered a 90% memory alert on a 2 GiB cluster (TASK-45).
+
+`memory` is a recycle threshold, not a cap — Worker::stopIfNecessary checks it between jobs, so a job needing more is bounded by PHP's memory_limit and still finishes. With maxJobs/maxTime at 0 it is also the only recycle trigger, which makes it a target every worker climbs to; keep maxJobs set.
 
 ## Sessions live on Redis DB 2
 When session.driver is redis, SESSION_CONNECTION must be the dedicated `session` Redis connection on REDIS_SESSION_DB (default 2), not the default connection (DB 0, queue/Horizon) or cache (DB 1). ProductionConfigurationValidator rejects a missing connection or a session DB that equals default. Numbered DBs share instance maxmemory — this is FLUSHDB isolation, not eviction isolation.

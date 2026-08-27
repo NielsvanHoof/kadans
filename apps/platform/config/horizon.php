@@ -218,26 +218,86 @@ return [
     | Queue Worker Configuration
     |--------------------------------------------------------------------------
     |
-    | Supervisors drain WorkerQueues::NAMES. Timeout must sit above the
-    | longest job (GenerateDataSubjectExportJob 600s) and a few seconds below
-    | queue.connections.redis.retry_after (660) so a kill cannot double-run.
+    | Between them the supervisors drain WorkerQueues::NAMES exactly once —
+    | WorkerQueueCoverageTest enforces the partition, because a queue in neither
+    | list fails nothing, it just piles up unconsumed.
     |
     | Laravel Cloud runs a single custom background process:
     | `php artisan horizon`. Do not also run queue:work against Redis.
     |
+    | Two supervisors rather than one, and `maxProcesses` above each one's queue
+    | count, for reasons that are easy to undo by accident (TASK-45):
+    |
+    | `balance => 'auto'` builds one process pool per queue and `minProcesses`
+    | is a per-pool floor, so a single supervisor over all five queues held five
+    | workers resident while idle. `maxProcesses` was 4 — below that floor — and
+    | `AutoScaler::scalePool` derives `maxUpShift` from
+    | `max(0, maxProcesses - totalProcessCount)`, which was therefore always 0:
+    | the pool could never grow under load, and `balance`, `balanceMaxShift` and
+    | `balanceCooldown` were decoration. Keep every `maxProcesses` strictly
+    | above its own queue count or that returns silently.
+    |
+    | `memory` is a recycle threshold, not a cap: Worker::stopIfNecessary checks
+    | it *between* jobs, so a job that needs more is bounded by PHP's own
+    | memory_limit and finishes regardless. Lowering it cannot fail a job — it
+    | only restarts the worker sooner. With `maxJobs`/`maxTime` at 0 it was also
+    | the *only* recycle trigger, which made 256 MB per worker a target rather
+    | than a limit; `maxJobs` now keeps the plateau well underneath it.
+    |
+    | Resident floor 896 MB, ceiling 1152 MB, against 1344 MB fixed before —
+    | on a 2 GiB single-vCPU cluster shared with Octane, the scheduler and the
+    | two SQS daemons.
+    |
     */
 
     'defaults' => [
-        'supervisor-1' => [
+        /*
+         * Small payloads a person is waiting on. Broadcast floods (one bulk
+         * upload emits several hundred pipeline.updated events) get their own
+         * pool so a queued notification is never stuck behind them.
+         */
+        'supervisor-interactive' => [
             'connection' => 'redis',
-            'queue' => WorkerQueues::NAMES,
+            'queue' => WorkerQueues::INTERACTIVE,
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
-            'maxProcesses' => 1,
+            // > count(INTERACTIVE), so the pool can actually grow.
+            'maxProcesses' => 3,
             'minProcesses' => 1,
             'maxTime' => 0,
-            'maxJobs' => 0,
-            'memory' => 256,
+            'maxJobs' => 500,
+            'memory' => 128,
+            'tries' => 3,
+            // Nothing here declares its own timeout; the slowest observed job
+            // on these queues is a queued notification at ~200ms.
+            'timeout' => 120,
+            'backoff' => 30,
+            'sleep' => 3,
+            'rest' => 0,
+            'force' => true,
+            'nice' => 0,
+        ],
+
+        /*
+         * Provider-bound work holding whole documents, transcripts or archives
+         * in memory. Still one pool per queue rather than a single ordered
+         * pool: a single pool would drain `ocr` first, and a bulk upload of 100
+         * documents would starve a dossier export a person is waiting to
+         * download for the better part of an hour.
+         */
+        'supervisor-heavy' => [
+            'connection' => 'redis',
+            'queue' => WorkerQueues::HEAVY,
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            // > count(HEAVY), so the pool can actually grow.
+            'maxProcesses' => 4,
+            'minProcesses' => 1,
+            'maxTime' => 0,
+            // Low, because each of these jobs holds a large payload: recycling
+            // often is how the plateau stays under `memory`.
+            'maxJobs' => 50,
+            'memory' => 192,
             'tries' => 3,
             // > DSR export 600s, < redis retry_after 660.
             'timeout' => 630,
@@ -251,8 +311,11 @@ return [
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 4,
+            'supervisor-interactive' => [
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
+            'supervisor-heavy' => [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
@@ -260,16 +323,28 @@ return [
 
         // Staging ships the same worker topology as production.
         'staging' => [
-            'supervisor-1' => [
-                'maxProcesses' => 4,
+            'supervisor-interactive' => [
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
+            'supervisor-heavy' => [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
         ],
 
+        /*
+         * Same topology, smaller thresholds: local jobs are tiny, and a laptop
+         * running Sail, Vite and the whole Docker stack has less to spare than
+         * the cluster does. maxProcesses stays above each queue count so the
+         * autoscaling bug above cannot reappear only in development.
+         */
         'local' => [
-            'supervisor-1' => [
-                'maxProcesses' => 3,
+            'supervisor-interactive' => [
+                'memory' => 96,
+            ],
+            'supervisor-heavy' => [
+                'memory' => 128,
             ],
         ],
     ],
