@@ -20,8 +20,8 @@ namespace App\Platform\Support;
  * `config/horizon.php` supervisors use {@see INTERACTIVE} and {@see HEAVY};
  * {@see NAMES} is their union and stays the single list everything else checks
  * against. Laravel Cloud runs a single custom background process
- * `php artisan horizon` (not queue:work); the queue CSV field on managed
- * queue:work workers is obsolete.
+ * `php artisan horizon` — not queue:work, and not Managed Queues, whose
+ * comma-separated queue field this class used to exist to produce.
  */
 final class WorkerQueues
 {
@@ -72,23 +72,4 @@ final class WorkerQueues
         ...self::INTERACTIVE,
         ...self::HEAVY,
     ];
-
-    public static function csv(): string
-    {
-        return implode(',', self::NAMES);
-    }
-
-    /**
-     * Dedicated queues only — default is drained by the same interactive
-     * supervisor as broadcasts.
-     *
-     * @return list<string>
-     */
-    public static function dedicatedNames(): array
-    {
-        return array_values(array_filter(
-            self::NAMES,
-            fn (string $queue): bool => $queue !== 'default',
-        ));
-    }
 }
