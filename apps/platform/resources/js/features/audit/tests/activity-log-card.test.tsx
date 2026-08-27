@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActivityLogEntry } from '@/features/audit/types';
 import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
-import type { Paginated } from '@/types/pagination';
+import type { SimplePaginated } from '@/types/pagination';
 
 vi.mock('@/hooks/use-current-workspace', () => ({
     useCurrentWorkspace: () => ({ slug: 'acme', name: 'Acme' }),
@@ -34,16 +34,18 @@ const { default: ActivityLogCard } =
 
 function paginated(
     data: ActivityLogEntry[],
-    total = data.length,
-): Paginated<ActivityLogEntry> {
+): SimplePaginated<ActivityLogEntry> {
     return {
         data,
-        total,
         current_page: 1,
-        last_page: 1,
         per_page: 10,
-        links: [],
-    } as unknown as Paginated<ActivityLogEntry>;
+        from: data.length === 0 ? null : 1,
+        to: data.length === 0 ? null : data.length,
+        path: '/activity',
+        first_page_url: '/activity?page=1',
+        next_page_url: null,
+        prev_page_url: null,
+    };
 }
 
 function activity(overrides: Partial<ActivityLogEntry> = {}): ActivityLogEntry {
@@ -72,26 +74,26 @@ describe('ActivityLogCard', () => {
         ).toBeInTheDocument();
     });
 
-    it('pluralizes the event count', () => {
+    it('describes the current page without a filtered-set total', (): void => {
         const { rerender } = render(
-            <ActivityLogCard activities={paginated([activity()], 1)} />,
+            <ActivityLogCard activities={paginated([activity()])} />,
         );
 
-        expect(screen.getByText('1 event')).toBeInTheDocument();
+        expect(screen.getByText('Latest 1 event')).toBeInTheDocument();
 
         rerender(
             <ActivityLogCard
-                activities={paginated([activity(), activity({ id: 2 })], 2)}
+                activities={paginated([activity(), activity({ id: 2 })])}
             />,
         );
 
-        expect(screen.getByText('2 events')).toBeInTheDocument();
+        expect(screen.getByText('Latest 2 events')).toBeInTheDocument();
     });
 
     it('falls back to "System" when there is no causer', () => {
         render(
             <ActivityLogCard
-                activities={paginated([activity({ causer_name: null })], 1)}
+                activities={paginated([activity({ causer_name: null })])}
             />,
         );
 
@@ -101,18 +103,15 @@ describe('ActivityLogCard', () => {
     it('links to the dossier subject but not to other subject types', () => {
         const { rerender } = render(
             <ActivityLogCard
-                activities={paginated(
-                    [
-                        activity({
-                            subject: {
-                                type: 'Dossier',
-                                id: 7,
-                                name: 'Q1 return',
-                            },
-                        }),
-                    ],
-                    1,
-                )}
+                activities={paginated([
+                    activity({
+                        subject: {
+                            type: 'Dossier',
+                            id: 7,
+                            name: 'Q1 return',
+                        },
+                    }),
+                ])}
             />,
         );
 
@@ -123,18 +122,15 @@ describe('ActivityLogCard', () => {
 
         rerender(
             <ActivityLogCard
-                activities={paginated(
-                    [
-                        activity({
-                            subject: {
-                                type: 'Client',
-                                id: 3,
-                                name: 'Acme BV',
-                            },
-                        }),
-                    ],
-                    1,
-                )}
+                activities={paginated([
+                    activity({
+                        subject: {
+                            type: 'Client',
+                            id: 3,
+                            name: 'Acme BV',
+                        },
+                    }),
+                ])}
             />,
         );
 
@@ -145,17 +141,14 @@ describe('ActivityLogCard', () => {
     it('renders attribute changes as an old → new diff, deduped across both sides', () => {
         render(
             <ActivityLogCard
-                activities={paginated(
-                    [
-                        activity({
-                            attribute_changes: {
-                                attributes: { status: 'closed', flagged: true },
-                                old: { status: 'open' },
-                            },
-                        }),
-                    ],
-                    1,
-                )}
+                activities={paginated([
+                    activity({
+                        attribute_changes: {
+                            attributes: { status: 'closed', flagged: true },
+                            old: { status: 'open' },
+                        },
+                    }),
+                ])}
             />,
         );
 
@@ -169,17 +162,14 @@ describe('ActivityLogCard', () => {
     it('shows ip/route context only when at least one is present', () => {
         const { rerender } = render(
             <ActivityLogCard
-                activities={paginated(
-                    [
-                        activity({
-                            properties: {
-                                ip: '10.0.0.1',
-                                route: 'dossiers.show',
-                            },
-                        }),
-                    ],
-                    1,
-                )}
+                activities={paginated([
+                    activity({
+                        properties: {
+                            ip: '10.0.0.1',
+                            route: 'dossiers.show',
+                        },
+                    }),
+                ])}
             />,
         );
 
@@ -189,10 +179,9 @@ describe('ActivityLogCard', () => {
 
         rerender(
             <ActivityLogCard
-                activities={paginated(
-                    [activity({ properties: { ip: null, route: null } })],
-                    1,
-                )}
+                activities={paginated([
+                    activity({ properties: { ip: null, route: null } }),
+                ])}
             />,
         );
 

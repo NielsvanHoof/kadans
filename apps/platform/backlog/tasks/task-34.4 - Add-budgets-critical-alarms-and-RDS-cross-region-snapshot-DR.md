@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@NielsvanHoof'
 created_date: '2026-08-11 16:54'
-updated_date: '2026-08-18 13:16'
+updated_date: '2026-08-25 21:14'
 labels:
   - infra
   - aws
@@ -35,7 +35,7 @@ Covers AWS Budgets, critical email/SMS alarms (ALB 5xx, ECS unhealthy, RDS failo
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 AWS Budget alerts fire when spend crosses the configured threshold
-- [ ] #2 Critical alarms cover ALB 5xx, unhealthy ECS targets, RDS failover, and DLQ depth with email/SMS delivery
+- [ ] #2 Critical alarms cover the three result-queue DLQs, RDS failover and RDS free storage, with email/SMS delivery
 - [ ] #3 RDS automated snapshots are retained and copied cross-region for cheap DR
 - [x] #4 Alarm and budget runbooks are documented for on-call
 - [x] #5 Infra docs list what is monitored and how to acknowledge/escalate
@@ -70,4 +70,12 @@ Ops layer implemented in ops.ts, plus a consolidation the earlier tasks had left
 **Acceptance criteria evidence.** #4 and #5 checked: infra/README.md has a "What is monitored, and what to do about it" section with a row per alarm giving what it means and the first move, plus how acknowledging works (alarms carry okActions, so recovery arrives on the same topic and nothing needs muting) and how to escalate (add a subscriber to the one topic). A Disaster recovery section covers the replica, the region choice and the restore path — explicitly noting the recovery time is unmeasured because it has not been rehearsed. #1, #2 and #3 are declared and asserted by 59 infra tests but need a deploy to be true.
 
 Verified: 59 infra tests, 8 bootstrap tests. No application code changed.
+
+Reconciliation (2026-08-25): this task is NOT superseded, contrary to TASK-43's description.
+
+TASK-43 claims it 'supersedes the AWS compute build-out in TASK-34.2, TASK-34.3 and TASK-34.4'. That is right for 34.2 and 34.3, and wrong for this one. Budgets, alarms and DR are data-plane concerns and all three survived the Laravel Cloud move: createBudget, createDatabaseAlarms and createDisasterRecovery in infra/src/shared/ops.ts, plus three DLQ alarms in infra/src/shared/alarms.ts (textract-dlq, transcribe-dlq, transcribe-delivery-dlq).
+
+AC#2 reworded. It named 'ALB 5xx' and 'unhealthy ECS targets', neither of which exists after TASK-43.3 — leaving it would have made the criterion permanently uncheckable. What actually remains is the three result-queue DLQs, the RDS failover EventSubscription (failover has no metric, so it is an event subscription rather than an alarm) and the database-storage MetricAlarm. Rewording narrows the criterion to the surviving surface rather than lowering the bar: nothing that still exists was dropped from it.
+
+AC#1, #2 and #3 remain unchecked. All three are 'declared by the program, asserted by infra tests, but need a deploy to be true', and that has not changed — local AWS credentials return InvalidClientTokenId, so deployed state cannot be observed from here. Checking them needs someone with credentials to confirm the budget, the alarm set and the cross-region backup replica exist in the account.
 <!-- SECTION:NOTES:END -->

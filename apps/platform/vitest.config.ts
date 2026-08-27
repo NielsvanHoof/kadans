@@ -41,10 +41,17 @@ export default defineConfig({
                 'resources/js/test/**',
             ],
             reporter: ['text', 'text-summary'],
-            // Ratchet: set at the suite's measured line % after shared-trunk tests.
+            // Ratchet: set just under the suite's measured line %, so a real
+            // regression trips it but ordinary churn does not.
             // Raise deliberately when coverage improves; never lower without a task.
+            //
+            // 41 -> 49 after features/clients went from zero tests to full line
+            // coverage (measured 49.86%). The gap left is deliberate headroom, not
+            // slack: pinning the exact figure makes every unrelated refactor a
+            // threshold failure, and a gate people routinely edit downward to get
+            // green stops being a gate.
             thresholds: {
-                lines: 41,
+                lines: 49,
             },
         },
     },

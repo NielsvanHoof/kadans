@@ -17,8 +17,6 @@ use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
 use App\Pipelines\Support\PipelineStepSequence;
-use App\Tenancy\Models\Tenant;
-use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
@@ -28,6 +26,9 @@ use function is_string;
 /**
  * Applies a Textract AnalyzeDocument SNS completion to an UploadedDocument.
  * Maps FORMS/TABLES via the extraction pipeline, then persists status + audit.
+ *
+ * Tenant is already current: the consume command switches before dispatch so
+ * Spatie restores it onto this job. A scoped lookup is therefore correct.
  */
 final readonly class CompleteTextractExtractionAction
 {
@@ -38,7 +39,6 @@ final readonly class CompleteTextractExtractionAction
         private PipelineState $pipelineState,
         private ResolveProviderPipelineForSubjectAction $resolveProviderPipeline,
         private PrepareProviderPipelineForProviderResultAction $prepareProviderPipeline,
-        private TenantContext $tenantContext,
         private UploadedDocumentProcessingTransitions $processingTransitions,
     ) {}
 
@@ -75,7 +75,7 @@ final readonly class CompleteTextractExtractionAction
             return false;
         }
 
-        $document = UploadedDocument::queryWithoutTenantScope()
+        $document = UploadedDocument::query()
             ->where('textract_job_id', $jobId)
             ->first();
 
@@ -90,151 +90,149 @@ final readonly class CompleteTextractExtractionAction
             return false;
         }
 
-        // SQS consumer has no HTTP tenant context — switch for audits and scoped queries.
-        $tenant = Tenant::query()->find($document->tenant_id);
-        if (! $tenant instanceof Tenant) {
-            Log::error('OCR: Textract completion document has missing tenant.', [
+        return $this->apply($document, $notification, $jobId, $status);
+    }
+
+    /**
+     * @param  array{JobId?: mixed, Status?: mixed, StatusMessage?: mixed, API?: mixed}  $notification
+     */
+    private function apply(
+        UploadedDocument $document,
+        array $notification,
+        string $jobId,
+        string $status,
+    ): bool {
+        $pipeline = $this->resolveProviderPipeline->handle(
+            $document,
+            PipelineType::OcrDocument,
+            $jobId,
+        );
+
+        if (in_array($document->processing_status, [
+            DocumentProcessingStatus::Completed,
+            DocumentProcessingStatus::Failed,
+        ], true)) {
+            // Document may already be done while the pipeline stayed pending
+            if (
+                $document->processing_status === DocumentProcessingStatus::Completed
+                && $pipeline instanceof Pipeline
+                && ! $pipeline->status->isTerminal()
+            ) {
+                $pipeline = $this->prepareProviderPipeline->handle(
+                    $pipeline,
+                    Config::string('ocr.driver'),
+                    $jobId,
+                    PipelineStepKey::ProviderProcessing,
+                );
+                $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                    ->complete(PipelineStepKey::ProviderProcessing)
+                    ->start(PipelineStepKey::ProcessResults)
+                    ->complete(PipelineStepKey::ProcessResults));
+            }
+
+            Log::info('OCR: Textract completion already applied — skipping.', [
                 'uploaded_document_id' => $document->id,
                 'tenant_id' => $document->tenant_id,
                 'textract_job_id' => $jobId,
             ]);
 
-            return false;
+            return true;
         }
 
-        return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
-            $pipeline = $this->resolveProviderPipeline->handle(
+        Log::info('OCR: applying Textract completion notification.', [
+            'uploaded_document_id' => $document->id,
+            'tenant_id' => $document->tenant_id,
+            'textract_job_id' => $jobId,
+            'status' => $status,
+        ]);
+
+        if ($status === 'SUCCEEDED') {
+            if ($pipeline instanceof Pipeline) {
+                // Catch up submit/provider_processing when the submit job never recorded them.
+                $pipeline = $this->prepareProviderPipeline->handle(
+                    $pipeline,
+                    Config::string('ocr.driver'),
+                    $jobId,
+                    PipelineStepKey::ProviderProcessing,
+                );
+                $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                    ->complete(PipelineStepKey::ProviderProcessing)
+                    ->start(PipelineStepKey::ProcessResults));
+            }
+
+            $startedAt = hrtime(true);
+            $extractedJson = $this->extractionPipeline->run($jobId, $document);
+            $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
+
+            $updated = $this->processingTransitions->complete($document, $jobId, $extractedJson);
+
+            if (! $updated) {
+                Log::warning('OCR: discarded stale Textract completion.', [
+                    'uploaded_document_id' => $document->id,
+                    'tenant_id' => $document->tenant_id,
+                    'textract_job_id' => $jobId,
+                    'expected_path' => $document->path,
+                ]);
+
+                return true;
+            }
+
+            $document->refresh();
+
+            if ($pipeline instanceof Pipeline) {
+                $this->pipelineState->complete($pipeline, PipelineStepKey::ProcessResults);
+            }
+
+            $this->logAuditActivity->handle(
+                AuditEvent::DocumentProcessingCompleted,
                 $document,
-                PipelineType::OcrDocument,
-                $jobId,
+                [
+                    'original_filename' => $document->original_filename,
+                    'extracted_length' => mb_strlen($extractedJson),
+                    'textract_job_id' => $jobId,
+                ],
+                includeRequestContext: false,
             );
 
-            if (in_array($document->processing_status, [
-                DocumentProcessingStatus::Completed,
-                DocumentProcessingStatus::Failed,
-            ], true)) {
-                // Document may already be done while the pipeline stayed pending
-                if (
-                    $document->processing_status === DocumentProcessingStatus::Completed
-                    && $pipeline instanceof Pipeline
-                    && ! $pipeline->status->isTerminal()
-                ) {
-                    $pipeline = $this->prepareProviderPipeline->handle(
-                        $pipeline,
-                        Config::string('ocr.driver'),
-                        $jobId,
-                        PipelineStepKey::ProviderProcessing,
-                    );
-                    $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
-                        ->complete(PipelineStepKey::ProviderProcessing)
-                        ->start(PipelineStepKey::ProcessResults)
-                        ->complete(PipelineStepKey::ProcessResults));
-                }
-
-                Log::info('OCR: Textract completion already applied — skipping.', [
-                    'uploaded_document_id' => $document->id,
-                    'tenant_id' => $document->tenant_id,
-                    'textract_job_id' => $jobId,
-                ]);
-
-                return true;
-            }
-
-            Log::info('OCR: applying Textract completion notification.', [
+            Log::info('OCR: Textract extraction completed successfully.', [
                 'uploaded_document_id' => $document->id,
                 'tenant_id' => $document->tenant_id,
                 'textract_job_id' => $jobId,
-                'status' => $status,
+                'extracted_length' => mb_strlen($extractedJson),
+                'duration_ms' => $durationMs,
             ]);
 
-            if ($status === 'SUCCEEDED') {
-                if ($pipeline instanceof Pipeline) {
-                    // Catch up submit/provider_processing when the submit job never recorded them.
-                    $pipeline = $this->prepareProviderPipeline->handle(
-                        $pipeline,
-                        Config::string('ocr.driver'),
-                        $jobId,
-                        PipelineStepKey::ProviderProcessing,
-                    );
-                    $this->pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
-                        ->complete(PipelineStepKey::ProviderProcessing)
-                        ->start(PipelineStepKey::ProcessResults));
-                }
+            return true;
+        }
 
-                $startedAt = hrtime(true);
-                $extractedJson = $this->extractionPipeline->run($jobId, $document);
-                $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
+        if (in_array($status, ['FAILED', 'ERROR'], true)) {
+            $message = $notification['StatusMessage'] ?? "Textract job reported {$status}.";
+            $error = is_string($message) && $message !== ''
+                ? mb_substr($message, 0, 500)
+                : "Textract job reported {$status}.";
 
-                $updated = $this->processingTransitions->complete($document, $jobId, $extractedJson);
+            $this->markTextractExtractionFailed->handle($document, $jobId, $error, $status);
 
-                if (! $updated) {
-                    Log::warning('OCR: discarded stale Textract completion.', [
-                        'uploaded_document_id' => $document->id,
-                        'tenant_id' => $document->tenant_id,
-                        'textract_job_id' => $jobId,
-                        'expected_path' => $document->path,
-                    ]);
-
-                    return true;
-                }
-
-                $document->refresh();
-
-                if ($pipeline instanceof Pipeline) {
-                    $this->pipelineState->complete($pipeline, PipelineStepKey::ProcessResults);
-                }
-
-                $this->logAuditActivity->handle(
-                    AuditEvent::DocumentProcessingCompleted,
-                    $document,
-                    [
-                        'original_filename' => $document->original_filename,
-                        'extracted_length' => mb_strlen($extractedJson),
-                        'textract_job_id' => $jobId,
-                    ],
-                    includeRequestContext: false,
+            if ($pipeline instanceof Pipeline) {
+                $this->pipelineState->fail(
+                    $pipeline,
+                    PipelineStepKey::ProviderProcessing,
+                    errorCode: 'textract_'.$status,
+                    errorMessage: $error,
                 );
-
-                Log::info('OCR: Textract extraction completed successfully.', [
-                    'uploaded_document_id' => $document->id,
-                    'tenant_id' => $document->tenant_id,
-                    'textract_job_id' => $jobId,
-                    'extracted_length' => mb_strlen($extractedJson),
-                    'duration_ms' => $durationMs,
-                ]);
-
-                return true;
             }
 
-            if (in_array($status, ['FAILED', 'ERROR'], true)) {
-                $message = $notification['StatusMessage'] ?? "Textract job reported {$status}.";
-                $error = is_string($message) && $message !== ''
-                    ? mb_substr($message, 0, 500)
-                    : "Textract job reported {$status}.";
+            return true;
+        }
 
-                $this->markTextractExtractionFailed->handle($document, $jobId, $error, $status);
+        // Unknown/non-final status — the job logs this and does not retry.
+        Log::info('OCR: Textract completion deferred — non-final status.', [
+            'uploaded_document_id' => $document->id,
+            'tenant_id' => $document->tenant_id,
+            'textract_job_id' => $jobId,
+            'status' => $status,
+        ]);
 
-                if ($pipeline instanceof Pipeline) {
-                    $this->pipelineState->fail(
-                        $pipeline,
-                        PipelineStepKey::ProviderProcessing,
-                        errorCode: 'textract_'.$status,
-                        errorMessage: $error,
-                    );
-                }
-
-                return true;
-            }
-
-            // Unknown/non-final status — leave the message visible for another poll.
-            Log::info('OCR: Textract completion deferred — non-final status.', [
-                'uploaded_document_id' => $document->id,
-                'tenant_id' => $document->tenant_id,
-                'textract_job_id' => $jobId,
-                'status' => $status,
-            ]);
-
-            return false;
-        });
+        return false;
     }
 }

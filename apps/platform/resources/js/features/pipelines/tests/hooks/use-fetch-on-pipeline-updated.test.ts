@@ -7,6 +7,8 @@ let emit: (event: PipelineUpdatedPayload) => void = () => {};
 const httpGet = vi.fn();
 
 vi.mock('@laravel/echo-react', () => ({
+    // lib/echo.ts calls this on import; no-op under tests.
+    configureEcho: vi.fn(),
     useEcho: (
         _channel: string,
         _event: string,
@@ -52,6 +54,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: (event) => `/documents/${event.subject_id}/live`,
                 onData,
             }),
@@ -69,6 +72,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 match: (event) => event.subject_id === 1,
                 urlForEvent: () => '/x',
                 onData,
@@ -86,6 +90,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 enabled: false,
                 urlForEvent: () => '/x',
                 onData,
@@ -117,6 +122,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: () => '/x',
                 onData,
             }),
@@ -142,6 +148,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: () => '/x',
                 onData,
             }),
@@ -159,6 +166,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: () => '/x',
                 onData,
             }),

@@ -279,6 +279,18 @@ final class Dossier extends TenantOwnedModel
     }
 
     /**
+     * status drives open / in_review / needs_review / awaiting_client, and
+     * due_date drives overdue. Title, reference and assignee do not appear in
+     * any cached metric.
+     *
+     * @return list<string>
+     */
+    protected static function cacheInvalidatingAttributes(): array
+    {
+        return ['status', 'due_date'];
+    }
+
+    /**
      * @return array<string, string>
      */
     #[Override]

@@ -29,7 +29,8 @@ export default function PipelineIndex({
     );
     useReloadOnPipelineUpdated(
         ['pipelines', 'filters', 'sort', 'indexQuery', 'flash'],
-        { enabled: hasInFlightPipeline },
+        // The one surface that genuinely wants every run in the firm.
+        { enabled: hasInFlightPipeline, scope: { on: 'workspace' } },
     );
 
     setLayoutProps({

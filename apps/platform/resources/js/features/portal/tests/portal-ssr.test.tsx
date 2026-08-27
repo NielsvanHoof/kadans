@@ -6,14 +6,16 @@ import type { PortalDossier } from '@/features/portal/types';
 import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 /**
- * The portal is server-rendered, so nothing on this page may touch a browser
- * global while rendering — an earlier revision crashed SSR by reading
- * `window.location` during render.
+ * Guard render-time browser-global safety for the portal composition.
+ *
+ * Inertia SSR is disabled in this app, but nothing on this surface may touch a
+ * browser global while rendering — an earlier revision crashed under
+ * `renderToString` by reading `window.location` during render.
  *
  * This file runs in the `node` environment on purpose: no jsdom, so no
- * `window`, exactly like the Inertia SSR bundle. The page component itself
- * cannot be imported (pages are Inertia entry points, not libraries), so this
- * renders the same composition the page renders.
+ * `window`. The page component itself cannot be imported (pages are Inertia
+ * entry points, not libraries), so this renders the same composition the page
+ * renders.
  */
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 vi.mock('@inertiajs/react', () => ({

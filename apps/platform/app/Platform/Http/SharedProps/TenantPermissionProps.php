@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Platform\Http\SharedProps;
 
 use App\Accounts\Models\User;
+use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Support\PermissionRegistry;
@@ -17,8 +18,12 @@ use App\Tenancy\Support\PermissionRegistry;
  * every time the UI wanted to gate on another permission. Driving it from
  * PermissionRegistry means adding a nav item is now a frontend-only change.
  *
- * Cheap despite the fan-out: Spatie loads the user's permissions once per
- * request, so the remaining checks are in-memory.
+ * The fan-out is over the whole registry, so the loop body has to stay genuinely
+ * cheap. User::hasTenantPermission() is the right entry point for a single
+ * check but the wrong one to call 48 times: it re-resolves SupportSessionState
+ * from the container and re-walks the membership list on every call. Neither
+ * answer can change between iterations, so both are settled once below and the
+ * loop keeps only the part that actually varies per permission.
  */
 final readonly class TenantPermissionProps
 {
@@ -34,11 +39,20 @@ final readonly class TenantPermissionProps
         if (! $user instanceof User || ! $tenant instanceof Tenant) {
             return [];
         }
+        $supportSession = resolve(SupportSessionState::class);
+        $onSupportSession = $user->isPlatformSupport() && $supportSession->isActiveFor($tenant);
+        $isMember = $user->belongsToTenant($tenant);
+
+        if (! $onSupportSession && ! $isMember) {
+            return [];
+        }
 
         $permissions = [];
 
         foreach ($this->permissionRegistry->all() as $permission) {
-            $permissions[$permission->value] = $user->hasTenantPermission($permission, $tenant);
+            $permissions[$permission->value] = $onSupportSession
+                ? $supportSession->allowsPermission($permission)
+                : $user->can($permission->value);
         }
 
         return $permissions;

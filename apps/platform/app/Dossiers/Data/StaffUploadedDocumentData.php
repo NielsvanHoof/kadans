@@ -29,13 +29,13 @@ final class StaffUploadedDocumentData extends Data
     ) {}
 
     /**
-     * Build the list/review slice from a document (loads pipelines when needed).
+     * Build the list/review slice from a document (loads the latest pipeline when needed).
      */
     public static function fromModel(UploadedDocument $uploadedDocument): self
     {
-        $uploadedDocument->loadMissing('pipelines.steps');
+        $uploadedDocument->loadMissing('latestPipeline.steps');
 
-        $latestPipeline = $uploadedDocument->pipelines->sortByDesc('id')->first();
+        $latestPipeline = $uploadedDocument->latestPipeline;
 
         return new self(
             id: $uploadedDocument->id,

@@ -18,6 +18,7 @@ use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Data\PersonOptionData;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use RuntimeException;
@@ -29,6 +30,12 @@ use function is_string;
  */
 final readonly class FetchDossierShowQuery
 {
+    /**
+     * Expired/revoked grants shown as history. Valid grants are always
+     * included so staff can still revoke them, regardless of age.
+     */
+    private const int RECENT_ACCESS_GRANT_LIMIT = 20;
+
     public function __construct(
         private MapStaffDocumentRequestRowsQuery $mapStaffDocumentRequestRowsQuery,
     ) {}
@@ -68,9 +75,8 @@ final readonly class FetchDossierShowQuery
             'responsibleUser:id,name,email',
             'documentRequests' => fn ($query) => $query
                 ->with(['uploadedDocuments', 'reviewedBy:id,name'])
-                ->with('uploadedDocuments.pipelines.steps')
+                ->with('uploadedDocuments.latestPipeline.steps')
                 ->oldest('sort_order'),
-            'clientAccessGrants' => fn ($query) => $query->latest(),
         ]);
 
         // Counted, not loaded: the rows themselves arrive as deferred props, but
@@ -85,19 +91,6 @@ final readonly class FetchDossierShowQuery
         );
 
         $responsibleUser = $dossier->responsibleUser;
-
-        /** @var list<DossierAccessGrantData> $accessGrants */
-        $accessGrants = [];
-
-        foreach ($dossier->clientAccessGrants as $grant) {
-            $accessGrants[] = new DossierAccessGrantData(
-                id: $grant->id,
-                expiresAt: $grant->expires_at->toIso8601String(),
-                revokedAt: $grant->revoked_at?->toIso8601String(),
-                lastUsedAt: $grant->last_used_at?->toIso8601String(),
-                isValid: $grant->isValid(),
-            );
-        }
 
         return new DossierShowData(
             id: $dossier->id,
@@ -130,7 +123,7 @@ final readonly class FetchDossierShowQuery
                 email: $client->email,
             ),
             documentRequests: $mapped->rows,
-            accessGrants: $accessGrants,
+            accessGrants: $this->accessGrantRows($dossier),
             // Filled by deferred top-level props after first paint.
             exports: [],
             audioRecordings: [],
@@ -165,13 +158,68 @@ final readonly class FetchDossierShowQuery
     private function audioRecordingRows(Dossier $dossier): array
     {
         $dossier->load([
-            'audioRecordings' => fn ($query) => $query->with('pipelines.steps')->latest(),
+            'audioRecordings' => fn ($query) => $query->with('latestPipeline.steps')->latest(),
         ]);
+
+        $dossier->loadMissing('tenant');
 
         $rows = [];
 
         foreach ($dossier->audioRecordings as $recording) {
+            $recording->setRelation('dossier', $dossier);
+
             $rows[] = StaffAudioRecordingData::fromModel($recording)->toArray();
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Every currently valid grant (so revoke stays possible) plus the most
+     * recent expired/revoked ones. Creating a new portal link every week
+     * would otherwise serialize the whole history on first paint.
+     *
+     * @return list<DossierAccessGrantData>
+     */
+    private function accessGrantRows(Dossier $dossier): array
+    {
+        // HasMany::getQuery() is the Eloquent builder; constraints go on its
+        // base query. phpstan-strict-rules flags Builder::valid()/latest()/
+        // limit()/whereNotNull() as staticMethod.dynamicCall.
+        $validQuery = $dossier->clientAccessGrants()->getQuery();
+        $validQuery->getQuery()
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->latest();
+        $valid = $validQuery->get();
+
+        $historyQuery = $dossier->clientAccessGrants()->getQuery();
+        $historyQuery->getQuery()
+            ->where(function (Builder $query): void {
+                $query->whereNotNull('revoked_at')
+                    ->orWhere('expires_at', '<=', now());
+            })
+            ->latest()
+            ->limit(self::RECENT_ACCESS_GRANT_LIMIT);
+        $history = $historyQuery->get();
+
+        /** @var list<DossierAccessGrantData> $rows */
+        $rows = [];
+        $seen = [];
+
+        foreach ($valid->concat($history) as $grant) {
+            if (isset($seen[$grant->id])) {
+                continue;
+            }
+
+            $seen[$grant->id] = true;
+            $rows[] = new DossierAccessGrantData(
+                id: $grant->id,
+                expiresAt: $grant->expires_at->toIso8601String(),
+                revokedAt: $grant->revoked_at?->toIso8601String(),
+                lastUsedAt: $grant->last_used_at?->toIso8601String(),
+                isValid: $grant->isValid(),
+            );
         }
 
         return $rows;

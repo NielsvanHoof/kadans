@@ -61,6 +61,8 @@ return [
         'max_speaker_labels' => (int) env('TRANSCRIBE_MAX_SPEAKERS', 10),
         'sqs_wait_time_seconds' => (int) env('TRANSCRIBE_SQS_WAIT_TIME', 20),
         'sqs_max_messages' => (int) env('TRANSCRIBE_SQS_MAX_MESSAGES', 5),
+        // Mirrors the queue's redrive policy; see config/ocr.php for why the
+        // consumer no longer reads it to decide when to give up.
         'sqs_max_receive_count' => (int) env('TRANSCRIBE_SQS_MAX_RECEIVE_COUNT', 5),
     ],
 

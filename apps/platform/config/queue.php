@@ -72,6 +72,13 @@ return [
             'queue' => env('REDIS_QUEUE', 'default'),
             // Must exceed every job timeout (largest: GenerateDataSubjectExportJob 600s).
             // Laravel re-reserves the job when retry_after elapses; ShouldBeUnique does not stop that.
+            //
+            // retry_after is per connection, not per queue, so moving that job
+            // off `default` does not let this come down — every queue on this
+            // connection still waits 11 minutes before a job lost to a dead
+            // worker is re-reserved. Lowering it means giving the long jobs
+            // their own connection, which on Laravel Cloud means a second
+            // worker process; not worth it until recovery latency actually bites.
             'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 660),
             'block_for' => null,
             'after_commit' => false,

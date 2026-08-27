@@ -132,7 +132,13 @@ test('fulfilling an export queues the build rather than blocking the request', f
         ]))
         ->assertRedirect();
 
-    Queue::assertPushed(GenerateDataSubjectExportJob::class);
+    // Not just "queued" — queued somewhere that cannot stall interactive work.
+    // This build has a ten-minute timeout, and `default` is drained first and
+    // carries every broadcast, queued notification and the health heartbeat.
+    Queue::assertPushed(
+        GenerateDataSubjectExportJob::class,
+        fn (GenerateDataSubjectExportJob $job): bool => $job->queue === 'dossier-export',
+    );
 });
 
 test('fulfilling an erasure anonymizes the client immediately', function (): void {

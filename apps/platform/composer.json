@@ -17,6 +17,7 @@
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",
+        "laravel/horizon": "^5.48",
         "laravel/octane": "^2.18",
         "laravel/prompts": "^0.3.21",
         "laravel/reverb": "^1.10",

@@ -6,16 +6,21 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/*/{Actions,Queries,Services,Transitions}/** | .ai/rules/actions-queries-services-transitions.md |
 | app/*/Actions/** | .ai/rules/actions.md |
+| app/Platform/Ai/** | .ai/rules/ai.md |
 | app/**, app/**/*.php | .ai/rules/app.md |
 | app/Audit/Models/** | .ai/rules/audit-models.md |
 | app/ClientPortal/** | .ai/rules/client-portal.md |
-| config/**, config/queue.php | .ai/rules/config.md |
+| app/Platform/Console/Commands/Retention/** | .ai/rules/commands-retention.md |
+| app/{DocumentProcessing,AudioProcessing}/Console/Commands/** | .ai/rules/commands.md |
+| config/**, config/queue.php, config/horizon.php | .ai/rules/config.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
-| docker/**, .dockerignore | .ai/rules/docker.md |
+| docker/**, .dockerignore, vite.config.ts | .ai/rules/docker.md |
+| app/{DocumentProcessing,AudioProcessing}/Actions/** | .ai/rules/document-processing-audio-processing-actions.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
 | app/{Dossiers,ClientPortal}/** | .ai/rules/dossiers-client-portal.md |
+| app/Dossiers/Queries/** | .ai/rules/dossiers-queries.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
 | app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |
@@ -27,6 +32,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
 | resources/js/**, resources/js/**/*.{tsx,ts} | .ai/rules/js.md |
+| resources/js/lib/** | .ai/rules/lib.md |
 | app/*/Listeners/** | .ai/rules/listeners.md |
 | compose.yaml, package.json | .ai/rules/local-environment.md |
 | app/Tenancy/Http/Middleware/** | .ai/rules/middleware.md |
@@ -34,7 +40,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Models/** | .ai/rules/models.md |
 | app/Pipelines/** | .ai/rules/pipelines.md |
 | app/Platform/Models/DataSubjectRequest.php | .ai/rules/platform-models.md |
+| app/Providers/** | .ai/rules/providers.md |
 | app/WorkspaceNotifications/Queries/** | .ai/rules/queries.md |
+| app/Reporting/Queries/** | .ai/rules/reporting-queries.md |
 | app/*/{Data,Http/Requests,Enums,Policies}/** | .ai/rules/requests-enums-policies.md |
 | app/Platform/Actions/Retention/** | .ai/rules/retention.md |
 | routes/** | .ai/rules/routes.md |

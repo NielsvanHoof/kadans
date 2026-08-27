@@ -19,3 +19,6 @@ Prefer `$this->app->scoped()` over `singleton()` for per-request services.
 
 ## Last-owner mutations lock the tenant row first
 Remove, suspend, and demote must call WorkspaceMemberRoles::lockOwnerMutations($tenantId) inside the transaction before locking the target membership. A membership-row lock does not serialize two owner mutations on different rows (READ COMMITTED both count 2). Do not use pg_advisory_xact_lock: tests run SQLite, which neither supports advisory locks nor emits FOR UPDATE. Leave isLastActiveOwner() unlocked — Policy and FormRequest call it outside a transaction.
+
+## Staff-options cache, no membership observers
+Staff dropdowns go through FetchResponsibleStaffOptionsQuery + StaffOptionsCache (Cache::flexible, tenant id in the key, 500 cap). Forget from Invite/Accept/Remove/Suspend/UpdateRole/Provision after the transaction commits — never from TenantMembership model events, because last_accessed_at writes every 5 minutes and would thrash the cache. Do not route this through TenantCacheInvalidator (Reporting-owned). The members page payload stays uncached (viewer-specific) but is LIMITed to 500; do not paginate that UI.

@@ -11,6 +11,7 @@ use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Support\StaffOptionsCache;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,7 +25,7 @@ final readonly class AcceptTenantInvitationAction
 
     public function handle(TenantInvitation $invitation, User $user): TenantMembership
     {
-        return DB::transaction(function () use ($invitation, $user): TenantMembership {
+        $result = DB::transaction(function () use ($invitation, $user): TenantMembership {
             $lockQuery = TenantInvitation::queryWithoutTenantScope()
                 ->whereKey($invitation->getKey());
 
@@ -94,5 +95,9 @@ final readonly class AcceptTenantInvitationAction
 
             return $membership->fresh(['user', 'tenant']) ?? $membership;
         });
+
+        StaffOptionsCache::forget($result->tenant_id);
+
+        return $result;
     }
 }

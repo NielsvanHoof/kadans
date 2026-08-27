@@ -23,6 +23,9 @@ beforeEach(function (): void {
         'database.connections.pgsql.sslrootcert' => base_path('composer.json'),
         'database.redis.cache.scheme' => 'tls',
         'database.redis.default.scheme' => 'tls',
+        'database.redis.session.scheme' => 'tls',
+        'database.redis.default.database' => '0',
+        'database.redis.session.database' => '2',
         'filesystems.default' => 's3',
         'filesystems.disks.s3.report' => true,
         'filesystems.disks.s3.throw' => true,
@@ -31,6 +34,7 @@ beforeEach(function (): void {
         'mail.default' => 'ses',
         'mail.from.address' => 'support@example.com',
         'ocr.driver' => 'textract',
+        'horizon.allowed_emails' => ['ops@example.com'],
         'scout.driver' => 'meilisearch',
         'security.malware_scanning.enabled' => true,
         'security.two_factor.enforcement' => 'all',
@@ -48,6 +52,7 @@ beforeEach(function (): void {
         'reverb.apps.apps.0.options.useTLS' => true,
         'reverb.apps.apps.0.secret' => 'production-reverb-secret',
         'session.driver' => 'redis',
+        'session.connection' => 'session',
         'session.domain' => 'app.example.com',
         'session.encrypt' => true,
         'session.secure' => true,
@@ -99,7 +104,10 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'unreadable database root certificate' => ['database.connections.pgsql.sslrootcert', '/nonexistent/rds-ca.pem'],
     'unencrypted Redis cache' => ['database.redis.cache.scheme', 'tcp'],
     'unencrypted Redis connection' => ['database.redis.default.scheme', 'tcp'],
+    'unencrypted Redis sessions' => ['database.redis.session.scheme', 'tcp'],
     'non-Redis sessions' => ['session.driver', 'file'],
+    'sessions on the default Redis connection' => ['session.connection', 'default'],
+    'sessions sharing the default Redis DB' => ['database.redis.session.database', '0'],
     'unencrypted sessions' => ['session.encrypt', false],
     'insecure session cookie' => ['session.secure', false],
     'wrong session domain' => ['session.domain', 'example.com'],
@@ -152,7 +160,48 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'Reverb TLS disabled' => ['reverb.apps.apps.0.options.useTLS', false],
     'wildcard Reverb allowed origins' => ['reverb.apps.apps.0.allowed_origins', ['*']],
     'empty Reverb allowed origins' => ['reverb.apps.apps.0.allowed_origins', []],
+    'unapproved inference provider for document overview' => ['ai.agents.document_overview.provider', 'openai'],
+    'unapproved inference provider for reminder drafting' => ['ai.agents.dossier_reminder.provider', 'openai'],
+    'agents config replaced wholesale' => ['ai.agents', 'nonsense'],
+    'empty Horizon allow list' => ['horizon.allowed_emails', []],
+    'Horizon allow list of blank strings' => ['horizon.allowed_emails', ['', '   ']],
+    'Horizon allow list replaced wholesale' => ['horizon.allowed_emails', 'ops@example.com'],
 ]);
+
+/**
+ * The fallback is the hazard, not the agent slots.
+ *
+ * Every agent names a provider today, so `ai.default` is unreachable and reads as
+ * harmless. Blank one `AI_*_PROVIDER` env var and that agent falls through to it —
+ * which, before decision-11, meant OCR field values from payslips and identity
+ * documents going to whatever the default named, with nothing failing. The
+ * validator resolves the same way `ResolvesConfiguredModel` does so the blank slot
+ * is checked against the value it would actually use.
+ */
+test('a blanked agent provider is rejected when the fallback is unapproved', function (mixed $blank): void {
+    config([
+        'ai.agents.document_overview.provider' => $blank,
+        'ai.default' => 'openai',
+    ]);
+
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
+        ->toThrow(LogicException::class, 'ai.agents.document_overview.provider');
+})->with([
+    'null' => [null],
+    'empty string' => [''],
+    'whitespace' => ['   '],
+]);
+
+test('a blanked agent provider passes when the fallback is approved', function (): void {
+    config([
+        'ai.agents.document_overview.provider' => null,
+        'ai.default' => 'bedrock',
+    ]);
+
+    resolve(ProductionConfigurationValidator::class)->validate();
+
+    expect(true)->toBeTrue();
+});
 
 /**
  * The log check asks whether anything leaves the machine, not that every

@@ -39,6 +39,10 @@ use function str_replace;
  *    same-origin under /build, uploads never land on this origin (they go to S3,
  *    and .js/.html are not accepted file types), so 'self' costs little here and
  *    keeps Vite's dev module graph working without special cases.
+ *
+ * Local dashboards are a third relaxation, applied only to their own HTML.
+ * Horizon and Telescope both need `'unsafe-eval'` (Vue runtime compiler) and
+ * `fonts.bunny.net` for Figtree. Never enable those on the main app.
  */
 final readonly class ContentSecurityPolicy
 {
@@ -64,8 +68,11 @@ final readonly class ContentSecurityPolicy
 
     /**
      * Build the policy string for this request.
+     *
+     * Pass `$forHorizon` or `$forTelescope` only for those dashboards — both
+     * compile Vue templates via `new Function` and load Figtree from Bunny.
      */
-    public function build(?string $nonce): string
+    public function build(?string $nonce, bool $forHorizon = false, bool $forTelescope = false): string
     {
         $scriptSources = ["'self'"];
 
@@ -116,6 +123,13 @@ final readonly class ContentSecurityPolicy
             'form-action' => ["'self'"],
             'frame-ancestors' => ["'none'"],
         ];
+
+        if ($forHorizon || $forTelescope) {
+            // Vue runtime compiler + Figtree stylesheet (Horizon and Telescope).
+            $directives['script-src'][] = "'unsafe-eval'";
+            $directives['style-src'][] = 'https://fonts.bunny.net';
+            $directives['font-src'][] = 'https://fonts.bunny.net';
+        }
 
         $directives = $this->applyDevelopmentServerOrigins($directives);
         $directives = $this->applyExtraSources($directives);

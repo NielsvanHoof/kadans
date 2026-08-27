@@ -19,7 +19,6 @@ use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Support\DebugbarStorageOpen;
-use App\Platform\Support\WorkerQueues;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use App\Tenancy\Models\Tenant;
@@ -127,7 +126,9 @@ final class AppServiceProvider extends ServiceProvider
 
         Model::shouldBeStrict();
 
-        Model::automaticallyEagerLoadRelationships();
+        if (app()->isProduction()) {
+            Model::automaticallyEagerLoadRelationships();
+        }
     }
 
     /**
@@ -209,14 +210,14 @@ final class AppServiceProvider extends ServiceProvider
 
     /**
      * Include Reverb in `php artisan dev` when broadcasting is enabled.
+     *
+     * Horizon registers itself and excepts the default `queue` listener, but
+     * DevCommands::except() replaces the list — so we must restate both
+     * `server` and `queue` here or Sail would run queue:listen beside Horizon.
      */
     private function configureDevCommands(): void
     {
-        DevCommands::except('server');
-
-        foreach (WorkerQueues::dedicatedNames() as $queue) {
-            DevCommands::artisan("queue:listen --tries=1 --timeout=0 --queue={$queue}", $queue);
-        }
+        DevCommands::except('server', 'queue');
 
         DevCommands::artisan('schedule:work', 'scheduled-tasks');
 

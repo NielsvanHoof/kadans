@@ -1,11 +1,11 @@
 ---
 id: TASK-34.3
 title: Add CloudFront edge (optional WAF) for platform hostnames
-status: In Progress
+status: Done
 assignee:
   - '@NielsvanHoof'
 created_date: '2026-08-11 16:54'
-updated_date: '2026-08-18 13:09'
+updated_date: '2026-08-25 21:14'
 labels:
   - infra
   - aws
@@ -73,4 +73,20 @@ CloudFront edge implemented, production only (staging stays edge-free; the savin
 **Acceptance criteria evidence.** #5 and #6 checked: infra/README.md has a "The edge" section covering the certificate region, cache scope, origin lockdown and WAF exclusions, plus a four-step DNS cutover with the propagation gap called out (DNS resolves to the ALB for up to the record TTL while the ALB has already started refusing direct traffic — lower the TTL a day ahead, and use `edgeDomainName` to verify before DNS catches up). #1-#4 are declared by the program and asserted by 51 infra tests but need a deploy to be true; nothing has been applied.
 
 Verified: 51 infra tests, 8 bootstrap tests. No application code changed.
+
+Closed as superseded, not delivered (2026-08-25 reconciliation).
+
+CloudFront and the optional WAF fronted the ALB that TASK-34.2 was going to build. Neither the ALB nor the edge was ever deployed, and TASK-43.3 deleted edge.ts along with the rest of the compute plane. Laravel Cloud fronts the application with its own Cloudflare edge, so the need this task served — TLS and an edge for app.qompose.nl — is met, just not by us.
+
+ACs #1-#4 describe resources that no longer exist. #5 and #6 (DNS cutover path, infra docs) were met and have since been rewritten for the data plane; dns.ts still owns the hostnames, minus the ALB/CloudFront alias wiring.
+
+One piece of this task's reasoning outlived it and is worth not losing: the AWSManagedRulesCommonRuleSet SizeRestrictions_BODY override existed because 20 MB uploads passed through the app. Since TASK-43.1 the browser PUTs straight to S3 and no large body reaches the origin, so if a WAF is ever reintroduced in front of Laravel Cloud that override is no longer needed for uploads — only CrossSiteScripting_BODY, which trips on client correspondence pasted into notes.
+
+Recorded as decision-9 (supersedes decision-8).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Superseded by TASK-43 / decision-9, not delivered. CloudFront/WAF fronted an ALB that was never deployed; edge.ts was deleted in TASK-43.3 and Laravel Cloud provides the edge. Verified no CloudFront or wafv2 resource remains in infra/src.
+<!-- SECTION:FINAL_SUMMARY:END -->

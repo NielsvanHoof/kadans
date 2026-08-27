@@ -238,7 +238,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
         if ($queue === 'overdue') {
             $query->getQuery()
                 ->whereNotNull('due_date')
-                ->whereDate('due_date', '<', today());
+                ->where('due_date', '<', today()->toDateString());
         }
     }
 }
