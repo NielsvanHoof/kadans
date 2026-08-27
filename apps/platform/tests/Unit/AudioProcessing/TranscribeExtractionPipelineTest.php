@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\AudioProcessing\Services\Transcribe\TranscribeExtractionPipeline;
 use App\AudioProcessing\Services\Transcribe\TranscribeTranscriptMapper;
+use App\AudioProcessing\Services\Transcribe\TranscribeTranscriptProjection;
 use Aws\Result;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Contracts\Config\Repository;
@@ -55,6 +56,7 @@ test('transcribe extraction pipeline downloads from configured s3 bucket and map
 
     $result = new TranscribeExtractionPipeline(
         $clientMock,
+        resolve(TranscribeTranscriptProjection::class),
         resolve(TranscribeTranscriptMapper::class),
         $filesystemsMock,
         $configMock,
@@ -103,6 +105,7 @@ test('transcribe extraction pipeline resolves the object key from every supporte
 
     $result = new TranscribeExtractionPipeline(
         $clientMock,
+        resolve(TranscribeTranscriptProjection::class),
         resolve(TranscribeTranscriptMapper::class),
         $filesystemsMock,
         $configMock,
