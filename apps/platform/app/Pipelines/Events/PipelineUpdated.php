@@ -14,6 +14,23 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Broadcast to workspace staff when a pipeline is created or advances.
  * Payload uses plain values so the queue job does not need Eloquent rehydration.
+ *
+ * Deliberately not on `workspaces.{slug}`. The notification bell mounts in
+ * AppLayout, so every staff member is subscribed to that channel on every page
+ * — and the Pusher protocol delivers every event on a channel to every
+ * subscriber, whether or not a listener is bound. Putting this stream there
+ * meant one firm bulk-uploading to a single dossier woke every open tab in the
+ * firm, hundreds of times, for events all but one of them discarded.
+ *
+ * So it goes to the two audiences that actually want it:
+ *
+ * - `…dossiers.{id}` — the dossier, review, document and recording surfaces,
+ *   which each care about one dossier. Subscribers are the people looking at it.
+ * - `…pipelines` — the pipeline admin pages, which legitimately want the whole
+ *   firm's traffic, plus the two subject pages whose dossier is not always
+ *   known. Subscribing costs nothing until someone opens one.
+ *
+ * A run with no dossier (a purged subject) only reaches the second.
  */
 final class PipelineUpdated implements ShouldBroadcast
 {
@@ -41,13 +58,33 @@ final class PipelineUpdated implements ShouldBroadcast
     ) {}
 
     /**
+     * The firm-wide stream. Named here so the channel authorization route and
+     * the frontend hook cannot drift from the broadcaster.
+     */
+    public static function pipelinesChannel(string $tenantSlug): string
+    {
+        return 'workspaces.'.$tenantSlug.'.pipelines';
+    }
+
+    public static function dossierChannel(string $tenantSlug, int $dossierId): string
+    {
+        return 'workspaces.'.$tenantSlug.'.dossiers.'.$dossierId;
+    }
+
+    /**
      * @return array<int, PrivateChannel>
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('workspaces.'.$this->tenantSlug),
+        $channels = [
+            new PrivateChannel(self::pipelinesChannel($this->tenantSlug)),
         ];
+
+        if ($this->dossierId !== null) {
+            $channels[] = new PrivateChannel(self::dossierChannel($this->tenantSlug, $this->dossierId));
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string

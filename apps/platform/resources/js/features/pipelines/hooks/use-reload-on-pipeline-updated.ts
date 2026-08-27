@@ -11,7 +11,7 @@ import {
  */
 export function useReloadOnPipelineUpdated(
     only: string[],
-    options: PipelineUpdatedSubscription = {},
+    options: PipelineUpdatedSubscription,
 ): void {
     const onlyKey = only.join(',');
 

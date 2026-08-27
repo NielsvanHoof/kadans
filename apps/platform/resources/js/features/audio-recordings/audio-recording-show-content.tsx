@@ -44,6 +44,10 @@ export default function AudioRecordingShowContent({
 
     useFetchOnPipelineUpdated<{ audio_recording: AudioRecordingDetail }>({
         enabled: isProcessing,
+        // The dossier is optional on this page; see the document page.
+        scope: dossier
+            ? { on: 'dossier', dossierId: dossier.id }
+            : { on: 'workspace' },
         match: (event) =>
             event.subject_type === 'audio_recording' &&
             event.subject_id === audioRecording.id,

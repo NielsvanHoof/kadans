@@ -54,6 +54,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: (event) => `/documents/${event.subject_id}/live`,
                 onData,
             }),
@@ -71,6 +72,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 match: (event) => event.subject_id === 1,
                 urlForEvent: () => '/x',
                 onData,
@@ -88,6 +90,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 enabled: false,
                 urlForEvent: () => '/x',
                 onData,
@@ -119,6 +122,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: () => '/x',
                 onData,
             }),
@@ -144,6 +148,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: () => '/x',
                 onData,
             }),
@@ -161,6 +166,7 @@ describe('useFetchOnPipelineUpdated', () => {
 
         renderHook(() =>
             useFetchOnPipelineUpdated({
+                scope: { on: 'workspace' },
                 urlForEvent: () => '/x',
                 onData,
             }),
