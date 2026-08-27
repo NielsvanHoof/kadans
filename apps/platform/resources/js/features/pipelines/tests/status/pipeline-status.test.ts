@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    pipelineErrorCodeLabel,
     pipelineIsInFlight,
     pipelineStatusLabel,
     pipelineStepLabel,
@@ -76,6 +77,29 @@ describe('pipelineStepLabel', () => {
         expect(pipelineStepLabel('transcribe', identity)).toBe('Transcribe');
         expect(pipelineStepLabel('unknown_step', identity)).toBe(
             'unknown_step',
+        );
+    });
+});
+
+describe('pipelineErrorCodeLabel', () => {
+    it('resolves the monitor code every stuck run is marked with', () => {
+        expect(pipelineErrorCodeLabel('pipeline_inactive', identity)).toBe(
+            'This run recorded no activity within the monitoring window and was marked stuck.',
+        );
+    });
+
+    it('resolves the per-status Textract codes the OCR path composes', () => {
+        expect(pipelineErrorCodeLabel('textract_FAILED', identity)).toBe(
+            'The OCR provider could not read this document.',
+        );
+        expect(
+            pipelineErrorCodeLabel('textract_PARTIAL_SUCCESS', identity),
+        ).toBe('The OCR provider could read only part of this document.');
+    });
+
+    it('returns null for an unknown code so callers can fall back to the raw message', () => {
+        expect(pipelineErrorCodeLabel('textract_SOMETHING_NEW', identity)).toBe(
+            null,
         );
     });
 });

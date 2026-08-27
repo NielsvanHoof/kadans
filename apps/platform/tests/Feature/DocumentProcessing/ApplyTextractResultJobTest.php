@@ -9,6 +9,11 @@ use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Pipelines\Actions\CreatePipelineAction;
+use App\Pipelines\Enums\PipelineStatus;
+use App\Pipelines\Enums\PipelineStepKey;
+use App\Pipelines\Enums\PipelineType;
+use App\Pipelines\Support\PipelineState;
 
 covers(ApplyTextractResultJob::class);
 
@@ -49,6 +54,32 @@ test('exhausted retries mark the document failed rather than leaving it processi
     expect($document->processing_status)->toBe(DocumentProcessingStatus::Failed)
         ->and($document->processing_error)->toBe('Persistent Textract result failure.')
         ->and($document->processing_finished_at)->not->toBeNull();
+});
+
+test('exhausted retries close the pipeline instead of leaving it for the stuck monitor', function (): void {
+    $document = documentAwaitingTextract('job-pipeline-exhausted');
+
+    // Reproduces what staging showed on 2026-08-27: the failed_jobs row landed,
+    // the document was marked failed, and the run still sat in `running` until
+    // pipelines:monitor marked it `stuck` 30 minutes later. `stuck` is a status
+    // pipelines:retry-due never picks up, so the run became a dead end.
+    $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
+    $state = resolve(PipelineState::class);
+    $state->start($pipeline, PipelineStepKey::Submit);
+    $state->complete($pipeline, PipelineStepKey::Submit);
+    $state->start($pipeline, PipelineStepKey::ProviderProcessing);
+    $state->complete($pipeline, PipelineStepKey::ProviderProcessing);
+    $state->start($pipeline, PipelineStepKey::ProcessResults);
+
+    new ApplyTextractResultJob(
+        ['JobId' => 'job-pipeline-exhausted', 'Status' => 'SUCCEEDED', 'API' => 'StartDocumentAnalysis'],
+        'job-pipeline-exhausted',
+    )->failed(new RuntimeException('Persistent Textract result failure.'));
+
+    $pipeline->refresh();
+
+    expect($pipeline->status)->toBe(PipelineStatus::Failed)
+        ->and($pipeline->error_code)->toBe('result_processing_failed');
 });
 
 test('a notification nothing can act on is logged, not retried', function (): void {

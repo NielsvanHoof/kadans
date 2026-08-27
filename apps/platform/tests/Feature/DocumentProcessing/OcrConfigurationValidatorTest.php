@@ -17,7 +17,7 @@ beforeEach(function (): void {
         'ocr.textract.sqs_wait_time_seconds' => 20,
         'ocr.textract.sqs_max_messages' => 5,
         'ocr.textract.sqs_max_receive_count' => 5,
-        'ai.agents.document_overview.model' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
+        'ai.agents.document_overview.model' => 'eu.amazon.nova-pro-v1:0',
     ]);
 });
 

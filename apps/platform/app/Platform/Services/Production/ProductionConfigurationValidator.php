@@ -22,6 +22,7 @@ use function is_string;
 use function max;
 use function mb_trim;
 use function sprintf;
+use function str_contains;
 
 final readonly class ProductionConfigurationValidator
 {
@@ -65,6 +66,22 @@ final readonly class ProductionConfigurationValidator
      * @var list<string>
      */
     private const array APPROVED_AI_PROVIDERS = ['bedrock'];
+
+    /**
+     * Model-id vendor fragments no shipped environment may resolve to.
+     *
+     * Anthropic on Bedrock needs an account-level use-case submission this
+     * account has not made. Until it clears, those models answer with a `404`
+     * whose body is the real reason — which reads like a wrong model id, so it
+     * cost an afternoon once already (.ai/rules/ai.md). Nova is what we can
+     * actually call, and `infra/src/config.ts` no longer grants the Anthropic
+     * ARNs, so an env var pointing here would fail in the worker rather than at
+     * boot. Matching a fragment rather than a prefix covers the bare
+     * `anthropic.*` ids and the `eu.` / `us.` inference-profile forms alike.
+     *
+     * @var list<string>
+     */
+    private const array DISALLOWED_AI_MODEL_FRAGMENTS = ['anthropic.'];
 
     /**
      * Environments this validator guards. Staging ships the same image and
@@ -112,6 +129,7 @@ final readonly class ProductionConfigurationValidator
             $this->matches('transcription.driver', 'transcribe'),
             $this->hasProductionSearchDriver() ? null : 'scout.driver',
             $this->unapprovedAiProviderKey(),
+            $this->disallowedAiModelKey(),
             $this->hasHorizonAllowList() ? null : 'horizon.allowed_emails',
             $this->hasErrorReporting() ? null : 'sentry.dsn',
             $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
@@ -199,6 +217,61 @@ final readonly class ProductionConfigurationValidator
         }
 
         return null;
+    }
+
+    /**
+     * The first agent configured to resolve to a model we cannot invoke.
+     *
+     * Resolution mirrors `ResolvesConfiguredModel::model()`: the agent's own
+     * slot, then the provider's default text model when that slot is blank.
+     * Checking the resolved value is the point — every agent but
+     * `document_overview` leaves `model` unset, so a single edit to the Bedrock
+     * provider default would reroute all of them at once.
+     *
+     * The provider default is checked on its own afterwards, so it cannot hide
+     * behind a set of agents that all name their own model.
+     */
+    private function disallowedAiModelKey(): ?string
+    {
+        $agents = $this->config->get('ai.agents');
+
+        if (! is_array($agents)) {
+            return 'ai.agents';
+        }
+
+        foreach ($agents as $agent => $settings) {
+            $configured = is_array($settings) ? ($settings['model'] ?? null) : null;
+
+            if (! is_string($configured) || mb_trim($configured) === '') {
+                continue;
+            }
+
+            if ($this->isDisallowedAiModel($configured)) {
+                return sprintf('ai.agents.%s.model', (string) $agent);
+            }
+        }
+
+        foreach (self::APPROVED_AI_PROVIDERS as $provider) {
+            $key = sprintf('ai.providers.%s.models.text.default', $provider);
+            $default = $this->config->get($key);
+
+            if (is_string($default) && $this->isDisallowedAiModel($default)) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    private function isDisallowedAiModel(string $model): bool
+    {
+        foreach (self::DISALLOWED_AI_MODEL_FRAGMENTS as $fragment) {
+            if (str_contains(mb_strtolower($model), $fragment)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

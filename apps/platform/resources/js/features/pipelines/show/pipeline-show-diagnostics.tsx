@@ -5,6 +5,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import PipelineErrorPanel from '@/features/pipelines/show/pipeline-error-panel';
 import type { PipelineDetail } from '@/features/pipelines/types';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
@@ -56,20 +57,10 @@ export default function PipelineShowDiagnostics({
                             </div>
                         ) : null}
                     </div>
-                    {pipeline.error_code || pipeline.error_message ? (
-                        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-                            {pipeline.error_code ? (
-                                <p className="font-mono text-xs text-destructive">
-                                    {pipeline.error_code}
-                                </p>
-                            ) : null}
-                            {pipeline.error_message ? (
-                                <p className="text-destructive">
-                                    {pipeline.error_message}
-                                </p>
-                            ) : null}
-                        </div>
-                    ) : null}
+                    <PipelineErrorPanel
+                        errorCode={pipeline.error_code}
+                        errorMessage={pipeline.error_message}
+                    />
                 </CardContent>
             </Card>
 

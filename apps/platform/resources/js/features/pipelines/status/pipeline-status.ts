@@ -69,6 +69,42 @@ export function pipelineTypeLabel(
     return t(labels[type] ?? type);
 }
 
+/**
+ * Localised sentence for a pipeline or step error code.
+ *
+ * The stored `error_message` cannot be translated: it is either an exception
+ * message or English prose written by a scheduled command, which has no user
+ * locale to translate against. The `error_code` beside it is a stable machine
+ * string, so the readable sentence is derived from the code here and the raw
+ * message stays on screen as technical detail.
+ *
+ * Returns null for an unrecognised code so callers fall back to that message
+ * rather than showing nothing.
+ */
+const PIPELINE_ERROR_CODE_LABELS: Record<string, string> = {
+    pipeline_inactive:
+        'This run recorded no activity within the monitoring window and was marked stuck.',
+    result_processing_failed:
+        'Processing the provider result failed on every attempt.',
+    ocr_job_failed: 'Reading this document failed.',
+    dossier_export_failed: 'Building the dossier export failed.',
+    transcribe_provider_failed:
+        'The transcription provider reported a failure.',
+    transcription_job_failed: 'Transcribing this recording failed.',
+    textract_FAILED: 'The OCR provider could not read this document.',
+    textract_PARTIAL_SUCCESS:
+        'The OCR provider could read only part of this document.',
+};
+
+export function pipelineErrorCodeLabel(
+    code: string,
+    t: (key: string) => string,
+): string | null {
+    const label = PIPELINE_ERROR_CODE_LABELS[code];
+
+    return label === undefined ? null : t(label);
+}
+
 export function pipelineStepLabel(
     key: string,
     t: (key: string) => string,
