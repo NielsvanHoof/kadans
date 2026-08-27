@@ -105,8 +105,6 @@ final readonly class ProductionConfigurationValidator
         $invalidKeys = array_values(array_filter([
             $this->config->get('app.debug') === false ? null : 'app.debug',
             $this->isHttpsUrl() ? null : 'app.url',
-            $this->matches('cache.default', 'redis'),
-            $this->matches('queue.default', 'redis'),
             $this->hasRetryAfterAboveJobTimeouts() ? null : 'queue.connections.redis.retry_after',
             $this->hasVerifiedDatabaseTls() ? null : 'database.connections.pgsql.sslmode',
             $this->hasDatabaseRootCertificate() ? null : 'database.connections.pgsql.sslrootcert',
