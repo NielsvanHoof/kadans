@@ -93,6 +93,12 @@ services:
         environment:
             FLOCI_HOSTNAME: floci
             FLOCI_STORAGE_MODE: persistent
+            # Exercise Laravel's SES transport while retaining Mailpit's local inbox UI.
+            FLOCI_SERVICES_SES_SMTP_HOST: mailpit
+            FLOCI_SERVICES_SES_SMTP_PORT: 1025
+            # Keep local S3 audit evidence available quickly instead of waiting 60 seconds.
+            FLOCI_SERVICES_CLOUDTRAIL_FLUSH_INTERVAL_SECONDS: 5
+            FLOCI_BOOTSTRAP_SES_DOMAIN: '${FLOCI_BOOTSTRAP_SES_DOMAIN:-qompose.test}'
             # Attach Floci-spawned containers to the Sail bridge network.
             FLOCI_SERVICES_DOCKER_NETWORK: '${COMPOSE_PROJECT_NAME:-platform}_sail'
         volumes:

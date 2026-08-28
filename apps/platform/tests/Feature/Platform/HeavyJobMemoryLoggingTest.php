@@ -2,18 +2,20 @@
 
 declare(strict_types=1);
 
+use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
 use App\Platform\Listeners\LogHeavyJobMemoryUsage;
 use App\Platform\Listeners\StartJobPeakMemoryWindow;
-use App\Platform\Support\PeakMemory;
 use App\Platform\Support\WorkerQueues;
+use App\Shared\Support\PeakMemory;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Log\LogManager;
 use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Log;
 
 covers(LogHeavyJobMemoryUsage::class);
 
-function jobProcessedOn(string $queue, string $name = 'App\\DocumentProcessing\\Jobs\\ApplyTextractResultJob'): JobProcessed
+function jobProcessedOn(string $queue, string $name = ApplyTextractResultJob::class): JobProcessed
 {
     $job = Mockery::mock(Job::class);
     $job->shouldReceive('getQueue')->andReturn($queue);
@@ -32,7 +34,7 @@ test('a heavy job records its peak memory', function (): void {
 
     resolve(LogHeavyJobMemoryUsage::class)->handle(jobProcessedOn('ocr'));
 
-    expect($captured['job'])->toBe('App\DocumentProcessing\Jobs\ApplyTextractResultJob')
+    expect($captured['job'])->toBe(ApplyTextractResultJob::class)
         ->and($captured['queue'])->toBe('ocr')
         ->and($captured['connection'])->toBe('redis')
         ->and($captured['attempts'])->toBe(1)
@@ -70,7 +72,7 @@ test('the peak window resets between jobs so one job cannot inherit another read
     expect($inflated)->toBeGreaterThan(24.0);
 
     resolve(StartJobPeakMemoryWindow::class)->handle(
-        new Illuminate\Queue\Events\JobProcessing('redis', Mockery::mock(Job::class)),
+        new JobProcessing('redis', Mockery::mock(Job::class)),
     );
 
     expect(PeakMemory::megabytes())->toBeLessThan($inflated);

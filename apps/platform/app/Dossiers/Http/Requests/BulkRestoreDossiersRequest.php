@@ -9,9 +9,9 @@ use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 use RuntimeException;
 
 final class BulkRestoreDossiersRequest extends FormRequest

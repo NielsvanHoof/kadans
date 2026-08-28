@@ -9,10 +9,10 @@ use App\Tenancy\Http\Requests\Concerns\ValidatesAssignableRolePermissions;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
 final class UpdateTenantRoleRequest extends FormRequest
 {

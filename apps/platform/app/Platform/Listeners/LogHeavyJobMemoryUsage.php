@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Platform\Listeners;
 
-use App\Platform\Support\PeakMemory;
 use App\Platform\Support\WorkerQueues;
+use App\Shared\Support\PeakMemory;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Log;
 

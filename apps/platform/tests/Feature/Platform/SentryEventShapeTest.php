@@ -31,8 +31,8 @@ test('both application integrations are registered as cacheable class names', fu
  */
 test('the root document carries the tracing meta tags the browser sdk continues from', function (): void {
     get('/login')
-        ->assertSee('name="sentry-trace"', escape: false)
-        ->assertSee('name="baggage"', escape: false);
+        ->assertSeeHtml('name="sentry-trace"')
+        ->assertSeeHtml('name="baggage"');
 });
 
 test('an event is attributed to its request, tenant, route, and user', function (): void {

@@ -7,7 +7,7 @@ namespace App\Dossiers\Http\Requests\Builder\Concerns;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Validation\Validator;
+use Illuminate\Contracts\Validation\Validator;
 
 use function is_string;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Support;
+namespace App\Shared\Support;
 
 use function memory_get_peak_usage;
 use function memory_reset_peak_usage;

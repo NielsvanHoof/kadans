@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Services\Ocr\Textract;
 
-use App\Platform\Support\PeakMemory;
+use App\Shared\Support\PeakMemory;
 use Aws\Textract\TextractClient;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;

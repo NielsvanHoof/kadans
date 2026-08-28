@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Services\Transcribe;
 
 use App\AudioProcessing\Data\TranscriptionResult;
-use App\Platform\Support\PeakMemory;
+use App\Shared\Support\PeakMemory;
 use Aws\TranscribeService\TranscribeServiceClient;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Filesystem\FilesystemManager;

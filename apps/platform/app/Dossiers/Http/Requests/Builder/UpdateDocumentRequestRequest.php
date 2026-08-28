@@ -10,9 +10,9 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
 final class UpdateDocumentRequestRequest extends FormRequest
 {

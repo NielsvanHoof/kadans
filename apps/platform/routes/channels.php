@@ -12,9 +12,7 @@ use Illuminate\Support\Facades\Broadcast;
  * Private workspace channels — active members of the tenant may subscribe.
  * Echo channel name: private-workspaces.{slug}
  */
-Broadcast::channel('workspaces.{tenantSlug}', function (User $user, string $tenantSlug): bool {
-    return WorkspaceChannelAccess::memberTenant($user, $tenantSlug) instanceof Tenant;
-});
+Broadcast::channel('workspaces.{tenantSlug}', fn (User $user, string $tenantSlug): bool => WorkspaceChannelAccess::memberTenant($user, $tenantSlug) instanceof Tenant);
 
 /*
  * Firm-wide pipeline stream — pipeline admin pages, and the document/recording
@@ -23,9 +21,7 @@ Broadcast::channel('workspaces.{tenantSlug}', function (User $user, string $tena
  * Same membership rule as the workspace channel: it carries no more than the
  * per-dossier stream does, only more of it.
  */
-Broadcast::channel('workspaces.{tenantSlug}.pipelines', function (User $user, string $tenantSlug): bool {
-    return WorkspaceChannelAccess::memberTenant($user, $tenantSlug) instanceof Tenant;
-});
+Broadcast::channel('workspaces.{tenantSlug}.pipelines', fn (User $user, string $tenantSlug): bool => WorkspaceChannelAccess::memberTenant($user, $tenantSlug) instanceof Tenant);
 
 /*
  * Per-dossier pipeline stream. Membership is not enough on its own here: the

@@ -23,6 +23,16 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_DISPLAY_TIMEZONE" value="Europe/Amsterdam"/>
+        <!-- Pin the locale trio. The product ships APP_LOCALE=nl (.env.example),
+             so a developer running the suite against their own .env resolved
+             Dutch while .env.ci resolved English — every assertion on a
+             translated string failed locally and passed on CI. Tests that go
+             through HTTP hid it, because SetLocale resolves "en" from an absent
+             Accept-Language header; the ones that call actions directly read
+             this config. Tests that care about Dutch set the locale themselves. -->
+        <env name="APP_LOCALE" value="en"/>
+        <env name="APP_FALLBACK_LOCALE" value="en"/>
+        <env name="APP_FAKER_LOCALE" value="en_US"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
