@@ -143,8 +143,8 @@ final class ClientAccessGrant extends TenantOwnedModel
     }
 
     /**
-     * @param  Builder<ClientAccessGrant>  $query
-     * @return Builder<ClientAccessGrant>
+     * @param  Builder<self>  $query
+     * @return Builder<self>
      */
     #[Scope]
     protected function valid(Builder $query): Builder

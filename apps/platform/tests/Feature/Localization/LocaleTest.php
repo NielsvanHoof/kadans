@@ -56,13 +56,13 @@ test('locale is resolved from the accept language header as a fallback', functio
 test('the translation dictionary is not resent once the client already holds it', function (): void {
     $user = User::factory()->create(['locale' => 'nl']);
 
-    // What the client sends on every visit after the first: it already has the
-    // once() prop, so ~100 KB of strings must stay off the wire.
+    // What the client sends on every visit after the first: it already holds the
+    // dictionary for this locale, so ~100 KB of strings must stay off the wire.
     $this->actingAs($user)
         ->withHeaders([
             'X-Inertia' => 'true',
             'X-Inertia-Version' => inertiaAssetVersion(),
-            'X-Inertia-Except-Once-Props' => 'translations',
+            'X-Inertia-Except-Once-Props' => 'translations.nl',
         ])
         ->get(route('profile.edit'))
         ->assertOk()
@@ -77,13 +77,13 @@ test('changing language resends the dictionary even though the client holds one'
         ->patch(route('language.update'), ['locale' => 'nl'])
         ->assertRedirect();
 
-    // LocaleController flashes inertia.refresh.translations, so the next
-    // response must override the client's cached English dictionary.
+    // The client still holds the English dictionary, but the once() key now
+    // carries the locale, so `translations.nl` misses and resolves fresh.
     $this->actingAs($user)
         ->withHeaders([
             'X-Inertia' => 'true',
             'X-Inertia-Version' => inertiaAssetVersion(),
-            'X-Inertia-Except-Once-Props' => 'translations',
+            'X-Inertia-Except-Once-Props' => 'translations.en',
         ])
         ->get(route('profile.edit'))
         ->assertOk()
@@ -286,4 +286,57 @@ test('portal invite notification is queued with the staff users locale', functio
             return true;
         },
     );
+});
+
+/**
+ * The once-prop keys a client would remember from a page object, in the
+ * comma-separated form it sends back on the next visit.
+ *
+ * Read from the response rather than hardcoded so the test exercises whatever
+ * keying the server actually advertises, the way the real client does.
+ *
+ * @param  array{onceProps?: array<string, mixed>}  $page
+ */
+function rememberedOnceProps(array $page): string
+{
+    return implode(',', array_keys($page['onceProps'] ?? []));
+}
+
+test('portal guests switching language receive the dictionary for the new locale', function (): void {
+    $context = createPortalDossierWithGrant();
+
+    $this->get(route('portal.exchange', $context['plainTextToken']))->assertRedirect();
+
+    /** @var array{props: array<string, mixed>, onceProps?: array<string, mixed>} $page */
+    $page = $this->get(route('portal.show'))->assertOk()->viewData('page');
+
+    expect($page['props']['locale'])->toBe('en')
+        ->and($page['props']['translations']['Your answer'])->toBe('Your answer');
+
+    // What PortalLocaleSwitcher does: write the locale cookie, then reload.
+    // There is no endpoint to flash a refresh flag — guests are not signed in.
+    $dutch = $this->withUnencryptedCookie('locale', 'nl')
+        ->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => inertiaAssetVersion(),
+            'X-Inertia-Except-Once-Props' => rememberedOnceProps($page),
+        ])
+        ->get(route('portal.show'))
+        ->assertOk()
+        ->assertJsonPath('props.locale', 'nl')
+        ->assertJsonPath('props.translations.Your answer', 'Jouw antwoord');
+
+    // And back again. The client drops the key it no longer sees, so it offers
+    // only `translations.nl` here — were the old key carried alongside it, the
+    // server would skip the prop and the UI would stay stuck in Dutch.
+    $this->withUnencryptedCookie('locale', 'en')
+        ->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => inertiaAssetVersion(),
+            'X-Inertia-Except-Once-Props' => rememberedOnceProps($dutch->json()),
+        ])
+        ->get(route('portal.show'))
+        ->assertOk()
+        ->assertJsonPath('props.locale', 'en')
+        ->assertJsonPath('props.translations.Your answer', 'Your answer');
 });

@@ -8,8 +8,8 @@ use App\Accounts\Http\Concerns\AuthorizesAnyAuthenticatedUser;
 use App\Accounts\Support\DisplayTimezones;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
 
 use function is_string;
 

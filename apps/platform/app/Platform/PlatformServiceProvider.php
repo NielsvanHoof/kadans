@@ -39,7 +39,7 @@ final class PlatformServiceProvider extends ServiceProvider
         // Replaces the vendor DatabaseConversationStore so every persist and
         // lookup carries tenant_id. Read Tenant::current() per call — this is
         // a singleton and must not cache tenant state across Octane requests.
-        $this->app->singleton(ConversationStore::class, function (): TenantAwareDatabaseConversationStore {
+        $this->app->singleton(function (): ConversationStore {
             $connection = Config::get('ai.conversations.connection');
 
             return new TenantAwareDatabaseConversationStore(

@@ -167,9 +167,7 @@ final class TranscribeTranscriptMapper
             $start = $this->toFloat($item['start_time'] ?? 0);
             $end = $this->toFloat($item['end_time'] ?? 0);
 
-            if ($sentenceStart === null) {
-                $sentenceStart = $start;
-            }
+            $sentenceStart ??= $start;
 
             $sentenceEnd = max($sentenceEnd, $end);
 

@@ -129,8 +129,8 @@ final class Activity extends SpatieActivity
     }
 
     /**
-     * @param  Builder<Activity>  $query
-     * @return Builder<Activity>
+     * @param  Builder<self>  $query
+     * @return Builder<self>
      */
     #[Scope]
     protected function forTenant(Builder $query, Tenant $tenant): Builder

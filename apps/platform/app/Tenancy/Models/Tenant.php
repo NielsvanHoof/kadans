@@ -10,6 +10,7 @@ use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Tenancy\Support\TenantLookup;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
+use Illuminate\Database\Eloquent\Attributes\RouteKey;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -50,6 +51,7 @@ use function in_array;
  *
  * @mixin \Eloquent
  */
+#[RouteKey('slug')]
 final class Tenant extends Model implements IsTenant
 {
     /** @use HasFactory<TenantFactory> */
@@ -86,12 +88,6 @@ final class Tenant extends Model implements IsTenant
     public function dossiers(): HasMany
     {
         return $this->hasMany(Dossier::class);
-    }
-
-    #[Override]
-    public function getRouteKeyName(): string
-    {
-        return 'slug';
     }
 
     /**

@@ -28,7 +28,6 @@ use RectorLaravel\Rector\Empty_\EmptyToBlankAndFilledFuncRector;
 use RectorLaravel\Rector\FuncCall\RemoveDumpDataDeadCodeRector;
 use RectorLaravel\Rector\MethodCall\WhereToWhereLikeRector;
 use RectorLaravel\Set\LaravelSetList;
-use RectorLaravel\Set\LaravelSetProvider;
 
 return RectorConfig::configure()
     // Application PHP sources only — skip generated/runtime directories.
@@ -92,8 +91,6 @@ return RectorConfig::configure()
         earlyReturn: true,
         carbon: true,
     )
-    // Enable Laravel composer-based sets for the installed framework version.
-    ->withSetProviders(LaravelSetProvider::class)
     ->withComposerBased(laravel: true)
     ->withSets([
         LaravelSetList::LARAVEL_CODE_QUALITY,

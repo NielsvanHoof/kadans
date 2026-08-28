@@ -12,10 +12,10 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Support\WorkspaceMemberRoles;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 use Override;
 
 use function is_string;

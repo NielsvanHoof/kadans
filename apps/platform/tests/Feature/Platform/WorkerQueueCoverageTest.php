@@ -79,7 +79,7 @@ test('the interactive and heavy groups partition every worker queue', function (
     $grouped = [...WorkerQueues::INTERACTIVE, ...WorkerQueues::HEAVY];
 
     expect($grouped)->toEqualCanonicalizing(WorkerQueues::NAMES)
-        ->and(array_unique($grouped))->toHaveCount(count(WorkerQueues::NAMES));
+        ->and(array_unique($grouped))->toHaveSameSize(WorkerQueues::NAMES);
 });
 
 test('horizon supervisors drain every worker queue exactly once', function (): void {
@@ -90,7 +90,7 @@ test('horizon supervisors drain every worker queue exactly once', function (): v
     $drained = collect($supervisors)->flatMap(fn (array $supervisor): array => $supervisor['queue'])->all();
 
     expect($drained)->toEqualCanonicalizing(WorkerQueues::NAMES)
-        ->and(array_unique($drained))->toHaveCount(count(WorkerQueues::NAMES));
+        ->and(array_unique($drained))->toHaveSameSize(WorkerQueues::NAMES);
 
     foreach ($supervisors as $name => $supervisor) {
         expect($supervisor['connection'])->toBe('redis', $name)

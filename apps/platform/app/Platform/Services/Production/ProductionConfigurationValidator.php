@@ -175,13 +175,7 @@ final readonly class ProductionConfigurationValidator
             return false;
         }
 
-        foreach ($allowed as $email) {
-            if (is_string($email) && mb_trim($email) !== '') {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($allowed, fn ($email): bool => is_string($email) && mb_trim($email) !== '');
     }
 
     /**
@@ -263,13 +257,7 @@ final readonly class ProductionConfigurationValidator
 
     private function isDisallowedAiModel(string $model): bool
     {
-        foreach (self::DISALLOWED_AI_MODEL_FRAGMENTS as $fragment) {
-            if (str_contains(mb_strtolower($model), $fragment)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(self::DISALLOWED_AI_MODEL_FRAGMENTS, fn (string $fragment): bool => str_contains(mb_strtolower($model), $fragment));
     }
 
     /**

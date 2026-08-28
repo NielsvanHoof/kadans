@@ -84,7 +84,7 @@ test('relaxes csp for the telescope dashboard only', function (): void {
     expect($matches)->toHaveKey(1);
 
     // The inline boot script is blocked unless Telescope stamps this nonce.
-    $response->assertSee('nonce="'.$matches[1].'"', escape: false);
+    $response->assertSeeHtml('nonce="'.$matches[1].'"');
 });
 
 test('emits the nonce from the policy header into the root document', function (): void {
@@ -97,7 +97,7 @@ test('emits the nonce from the policy header into the root document', function (
     expect($matches)->toHaveKey(1);
 
     // The inline appearance script must carry the same nonce or the page breaks.
-    $response->assertSee('nonce="'.$matches[1].'"', escape: false);
+    $response->assertSeeHtml('nonce="'.$matches[1].'"');
 });
 
 test('nonces every executable script and style in the document', function (): void {

@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Contracts\Mail\Factory;
+use Illuminate\Mail\Mailer;
+use Illuminate\Mail\Transport\SesTransport;
+
 /**
  * Browser PUTs to Floci are cross-origin (http://localhost → :4566). The
  * bucket CORS rule in ready.d is what answers the OPTIONS preflight — without
@@ -56,13 +60,13 @@ test('Laravel builds its SES transport with the configured Floci endpoint', func
         ],
     ]);
 
-    app('mail.manager')->purge('ses');
+    resolve(Factory::class)->purge('ses');
 
-    $mailer = app('mail.manager')->mailer('ses');
-    assert($mailer instanceof Illuminate\Mail\Mailer);
+    $mailer = resolve(Factory::class)->mailer('ses');
+    assert($mailer instanceof Mailer);
 
     $transport = $mailer->getSymfonyTransport();
-    assert($transport instanceof Illuminate\Mail\Transport\SesTransport);
+    assert($transport instanceof SesTransport);
 
     expect((string) $transport->ses()->getEndpoint())->toBe('http://floci:4566');
 });
