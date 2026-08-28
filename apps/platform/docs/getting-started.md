@@ -96,14 +96,14 @@ vendor/bin/sail artisan tenancy:sync-roles --prune
 | Floci (local AWS) | http://localhost:4566 |
 | Floci UI | http://localhost:4566/_floci/ui |
 
-Default filesystem is local. For S3 against Sail's Floci emulator, run `composer env:floci` (sets `FILESYSTEM_DISK=s3`, bucket `local`, path-style endpoint). Keep mock OCR/transcription unless you intentionally use real AWS — see [Storage profiles](#storage-profiles) and [infra/README](../infra/README.md).
+Default filesystem is local. For the production-shaped local AWS path, run `composer env:floci`: it enables Floci-backed S3, sends mail through Floci SES into Mailpit, records document S3 access in a local CloudTrail bucket, and points Bedrock Runtime at Floci. Keep mock OCR/transcription unless you intentionally use real AWS — see [Storage profiles](#storage-profiles) and [infra/README](../infra/README.md).
 
 ### Storage profiles
 
 Flip only the AWS/storage-related keys in `.env` without replacing the whole file:
 
 ```bash
-composer env:floci   # Sail Floci S3 + mock OCR/transcription (committed overlay)
+composer env:floci   # Sail Floci S3/SES/CloudTrail/Bedrock + mock OCR/transcription
 composer env:aws     # real AWS from cached Pulumi profile (or sync if missing)
 ```
 
@@ -119,7 +119,11 @@ vendor/bin/sail artisan config:clear
 
 ### Local AWS via Floci (optional)
 
-[Floci](https://github.com/floci-io/floci) emulates S3 plus stub Textract/Transcribe/SQS/SNS on one endpoint. Prefer `composer env:floci` over hand-editing `AWS_*` so you do not mix a Floci endpoint with a Pulumi bucket name.
+[Floci](https://github.com/floci-io/floci) emulates the local AWS APIs on one endpoint. Prefer `composer env:floci` over hand-editing `AWS_*` so you do not mix a Floci endpoint with a Pulumi bucket name.
+
+The profile uses Laravel's real SES transport. Floci verifies the local `qompose.test` domain during bootstrap, stores messages at `http://localhost:4566/_aws/ses`, and relays them to Mailpit. It also records S3 object access for the `local` documents bucket into `local-audit-logs`; Floci flushes AWS-shaped gzipped CloudTrail files every five seconds.
+
+`AWS_ENDPOINT_URL_BEDROCK_RUNTIME` points Laravel AI's underlying AWS SDK client at Floci without overriding Laravel AI internals. Floci returns stub model output by default, so this exercises Bedrock request signing and response handling rather than model quality. Structured-output agents may reject the fixed stub payload; use Floci's optional OpenAI-compatible proxy backend when schema-valid model output is required.
 
 Fidelity limits — do not treat Floci as a full OCR/STT substitute:
 
