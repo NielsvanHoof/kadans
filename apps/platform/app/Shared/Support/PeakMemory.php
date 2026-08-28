@@ -22,12 +22,6 @@ use function round;
  *
  * Real allocated pages rather than emalloc bookkeeping, because Horizon's
  * `memory` threshold and the container's limit both count the former.
- *
- * Lives in Shared (L0), not with the Platform listeners that first used it.
- * The L4 extraction pipelines report the same key, and L4 may not reach
- * Platform (L6) — as the arch preset in tests/Pest.php caught. It holds no
- * domain knowledge, so L0 is where it belongs rather than something to
- * invert behind a contract.
  */
 final class PeakMemory
 {
