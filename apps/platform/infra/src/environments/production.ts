@@ -15,6 +15,9 @@ export const productionSettings: EnvironmentSettings = {
   databaseMultiAz: true,
   databaseBackupRetentionDays: 14,
   databaseAllocatedStorageGb: 20,
+  // Queue instance modifications for the weekly maintenance window so they do
+  // not cause an unscheduled production interruption.
+  databaseApplyImmediately: false,
 
   dnsSubdomain: null,
 

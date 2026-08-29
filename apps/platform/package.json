@@ -16,7 +16,8 @@
         "types:transform": "php artisan typescript:transform --no-interaction",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "test:browser:install": "playwright install chromium"
     },
     "devDependencies": {
         "@babel/core": "^7.29.7",

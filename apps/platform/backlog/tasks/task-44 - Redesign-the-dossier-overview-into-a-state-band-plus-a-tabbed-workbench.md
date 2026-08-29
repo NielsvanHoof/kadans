@@ -1,11 +1,11 @@
 ---
 id: TASK-44
 title: Redesign the dossier overview into a state band plus a tabbed workbench
-status: In Progress
+status: Done
 assignee:
   - '@NielsvanHoof'
 created_date: '2026-08-24 09:49'
-updated_date: '2026-08-24 13:42'
+updated_date: '2026-08-28 22:37'
 labels: []
 dependencies: []
 ordinal: 102000
@@ -19,15 +19,15 @@ The staff dossier overview stacks seven equal-weight cards (header, follow-up, s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The overview renders exactly two landmarks below the header: one state band and one tabset
-- [ ] #2 Tab labels show counts for waiting items, valid access grants, recordings and exports
-- [ ] #3 The active panel is deep-linkable via ?tab= and survives a page reload
-- [ ] #4 A failed audio upload keeps the Recordings panel selected and paints its inline validation error (TASK-42 regression)
-- [ ] #5 The header CTA and the stage rail's invite step select the Access panel instead of jumping to an anchor
-- [ ] #6 Creating an access grant lands on the Access panel with the one-time portal link shown inline
-- [ ] #7 Recordings and Exports tab visibility is correct on first paint, with no layout shift when the deferred props land
-- [ ] #8 A viewer without download or audio permissions sees only the Waiting and Access tabs
-- [ ] #9 The tab strip scrolls horizontally at 375px and is keyboard navigable with visible focus rings
+- [x] #1 The overview renders exactly two landmarks below the header: one state band and one tabset
+- [x] #2 Tab labels show counts for waiting items, valid access grants, recordings and exports
+- [x] #3 The active panel is deep-linkable via ?tab= and survives a page reload
+- [x] #4 A failed audio upload keeps the Recordings panel selected and paints its inline validation error (TASK-42 regression)
+- [x] #5 The header CTA and the stage rail's invite step select the Access panel instead of jumping to an anchor
+- [x] #6 Creating an access grant lands on the Access panel with the one-time portal link shown inline
+- [x] #7 Recordings and Exports tab visibility is correct on first paint, with no layout shift when the deferred props land
+- [x] #8 A viewer without download or audio permissions sees only the Waiting and Access tabs
+- [x] #9 The tab strip scrolls horizontally at 375px and is keyboard navigable with visible focus rings
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -79,3 +79,29 @@ Deviation from the plan, stated plainly: the plan promised coral in exactly two 
 
 Still unverified by a real interaction (screenshots only): keyboard focus rings and the TASK-42 manual upload-failure check.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: claude
+created: 2026-08-28 22:37
+---
+Closed on the author's confirmation that the redesign is done, plus a browser pass today.
+
+Worth recording why the 500 hid for five days: `Model::shouldBeStrict()` is unconditional, but `automaticallyEagerLoadRelationships()` only runs in production. So production absorbed the missing eager loads as extra queries while local, testing and staging threw — the environments that would catch it were the only ones that broke, and no fixture exercised the path.
+
+A factory-built dossier with an upload does not reproduce it; only a fully seeded workspace does. That is why the regression guard lives in DemoDataSeederTest rather than DossierShowPageTest — a guard placed in the obvious file would have passed while the page was broken.
+---
+<!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the seven-card dossier overview with a state band plus a four-panel tabbed workbench (Waiting / Access / Recordings / Exports), tab labels carrying live counts, and a URL-synced panel that survives reload.
+
+Verified: 541 Vitest cases, phpstan 0, pint and types:check clean, and Dossier|InertiaPropContract|DomainStructure|AppArchitecture|LanguageCoverage green at the time of implementation. Re-verified on 2026-08-29 in a real browser now that Playwright's binaries are installed — the tabset renders, `?tab=` deep-links to the named panel, and the strip holds at 375px. AC#4 (failed audio upload keeps Recordings selected) and the keyboard focus rings rest on the author's own confirmation plus the carried-over TASK-42 assertions in dossier-panels.test.tsx, not on a scripted interaction.
+
+Two claims in the notes were stale and are now false: the three "pre-existing failures" all pass (ProductionCaddyfileTest, DashboardProcessingHealthTest), and the Playwright blocker is gone.
+
+One defect surfaced while verifying and was fixed rather than filed: the overview returned 500 for any dossier holding an uploaded document. StaffUploadedDocumentData asks the gate for `delete` per upload, and UploadedDocumentPolicy::delete() walks the upload's tenant, its parent request and that request's dossier — none of which are populated by loading the children. FetchDossierShowQuery now eager-loads that chain. Guarded by "every seeded dossier overview renders" in DemoDataSeederTest, which fails without the fix.
+<!-- SECTION:FINAL_SUMMARY:END -->

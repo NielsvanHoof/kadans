@@ -13,7 +13,7 @@ use RuntimeException;
  * Usage: php artisan db:seed --class=LocalDatabaseSeeder
  *
  * Starts from the same production-safe baseline as DatabaseSeeder.
- * Demo clients/dossiers can be added here later — never under DatabaseSeeder.
+ * Demo clients/dossiers live in DemoDataSeeder — never under DatabaseSeeder.
  */
 final class LocalDatabaseSeeder extends Seeder
 {
@@ -23,6 +23,6 @@ final class LocalDatabaseSeeder extends Seeder
 
         $this->call(DatabaseSeeder::class);
 
-        // Optional demo data (clients, dossiers, …) belongs here only.
+        $this->call(DemoDataSeeder::class);
     }
 }

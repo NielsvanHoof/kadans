@@ -10,6 +10,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | mock     — sync fake text (CI / offline). Completes inside the upload job.
+    | demo     — like mock, but realistic Dutch extractions and a short pause so
+    |            the pipeline progress is visible during a live walkthrough.
     | textract — async AWS Textract StartDocumentAnalysis (FORMS + TABLES) via
     |            SNS/SQS, then DocumentOverviewAgent fills document_type /
     |            summary / notes. That agent's provider and model are
@@ -18,6 +20,11 @@ return [
     */
 
     'driver' => env('OCR_DRIVER', 'mock'),
+
+    'demo' => [
+        // Seconds the demo driver waits before completing. 0 disables the pause.
+        'delay_seconds' => (int) env('OCR_DEMO_DELAY_SECONDS', 3),
+    ],
 
     'textract' => [
         'key' => env('AWS_ACCESS_KEY_ID'),

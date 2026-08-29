@@ -132,7 +132,7 @@ final readonly class SyncDossierDocumentRequestsAction
             ->get();
 
         $mapped = $this->mapStaffDocumentRequestRows->handle(
-            $dossier->status,
+            $dossier,
             $documentRequests,
         );
 

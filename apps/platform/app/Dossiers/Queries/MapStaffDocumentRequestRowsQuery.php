@@ -11,9 +11,10 @@ use App\Dossiers\Data\StaffDocumentRequestData;
 use App\Dossiers\Data\StaffDocumentRequestRowsData;
 use App\Dossiers\Data\StaffUploadedDocumentData;
 use App\Dossiers\Enums\DocumentRequestStatus;
-use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Collection;
 
 use function in_array;
@@ -32,10 +33,16 @@ final readonly class MapStaffDocumentRequestRowsQuery
      * @param  Collection<int, DocumentRequest>  $documentRequests
      */
     public function handle(
-        DossierStatus $dossierStatus,
+        Dossier $dossier,
         Collection $documentRequests,
         bool $includeUploadedDocuments = true,
     ): StaffDocumentRequestRowsData {
+        $dossierStatus = $dossier->status;
+
+        // Resolved once. Every row here belongs to it: these queries only run
+        // under strict tenant scope.
+        $currentTenant = Tenant::current();
+
         // Progress / completion only count applicable (visible + required-or-answered) fields.
         $applicableDocumentRequests = $this->resolveApplicableDocumentRequests->handle(
             $documentRequests,
@@ -70,7 +77,16 @@ final readonly class MapStaffDocumentRequestRowsQuery
                 $isVisible,
                 $isApplicable,
                 array_values($uploaded
-                    ->map(fn (UploadedDocument $uploadedDocument): StaffUploadedDocumentData => StaffUploadedDocumentData::fromModel($uploadedDocument))
+                    ->map(function (UploadedDocument $uploadedDocument) use ($dossier, $documentRequest, $currentTenant): StaffUploadedDocumentData {
+                        $uploadedDocument->setRelation('documentRequest', $documentRequest);
+                        $documentRequest->setRelation('dossier', $dossier);
+
+                        if ($currentTenant instanceof Tenant) {
+                            $uploadedDocument->setRelation('tenant', $currentTenant);
+                        }
+
+                        return StaffUploadedDocumentData::fromModel($uploadedDocument);
+                    })
                     ->all()),
             );
         }

@@ -26,6 +26,19 @@ export interface EnvironmentSettings {
   readonly databaseMultiAz: boolean;
   readonly databaseBackupRetentionDays: number;
   readonly databaseAllocatedStorageGb: number;
+  /**
+   * Apply instance modifications now instead of queueing them for the weekly
+   * maintenance window.
+   *
+   * This is not just a speed knob. A parameter group swap stays *pending* while
+   * this is false, so the instance remains a member of the outgoing group and
+   * the group cannot be deleted — which deadlocks any Postgres major version
+   * bump, since `family` is immutable and forces the group to be replaced.
+   *
+   * True where a short modification pause is acceptable, false in production
+   * where it means an unscheduled interruption.
+   */
+  readonly databaseApplyImmediately: boolean;
 
   /**
    * DNS label inserted before the apex domain, or null for the apex itself.

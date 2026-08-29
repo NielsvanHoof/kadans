@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
+use App\DocumentProcessing\Services\Ocr\Drivers\DemoOcrExtractor;
 use App\DocumentProcessing\Services\Ocr\Drivers\MockOcrExtractor;
 use App\DocumentProcessing\Services\Ocr\Drivers\TextractDocumentOcr;
 
@@ -12,6 +13,7 @@ test('configured OCR drivers resolve through the factory', function (string $dri
     expect(resolve(DocumentOcr::class))->toBeInstanceOf($expectedClass);
 })->with([
     'mock' => ['mock', MockOcrExtractor::class],
+    'demo' => ['demo', DemoOcrExtractor::class],
     'textract' => ['textract', TextractDocumentOcr::class],
 ]);
 
@@ -30,6 +32,19 @@ test('mock OCR cannot be resolved in production', function (): void {
     try {
         expect(fn (): DocumentOcr => resolve(DocumentOcr::class))
             ->toThrow(LogicException::class, 'Mock OCR driver cannot be used in production.');
+    } finally {
+        $this->app->instance('env', $originalEnvironment);
+    }
+});
+
+test('demo OCR cannot be resolved in production', function (): void {
+    $originalEnvironment = $this->app->environment();
+    $this->app->instance('env', 'production');
+    config(['ocr.driver' => 'demo']);
+
+    try {
+        expect(fn (): DocumentOcr => resolve(DocumentOcr::class))
+            ->toThrow(LogicException::class, 'Demo OCR driver cannot be used in production.');
     } finally {
         $this->app->instance('env', $originalEnvironment);
     }

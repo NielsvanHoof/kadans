@@ -46,8 +46,19 @@ export function createDatabase(
   });
 
   const parameterGroup = new aws.rds.ParameterGroup(environment.resourceName("db-params"), {
-    name: environment.resourceName("db-params"),
-    family: "postgres17",
+    // namePrefix, not name, and deliberately unlike every other resource here.
+    //
+    // `family` is immutable, so a major version bump replaces this group. With a
+    // fixed name the replacement cannot be created while the old one still holds
+    // the name, so Pulumi deletes first — and RDS refuses that while the instance
+    // is still a member ("InvalidDBParameterGroupState"). The stack then wedges
+    // with the group half-deleted and the engine still on the old major.
+    //
+    // A generated suffix lets the new group exist alongside the old one: create
+    // it, point the instance at it, then delete the old. Do not "tidy" this back
+    // to a fixed name — postgres18 -> 19 would deadlock the same way.
+    namePrefix: `${environment.resourceName("db-params")}-`,
+    family: "postgres18",
     parameters: [{
       // Refuse non-TLS connections outright rather than trusting every client to
       // ask for TLS. Laravel's pgsql driver negotiates TLS by default, so this
@@ -63,7 +74,13 @@ export function createDatabase(
   const instance = new aws.rds.Instance(environment.resourceName("database"), {
     identifier: environment.resourceName("database"),
     engine: "postgres",
-    engineVersion: "17",
+    engineVersion: "18",
+    // Required for the 17 -> 18 modify: without it RDS refuses a major version
+    // change and the apply fails rather than upgrading. AWS has no downgrade
+    // path, so the pre-upgrade snapshot is the only way back — take one and read
+    // the CloudWatch `upgrade` log export before assuming the apply went clean.
+    // Safe to drop back to false once every stack is on 18.
+    allowMajorVersionUpgrade: true,
     instanceClass: settings.databaseInstanceClass,
     allocatedStorage: settings.databaseAllocatedStorageGb,
     // gp3 is the current general-purpose default and is cheaper than gp2 per IOPS.
@@ -87,6 +104,7 @@ export function createDatabase(
     backupWindow: "02:00-03:00",
     maintenanceWindow: "Mon:03:15-Mon:04:15",
     autoMinorVersionUpgrade: true,
+    applyImmediately: settings.databaseApplyImmediately,
 
     deletionProtection: settings.deletionProtection,
     skipFinalSnapshot: !settings.deletionProtection,

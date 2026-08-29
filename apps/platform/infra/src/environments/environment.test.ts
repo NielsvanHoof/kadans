@@ -13,6 +13,7 @@ test("production keeps deletion protection, Multi-AZ, and long retention", () =>
   assert.equal(environment.name, "production");
   assert.equal(environment.settings.deletionProtection, true);
   assert.equal(environment.settings.databaseMultiAz, true);
+  assert.equal(environment.settings.databaseApplyImmediately, false);
   assert.equal(environment.settings.documentNoncurrentVersionDays, 90);
   assert.equal(environment.settings.kmsDeletionWindowInDays, 30);
   assert.equal(environment.settings.databaseEnabled, true);

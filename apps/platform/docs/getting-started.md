@@ -51,13 +51,15 @@ vendor/bin/sail artisan tenancy:create-owner
 
 You can pass arguments/options (`name`, `email`, `--firm`, `--password`, `--role`) or answer the prompts.
 
-Optional local-only entrypoint (same baseline today; reserved for future demo data):
+Local-only entrypoint. On top of the same baseline it runs `DemoDataSeeder`, which builds a full demo firm — staff across three roles, 14 clients, dossiers in every status, processed documents with extractions, a transcript, and one deliberately failed pipeline — then prints the sign-in details and a ready-to-open client portal link:
 
 ```bash
 vendor/bin/sail artisan db:seed --class=LocalDatabaseSeeder --force
 ```
 
 Never run `LocalDatabaseSeeder` on Cloud/staging/production — it aborts outside `local`/`testing`.
+
+Two details in `DemoDataSeeder` are deliberate and easy to break: `answered_at` is spread across the eight weeks `FetchDashboardTrendQuery` buckets (data created "now" renders as seven zero columns and a spike), and the faker seed is pinned so every run produces identical data. `tests/Feature/Platform/DemoDataSeederTest.php` guards both.
 
 ### Laravel Cloud (staging / production)
 

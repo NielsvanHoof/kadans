@@ -15,6 +15,7 @@ final readonly class OcrDriverFactory
     public function __construct(
         private Application $application,
         private MockOcrExtractor $mockOcrExtractor,
+        private DemoOcrExtractor $demoOcrExtractor,
         private TextractDocumentOcr $textractDocumentOcr,
     ) {}
 
@@ -26,8 +27,11 @@ final readonly class OcrDriverFactory
 
         throw_if($ocrDriver === OcrDriver::Mock && $this->application->isProduction(), LogicException::class, 'Mock OCR driver cannot be used in production.');
 
+        throw_if($ocrDriver === OcrDriver::Demo && $this->application->isProduction(), LogicException::class, 'Demo OCR driver cannot be used in production.');
+
         return match ($ocrDriver) {
             OcrDriver::Mock => $this->mockOcrExtractor,
+            OcrDriver::Demo => $this->demoOcrExtractor,
             OcrDriver::Textract => $this->textractDocumentOcr,
         };
     }

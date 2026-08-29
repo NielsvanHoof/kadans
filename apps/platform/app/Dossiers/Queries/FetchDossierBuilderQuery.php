@@ -82,7 +82,7 @@ final readonly class FetchDossierBuilderQuery
         ]);
 
         $mapped = $this->mapStaffDocumentRequestRowsQuery->handle(
-            $dossier->status,
+            $dossier,
             $dossier->documentRequests,
             includeUploadedDocuments: false,
         );

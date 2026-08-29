@@ -20,6 +20,7 @@ export const localSettings: EnvironmentSettings = {
   databaseMultiAz: false,
   databaseBackupRetentionDays: 1,
   databaseAllocatedStorageGb: 20,
+  databaseApplyImmediately: true,
 
   dnsSubdomain: "local",
 
