@@ -536,7 +536,7 @@ and expired platform support sessions are cleared/audited before tenant access d
 | Item | Status |
 |---|---|
 | **No PHP / JS SAST in CI** | Tracked in **TASK-28.1**. CodeQL is deferred (private repo without Advanced Security). A Psalm + `psalm/plugin-laravel` attempt was deferred: beta19 conflicts with PHPUnit 13’s `sebastian/diff` ^9, and `dev-master` (which allows ^9) crashed on PHP 8.5. Revisit when a tagged Psalm release is installable, or when CodeQL becomes available. PHPStan in `ci:quality` remains type analysis, not security SAST. |
-| **No container image scanning** | Lost with the container build in TASK-43.5 (decision-9). Laravel Cloud builds and patches the runtime image, so the base-image CVE surface moved to them and we have no artifact to scan. Options if we want the control back: Trivy in filesystem mode over the repo (catches dependency CVEs we already catch), or asking Laravel Cloud what they publish about base-image patching. **Needs a task — this row is the only record of it.** |
+| **No container image scanning** | Lost with the container build in TASK-43.5 (decision-9). Laravel Cloud builds and patches the runtime image, so the base-image CVE surface moved to them and we have no artifact to scan. Options if we want the control back: Trivy in filesystem mode over the repo (catches dependency CVEs we already catch), or asking Laravel Cloud what they publish about base-image patching. Tracked in **TASK-48**. |
 
 Nothing in the former open-gaps list should sit outside either an accepted-risk
 decision or a tracked task.

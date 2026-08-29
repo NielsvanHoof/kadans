@@ -86,7 +86,7 @@ final readonly class FetchDossierShowQuery
 
         $client = $this->resolveClient($dossier);
         $mapped = $this->mapStaffDocumentRequestRowsQuery->handle(
-            $dossier->status,
+            $dossier,
             $dossier->documentRequests,
         );
 

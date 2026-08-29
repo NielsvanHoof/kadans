@@ -1,11 +1,11 @@
 ---
 id: TASK-43.3
 title: Reduce the Pulumi stack to data plane plus RDS
-status: In Progress
+status: Done
 assignee:
   - '@NielsvanHoof'
 created_date: '2026-08-22 16:05'
-updated_date: '2026-08-25 21:13'
+updated_date: '2026-08-28 22:37'
 labels: []
 dependencies: []
 parent_task_id: TASK-43
@@ -61,3 +61,9 @@ AC#1 NOT checked — needs 'pulumi preview' against staging with valid credentia
 
 AC#5 NOT checked, and it was the real gap. The drift check existed (laravelCloudEgress.test.ts) but nothing ran it automatically: platform.yml never invokes the infra suite and deploy.yml is workflow_dispatch-only, so between manual infra deploys the guard was dormant. Added .github/workflows/infra-drift.yml — daily cron plus pull_request on apps/platform/infra/**. It also fails when the drift test SKIPS rather than runs: the test calls t.skip() when cloud.laravel.com is unreachable, and a skipped node --test run reports 'pass 0, fail 0' and exits 0, so on a schedule it would have gone green precisely when it checked nothing. Verified that skip-detection empirically with a synthetic skipping test. Leaving AC#5 unchecked until the workflow has actually run once in CI — the logic is verified locally but the wiring is not.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The Pulumi stack is data plane plus RDS only. Verified in code on 2026-08-29: no `aws.ecs`, `aws.alb`, `aws.lb`, `aws.cloudfront`, `aws.ecr`, `aws.elasticache` or `aws.secretsmanager` resource remains anywhere in `infra/src`, and the `computeEnabled` seam that gated the compute IIFE is gone entirely. 28 infra stack tests pass. Confirmed by the author that AWS now carries data processing only.
+<!-- SECTION:FINAL_SUMMARY:END -->

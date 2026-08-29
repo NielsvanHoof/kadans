@@ -219,7 +219,7 @@ declare namespace App {
                 | 'date_of_birth'
                 | 'email'
                 | 'phone';
-            export type OcrDriver = 'mock' | 'textract';
+            export type OcrDriver = 'mock' | 'demo' | 'textract';
             export type OcrProcessingOutcome = 'immediate' | 'deferred';
             export type TranscriptionStatus =
                 'pending' | 'processing' | 'completed' | 'failed';

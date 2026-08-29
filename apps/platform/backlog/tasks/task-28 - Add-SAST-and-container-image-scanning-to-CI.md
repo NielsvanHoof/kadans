@@ -5,18 +5,17 @@ status: Done
 assignee:
   - cursor-agent
 created_date: '2026-08-08 13:35'
-updated_date: '2026-08-11 09:34'
+updated_date: '2026-08-28 21:00'
 labels: []
 milestone: m-0
 dependencies: []
 references:
   - .github/workflows/platform.yml
-  - .github/codeql/codeql-config.yml
+  - docs/security.md
 documentation:
   - docs/security.md
 modified_files:
   - .github/workflows/platform.yml
-  - .github/codeql/codeql-config.yml
   - apps/platform/docs/security.md
 priority: medium
 type: enhancement
@@ -74,6 +73,20 @@ Correction: CodeQL does not support PHP. Removing php from the language matrix; 
 
 Fixed: codeql job is javascript-typescript only (no matrix). Config paths-ignore includes **/*.php. security.md states CodeQL JS/TS coverage and lists No PHP SAST as open gap #4.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: claude
+created: 2026-08-28 21:00
+---
+Record correction, not a status change. Both halves of this task shipped as described and were then removed by TASK-43.5 (decision-9), which deleted the container build when deployment moved to Laravel Cloud.
+
+Current state on develop: no CodeQL, no Trivy, no `security-events` permission anywhere in `.github/workflows/`, and `.github/codeql/codeql-config.yml` does not exist. That path has been dropped from References and Modified files, where it was pointing at a file no reader could open.
+
+Leaving this Done because the work was genuinely completed at the time. The two gaps it closed are open again and tracked separately: SAST in TASK-28.1, container/base-image scanning in the new task filed alongside this comment. `docs/security.md` already describes both accurately (lines 502-505, 538-539) and asked for that second task explicitly.
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 

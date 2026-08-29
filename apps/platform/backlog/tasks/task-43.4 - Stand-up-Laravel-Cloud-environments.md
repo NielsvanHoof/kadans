@@ -1,10 +1,10 @@
 ---
 id: TASK-43.4
 title: Stand up Laravel Cloud environments
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-22 16:05'
-updated_date: '2026-08-27 20:34'
+updated_date: '2026-08-28 22:38'
 labels: []
 dependencies: []
 parent_task_id: TASK-43
@@ -86,3 +86,23 @@ Actual topology: one custom background process 'php artisan horizon', plus textr
 
 Worker sizing note in the description still holds in spirit but not in numbers: the app cluster is 2 GiB / 1 vCPU and runs web, scheduler and all three background processes together, which hit a 90% memory alert until TASK-45 retuned the supervisors. See .ai/rules/config.md.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: claude
+created: 2026-08-28 22:38
+---
+Closed on the author's confirmation that the Cloud environments are up. The individual acceptance criteria are left unchecked rather than ticked on inference: /ready, the Reverb WebSocket handshake, the daemons running unattended, and a data-subject export completing within worker disk are all observations against the deployed environments, and AWS credentials here return an expired token. Anyone with Cloud access can check them off in one pass.
+---
+<!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Laravel Cloud application and both environments are standing and serving. Confirmed by the author on 2026-08-29; staging additionally runs Nightwatch, configured through Cloud environment variables rather than a committed config file.
+
+The "Blocked for deploy: env vars beyond APP_KEY" note in the progress log is resolved and no longer describes reality.
+
+Topology as actually deployed is the corrected one in the notes, not the one in this task's description: one `php artisan horizon` background process (Horizon forks its own workers from the two supervisors in config/horizon.php) plus `textract:consume` and `transcribe:consume` as long-poll SQS daemons. Do not provision Managed Queues alongside Horizon.
+<!-- SECTION:FINAL_SUMMARY:END -->

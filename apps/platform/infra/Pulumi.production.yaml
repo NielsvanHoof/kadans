@@ -1,17 +1,2 @@
 config:
   aws:region: eu-west-1
-  qompose-platform:reverbPublicKey: 38157b75d78efb1501078a2323c1dada
-  qompose-platform:appKey:
-    secure: AAABAIZig50hxPeP6MgVFvZydo6Mt8tWVVZcxhuoD8MyweFba4FHjBN2ccQCny1CP6kgeh63UIQwH5ixO4SznIrALi2jQUjspilA1ylJDkCJlEE=
-  qompose-platform:reverbAppId:
-    secure: AAABAGWW4pT0DpKrPOhzAg/MYpvSuWc6GkVR67HKXQrhAuoDhL6k
-  qompose-platform:reverbAppSecret:
-    secure: AAABABrTUEnYRCaf+BK1WGTyXuGvnv2d64PS5tlwQPTFaiFWIT+CEpAAwCs/YlhZ8AmAUNKUH/treHInU0/c5Tl75UPdzaoweo6NVstExSDaw5GkL/S+DwUHbL69VqMn
-  qompose-platform:cacheAuthToken:
-    secure: AAABAJj9BUUmn5rMhHiC/e0T//J3PoeL6lPiOgxNK31Wxw7//8jySlXyAtqF3zNCVMf+OqOKqpxGsFW84KxYvw/6MFN48NM4iRWQlpzAo9A=
-  qompose-platform:originVerifySecret:
-    secure: AAABAFSvQfudE0g0llXL1dWzCPyw5JxyFER8YEgfPNTkHPPHMjk2snUF/8jHr/FZ1+oshBy6NrRhKuJB3sN3iUjxlKW9avlWqbg02c0SFH0eOAuCHWaPSAMV8E8WmEE5
-  qompose-platform:sentryDsn:
-    secure: AAABAIg2jntUOWybMLSL8cQpka08X673GZVeR0NbC7Dd8CABYCk1KRcTNjYQeCBc1evf0N5DmHEUHWJ68klhswnmuiA/q/oLGVPuuqhI3NLbc8yDhlY390hC2EmfYXgQG76baYGrs9tuoLPdMMxf2azcGVHPGA==
-  qompose-platform:sentryBrowserDsn:
-    secure: AAABALhJPe14J5WChgpVyrKtXaYKkePm1MHx6fSty2Q9F+fiEhhnbkqCaY1sxEFDsFD6tB321RLO0VxO/MpWgQstT5HSHls14/zIbJuYZRZThVIrY7MBm5NHCMTpQxekZ5XhGAtS9TgFkHGchd9H9R5h1YMagg==

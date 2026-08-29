@@ -124,6 +124,25 @@ vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 vi.mock('@inertiajs/react', () => ({ usePage: () => mockInertiaPage({ locale: 'en' }) }));
 ```
 
+## Browser checks
+
+There is no committed browser suite, and `decision-5` still stands: Feature/HTTP coverage plus Vitest is the gate for v1.0. What is installed is the one-off probe, not an E2E tier — `vendor/bin/pest --agent='visit("/login")->…'` for confirming a change actually renders, and for demo rehearsal.
+
+Chromium is not in the image. The Sail Dockerfile installs Playwright's *system* dependencies and sets `PLAYWRIGHT_BROWSERS_PATH=0`, which puts browsers under `node_modules/playwright-core/.local-browsers` — inside the bind mount, so they survive a container rebuild but not a fresh `npm ci`. Fetch them once per checkout:
+
+```bash
+vendor/bin/sail npm run test:browser:install
+```
+
+Without it the plugin fails with "Playwright is outdated", which is misleading — the npm package is fine, the browser binaries are simply missing.
+
+Two traps worth knowing before you write a snippet:
+
+- `phpunit.xml` pins the locale, so the UI renders in **English** under test even though `APP_LOCALE=nl` drives the running app. Press `Log in`, not `Inloggen`.
+- Charts animate on mount. A screenshot taken immediately after `navigate()` catches an empty plot area; `->wait(4)` before capturing, or assert on the SVG node count instead.
+
+Screenshots land in `tests/Browser/Screenshots/`, which is gitignored. Delete throwaways when you are done with them.
+
 ## Architecture tests
 
 Domain layering (which domain may depend on which) is enforced in `tests/Pest.php` and checked by Architecture tests. When you add cross-domain usage, respect the layer order documented in [Architecture](architecture.md).

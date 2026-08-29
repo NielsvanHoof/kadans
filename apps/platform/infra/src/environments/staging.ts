@@ -18,6 +18,7 @@ export const stagingSettings: EnvironmentSettings = {
   databaseMultiAz: false,
   databaseBackupRetentionDays: 3,
   databaseAllocatedStorageGb: 20,
+  databaseApplyImmediately: true,
 
   dnsSubdomain: "staging",
 
