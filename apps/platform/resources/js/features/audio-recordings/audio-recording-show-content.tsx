@@ -6,6 +6,7 @@ import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants, LinkButton } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import CalendarAttachPanel from '@/features/audio-recordings/calendar-attach-panel';
 import TranscriptView from '@/features/audio-recordings/transcript-view/transcript-view';
 import type { AudioRecordingShowProps } from '@/features/audio-recordings/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
@@ -25,6 +26,7 @@ export default function AudioRecordingShowContent({
     audio_recording: initialAudioRecording,
     dossier,
     can_download: canDownload,
+    calendar,
 }: AudioRecordingShowProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -185,6 +187,15 @@ export default function AudioRecordingShowContent({
                     />
                 </div>
             )}
+
+            <CalendarAttachPanel
+                audioRecordingId={audioRecording.id}
+                transcriptionStatus={audioRecording.transcription_status}
+                calendarLinks={audioRecording.calendar_links}
+                provider={calendar.provider}
+                connectionStatus={calendar.connection_status}
+                reconnectUrl={calendar.reconnect_url}
+            />
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { AlertCircle } from 'lucide-react';
+import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthController';
 import InputError, {
     fieldErrorAriaProps,
 } from '@/components/primitives/input-error';
@@ -7,7 +8,7 @@ import PasswordInput from '@/components/primitives/password-input';
 import StatusMessage from '@/components/primitives/status-message';
 import TextLink from '@/components/primitives/text-link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -21,15 +22,34 @@ import { request } from '@/routes/password';
 type Props = {
     status?: string;
     canResetPassword: boolean;
+    oauthProviders?: string[];
 };
 
-export default function Login({ status, canResetPassword }: Props) {
+export default function Login({
+    status,
+    canResetPassword,
+    oauthProviders = [],
+}: Props) {
     const { t } = useTranslation();
 
     setLayoutProps({
         title: t('Log in to your account'),
         description: t('Enter your email and password below to log in'),
     });
+
+    const showOAuthProviders = oauthProviders.length > 0;
+
+    const providerLoginLabel = (provider: string): string => {
+        if (provider === 'google') {
+            return t('Log in with Google');
+        }
+
+        if (provider === 'microsoft') {
+            return t('Log in with Microsoft');
+        }
+
+        return provider;
+    };
 
     return (
         <>
@@ -156,6 +176,35 @@ export default function Login({ status, canResetPassword }: Props) {
                     );
                 }}
             </Form>
+
+            {showOAuthProviders ? (
+                <div className="flex flex-col gap-4">
+                    <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+                        <span className="relative z-10 bg-background px-2 text-muted-foreground">
+                            {t('Or continue with')}
+                        </span>
+                    </div>
+
+                    {/*
+                        Plain <a>, not LinkButton: Inertia XHR would follow the
+                        Socialite redirect to the IdP and hit connect-src CSP.
+                    */}
+                    <div className="flex flex-col gap-2">
+                        {oauthProviders.map((provider) => (
+                            <a
+                                key={provider}
+                                className={buttonVariants({
+                                    variant: 'outline',
+                                    className: 'w-full',
+                                })}
+                                href={OAuthController.redirect.url(provider)}
+                            >
+                                {providerLoginLabel(provider)}
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            ) : null}
         </>
     );
 }

@@ -13,6 +13,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Platform/Console/Commands/Retention/** | .ai/rules/commands-retention.md |
 | app/{DocumentProcessing,AudioProcessing}/Console/Commands/** | .ai/rules/commands.md |
 | config/**, config/queue.php, config/horizon.php | .ai/rules/config.md |
+| app/Integrations/Http/Connectors/** | .ai/rules/connectors.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
 | docker/**, .dockerignore, vite.config.ts | .ai/rules/docker.md |
@@ -28,6 +29,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/ClientPortal/Http/Controllers/** | .ai/rules/http-controllers.md |
 | app/Shared/Http/** | .ai/rules/http.md |
 | infra/** | .ai/rules/infra.md |
+| resources/js/pages/auth/**,resources/js/features/integrations/**,app/Integrations/Http/Controllers/** | .ai/rules/integrations-http-controllers.md |
+| app/Integrations/** | .ai/rules/integrations.md |
 | app/{DocumentProcessing,AudioProcessing}/{Jobs,Transitions}/** | .ai/rules/jobs-transitions.md |
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |

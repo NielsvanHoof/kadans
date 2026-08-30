@@ -193,11 +193,12 @@ describe('policy assembly', function (): void {
         $policy = resolve(ContentSecurityPolicy::class)->build('abc123');
         $host = 'https://qompose-documents.s3.eu-west-1.amazonaws.com';
 
-        // Direct presigned PUT uploads use connect-src; PDF previews use frame-src; images use img-src.
+        // PUT uploads: connect-src; PDF iframe: frame-src; images: img-src; audio/video: media-src.
         expect($policy)
             ->toMatch('/connect-src [^;]*'.preg_quote($host, '/').'/')
             ->toMatch('/frame-src [^;]*'.preg_quote($host, '/').'/')
-            ->toMatch('/img-src [^;]*'.preg_quote($host, '/').'/');
+            ->toMatch('/img-src [^;]*'.preg_quote($host, '/').'/')
+            ->toMatch('/media-src [^;]*'.preg_quote($host, '/').'/');
     });
 
     test('prefers an explicit public endpoint over the derived aws host', function (): void {

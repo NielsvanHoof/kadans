@@ -69,6 +69,52 @@ test('safe production configuration passes validation', function (): void {
         ->toBeGreaterThan((int) config('transcription.timeouts.job'));
 });
 
+test('production rejects incomplete microsoft oauth credentials', function (): void {
+    config([
+        'services.microsoft.client_id' => 'entra-app-id',
+        'services.microsoft.client_secret' => '',
+        'services.microsoft.redirect' => 'https://app.example.com/auth/microsoft/callback',
+    ]);
+
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
+        ->toThrow(LogicException::class, 'services.microsoft.client_secret');
+});
+
+test('production accepts complete microsoft oauth credentials', function (): void {
+    config([
+        'services.microsoft.client_id' => 'entra-app-id',
+        'services.microsoft.client_secret' => 'entra-secret',
+        'services.microsoft.redirect' => 'https://app.example.com/auth/microsoft/callback',
+    ]);
+
+    resolve(ProductionConfigurationValidator::class)->validate();
+
+    expect(true)->toBeTrue();
+});
+
+test('production rejects incomplete google oauth credentials', function (): void {
+    config([
+        'services.google.client_id' => 'google-app-id',
+        'services.google.client_secret' => '',
+        'services.google.redirect' => 'https://app.example.com/auth/google/callback',
+    ]);
+
+    expect(fn () => resolve(ProductionConfigurationValidator::class)->validate())
+        ->toThrow(LogicException::class, 'services.google.client_secret');
+});
+
+test('production accepts complete google oauth credentials', function (): void {
+    config([
+        'services.google.client_id' => 'google-app-id',
+        'services.google.client_secret' => 'google-secret',
+        'services.google.redirect' => 'https://app.example.com/auth/google/callback',
+    ]);
+
+    resolve(ProductionConfigurationValidator::class)->validate();
+
+    expect(true)->toBeTrue();
+});
+
 test('the committed RDS CA bundle is present for shipped DB_SSLROOTCERT', function (): void {
     // Build-time downloads into storage/ do not survive Laravel Cloud's runtime
     // volume, so verify-full needs this file in the deploy artifact.

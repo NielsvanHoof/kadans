@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
 use App\Clients\Http\Controllers\ClientController;
+use App\Dossiers\Http\Controllers\AudioRecordingCalendarController;
 use App\Dossiers\Http\Controllers\AudioRecordingController;
 use App\Dossiers\Http\Controllers\DocumentRequestController;
 use App\Dossiers\Http\Controllers\DocumentRequestReviewController;
@@ -11,6 +12,7 @@ use App\Dossiers\Http\Controllers\DossierBuilderLockController;
 use App\Dossiers\Http\Controllers\DossierController;
 use App\Dossiers\Http\Controllers\DossierExportController;
 use App\Dossiers\Http\Controllers\UploadedDocumentController;
+use App\Integrations\Http\Controllers\OAuthController;
 use App\Platform\Http\Controllers\DataSubjectRequestController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
 use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
@@ -92,6 +94,9 @@ const CONTROLLER_NON_REST_ACTIONS = [
     AudioRecordingController::class => [
         'download', 'live',
     ],
+    AudioRecordingCalendarController::class => [
+        'attach', 'suggestions',
+    ],
     DossierExportController::class => ['download'],
 
     // The client's own copy of a file they uploaded. Same bytes as the staff
@@ -115,6 +120,11 @@ const CONTROLLER_NON_REST_ACTIONS = [
     TenantInvitationController::class => ['resend'],
 
     WorkspaceNotificationController::class => ['destroyAll'],
+
+    // OAuth connect / callback / disconnect flow.
+    OAuthController::class => [
+        'callback', 'redirect',
+    ],
 ];
 
 /**

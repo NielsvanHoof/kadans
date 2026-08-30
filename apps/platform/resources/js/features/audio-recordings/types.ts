@@ -12,12 +12,30 @@ export type TranscriptSegment = {
 /** Uploaded audio on a staff dossier (list/live payload — no transcript body). */
 export type AudioRecording = App.Dossiers.Data.StaffAudioRecordingData;
 
+/** Calendar event this transcript was attached to. */
+export type AudioRecordingCalendarLink = {
+    provider: string;
+    event_id: string;
+    html_link: string | null;
+    linked_at: string;
+};
+
 /** Dedicated transcript page props (staff). */
 export type AudioRecordingShowProps = {
     audio_recording: AudioRecording & {
         transcript: string | null;
         segments: TranscriptSegment[] | null;
+        calendar_links: AudioRecordingCalendarLink[];
     };
     dossier: { id: number; title: string } | null;
     can_download: boolean;
+    calendar: {
+        provider: string;
+        connection_status:
+            | 'ready'
+            | 'missing'
+            | 'needs_reconsent'
+            | 'unconfigured';
+        reconnect_url: string | null;
+    };
 };

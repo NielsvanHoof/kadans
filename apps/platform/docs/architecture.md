@@ -15,6 +15,7 @@ Convention guides: [Backend](backend.md) · [Frontend](frontend.md) · [Testing]
 | **Clients** | Firm CRM clients |
 | **DocumentProcessing** | OCR drivers, config, and related jobs/commands |
 | **Dossiers** | Cases, document requests, uploads, exports, reminders |
+| **Integrations** | Per-user OAuth connections (Microsoft first), Socialite drivers, encrypted tokens |
 | **Pipelines** | Run tracking for long-running processes (OCR, transcription, export): model, retry, monitoring |
 | **Platform** | Support sessions, Inertia shared props, retention, readiness |
 | **Questionnaires** | Reusable questionnaire templates |
@@ -67,7 +68,7 @@ Domains are PHP namespaces with their own service providers for bindings and pol
 Providers registered in [`bootstrap/providers.php`](../bootstrap/providers.php):
 
 - App-level: `AppServiceProvider`, `FortifyServiceProvider`, `HealthServiceProvider`
-- Domain: `Platform`, `Tenancy`, `Pipelines`, `DocumentProcessing`, `AudioProcessing`, `Dossiers`, `Audit`, `Clients`, `ClientPortal`, `Questionnaires`, `Reporting`
+- Domain: `Platform`, `Integrations`, `Tenancy`, `Pipelines`, `DocumentProcessing`, `AudioProcessing`, `Dossiers`, `Audit`, `Clients`, `ClientPortal`, `Questionnaires`, `Reporting`
 
 `AppServiceProvider` stays thin — defaults, factory discovery, morph map, and local tooling. Domain wiring (AWS/OCR, gates, policies) belongs in the matching domain provider.
 
@@ -148,13 +149,17 @@ siblings, never above. Enforced in [`tests/Pest.php`](../tests/Pest.php).
 
 ```
 L0  Shared
-L1  Accounts
+L1  Accounts, Integrations
 L2  Tenancy
 L3  Questionnaires
 L4  Clients, Dossiers, DocumentProcessing, AudioProcessing, Pipelines
 L5  ClientPortal
 L6  Reporting, Platform, WorkspaceNotifications
 ```
+
+**Integrations** is an L1 sibling of Accounts: OAuth connections and Socialite
+drivers. Login needs the token vault; calendar *product* UI stays higher and
+calls Integrations rather than living inside it.
 
 **Audit is cross-cutting**, not a layer: any domain may log activity, and Audit
 itself may only reach Accounts and Tenancy.

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Override;
@@ -40,6 +41,8 @@ use Override;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Dossier $dossier
+ * @property-read Collection<int, AudioRecordingCalendarLink> $calendarLinks
+ * @property-read int|null $calendar_links_count
  * @property-read Pipeline|null $latestPipeline
  * @property-read Collection<int, Pipeline> $pipelines
  * @property-read int|null $pipelines_count
@@ -106,6 +109,16 @@ final class AudioRecording extends TenantOwnedModel
     public function dossier(): BelongsTo
     {
         return $this->belongsTo(Dossier::class);
+    }
+
+    /**
+     * Calendar events this transcript was attached to (any provider).
+     *
+     * @return HasMany<AudioRecordingCalendarLink, $this>
+     */
+    public function calendarLinks(): HasMany
+    {
+        return $this->hasMany(AudioRecordingCalendarLink::class);
     }
 
     /**

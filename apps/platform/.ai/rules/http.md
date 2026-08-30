@@ -24,3 +24,6 @@ The application owns `Referrer-Policy` exclusively. `docker/8.5/Caddyfile` (the 
 
 ## CSP report-only needs a report_uri
 SECURITY_CSP_REPORT_ONLY only switches to Content-Security-Policy-Report-Only when SECURITY_CSP_REPORT_URI is also set. Report-Only without a sink is ignored by browsers (console warning, no enforcement). ContentSecurityPolicy::headerName() falls back to the enforcing header in that case — do not "fix" that by sending bare Report-Only.
+
+## S3 host belongs on media-src for audio streaming
+When documentStorageOrigin() is set, allow it on media-src as well as connect-src/frame-src/img-src — audio/video transcript players stream signed S3 URLs. Staging/production use the same derived host; do not hardcode bucket URLs.

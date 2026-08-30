@@ -6,6 +6,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
+import { edit as editIntegrations } from '@/routes/integrations';
 import { edit as editLanguage } from '@/routes/language';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
@@ -24,6 +25,11 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         {
             title: t('Security'),
             href: editSecurity(),
+            icon: null,
+        },
+        {
+            title: t('Integrations'),
+            href: editIntegrations(),
             icon: null,
         },
         {
