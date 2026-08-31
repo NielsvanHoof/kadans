@@ -15,9 +15,12 @@ use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineRetryBackoff;
 use App\Pipelines\Support\PipelineState;
+use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Multitenancy\Events\MadeTenantCurrentEvent;
 
 covers(RetryDuePipelinesCommand::class);
 
@@ -153,6 +156,28 @@ describe('pipelines:retry-due', function (): void {
 
         // Two tenants, one due run each: three would mean a scope leak.
         expect(Artisan::output())->toContain('Retried: 2. Skipped: 0.');
+    });
+
+    it('does not enter idle tenants', function (): void {
+        Queue::fake();
+        failedPipelineDueAt(now()->subMinute());
+        $busyTenantId = $this->tenant->id;
+
+        ['tenant' => $idle] = provisionWorkspace('Idle Firm');
+
+        // Drop leftover current tenant so execute()'s finally block does not
+        // restore the idle firm (which would look like we "entered" it).
+        Tenant::forgetCurrent();
+        Event::fake([MadeTenantCurrentEvent::class]);
+
+        Artisan::call('pipelines:retry-due');
+
+        Event::assertDispatched(fn (MadeTenantCurrentEvent $event): bool => $event->tenant->id === $busyTenantId);
+        Event::assertNotDispatched(
+            MadeTenantCurrentEvent::class,
+            fn (MadeTenantCurrentEvent $event): bool => $event->tenant->is($idle),
+        );
+        expect(Artisan::output())->toContain('Retried: 1.');
     });
 });
 

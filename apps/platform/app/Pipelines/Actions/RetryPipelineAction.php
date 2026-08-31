@@ -43,9 +43,7 @@ final readonly class RetryPipelineAction
 
         /** @var array{0: Pipeline, 1: Model} $result */
         $result = DB::transaction(function () use ($pipeline, $user, $runner): array {
-            $pipelineQuery = Pipeline::query()->whereKey($pipeline->id);
-            $pipelineQuery->getQuery()->lockForUpdate();
-            $lockedPipeline = $pipelineQuery->firstOrFail();
+            $lockedPipeline = $pipeline->refreshForUpdate();
 
             $previousStatus = $lockedPipeline->status;
             $subject = $this->resolveSubject($lockedPipeline, $runner);

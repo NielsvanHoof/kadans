@@ -146,3 +146,25 @@ test('dossiers index rejects invalid sort', function (): void {
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?sort=password')
         ->assertBadRequest();
 });
+
+test('dossiers index surfaces scout search truncation when the key limit is hit', function (): void {
+    config(['scout.key_limit' => 2]);
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    foreach (['Alpha UniqueNeedle', 'Beta UniqueNeedle', 'Gamma UniqueNeedle'] as $title) {
+        Dossier::factory()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'title' => $title,
+        ]);
+    }
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[q]=UniqueNeedle')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->has('dossiers.data', 2)
+            ->where('indexQuery.search_truncated', true));
+});

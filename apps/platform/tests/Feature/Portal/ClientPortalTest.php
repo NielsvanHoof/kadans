@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
+use App\ClientPortal\Actions\RevokeClientPortalAccessAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Listeners\LogClientPortalInviteFailed;
 use App\ClientPortal\Listeners\LogClientPortalInviteSent;
@@ -553,6 +554,25 @@ test('revoking portal access is audited atomically', function (): void {
 
     expect($activity->subject_id)->toBe($context['grant']->id)
         ->and($activity->causer_id)->toBe($context['owner']->id);
+});
+
+test('revoking already-revoked portal access refreshes stale grant state', function (): void {
+    $context = createPortalDossierWithGrant();
+    $revokedAt = now()->subMinute();
+
+    ClientAccessGrant::query()
+        ->whereKey($context['grant']->getKey())
+        ->update(['revoked_at' => $revokedAt]);
+
+    $revokedGrant = resolve(RevokeClientPortalAccessAction::class)->handle(
+        $context['grant'],
+        $context['owner'],
+    );
+
+    expect($revokedGrant->revoked_at)->not->toBeNull()
+        ->and(Activity::query()
+            ->where('event', AuditEvent::ClientPortalAccessGrantRevoked->value)
+            ->exists())->toBeFalse();
 });
 
 test('portal invitation delivery outcomes are audited without the bearer url', function (): void {

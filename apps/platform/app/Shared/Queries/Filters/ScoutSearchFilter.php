@@ -11,6 +11,8 @@ use InvalidArgumentException;
 use Laravel\Scout\Builder as ScoutBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 
+use function array_slice;
+use function count;
 use function is_callable;
 use function is_int;
 use function is_string;
@@ -22,6 +24,12 @@ use function is_string;
  */
 final class ScoutSearchFilter
 {
+    /**
+     * Request attribute set when a search hit the scout.key_limit cap.
+     * PaginatedIndexQuery reads this into indexQuery.search_truncated.
+     */
+    public const string REQUEST_ATTRIBUTE_TRUNCATED = 'scout_search_truncated';
+
     /**
      * @param  class-string<Model>  $modelClass
      * @param  array<string, int|string>  $wheres  Scout equality filters (table columns / index fields)
@@ -72,8 +80,10 @@ final class ScoutSearchFilter
             $scoutBuilder->onlyTrashed();
         }
 
-        // DatabaseEngine applies no SQL LIMIT when builder limit is null.
-        $scoutBuilder->take(Config::integer('scout.key_limit'));
+        // Bound the IN list (Postgres bind limit) and detect truncation with one
+        // extra key — DatabaseEngine hydrates every match when take() is null.
+        $limit = Config::integer('scout.key_limit');
+        $scoutBuilder->take($limit + 1);
 
         $keys = [];
 
@@ -81,6 +91,12 @@ final class ScoutSearchFilter
             if (is_int($key) || is_string($key)) {
                 $keys[] = $key;
             }
+        }
+
+        if (count($keys) > $limit) {
+            request()->attributes->set(self::REQUEST_ATTRIBUTE_TRUNCATED, true);
+
+            return array_values(array_slice($keys, 0, $limit));
         }
 
         return $keys;

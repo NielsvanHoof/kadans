@@ -240,12 +240,24 @@ export default function IndexQueryToolbar({
     // This is a JS branch rather than CSS because React Aria's DisclosurePanel
     // hides its content with the `hidden` attribute, which a breakpoint cannot
     // undo — the desktop row has to be a genuinely different tree.
+    const truncationNotice = config.search_truncated ? (
+        <p
+            role="status"
+            className="text-muted-foreground text-sm text-pretty"
+        >
+            {t(
+                'Search results are limited to the first matches. Narrow your query to see more.',
+            )}
+        </p>
+    ) : null;
+
     if (isMobile) {
         return (
             <div
                 data-slot="index-query-toolbar"
                 className="flex flex-col gap-3"
             >
+                {truncationNotice}
                 {primarySearch ? renderFilter(primarySearch) : null}
 
                 {collapsibleFilters.length > 0 || sortControl ? (
@@ -281,12 +293,12 @@ export default function IndexQueryToolbar({
     }
 
     return (
-        <div
-            data-slot="index-query-toolbar"
-            className="flex flex-wrap items-end gap-3"
-        >
-            {config.filters.map(renderFilter)}
-            {sortControl}
+        <div data-slot="index-query-toolbar" className="flex flex-col gap-3">
+            {truncationNotice}
+            <div className="flex flex-wrap items-end gap-3">
+                {config.filters.map(renderFilter)}
+                {sortControl}
+            </div>
         </div>
     );
 }

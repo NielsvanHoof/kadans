@@ -43,7 +43,16 @@ final class RetryDuePipelinesCommand extends Command
         $retried = 0;
         $failures = 0;
 
-        Tenant::query()->each(function (Tenant $tenant) use (
+        $tenantIds = Pipeline::queryWithoutTenantScope()
+            ->toBase()
+            ->where('status', PipelineStatus::Failed->value)
+            ->whereNotNull('next_retry_at')
+            ->where('next_retry_at', '<=', $due)
+            ->where('attempt_number', '<', $backoff->maxAttempts())
+            ->distinct()
+            ->pluck('tenant_id');
+
+        Tenant::query()->whereKey($tenantIds)->each(function (Tenant $tenant) use (
             $tenantContext,
             $retryPipeline,
             $backoff,

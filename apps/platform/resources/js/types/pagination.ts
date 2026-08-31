@@ -65,4 +65,6 @@ export type IndexQueryConfig = {
     defaults: {
         sort: string;
     };
+    /** True when Scout hit scout.key_limit and omitted further matches. */
+    search_truncated?: boolean;
 };

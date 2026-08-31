@@ -9,10 +9,12 @@ use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
+use DateTimeInterface;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
 
@@ -30,64 +32,58 @@ final class MonitorPipelinesCommand extends Command
         $stuckAfter = max(1, (int) $this->option('stuck-after'));
         $repeatAfter = max(1, (int) $this->option('repeat-after'));
         $cutoff = Date::now()->subMinutes($stuckAfter);
-        $active = 0;
+
+        // Cross-tenant aggregates — no need to enter idle firms.
+        $activeQuery = Pipeline::queryWithoutTenantScope();
+        $activeQuery->getQuery()->whereIn(
+            'status',
+            [PipelineStatus::Pending->value, PipelineStatus::Running->value],
+        );
+        $active = $activeQuery->toBase()->count();
+
+        $failedQuery = Pipeline::queryWithoutTenantScope();
+        $failedQuery->getQuery()
+            ->where('status', PipelineStatus::Failed->value)
+            ->where('attempt_number', '>=', $repeatAfter);
+        $repeatedlyFailing = $failedQuery->toBase()->count();
+
         $markedStuck = 0;
-        $repeatedlyFailing = 0;
 
-        Tenant::query()->each(function (Tenant $tenant) use (
-            $tenantContext,
-            $pipelineState,
-            $cutoff,
-            $repeatAfter,
-            &$active,
-            &$markedStuck,
-            &$repeatedlyFailing,
-        ): void {
-            $tenantContext->runForTenant($tenant, function () use (
+        $this->stuckPipelinesByTenant($cutoff)->each(
+            function (Collection $pipelines, int|string $tenantId) use (
+                $tenantContext,
                 $pipelineState,
-                $cutoff,
-                $repeatAfter,
-                &$active,
                 &$markedStuck,
-                &$repeatedlyFailing,
             ): void {
-                $activeQuery = Pipeline::query();
-                $activeQuery->getQuery()->whereIn('status', [PipelineStatus::Pending->value, PipelineStatus::Running->value]);
-                // toBase() applies global scopes before dropping to the query
-                // builder; getQuery() does not, and would report every tenant's
-                // total once per tenant.
-                $active += $activeQuery->toBase()->count();
+                $tenant = Tenant::query()->find($tenantId);
 
-                $stuckQuery = Pipeline::query();
-                $stuckQuery->getQuery()
-                    ->where('status', PipelineStatus::Running->value)
-                    ->where(function (Builder $query) use ($cutoff): void {
-                        $query
-                            ->where('last_activity_at', '<=', $cutoff)
-                            ->orWhere(function (Builder $query) use ($cutoff): void {
-                                $query
-                                    ->whereNull('last_activity_at')
-                                    ->where('started_at', '<=', $cutoff);
-                            });
-                    });
+                if (! $tenant instanceof Tenant) {
+                    return;
+                }
 
-                $stuckQuery->get()->each(function (Pipeline $pipeline) use ($pipelineState, &$markedStuck): void {
-                    $pipelineState->stuck(
-                        $pipeline,
-                        $pipeline->current_stage,
-                        errorCode: 'pipeline_inactive',
-                        errorMessage: 'No activity was recorded within the monitoring window.',
-                    );
-                    $markedStuck++;
+                $tenantContext->runForTenant($tenant, function () use (
+                    $pipelines,
+                    $pipelineState,
+                    &$markedStuck,
+                ): void {
+                    foreach ($pipelines as $pipeline) {
+                        $scoped = Pipeline::query()->find($pipeline->getKey());
+
+                        if (! $scoped instanceof Pipeline) {
+                            continue;
+                        }
+
+                        $pipelineState->stuck(
+                            $scoped,
+                            $scoped->current_stage,
+                            errorCode: 'pipeline_inactive',
+                            errorMessage: 'No activity was recorded within the monitoring window.',
+                        );
+                        $markedStuck++;
+                    }
                 });
-
-                $failedQuery = Pipeline::query();
-                $failedQuery->getQuery()
-                    ->where('status', PipelineStatus::Failed->value)
-                    ->where('attempt_number', '>=', $repeatAfter);
-                $repeatedlyFailing += $failedQuery->toBase()->count();
-            });
-        });
+            },
+        );
 
         info(sprintf(
             'Active: %d. Marked stuck: %d. Repeatedly failing: %d.',
@@ -112,5 +108,28 @@ final class MonitorPipelinesCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Running pipelines past the inactivity cutoff, keyed by tenant.
+     *
+     * @return Collection<int|string, Collection<int, Pipeline>>
+     */
+    private function stuckPipelinesByTenant(DateTimeInterface $cutoff): Collection
+    {
+        $stuckQuery = Pipeline::queryWithoutTenantScope();
+        $stuckQuery->getQuery()
+            ->where('status', PipelineStatus::Running->value)
+            ->where(function (Builder $query) use ($cutoff): void {
+                $query
+                    ->where('last_activity_at', '<=', $cutoff)
+                    ->orWhere(function (Builder $query) use ($cutoff): void {
+                        $query
+                            ->whereNull('last_activity_at')
+                            ->where('started_at', '<=', $cutoff);
+                    });
+            });
+
+        return $stuckQuery->get()->groupBy('tenant_id');
     }
 }

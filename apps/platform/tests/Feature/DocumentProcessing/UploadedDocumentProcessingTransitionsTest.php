@@ -72,7 +72,9 @@ describe('claim', function (): void {
         $document = createDocumentForProcessingTransitions();
         $stalePath = $document->path;
 
-        $document->forceFill(['path' => 'uploads/replacement.pdf'])->save();
+        UploadedDocument::query()
+            ->whereKey($document->getKey())
+            ->update(['path' => 'uploads/replacement.pdf']);
 
         expect($this->transitions->claim($document, $stalePath))->toBeNull()
             ->and($document->fresh()->processing_status)->toBe(DocumentProcessingStatus::Pending);

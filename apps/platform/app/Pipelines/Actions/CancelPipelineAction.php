@@ -37,9 +37,7 @@ final readonly class CancelPipelineAction
     public function handle(Pipeline $pipeline, User $user): Pipeline
     {
         $cancelled = DB::transaction(function () use ($pipeline, $user): Pipeline {
-            $pipelineQuery = Pipeline::query()->whereKey($pipeline->id);
-            $pipelineQuery->getQuery()->lockForUpdate();
-            $lockedPipeline = $pipelineQuery->firstOrFail();
+            $lockedPipeline = $pipeline->refreshForUpdate();
 
             $previousStatus = $lockedPipeline->status;
             $previousStage = $lockedPipeline->current_stage;

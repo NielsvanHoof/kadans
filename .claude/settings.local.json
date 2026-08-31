@@ -1,7 +1,8 @@
 {
   "enabledMcpjsonServers": [
     "laravel-boost",
-    "shadcn"
+    "shadcn",
+    "nightwatch"
   ],
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,

@@ -42,9 +42,11 @@ final readonly class SyncTenantRolesAction
         $tenantsSynced = 0;
         $rolesCreated = 0;
 
+        // Defer the Spatie cache flush until every tenant is done. Forgetting
+        // inside syncTenant() rebuilds the global blob once per firm.
         Tenant::query()->chunkById(100, function ($tenants) use (&$tenantsSynced, &$rolesCreated): void {
             foreach ($tenants as $tenant) {
-                $rolesCreated += $this->syncTenant($tenant);
+                $rolesCreated += $this->syncTenant($tenant, refreshPermissionCache: false);
                 $tenantsSynced++;
             }
         });
@@ -62,15 +64,18 @@ final readonly class SyncTenantRolesAction
     /**
      * Reconcile a single tenant's roles against the registry.
      *
+     * @param  bool  $refreshPermissionCache  When false, the caller owns the
+     *                                        single forgetCachedPermissions() —
+     *                                        used by handle() so a platform-wide
+     *                                        sync does not rebuild the blob N times.
      * @return int Number of role rows created.
      */
-    public function syncTenant(Tenant $tenant): int
+    public function syncTenant(Tenant $tenant, bool $refreshPermissionCache = true): int
     {
         $previousTeamId = getPermissionsTeamId();
 
         try {
             setPermissionsTeamId($tenant->getKey());
-            $this->forgetCachedPermissions();
 
             $rolesCreated = 0;
 
@@ -102,7 +107,10 @@ final readonly class SyncTenantRolesAction
             return $rolesCreated;
         } finally {
             setPermissionsTeamId($previousTeamId);
-            $this->forgetCachedPermissions();
+
+            if ($refreshPermissionCache) {
+                $this->forgetCachedPermissions();
+            }
         }
     }
 
