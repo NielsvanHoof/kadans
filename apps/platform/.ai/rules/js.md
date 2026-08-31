@@ -13,7 +13,7 @@ Alias generated types in `features/<domain>/types.ts` (`export type Dossier = Ap
 
 Never hardcode URL strings — use `@/routes/...` for hrefs and `@/actions/...` or `.form()` for mutations.
 
-Import boundaries (Biome-enforced): `components/` must not import from `features/`; `pages/` must not be imported from anywhere; `hooks/` and `lib/` stay domain-agnostic. Domain hooks live beside their feature or in `features/<domain>/hooks/`, never in top-level `hooks/`.
+Import boundaries (Oxlint-enforced in `vite.lint.ts`): `components/` must not import from `features/`; `pages/` must not be imported from anywhere; `hooks/` and `lib/` stay domain-agnostic. Domain hooks live beside their feature or in `features/<domain>/hooks/`, never in top-level `hooks/`.
 
 Forms: Inertia `<Form>` + Wayfinder `.form()` by default. `useForm` only for multipart uploads needing progress.
 
@@ -21,7 +21,7 @@ UI copy uses JSON sentence keys in `lang/en.json` / `lang/nl.json` via `t('Full 
 
 Permissions are gated by server-sent boolean props (`can_view`, `can_update`); the client only hides or disables.
 
-Vitest tests live in a `tests/` subfolder mirroring the tested file's path, using the shared mocks in `resources/js/test/mocks.ts`.
+Frontend tests live in a `tests/` subfolder mirroring the tested file's path, using the shared mocks in `resources/js/test/mocks.ts`. Run them with `npm test` (`vp test`).
 
 After route/Data/permission/questionnaire changes run `npm run types:check`.
 

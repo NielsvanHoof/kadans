@@ -19,8 +19,8 @@ export function PaletteOverlay({ type }: { type: QuestionnaireItemType }) {
     const { icon: Icon } = getQuestionnaireItemTypeBuilderRenderer(type);
 
     return (
-        <div className="flex items-center gap-2 rounded-xl border border-primary bg-card px-3 py-2 shadow-lg ring-2 ring-primary/25">
-            <Icon className="size-4 text-primary" aria-hidden="true" />
+        <div className="border-primary bg-card ring-primary/25 flex items-center gap-2 rounded-xl border px-3 py-2 shadow-lg ring-2">
+            <Icon className="text-primary size-4" aria-hidden="true" />
             <span className="text-sm font-medium">{t(definition.label)}</span>
         </div>
     );
@@ -35,11 +35,11 @@ export function CanvasItemOverlay({
     typeLabel: string;
 }) {
     return (
-        <div className="flex max-w-sm items-center gap-2 rounded-xl border border-primary bg-card px-3 py-2 shadow-lg ring-2 ring-primary/25">
+        <div className="border-primary bg-card ring-primary/25 flex max-w-sm items-center gap-2 rounded-xl border px-3 py-2 shadow-lg ring-2">
             <span className="min-w-0 flex-1 truncate text-sm font-medium">
                 {title}
             </span>
-            <span className="shrink-0 text-xs text-muted-foreground">
+            <span className="text-muted-foreground shrink-0 text-xs">
                 {typeLabel}
             </span>
         </div>

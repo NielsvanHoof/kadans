@@ -36,16 +36,16 @@ export default function ExtractionOverview({
     return (
         <section className="space-y-3 pt-2">
             {documentType !== null && (
-                <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">
+                <p className="text-muted-foreground text-sm">
+                    <span className="text-foreground font-medium">
                         {t('Type')}:
                     </span>{' '}
                     {documentType}
                 </p>
             )}
             {documentConfidence !== null && (
-                <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">
+                <p className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-foreground font-medium">
                         {t('OCR confidence')}:
                     </span>
                     <ConfidenceBadge confidence={documentConfidence} />
@@ -57,7 +57,7 @@ export default function ExtractionOverview({
             {keyedNotes.length > 0 && (
                 <div className="space-y-1">
                     <h3 className="text-sm font-medium">{t('Notes')}</h3>
-                    <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                    <ul className="text-muted-foreground list-disc space-y-1 pl-5 text-sm">
                         {keyedNotes.map(({ value: note, key }) => (
                             <li key={`note:${key}`}>{note}</li>
                         ))}

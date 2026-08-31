@@ -1,6 +1,6 @@
 import * as aws from "@pulumi/aws";
-import * as pulumi from "@pulumi/pulumi";
-import { PlatformConfig } from "../config.js";
+import type * as pulumi from "@pulumi/pulumi";
+import type { PlatformConfig } from "../config.js";
 
 export interface Mail {
   domainIdentity: aws.ses.DomainIdentity;

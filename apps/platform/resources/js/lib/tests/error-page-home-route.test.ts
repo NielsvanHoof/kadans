@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { errorPageHomeRoute } from '@/lib/error-page-home-route';
 
 describe('errorPageHomeRoute', () => {

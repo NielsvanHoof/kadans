@@ -1,8 +1,10 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { AlertCircle } from 'lucide-react';
+import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthController';
 import InputError, {
     fieldErrorAriaProps,
 } from '@/components/primitives/input-error';
+import OrDivider from '@/components/primitives/or-divider';
 import PasswordInput from '@/components/primitives/password-input';
 import StatusMessage from '@/components/primitives/status-message';
 import TextLink from '@/components/primitives/text-link';
@@ -12,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import OAuthProviderButton from '@/features/integrations/oauth-provider-button';
 import { isLoginThrottleMessage } from '@/features/security/is-login-throttle-message';
 import PasskeyVerify from '@/features/security/passkeys/passkey-verify';
 import { useTranslation } from '@/hooks/use-translation';
@@ -21,15 +24,34 @@ import { request } from '@/routes/password';
 type Props = {
     status?: string;
     canResetPassword: boolean;
+    oauthProviders?: string[];
 };
 
-export default function Login({ status, canResetPassword }: Props) {
+export default function Login({
+    status,
+    canResetPassword,
+    oauthProviders = [],
+}: Props) {
     const { t } = useTranslation();
 
     setLayoutProps({
         title: t('Log in to your account'),
         description: t('Enter your email and password below to log in'),
     });
+
+    const showOAuthProviders = oauthProviders.length > 0;
+
+    const providerLoginLabel = (provider: string): string => {
+        if (provider === 'google') {
+            return t('Log in with Google');
+        }
+
+        if (provider === 'microsoft') {
+            return t('Log in with Microsoft');
+        }
+
+        return provider;
+    };
 
     return (
         <>
@@ -156,6 +178,23 @@ export default function Login({ status, canResetPassword }: Props) {
                     );
                 }}
             </Form>
+
+            {showOAuthProviders ? (
+                <div className="flex flex-col gap-4">
+                    <OrDivider label={t('Or continue with')} />
+                    <div className="flex flex-col gap-2">
+                        {oauthProviders.map((provider) => (
+                            <OAuthProviderButton
+                                key={provider}
+                                provider={provider}
+                                href={OAuthController.redirect.url(provider)}
+                            >
+                                {providerLoginLabel(provider)}
+                            </OAuthProviderButton>
+                        ))}
+                    </div>
+                </div>
+            ) : null}
         </>
     );
 }

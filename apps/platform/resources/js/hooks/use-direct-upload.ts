@@ -73,7 +73,7 @@ export function useDirectUpload(signUrl: string, purpose: UploadPurpose) {
             setState({ progressPercent: 0, uploading: true, error: null });
 
             const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
-            const sentBytes = new Array<number>(files.length).fill(0);
+            const sentBytes = Array.from({ length: files.length }, () => 0);
 
             const reportProgress = () => {
                 const sent = sentBytes.reduce((sum, bytes) => sum + bytes, 0);

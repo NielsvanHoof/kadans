@@ -144,7 +144,7 @@ pest()->presets()->custom('qompose', fn (): array => [
     | domains from decaying back into one big namespace.
     |
     |   L0  Shared
-    |   L1  Accounts
+    |   L1  Accounts, Integrations
     |   L2  Tenancy
     |   L3  Questionnaires
     |   L4  Clients, Dossiers, DocumentProcessing, AudioProcessing, Pipelines
@@ -153,6 +153,10 @@ pest()->presets()->custom('qompose', fn (): array => [
     |
     |   Cross-cutting: Audit — any domain may log activity; Audit itself may
     |   only reach Accounts and Tenancy (enforced separately below).
+    |
+    | Integrations is an L1 sibling of Accounts (OAuth connections / Socialite).
+    | Login needs the token vault; calendar product UI stays higher and calls
+    | Integrations. Accounts and User may reach Integrations; Shared must not.
     |
     | Several pairs share a layer because their dependency really is mutual, and
     | pretending otherwise only produced permanent "debt" entries:
@@ -192,6 +196,7 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\Clients',
             'App\Dossiers',
             'App\DocumentProcessing',
+            'App\Integrations',
             'App\Pipelines',
             'App\WorkspaceNotifications',
             'App\Platform',
@@ -202,6 +207,7 @@ pest()->presets()->custom('qompose', fn (): array => [
 
     // User is the cross-domain hub, so it is ignored here and constrained
     // separately below. Audit is cross-cutting and deliberately absent.
+    // Integrations is an L1 sibling — Accounts may use the OAuth token vault.
     expect('App\Accounts')
         ->not->toUse([
             'App\AudioProcessing',
@@ -221,6 +227,7 @@ pest()->presets()->custom('qompose', fn (): array => [
     // The one class allowed to reach up, and only as far as Tenancy: Eloquent
     // relations plus the SupportSessionState contract. Without this, ignoring
     // User above would let any upward dependency hide inside the hub.
+    // Integrations is L1 sibling — User::oauthConnections() may import it.
     expect(User::class)
         ->not->toUse([
             'App\AudioProcessing',
@@ -232,6 +239,23 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\Platform',
             'App\Questionnaires',
             'App\Reporting',
+            'App\WorkspaceNotifications',
+        ]),
+
+    // OAuth connections / Socialite. May reach Accounts (User) and Shared;
+    // must not climb into Tenancy or anything above.
+    expect('App\Integrations')
+        ->not->toUse([
+            'App\AudioProcessing',
+            'App\ClientPortal',
+            'App\Clients',
+            'App\Dossiers',
+            'App\DocumentProcessing',
+            'App\Pipelines',
+            'App\Platform',
+            'App\Questionnaires',
+            'App\Reporting',
+            'App\Tenancy',
             'App\WorkspaceNotifications',
         ]),
 

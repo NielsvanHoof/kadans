@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
+import type {
+  DeploymentEnvironment} from "./environments/environment.js";
 import {
-  DeploymentEnvironment,
   deploymentEnvironmentFromStack,
 } from "./environments/environment.js";
 

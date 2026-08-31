@@ -47,7 +47,7 @@ export default function ClientsListCard({
                     >
                         {client.name}
                     </Link>
-                    <p className="text-sm text-muted-foreground sm:hidden">
+                    <p className="text-muted-foreground text-sm sm:hidden">
                         {client.email}
                     </p>
                 </div>
@@ -58,7 +58,7 @@ export default function ClientsListCard({
             header: t('Email'),
             className: 'hidden whitespace-normal sm:table-cell',
             cell: (client) => (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                     {client.email}
                 </span>
             ),
@@ -67,7 +67,7 @@ export default function ClientsListCard({
             key: 'dossiers',
             header: t('Dossiers'),
             cell: (client) => (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                     {client.dossiers_count}{' '}
                     {client.dossiers_count === 1 ? t('dossier') : t('dossiers')}
                 </span>

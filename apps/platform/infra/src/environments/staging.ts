@@ -1,5 +1,5 @@
 import { LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS } from "../shared/laravelCloudEgress.js";
-import { EnvironmentSettings } from "./settings.js";
+import type { EnvironmentSettings } from "./settings.js";
 
 /**
  * Staging data plane: documents/OCR + public RDS for Laravel Cloud staging.

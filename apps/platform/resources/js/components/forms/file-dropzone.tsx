@@ -223,7 +223,7 @@ export default function FileDropzone({
                 <div
                     className={cn(
                         'rounded-xl transition-colors',
-                        dragActive && 'bg-primary/5 ring-1 ring-primary/40',
+                        dragActive && 'bg-primary/5 ring-primary/40 ring-1',
                         disabled && 'opacity-60',
                     )}
                 >
@@ -292,7 +292,7 @@ export default function FileDropzone({
 
                     <p
                         id={hintId}
-                        className="mt-1.5 text-xs text-muted-foreground"
+                        className="text-muted-foreground mt-1.5 text-xs"
                     >
                         {t('Drop to replace or click to browse')}
                     </p>
@@ -310,7 +310,7 @@ export default function FileDropzone({
                     onDrop={handleDrop}
                     onClick={openFilePicker}
                     className={cn(
-                        'relative flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        'focus-visible:ring-ring/50 relative flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors focus-visible:ring-[3px] focus-visible:outline-none',
                         dragActive
                             ? 'border-primary bg-primary/5'
                             : 'border-border/70 hover:border-border hover:bg-muted/30',
@@ -320,13 +320,13 @@ export default function FileDropzone({
                     )}
                 >
                     <Upload
-                        className="size-8 text-muted-foreground"
+                        className="text-muted-foreground size-8"
                         aria-hidden
                     />
                     <span className="text-sm font-medium">
                         {t('Drop a file here or click to browse')}
                     </span>
-                    <span id={hintId} className="text-xs text-muted-foreground">
+                    <span id={hintId} className="text-muted-foreground text-xs">
                         {resolvedAcceptHint} ·{' '}
                         {t('max :size', { size: formatBytes(maxBytes) })}
                     </span>

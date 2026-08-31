@@ -128,7 +128,7 @@ export default function DossierExportCard({ dossier }: { dossier: Dossier }) {
                                 ) : null}
                             </div>
                             {exportItem.pipeline ? (
-                                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground mt-2 flex flex-wrap gap-2 text-xs">
                                     {exportItem.pipeline.steps.map((step) => (
                                         <span
                                             key={step.key}

@@ -40,7 +40,7 @@ export default function PipelineShowHeader({
             <div className="space-y-3">
                 <Link
                     href={pipelineIndex(currentWorkspace)}
-                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm"
                 >
                     <ArrowLeft aria-hidden="true" className="size-4" />
                     {t('All pipelines')}

@@ -6,7 +6,7 @@ status: accepted
 ---
 ## Context
 
-Frontend unit coverage is enforced as a Vitest line ratchet (`vitest.config.ts`).
+Frontend unit coverage is enforced as a Vitest line ratchet (`vite.config.ts` `test.coverage`).
 TASK-14.4 removed dead Playwright/Pest browser scaffolding rather than writing smoke
 tests. The client portal path an unauthenticated user touches is covered at the HTTP
 feature level in `tests/Feature/Portal/` (token exchange, session requirement, upload,

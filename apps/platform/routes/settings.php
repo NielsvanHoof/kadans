@@ -6,6 +6,7 @@ use App\Accounts\Http\Controllers\LocaleController;
 use App\Accounts\Http\Controllers\ProfileController;
 use App\Accounts\Http\Controllers\SecurityController;
 use App\Accounts\Http\Controllers\TimezoneController;
+use App\Integrations\Http\Controllers\IntegrationsSettingsController;
 use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -39,6 +40,9 @@ Route::middleware([
     Route::put('settings/password', [SecurityController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('user-password.update');
+
+    Route::get('settings/integrations', [IntegrationsSettingsController::class, 'edit'])
+        ->name('integrations.edit');
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
 

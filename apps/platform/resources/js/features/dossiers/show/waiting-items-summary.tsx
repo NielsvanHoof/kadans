@@ -135,16 +135,16 @@ function WaitingGroup({
             <div className="flex items-baseline justify-between gap-2 px-1 pb-2">
                 <h3
                     id={id}
-                    className="scroll-mt-20 truncate font-data text-[0.6875rem] tracking-[0.08em] text-muted-foreground uppercase"
+                    className="font-data text-muted-foreground scroll-mt-20 truncate text-[0.6875rem] tracking-[0.08em] uppercase"
                 >
                     {title}
                 </h3>
-                <span className="font-data text-xs text-muted-foreground tabular-nums">
+                <span className="font-data text-muted-foreground text-xs tabular-nums">
                     {items.length}
                 </span>
             </div>
 
-            <ItemGroup className="gap-0 overflow-hidden rounded-md ring-1 ring-foreground/10">
+            <ItemGroup className="ring-foreground/10 gap-0 overflow-hidden rounded-md ring-1">
                 {items.map((request) => (
                     <WaitingItemRow key={request.id} request={request} />
                 ))}
@@ -168,12 +168,12 @@ function NotCurrentlyAskedGroup({ items }: { items: DocumentRequest[] }) {
         <Collapsible
             isExpanded={expanded}
             onExpandedChange={setExpanded}
-            className="overflow-hidden rounded-md ring-1 ring-foreground/10"
+            className="ring-foreground/10 overflow-hidden rounded-md ring-1"
         >
             <CollapsibleTrigger
                 type="button"
                 variant="ghost"
-                className="h-auto w-full justify-start gap-2 rounded-none px-3 py-2.5 font-normal text-muted-foreground"
+                className="text-muted-foreground h-auto w-full justify-start gap-2 rounded-none px-3 py-2.5 font-normal"
             >
                 <ChevronRight
                     className={cn(

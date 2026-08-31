@@ -52,7 +52,7 @@ export default function DossiersListCard({
             header: t('Client'),
             className: 'hidden whitespace-normal sm:table-cell',
             cell: (dossier) => (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                     {dossier.client_name}
                     {dossier.reference ? ` · ${dossier.reference}` : null}
                 </div>
@@ -63,7 +63,7 @@ export default function DossiersListCard({
             header: t('Due'),
             className: 'hidden md:table-cell',
             cell: (dossier) => (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                     {dossier.due_date
                         ? formatDate(dossier.due_date)
                         : t('No due date')}

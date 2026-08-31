@@ -34,11 +34,11 @@ export default function ArchivedDossiersCard({
                         <p className="font-medium">{dossier.title}</p>
                         <DossierStatusBadge status={dossier.status} />
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         {dossier.client_name}
                         {dossier.reference ? ` · ${dossier.reference}` : null}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-xs">
                         {t('Archived :datetime', {
                             datetime: formatDateTime(dossier.archived_at),
                         })}
@@ -104,7 +104,7 @@ export default function ArchivedDossiersCard({
                                   actions={
                                       <>
                                           {selectedBlockedCount > 0 ? (
-                                              <p className="max-w-64 text-right text-xs text-muted-foreground">
+                                              <p className="text-muted-foreground max-w-64 text-right text-xs">
                                                   {selectedBlockedCount === 1
                                                       ? t(
                                                             '1 selected dossier needs its client restored first.',

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { isOrderedBefore } from '@/features/document-requests/types';
 import parityFixture from '../../../../../tests/fixtures/ordering-parity.json';
 

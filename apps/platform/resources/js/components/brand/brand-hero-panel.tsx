@@ -23,7 +23,7 @@ export default function BrandHeroPanel({
     return (
         <div
             className={cn(
-                'relative isolate overflow-hidden bg-brand-panel text-brand-panel-foreground',
+                'bg-brand-panel text-brand-panel-foreground relative isolate overflow-hidden',
                 className,
             )}
         >

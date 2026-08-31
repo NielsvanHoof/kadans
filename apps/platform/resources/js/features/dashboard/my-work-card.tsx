@@ -72,7 +72,7 @@ export default function MyWorkCard({ myWork }: { myWork: DashboardMyWork }) {
                             key={stat.key}
                             className="rounded-lg border px-3 py-2"
                         >
-                            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="text-muted-foreground flex items-center gap-2 text-xs">
                                 <span
                                     className={cn(
                                         'flex size-6 shrink-0 items-center justify-center rounded-md',
@@ -86,7 +86,7 @@ export default function MyWorkCard({ myWork }: { myWork: DashboardMyWork }) {
                                 </span>
                                 {stat.label}
                             </span>
-                            <p className="mt-1 font-data text-2xl font-semibold tabular-nums">
+                            <p className="font-data mt-1 text-2xl font-semibold tabular-nums">
                                 {stat.count}
                             </p>
                         </div>
@@ -103,12 +103,12 @@ export default function MyWorkCard({ myWork }: { myWork: DashboardMyWork }) {
                     />
                 ) : (
                     <div className="space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground">
+                        <p className="text-muted-foreground text-xs font-medium">
                             {t('Next due')}
                         </p>
 
                         {myWork.agenda.length === 0 ? (
-                            <p className="rounded-lg border border-dashed px-3 py-3 text-sm text-muted-foreground">
+                            <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-3 text-sm">
                                 {t(
                                     'Nothing of yours is due in the next 7 days.',
                                 )}
@@ -122,13 +122,13 @@ export default function MyWorkCard({ myWork }: { myWork: DashboardMyWork }) {
                                                 tenant: currentWorkspace,
                                                 dossier: item.id,
                                             })}
-                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                            className="hover:bg-muted/50 focus-visible:ring-ring flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                         >
                                             <span className="min-w-0">
                                                 <span className="block truncate text-sm font-medium">
                                                     {item.title}
                                                 </span>
-                                                <span className="block truncate text-xs text-muted-foreground">
+                                                <span className="text-muted-foreground block truncate text-xs">
                                                     {item.client_name}
                                                 </span>
                                             </span>
@@ -150,7 +150,7 @@ export default function MyWorkCard({ myWork }: { myWork: DashboardMyWork }) {
                                     filter: { queue: 'overdue' },
                                 },
                             })}
-                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            className="text-muted-foreground focus-visible:ring-ring inline-flex items-center gap-1.5 text-sm underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                         >
                             <CalendarClock className="size-3.5" aria-hidden />
                             {t('See everything overdue')}

@@ -50,12 +50,12 @@ export default function DocumentPreviewPanel({
             >
                 {t('Document preview')}
             </h2>
-            <div className="overflow-hidden rounded-md border bg-muted/20">
+            <div className="bg-muted/20 overflow-hidden rounded-md border">
                 {kind === 'pdf' ? (
                     <iframe
                         src={previewUrl}
                         title={filename}
-                        className="h-[min(70vh,720px)] w-full bg-background"
+                        className="bg-background h-[min(70vh,720px)] w-full"
                     />
                 ) : (
                     <img

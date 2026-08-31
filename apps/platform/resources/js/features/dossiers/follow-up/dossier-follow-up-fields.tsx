@@ -54,7 +54,7 @@ export default function DossierFollowUpFields({
     );
 
     return (
-        <FieldSet className="gap-4 rounded-lg border bg-muted/20 p-4">
+        <FieldSet className="bg-muted/20 gap-4 rounded-lg border p-4">
             <FieldLegend variant="label" className="mb-0 px-1">
                 {t('Follow-up planning')}
             </FieldLegend>
@@ -99,7 +99,7 @@ export default function DossierFollowUpFields({
                                 {selectedStaffMember?.name ?? t('Unassigned')}
                             </SelectValue>
                         </SelectTrigger>
-                        <SelectContent className="space-y-1 bg-background p-1">
+                        <SelectContent className="bg-background space-y-1 p-1">
                             <SelectGroup>
                                 <SelectItem id={UNASSIGNED_VALUE}>
                                     {t('Unassigned')}
@@ -114,7 +114,7 @@ export default function DossierFollowUpFields({
                                         <span className="font-medium">
                                             {staffMember.name}
                                         </span>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-muted-foreground text-xs">
                                             {staffMember.email}
                                         </span>
                                     </SelectItem>
@@ -153,7 +153,7 @@ export default function DossierFollowUpFields({
                         defaultValue={defaultReminderIntervalDays ?? ''}
                         aria-invalid={Boolean(errors.reminder_interval_days)}
                     />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                         {t('days')}
                     </span>
                 </div>

@@ -49,7 +49,7 @@ export function PortalFileRequestContent({
                         />
                     ))}
                     {!canRespond ? (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                             {t('File received.')}
                         </p>
                     ) : null}
@@ -75,12 +75,12 @@ function PortalUploadedFile({
     const { formatDateTime } = useFormatters();
 
     return (
-        <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border/70 bg-muted/30 px-3 py-2.5 text-sm">
+        <div className="border-border/70 bg-muted/30 flex items-center justify-between gap-2 rounded-lg border border-dashed px-3 py-2.5 text-sm">
             <div className="min-w-0">
                 <p className="truncate font-medium">
                     {uploaded.original_filename}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                     {formatBytes(uploaded.size_bytes)}
                     {uploaded.uploaded_at ? (
                         <> · {formatDateTime(uploaded.uploaded_at)}</>
@@ -209,8 +209,8 @@ function PortalSubmittedAnswerPreview({
         }
 
         return (
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs text-muted-foreground">
+            <div className="bg-muted/50 rounded-lg px-3 py-2.5 text-sm">
+                <p className="text-muted-foreground text-xs">
                     {t('Your answer')}
                 </p>
                 <p className="mt-0.5 font-medium whitespace-pre-wrap">
@@ -225,8 +225,8 @@ function PortalSubmittedAnswerPreview({
         documentRequest.answer_boolean !== null
     ) {
         return (
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs text-muted-foreground">
+            <div className="bg-muted/50 rounded-lg px-3 py-2.5 text-sm">
+                <p className="text-muted-foreground text-xs">
                     {t('Your answer')}
                 </p>
                 <p className="mt-0.5 font-medium">
@@ -252,8 +252,8 @@ function PortalSubmittedAnswerPreview({
         }
 
         return (
-            <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs text-muted-foreground">
+            <div className="bg-muted/50 rounded-lg px-3 py-2.5 text-sm">
+                <p className="text-muted-foreground text-xs">
                     {t('Your answer')}
                 </p>
                 <p className="mt-0.5 font-medium whitespace-pre-wrap">

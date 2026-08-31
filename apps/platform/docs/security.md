@@ -308,8 +308,10 @@ the Caddyfile.
 `App\Shared\Http\ContentSecurityPolicy` builds the policy per request, deriving
 everything environment-specific from existing config rather than restating it: the
 Vite nonce, the Vite dev server when running hot, the Reverb websocket from
-`broadcasting.connections.reverb`, the S3 host from `filesystems.disks.s3`, and the
-Sentry ingest host from `services.sentry.browser_dsn`. Only the DSN's origin reaches
+`broadcasting.connections.reverb`, the S3 host from `filesystems.disks.s3`
+(connect-src for PUTs, frame-src for PDF previews, img-src for images, media-src
+for audio/video streaming), and the Sentry ingest host from
+`services.sentry.browser_dsn`. Only the DSN's origin reaches
 the header — `originFromUrl()` drops the public key along with the rest of the
 userinfo. With no browser DSN configured the origin is omitted entirely.
 

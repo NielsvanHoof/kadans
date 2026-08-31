@@ -78,11 +78,11 @@ export default function QuestionnaireTemplatesSection({
                                             </Badge>
                                         </div>
                                         {template.description && (
-                                            <p className="mt-1 text-sm text-muted-foreground">
+                                            <p className="text-muted-foreground mt-1 text-sm">
                                                 {template.description}
                                             </p>
                                         )}
-                                        <p className="mt-1 text-xs text-muted-foreground">
+                                        <p className="text-muted-foreground mt-1 text-xs">
                                             {template.items_count} items
                                         </p>
                                     </div>

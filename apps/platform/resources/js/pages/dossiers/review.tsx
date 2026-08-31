@@ -159,13 +159,13 @@ export default function ReviewDossier({
 
                     {hasInFlightProcessing && (
                         <div
-                            className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3"
+                            className="bg-muted/30 flex items-center gap-3 rounded-lg border px-4 py-3"
                             aria-live="polite"
                             aria-busy="true"
                         >
-                            <Spinner className="size-4 shrink-0 text-muted-foreground" />
+                            <Spinner className="text-muted-foreground size-4 shrink-0" />
                             <div className="min-w-0 flex-1 space-y-2">
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     {t(
                                         firstInFlightDocument === null
                                             ? 'Document analysis is still running. Results will update automatically.'

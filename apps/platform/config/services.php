@@ -55,4 +55,27 @@ return [
         ],
     ],
 
+    /*
+     * Google OAuth for per-user sign-in (built-in Socialite driver).
+     * Optional: leave GOOGLE_CLIENT_ID empty to hide "Log in with Google".
+     */
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
+    ],
+
+    /*
+     * Microsoft Entra (Azure AD) OAuth for per-user sign-in and Graph tokens.
+     * Optional: leave MICROSOFT_CLIENT_ID empty to hide "Log in with Microsoft".
+     * tenant=organizations rejects personal Microsoft accounts.
+     * Foundation kept for Graph/calendar later; Google is the free default SSO.
+     */
+    'microsoft' => [
+        'client_id' => env('MICROSOFT_CLIENT_ID'),
+        'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
+        'redirect' => env('MICROSOFT_REDIRECT_URI', '/auth/microsoft/callback'),
+        'tenant' => env('MICROSOFT_TENANT_ID', 'organizations'),
+    ],
+
 ];

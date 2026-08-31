@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import IndexQuerySelectFilter from '@/components/data/index-query/index-query-select-filter';
 import type { IndexQueryFilterOption } from '@/types/pagination';
 

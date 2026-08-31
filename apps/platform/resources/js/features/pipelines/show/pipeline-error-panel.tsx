@@ -29,17 +29,17 @@ export default function PipelineErrorPanel({
     const showsMessageAsDetail = sentence !== null && errorMessage !== null;
 
     return (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+        <div className="border-destructive/30 bg-destructive/5 rounded-md border px-3 py-2 text-sm">
             {heading !== null ? (
                 <p className="text-destructive">{heading}</p>
             ) : null}
             {errorCode !== null ? (
-                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                <p className="text-muted-foreground mt-1 font-mono text-xs">
                     {errorCode}
                 </p>
             ) : null}
             {showsMessageAsDetail ? (
-                <p className="font-mono text-xs break-words text-muted-foreground">
+                <p className="text-muted-foreground font-mono text-xs break-words">
                     {errorMessage}
                 </p>
             ) : null}

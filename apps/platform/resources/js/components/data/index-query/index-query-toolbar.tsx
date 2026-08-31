@@ -151,7 +151,7 @@ export default function IndexQueryToolbar({
                         >
                             <label
                                 htmlFor={`index-filter-${filter.key}`}
-                                className="text-xs font-medium text-muted-foreground"
+                                className="text-muted-foreground text-xs font-medium"
                             >
                                 {t(filter.label)}
                             </label>
@@ -188,7 +188,7 @@ export default function IndexQueryToolbar({
 
             {config.sorts.length > 0 && (
                 <div className="flex min-w-44 flex-col gap-1.5">
-                    <span className="text-xs font-medium text-muted-foreground">
+                    <span className="text-muted-foreground text-xs font-medium">
                         {t('Sort')}
                     </span>
                     <Select

@@ -46,16 +46,16 @@ export default function QuestionnaireBuilderCanvas({
             aria-label={t('Client form canvas')}
         >
             {/* Sticky toolbar stays visible while the field list scrolls. */}
-            <div className="sticky top-0 z-10 mb-3 space-y-1 bg-background/95 pb-2 backdrop-blur-sm">
+            <div className="bg-background/95 sticky top-0 z-10 mb-3 space-y-1 pb-2 backdrop-blur-sm">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <h3 className="text-sm font-semibold tracking-tight text-pretty">
                         {t('Client form')}
                     </h3>
-                    <p className="font-data text-xs text-muted-foreground">
+                    <p className="font-data text-muted-foreground text-xs">
                         {t(':count fields', { count: items.length })}
                     </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                     {t(
                         'This is the form the client will fill in. Drag components here to build it.',
                     )}

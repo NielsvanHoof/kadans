@@ -26,8 +26,9 @@ use function str_replace;
  *
  * Everything that varies per environment is derived from existing config rather
  * than restated: the Vite nonce, the Vite dev server (when running hot), the
- * Reverb websocket, the S3 host for direct presigned uploads and signed download
- * redirects, and the Sentry ingest host the browser SDK reports to.
+ * Reverb websocket, the S3 host for direct presigned uploads, signed download
+ * redirects, PDF previews, and audio/video streaming, and the Sentry ingest host
+ * the browser SDK reports to.
  *
  * Two deliberate relaxations, both documented in docs/security.md:
  *
@@ -83,6 +84,8 @@ final readonly class ContentSecurityPolicy
         $connectSources = ["'self'"];
         $frameSources = ["'self'"];
         $imageSources = ["'self'", 'data:', 'blob:'];
+        // Audio/video transcripts stream from the same documents bucket via signed URLs.
+        $mediaSources = ["'self'"];
 
         // Reverb: the browser opens this socket directly from app.tsx.
         foreach ($this->websocketOrigins() as $origin) {
@@ -96,13 +99,15 @@ final readonly class ContentSecurityPolicy
             $connectSources[] = $errorReportingHost;
         }
 
-        // Direct presigned PUT uploads and download/preview redirects hit the storage host.
+        // Direct presigned PUT uploads and download/preview/stream redirects hit the storage host.
+        // connect-src: XHR PUT; frame-src: PDF iframe; img-src: image previews; media-src: audio/video players.
         $documentHost = $this->documentStorageOrigin();
 
         if ($documentHost !== null) {
             $connectSources[] = $documentHost;
             $frameSources[] = $documentHost;
             $imageSources[] = $documentHost;
+            $mediaSources[] = $documentHost;
         }
 
         $directives = [
@@ -116,7 +121,7 @@ final readonly class ContentSecurityPolicy
             'font-src' => ["'self'", 'data:'],
             'connect-src' => $connectSources,
             'frame-src' => $frameSources,
-            'media-src' => ["'self'"],
+            'media-src' => $mediaSources,
             'worker-src' => ["'self'", 'blob:'],
             'manifest-src' => ["'self'"],
             'object-src' => ["'none'"],

@@ -56,9 +56,9 @@ export default function PortalEnded({
                     </AlertDescription>
                 </Alert>
 
-                <div className="rounded-xl border border-border/70 bg-card px-4 py-3.5 text-base text-pretty shadow-xs">
+                <div className="border-border/70 bg-card rounded-xl border px-4 py-3.5 text-base text-pretty shadow-xs">
                     <p className="font-medium">{t('What to do next')}</p>
-                    <p className="mt-1 text-muted-foreground">
+                    <p className="text-muted-foreground mt-1">
                         {isTimedOut
                             ? t(
                                   'Open the link from your email again to carry on where you left off.',

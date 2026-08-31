@@ -23,7 +23,7 @@ export default function LegalFooterLinks({ className }: LegalFooterLinksProps) {
         <nav
             aria-label={t('Legal')}
             className={cn(
-                'flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground',
+                'text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs',
                 className,
             )}
         >

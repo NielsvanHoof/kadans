@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Accounts\Actions\CreateNewUser;
 use App\Accounts\Actions\ResetUserPassword;
+use App\Integrations\Enums\OAuthProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -59,6 +60,10 @@ final class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
+            'oauthProviders' => array_map(
+                static fn (OAuthProvider $provider): string => $provider->value,
+                OAuthProvider::configured(),
+            ),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [
@@ -101,6 +106,12 @@ final class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(10)->by($rateLimitKey.'|'.$request->ip());
         });
+
+        // OAuth redirect + callback — throttle by IP like login.
+        RateLimiter::for(
+            'oauth',
+            fn (Request $request) => Limit::perMinute(10)->by('oauth|'.$request->ip()),
+        );
 
         RateLimiter::for('reset-password-email', function (Request $request): array {
             $email = Str::transliterate(Str::lower((string) $request->input(Fortify::email())));

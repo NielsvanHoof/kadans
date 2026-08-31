@@ -296,7 +296,7 @@ export default function TemplateItemEditor({
                                 <div>
                                     <p className="font-medium">{item.title}</p>
                                     {item.instructions && (
-                                        <p className="mt-1 text-sm text-muted-foreground">
+                                        <p className="text-muted-foreground mt-1 text-sm">
                                             {item.instructions}
                                         </p>
                                     )}
@@ -348,7 +348,7 @@ export default function TemplateItemEditor({
                     {suggestions.length > 0 && (
                         <>
                             <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     {t(':count suggestions', {
                                         count: suggestions.length,
                                     })}
@@ -378,7 +378,7 @@ export default function TemplateItemEditor({
                                 {suggestions.map((item) => (
                                     <li
                                         key={`${item.type}:${item.title}:${item.instructions}`}
-                                        className="flex items-start justify-between gap-3 rounded-md border bg-muted/20 p-3"
+                                        className="bg-muted/20 flex items-start justify-between gap-3 rounded-md border p-3"
                                     >
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
@@ -393,7 +393,7 @@ export default function TemplateItemEditor({
                                                     {item.title}
                                                 </p>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="text-muted-foreground text-sm">
                                                 {item.instructions}
                                             </p>
                                         </div>

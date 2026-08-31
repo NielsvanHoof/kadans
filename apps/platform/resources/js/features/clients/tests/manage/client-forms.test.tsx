@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());

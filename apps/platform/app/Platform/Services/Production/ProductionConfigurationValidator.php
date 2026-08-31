@@ -147,6 +147,8 @@ final readonly class ProductionConfigurationValidator
             $this->hasHttpsReverbScheme() ? null : 'reverb.apps.apps.0.options.scheme',
             $this->hasReverbTlsEnabled() ? null : 'reverb.apps.apps.0.options.useTLS',
             $this->hasRestrictedReverbOrigins() ? null : 'reverb.apps.apps.0.allowed_origins',
+            $this->incompleteOAuthProviderKey('google'),
+            $this->incompleteOAuthProviderKey('microsoft'),
         ], static fn (?string $key): bool => $key !== null));
 
         if ($invalidKeys !== []) {
@@ -387,6 +389,30 @@ final readonly class ProductionConfigurationValidator
         $dsn = $this->config->get('services.sentry.browser_dsn');
 
         return is_string($dsn) && mb_trim($dsn) !== '';
+    }
+
+    /**
+     * SSO is optional, but a partial IdP app config must not ship: a client_id
+     * without a secret (or redirect) fails at login time instead. When client_id
+     * is blank, that provider stays off — other services.{provider}.* keys are ignored.
+     */
+    private function incompleteOAuthProviderKey(string $provider): ?string
+    {
+        $clientId = $this->config->get('services.'.$provider.'.client_id');
+
+        if (! is_string($clientId) || mb_trim($clientId) === '') {
+            return null;
+        }
+
+        foreach (['services.'.$provider.'.client_secret', 'services.'.$provider.'.redirect'] as $key) {
+            $value = $this->config->get($key);
+
+            if (! is_string($value) || mb_trim($value) === '') {
+                return $key;
+            }
+        }
+
+        return null;
     }
 
     /**

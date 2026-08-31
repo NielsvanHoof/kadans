@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { AudioRecording } from '@/features/audio-recordings/types';
 import type { Dossier } from '@/features/dossiers/types';
 import {

@@ -201,7 +201,7 @@ function DossierShowBody({
                      * and O stay apart in codes like this one.
                      */}
                     {dossier.reference ? (
-                        <p className="mb-1 font-data text-xs tracking-[0.08em] text-muted-foreground uppercase">
+                        <p className="font-data text-muted-foreground mb-1 text-xs tracking-[0.08em] uppercase">
                             {dossier.reference}
                         </p>
                     ) : null}

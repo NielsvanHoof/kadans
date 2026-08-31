@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Dossiers\Http\Controllers\AudioRecordingCalendarController;
 use App\Dossiers\Http\Controllers\AudioRecordingController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Config;
@@ -30,5 +31,23 @@ Route::get('audio-recordings/{audioRecording}/download', [AudioRecordingControll
         passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('audio-recordings.download');
+Route::get('audio-recordings/{audioRecording}/calendar-suggestions', [AudioRecordingCalendarController::class, 'suggestions'])
+    ->middleware(RequirePassword::using(
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
+    ))
+    ->name('audio-recordings.calendar-suggestions');
+Route::post('audio-recordings/{audioRecording}/calendar-events', [AudioRecordingCalendarController::class, 'attach'])
+    ->middleware(RequirePassword::using(
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
+    ))
+    ->name('audio-recordings.calendar-events.attach');
+Route::delete(
+    'audio-recordings/{audioRecording}/calendar-links/{calendarLink}',
+    [AudioRecordingCalendarController::class, 'detach'],
+)
+    ->middleware(RequirePassword::using(
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
+    ))
+    ->name('audio-recordings.calendar-links.destroy');
 Route::delete('audio-recordings/{audioRecording}', [AudioRecordingController::class, 'destroy'])
     ->name('audio-recordings.destroy');

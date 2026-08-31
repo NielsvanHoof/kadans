@@ -7,13 +7,13 @@ How the Inertia React UI is organized and written. For the backend → frontend 
 | Piece | Role |
 |-------|------|
 | Inertia React 19 | SPA pages via `@inertiajs/react` |
-| Vite 8 | Build and dev server |
+| Vite+ | Build, dev, format (Oxfmt), lint (Oxlint) via `vp` |
 | Tailwind 4 | Styling |
 | Wayfinder | Generated `@/actions` and `@/routes` helpers |
 | spatie/laravel-typescript-transformer | PHP Data → `resources/js/types/generated/` |
 | shadcn/ui | Primitives in `components/ui` (see `components.json`) |
-| Biome | Lint and import boundaries (`biome.json`) |
-| Vitest | Co-located unit/component tests under `resources/js` |
+| Oxlint | Lint and import boundaries (`vite.lint.ts`) |
+| Vite+ test | Co-located unit/component tests under `resources/js` (`vp test`; import from `vite-plus/test`) |
 | Laravel Echo | Real-time (Reverb) where used |
 
 ## Directory map
@@ -36,7 +36,7 @@ resources/js/
 
 | Group | Contents |
 |-------|----------|
-| `ui/` | shadcn primitives (vendored, Biome-ignored) |
+| `ui/` | shadcn primitives (vendored, Oxlint-ignored) |
 | `primitives/` | Single-purpose building blocks (`heading`, `input-error`, `empty-state`, …) |
 | `data/` | `data-table`, `index-list`, `index-query/`, `sortable/` |
 | `forms/` | `file-dropzone`, `date-picker` |
@@ -52,7 +52,7 @@ Co-locate domain hooks as `use-*.ts` next to the feature that owns them, or unde
 
 ## Import rules
 
-Import boundaries are enforced by Biome — see [`biome.json`](../biome.json).
+Import boundaries are enforced by Oxlint — see [`vite.lint.ts`](../vite.lint.ts).
 
 - `components/` must not import from `features/`.
 - `pages/` must not be imported from elsewhere.

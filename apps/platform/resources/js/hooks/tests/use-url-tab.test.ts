@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vite-plus/test';
 import { useUrlTab } from '@/hooks/use-url-tab';
 
 type Panel = 'waiting' | 'access';

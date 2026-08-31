@@ -243,7 +243,7 @@ export default function MultiFileDropzone({
                     onDrop={handleDrop}
                     onClick={openFilePicker}
                     className={cn(
-                        'relative flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        'focus-visible:ring-ring/50 relative flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors focus-visible:ring-[3px] focus-visible:outline-none',
                         files.length > 0 && 'py-3',
                         dragActive
                             ? 'border-primary bg-primary/5'
@@ -254,7 +254,7 @@ export default function MultiFileDropzone({
                     )}
                 >
                     <Upload
-                        className="size-8 text-muted-foreground"
+                        className="text-muted-foreground size-8"
                         aria-hidden
                     />
                     <span className="text-sm font-medium">
@@ -262,7 +262,7 @@ export default function MultiFileDropzone({
                             ? t('Drop more files here or click to add')
                             : t('Drop files here or click to browse')}
                     </span>
-                    <span id={hintId} className="text-xs text-muted-foreground">
+                    <span id={hintId} className="text-muted-foreground text-xs">
                         {resolvedAcceptHint} ·{' '}
                         {t('max :size per file', {
                             size: formatBytes(maxBytes),

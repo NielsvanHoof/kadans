@@ -1,6 +1,6 @@
 import * as aws from "@pulumi/aws";
-import { PlatformConfig } from "../config.js";
-import { Database } from "./database.js";
+import type { PlatformConfig } from "../config.js";
+import type { Database } from "./database.js";
 
 export interface OperationsAlerting {
   /** Absent when no alarm email is configured, so there is nothing to notify. */

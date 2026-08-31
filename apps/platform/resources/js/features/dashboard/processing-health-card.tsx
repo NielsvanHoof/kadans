@@ -51,7 +51,7 @@ export default function ProcessingHealthCard({
                         href={pipelineIndex(currentWorkspace, {
                             query: { filter: { status: 'failed' } },
                         })}
-                        className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        className="text-muted-foreground focus-visible:ring-ring inline-flex shrink-0 items-center gap-1 text-sm underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                     >
                         {t('View all')}
                         <ArrowUpRight className="size-3.5" aria-hidden />
@@ -74,12 +74,12 @@ export default function ProcessingHealthCard({
                                 href={pipelineIndex(currentWorkspace, {
                                     query: { filter: { status: 'failed' } },
                                 })}
-                                className="rounded-lg border px-3 py-2 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                className="hover:bg-muted/50 focus-visible:ring-ring rounded-lg border px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                             >
-                                <span className="block text-xs text-muted-foreground">
+                                <span className="text-muted-foreground block text-xs">
                                     {t('Failed')}
                                 </span>
-                                <span className="mt-1 block font-data text-xl font-semibold tabular-nums">
+                                <span className="font-data mt-1 block text-xl font-semibold tabular-nums">
                                     {health.failed}
                                 </span>
                             </Link>
@@ -87,12 +87,12 @@ export default function ProcessingHealthCard({
                                 href={pipelineIndex(currentWorkspace, {
                                     query: { filter: { status: 'stuck' } },
                                 })}
-                                className="rounded-lg border px-3 py-2 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                className="hover:bg-muted/50 focus-visible:ring-ring rounded-lg border px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                             >
-                                <span className="block text-xs text-muted-foreground">
+                                <span className="text-muted-foreground block text-xs">
                                     {t('Stuck')}
                                 </span>
-                                <span className="mt-1 block font-data text-xl font-semibold tabular-nums">
+                                <span className="font-data mt-1 block text-xl font-semibold tabular-nums">
                                     {health.stuck}
                                 </span>
                             </Link>
@@ -106,7 +106,7 @@ export default function ProcessingHealthCard({
                                             tenant: currentWorkspace,
                                             pipeline: run.id,
                                         })}
-                                        className="block rounded-lg border px-3 py-2 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                        className="hover:bg-muted/50 focus-visible:ring-ring block rounded-lg border px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                     >
                                         <span className="flex flex-wrap items-center justify-between gap-2">
                                             <span className="text-sm font-medium">
@@ -117,7 +117,7 @@ export default function ProcessingHealthCard({
                                             />
                                         </span>
                                         {run.error_message && (
-                                            <span className="mt-1 block truncate text-xs text-muted-foreground">
+                                            <span className="text-muted-foreground mt-1 block truncate text-xs">
                                                 {run.error_message}
                                             </span>
                                         )}

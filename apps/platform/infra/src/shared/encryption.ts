@@ -1,5 +1,5 @@
 import * as aws from "@pulumi/aws";
-import { PlatformConfig } from "../config.js";
+import type { PlatformConfig } from "../config.js";
 
 export interface OcrEncryption {
   encryptionKey: aws.kms.Key;

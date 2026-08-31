@@ -153,7 +153,7 @@ export default function UploadedDocumentShowContent({
                 </div>
             </div>
 
-            <p className="font-data text-sm text-muted-foreground">
+            <p className="font-data text-muted-foreground text-sm">
                 {formatBytes(uploadedDocument.size_bytes)} · {t('uploaded')}{' '}
                 {formatDateTime(uploadedDocument.uploaded_at)}
             </p>
@@ -169,7 +169,7 @@ export default function UploadedDocumentShowContent({
 
             {(uploadedDocument.processing_status === 'pending' ||
                 uploadedDocument.processing_status === 'processing') && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                     {t(ocrRunningBannerMessage(uploadedDocument))}
                 </p>
             )}

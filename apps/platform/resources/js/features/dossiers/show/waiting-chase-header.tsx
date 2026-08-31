@@ -47,7 +47,7 @@ export default function WaitingChaseHeader({
                     {openCount === 1
                         ? t('1 item open')
                         : t(':count items open', { count: openCount })}
-                    <span className="font-normal text-muted-foreground">
+                    <span className="text-muted-foreground font-normal">
                         {' · '}
                         {dossier.last_client_message_sent_at
                             ? t('last asked :date', {
@@ -60,7 +60,7 @@ export default function WaitingChaseHeader({
                 </p>
 
                 {activeGrant ? (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                         {t('Portal link expires :date', {
                             date: formatDate(activeGrant.expires_at),
                         })}
