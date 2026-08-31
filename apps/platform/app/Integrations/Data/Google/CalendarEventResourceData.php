@@ -12,7 +12,7 @@ use function is_string;
 /**
  * Google Calendar event resource fields used when reading/patching attachments.
  *
- * @phpstan-type AttachmentShape array{fileUrl: string, mimeType: string, title: string}
+ * @phpstan-type AttachmentShape array{fileUrl: string, mimeType: string, title: string, fileId?: string}
  */
 final readonly class CalendarEventResourceData
 {
@@ -45,16 +45,24 @@ final readonly class CalendarEventResourceData
                 $fileUrl = $attachment['fileUrl'] ?? null;
                 $mimeType = $attachment['mimeType'] ?? null;
                 $title = $attachment['title'] ?? null;
+                $fileId = $attachment['fileId'] ?? null;
 
                 if (! is_string($fileUrl) || $fileUrl === '') {
                     continue;
                 }
 
-                $attachments[] = [
+                $item = [
                     'fileUrl' => $fileUrl,
                     'mimeType' => is_string($mimeType) && $mimeType !== '' ? $mimeType : 'application/octet-stream',
                     'title' => is_string($title) && $title !== '' ? $title : 'attachment',
                 ];
+
+                // fileId is read-only on Google's EventAttachment; used to match our Drive file.
+                if (is_string($fileId) && $fileId !== '') {
+                    $item['fileId'] = $fileId;
+                }
+
+                $attachments[] = $item;
             }
         }
 

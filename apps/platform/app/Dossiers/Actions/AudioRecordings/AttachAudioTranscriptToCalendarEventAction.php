@@ -56,10 +56,11 @@ final readonly class AttachAudioTranscriptToCalendarEventAction
         }
 
         // Already linked to this event — idempotent success.
-        $existing = $audioRecording->calendarLinks()
+        $existingQuery = $audioRecording->calendarLinks()->getQuery();
+        $existingQuery->getQuery()
             ->where('provider', $provider)
-            ->where('external_event_id', $eventId)
-            ->first();
+            ->where('external_event_id', $eventId);
+        $existing = $existingQuery->first();
 
         if ($existing instanceof AudioRecordingCalendarLink) {
             return $audioRecording;

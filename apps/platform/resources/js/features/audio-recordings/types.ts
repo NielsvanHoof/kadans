@@ -14,6 +14,7 @@ export type AudioRecording = App.Dossiers.Data.StaffAudioRecordingData;
 
 /** Calendar event this transcript was attached to. */
 export type AudioRecordingCalendarLink = {
+    id: number;
     provider: string;
     event_id: string;
     html_link: string | null;
@@ -32,10 +33,7 @@ export type AudioRecordingShowProps = {
     calendar: {
         provider: string;
         connection_status:
-            | 'ready'
-            | 'missing'
-            | 'needs_reconsent'
-            | 'unconfigured';
+            'ready' | 'missing' | 'needs_reconsent' | 'unconfigured';
         reconnect_url: string | null;
     };
 };

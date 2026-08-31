@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\AbstractProvider;
 use Laravel\Socialite\Two\InvalidStateException;
+use Laravel\Socialite\Two\User as SocialiteUser;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -42,20 +44,21 @@ final class OAuthController extends Controller
             $request->session()->forget('oauth.intent');
         }
 
-        $forceConsent = $request->boolean('reconsent');
+        $driver = Socialite::driver($oauthProvider->value);
 
-        $driver = Socialite::driver($oauthProvider->value)
-            ->scopes($oauthProvider->scopes());
+        if ($driver instanceof AbstractProvider) {
+            $driver = $driver->scopes($oauthProvider->scopes());
 
-        $parameters = $oauthProvider->redirectParameters($forceConsent);
+            $parameters = $oauthProvider->redirectParameters();
 
-        if ($parameters !== []) {
-            $driver = $driver->with($parameters);
+            if ($parameters !== []) {
+                $driver = $driver->with($parameters);
+            }
         }
 
         $redirect = $driver->redirect();
 
-        if ($request->header('X-Inertia')) {
+        if ($request->headers->has('X-Inertia')) {
             return Inertia::location($redirect->getTargetUrl());
         }
 
@@ -74,6 +77,14 @@ final class OAuthController extends Controller
         try {
             $socialiteUser = Socialite::driver($oauthProvider->value)->user();
         } catch (InvalidStateException) {
+            Toast::error(__('Sign-in with :provider expired. Please try again.', [
+                'provider' => $oauthProvider->label(),
+            ]));
+
+            return $this->failureRedirect($request);
+        }
+
+        if (! $socialiteUser instanceof SocialiteUser) {
             Toast::error(__('Sign-in with :provider expired. Please try again.', [
                 'provider' => $oauthProvider->label(),
             ]));

@@ -113,14 +113,12 @@ enum OAuthProvider: string
      *
      * @return array<string, string>
      */
-    public function redirectParameters(bool $forceConsent = false): array
+    public function redirectParameters(): array
     {
         return match ($this) {
-            // access_type=offline so we can store a refresh token. Consent is
-            // forced when reconnecting for new Calendar/Drive scopes.
             self::Google => [
                 'access_type' => 'offline',
-                'prompt' => $forceConsent ? 'consent select_account' : 'select_account',
+                'prompt' => 'consent select_account',
             ],
             self::Microsoft => [],
         };

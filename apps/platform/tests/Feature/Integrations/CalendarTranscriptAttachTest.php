@@ -5,11 +5,13 @@ declare(strict_types=1);
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\AudioRecording;
+use App\Dossiers\Models\AudioRecordingCalendarLink;
 use App\Dossiers\Models\Dossier;
 use App\Integrations\Actions\RefreshOAuthAccessTokenAction;
 use App\Integrations\Enums\OAuthProvider;
 use App\Integrations\Http\Connectors\Google\Requests\Calendar\ListPrimaryEventsRequest;
 use App\Integrations\Http\Connectors\Google\Requests\Calendar\PatchEventAttachmentsRequest;
+use App\Integrations\Http\Connectors\Google\Requests\Drive\DeleteDriveFileRequest;
 use App\Integrations\Models\OAuthConnection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Date;
@@ -258,4 +260,213 @@ test('refresh oauth access token updates google connection', function (): void {
 
     expect($refreshed->access_token)->toBe('new-access')
         ->and($refreshed->refresh_token)->toBe('refresh-token');
+});
+
+test('unlink transcript patches calendar event and deletes drive file', function (): void {
+    enableGoogleWorkspaceOAuth();
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $dossier = Dossier::factory()->create(['tenant_id' => $tenant->id]);
+    $recording = AudioRecording::factory()->transcribed('Ready')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $link = AudioRecordingCalendarLink::factory()->create([
+        'tenant_id' => $tenant->id,
+        'audio_recording_id' => $recording->id,
+        'external_event_id' => 'evt-1',
+        'external_file_id' => 'drive-file-1',
+        'linked_by_user_id' => $owner->id,
+    ]);
+
+    OAuthConnection::factory()->forProvider(OAuthProvider::Google)->create([
+        'user_id' => $owner->id,
+        'access_token' => 'access-token',
+        'refresh_token' => 'refresh-token',
+        'token_expires_at' => Date::now()->addHour(),
+        'scopes' => googleWorkspaceScopes(),
+    ]);
+
+    MockClient::global([
+        MockResponse::make([
+            'id' => 'evt-1',
+            'htmlLink' => 'https://calendar.google.com/event?eid=1',
+            'attachments' => [
+                [
+                    'fileUrl' => 'https://drive.google.com/file/d/drive-file-1/view',
+                    'mimeType' => 'text/plain',
+                    'title' => 'intake-transcript.txt',
+                    'fileId' => 'drive-file-1',
+                ],
+                [
+                    'fileUrl' => 'https://drive.google.com/file/d/other/view',
+                    'mimeType' => 'application/pdf',
+                    'title' => 'agenda.pdf',
+                    'fileId' => 'other',
+                ],
+            ],
+        ]),
+        MockResponse::make([
+            'id' => 'evt-1',
+            'htmlLink' => 'https://calendar.google.com/event?eid=1',
+        ]),
+        MockResponse::make(body: '', status: 204),
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['auth.password_confirmed_at' => Date::now()->getTimestamp()])
+        ->from(workspaceRoute('workspaces.audio-recordings.show', $tenant, [
+            'audioRecording' => $recording,
+        ]))
+        ->delete(workspaceRoute('workspaces.audio-recordings.calendar-links.destroy', $tenant, [
+            'audioRecording' => $recording,
+            'calendarLink' => $link,
+        ]))
+        ->assertRedirect();
+
+    expect($recording->calendarLinks()->count())->toBe(0);
+
+    MockClient::global()->assertSent(PatchEventAttachmentsRequest::class);
+    MockClient::global()->assertSent(DeleteDriveFileRequest::class);
+});
+
+test('unlink treats a missing calendar event as already unlinked', function (): void {
+    enableGoogleWorkspaceOAuth();
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $dossier = Dossier::factory()->create(['tenant_id' => $tenant->id]);
+    $recording = AudioRecording::factory()->transcribed('Ready')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $link = AudioRecordingCalendarLink::factory()->create([
+        'tenant_id' => $tenant->id,
+        'audio_recording_id' => $recording->id,
+        'external_event_id' => 'evt-gone',
+        'external_file_id' => 'drive-file-1',
+        'linked_by_user_id' => $owner->id,
+    ]);
+
+    OAuthConnection::factory()->forProvider(OAuthProvider::Google)->create([
+        'user_id' => $owner->id,
+        'access_token' => 'access-token',
+        'refresh_token' => 'refresh-token',
+        'token_expires_at' => Date::now()->addHour(),
+        'scopes' => googleWorkspaceScopes(),
+    ]);
+
+    MockClient::global([
+        MockResponse::make(['error' => ['message' => 'Not Found']], 404),
+        MockResponse::make(body: '', status: 204),
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['auth.password_confirmed_at' => Date::now()->getTimestamp()])
+        ->from(workspaceRoute('workspaces.audio-recordings.show', $tenant, [
+            'audioRecording' => $recording,
+        ]))
+        ->delete(workspaceRoute('workspaces.audio-recordings.calendar-links.destroy', $tenant, [
+            'audioRecording' => $recording,
+            'calendarLink' => $link,
+        ]))
+        ->assertRedirect();
+
+    expect($recording->calendarLinks()->count())->toBe(0);
+
+    MockClient::global()->assertSent(DeleteDriveFileRequest::class);
+});
+
+test('unlink treats a missing drive file as already unlinked', function (): void {
+    enableGoogleWorkspaceOAuth();
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $dossier = Dossier::factory()->create(['tenant_id' => $tenant->id]);
+    $recording = AudioRecording::factory()->transcribed('Ready')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $link = AudioRecordingCalendarLink::factory()->create([
+        'tenant_id' => $tenant->id,
+        'audio_recording_id' => $recording->id,
+        'external_event_id' => 'evt-1',
+        'external_file_id' => 'drive-file-1',
+        'linked_by_user_id' => $owner->id,
+    ]);
+
+    OAuthConnection::factory()->forProvider(OAuthProvider::Google)->create([
+        'user_id' => $owner->id,
+        'access_token' => 'access-token',
+        'refresh_token' => 'refresh-token',
+        'token_expires_at' => Date::now()->addHour(),
+        'scopes' => googleWorkspaceScopes(),
+    ]);
+
+    MockClient::global([
+        MockResponse::make([
+            'id' => 'evt-1',
+            'htmlLink' => 'https://calendar.google.com/event?eid=1',
+            'attachments' => [
+                [
+                    'fileUrl' => 'https://drive.google.com/file/d/drive-file-1/view',
+                    'mimeType' => 'text/plain',
+                    'title' => 'intake-transcript.txt',
+                    'fileId' => 'drive-file-1',
+                ],
+            ],
+        ]),
+        MockResponse::make([
+            'id' => 'evt-1',
+            'htmlLink' => 'https://calendar.google.com/event?eid=1',
+        ]),
+        MockResponse::make(['error' => ['message' => 'Not Found']], 404),
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['auth.password_confirmed_at' => Date::now()->getTimestamp()])
+        ->from(workspaceRoute('workspaces.audio-recordings.show', $tenant, [
+            'audioRecording' => $recording,
+        ]))
+        ->delete(workspaceRoute('workspaces.audio-recordings.calendar-links.destroy', $tenant, [
+            'audioRecording' => $recording,
+            'calendarLink' => $link,
+        ]))
+        ->assertRedirect();
+
+    expect($recording->calendarLinks()->count())->toBe(0);
+});
+
+test('unlink cannot target a calendar link on another recording', function (): void {
+    enableGoogleWorkspaceOAuth();
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $dossier = Dossier::factory()->create(['tenant_id' => $tenant->id]);
+    $recording = AudioRecording::factory()->transcribed('Ready')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $otherRecording = AudioRecording::factory()->transcribed('Other')->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $link = AudioRecordingCalendarLink::factory()->create([
+        'tenant_id' => $tenant->id,
+        'audio_recording_id' => $otherRecording->id,
+        'external_event_id' => 'evt-other',
+        'external_file_id' => 'drive-other',
+        'linked_by_user_id' => $owner->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['auth.password_confirmed_at' => Date::now()->getTimestamp()])
+        ->delete(workspaceRoute('workspaces.audio-recordings.calendar-links.destroy', $tenant, [
+            'audioRecording' => $recording,
+            'calendarLink' => $link,
+        ]))
+        ->assertNotFound();
+
+    expect($otherRecording->calendarLinks()->count())->toBe(1);
 });

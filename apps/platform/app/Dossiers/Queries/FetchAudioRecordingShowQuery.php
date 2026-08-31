@@ -29,6 +29,7 @@ final class FetchAudioRecordingShowQuery
      *         segments: array<int, array{text: string, speaker: string, start_seconds: float, end_seconds: float}>|null,
      *         pipeline: array<string, mixed>|null,
      *         calendar_links: list<array{
+     *             id: int,
      *             provider: string,
      *             event_id: string,
      *             html_link: string|null,
@@ -62,15 +63,15 @@ final class FetchAudioRecordingShowQuery
                 'transcript' => $audioRecording->transcript,
                 'segments' => $audioRecording->segments,
                 'pipeline' => $this->latestPipeline($audioRecording),
-                'calendar_links' => $audioRecording->calendarLinks
+                'calendar_links' => array_values($audioRecording->calendarLinks
                     ->map(fn (AudioRecordingCalendarLink $link): array => [
+                        'id' => $link->id,
                         'provider' => $link->provider->value,
                         'event_id' => $link->external_event_id,
                         'html_link' => $link->external_event_url,
                         'linked_at' => $link->linked_at->toIso8601String(),
                     ])
-                    ->values()
-                    ->all(),
+                    ->all()),
             ],
             'dossier' => $dossier === null ? null : [
                 'id' => $dossier->id,

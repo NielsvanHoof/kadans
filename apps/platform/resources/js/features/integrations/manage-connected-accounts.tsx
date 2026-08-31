@@ -1,9 +1,9 @@
 import { Form } from '@inertiajs/react';
 import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthController';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import OAuthProviderButton from '@/features/integrations/oauth-provider-button';
 import { useTranslation } from '@/hooks/use-translation';
-import { cn } from '@/lib/utils';
 
 export type OAuthConnectionSummary = {
     provider: string;
@@ -27,10 +27,7 @@ export default function ManageConnectedAccounts({
     const { t } = useTranslation();
 
     const connectionByProvider = Object.fromEntries(
-        oauthConnections.map((connection) => [
-            connection.provider,
-            connection,
-        ]),
+        oauthConnections.map((connection) => [connection.provider, connection]),
     );
 
     const providerLabel = (provider: string): string => {
@@ -63,8 +60,7 @@ export default function ManageConnectedAccounts({
                                 <p className="text-sm text-muted-foreground">
                                     {connection.email ?? t('Connected')}
                                     {provider === 'google' &&
-                                    connection.has_workspace_scopes ===
-                                        false
+                                    connection.has_workspace_scopes === false
                                         ? ` · ${t('Reconnect for calendar access')}`
                                         : null}
                                 </p>
@@ -79,19 +75,16 @@ export default function ManageConnectedAccounts({
                             <div className="flex flex-wrap gap-2">
                                 {provider === 'google' &&
                                 connection.has_workspace_scopes === false ? (
-                                    <a
-                                        className={cn(
-                                            buttonVariants({
-                                                variant: 'outline',
-                                            }),
-                                        )}
+                                    <OAuthProviderButton
+                                        provider={provider}
+                                        className="w-auto"
                                         href={OAuthController.redirect.url(
                                             provider,
                                             { query: { reconsent: 1 } },
                                         )}
                                     >
                                         {t('Reconnect')}
-                                    </a>
+                                    </OAuthProviderButton>
                                 ) : null}
                                 <Form
                                     {...OAuthController.destroy.form(provider)}
@@ -110,20 +103,13 @@ export default function ManageConnectedAccounts({
                                 </Form>
                             </div>
                         ) : (
-                            /*
-                             * Plain <a>, not LinkButton: RouterProvider sends
-                             * React Aria hrefs through Inertia XHR. Following the
-                             * Socialite 302 to the IdP is then blocked by
-                             * connect-src CSP.
-                             */
-                            <a
-                                className={cn(
-                                    buttonVariants({ variant: 'outline' }),
-                                )}
+                            <OAuthProviderButton
+                                provider={provider}
+                                className="w-auto"
                                 href={OAuthController.redirect.url(provider)}
                             >
                                 {t('Connect')}
-                            </a>
+                            </OAuthProviderButton>
                         )}
                     </div>
                 );

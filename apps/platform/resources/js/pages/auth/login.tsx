@@ -4,15 +4,17 @@ import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthCo
 import InputError, {
     fieldErrorAriaProps,
 } from '@/components/primitives/input-error';
+import OrDivider from '@/components/primitives/or-divider';
 import PasswordInput from '@/components/primitives/password-input';
 import StatusMessage from '@/components/primitives/status-message';
 import TextLink from '@/components/primitives/text-link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import OAuthProviderButton from '@/features/integrations/oauth-provider-button';
 import { isLoginThrottleMessage } from '@/features/security/is-login-throttle-message';
 import PasskeyVerify from '@/features/security/passkeys/passkey-verify';
 import { useTranslation } from '@/hooks/use-translation';
@@ -179,28 +181,16 @@ export default function Login({
 
             {showOAuthProviders ? (
                 <div className="flex flex-col gap-4">
-                    <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                        <span className="relative z-10 bg-background px-2 text-muted-foreground">
-                            {t('Or continue with')}
-                        </span>
-                    </div>
-
-                    {/*
-                        Plain <a>, not LinkButton: Inertia XHR would follow the
-                        Socialite redirect to the IdP and hit connect-src CSP.
-                    */}
+                    <OrDivider label={t('Or continue with')} />
                     <div className="flex flex-col gap-2">
                         {oauthProviders.map((provider) => (
-                            <a
+                            <OAuthProviderButton
                                 key={provider}
-                                className={buttonVariants({
-                                    variant: 'outline',
-                                    className: 'w-full',
-                                })}
+                                provider={provider}
                                 href={OAuthController.redirect.url(provider)}
                             >
                                 {providerLoginLabel(provider)}
-                            </a>
+                            </OAuthProviderButton>
                         ))}
                     </div>
                 </div>

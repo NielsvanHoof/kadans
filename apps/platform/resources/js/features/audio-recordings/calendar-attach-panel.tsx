@@ -4,15 +4,13 @@ import AudioRecordingCalendarController from '@/actions/App/Dossiers/Http/Contro
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { AudioRecordingCalendarLink } from '@/features/audio-recordings/types';
+import type { Firm } from '@/features/workspaces/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 export type CalendarConnectionStatus =
-    | 'ready'
-    | 'missing'
-    | 'needs_reconsent'
-    | 'unconfigured';
+    'ready' | 'missing' | 'needs_reconsent' | 'unconfigured';
 
 export type CalendarEventSuggestion = {
     id: string;
@@ -24,6 +22,51 @@ export type CalendarEventSuggestion = {
     matches_client_email: boolean;
     provider?: string;
 };
+
+type UnlinkFormProps = {
+    audioRecordingId: number;
+    calendarLinkId: number;
+    workspace: Firm;
+};
+
+/**
+ * One-click unlink; reversible by attaching again.
+ */
+function CalendarUnlinkForm({
+    audioRecordingId,
+    calendarLinkId,
+    workspace,
+}: UnlinkFormProps) {
+    const { t } = useTranslation();
+
+    return (
+        <Form
+            {...AudioRecordingCalendarController.detach.form({
+                tenant: workspace,
+                audioRecording: audioRecordingId,
+                calendarLink: calendarLinkId,
+            })}
+            options={{ preserveScroll: true }}
+            onSuccess={() => {
+                router.reload({
+                    only: ['audio_recording', 'calendar'],
+                });
+            }}
+        >
+            {({ processing }) => (
+                <Button
+                    type="submit"
+                    variant="outline"
+                    size="sm"
+                    isDisabled={processing}
+                >
+                    {processing && <Spinner />}
+                    {t('Unlink')}
+                </Button>
+            )}
+        </Form>
+    );
+}
 
 type Props = {
     audioRecordingId: number;
@@ -55,17 +98,6 @@ export default function CalendarAttachPanel({
 
     const canSuggest =
         transcriptionStatus === 'completed' && connectionStatus === 'ready';
-
-    // Event ids already linked for this provider — used to disable Attach.
-    const linkedEventIds = useMemo(
-        () =>
-            new Set(
-                calendarLinks
-                    .filter((link) => link.provider === provider)
-                    .map((link) => link.event_id),
-            ),
-        [calendarLinks, provider],
-    );
 
     const providerLinks = useMemo(
         () => calendarLinks.filter((link) => link.provider === provider),
@@ -137,16 +169,7 @@ export default function CalendarAttachPanel({
     }
 
     return (
-        <div className="space-y-4 rounded-lg border border-border p-4 md:p-6">
-            <div>
-                <h2 className="font-medium">{t('Google Calendar')}</h2>
-                <p className="text-sm text-muted-foreground">
-                    {t(
-                        'Attach this transcript to a meeting on your Google Calendar.',
-                    )}
-                </p>
-            </div>
-
+        <div className="space-y-4">
             {providerLinks.length > 0 ? (
                 <div className="space-y-2">
                     <p className="text-sm font-medium">
@@ -177,6 +200,13 @@ export default function CalendarAttachPanel({
                                     >
                                         {t('Open in Google Calendar')}
                                     </a>
+                                ) : null}
+                                {connectionStatus === 'ready' ? (
+                                    <CalendarUnlinkForm
+                                        audioRecordingId={audioRecordingId}
+                                        calendarLinkId={link.id}
+                                        workspace={currentWorkspace}
+                                    />
                                 ) : null}
                             </li>
                         ))}
@@ -239,7 +269,10 @@ export default function CalendarAttachPanel({
                     ) : null}
 
                     {events.map((event) => {
-                        const alreadyLinked = linkedEventIds.has(event.id);
+                        const linked = providerLinks.find(
+                            (link) => link.event_id === event.id,
+                        );
+                        const alreadyLinked = linked !== undefined;
 
                         return (
                             <div
@@ -262,10 +295,18 @@ export default function CalendarAttachPanel({
                                     ) : null}
                                 </div>
 
-                                {alreadyLinked ? (
-                                    <span className="text-sm text-muted-foreground">
-                                        {t('Already linked')}
-                                    </span>
+                                {alreadyLinked && linked ? (
+                                    connectionStatus === 'ready' ? (
+                                        <CalendarUnlinkForm
+                                            audioRecordingId={audioRecordingId}
+                                            calendarLinkId={linked.id}
+                                            workspace={currentWorkspace}
+                                        />
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">
+                                            {t('Already linked')}
+                                        </span>
+                                    )
                                 ) : (
                                     <Form
                                         {...AudioRecordingCalendarController.attach.form(

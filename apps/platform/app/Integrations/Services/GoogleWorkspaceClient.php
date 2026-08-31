@@ -11,13 +11,17 @@ use App\Integrations\Http\Connectors\Google\GoogleConnector;
 use App\Integrations\Http\Connectors\Google\Requests\Calendar\GetEventRequest;
 use App\Integrations\Http\Connectors\Google\Requests\Calendar\ListPrimaryEventsRequest;
 use App\Integrations\Http\Connectors\Google\Requests\Calendar\PatchEventAttachmentsRequest;
+use App\Integrations\Http\Connectors\Google\Requests\Drive\DeleteDriveFileRequest;
 use App\Integrations\Http\Connectors\Google\Requests\Drive\UpdateDriveFileMetadataRequest;
 use App\Integrations\Http\Connectors\Google\Requests\Drive\UploadPlainTextMediaRequest;
 use Carbon\CarbonInterface;
 use Saloon\Exceptions\Request\RequestException;
+use Saloon\Exceptions\Request\Statuses\NotFoundException;
 
 use function in_array;
+use function is_string;
 use function mb_strtolower;
+use function str_contains;
 
 /**
  * Google Calendar + Drive API driver used by dossier calendar features.
@@ -109,7 +113,7 @@ final readonly class GoogleWorkspaceClient
         $getResponse->throw();
         $event = $getRequest->createDtoFromResponse($getResponse);
 
-        $attachments = $event->attachments;
+        $attachments = array_map($this->writableAttachment(...), $event->attachments);
         $attachments[] = [
             'fileUrl' => $webViewLink,
             'mimeType' => $mimeType,
@@ -126,5 +130,112 @@ final readonly class GoogleWorkspaceClient
             'html_link' => $patched->htmlLink ?? $event->htmlLink,
             'drive_file_id' => $file->id,
         ];
+    }
+
+    /**
+     * Remove our Drive attachment from the event, then delete the Drive file.
+     *
+     * Google 404 on the event or file is already-unlinked — still continue.
+     *
+     * @throws RequestException
+     */
+    public function detachTranscriptFromEvent(
+        GoogleConnector $connector,
+        string $eventId,
+        ?string $driveFileId,
+    ): void {
+        $this->removeTranscriptAttachmentFromEvent($connector, $eventId, $driveFileId);
+
+        if (is_string($driveFileId) && $driveFileId !== '') {
+            $this->deleteDriveFile($connector, $driveFileId);
+        }
+    }
+
+    /**
+     * Calendar PATCH replaces the whole attachments array — GET first, then drop ours.
+     *
+     * @throws RequestException
+     */
+    private function removeTranscriptAttachmentFromEvent(
+        GoogleConnector $connector,
+        string $eventId,
+        ?string $driveFileId,
+    ): void {
+        $getRequest = new GetEventRequest($eventId);
+
+        try {
+            $getResponse = $connector->send($getRequest);
+            $getResponse->throw();
+        } catch (NotFoundException) {
+            return;
+        }
+
+        if (! is_string($driveFileId) || $driveFileId === '') {
+            return;
+        }
+
+        $event = $getRequest->createDtoFromResponse($getResponse);
+        $kept = [];
+        $removed = false;
+
+        foreach ($event->attachments as $attachment) {
+            if ($this->attachmentMatchesDriveFile($attachment, $driveFileId)) {
+                $removed = true;
+
+                continue;
+            }
+
+            $kept[] = $this->writableAttachment($attachment);
+        }
+
+        if (! $removed) {
+            return;
+        }
+
+        $patchRequest = new PatchEventAttachmentsRequest($eventId, $kept);
+        $patchResponse = $connector->send($patchRequest);
+        $patchResponse->throw();
+    }
+
+    /**
+     * @throws RequestException
+     */
+    private function deleteDriveFile(GoogleConnector $connector, string $driveFileId): void
+    {
+        $request = new DeleteDriveFileRequest($driveFileId);
+
+        try {
+            $response = $connector->send($request);
+            $response->throw();
+        } catch (NotFoundException) {
+            // File already gone in Drive.
+        }
+    }
+
+    /**
+     * @param  array{fileUrl: string, mimeType: string, title: string, fileId?: string}  $attachment
+     * @return array{fileUrl: string, mimeType: string, title: string}
+     */
+    private function writableAttachment(array $attachment): array
+    {
+        return [
+            'fileUrl' => $attachment['fileUrl'],
+            'mimeType' => $attachment['mimeType'],
+            'title' => $attachment['title'],
+        ];
+    }
+
+    /**
+     * @param  array{fileUrl: string, mimeType: string, title: string, fileId?: string}  $attachment
+     */
+    private function attachmentMatchesDriveFile(array $attachment, string $driveFileId): bool
+    {
+        $fileId = $attachment['fileId'] ?? null;
+
+        if (is_string($fileId) && $fileId === $driveFileId) {
+            return true;
+        }
+
+        return str_contains($attachment['fileUrl'], $driveFileId);
     }
 }

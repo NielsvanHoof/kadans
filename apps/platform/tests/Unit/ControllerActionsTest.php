@@ -95,7 +95,7 @@ const CONTROLLER_NON_REST_ACTIONS = [
         'download', 'live',
     ],
     AudioRecordingCalendarController::class => [
-        'attach', 'suggestions',
+        'attach', 'detach', 'suggestions',
     ],
     DossierExportController::class => ['download'],
 

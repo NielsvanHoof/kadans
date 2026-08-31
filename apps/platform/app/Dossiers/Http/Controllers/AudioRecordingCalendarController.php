@@ -6,9 +6,11 @@ namespace App\Dossiers\Http\Controllers;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\AudioRecordings\AttachAudioTranscriptToCalendarEventAction;
+use App\Dossiers\Actions\AudioRecordings\DetachAudioTranscriptFromCalendarEventAction;
 use App\Dossiers\Actions\AudioRecordings\SuggestCalendarEventsAction;
 use App\Dossiers\Http\Requests\AudioRecordings\AttachAudioTranscriptToCalendarEventRequest;
 use App\Dossiers\Models\AudioRecording;
+use App\Dossiers\Models\AudioRecordingCalendarLink;
 use App\Integrations\Data\CalendarEventData;
 use App\Integrations\Exceptions\OAuthTokenRefreshFailedException;
 use App\Shared\Http\Controllers\Controller;
@@ -81,6 +83,38 @@ final class AudioRecordingCalendarController extends Controller
         }
 
         Toast::success(__('Transcript attached to Google Calendar.'));
+
+        return back();
+    }
+
+    public function detach(
+        Tenant $tenant,
+        AudioRecording $audioRecording,
+        AudioRecordingCalendarLink $calendarLink,
+        DetachAudioTranscriptFromCalendarEventAction $detachAudioTranscriptFromCalendarEvent,
+    ): RedirectResponse {
+        $this->authorize('view', $audioRecording);
+
+        abort_unless($calendarLink->audio_recording_id === $audioRecording->id, 404);
+
+        try {
+            $detachAudioTranscriptFromCalendarEvent->handle(
+                $audioRecording,
+                $this->currentUser(),
+                $calendarLink,
+            );
+        } catch (OAuthTokenRefreshFailedException|RuntimeException $exception) {
+            Toast::error($exception->getMessage());
+
+            return back();
+        } catch (RequestException $exception) {
+            report($exception);
+            Toast::error(__('Could not unlink the transcript from Google Calendar. Please try again.'));
+
+            return back();
+        }
+
+        Toast::success(__('Transcript unlinked from Google Calendar.'));
 
         return back();
     }

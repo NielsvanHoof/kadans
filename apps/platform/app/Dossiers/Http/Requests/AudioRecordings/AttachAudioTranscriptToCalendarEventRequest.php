@@ -52,13 +52,12 @@ final class AttachAudioTranscriptToCalendarEventRequest extends FormRequest
     }
 
     /**
-     * @return array<string, list<string|ValidationRule>>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
             'event_id' => ['required', 'string', 'max:255'],
-            // Optional today; Google is the only implemented calendar provider.
             'provider' => ['sometimes', 'nullable', 'string', Rule::enum(OAuthProvider::class)],
         ];
     }

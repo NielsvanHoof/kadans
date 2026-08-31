@@ -21,10 +21,13 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
 | app/{Dossiers,ClientPortal}/** | .ai/rules/dossiers-client-portal.md |
+| app/Dossiers/Http/Controllers/AudioRecordingCalendarController.php | .ai/rules/dossiers-http-controllers.md |
 | app/Dossiers/Queries/** | .ai/rules/dossiers-queries.md |
+| app/Integrations/Enums/OAuthProvider.php | .ai/rules/enums.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
 | app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |
+| app/Integrations/Http/Connectors/Google/** | .ai/rules/google.md |
 | resources/js/features/**/hooks/** | .ai/rules/hooks.md |
 | app/ClientPortal/Http/Controllers/** | .ai/rules/http-controllers.md |
 | app/Shared/Http/** | .ai/rules/http.md |

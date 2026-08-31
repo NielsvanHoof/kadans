@@ -47,13 +47,27 @@ test('login screen shows google when configured', function (): void {
         );
 });
 
-test('guest is redirected to google authorize url', function (): void {
+test('google authorize url requests offline access and consent', function (?string $reconsent): void {
     enableGoogleOAuth();
-    Socialite::fake('google');
 
-    $this->get(route('oauth.redirect', ['provider' => 'google']))
-        ->assertRedirect();
-});
+    $query = $reconsent === null ? [] : ['reconsent' => $reconsent];
+
+    $response = $this->get(route('oauth.redirect', ['provider' => 'google', ...$query]));
+
+    $response->assertRedirect();
+
+    $location = $response->headers->get('Location');
+    expect($location)->toBeString();
+
+    parse_str((string) parse_url((string) $location, PHP_URL_QUERY), $params);
+
+    expect($params['access_type'] ?? null)->toBe('offline')
+        ->and($params['prompt'] ?? '')->toContain('consent')
+        ->and($params['prompt'] ?? '')->toContain('select_account');
+})->with([
+    'without reconsent' => [null],
+    'with reconsent' => ['1'],
+]);
 
 test('matching verified email logs in via google', function (): void {
     enableGoogleOAuth();

@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Two\User as SocialiteUser;
 
-use function is_array;
 use function is_string;
 use function mb_strtolower;
 
@@ -70,10 +69,11 @@ final readonly class CompleteOAuthCallbackAction
             );
         }
 
-        $user = User::query()
+        $userQuery = User::query();
+        $userQuery->getQuery()
             ->whereRaw('LOWER(email) = ?', [$email])
-            ->whereNotNull('email_verified_at')
-            ->first();
+            ->whereNotNull('email_verified_at');
+        $user = $userQuery->first();
 
         if (! $user instanceof User) {
             return OAuthCallbackResult::failure(
@@ -86,6 +86,7 @@ final readonly class CompleteOAuthCallbackAction
         $alreadyLinked = OAuthConnection::query()
             ->where('user_id', $user->id)
             ->where('provider', $provider)
+            ->toBase()
             ->exists();
 
         if ($alreadyLinked) {
@@ -112,6 +113,7 @@ final readonly class CompleteOAuthCallbackAction
             ->where('provider', $provider)
             ->where('provider_user_id', $providerUserId)
             ->where('user_id', '!=', $authenticatedUser->id)
+            ->toBase()
             ->exists();
 
         if ($ownedByOther) {
@@ -183,7 +185,9 @@ final readonly class CompleteOAuthCallbackAction
         $connection->forceFill([
             'email' => $email ?? $connection->email,
             'access_token' => $socialiteUser->token,
-            'refresh_token' => $socialiteUser->refreshToken ?? $connection->refresh_token,
+            'refresh_token' => $socialiteUser->refreshToken !== ''
+                ? $socialiteUser->refreshToken
+                : $connection->refresh_token,
             'token_expires_at' => $this->expiresAt($socialiteUser) ?? $connection->token_expires_at,
             'scopes' => $this->scopes($socialiteUser, $connection->provider),
         ])->save();
@@ -200,13 +204,13 @@ final readonly class CompleteOAuthCallbackAction
 
     private function expiresAt(SocialiteUser $socialiteUser): ?CarbonImmutable
     {
-        $expiresIn = $socialiteUser->expiresIn ?? null;
+        $expiresIn = $socialiteUser->expiresIn;
 
-        if (! is_numeric($expiresIn) || (int) $expiresIn <= 0) {
+        if ($expiresIn <= 0) {
             return null;
         }
 
-        return Date::now()->addSeconds((int) $expiresIn)->toImmutable();
+        return Date::now()->addSeconds($expiresIn)->toImmutable();
     }
 
     /**
@@ -214,9 +218,9 @@ final readonly class CompleteOAuthCallbackAction
      */
     private function scopes(SocialiteUser $socialiteUser, OAuthProvider $provider): array
     {
-        $approved = $socialiteUser->approvedScopes ?? null;
+        $approved = $socialiteUser->approvedScopes;
 
-        if (is_array($approved) && $approved !== []) {
+        if ($approved !== []) {
             /** @var list<string> $approved */
             return array_values(array_map(static fn (mixed $scope): string => (string) $scope, $approved));
         }

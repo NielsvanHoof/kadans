@@ -6,7 +6,6 @@ namespace App\Integrations\Data\Google;
 
 use Saloon\Http\Response;
 
-use function array_values;
 use function is_array;
 
 /**
@@ -45,6 +44,6 @@ final readonly class CalendarEventsListData
             }
         }
 
-        return new self(array_values($items));
+        return new self($items);
     }
 }

@@ -41,5 +41,13 @@ Route::post('audio-recordings/{audioRecording}/calendar-events', [AudioRecording
         passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('audio-recordings.calendar-events.attach');
+Route::delete(
+    'audio-recordings/{audioRecording}/calendar-links/{calendarLink}',
+    [AudioRecordingCalendarController::class, 'detach'],
+)
+    ->middleware(RequirePassword::using(
+        passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
+    ))
+    ->name('audio-recordings.calendar-links.destroy');
 Route::delete('audio-recordings/{audioRecording}', [AudioRecordingController::class, 'destroy'])
     ->name('audio-recordings.destroy');

@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
 /**
- * A calendar event linked to an audio transcript (Google / Microsoft).
+ * A calendar event linked to an audio transcript
  *
  * @property int $id
  * @property int $tenant_id

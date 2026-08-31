@@ -31,4 +31,14 @@ final class GetEventRequest extends Request
     {
         return CalendarEventResourceData::fromResponse($response);
     }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function defaultQuery(): array
+    {
+        return [
+            'supportsAttachments' => 'true',
+        ];
+    }
 }

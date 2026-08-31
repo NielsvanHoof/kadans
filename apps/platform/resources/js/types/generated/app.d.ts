@@ -410,6 +410,11 @@ declare namespace App {
                 'documents.view' | 'documents.download';
         }
     }
+    namespace Integrations {
+        namespace Enums {
+            export type OAuthProvider = 'google' | 'microsoft';
+        }
+    }
     namespace Pipelines {
         namespace Data {
             export type PipelineData = {
