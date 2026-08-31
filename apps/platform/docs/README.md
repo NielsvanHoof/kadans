@@ -20,7 +20,7 @@ Domains are **folder namespaces**, not Laravel packages. Each domain that needs 
 1. [Getting started](getting-started.md) — local Sail setup and first login
 2. [Architecture](architecture.md) — domains, request flow, layering
 3. [Backend](backend.md) — PHP conventions (Actions, Queries, models, validation)
-4. [Frontend](frontend.md) — Inertia React structure, Wayfinder, types, Biome rules
+4. [Frontend](frontend.md) — Inertia React structure, Wayfinder, types, Oxlint rules
 5. [Testing](testing.md) — Pest helpers, factories, assertions, Vitest
 6. [Permissions](permissions.md) — how tenant permissions are defined and enforced
 7. [Security](security.md) — threat model, tenant isolation, portal tokens, response hardening
@@ -31,5 +31,5 @@ Domains are **folder namespaces**, not Laravel packages. Each domain that needs 
 
 - [README](../README.md) — stack overview and quick commands
 - [CONTEXT](../CONTEXT.md) — domain glossary (entities and workflow terms)
-- [biome.json](../biome.json) — frontend import boundaries (see [Frontend](frontend.md))
+- [vite.lint.ts](../vite.lint.ts) — frontend import boundaries (see [Frontend](frontend.md))
 - [Infra README](../infra/README.md) — optional AWS / OCR deployment notes

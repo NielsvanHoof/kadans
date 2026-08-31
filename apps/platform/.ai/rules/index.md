@@ -13,21 +13,27 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Platform/Console/Commands/Retention/** | .ai/rules/commands-retention.md |
 | app/{DocumentProcessing,AudioProcessing}/Console/Commands/** | .ai/rules/commands.md |
 | config/**, config/queue.php, config/horizon.php | .ai/rules/config.md |
+| app/Integrations/Http/Connectors/** | .ai/rules/connectors.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
-| docker/**, .dockerignore, vite.config.ts | .ai/rules/docker.md |
+| docker/**, .dockerignore, vite.config.ts, vite.lint.ts | .ai/rules/docker.md |
 | app/{DocumentProcessing,AudioProcessing}/Actions/** | .ai/rules/document-processing-audio-processing-actions.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
 | app/{Dossiers,ClientPortal}/** | .ai/rules/dossiers-client-portal.md |
+| app/Dossiers/Http/Controllers/AudioRecordingCalendarController.php | .ai/rules/dossiers-http-controllers.md |
 | app/Dossiers/Queries/** | .ai/rules/dossiers-queries.md |
+| app/Integrations/Enums/OAuthProvider.php | .ai/rules/enums.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
 | app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |
+| app/Integrations/Http/Connectors/Google/** | .ai/rules/google.md |
 | resources/js/features/**/hooks/** | .ai/rules/hooks.md |
 | app/ClientPortal/Http/Controllers/** | .ai/rules/http-controllers.md |
 | app/Shared/Http/** | .ai/rules/http.md |
 | infra/** | .ai/rules/infra.md |
+| resources/js/pages/auth/**,resources/js/features/integrations/**,app/Integrations/Http/Controllers/** | .ai/rules/integrations-http-controllers.md |
+| app/Integrations/** | .ai/rules/integrations.md |
 | app/{DocumentProcessing,AudioProcessing}/{Jobs,Transitions}/** | .ai/rules/jobs-transitions.md |
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
@@ -54,3 +60,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/{Transitions,Policies,Http/Controllers}/** | .ai/rules/transitions-policies-http-controllers.md |
 | resources/js/components/ui/** | .ai/rules/ui.md |
 | app/Dossiers/Actions/Uploads/** | .ai/rules/uploads.md |
+| .github/workflows/** | .ai/rules/workflows.md |

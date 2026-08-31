@@ -236,7 +236,7 @@ export default function QuestionnaireBuilder({
             ) : (
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <p
-                        className="text-xs text-muted-foreground"
+                        className="text-muted-foreground text-xs"
                         aria-live="polite"
                     >
                         {state.isDirty

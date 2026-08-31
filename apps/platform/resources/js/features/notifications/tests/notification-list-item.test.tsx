@@ -8,7 +8,7 @@ import {
     expect,
     it,
     vi,
-} from 'vitest';
+} from 'vite-plus/test';
 import type { WorkspaceNotification } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
 import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';

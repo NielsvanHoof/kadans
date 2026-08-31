@@ -29,11 +29,11 @@ export default function PortalDocumentRequestsCard({
                     <h2 className="font-display text-xl font-semibold tracking-tight">
                         {t('Your form')}
                     </h2>
-                    <p className="font-data text-sm text-muted-foreground tabular-nums">
+                    <p className="font-data text-muted-foreground text-sm tabular-nums">
                         {t(':count fields', { count: documentRequests.length })}
                     </p>
                 </div>
-                <p className="text-base text-pretty text-muted-foreground">
+                <p className="text-muted-foreground text-base text-pretty">
                     {t(
                         'Complete each item. Submitted items stay locked while they are reviewed.',
                     )}
@@ -62,14 +62,14 @@ export default function PortalDocumentRequestsCard({
                                 key={documentRequest.id}
                                 id={`request-${documentRequest.id}`}
                                 className={cn(
-                                    'scroll-mt-6 list-none rounded-2xl border bg-card shadow-xs transition-colors duration-150 motion-reduce:transition-none',
+                                    'bg-card scroll-mt-6 list-none rounded-2xl border shadow-xs transition-colors duration-150 motion-reduce:transition-none',
                                     isNext
-                                        ? 'border-primary ring-[3px] ring-ring/40'
+                                        ? 'border-primary ring-ring/40 ring-[3px]'
                                         : 'border-border/70',
                                 )}
                             >
                                 <div className="flex items-start gap-3 px-4 py-3.5 md:px-5">
-                                    <span className="mt-1 w-6 shrink-0 font-data text-sm text-muted-foreground tabular-nums">
+                                    <span className="font-data text-muted-foreground mt-1 w-6 shrink-0 text-sm tabular-nums">
                                         {index + 1}
                                     </span>
                                     <div className="min-w-0 flex-1 space-y-1.5">
@@ -88,14 +88,14 @@ export default function PortalDocumentRequestsCard({
                                             />
                                         </div>
                                         {documentRequest.instructions ? (
-                                            <p className="text-base text-pretty text-muted-foreground">
+                                            <p className="text-muted-foreground text-base text-pretty">
                                                 {documentRequest.instructions}
                                             </p>
                                         ) : null}
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 border-t border-border/60 px-4 py-4 md:px-5">
+                                <div className="border-border/60 space-y-4 border-t px-4 py-4 md:px-5">
                                     {documentRequest.status === 'rejected' &&
                                     documentRequest.rejection_reason ? (
                                         <Alert variant="destructive">
@@ -144,7 +144,7 @@ function FieldFooter({
 
     if (documentRequest.status === 'submitted') {
         return (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
                 {t('Submitted and waiting for review.')}
             </p>
         );
@@ -152,7 +152,7 @@ function FieldFooter({
 
     if (documentRequest.status === 'accepted') {
         return (
-            <p className="text-sm text-success-foreground">
+            <p className="text-success-foreground text-sm">
                 {t('Approved by :firm.', { firm: firmName })}
             </p>
         );

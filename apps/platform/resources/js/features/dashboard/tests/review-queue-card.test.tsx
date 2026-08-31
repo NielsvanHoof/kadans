@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import type { WorkspaceDashboardMetrics } from '@/features/dashboard/types';
 import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
 

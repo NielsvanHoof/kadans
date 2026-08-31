@@ -79,7 +79,7 @@ export default function ReviewQueueCard({
                             href={dossierIndex(currentWorkspace, {
                                 query: { filter: { queue: queue.key } },
                             })}
-                            className="group flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            className="group hover:bg-muted/50 focus-visible:ring-ring flex items-center gap-3 rounded-lg border p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             <span
                                 className={`flex size-9 shrink-0 items-center justify-center rounded-md ${queue.tone}`}
@@ -98,12 +98,12 @@ export default function ReviewQueueCard({
                                         {queue.count}
                                     </span>
                                 </span>
-                                <span className="block text-xs text-muted-foreground">
+                                <span className="text-muted-foreground block text-xs">
                                     {queue.description}
                                 </span>
                             </span>
                             <ArrowUpRight
-                                className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                                 aria-hidden="true"
                             />
                         </Link>

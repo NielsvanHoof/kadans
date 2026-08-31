@@ -53,7 +53,7 @@ export function PortalTextDocumentAnswer({
                             <Suspense
                                 fallback={
                                     <div
-                                        className="h-11 rounded-md border border-input bg-muted/30"
+                                        className="border-input bg-muted/30 h-11 rounded-md border"
                                         aria-hidden="true"
                                     />
                                 }

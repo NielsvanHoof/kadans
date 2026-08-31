@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
-import * as pulumi from "@pulumi/pulumi";
-import { PlatformConfig } from "../config.js";
-import { EnvironmentSettings } from "../environments/settings.js";
+import type * as pulumi from "@pulumi/pulumi";
+import type { PlatformConfig } from "../config.js";
+import type { EnvironmentSettings } from "../environments/settings.js";
 
 export interface Network {
   vpc: aws.ec2.Vpc;

@@ -90,8 +90,8 @@ export default function DocumentRequestReview({
     };
 
     return (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 px-3 py-3">
-            <p className="mr-auto text-sm text-muted-foreground">
+        <div className="bg-muted/20 flex flex-wrap items-center gap-2 rounded-md border px-3 py-3">
+            <p className="text-muted-foreground mr-auto text-sm">
                 {t('This item is ready for review.')}
             </p>
 

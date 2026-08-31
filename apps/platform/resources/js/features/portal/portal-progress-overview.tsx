@@ -64,7 +64,7 @@ export default function PortalProgressOverview({
                                           count: progress.remaining,
                                       })}
                             </h2>
-                            <p className="text-sm text-pretty text-muted-foreground">
+                            <p className="text-muted-foreground text-sm text-pretty">
                                 {isComplete
                                     ? t(
                                           ':firm will review your information. You can return here if changes are requested.',
@@ -95,7 +95,7 @@ export default function PortalProgressOverview({
                         aria-label={t('Dossier progress')}
                         className="[&_[data-slot=progress-indicator]]:rounded-full [&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-track]]:rounded-full"
                     />
-                    <p className="font-data text-xs text-muted-foreground tabular-nums">
+                    <p className="font-data text-muted-foreground text-xs tabular-nums">
                         {t(
                             ':completed of :total complete · :approved approved',
                             {

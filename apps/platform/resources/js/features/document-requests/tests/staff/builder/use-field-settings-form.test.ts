@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { mockUseTranslation } from '@/test/mocks';
 

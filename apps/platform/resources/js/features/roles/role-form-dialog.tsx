@@ -145,7 +145,7 @@ function RoleFormFields({
                     />
                     <InputError message={errors.permissions} />
                     {selectedPermissions.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                             {t(
                                 'Choose at least one permission before saving this role.',
                             )}

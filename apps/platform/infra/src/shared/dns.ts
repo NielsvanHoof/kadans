@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { PlatformConfig } from "../config.js";
-import { Mail } from "./mail.js";
+import type { PlatformConfig } from "../config.js";
+import type { Mail } from "./mail.js";
 
 export interface PlatformDns {
   /**

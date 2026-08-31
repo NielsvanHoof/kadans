@@ -46,7 +46,7 @@ export default function TwoFactorSetupStep({
             ) : (
                 <>
                     <div className="mx-auto flex max-w-md overflow-hidden">
-                        <div className="mx-auto aspect-square w-64 rounded-lg border border-border">
+                        <div className="border-border mx-auto aspect-square w-64 rounded-lg border">
                             <div className="z-10 flex h-full w-full items-center justify-center p-5">
                                 {qrCodeImageSrc ? (
                                     <img
@@ -77,7 +77,7 @@ export default function TwoFactorSetupStep({
 
                     <div className="relative flex w-full items-center justify-center">
                         <Separator className="absolute inset-x-0 top-1/2" />
-                        <span className="relative bg-card px-2 py-1">
+                        <span className="bg-card relative px-2 py-1">
                             {t('or, enter the code manually')}
                         </span>
                     </div>
@@ -91,7 +91,7 @@ export default function TwoFactorSetupStep({
                         </FieldLabel>
                         <InputGroup className="h-auto min-h-9">
                             {!manualSetupKey ? (
-                                <div className="flex h-full w-full items-center justify-center bg-muted p-3">
+                                <div className="bg-muted flex h-full w-full items-center justify-center p-3">
                                     <Spinner />
                                 </div>
                             ) : (
@@ -101,7 +101,7 @@ export default function TwoFactorSetupStep({
                                         type="text"
                                         readOnly
                                         value={manualSetupKey}
-                                        className="h-auto py-3 font-data"
+                                        className="font-data h-auto py-3"
                                     />
                                     <InputGroupAddon align="inline-end">
                                         <InputGroupButton

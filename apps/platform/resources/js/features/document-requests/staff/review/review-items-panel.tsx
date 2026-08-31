@@ -47,7 +47,7 @@ export default function ReviewItemsPanel({
 
     return (
         <section
-            className="space-y-5 rounded-2xl border border-border/70 bg-card p-4 md:p-5"
+            className="border-border/70 bg-card space-y-5 rounded-2xl border p-4 md:p-5"
             aria-labelledby="review-queue-heading"
         >
             <div>
@@ -57,7 +57,7 @@ export default function ReviewItemsPanel({
                 >
                     {t('Review queue')}
                 </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mt-1 text-sm">
                     {t('Approve items or request changes, then complete.')}
                 </p>
             </div>
@@ -243,7 +243,7 @@ function ReviewGroup({
             {items.length === 0 ? (
                 <EmptyState variant="compact" title={emptyLabel} />
             ) : (
-                <ul className="divide-y overflow-hidden rounded-xl border border-border/70">
+                <ul className="border-border/70 divide-y overflow-hidden rounded-xl border">
                     {items.map((documentRequest) => {
                         const definition = getQuestionnaireItemTypeDefinition(
                             documentRequest.type,
@@ -313,7 +313,7 @@ function ReviewGroup({
                                     documentRequest={documentRequest}
                                 />
                                 {notApplicable ? (
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-muted-foreground text-xs">
                                         {documentRequest.is_visible
                                             ? t(
                                                   'Optional and unanswered — does not block progress.',
@@ -335,7 +335,7 @@ function ReviewGroup({
             )}
 
             {showBulk && items.length > 0 ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-xs">
                     <Checkbox
                         isSelected={allSelected}
                         isIndeterminate={!allSelected && selectedIds.size > 0}

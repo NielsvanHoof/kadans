@@ -69,10 +69,10 @@ export default function DashboardMetricsGrid({
             <div className="flex justify-end">
                 <Link
                     href={clientIndex(currentWorkspace)}
-                    className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="hover:bg-muted/50 focus-visible:ring-ring inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                     <Users
-                        className="size-4 text-muted-foreground"
+                        className="text-muted-foreground size-4"
                         aria-hidden
                     />
                     <span className="text-muted-foreground">
@@ -103,9 +103,9 @@ export default function DashboardMetricsGrid({
                                 <Link
                                     href={stage.href}
                                     className={cn(
-                                        'group flex min-w-0 flex-1 flex-col rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                                        'group bg-card hover:bg-muted/40 focus-visible:ring-ring flex min-w-0 flex-1 flex-col rounded-xl border p-4 shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none',
                                         isFocus &&
-                                            'border-primary/40 ring-1 ring-primary/20',
+                                            'border-primary/40 ring-primary/20 ring-1',
                                     )}
                                 >
                                     <div className="flex items-center gap-2">
@@ -132,16 +132,16 @@ export default function DashboardMetricsGrid({
                                             {dossierStageLabel(stage.key, t)}
                                         </span>
                                     </div>
-                                    <p className="mt-3 font-data text-3xl font-semibold tracking-tight tabular-nums">
+                                    <p className="font-data mt-3 text-3xl font-semibold tracking-tight tabular-nums">
                                         {stage.count}
                                     </p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
+                                    <p className="text-muted-foreground mt-1 text-sm">
                                         {stage.description}
                                     </p>
 
                                     {/* Weekly activity comparison — uses chart tokens. */}
                                     <div className="mt-3 space-y-1.5">
-                                        <p className="font-data text-xs text-muted-foreground tabular-nums">
+                                        <p className="font-data text-muted-foreground text-xs tabular-nums">
                                             {t(
                                                 ':this this week · :last last week',
                                                 {
@@ -168,7 +168,7 @@ export default function DashboardMetricsGrid({
                                                 }}
                                             />
                                             <span
-                                                className="rounded-full bg-muted-foreground/25"
+                                                className="bg-muted-foreground/25 rounded-full"
                                                 style={{
                                                     width: `${(stage.lastWeek / maxWeek) * 100}%`,
                                                     minWidth:
@@ -180,7 +180,7 @@ export default function DashboardMetricsGrid({
                                         </div>
                                     </div>
 
-                                    <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <p className="text-muted-foreground mt-3 flex items-center gap-1.5 text-xs">
                                         <ClipboardList
                                             className="size-3.5 shrink-0"
                                             aria-hidden
@@ -194,7 +194,7 @@ export default function DashboardMetricsGrid({
                                         aria-hidden
                                         className="hidden items-center justify-center lg:flex"
                                     >
-                                        <span className="h-px w-6 bg-border" />
+                                        <span className="bg-border h-px w-6" />
                                     </div>
                                 )}
                             </li>

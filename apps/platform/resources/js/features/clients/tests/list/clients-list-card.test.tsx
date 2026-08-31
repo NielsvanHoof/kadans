@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import type { ClientSummary } from '@/features/clients/types';
 import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
 import type { Paginated } from '@/types/pagination';

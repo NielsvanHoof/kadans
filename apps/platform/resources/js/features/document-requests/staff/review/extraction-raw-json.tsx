@@ -56,7 +56,7 @@ export default function ExtractionRawJson({
 
     return (
         <section className="space-y-3 pt-2">
-            <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <p className="text-muted-foreground flex items-start gap-2 text-xs">
                 <ShieldAlert className="mt-0.5 size-4 shrink-0" />
                 <span>
                     {t(
@@ -94,7 +94,7 @@ export default function ExtractionRawJson({
             </div>
 
             {isRevealed && (
-                <pre className="max-h-96 overflow-auto rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs whitespace-pre-wrap">
+                <pre className="bg-muted/40 max-h-96 overflow-auto rounded-md border px-3 py-2 font-mono text-xs whitespace-pre-wrap">
                     {formatRawJson(rawJson)}
                 </pre>
             )}

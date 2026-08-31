@@ -53,7 +53,7 @@ export default function Heading({
                 <TitleTag className={titleClass}>{title}</TitleTag>
             )}
             {description && (
-                <p className="text-sm text-pretty text-muted-foreground">
+                <p className="text-muted-foreground text-sm text-pretty">
                     {description}
                 </p>
             )}

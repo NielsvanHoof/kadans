@@ -1,5 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vite-plus/test';
 import { usePortalSessionCountdown } from '@/features/portal/hooks/use-portal-session-countdown';
 
 const NOW = new Date('2026-08-21T10:00:00.000Z');

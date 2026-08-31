@@ -44,7 +44,7 @@ export default function SimpleIndexPagination<T>({
     return (
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {rangeText ? (
-                <p className="text-sm text-muted-foreground">{rangeText}</p>
+                <p className="text-muted-foreground text-sm">{rangeText}</p>
             ) : null}
 
             {showLinks ? (

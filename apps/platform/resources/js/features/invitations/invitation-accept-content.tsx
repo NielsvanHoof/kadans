@@ -55,7 +55,7 @@ export default function InvitationAcceptContent({
             )}
 
             {auth.authenticated && !auth.email_matches && (
-                <div className="space-y-3 text-sm text-muted-foreground">
+                <div className="text-muted-foreground space-y-3 text-sm">
                     <p>
                         {t(
                             'You are signed in as :email. Sign in with :invite to accept.',
@@ -71,7 +71,7 @@ export default function InvitationAcceptContent({
 
             {!auth.authenticated && (
                 <div className="space-y-6">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         {t('Already have an account?')}{' '}
                         <TextLink href={login()}>{t('Log in')}</TextLink>{' '}
                         {t('with :email, then return to this page.', {

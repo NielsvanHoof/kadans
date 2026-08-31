@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { PipelineUpdatedPayload } from '@/features/pipelines/types';
 
 /** Captured Echo handler, so tests can emit broadcasts directly. */

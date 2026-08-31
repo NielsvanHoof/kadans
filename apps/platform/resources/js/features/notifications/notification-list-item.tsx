@@ -112,13 +112,13 @@ export default function NotificationListItem({
         <Item
             size="sm"
             className={cn(
-                'group w-full flex-row items-start gap-2 rounded-none px-3 py-2.5 text-left hover:bg-accent',
+                'group hover:bg-accent w-full flex-row items-start gap-2 rounded-none px-3 py-2.5 text-left',
                 isUnread && 'bg-accent/40',
             )}
         >
             <Link
                 href={notification.url}
-                className="flex min-w-0 flex-1 items-start gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="focus-visible:ring-ring/50 flex min-w-0 flex-1 items-start gap-2.5 outline-none focus-visible:ring-2"
                 onClick={openNotification}
             >
                 <span
@@ -137,7 +137,7 @@ export default function NotificationListItem({
                         className={cn(
                             'line-clamp-2 leading-snug wrap-break-word',
                             isUnread
-                                ? 'font-medium text-foreground'
+                                ? 'text-foreground font-medium'
                                 : 'text-muted-foreground',
                         )}
                     >
@@ -145,7 +145,7 @@ export default function NotificationListItem({
                     </span>
                     {notification.created_at && (
                         <span
-                            className="mt-0.5 block font-data text-xs text-muted-foreground tabular-nums"
+                            className="font-data text-muted-foreground mt-0.5 block text-xs tabular-nums"
                             title={absoluteTimeWithZone}
                         >
                             {relativeTime ?? absoluteTime}
@@ -159,7 +159,7 @@ export default function NotificationListItem({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                    'size-7 shrink-0 text-muted-foreground hover:text-destructive',
+                    'text-muted-foreground hover:text-destructive size-7 shrink-0',
                     '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100',
                 )}
                 aria-label={t('Delete notification')}

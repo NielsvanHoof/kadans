@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import type { Dossier, DossierStatus } from '@/features/dossiers/types';
 import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';

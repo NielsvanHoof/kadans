@@ -118,12 +118,12 @@ export default function Profile({
 
                             {mustVerifyEmail && !emailVerified && (
                                 <Field>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-muted-foreground text-sm">
                                         {t('Your email address is unverified.')}{' '}
                                         <Link
                                             href={send()}
                                             as="button"
-                                            className="text-foreground underline decoration-border underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
+                                            className="text-foreground decoration-border underline underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
                                         >
                                             {t(
                                                 'Click here to re-send the verification email.',

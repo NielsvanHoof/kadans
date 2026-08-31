@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { vi } from 'vite-plus/test';
 
 // Skipped under `@vitest-environment node`, which SSR tests use to assert that
 // a page renders with no browser globals at all.

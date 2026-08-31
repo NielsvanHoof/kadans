@@ -63,7 +63,7 @@ export default function ErrorPage({ status }: Props) {
         <>
             <Head title={copy.title} />
 
-            <div className="flex min-h-svh flex-col items-center justify-center bg-background px-6 py-16">
+            <div className="bg-background flex min-h-svh flex-col items-center justify-center px-6 py-16">
                 <main
                     id="main-content"
                     tabIndex={-1}
@@ -72,18 +72,18 @@ export default function ErrorPage({ status }: Props) {
                     <Link
                         href={home}
                         aria-label={name}
-                        className="mb-10 flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground"
+                        className="bg-primary text-primary-foreground mb-10 flex size-12 items-center justify-center rounded-md"
                     >
-                        <AppLogoIcon className="size-7 text-primary-foreground" />
+                        <AppLogoIcon className="text-primary-foreground size-7" />
                     </Link>
 
-                    <p className="mb-3 font-mono text-sm tracking-widest text-muted-foreground uppercase">
+                    <p className="text-muted-foreground mb-3 font-mono text-sm tracking-widest uppercase">
                         {status}
                     </p>
 
-                    <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted">
+                    <div className="bg-muted mb-4 flex size-14 items-center justify-center rounded-2xl">
                         <Icon
-                            className="size-7 text-muted-foreground"
+                            className="text-muted-foreground size-7"
                             aria-hidden
                         />
                     </div>
@@ -91,7 +91,7 @@ export default function ErrorPage({ status }: Props) {
                     <h1 className="font-display text-2xl font-semibold tracking-tight text-balance">
                         {copy.title}
                     </h1>
-                    <p className="mt-2 text-sm text-pretty text-muted-foreground">
+                    <p className="text-muted-foreground mt-2 text-sm text-pretty">
                         {copy.description}
                     </p>
 

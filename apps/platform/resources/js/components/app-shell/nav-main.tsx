@@ -10,7 +10,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import type { NavItem } from '@/types';
 
 export function NavMain({
-    items = [],
+    items,
     label,
 }: {
     items: NavItem[];

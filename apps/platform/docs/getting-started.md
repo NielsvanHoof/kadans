@@ -144,8 +144,7 @@ vendor/bin/sail up -d
 vendor/bin/sail composer run dev          # queue + logs + Reverb + Vite
 vendor/bin/sail artisan test --compact    # Pest
 vendor/bin/sail npm run types:check       # Wayfinder generate + tsc
-vendor/bin/sail npm run lint:check        # Biome
-vendor/bin/sail npm run format:check      # Prettier
+vendor/bin/sail npm run check             # Oxfmt + Oxlint
 vendor/bin/sail bin pint --dirty          # PHP formatting
 ```
 

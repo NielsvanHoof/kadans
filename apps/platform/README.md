@@ -6,7 +6,7 @@ Multi-tenant platform for accounting and advisory firms to collect documents and
 
 - **Backend:** Laravel 13 (PHP 8.5), Octane + FrankenPHP, Fortify (auth, 2FA, passkeys), Spatie Multitenancy + Permission, activity log
 - **Frontend:** Inertia v3 + React 19, Tailwind CSS 4, shadcn/ui, Wayfinder (typed routes)
-- **Tooling:** Laravel Sail, Pest 4, Pint, Larastan, Biome + Prettier, Vite 8
+- **Tooling:** Laravel Sail, Pest 4, Pint, Larastan, Vite+ (`vp` / Oxlint / Oxfmt), Vite 8
 
 
 
@@ -42,9 +42,8 @@ Useful commands:
 
 ```bash
 vendor/bin/sail artisan test --compact   # backend tests (Pest)
-vendor/bin/sail npm run types:check      # TypeScript
-vendor/bin/sail npm run lint:check       # Biome (lint + import boundaries)
-vendor/bin/sail npm run format:check     # Prettier
+vendor/bin/sail npm run types:check      # TypeScript codegen + tsc
+vendor/bin/sail npm run check            # Oxfmt + Oxlint (import boundaries)
 vendor/bin/sail bin pint --dirty         # PHP formatting
 ```
 
@@ -83,7 +82,7 @@ Backend code is organized by domain under `app/` (Dossiers, Clients, Tenancy, �
 
 Run `vendor/bin/sail npm run dev` (or `npm run build`) so Wayfinder generates those folders — required for IDE type resolution and `npm run types:check`.
 
-Key conventions (enforced by Biome; see [Frontend](docs/frontend.md) and `[biome.json](biome.json)`):
+Key conventions (enforced by Oxlint; see [Frontend](docs/frontend.md) and `[vite.lint.ts](vite.lint.ts)`):
 
 - Payload types are generated from the PHP `*Data` objects into `types/generated/` — `features/<domain>/types.ts` mostly aliases them.
 - Shared `components/` never import from `features/`, and are grouped by role (`ui/`, `primitives/`, `data/`, `forms/`, `feedback/`, `brand/`, `app-shell/`).

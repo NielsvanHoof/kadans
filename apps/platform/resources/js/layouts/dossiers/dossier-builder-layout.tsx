@@ -33,11 +33,11 @@ export default function DossierBuilderLayout({
             className="h-dvh min-h-0 overflow-hidden pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
         >
             {/* Fixed chrome — content below scrolls inside panes, not the page. */}
-            <header className="z-20 shrink-0 border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+            <header className="bg-background/95 z-20 shrink-0 border-b pt-[env(safe-area-inset-top)] backdrop-blur-sm">
                 <div className="mx-auto flex h-14 w-full max-w-[100rem] items-center gap-3 px-4 md:px-6">
                     <Link
                         href={backHref}
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-sm text-muted-foreground/80 transition-colors hover:bg-muted/60 hover:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                        className="text-muted-foreground/80 hover:bg-muted/60 hover:text-muted-foreground focus-visible:ring-ring/50 inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
                     >
                         <ArrowLeft className="size-4" aria-hidden="true" />
                         {t('Back to dossier')}

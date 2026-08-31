@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { PlatformConfig } from "../config.js";
-import { Network } from "./network.js";
+import type { PlatformConfig } from "../config.js";
+import type { Network } from "./network.js";
 
 export interface Database {
   instance: aws.rds.Instance;

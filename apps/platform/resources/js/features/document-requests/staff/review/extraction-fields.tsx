@@ -80,7 +80,7 @@ export default function ExtractionFields({
                                     key={key}
                                     className="min-w-0 px-3 py-2 @md:border-b"
                                 >
-                                    <dt className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+                                    <dt className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs font-medium">
                                         <span>{field.label}</span>
                                         {isSensitive && (
                                             <Badge variant="outline">

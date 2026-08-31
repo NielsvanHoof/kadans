@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { buildTranscriptSentences } from '@/features/audio-recordings/build-sentences/build-transcript-sentences';
 import type { TranscriptSegment } from '@/features/audio-recordings/types';
 

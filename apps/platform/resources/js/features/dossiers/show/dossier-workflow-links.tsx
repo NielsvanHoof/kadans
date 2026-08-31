@@ -64,11 +64,11 @@ export default function DossierWorkflowLinks({
                     );
 
                     const className = cn(
-                        'flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-[color,background-color] focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        'focus-visible:ring-ring/50 flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-[color,background-color] focus-visible:ring-[3px] focus-visible:outline-none',
                         disabled
                             ? 'cursor-not-allowed opacity-60'
                             : 'hover:bg-muted/40',
-                        current && 'bg-muted/50 ring-1 ring-primary/40',
+                        current && 'bg-muted/50 ring-primary/40 ring-1',
                     );
 
                     return (
@@ -106,7 +106,7 @@ export default function DossierWorkflowLinks({
                             )}
                             {index < STAGE_ORDER.length - 1 ? (
                                 <ChevronRight
-                                    className="mx-0.5 size-3.5 shrink-0 text-muted-foreground/50"
+                                    className="text-muted-foreground/50 mx-0.5 size-3.5 shrink-0"
                                     aria-hidden="true"
                                 />
                             ) : null}
@@ -116,7 +116,7 @@ export default function DossierWorkflowLinks({
             </ol>
 
             {currentStage !== null ? (
-                <p className="mt-1.5 text-xs text-pretty text-muted-foreground">
+                <p className="text-muted-foreground mt-1.5 text-xs text-pretty">
                     {dossierStageHint(currentStage, t)}
                 </p>
             ) : null}
@@ -139,7 +139,7 @@ function StageBody({
         <>
             <span
                 className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-full border font-data text-[0.6875rem] tabular-nums',
+                    'font-data flex size-5 shrink-0 items-center justify-center rounded-full border text-[0.6875rem] tabular-nums',
                     done
                         ? 'border-success-border bg-success-muted text-success-foreground'
                         : current
@@ -160,7 +160,7 @@ function StageBody({
                         ? 'font-semibold'
                         : done
                           ? 'font-medium'
-                          : 'font-medium text-muted-foreground',
+                          : 'text-muted-foreground font-medium',
                 )}
             >
                 {label}

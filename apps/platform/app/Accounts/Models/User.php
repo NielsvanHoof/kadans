@@ -6,6 +6,7 @@ namespace App\Accounts\Models;
 
 use App\Accounts\Enums\PlatformRole;
 use App\Accounts\Support\DisplayTimezones;
+use App\Integrations\Models\OAuthConnection;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
@@ -52,6 +53,8 @@ use function is_string;
  * @property PlatformRole|null $platform_role
  * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
+ * @property-read Collection<int, OAuthConnection> $oauthConnections
+ * @property-read int|null $oauth_connections_count
  * @property-read Collection<int, Passkey> $passkeys
  * @property-read int|null $passkeys_count
  * @property-read Collection<int, Permission> $permissions
@@ -146,6 +149,16 @@ final class User extends Authenticatable implements HasLocalePreference, MustVer
     public function tenantMemberships(): HasMany
     {
         return $this->hasMany(TenantMembership::class);
+    }
+
+    /**
+     * Linked SSO providers
+     *
+     * @return HasMany<OAuthConnection, $this>
+     */
+    public function oauthConnections(): HasMany
+    {
+        return $this->hasMany(OAuthConnection::class);
     }
 
     public function belongsToTenant(Tenant $tenant): bool

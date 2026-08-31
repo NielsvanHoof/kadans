@@ -67,7 +67,7 @@ export default function ActivityLogCard({
                                         {activity.label}
                                     </Badge>
                                     {activity.created_at && (
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-muted-foreground text-xs">
                                             {formatDateTime(
                                                 activity.created_at,
                                             )}
@@ -81,7 +81,7 @@ export default function ActivityLogCard({
                                     </p>
                                 ) : null}
 
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     {activity.causer_name ?? t('System')}
                                     {activity.subject && (
                                         <>
@@ -126,7 +126,7 @@ export default function ActivityLogCard({
 
                                 {(activity.properties.ip ||
                                     activity.properties.route) && (
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-muted-foreground text-xs">
                                         {[
                                             activity.properties.ip,
                                             activity.properties.route,
@@ -163,14 +163,14 @@ function AttributeChangesList({
     }
 
     return (
-        <dl className="space-y-1 text-xs text-muted-foreground">
+        <dl className="text-muted-foreground space-y-1 text-xs">
             {keys.map((key) => {
                 const oldValue = formatChangeValue(changes.old[key]);
                 const newValue = formatChangeValue(changes.attributes[key]);
 
                 return (
                     <div key={key} className="flex flex-wrap gap-1">
-                        <dt className="font-medium text-foreground">{key}:</dt>
+                        <dt className="text-foreground font-medium">{key}:</dt>
                         <dd>
                             {oldValue !== null ? (
                                 <>
@@ -198,9 +198,13 @@ function formatChangeValue(value: unknown): string | null {
         return value ? 'true' : 'false';
     }
 
-    if (typeof value === 'object') {
-        return JSON.stringify(value);
+    if (
+        typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'bigint'
+    ) {
+        return String(value);
     }
 
-    return String(value);
+    return JSON.stringify(value);
 }

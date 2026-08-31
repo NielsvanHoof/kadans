@@ -14,7 +14,7 @@ export default function TextLink({
             className={cn(
                 // Darkened coral for body-sized links — display #EF5734 is only
                 // 3.45:1 on the canvas (same split as qompose.nl vs AA).
-                'text-brand-foreground underline decoration-brand-border underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!',
+                'text-brand-foreground decoration-brand-border underline underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!',
                 className,
             )}
             {...props}

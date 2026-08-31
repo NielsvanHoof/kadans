@@ -47,7 +47,7 @@ function pageLayout(name: string) {
     }
 }
 
-createInertiaApp({
+void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     /*
      * AriaLocaleProvider is prepended to every page's layout stack rather than
@@ -77,9 +77,10 @@ createInertiaApp({
              * into a full page load. RouterProvider hands that navigation to
              * Inertia instead, so `href` stays a client-side visit.
              *
-             * Exception: file downloads that 302 to a signed S3 URL must use a
-             * plain <a>, not LinkButton. An Inertia visit follows the redirect
-             * as XHR and fails the bucket CORS preflight (uploads only allow PUT).
+             * Exception: file downloads that 302 to a signed S3 URL, and OAuth
+             * redirects to an IdP, must use a plain <a>, not LinkButton. An
+             * Inertia visit follows the redirect as XHR — S3 fails CORS (PUT
+             * only); Microsoft is blocked by connect-src CSP.
              */
             <RouterProvider
                 navigate={(href, options) => router.visit(href, options)}

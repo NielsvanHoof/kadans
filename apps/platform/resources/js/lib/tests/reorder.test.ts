@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { applyIdOrder, reorderIds, sameIdOrder } from '@/lib/reorder';
 
 /**
@@ -34,7 +34,7 @@ describe('reorderIds', () => {
     it('preserves length and membership', () => {
         const result = reorderIds([5, 6, 7, 8], 8, 5);
         expect(result).toHaveLength(4);
-        expect([...result].sort()).toEqual([5, 6, 7, 8]);
+        expect([...result].sort((a, b) => a - b)).toEqual([5, 6, 7, 8]);
     });
 
     it('handles negative draft ids alongside real ones', () => {

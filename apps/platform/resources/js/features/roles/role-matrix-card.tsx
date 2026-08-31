@@ -91,7 +91,7 @@ function PermissionGrid({
     return (
         <table className="w-full caption-bottom text-xs">
             <thead className="[&_tr]:border-b">
-                <tr className="border-b transition-colors hover:bg-muted/50">
+                <tr className="hover:bg-muted/50 border-b transition-colors">
                     <th className="min-w-56 p-2 text-left align-middle font-medium">
                         {t('Permission')}
                     </th>
@@ -100,7 +100,7 @@ function PermissionGrid({
                             className="p-2 text-center align-middle font-medium"
                             key={role.value}
                         >
-                            <span className="block text-foreground">
+                            <span className="text-foreground block">
                                 {role.label}
                             </span>
                             <span className="block text-xs font-normal">
@@ -117,7 +117,7 @@ function PermissionGrid({
             <tbody className="[&_tr:last-child]:border-0">
                 {permissionGroups.map((group) => (
                     <Fragment key={group.value}>
-                        <tr className="border-b transition-colors hover:bg-muted/50 hover:bg-transparent">
+                        <tr className="hover:bg-muted/50 border-b transition-colors hover:bg-transparent">
                             <td
                                 className="bg-muted/40 p-2 align-middle text-xs font-semibold tracking-wide uppercase"
                                 colSpan={roles.length + 1}
@@ -127,14 +127,14 @@ function PermissionGrid({
                         </tr>
                         {group.permissions.map((permission) => (
                             <tr
-                                className="border-b transition-colors hover:bg-muted/50"
+                                className="hover:bg-muted/50 border-b transition-colors"
                                 key={permission.value}
                             >
                                 <td className="p-2 align-middle">
                                     <span className="block font-medium">
                                         {permission.label}
                                     </span>
-                                    <span className="block text-xs text-pretty whitespace-normal text-muted-foreground">
+                                    <span className="text-muted-foreground block text-xs text-pretty whitespace-normal">
                                         {permission.description}
                                     </span>
                                 </td>
@@ -180,7 +180,7 @@ function PermissionStack({
         <div className="flex flex-col gap-6">
             {permissionGroups.map((group) => (
                 <section key={group.value} className="flex flex-col gap-3">
-                    <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                         {group.label}
                     </h3>
                     <ul className="flex flex-col gap-4">
@@ -192,11 +192,11 @@ function PermissionStack({
                                 <p className="font-medium">
                                     {permission.label}
                                 </p>
-                                <p className="text-xs text-pretty text-muted-foreground">
+                                <p className="text-muted-foreground text-xs text-pretty">
                                     {permission.description}
                                 </p>
                                 {permission.granted_to.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-muted-foreground text-xs">
                                         {t('No role grants this.')}
                                     </p>
                                 ) : (
@@ -242,10 +242,10 @@ function GrantMark({
     return (
         <>
             {granted ? (
-                <Check className="mx-auto size-4 text-primary" aria-hidden />
+                <Check className="text-primary mx-auto size-4" aria-hidden />
             ) : (
                 <Minus
-                    className="mx-auto size-4 text-muted-foreground/40"
+                    className="text-muted-foreground/40 mx-auto size-4"
                     aria-hidden
                 />
             )}

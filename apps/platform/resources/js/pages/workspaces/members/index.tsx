@@ -54,7 +54,7 @@ export default function WorkspaceMembersIndex({
                     )}
                 />
                 {roleFilter ? (
-                    <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                    <div className="bg-muted/40 flex items-center justify-between rounded-md border px-3 py-2 text-sm">
                         <span>
                             {t('Filtered by role: :role', { role: roleFilter })}
                         </span>

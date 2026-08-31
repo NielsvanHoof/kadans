@@ -104,7 +104,7 @@ export default function DossierChaseLine({
                         ) : null}
 
                         <div className="min-w-0 flex-1">
-                            <span className="block truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            <span className="text-muted-foreground block truncate text-xs font-medium tracking-wide uppercase">
                                 {mark.label}
                             </span>
 
@@ -118,7 +118,7 @@ export default function DossierChaseLine({
                                     {index < marks.length - 1 ? (
                                         <span
                                             aria-hidden="true"
-                                            className="absolute top-1/2 -right-4 left-3.5 h-px -translate-y-1/2 bg-border"
+                                            className="bg-border absolute top-1/2 -right-4 left-3.5 h-px -translate-y-1/2"
                                         />
                                     ) : null}
                                     <ChaseMarkGlyph
@@ -131,7 +131,7 @@ export default function DossierChaseLine({
 
                             <span
                                 className={cn(
-                                    'block truncate font-data text-sm',
+                                    'font-data block truncate text-sm',
                                     mark.value === null
                                         ? 'text-muted-foreground'
                                         : 'font-medium',
@@ -155,7 +155,7 @@ export default function DossierChaseLine({
             </ol>
 
             {showMeta ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                     <span>
                         {dossier.responsible_staff?.name ?? t('Unassigned')}
                     </span>
@@ -198,7 +198,7 @@ function VerticalMark({
             {showConnector ? (
                 <span
                     aria-hidden="true"
-                    className="absolute top-3 bottom-[-0.75rem] w-px bg-border"
+                    className="bg-border absolute top-3 bottom-[-0.75rem] w-px"
                 />
             ) : null}
         </span>

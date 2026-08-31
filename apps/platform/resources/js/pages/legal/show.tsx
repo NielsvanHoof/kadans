@@ -35,16 +35,16 @@ export default function LegalShow({
         <>
             <Head title={title} />
 
-            <div className="min-h-svh bg-background">
-                <header className="border-b border-border/80">
+            <div className="bg-background min-h-svh">
+                <header className="border-border/80 border-b">
                     <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-5 py-5 md:px-8">
                         <Link
                             href={dashboard.url()}
                             className="flex items-center gap-2 text-sm font-medium"
                             aria-label={t('Privacy policy')}
                         >
-                            <span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                                <AppLogoIcon className="size-5 text-primary-foreground" />
+                            <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md">
+                                <AppLogoIcon className="text-primary-foreground size-5" />
                             </span>
                         </Link>
                         <nav
@@ -57,7 +57,7 @@ export default function LegalShow({
                                     href={legalShow.url(item.slug)}
                                     className={
                                         item.slug === document
-                                            ? 'font-medium text-foreground'
+                                            ? 'text-foreground font-medium'
                                             : 'text-muted-foreground hover:text-foreground'
                                     }
                                     aria-current={
@@ -91,13 +91,13 @@ export default function LegalShow({
 
                     {/* HTML is produced by Str::markdown with html_input strip. */}
                     <article
-                        className="legal-prose space-y-4 text-sm leading-relaxed text-foreground [&_a]:text-primary [&_a]:underline [&_h1]:font-display [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_li]:ms-5 [&_li]:list-disc [&_p]:text-pretty [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1.5 [&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left"
+                        className="legal-prose text-foreground [&_a]:text-primary [&_h1]:font-display [&_td]:border-border [&_th]:border-border space-y-4 text-sm leading-relaxed [&_a]:underline [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_li]:ms-5 [&_li]:list-disc [&_p]:text-pretty [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:px-2 [&_td]:py-1.5 [&_th]:border [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised markdown from app resources
                         dangerouslySetInnerHTML={{ __html: html }}
                     />
                 </main>
 
-                <footer className="border-t border-border/80">
+                <footer className="border-border/80 border-t">
                     <div className="mx-auto flex w-full max-w-3xl justify-center px-5 py-6 md:px-8">
                         <LegalFooterLinks />
                     </div>

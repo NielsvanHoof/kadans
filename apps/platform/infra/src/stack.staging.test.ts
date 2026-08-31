@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test, { before } from "node:test";
-import { CapturedStack, runStack } from "./testing/harness.js";
+import type { CapturedStack} from "./testing/harness.js";
+import { runStack } from "./testing/harness.js";
 
 /*
  * Staging in its own file: pulumi.runtime.setMocks is process-global and index.js

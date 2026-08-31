@@ -57,13 +57,13 @@ export function DossierContextRailBody({ dossier }: { dossier: Dossier }) {
     return (
         <div className="space-y-4">
             <section className="min-w-0 space-y-1">
-                <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                     {t('Client')}
                 </h3>
                 <p className="truncate text-sm font-medium">
                     {dossier.client.name}
                 </p>
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="text-muted-foreground truncate text-xs">
                     {dossier.client.email}
                 </p>
             </section>
@@ -71,7 +71,7 @@ export function DossierContextRailBody({ dossier }: { dossier: Dossier }) {
             <Separator />
 
             <section className="min-w-0 space-y-1">
-                <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                     {t('Due')}
                 </h3>
                 <p className="font-data text-sm font-medium">
@@ -90,7 +90,7 @@ export function DossierContextRailBody({ dossier }: { dossier: Dossier }) {
             <Separator />
 
             <section className="min-w-0 space-y-3">
-                <h3 className="scroll-mt-20 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <h3 className="text-muted-foreground scroll-mt-20 text-xs font-medium tracking-wide uppercase">
                     {t('Follow-up')}
                 </h3>
                 <DossierChaseLine
@@ -104,13 +104,13 @@ export function DossierContextRailBody({ dossier }: { dossier: Dossier }) {
             <Separator />
 
             <section className="min-w-0 space-y-1">
-                <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                     {t('Owner')}
                 </h3>
                 <p className="text-sm">
                     {dossier.responsible_staff?.name ?? t('Unassigned')}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                     {dossier.reminder_interval_days
                         ? t('reminder every :days days', {
                               days: dossier.reminder_interval_days,
@@ -164,7 +164,7 @@ export function DossierContextRailBody({ dossier }: { dossier: Dossier }) {
 function ReviewCount({ label, value }: { label: string; value: number }) {
     return (
         <div className="min-w-0">
-            <dt className="truncate text-muted-foreground">{label}</dt>
+            <dt className="text-muted-foreground truncate">{label}</dt>
             <dd className="font-data text-sm font-medium tabular-nums">
                 {value}
             </dd>

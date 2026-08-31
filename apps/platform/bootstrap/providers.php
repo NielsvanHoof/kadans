@@ -8,6 +8,7 @@ use App\ClientPortal\ClientPortalServiceProvider;
 use App\Clients\ClientsServiceProvider;
 use App\DocumentProcessing\DocumentProcessingServiceProvider;
 use App\Dossiers\DossiersServiceProvider;
+use App\Integrations\IntegrationsServiceProvider;
 use App\Pipelines\PipelinesServiceProvider;
 use App\Platform\PlatformServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -26,6 +27,7 @@ return [
     HorizonServiceProvider::class,
     TypeScriptTransformerServiceProvider::class,
     PlatformServiceProvider::class,
+    IntegrationsServiceProvider::class,
     TenancyServiceProvider::class,
     PipelinesServiceProvider::class,
     DocumentProcessingServiceProvider::class,

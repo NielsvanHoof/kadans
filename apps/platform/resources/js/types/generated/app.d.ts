@@ -1,89 +1,89 @@
 declare namespace App {
     namespace Accounts {
         namespace Enums {
-            export type Locale = 'en' | 'nl';
-            export type PlatformRole = 'support';
-            export type TwoFactorEnforcement = 'off' | 'all' | 'by_permission';
+            export type Locale = "en" | "nl";
+            export type PlatformRole = "support";
+            export type TwoFactorEnforcement = "off" | "all" | "by_permission";
         }
     }
     namespace AudioProcessing {
         namespace Enums {
-            export type TranscriptionDriver = 'mock' | 'transcribe';
+            export type TranscriptionDriver = "mock" | "transcribe";
             export type TranscriptionProcessingOutcome =
-                'immediate' | 'deferred';
+                "immediate" | "deferred";
         }
     }
     namespace Audit {
         namespace Enums {
             export type AuditEvent =
-                | 'dossier.viewed'
-                | 'document_request.created'
-                | 'document_request.accepted'
-                | 'document_request.rejected'
-                | 'document.uploaded'
-                | 'questionnaire.answer_submitted'
-                | 'client_portal.questionnaire_completed'
-                | 'dossier.completed'
-                | 'document.viewed'
-                | 'document.downloaded'
-                | 'dossier.export_requested'
-                | 'dossier.export_completed'
-                | 'dossier.export_failed'
-                | 'dossier.export_downloaded'
-                | 'document.processing_started'
-                | 'document.processing_completed'
-                | 'document.processing_failed'
-                | 'client_portal.access_grant_created'
-                | 'client_portal.access_grant_revoked'
-                | 'client_portal.accessed'
-                | 'client_portal.accessed_from_new_device'
-                | 'client_portal.new_device_blocked'
-                | 'client_portal.invite_queued'
-                | 'client_portal.invite_sent'
-                | 'client_portal.invite_failed'
-                | 'dossier.reminder_queued'
-                | 'dossier.reminder_sent'
-                | 'dossier.reminder_failed'
-                | 'client_portal.changes_requested_queued'
-                | 'client_portal.changes_requested_sent'
-                | 'client_portal.changes_requested_failed'
-                | 'access.denied'
-                | 'member.invited'
-                | 'member.invitation_accepted'
-                | 'member.invitation_revoked'
-                | 'member.role_changed'
-                | 'role.created'
-                | 'role.updated'
-                | 'role.deleted'
-                | 'member.suspended'
-                | 'member.removed'
-                | 'dossier.deleted'
-                | 'client.deleted'
-                | 'dossier.restored'
-                | 'client.restored'
-                | 'document_request.deleted'
-                | 'questionnaire_template.deleted'
-                | 'questionnaire_template_item.deleted'
-                | 'pipeline.retried'
-                | 'pipeline.cancelled'
-                | 'pipeline.deleted'
-                | 'user.deleted'
-                | 'data_subject.request_logged'
-                | 'data_subject.request_refused'
-                | 'data_subject.export_completed'
-                | 'data_subject.erasure_completed'
-                | 'data_subject.export_downloaded'
-                | 'support.session_started'
-                | 'support.session_ended'
-                | 'support.session_expired'
-                | 'audio_recording.uploaded'
-                | 'audio_recording.downloaded'
-                | 'audio_recording.deleted'
-                | 'audio_recording.transcription_started'
-                | 'audio_recording.transcription_completed'
-                | 'audio_recording.transcription_failed'
-                | 'file.blocked_by_malware_scan';
-            export type AuditPermission = 'audit.view';
+                | "dossier.viewed"
+                | "document_request.created"
+                | "document_request.accepted"
+                | "document_request.rejected"
+                | "document.uploaded"
+                | "questionnaire.answer_submitted"
+                | "client_portal.questionnaire_completed"
+                | "dossier.completed"
+                | "document.viewed"
+                | "document.downloaded"
+                | "dossier.export_requested"
+                | "dossier.export_completed"
+                | "dossier.export_failed"
+                | "dossier.export_downloaded"
+                | "document.processing_started"
+                | "document.processing_completed"
+                | "document.processing_failed"
+                | "client_portal.access_grant_created"
+                | "client_portal.access_grant_revoked"
+                | "client_portal.accessed"
+                | "client_portal.accessed_from_new_device"
+                | "client_portal.new_device_blocked"
+                | "client_portal.invite_queued"
+                | "client_portal.invite_sent"
+                | "client_portal.invite_failed"
+                | "dossier.reminder_queued"
+                | "dossier.reminder_sent"
+                | "dossier.reminder_failed"
+                | "client_portal.changes_requested_queued"
+                | "client_portal.changes_requested_sent"
+                | "client_portal.changes_requested_failed"
+                | "access.denied"
+                | "member.invited"
+                | "member.invitation_accepted"
+                | "member.invitation_revoked"
+                | "member.role_changed"
+                | "role.created"
+                | "role.updated"
+                | "role.deleted"
+                | "member.suspended"
+                | "member.removed"
+                | "dossier.deleted"
+                | "client.deleted"
+                | "dossier.restored"
+                | "client.restored"
+                | "document_request.deleted"
+                | "questionnaire_template.deleted"
+                | "questionnaire_template_item.deleted"
+                | "pipeline.retried"
+                | "pipeline.cancelled"
+                | "pipeline.deleted"
+                | "user.deleted"
+                | "data_subject.request_logged"
+                | "data_subject.request_refused"
+                | "data_subject.export_completed"
+                | "data_subject.erasure_completed"
+                | "data_subject.export_downloaded"
+                | "support.session_started"
+                | "support.session_ended"
+                | "support.session_expired"
+                | "audio_recording.uploaded"
+                | "audio_recording.downloaded"
+                | "audio_recording.deleted"
+                | "audio_recording.transcription_started"
+                | "audio_recording.transcription_completed"
+                | "audio_recording.transcription_failed"
+                | "file.blocked_by_malware_scan";
+            export type AuditPermission = "audit.view";
         }
     }
     namespace ClientPortal {
@@ -150,14 +150,14 @@ declare namespace App {
         }
         namespace Enums {
             export type ClientAccessGrantPermission =
-                'client_access.grant' | 'client_access.revoke';
-            export type NewPortalDeviceAction = 'notify' | 'block' | 'ignore';
+                "client_access.grant" | "client_access.revoke";
+            export type NewPortalDeviceAction = "notify" | "block" | "ignore";
             export type PortalDeviceOutcome =
-                | 'first_use'
-                | 'recognised'
-                | 'new_device_allowed'
-                | 'new_device_blocked';
-            export type PortalSessionEndReason = 'timed_out' | 'access_ended';
+                | "first_use"
+                | "recognised"
+                | "new_device_allowed"
+                | "new_device_blocked";
+            export type PortalSessionEndReason = "timed_out" | "access_ended";
         }
     }
     namespace Clients {
@@ -200,29 +200,29 @@ declare namespace App {
         }
         namespace Enums {
             export type ClientPermission =
-                | 'clients.view'
-                | 'clients.create'
-                | 'clients.update'
-                | 'clients.delete'
-                | 'clients.restore';
+                | "clients.view"
+                | "clients.create"
+                | "clients.update"
+                | "clients.delete"
+                | "clients.restore";
         }
     }
     namespace DocumentProcessing {
         namespace Enums {
             export type DocumentProcessingStatus =
-                'pending' | 'processing' | 'completed' | 'failed';
+                "pending" | "processing" | "completed" | "failed";
             export type ExtractionFieldSensitivity =
-                | 'bsn'
-                | 'iban'
-                | 'id_number'
-                | 'account_number'
-                | 'date_of_birth'
-                | 'email'
-                | 'phone';
-            export type OcrDriver = 'mock' | 'demo' | 'textract';
-            export type OcrProcessingOutcome = 'immediate' | 'deferred';
+                | "bsn"
+                | "iban"
+                | "id_number"
+                | "account_number"
+                | "date_of_birth"
+                | "email"
+                | "phone";
+            export type OcrDriver = "mock" | "demo" | "textract";
+            export type OcrProcessingOutcome = "immediate" | "deferred";
             export type TranscriptionStatus =
-                'pending' | 'processing' | 'completed' | 'failed';
+                "pending" | "processing" | "completed" | "failed";
         }
     }
     namespace Dossiers {
@@ -371,43 +371,48 @@ declare namespace App {
         }
         namespace Enums {
             export type AudioRecordingPermission =
-                | 'audio_recordings.view'
-                | 'audio_recordings.upload'
-                | 'audio_recordings.download'
-                | 'audio_recordings.delete';
+                | "audio_recordings.view"
+                | "audio_recordings.upload"
+                | "audio_recordings.download"
+                | "audio_recordings.delete";
             export type DocumentRequestPermission =
-                | 'document_requests.view'
-                | 'document_requests.create'
-                | 'document_requests.update'
-                | 'document_requests.delete'
-                | 'document_requests.upload'
-                | 'document_requests.review';
+                | "document_requests.view"
+                | "document_requests.create"
+                | "document_requests.update"
+                | "document_requests.delete"
+                | "document_requests.upload"
+                | "document_requests.review";
             export type DocumentRequestStatus =
-                'pending' | 'submitted' | 'accepted' | 'rejected';
+                "pending" | "submitted" | "accepted" | "rejected";
             export type DossierExportStatus =
-                'pending' | 'processing' | 'completed' | 'failed';
+                "pending" | "processing" | "completed" | "failed";
             export type DossierPermission =
-                | 'dossiers.view'
-                | 'dossiers.create'
-                | 'dossiers.update'
-                | 'dossiers.delete'
-                | 'dossiers.restore'
-                | 'dossiers.complete'
-                | 'dossiers.export'
-                | 'dossiers.send_reminder';
-            export type DossierReminderSource = 'manual' | 'scheduled';
+                | "dossiers.view"
+                | "dossiers.create"
+                | "dossiers.update"
+                | "dossiers.delete"
+                | "dossiers.restore"
+                | "dossiers.complete"
+                | "dossiers.export"
+                | "dossiers.send_reminder";
+            export type DossierReminderSource = "manual" | "scheduled";
             export type DossierStatus =
-                'draft' | 'awaiting_client' | 'in_review' | 'completed';
+                "draft" | "awaiting_client" | "in_review" | "completed";
             export type MalwareScanStatus =
-                | 'NO_THREATS_FOUND'
-                | 'THREATS_FOUND'
-                | 'UNSUPPORTED'
-                | 'ACCESS_DENIED'
-                | 'FAILED';
-            export type SubmissionContext = 'portal' | 'staff';
-            export type UploadPurpose = 'document' | 'audio_recording';
+                | "NO_THREATS_FOUND"
+                | "THREATS_FOUND"
+                | "UNSUPPORTED"
+                | "ACCESS_DENIED"
+                | "FAILED";
+            export type SubmissionContext = "portal" | "staff";
+            export type UploadPurpose = "document" | "audio_recording";
             export type UploadedDocumentPermission =
-                'documents.view' | 'documents.download';
+                "documents.view" | "documents.download";
+        }
+    }
+    namespace Integrations {
+        namespace Enums {
+            export type OAuthProvider = "google" | "microsoft";
         }
     }
     namespace Pipelines {
@@ -479,33 +484,33 @@ declare namespace App {
         }
         namespace Enums {
             export type PipelinePermission =
-                | 'pipelines.view'
-                | 'pipelines.retry'
-                | 'pipelines.cancel'
-                | 'pipelines.delete';
+                | "pipelines.view"
+                | "pipelines.retry"
+                | "pipelines.cancel"
+                | "pipelines.delete";
             export type PipelineStatus =
-                | 'pending'
-                | 'running'
-                | 'completed'
-                | 'failed'
-                | 'stuck'
-                | 'cancelled';
+                | "pending"
+                | "running"
+                | "completed"
+                | "failed"
+                | "stuck"
+                | "cancelled";
             export type PipelineStepKey =
-                | 'submit'
-                | 'provider_processing'
-                | 'process_results'
-                | 'transcribe'
-                | 'build_archive'
-                | 'store_archive';
+                | "submit"
+                | "provider_processing"
+                | "process_results"
+                | "transcribe"
+                | "build_archive"
+                | "store_archive";
             export type PipelineStepStatus =
-                | 'pending'
-                | 'running'
-                | 'completed'
-                | 'failed'
-                | 'stuck'
-                | 'skipped';
+                | "pending"
+                | "running"
+                | "completed"
+                | "failed"
+                | "stuck"
+                | "skipped";
             export type PipelineType =
-                'ocr_document' | 'dossier_export' | 'audio_transcription';
+                "ocr_document" | "dossier_export" | "audio_transcription";
         }
     }
     namespace Platform {
@@ -530,11 +535,11 @@ declare namespace App {
         }
         namespace Enums {
             export type DataSubjectPermission =
-                'data_subject.view' | 'data_subject.manage';
+                "data_subject.view" | "data_subject.manage";
             export type DataSubjectRequestStatus =
-                'pending' | 'completed' | 'refused';
-            export type DataSubjectRequestType = 'export' | 'erasure';
-            export type LegalDocument = 'privacy' | 'cookies' | 'terms';
+                "pending" | "completed" | "refused";
+            export type DataSubjectRequestType = "export" | "erasure";
+            export type LegalDocument = "privacy" | "cookies" | "terms";
         }
     }
     namespace Questionnaires {
@@ -609,23 +614,23 @@ declare namespace App {
         }
         namespace Enums {
             export type QuestionnaireItemType =
-                | 'file'
-                | 'text'
-                | 'textarea'
-                | 'date'
-                | 'number'
-                | 'boolean'
-                | 'choice'
-                | 'multi_select';
+                | "file"
+                | "text"
+                | "textarea"
+                | "date"
+                | "number"
+                | "boolean"
+                | "choice"
+                | "multi_select";
             export type QuestionnaireTemplateCategory =
-                'kyc' | 'jaarrekening' | 'fiscale' | 'pbc' | 'custom';
+                "kyc" | "jaarrekening" | "fiscale" | "pbc" | "custom";
             export type QuestionnaireTemplatePermission =
-                | 'templates.view'
-                | 'templates.create'
-                | 'templates.update'
-                | 'templates.delete'
-                | 'templates.copy'
-                | 'templates.apply';
+                | "templates.view"
+                | "templates.create"
+                | "templates.update"
+                | "templates.delete"
+                | "templates.copy"
+                | "templates.apply";
         }
     }
     namespace Reporting {
@@ -820,35 +825,35 @@ declare namespace App {
         }
         namespace Enums {
             export type PermissionGroup =
-                | 'dossiers'
-                | 'document_requests'
-                | 'documents'
-                | 'audio_recordings'
-                | 'clients'
-                | 'client_portal'
-                | 'templates'
-                | 'processing'
-                | 'members'
-                | 'audit'
-                | 'data_subject_requests'
-                | 'settings';
+                | "dossiers"
+                | "document_requests"
+                | "documents"
+                | "audio_recordings"
+                | "clients"
+                | "client_portal"
+                | "templates"
+                | "processing"
+                | "members"
+                | "audit"
+                | "data_subject_requests"
+                | "settings";
             export type Role =
-                | 'owner'
-                | 'administrator'
-                | 'adviser'
-                | 'reviewer'
-                | 'read-only';
+                | "owner"
+                | "administrator"
+                | "adviser"
+                | "reviewer"
+                | "read-only";
             export type TenantMembershipStatus =
-                'invited' | 'active' | 'suspended';
+                "invited" | "active" | "suspended";
             export type WorkspacePermission =
-                | 'members.view'
-                | 'members.invite'
-                | 'members.suspend'
-                | 'members.remove'
-                | 'members.assign_role'
-                | 'roles.view'
-                | 'roles.manage'
-                | 'tenant.settings.manage';
+                | "members.view"
+                | "members.invite"
+                | "members.suspend"
+                | "members.remove"
+                | "members.assign_role"
+                | "roles.view"
+                | "roles.manage"
+                | "tenant.settings.manage";
         }
     }
     namespace WorkspaceNotifications {

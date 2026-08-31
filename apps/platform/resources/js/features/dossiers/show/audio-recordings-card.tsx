@@ -166,7 +166,7 @@ function AudioRecordingsList({
                                     {recording.original_filename}
                                 </a>
                             </p>
-                            <p className="flex items-center gap-1.5 text-muted-foreground">
+                            <p className="text-muted-foreground flex items-center gap-1.5">
                                 {(recording.transcription_status ===
                                     'pending' ||
                                     recording.transcription_status ===
@@ -260,7 +260,7 @@ function AudioRecordingsList({
                         </div>
                     </div>
                     {recording.pipeline ? (
-                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground mt-2 flex flex-wrap gap-2 text-xs">
                             {recording.pipeline.steps.map((step) => (
                                 <span
                                     key={step.key}

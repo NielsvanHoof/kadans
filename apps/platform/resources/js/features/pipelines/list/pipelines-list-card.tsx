@@ -39,7 +39,7 @@ export default function PipelinesListCard({
                     >
                         {pipelineTypeLabel(pipeline.type, t)}
                     </Link>
-                    <p className="font-mono text-xs text-muted-foreground">
+                    <p className="text-muted-foreground font-mono text-xs">
                         #{pipeline.id}
                     </p>
                 </div>
@@ -54,7 +54,7 @@ export default function PipelinesListCard({
                     <span className="text-foreground">
                         {pipeline.subject_type}
                     </span>
-                    <span className="font-mono text-muted-foreground">
+                    <span className="text-muted-foreground font-mono">
                         {' '}
                         #{pipeline.subject_id}
                     </span>
@@ -73,7 +73,7 @@ export default function PipelinesListCard({
             header: t('Current step'),
             className: 'hidden md:table-cell',
             cell: (pipeline) => (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                     {pipeline.current_stage
                         ? pipelineStepLabel(pipeline.current_stage, t)
                         : t('—')}
@@ -85,7 +85,7 @@ export default function PipelinesListCard({
             header: t('Last activity'),
             className: 'hidden lg:table-cell',
             cell: (pipeline) => (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                     {pipeline.last_activity_at
                         ? formatDateTime(pipeline.last_activity_at)
                         : formatDateTime(pipeline.created_at)}
@@ -103,7 +103,7 @@ export default function PipelinesListCard({
                         pipeline: pipeline.id,
                     })}
                     aria-label={t('View pipeline :id', { id: pipeline.id })}
-                    className="inline-flex rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex rounded-md p-1"
                 >
                     <ArrowRight aria-hidden="true" className="size-4" />
                 </Link>

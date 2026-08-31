@@ -11,10 +11,12 @@ use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\OcrDriver;
 use App\Dossiers\Models\AudioRecording;
+use App\Dossiers\Models\AudioRecordingCalendarLink;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use App\Integrations\Models\OAuthConnection;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Platform\Models\DataSubjectRequest;
@@ -162,12 +164,14 @@ final class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'activity' => Activity::class,
             'audio_recording' => AudioRecording::class,
+            'audio_recording_calendar_link' => AudioRecordingCalendarLink::class,
             'client' => Client::class,
             'client_access_grant' => ClientAccessGrant::class,
             'data_subject_request' => DataSubjectRequest::class,
             'document_request' => DocumentRequest::class,
             'dossier' => Dossier::class,
             'dossier_export' => DossierExport::class,
+            'oauth_connection' => OAuthConnection::class,
             'pipeline' => Pipeline::class,
             'pipeline_step' => PipelineStep::class,
             'questionnaire_template' => QuestionnaireTemplate::class,

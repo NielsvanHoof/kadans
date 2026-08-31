@@ -10,6 +10,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Models\UploadedDocument;
+use App\Integrations\Models\OAuthConnection;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Questionnaires\Models\QuestionnaireTemplate;
@@ -22,6 +23,7 @@ use Database\Factories\ClientFactory;
 use Database\Factories\DocumentRequestFactory;
 use Database\Factories\DossierExportFactory;
 use Database\Factories\DossierFactory;
+use Database\Factories\OAuthConnectionFactory;
 use Database\Factories\PipelineFactory;
 use Database\Factories\PipelineStepFactory;
 use Database\Factories\QuestionnaireTemplateFactory;
@@ -44,6 +46,7 @@ test('application models use stable morph aliases', function (): void {
         'document_request' => DocumentRequest::class,
         'dossier' => Dossier::class,
         'dossier_export' => DossierExport::class,
+        'oauth_connection' => OAuthConnection::class,
         'pipeline' => Pipeline::class,
         'pipeline_step' => PipelineStep::class,
         'questionnaire_template' => QuestionnaireTemplate::class,
@@ -72,6 +75,7 @@ test('moved models resolve their explicit factories', function (): void {
         DocumentRequest::class => DocumentRequestFactory::class,
         Dossier::class => DossierFactory::class,
         DossierExport::class => DossierExportFactory::class,
+        OAuthConnection::class => OAuthConnectionFactory::class,
         UploadedDocument::class => UploadedDocumentFactory::class,
         QuestionnaireTemplate::class => QuestionnaireTemplateFactory::class,
         QuestionnaireTemplateItem::class => QuestionnaireTemplateItemFactory::class,

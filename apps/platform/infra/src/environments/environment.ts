@@ -1,6 +1,6 @@
 import { localSettings } from "./local.js";
 import { productionSettings } from "./production.js";
-import { EnvironmentSettings } from "./settings.js";
+import type { EnvironmentSettings } from "./settings.js";
 import { stagingSettings } from "./staging.js";
 
 export type EnvironmentName = "production" | "staging" | "local";

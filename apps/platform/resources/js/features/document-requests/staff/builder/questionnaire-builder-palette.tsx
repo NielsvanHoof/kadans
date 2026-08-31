@@ -49,17 +49,17 @@ export default function QuestionnaireBuilderPalette({
                     <h3 className="text-sm font-semibold tracking-tight text-pretty">
                         {t('Components')}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                         {t('Drag onto the form or use Add.')}
                     </p>
                     {insertAfterTitle ? (
-                        <p className="text-xs text-pretty text-muted-foreground">
+                        <p className="text-muted-foreground text-xs text-pretty">
                             {t('New fields insert after “:title”.', {
                                 title: insertAfterTitle,
                             })}
                         </p>
                     ) : (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                             {t('New fields are added at the end of the form.')}
                         </p>
                     )}
@@ -67,7 +67,7 @@ export default function QuestionnaireBuilderPalette({
 
                 <div className="relative">
                     <Search
-                        className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+                        className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
                         aria-hidden="true"
                     />
                     <Input
@@ -83,7 +83,7 @@ export default function QuestionnaireBuilderPalette({
             </div>
 
             {filtered.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                     {t('No matching components.')}
                 </p>
             ) : (
@@ -149,7 +149,7 @@ function PaletteItem({
         <div
             ref={setNodeRef}
             className={cn(
-                'rounded-lg border border-border/70 bg-card p-2 shadow-xs',
+                'border-border/70 bg-card rounded-lg border p-2 shadow-xs',
                 isDragging && 'opacity-40',
                 disabled && 'opacity-60',
             )}
@@ -158,7 +158,7 @@ function PaletteItem({
                 <button
                     type="button"
                     className={cn(
-                        'flex min-w-0 flex-1 touch-none items-center gap-2 rounded-md px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        'focus-visible:ring-ring/50 flex min-w-0 flex-1 touch-none items-center gap-2 rounded-md px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:outline-none',
                         !disabled && 'cursor-grab active:cursor-grabbing',
                     )}
                     aria-label={t('Drag :component', { component: label })}
@@ -167,7 +167,7 @@ function PaletteItem({
                     {...listeners}
                     {...attributes}
                 >
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
+                    <span className="bg-secondary text-primary flex size-7 shrink-0 items-center justify-center rounded-md">
                         <Icon className="size-3.5" aria-hidden={true} />
                     </span>
                     <span className="min-w-0 truncate text-sm font-medium">

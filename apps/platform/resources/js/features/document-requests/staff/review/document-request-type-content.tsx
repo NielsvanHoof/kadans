@@ -73,7 +73,7 @@ function WaitingForClientUpload({
     const { t } = useTranslation();
 
     return (
-        <div className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+        <div className="bg-muted/50 text-muted-foreground rounded-md px-3 py-2 text-sm">
             <p>{t('Waiting for the client to upload via the portal.')}</p>
             {dossierStatus === 'draft' && (
                 <p className="mt-1">
@@ -250,7 +250,7 @@ function AnswerPreview({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
 
     return (
-        <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
+        <div className="bg-muted/50 rounded-md px-3 py-2 text-sm">
             <p className="text-muted-foreground">{t('Answer')}</p>
             {children}
         </div>
