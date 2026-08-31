@@ -38,10 +38,17 @@ export default function AppSidebarLayout({
             <NavigationEffects />
             <WorkspaceNotifications />
             <AppSidebar />
+            {/* min-w-0, not overflow-x-hidden. SidebarInset is a flex item in
+                a row container without min-w-0 of its own, and `min-width:auto`
+                only resolves to the content-based minimum when overflow is
+                visible — so overflow-x-hidden was standing in for min-w-0 by
+                accident. Both stop the page scrolling sideways, but min-w-0
+                lets inner overflow-x-auto regions scroll instead of clipping,
+                so a wide table stays reachable rather than silently cut off. */}
             <AppContent
                 id="main-content"
                 variant="sidebar"
-                className="overflow-x-hidden"
+                className="min-w-0"
                 tabIndex={-1}
             >
                 <SupportSessionBanner />

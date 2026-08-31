@@ -45,7 +45,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     ];
 
     return (
-        <div className="px-4 py-6">
+        <div className="mx-auto w-full max-w-5xl p-4 md:p-8">
             <Heading
                 level={1}
                 title={t('Settings')}

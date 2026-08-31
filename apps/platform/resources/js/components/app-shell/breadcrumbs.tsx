@@ -41,9 +41,22 @@ export function Breadcrumbs({
 
                             return (
                                 <Fragment key={`${item.title}-${href}`}>
-                                    <BreadcrumbItem>
+                                    {/* Below sm: only the current page shows.
+                                        Beside a 40px drawer trigger and three
+                                        header actions there is roughly 200px
+                                        left at 375px — not enough for a legible
+                                        trail, and the drawer already carries
+                                        navigation. The full trail returns at
+                                        sm:, truncating rather than wrapping. */}
+                                    <BreadcrumbItem
+                                        className={
+                                            isLast
+                                                ? 'min-w-0'
+                                                : 'hidden sm:inline-flex'
+                                        }
+                                    >
                                         {isLast ? (
-                                            <BreadcrumbPage>
+                                            <BreadcrumbPage className="truncate">
                                                 {item.title}
                                             </BreadcrumbPage>
                                         ) : (

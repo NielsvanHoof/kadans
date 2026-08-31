@@ -16,6 +16,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Integrations/Http/Connectors/** | .ai/rules/connectors.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
+| resources/js/components/data/** | .ai/rules/data.md |
 | docker/**, .dockerignore, vite.config.ts, vite.lint.ts | .ai/rules/docker.md |
 | app/{DocumentProcessing,AudioProcessing}/Actions/** | .ai/rules/document-processing-audio-processing-actions.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
@@ -38,6 +39,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/*/Jobs/** | .ai/rules/jobs.md |
 | resources/js/**/tests/** | .ai/rules/js-tests.md |
 | resources/js/**, resources/js/**/*.{tsx,ts} | .ai/rules/js.md |
+| resources/js/layouts/** | .ai/rules/layouts.md |
 | resources/js/lib/** | .ai/rules/lib.md |
 | app/*/Listeners/** | .ai/rules/listeners.md |
 | compose.yaml, package.json | .ai/rules/local-environment.md |

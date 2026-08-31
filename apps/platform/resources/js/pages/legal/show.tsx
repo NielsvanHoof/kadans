@@ -91,7 +91,12 @@ export default function LegalShow({
 
                     {/* HTML is produced by Str::markdown with html_input strip. */}
                     <article
-                        className="legal-prose text-foreground [&_a]:text-primary [&_h1]:font-display [&_td]:border-border [&_th]:border-border space-y-4 text-sm leading-relaxed [&_a]:underline [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_li]:ms-5 [&_li]:list-disc [&_p]:text-pretty [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:px-2 [&_td]:py-1.5 [&_th]:border [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left"
+                        // `[&_table]:block` + `overflow-x-auto` is what makes a
+                        // wide table in the markdown scroll inside the article
+                        // instead of pushing the whole page sideways — the one
+                        // confirmed viewport overflow in the app. The markup is
+                        // injected, so the scroll container has to be the table.
+                        className="legal-prose text-foreground [&_a]:text-primary [&_h1]:font-display [&_td]:border-border [&_th]:border-border space-y-4 text-sm leading-relaxed [&_a]:underline [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-tight md:[&_h1]:text-3xl [&_h2]:mt-8 [&_h2]:text-lg [&_h2]:font-semibold md:[&_h2]:text-xl [&_li]:ms-5 [&_li]:list-disc [&_p]:text-pretty [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:border-collapse [&_table]:overflow-x-auto [&_td]:border [&_td]:px-2 [&_td]:py-1.5 [&_th]:border [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised markdown from app resources
                         dangerouslySetInnerHTML={{ __html: html }}
                     />

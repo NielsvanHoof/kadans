@@ -92,10 +92,12 @@ export default function RoleManagementCard({
                         customRoles.map((role) => (
                             <div
                                 key={role.value}
-                                className="flex items-center justify-between rounded-md border px-3 py-2"
+                                className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2"
                             >
-                                <div>
-                                    <p className="font-medium">{role.label}</p>
+                                <div className="min-w-0">
+                                    <p className="truncate font-medium">
+                                        {role.label}
+                                    </p>
                                     <p className="text-muted-foreground text-xs">
                                         {role.member_count === 1
                                             ? t('1 member')
@@ -104,7 +106,7 @@ export default function RoleManagementCard({
                                               })}
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     <LinkButton
                                         variant="outline"
                                         size="sm"
