@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import ErrorState from '@/components/primitives/error-state';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarAttachPanel from '@/features/audio-recordings/calendar-attach-panel';
@@ -51,18 +52,23 @@ export default function RecordingShowPanels({
                 className="gap-0"
             >
                 <CardHeader className="bg-card sticky top-0 z-10 touch-manipulation border-b py-3 lg:static">
-                    <TabsList aria-label={t('Recording panels')}>
-                        <TabsTrigger
-                            id="transcript"
-                            className="gap-1.5 text-sm"
-                        >
-                            {t('Transcript')}
-                        </TabsTrigger>
-                        <TabsTrigger id="calendar" className="gap-1.5 text-sm">
-                            {t('Calendar')}
-                            <PanelCount value={attachedCount} />
-                        </TabsTrigger>
-                    </TabsList>
+                    <ScrollArea className="w-full">
+                        <TabsList aria-label={t('Recording panels')}>
+                            <TabsTrigger
+                                id="transcript"
+                                className="gap-1.5 text-sm"
+                            >
+                                {t('Transcript')}
+                            </TabsTrigger>
+                            <TabsTrigger
+                                id="calendar"
+                                className="gap-1.5 text-sm"
+                            >
+                                {t('Calendar')}
+                                <PanelCount value={attachedCount} />
+                            </TabsTrigger>
+                        </TabsList>
+                    </ScrollArea>
                 </CardHeader>
 
                 <CardContent className="py-5">

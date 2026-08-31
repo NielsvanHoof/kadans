@@ -1,8 +1,15 @@
+import { SlidersHorizontal } from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 import IndexQuerySelectFilter, {
     ALL_VALUE,
 } from '@/components/data/index-query/index-query-select-filter';
+import { Badge } from '@/components/ui/badge';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -13,6 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useIndexQuery } from '@/hooks/use-index-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useTranslation } from '@/hooks/use-translation';
 import type { IndexQueryConfig } from '@/types/pagination';
 
@@ -31,6 +39,7 @@ export default function IndexQueryToolbar({
     only?: string[];
 }) {
     const { t } = useTranslation();
+    const isMobile = useIsMobile();
     const { filters, sort, setFilters, setSort } = useIndexQuery({
         only,
     });
@@ -140,83 +149,144 @@ export default function IndexQueryToolbar({
 
     const activeSort = sort ?? config.defaults.sort;
 
-    return (
-        <div className="flex flex-wrap items-end gap-3">
-            {config.filters.map((filter) => {
-                if (filter.type === 'search') {
-                    return (
-                        <div
-                            key={filter.key}
-                            className="flex min-w-48 flex-1 flex-col gap-1.5"
-                        >
-                            <label
-                                htmlFor={`index-filter-${filter.key}`}
-                                className="text-muted-foreground text-xs font-medium"
-                            >
-                                {t(filter.label)}
-                            </label>
-                            <Input
-                                id={`index-filter-${filter.key}`}
-                                type="search"
-                                value={drafts[filter.key] ?? ''}
-                                placeholder={t(filter.label)}
-                                onFocus={handleSearchFocus}
-                                onBlur={handleSearchBlur}
-                                onChange={(event) =>
-                                    handleSearchChange(
-                                        filter.key,
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                    );
-                }
+    // The first search field is the one people reach for, so it stays visible
+    // on mobile; everything else goes behind the disclosure.
+    const primarySearch = config.filters.find(
+        (filter) => filter.type === 'search',
+    );
+    const collapsibleFilters = config.filters.filter(
+        (filter) => filter !== primarySearch,
+    );
+    const activeCollapsedCount =
+        collapsibleFilters.filter((filter) => Boolean(filters[filter.key]))
+            .length + (sort !== null && sort !== config.defaults.sort ? 1 : 0);
 
-                return (
-                    <IndexQuerySelectFilter
-                        key={filter.key}
-                        label={filter.label}
-                        selectedKey={filters[filter.key] ?? ALL_VALUE}
-                        options={filter.options ?? []}
-                        onSelectionChange={(value) =>
-                            handleSelectChange(filter.key, value)
+    function renderFilter(filter: IndexQueryConfig['filters'][number]) {
+        if (filter.type === 'search') {
+            return (
+                <div
+                    key={filter.key}
+                    className="flex min-w-48 flex-1 flex-col gap-1.5"
+                >
+                    <label
+                        htmlFor={`index-filter-${filter.key}`}
+                        className="text-muted-foreground text-xs font-medium"
+                    >
+                        {t(filter.label)}
+                    </label>
+                    <Input
+                        id={`index-filter-${filter.key}`}
+                        type="search"
+                        value={drafts[filter.key] ?? ''}
+                        placeholder={t(filter.label)}
+                        onFocus={handleSearchFocus}
+                        onBlur={handleSearchBlur}
+                        onChange={(event) =>
+                            handleSearchChange(filter.key, event.target.value)
                         }
                     />
-                );
-            })}
-
-            {config.sorts.length > 0 && (
-                <div className="flex min-w-44 flex-col gap-1.5">
-                    <span className="text-muted-foreground text-xs font-medium">
-                        {t('Sort')}
-                    </span>
-                    <Select
-                        selectedKey={activeSort}
-                        onSelectionChange={(value) =>
-                            setSort(value === null ? null : String(value))
-                        }
-                        placeholder={t('Sort')}
-                        aria-label={t('Sort')}
-                    >
-                        <SelectTrigger className="w-full min-w-44">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                {config.sorts.map((option) => (
-                                    <SelectItem
-                                        key={option.key}
-                                        id={option.key}
-                                    >
-                                        {t(option.label)}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
                 </div>
-            )}
+            );
+        }
+
+        return (
+            <IndexQuerySelectFilter
+                key={filter.key}
+                label={filter.label}
+                selectedKey={filters[filter.key] ?? ALL_VALUE}
+                options={filter.options ?? []}
+                onSelectionChange={(value) =>
+                    handleSelectChange(filter.key, value)
+                }
+            />
+        );
+    }
+
+    const sortControl =
+        config.sorts.length > 0 ? (
+            <div className="flex min-w-44 flex-col gap-1.5">
+                <span className="text-muted-foreground text-xs font-medium">
+                    {t('Sort')}
+                </span>
+                <Select
+                    selectedKey={activeSort}
+                    onSelectionChange={(value) =>
+                        setSort(value === null ? null : String(value))
+                    }
+                    placeholder={t('Sort')}
+                    aria-label={t('Sort')}
+                >
+                    <SelectTrigger className="w-full min-w-44">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            {config.sorts.map((option) => (
+                                <SelectItem key={option.key} id={option.key}>
+                                    {t(option.label)}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+            </div>
+        ) : null;
+
+    // Below md: the primary search stays out in the open and everything else
+    // folds away. Six controls stacked one per row measured 338px on a 375px
+    // screen and pushed the first result to y=689 of an 812px viewport — the
+    // filters were the page. Desktop keeps the flat wrapping row unchanged.
+    //
+    // This is a JS branch rather than CSS because React Aria's DisclosurePanel
+    // hides its content with the `hidden` attribute, which a breakpoint cannot
+    // undo — the desktop row has to be a genuinely different tree.
+    if (isMobile) {
+        return (
+            <div
+                data-slot="index-query-toolbar"
+                className="flex flex-col gap-3"
+            >
+                {primarySearch ? renderFilter(primarySearch) : null}
+
+                {collapsibleFilters.length > 0 || sortControl ? (
+                    <Collapsible>
+                        <CollapsibleTrigger
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-between"
+                        >
+                            <span className="inline-flex items-center gap-2">
+                                <SlidersHorizontal className="size-3.5" />
+                                {t('Filters')}
+                            </span>
+                            {/* The count is what makes collapsing safe: an
+                                active filter must never be invisible, or the
+                                list looks wrong for no discoverable reason. */}
+                            {activeCollapsedCount > 0 ? (
+                                <Badge variant="secondary">
+                                    {activeCollapsedCount}
+                                </Badge>
+                            ) : null}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div className="flex flex-col gap-3 pt-3">
+                                {collapsibleFilters.map(renderFilter)}
+                                {sortControl}
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+                ) : null}
+            </div>
+        );
+    }
+
+    return (
+        <div
+            data-slot="index-query-toolbar"
+            className="flex flex-wrap items-end gap-3"
+        >
+            {config.filters.map(renderFilter)}
+            {sortControl}
         </div>
     );
 }

@@ -35,8 +35,12 @@ function BreadcrumbList<T extends object>({
   return (
     <BreadcrumbsPrimitive
       data-slot="breadcrumb-list"
+      // Deliberately does not wrap. This list lives in a fixed h-16 header, so
+      // `flex-wrap` + `wrap-break-word` pushed a three-level trail onto three
+      // lines (measured 71px inside a 64px header) and spilled out of the band.
+      // Non-wrapping plus min-w-0 lets the items truncate on one line instead.
       className={cn(
-        "flex flex-wrap items-center gap-1.5 text-xs/relaxed wrap-break-word text-muted-foreground",
+        "flex min-w-0 flex-nowrap items-center gap-1.5 text-xs/relaxed text-muted-foreground",
         className
       )}
       {...props}

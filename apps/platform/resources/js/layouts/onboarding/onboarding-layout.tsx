@@ -43,7 +43,11 @@ export default function OnboardingLayout({
                 </div>
             </BrandHeroPanel>
 
-            <div className="w-full lg:p-8">
+            {/* The root drops its padding at sm: (`sm:px-0`) because the hero
+                panel is expected to take over — but the hero is `lg:flex`, so
+                between 640px and 1023px nothing supplies horizontal padding.
+                Carry it on the content column until lg: picks it up. */}
+            <div className="w-full px-6 sm:px-8 lg:p-8">
                 <div className="mx-auto flex w-full max-w-xl flex-col justify-center space-y-6">
                     <Link
                         href={dashboard()}

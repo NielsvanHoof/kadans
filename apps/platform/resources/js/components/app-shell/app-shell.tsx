@@ -16,7 +16,10 @@ export function AppShell({ children, variant = 'sidebar', className }: Props) {
 
     if (variant === 'header') {
         return (
-            <div className={cn('flex min-h-screen w-full flex-col', className)}>
+            // min-h-svh, matching the sidebar variant: on mobile browsers 100vh
+            // includes the collapsing toolbar, so min-h-screen leaves a gap
+            // once it retracts.
+            <div className={cn('flex min-h-svh w-full flex-col', className)}>
                 {children}
             </div>
         );

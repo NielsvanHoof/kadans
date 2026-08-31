@@ -71,6 +71,11 @@ describe('RequestsListCard', () => {
 
         expect(screen.getByRole('grid')).toBeTruthy();
         expect(screen.getByText('Sander')).toBeTruthy();
-        expect(screen.getByText('Data export')).toBeTruthy();
+
+        // Twice on purpose: the Request column is `hidden sm:table-cell`, so
+        // the same label is repeated inside the Client cell as an `sm:hidden`
+        // fallback. Hiding a column must never make its data unreachable, and
+        // both copies are in the DOM at every width — only CSS picks one.
+        expect(screen.getAllByText('Data export')).toHaveLength(2);
     });
 });

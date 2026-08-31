@@ -48,9 +48,13 @@ export default function RequestsListCard({
             <Table aria-label={t('Data-subject requests')}>
                 <TableHeader>
                     <TableHead isRowHeader>{t('Client')}</TableHead>
-                    <TableHead>{t('Request')}</TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                        {t('Request')}
+                    </TableHead>
                     <TableHead>{t('Status')}</TableHead>
-                    <TableHead>{t('Due')}</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                        {t('Due')}
+                    </TableHead>
                     <TableHead className="text-right">{t('Actions')}</TableHead>
                 </TableHeader>
                 <TableBody>
@@ -58,8 +62,18 @@ export default function RequestsListCard({
                         <TableRow key={request.id} id={String(request.id)}>
                             <TableCell className="font-medium">
                                 {request.client_name}
+                                {/* Request type and due date are hidden as
+                                    columns below sm:/md:, so surface them
+                                    inline here — hiding a column must never
+                                    make its data unreachable. */}
+                                <p className="text-muted-foreground text-xs font-normal sm:hidden">
+                                    {request.type_label}
+                                </p>
+                                <p className="text-muted-foreground text-xs font-normal md:hidden">
+                                    {formatDateTime(request.due_at)}
+                                </p>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden sm:table-cell">
                                 {request.type_label}
                                 {request.refusal_reason ? (
                                     <p className="text-muted-foreground mt-1 text-sm">
@@ -70,7 +84,7 @@ export default function RequestsListCard({
                             <TableCell>
                                 <RequestStatusBadge request={request} />
                             </TableCell>
-                            <TableCell className="whitespace-nowrap">
+                            <TableCell className="hidden whitespace-nowrap md:table-cell">
                                 {formatDateTime(request.due_at)}
                             </TableCell>
                             <TableCell>

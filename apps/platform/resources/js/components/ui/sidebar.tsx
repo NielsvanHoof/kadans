@@ -271,7 +271,11 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon-sm"
-      className={cn(className)}
+      // On a phone this is *the* navigation affordance — the desktop sidebar
+      // is not in the DOM below md:, so the drawer is the only way to move
+      // around. It gets a full 40px touch target there and collapses back to
+      // the 24px desktop rail trigger at md:.
+      className={cn("size-10 md:size-6", className)}
       onPress={(event) => {
         onPress?.(event)
         toggleSidebar()

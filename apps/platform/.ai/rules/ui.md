@@ -13,3 +13,16 @@ Most files here differ from the shadcn registry deliberately: i18n on the dialog
 Note the CLI's `-y` does NOT imply overwrite, but it also does not suppress the per-file overwrite prompt — use `yes n | npx shadcn@latest add <components>` to add new components while declining every existing-file overwrite.
 
 A ~2-line diff is usually just the `"use client"` directive the CLI strips (`rsc: false`) and is not local work.
+
+## Control density is desktop-first; mobile overrides are md:-gated
+This design system sits one step below the shadcn registry on purpose (h-7 controls, text-xs). That is a mouse-calibrated choice — keep it, but never let it reach a phone unmodified.
+
+Two hard rules:
+
+1. Text inputs must render at 16px below `md:`. Mobile Safari force-zooms the viewport whenever a focused field is under 16px, so `text-sm` (14px) makes every form on the app jolt on an iPhone. Write `text-base md:text-xs/relaxed`, never `text-sm md:text-xs`. Applies to input.tsx, textarea.tsx and select.tsx.
+
+2. Every density override is gated below `md:` and restores the desktop value at `md:` (`h-9 md:h-7`, `size-10 md:size-6`). That keeps the dense ledger look byte-for-byte identical on desktop — verified by measuring computed box/font at 1440x900 before and after.
+
+`size="xs"` / `icon-xs` are deliberately left small: they are inline affordances inside table rows and chips, which WCAG 2.5.8 exempts.
+
+When auditing touch targets, measure the *effective* hit area, not the element box. checkbox.tsx uses `after:absolute after:-inset-x-3 after:-inset-y-2` to turn a 16px box into a 40x32 target, and React Aria renders a visually-hidden native `<input>` that is never the real target — measuring raw `<input>` rects reports phantom 13x13 failures.

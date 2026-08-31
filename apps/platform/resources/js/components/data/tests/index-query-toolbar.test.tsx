@@ -11,6 +11,14 @@ vi.mock('@/hooks/use-translation', () => ({
     }),
 }));
 
+// The global matchMedia stub in test/setup.ts always reports `matches: false`,
+// so the toolbar would only ever render its desktop branch. Mock the hook
+// itself through vi.hoisted so a single test can flip to the mobile tree.
+const mobile = vi.hoisted(() => ({ value: false }));
+vi.mock('@/hooks/use-mobile', () => ({
+    useIsMobile: () => mobile.value,
+}));
+
 const setFilters = vi.fn();
 const setSort = vi.fn();
 
@@ -90,5 +98,45 @@ describe('IndexQueryToolbar', () => {
         await user.click(await screen.findByRole('option', { name: 'Newest' }));
 
         expect(setSort).toHaveBeenCalledWith('-created_at');
+    });
+
+    /*
+     * Six controls stacked one per row measured 338px on a 375px screen and
+     * pushed the first result to y=689 of an 812px viewport. Below md: only the
+     * primary search stays out; the rest fold behind a disclosure that carries
+     * a count, so an applied filter is never silently invisible.
+     */
+    describe('on mobile', () => {
+        it('keeps search visible, folds the rest away, and counts what is applied', async () => {
+            const user = userEvent.setup();
+            mobile.value = true;
+
+            try {
+                render(<IndexQueryToolbar config={config} />);
+
+                // Search is always reachable without a tap.
+                expect(screen.getByLabelText('Search')).toBeInTheDocument();
+
+                // `filters` is mocked as { status: 'open' }, so exactly one of
+                // the folded controls is active.
+                const trigger = screen.getByRole('button', {
+                    name: /Filters/,
+                });
+                expect(trigger).toHaveTextContent('1');
+
+                // The Status select is not reachable until the panel opens.
+                expect(
+                    screen.queryByRole('button', { name: /Status/ }),
+                ).not.toBeInTheDocument();
+
+                await user.click(trigger);
+
+                expect(
+                    await screen.findByRole('button', { name: /Status/ }),
+                ).toBeInTheDocument();
+            } finally {
+                mobile.value = false;
+            }
+        });
     });
 });
