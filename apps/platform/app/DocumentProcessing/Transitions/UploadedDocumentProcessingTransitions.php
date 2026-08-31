@@ -24,10 +24,7 @@ final class UploadedDocumentProcessingTransitions
     public function claim(UploadedDocument $document, string $expectedPath): ?UploadedDocument
     {
         return DB::transaction(function () use ($document, $expectedPath): ?UploadedDocument {
-            $query = UploadedDocument::query()->whereKey($document->getKey());
-            $query->getQuery()->lockForUpdate();
-
-            $locked = $query->firstOrFail();
+            $locked = $document->refreshForUpdate();
 
             // Stale job for a replaced upload revision — skip without failing the queue.
             if ($locked->path !== $expectedPath) {

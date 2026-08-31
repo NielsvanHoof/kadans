@@ -102,9 +102,11 @@ it('still closes the run when the subject has already been purged', function ():
 
 it('refuses to cancel a run that is already closed', function (PipelineStatus $status): void {
     $pipeline = cancellablePipeline(cancellableDocument());
-    $pipeline->forceFill(['status' => $status])->saveQuietly();
+    Pipeline::query()
+        ->whereKey($pipeline->getKey())
+        ->update(['status' => $status->value]);
 
-    expect(fn () => $this->cancel->handle($pipeline->fresh(), $this->owner))
+    expect(fn () => $this->cancel->handle($pipeline, $this->owner))
         ->toThrow(ValidationException::class, 'Only a pending or running pipeline can be cancelled.');
 })->with([
     'completed' => [PipelineStatus::Completed],

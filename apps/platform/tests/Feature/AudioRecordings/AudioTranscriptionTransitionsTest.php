@@ -67,7 +67,9 @@ describe('claim', function (): void {
         $recording = createRecordingForTranscriptionTransitions();
         $stalePath = $recording->path;
 
-        $recording->forceFill(['path' => 'audio/replacement.mp3'])->save();
+        AudioRecording::query()
+            ->whereKey($recording->getKey())
+            ->update(['path' => 'audio/replacement.mp3']);
 
         expect($this->transitions->claim($recording, $stalePath))->toBeNull()
             ->and($recording->fresh()->transcription_status)->toBe(TranscriptionStatus::Pending);

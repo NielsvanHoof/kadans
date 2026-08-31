@@ -19,9 +19,7 @@ final readonly class RevokeClientPortalAccessAction
     public function handle(ClientAccessGrant $grant, User $revokedBy): ClientAccessGrant
     {
         return DB::transaction(function () use ($grant, $revokedBy): ClientAccessGrant {
-            $grantQuery = ClientAccessGrant::query()->whereKey($grant->getKey());
-            $grantQuery->getQuery()->lockForUpdate();
-            $lockedGrant = $grantQuery->firstOrFail();
+            $lockedGrant = $grant->refreshForUpdate();
 
             if ($lockedGrant->revoked_at !== null) {
                 return $lockedGrant;

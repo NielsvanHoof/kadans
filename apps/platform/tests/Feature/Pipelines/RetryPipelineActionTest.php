@@ -250,7 +250,10 @@ describe('bookkeeping', function (): void {
 describe('guards', function (): void {
     it('refuses a run that is not failed, stuck, or cancelled and queues nothing', function (PipelineStatus $status): void {
         Queue::fake();
-        $pipeline = failedPipelineFor(retryOcrDocument($this->tenant), PipelineType::OcrDocument, $status);
+        $pipeline = failedPipelineFor(retryOcrDocument($this->tenant), PipelineType::OcrDocument);
+        Pipeline::query()
+            ->whereKey($pipeline->getKey())
+            ->update(['status' => $status->value]);
 
         expect(fn () => $this->retry->handle($pipeline, $this->owner))
             ->toThrow(ValidationException::class);

@@ -23,10 +23,7 @@ final class AudioTranscriptionTransitions
     public function claim(AudioRecording $recording, string $expectedPath): ?AudioRecording
     {
         return DB::transaction(function () use ($recording, $expectedPath): ?AudioRecording {
-            $query = AudioRecording::query()->whereKey($recording->getKey());
-            $query->getQuery()->lockForUpdate();
-
-            $locked = $query->firstOrFail();
+            $locked = $recording->refreshForUpdate();
 
             // Stale job for a replaced upload revision — skip without failing the queue.
             if ($locked->path !== $expectedPath) {
