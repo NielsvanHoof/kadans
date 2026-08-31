@@ -1,7 +1,7 @@
 import { User } from '@react-aria/test-utils';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { WorkspaceNotificationsSummary } from '@/features/notifications/types';
 import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
 

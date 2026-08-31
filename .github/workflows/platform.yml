@@ -45,18 +45,17 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1.18.0
         with:
+          working-directory: apps/platform
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: apps/platform/package-lock.json
+          cache: true
+          run-install: |
+            - args: ['--frozen-lockfile']
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: Install frontend dependencies
-        run: npm ci
 
       - name: Prepare the application
         run: |
@@ -151,18 +150,17 @@ jobs:
           coverage: pcov
           tools: composer:v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1.18.0
         with:
+          working-directory: apps/platform
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: apps/platform/package-lock.json
+          cache: true
+          run-install: |
+            - args: ['--frozen-lockfile']
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: Install frontend dependencies
-        run: npm ci
 
       - name: Prepare the application
         run: |
@@ -178,7 +176,7 @@ jobs:
       - name: Enforce the PHP coverage threshold
         run: composer test:coverage:ci
 
-      # Line floor lives in vitest.config.ts (excludes generated + shadcn ui).
+      # Line floor lives in vite.config.ts test.coverage (excludes generated + shadcn ui).
       - name: Enforce the frontend coverage threshold
         run: npm run test:coverage
 

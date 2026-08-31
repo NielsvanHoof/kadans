@@ -64,7 +64,7 @@ export default function EmptyState({
             >
                 <EmptyMedia variant="icon" className="mb-0 size-14 rounded-2xl">
                     <Icon
-                        className="size-7 text-muted-foreground"
+                        className="text-muted-foreground size-7"
                         aria-hidden
                     />
                 </EmptyMedia>
@@ -88,7 +88,7 @@ export default function EmptyState({
             )}
         >
             <EmptyHeader className="max-w-none items-start gap-1 text-left">
-                <EmptyTitle className="text-sm font-normal text-muted-foreground">
+                <EmptyTitle className="text-muted-foreground text-sm font-normal">
                     {title}
                 </EmptyTitle>
                 {description && (

@@ -70,7 +70,7 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
 
     if (!isSupported) {
         return (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
                 {t('Passkeys are not supported in this browser.')}
             </div>
         );
@@ -87,7 +87,7 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
     return (
         <form
             onSubmit={handleSubmit}
-            className="rounded-lg border border-border bg-muted/50 p-4"
+            className="border-border bg-muted/50 rounded-lg border p-4"
         >
             <FieldGroup className="gap-4">
                 <Field data-invalid={Boolean(error)}>

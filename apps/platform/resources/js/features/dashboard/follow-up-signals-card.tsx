@@ -109,7 +109,7 @@ export default function FollowUpSignalsCard({
                 ) : (
                     activeGroups.map((group) => (
                         <div key={group.key} className="space-y-1.5">
-                            <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                            <p className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
                                 <span
                                     className={cn(
                                         'flex size-6 shrink-0 items-center justify-center rounded-md',
@@ -132,17 +132,17 @@ export default function FollowUpSignalsCard({
                                                 tenant: currentWorkspace,
                                                 dossier: item.id,
                                             })}
-                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                            className="hover:bg-muted/50 focus-visible:ring-ring flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                         >
                                             <span className="min-w-0">
                                                 <span className="block truncate text-sm font-medium">
                                                     {item.title}
                                                 </span>
-                                                <span className="block truncate text-xs text-muted-foreground">
+                                                <span className="text-muted-foreground block truncate text-xs">
                                                     {item.client_name}
                                                 </span>
                                             </span>
-                                            <span className="font-data text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+                                            <span className="font-data text-muted-foreground text-xs whitespace-nowrap tabular-nums">
                                                 {group.caption(item.days)}
                                             </span>
                                         </Link>

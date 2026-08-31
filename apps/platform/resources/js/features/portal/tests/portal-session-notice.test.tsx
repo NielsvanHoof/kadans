@@ -1,14 +1,17 @@
 import { render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vite-plus/test';
 import { mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 vi.mock('@inertiajs/react', () => ({
-    Form: ({
-        children,
-    }: {
-        children?: ((props: Record<string, unknown>) => unknown) | unknown;
-    }) =>
+    Form: ({ children }: { children?: unknown }) =>
         typeof children === 'function'
             ? children({ errors: {}, processing: false, submit: () => {} })
             : children,

@@ -28,10 +28,10 @@ export default function ArchivedClientsCard({
             cell: (client) => (
                 <div className="min-w-0">
                     <p className="font-medium">{client.name}</p>
-                    <p className="truncate text-sm text-muted-foreground">
+                    <p className="text-muted-foreground truncate text-sm">
                         {client.email}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-xs">
                         {t('Archived :datetime', {
                             datetime: formatDateTime(client.archived_at),
                         })}

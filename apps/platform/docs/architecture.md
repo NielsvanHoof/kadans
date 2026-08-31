@@ -233,7 +233,7 @@ Rough backend → frontend map:
 | AudioProcessing | audio recordings, transcript UI |
 | Accounts | settings, auth, security |
 
-Import boundaries and nesting rules are enforced by Biome — see [`biome.json`](../biome.json) and [Frontend](frontend.md).
+Import boundaries and nesting rules are enforced by Oxlint — see [`vite.lint.ts`](../vite.lint.ts) and [Frontend](frontend.md).
 
 Questionnaire item types are defined once in PHP (`QuestionnaireItemType`), codegen'd to `features/document-requests/item-types/generated.ts`, and wired in staff (`questionnaire-item-type-registry.tsx`) and portal (`item-types/portal-registry.ts`) registries.
 

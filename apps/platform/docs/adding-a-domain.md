@@ -53,7 +53,7 @@ Copy this and tick as you go.
 - [ ] Feature UI + `types.ts`: `resources/js/features/{slug}/`
 - [ ] Do not put domain types in `@/types`
 - [ ] Shared `components/` must not import from `features/`
-- [ ] Follow [Frontend](frontend.md) and import rules in [`biome.json`](../biome.json)
+- [ ] Follow [Frontend](frontend.md) and import rules in [`vite.lint.ts`](../vite.lint.ts)
 
 ### Tests
 

@@ -63,7 +63,7 @@ export default function DossierWorkflowCard({
                 </div>
 
                 {dossier.status === 'completed' ? (
-                    <div className="flex items-center gap-2 rounded-md border border-success-border bg-success-muted px-3 py-2 text-sm font-medium text-success-foreground">
+                    <div className="border-success-border bg-success-muted text-success-foreground flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium">
                         <CheckCircle2 className="size-4" aria-hidden="true" />
                         {t('Dossier completed')}
                     </div>
@@ -74,13 +74,13 @@ export default function DossierWorkflowCard({
                             ready={dossier.ready_to_complete}
                         />
                         {!dossier.ready_to_complete && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                                 {t('Every item must be approved first.')}
                             </p>
                         )}
                     </div>
                 ) : (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                         {t(
                             'A reviewer will complete the dossier after all items have been approved.',
                         )}
@@ -156,7 +156,7 @@ function ReviewCount({ label, value }: { label: string; value: number }) {
     return (
         <div className="rounded-md border px-3 py-2">
             <p className="text-xl font-semibold tabular-nums">{value}</p>
-            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-muted-foreground text-xs">{label}</p>
         </div>
     );
 }

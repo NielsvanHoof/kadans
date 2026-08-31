@@ -70,7 +70,7 @@ export default function PipelineShowDiagnostics({
                         <CardTitle>{t('Metadata')}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+                        <pre className="bg-muted overflow-x-auto rounded-md p-3 font-mono text-xs leading-relaxed">
                             {JSON.stringify(pipeline.metadata, null, 2)}
                         </pre>
                     </CardContent>

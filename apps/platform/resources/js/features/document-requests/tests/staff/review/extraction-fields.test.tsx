@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import type { DocumentExtractionField } from '@/features/document-requests/types';
 import { mockUseTranslation } from '@/test/mocks';
 

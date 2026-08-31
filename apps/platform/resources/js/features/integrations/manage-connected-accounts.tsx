@@ -43,21 +43,21 @@ export default function ManageConnectedAccounts({
     };
 
     return (
-        <div className="overflow-hidden rounded-lg border border-border">
+        <div className="border-border overflow-hidden rounded-lg border">
             {oauthProviders.map((provider) => {
                 const connection = connectionByProvider[provider];
 
                 return (
                     <div
                         key={provider}
-                        className="flex flex-col gap-3 border-b border-border px-4 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
+                        className="border-border flex flex-col gap-3 border-b px-4 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <div className="space-y-1">
                             <p className="font-medium">
                                 {providerLabel(provider)}
                             </p>
                             {connection ? (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     {connection.email ?? t('Connected')}
                                     {provider === 'google' &&
                                     connection.has_workspace_scopes === false
@@ -65,7 +65,7 @@ export default function ManageConnectedAccounts({
                                         : null}
                                 </p>
                             ) : (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     {t('Not connected')}
                                 </p>
                             )}

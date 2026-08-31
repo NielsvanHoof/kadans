@@ -32,8 +32,8 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
     return (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4 last:border-b-0">
             <div className="flex min-w-0 flex-1 items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
-                    <KeyRound className="h-5 w-5 text-muted-foreground" />
+                <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                    <KeyRound className="text-muted-foreground h-5 w-5" />
                 </div>
                 <div className="min-w-0 space-y-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-2.5">
@@ -43,19 +43,19 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                         {passkey.authenticator && (
                             <Badge
                                 variant="secondary"
-                                className="tracking-wide text-muted-foreground uppercase"
+                                className="text-muted-foreground tracking-wide uppercase"
                             >
                                 {passkey.authenticator}
                             </Badge>
                         )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         {t('Added :when', {
                             when: passkey.created_at_diff,
                         })}
                         {passkey.last_used_at_diff && (
                             <>
-                                <span className="mx-1 text-muted-foreground/50">
+                                <span className="text-muted-foreground/50 mx-1">
                                     /
                                 </span>
                                 {t('Last used :when', {

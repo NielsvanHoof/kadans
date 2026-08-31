@@ -103,7 +103,7 @@ export default function MembersListCard({
                                                 ? ` (${t('you')})`
                                                 : ''}
                                         </p>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-muted-foreground text-sm">
                                             {member.email}
                                             {member.status === 'suspended'
                                                 ? ` · ${t('Suspended')}`

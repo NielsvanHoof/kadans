@@ -59,9 +59,9 @@ export default function QuestionnaireBuilderItem({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'rounded-xl border bg-card shadow-sm transition-[box-shadow,border-color] duration-150 motion-reduce:transition-none',
+                'bg-card rounded-xl border shadow-sm transition-[box-shadow,border-color] duration-150 motion-reduce:transition-none',
                 selected
-                    ? 'border-primary ring-2 ring-primary/20'
+                    ? 'border-primary ring-primary/20 ring-2'
                     : 'border-border/80',
                 isDragging && 'opacity-40',
             )}
@@ -70,7 +70,7 @@ export default function QuestionnaireBuilderItem({
                 {canEdit ? (
                     <button
                         type="button"
-                        className="inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-muted active:cursor-grabbing"
+                        className="text-muted-foreground hover:bg-muted inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-md active:cursor-grabbing"
                         aria-label={t('Drag to reorder')}
                         {...attributes}
                         {...listeners}
@@ -83,12 +83,12 @@ export default function QuestionnaireBuilderItem({
 
                 <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                    className="focus-visible:ring-ring/50 flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:outline-none"
                     aria-pressed={selected}
                     aria-label={documentRequest.title}
                     onClick={() => onSelect(documentRequest.id)}
                 >
-                    <span className="w-5 shrink-0 font-data text-xs text-muted-foreground tabular-nums">
+                    <span className="font-data text-muted-foreground w-5 shrink-0 text-xs tabular-nums">
                         {index + 1}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">
@@ -128,7 +128,7 @@ export default function QuestionnaireBuilderItem({
             </div>
 
             {selected ? (
-                <div className="border-t border-border/60 px-3 py-3">
+                <div className="border-border/60 border-t px-3 py-3">
                     <BuilderPreview
                         title={documentRequest.title}
                         instructions={documentRequest.instructions}

@@ -43,7 +43,7 @@ export default function SegmentedControl({
             }}
             aria-label={ariaLabel}
             className={cn(
-                'inline-flex gap-1 rounded-lg bg-muted p-1',
+                'bg-muted inline-flex gap-1 rounded-lg p-1',
                 className,
             )}
         >

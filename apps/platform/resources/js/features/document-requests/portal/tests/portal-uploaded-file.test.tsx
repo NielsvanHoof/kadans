@@ -1,16 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 vi.mock('@/hooks/use-formatters', () => mockUseFormatters());
 vi.mock('@inertiajs/react', () => ({
-    Form: ({
-        children,
-    }: {
-        children?: ((props: Record<string, unknown>) => unknown) | unknown;
-    }) =>
+    Form: ({ children }: { children?: unknown }) =>
         typeof children === 'function'
             ? children({ errors: {}, processing: false, submit: () => {} })
             : children,

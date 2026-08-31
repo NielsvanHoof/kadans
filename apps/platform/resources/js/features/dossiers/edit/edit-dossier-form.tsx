@@ -37,7 +37,7 @@ export default function EditDossierForm({
                     <Alert>
                         <AlertTitle>{t('Client')}</AlertTitle>
                         <AlertDescription>
-                            <p className="font-medium text-foreground">
+                            <p className="text-foreground font-medium">
                                 {dossier.client.name}
                             </p>
                             <p>{dossier.client.email}</p>

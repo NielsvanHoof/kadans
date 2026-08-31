@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
-import * as pulumi from "@pulumi/pulumi";
-import { PlatformConfig } from "../config.js";
-import { DocumentInfrastructure } from "./documents.js";
+import type * as pulumi from "@pulumi/pulumi";
+import type { PlatformConfig } from "../config.js";
+import type { DocumentInfrastructure } from "./documents.js";
 
 /**
  * Everything the Qompose application needs from AWS at runtime.

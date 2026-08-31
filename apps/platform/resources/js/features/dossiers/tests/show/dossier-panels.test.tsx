@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import type { DossierPanel } from '@/features/dossiers/show/dossier-panel';
 import type { Dossier } from '@/features/dossiers/types';

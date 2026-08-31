@@ -44,7 +44,7 @@ export default function QuestionnaireBuilderTemplates({
     );
 
     return (
-        <Collapsible className="border-t border-border/60 pt-3">
+        <Collapsible className="border-border/60 border-t pt-3">
             <CollapsibleTrigger
                 type="button"
                 variant="ghost"
@@ -56,7 +56,7 @@ export default function QuestionnaireBuilderTemplates({
                     <span className="block text-sm font-semibold">
                         {t('Templates')}
                     </span>
-                    <span className="block text-xs font-normal text-pretty text-muted-foreground">
+                    <span className="text-muted-foreground block text-xs font-normal text-pretty">
                         {t(
                             'Append a reusable pack. Existing items are kept. Save to persist.',
                         )}
@@ -91,7 +91,7 @@ export default function QuestionnaireBuilderTemplates({
                                     {selectedTemplate?.name}
                                 </SelectValue>
                             </SelectTrigger>
-                            <SelectContent className="max-w-(--anchor-width) bg-background">
+                            <SelectContent className="bg-background max-w-(--anchor-width)">
                                 <SelectGroup>
                                     {templates.map((template) => (
                                         <SelectItem
@@ -104,7 +104,7 @@ export default function QuestionnaireBuilderTemplates({
                                                 <span className="truncate font-medium">
                                                     {template.name}
                                                 </span>
-                                                <span className="truncate text-xs text-muted-foreground">
+                                                <span className="text-muted-foreground truncate text-xs">
                                                     {template.category_label} (
                                                     {template.items_count})
                                                     {template.is_system

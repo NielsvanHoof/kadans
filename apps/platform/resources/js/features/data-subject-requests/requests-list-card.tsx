@@ -62,7 +62,7 @@ export default function RequestsListCard({
                             <TableCell>
                                 {request.type_label}
                                 {request.refusal_reason ? (
-                                    <p className="mt-1 text-sm text-muted-foreground">
+                                    <p className="text-muted-foreground mt-1 text-sm">
                                         {request.refusal_reason}
                                     </p>
                                 ) : null}

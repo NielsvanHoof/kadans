@@ -32,7 +32,7 @@ export default function DashboardLane({
                         {title}
                     </h2>
                     {description && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                             {description}
                         </p>
                     )}

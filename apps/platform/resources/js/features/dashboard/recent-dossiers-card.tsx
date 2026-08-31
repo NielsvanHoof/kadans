@@ -74,20 +74,20 @@ export default function RecentDossiersCard({
                                     tenant: currentWorkspace,
                                     dossier: dossier.id,
                                 })}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+                                className="hover:bg-muted/50 flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors"
                             >
                                 <div>
                                     <p className="font-medium">
                                         {dossier.title}
                                     </p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-muted-foreground text-sm">
                                         {dossier.client_name}
                                         {dossier.reference &&
                                             ` · ${dossier.reference}`}
                                     </p>
                                     {(dossier.due_date ||
                                         dossier.responsible_name) && (
-                                        <p className="mt-1 text-xs text-muted-foreground">
+                                        <p className="text-muted-foreground mt-1 text-xs">
                                             {dossier.due_date
                                                 ? t('Due :date', {
                                                       date: formatDate(

@@ -110,9 +110,8 @@
         "ci:quality": [
             "Composer\\Config::disableProcessTimeout",
             "@security:check",
-            "npm run lint:check",
-            "npm run format:check",
             "npm run types:check",
+            "npm run check",
             "npm run build",
             "npm run test:coverage",
             "@rector:check",

@@ -108,7 +108,7 @@ export default function PlatformSupport({
 
                 <ul className="divide-y rounded-lg border">
                     {tenants.length === 0 ? (
-                        <li className="px-4 py-6 text-sm text-muted-foreground">
+                        <li className="text-muted-foreground px-4 py-6 text-sm">
                             {t('No firms found.')}
                         </li>
                     ) : (
@@ -119,7 +119,7 @@ export default function PlatformSupport({
                             >
                                 <div>
                                     <p className="font-medium">{tenant.name}</p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-muted-foreground text-sm">
                                         {tenant.slug}
                                     </p>
                                 </div>

@@ -238,7 +238,7 @@ function SortableRow({
             ref={setNodeRef}
             style={style}
             className={cn(
-                isDragging && 'relative z-10 bg-background shadow-md',
+                isDragging && 'bg-background relative z-10 shadow-md',
             )}
         >
             {children(DragHandle)}

@@ -74,7 +74,7 @@ export default function MediaDocumentsCard({
                                     <div className="flex min-w-0 flex-1 items-start gap-3">
                                         {FileIcon ? (
                                             <FileIcon
-                                                className="mt-0.5 size-5 shrink-0 text-muted-foreground"
+                                                className="text-muted-foreground mt-0.5 size-5 shrink-0"
                                                 aria-hidden
                                             />
                                         ) : null}
@@ -82,7 +82,7 @@ export default function MediaDocumentsCard({
                                             <p className="font-medium">
                                                 {document.title}
                                             </p>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="text-muted-foreground text-sm">
                                                 {document.client_name}
                                                 {' · '}
                                                 {document.dossier.title}
@@ -90,7 +90,7 @@ export default function MediaDocumentsCard({
                                                     ` · ${document.dossier.reference}`}
                                             </p>
                                             {firstUpload ? (
-                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                <p className="text-muted-foreground mt-1 text-sm">
                                                     {
                                                         firstUpload.original_filename
                                                     }
@@ -106,7 +106,7 @@ export default function MediaDocumentsCard({
                                                         ` · ${t('+:count more', { count: extraUploadCount })}`}
                                                 </p>
                                             ) : (
-                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                <p className="text-muted-foreground mt-1 text-sm">
                                                     {t('No file uploaded yet')}
                                                 </p>
                                             )}

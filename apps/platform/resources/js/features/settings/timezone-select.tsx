@@ -60,7 +60,7 @@ export default function TimezoneSelect() {
                 <SelectTrigger id="timezone" className="w-full sm:w-80">
                     <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="space-y-1 bg-background p-1">
+                <SelectContent className="bg-background space-y-1 p-1">
                     <SelectGroup>
                         {available_timezones.map((option) => (
                             <SelectItem

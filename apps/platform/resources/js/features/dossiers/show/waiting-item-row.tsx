@@ -39,7 +39,7 @@ export default function WaitingItemRow({
             role="listitem"
             variant="default"
             size="sm"
-            className="rounded-none border-0 even:bg-ledger-stripe"
+            className="even:bg-ledger-stripe rounded-none border-0"
         >
             <ItemMedia>
                 <AuditMark variant={isRejected ? 'queried' : 'open'} />
@@ -48,7 +48,7 @@ export default function WaitingItemRow({
             <ItemContent className="min-w-0">
                 <ItemTitle className="min-w-0 text-sm">
                     <Icon
-                        className="size-3.5 shrink-0 text-muted-foreground"
+                        className="text-muted-foreground size-3.5 shrink-0"
                         aria-hidden
                     />
                     <span className="min-w-0 truncate">{request.title}</span>
@@ -85,14 +85,14 @@ export default function WaitingItemRow({
                 {isRejected && !notApplicable && request.rejection_reason ? (
                     <div
                         className={cn(
-                            'mt-1.5 border-l-2 border-brand-border pl-3',
+                            'border-brand-border mt-1.5 border-l-2 pl-3',
                         )}
                     >
                         <p className="text-xs text-pretty">
                             {request.rejection_reason}
                         </p>
                         {request.reviewed_at ? (
-                            <p className="mt-1 font-data text-[0.6875rem] text-muted-foreground">
+                            <p className="font-data text-muted-foreground mt-1 text-[0.6875rem]">
                                 {request.reviewed_by_name
                                     ? t('Returned by :name on :date', {
                                           name: request.reviewed_by_name,

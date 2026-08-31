@@ -20,7 +20,7 @@ export function BuilderFilePreview({
     return (
         <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
-            <div className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-4 text-center text-sm text-muted-foreground">
+            <div className="border-border bg-muted/40 text-muted-foreground rounded-md border border-dashed px-3 py-4 text-center text-sm">
                 {t('Client uploads a file here')}
             </div>
             <Input
@@ -142,10 +142,10 @@ export function BuilderBooleanPreview({
         <Field data-disabled>
             <FieldChrome title={title} instructions={instructions} />
             <div className="flex gap-2" aria-hidden="true">
-                <span className="rounded-md border border-input bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground">
+                <span className="border-input bg-muted/40 text-muted-foreground rounded-md border px-3 py-1.5 text-sm">
                     {t('Yes')}
                 </span>
-                <span className="rounded-md border border-input bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground">
+                <span className="border-input bg-muted/40 text-muted-foreground rounded-md border px-3 py-1.5 text-sm">
                     {t('No')}
                 </span>
             </div>
@@ -174,8 +174,8 @@ export function BuilderChoicePreview({
             <div className="space-y-2" aria-hidden="true">
                 {options.map((option) => (
                     <div key={option.id} className="flex items-center gap-2">
-                        <span className="size-4 rounded-full border border-input bg-muted/40" />
-                        <span className="text-sm text-muted-foreground">
+                        <span className="border-input bg-muted/40 size-4 rounded-full border" />
+                        <span className="text-muted-foreground text-sm">
                             {option.label}
                         </span>
                     </div>
@@ -206,8 +206,8 @@ export function BuilderMultiSelectPreview({
             <div className="space-y-2" aria-hidden="true">
                 {options.map((option) => (
                     <div key={option.id} className="flex items-center gap-2">
-                        <span className="size-4 rounded-[4px] border border-input bg-muted/40" />
-                        <span className="text-sm text-muted-foreground">
+                        <span className="border-input bg-muted/40 size-4 rounded-[4px] border" />
+                        <span className="text-muted-foreground text-sm">
                             {option.label}
                         </span>
                     </div>

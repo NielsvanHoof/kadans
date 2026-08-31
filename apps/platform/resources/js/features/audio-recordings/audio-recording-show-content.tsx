@@ -136,7 +136,7 @@ export default function AudioRecordingShowContent({
                 </div>
             </div>
 
-            <p className="font-data text-sm text-muted-foreground">
+            <p className="font-data text-muted-foreground text-sm">
                 {formatBytes(audioRecording.size_bytes)} · {t('uploaded')}{' '}
                 {formatDateTime(audioRecording.uploaded_at)}
             </p>
@@ -144,7 +144,7 @@ export default function AudioRecordingShowContent({
             {downloadUrl && (
                 <div className="flex flex-col gap-2">
                     {isAudioLoading && (
-                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
                             <Spinner className="size-4 shrink-0" />
                             {t('Loading audio stream...')}
                         </p>

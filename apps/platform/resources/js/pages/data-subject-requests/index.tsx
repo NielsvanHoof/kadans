@@ -74,7 +74,7 @@ export default function DataSubjectRequestIndex({
                     <IndexPagination paginator={requests} />
                 </IndexQueryResults>
 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                     {t(
                         'Erasure removes the client’s name, email, portal access and activity trail. Dossiers, documents and transcripts are kept, because the firm is legally required to retain them — so those records may still identify the person. Say so when you answer the client.',
                     )}

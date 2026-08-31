@@ -46,7 +46,8 @@ type ConfirmDestroyCallbackProps = ConfirmDestroyDialogBase & {
 };
 
 type ConfirmDestroyDialogProps =
-    ConfirmDestroyFormProps | ConfirmDestroyCallbackProps;
+    | ConfirmDestroyFormProps
+    | ConfirmDestroyCallbackProps;
 
 /**
  * Shared confirmation alert for destructive actions.

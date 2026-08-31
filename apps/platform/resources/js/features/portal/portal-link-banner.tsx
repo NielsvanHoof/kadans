@@ -62,7 +62,7 @@ export default function PortalLinkBanner({
                         'Copy this link now. The plain token is shown once and cannot be retrieved again.',
                     )}
                 </p>
-                <code className="block max-w-full overflow-x-auto rounded-md border border-brand-border/60 bg-card px-3 py-2 font-data text-xs break-all">
+                <code className="border-brand-border/60 bg-card font-data block max-w-full overflow-x-auto rounded-md border px-3 py-2 text-xs break-all">
                     {portalUrl}
                 </code>
                 <div className="flex flex-wrap items-center gap-3">
@@ -76,7 +76,7 @@ export default function PortalLinkBanner({
                         {justCopied ? t('Copied') : t('Copy portal link')}
                     </Button>
                     {token && (
-                        <span className="font-data text-xs text-muted-foreground">
+                        <span className="font-data text-muted-foreground text-xs">
                             {t('Token: :token…', { token: token.slice(0, 8) })}
                         </span>
                     )}

@@ -58,7 +58,7 @@ export default function WorkspaceDashboard({
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
-                        <p className="text-sm font-medium text-muted-foreground">
+                        <p className="text-muted-foreground text-sm font-medium">
                             {currentWorkspace.name}
                         </p>
                         <Heading

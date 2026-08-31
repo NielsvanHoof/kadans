@@ -10,7 +10,10 @@ import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 export type CalendarConnectionStatus =
-    'ready' | 'missing' | 'needs_reconsent' | 'unconfigured';
+    | 'ready'
+    | 'missing'
+    | 'needs_reconsent'
+    | 'unconfigured';
 
 export type CalendarEventSuggestion = {
     id: string;
@@ -218,7 +221,7 @@ export default function CalendarAttachPanel({
                 connectionStatus === 'needs_reconsent') &&
             reconnectUrl ? (
                 <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         {connectionStatus === 'needs_reconsent'
                             ? t(
                                   'Reconnect Google to allow calendar and Drive access.',
@@ -240,7 +243,7 @@ export default function CalendarAttachPanel({
             ) : null}
 
             {connectionStatus === 'unconfigured' ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                     {t(
                         'Google Calendar is not configured on this environment.',
                     )}
@@ -250,18 +253,18 @@ export default function CalendarAttachPanel({
             {canSuggest ? (
                 <div className="space-y-3">
                     {loading ? (
-                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
                             <Spinner className="size-4 shrink-0" />
                             {t('Loading meetings...')}
                         </p>
                     ) : null}
 
                     {error ? (
-                        <p className="text-sm text-destructive">{error}</p>
+                        <p className="text-destructive text-sm">{error}</p>
                     ) : null}
 
                     {!loading && !error && events.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                             {t(
                                 'No meetings found in the week around this recording.',
                             )}
@@ -277,19 +280,19 @@ export default function CalendarAttachPanel({
                         return (
                             <div
                                 key={event.id}
-                                className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
+                                className="border-border flex flex-col gap-2 border-b py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
                             >
                                 <div className="space-y-1">
                                     <p className="font-medium">
                                         {event.summary}
                                         {event.matches_client_email ? (
-                                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                            <span className="text-muted-foreground ml-2 text-xs font-normal">
                                                 {t('Matches client email')}
                                             </span>
                                         ) : null}
                                     </p>
                                     {event.starts_at ? (
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-muted-foreground text-sm">
                                             {event.starts_at}
                                         </p>
                                     ) : null}
@@ -303,7 +306,7 @@ export default function CalendarAttachPanel({
                                             workspace={currentWorkspace}
                                         />
                                     ) : (
-                                        <span className="text-sm text-muted-foreground">
+                                        <span className="text-muted-foreground text-sm">
                                             {t('Already linked')}
                                         </span>
                                     )

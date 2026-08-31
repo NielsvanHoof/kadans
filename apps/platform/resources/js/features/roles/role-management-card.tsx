@@ -85,7 +85,7 @@ export default function RoleManagementCard({
                     </div>
 
                     {customRoles.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                             {t('No custom roles yet.')}
                         </p>
                     ) : (
@@ -96,7 +96,7 @@ export default function RoleManagementCard({
                             >
                                 <div>
                                     <p className="font-medium">{role.label}</p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-muted-foreground text-xs">
                                         {role.member_count === 1
                                             ? t('1 member')
                                             : t(':count members', {

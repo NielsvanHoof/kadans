@@ -33,7 +33,10 @@ export type AudioRecordingShowProps = {
     calendar: {
         provider: string;
         connection_status:
-            'ready' | 'missing' | 'needs_reconsent' | 'unconfigured';
+            | 'ready'
+            | 'missing'
+            | 'needs_reconsent'
+            | 'unconfigured';
         reconnect_url: string | null;
     };
 };

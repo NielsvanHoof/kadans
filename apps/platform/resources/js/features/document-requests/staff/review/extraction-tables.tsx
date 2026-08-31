@@ -64,7 +64,7 @@ export default function ExtractionTables({
                                           number: index + 1,
                                       })}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                                 {t(':columns columns · :rows rows', {
                                     columns: columnCount,
                                     rows: table.rows.length,
@@ -96,10 +96,10 @@ function ExtractionTable({
             <table className="w-full min-w-md caption-bottom text-left text-xs">
                 {headers.length > 0 && (
                     <thead className="[&_tr]:border-b">
-                        <tr className="border-b bg-muted/40">
+                        <tr className="bg-muted/40 border-b">
                             {headers.map(({ value: header, key }) => (
                                 <th
-                                    className="sticky top-0 bg-muted/40 p-2 text-left align-middle font-medium"
+                                    className="bg-muted/40 sticky top-0 p-2 text-left align-middle font-medium"
                                     key={`${tableId}|h|${key}`}
                                 >
                                     {header}
@@ -115,7 +115,7 @@ function ExtractionTable({
 
                         return (
                             <tr
-                                className="border-b transition-colors hover:bg-muted/50"
+                                className="hover:bg-muted/50 border-b transition-colors"
                                 key={rowId}
                             >
                                 {cells.map(({ cell, key }) => (

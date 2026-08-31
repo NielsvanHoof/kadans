@@ -26,7 +26,7 @@ export default function OrDivider({
                 className="absolute inset-x-0 top-1/2"
                 aria-hidden="true"
             />
-            <span className="relative bg-background px-2 text-xs text-muted-foreground uppercase">
+            <span className="bg-background text-muted-foreground relative px-2 text-xs uppercase">
                 {label ?? t('or')}
             </span>
         </div>

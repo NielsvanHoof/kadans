@@ -50,7 +50,7 @@ export default function RecordingShowPanels({
                 }
                 className="gap-0"
             >
-                <CardHeader className="sticky top-0 z-10 touch-manipulation border-b bg-card py-3 lg:static">
+                <CardHeader className="bg-card sticky top-0 z-10 touch-manipulation border-b py-3 lg:static">
                     <TabsList aria-label={t('Recording panels')}>
                         <TabsTrigger
                             id="transcript"
@@ -80,7 +80,7 @@ export default function RecordingShowPanels({
                         ) : null}
 
                         {isProcessing ? (
-                            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <p className="text-muted-foreground flex items-center gap-2 text-sm">
                                 <Spinner className="size-4 shrink-0" />
                                 {t(
                                     'Transcription is still running. The transcript will appear automatically.',
@@ -123,7 +123,7 @@ export default function RecordingShowPanels({
                                 />
                             </PanelBody>
                         ) : (
-                            <p className="max-w-prose text-sm text-muted-foreground">
+                            <p className="text-muted-foreground max-w-prose text-sm">
                                 {t('Available when the transcript is ready.')}
                             </p>
                         )}
@@ -156,7 +156,7 @@ function PanelBody({
 }): ReactNode {
     return (
         <div className="space-y-4 text-sm">
-            <p className="max-w-prose text-sm text-muted-foreground">{lead}</p>
+            <p className="text-muted-foreground max-w-prose text-sm">{lead}</p>
             {children}
         </div>
     );

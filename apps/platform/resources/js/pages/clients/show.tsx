@@ -51,13 +51,13 @@ export default function ShowClient({
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-4">
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border bg-secondary text-primary">
+                        <div className="bg-secondary text-primary flex size-12 shrink-0 items-center justify-center rounded-xl border">
                             <span className="text-lg font-semibold" aria-hidden>
                                 {client.name.slice(0, 1).toUpperCase()}
                             </span>
                         </div>
                         <div className="min-w-0">
-                            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                                 {t('Client record')}
                             </p>
                             <Heading
@@ -65,7 +65,7 @@ export default function ShowClient({
                                 className="mb-0"
                                 title={client.name}
                             />
-                            <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                            <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
                                 <Mail className="size-4" aria-hidden="true" />
                                 {client.email}
                             </p>
@@ -99,14 +99,14 @@ export default function ShowClient({
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Card>
                         <CardContent className="flex items-center gap-4 p-5">
-                            <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-primary">
+                            <div className="bg-secondary text-primary flex size-10 items-center justify-center rounded-lg">
                                 <FolderOpen className="size-5" aria-hidden />
                             </div>
                             <div>
                                 <p className="text-2xl font-semibold tabular-nums">
                                     {client.active_dossiers_count}
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     {t('Active dossiers')}
                                 </p>
                             </div>
@@ -116,14 +116,14 @@ export default function ShowClient({
                     <Card>
                         <CardContent className="flex items-center justify-between gap-4 p-5">
                             <div className="flex items-center gap-4">
-                                <div className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                <div className="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-lg">
                                     <Archive className="size-5" aria-hidden />
                                 </div>
                                 <div>
                                     <p className="text-2xl font-semibold tabular-nums">
                                         {client.archived_dossiers_count}
                                     </p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-muted-foreground text-sm">
                                         {t('Archived dossiers')}
                                     </p>
                                 </div>

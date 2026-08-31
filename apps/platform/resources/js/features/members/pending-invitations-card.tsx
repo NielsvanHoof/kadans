@@ -70,7 +70,7 @@ export default function PendingInvitationsCard({
                                 <p className="font-medium">
                                     {invitation.email}
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                     {invitation.role_label} ·{' '}
                                     {t('Expires :date', {
                                         date: formatDateTime(

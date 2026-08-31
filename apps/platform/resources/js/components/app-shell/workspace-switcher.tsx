@@ -18,7 +18,7 @@ import { create as createFirm } from '@/routes/firms';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 
 export function WorkspaceSwitcher() {
-    const { current_firm: currentFirm, workspaces = [] } = usePage().props;
+    const { current_firm: currentFirm, workspaces } = usePage().props;
     const { t } = useTranslation();
 
     if (!currentFirm) {

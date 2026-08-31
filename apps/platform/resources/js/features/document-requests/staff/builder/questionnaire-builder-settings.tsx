@@ -70,7 +70,7 @@ export default function QuestionnaireBuilderSettings({
 
     return (
         <aside
-            className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card p-4"
+            className="border-border/70 bg-card flex flex-col gap-4 rounded-2xl border p-4"
             aria-label={t('Field settings')}
         >
             <div className="flex items-start justify-between gap-2">
@@ -78,14 +78,14 @@ export default function QuestionnaireBuilderSettings({
                     <h3 className="text-sm font-semibold">
                         {t('Field settings')}
                     </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-xs">
                         {t(
                             'Edits update your draft. Save the form to persist.',
                         )}
                     </p>
                 </div>
                 <p
-                    className="font-data text-xs text-muted-foreground"
+                    className="font-data text-muted-foreground text-xs"
                     aria-live="polite"
                 >
                     {describeSaveState(saveStatus, form.isDirty, t)}
@@ -278,11 +278,11 @@ function EmptySettingsPanel() {
 
     return (
         <aside
-            className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4"
+            className="border-border/70 bg-muted/20 rounded-2xl border border-dashed p-4"
             aria-label={t('Field settings')}
         >
             <h3 className="text-sm font-semibold">{t('Field settings')}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-xs">
                 {t('Select a field on the canvas to edit its settings.')}
             </p>
         </aside>

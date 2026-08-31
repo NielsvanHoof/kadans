@@ -40,7 +40,7 @@ export default function RolesOverviewSummaryCard({
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex flex-wrap gap-3 text-sm">
                     <span>
                         {customRoles.length === 1
                             ? t('1 custom role')

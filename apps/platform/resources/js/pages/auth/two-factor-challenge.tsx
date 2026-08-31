@@ -160,11 +160,11 @@ function ChallengeFields({
             </Field>
 
             <Field>
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-center text-sm">
                     <span>{t('or you can')} </span>
                     <button
                         type="button"
-                        className="cursor-pointer text-foreground underline decoration-border underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
+                        className="text-foreground decoration-border cursor-pointer underline underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
                         onClick={() => toggleRecoveryMode(clearErrors)}
                     >
                         {authConfigContent.toggleText}

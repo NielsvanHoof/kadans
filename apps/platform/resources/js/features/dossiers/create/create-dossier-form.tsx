@@ -75,7 +75,7 @@ export default function CreateDossierForm({
                             >
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="space-y-1 bg-background p-1">
+                            <SelectContent className="bg-background space-y-1 p-1">
                                 <SelectGroup>
                                     {clients.map((client) => (
                                         <SelectItem
@@ -87,7 +87,7 @@ export default function CreateDossierForm({
                                             <span className="font-medium">
                                                 {client.name}
                                             </span>
-                                            <span className="text-xs text-muted-foreground">
+                                            <span className="text-muted-foreground text-xs">
                                                 {client.email}
                                             </span>
                                         </SelectItem>

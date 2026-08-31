@@ -81,7 +81,7 @@ export default function TwoFactorRecoveryCodes({
 
     useEffect(() => {
         if (!recoveryCodesList.length) {
-            fetchRecoveryCodes();
+            void fetchRecoveryCodes();
         }
     }, [recoveryCodesList.length, fetchRecoveryCodes]);
 
@@ -172,7 +172,7 @@ export default function TwoFactorRecoveryCodes({
                             <>
                                 <ul
                                     ref={codesSectionRef}
-                                    className="grid list-none gap-1 rounded-lg bg-muted p-4 font-mono text-sm"
+                                    className="bg-muted grid list-none gap-1 rounded-lg p-4 font-mono text-sm"
                                     aria-label={t('Recovery codes')}
                                 >
                                     {recoveryCodesList.length ? (
@@ -223,7 +223,7 @@ export default function TwoFactorRecoveryCodes({
                                     </Button>
                                 </div>
 
-                                <div className="text-xs text-muted-foreground select-none">
+                                <div className="text-muted-foreground text-xs select-none">
                                     <p id="regenerate-warning">
                                         {t(
                                             'Each recovery code can be used once to access your account and will be removed after use. If you need more, click :action above.',

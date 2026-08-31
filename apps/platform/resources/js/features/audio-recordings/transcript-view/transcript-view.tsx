@@ -20,8 +20,8 @@ export default function TranscriptView({
         const sentences = buildTranscriptSentences(segments);
 
         return (
-            <div className="rounded-md border bg-muted/20 p-4">
-                <p className="mb-3 text-xs text-muted-foreground">
+            <div className="bg-muted/20 rounded-md border p-4">
+                <p className="text-muted-foreground mb-3 text-xs">
                     Live transcript progress
                 </p>
                 <p className="text-base leading-relaxed">

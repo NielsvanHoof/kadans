@@ -24,11 +24,11 @@ export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
                 <Link
                     key={firm.slug}
                     href={workspaceDashboard.url(firm)}
-                    className="group rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="group focus-visible:ring-ring rounded-xl text-left outline-none focus-visible:ring-2"
                 >
-                    <Card className="h-full transition-colors group-hover:bg-muted/50">
+                    <Card className="group-hover:bg-muted/50 h-full transition-colors">
                         <CardHeader>
-                            <Building2 className="size-8 text-muted-foreground" />
+                            <Building2 className="text-muted-foreground size-8" />
                             <CardTitle>{firm.name}</CardTitle>
                             <CardDescription>
                                 {t('Open dossiers')}
@@ -47,11 +47,11 @@ export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
             {/* Entry point for creating an additional firm. */}
             <Link
                 href={createFirm.url()}
-                className="group rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group focus-visible:ring-ring rounded-xl text-left outline-none focus-visible:ring-2"
             >
-                <Card className="h-full border-dashed transition-colors group-hover:bg-muted/50">
+                <Card className="group-hover:bg-muted/50 h-full border-dashed transition-colors">
                     <CardHeader>
-                        <Plus className="size-8 text-muted-foreground" />
+                        <Plus className="text-muted-foreground size-8" />
                         <CardTitle>{t('Add a firm')}</CardTitle>
                         <CardDescription>
                             {t(

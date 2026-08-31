@@ -48,7 +48,7 @@ export default function PipelineStepTimeline({
                     {index < steps.length - 1 ? (
                         <span
                             aria-hidden="true"
-                            className="absolute top-8 left-3.5 h-[calc(100%-1.5rem)] w-px bg-border"
+                            className="bg-border absolute top-8 left-3.5 h-[calc(100%-1.5rem)] w-px"
                         />
                     ) : null}
                     <div
@@ -62,7 +62,7 @@ export default function PipelineStepTimeline({
                                 <p className="font-medium">
                                     {pipelineStepLabel(step.key, t)}
                                 </p>
-                                <p className="font-mono text-xs text-muted-foreground">
+                                <p className="text-muted-foreground font-mono text-xs">
                                     {step.key}
                                 </p>
                             </div>
@@ -79,7 +79,7 @@ export default function PipelineStepTimeline({
                                 {pipelineStepStatusLabel(step.status, t)}
                             </Badge>
                         </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
                             <span>
                                 {t(':count attempts', {
                                     count: step.attempts,

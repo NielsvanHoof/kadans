@@ -154,7 +154,7 @@ export default function DataTable<T>({
                                     className={cn(
                                         column.className,
                                         isSortable &&
-                                            'cursor-pointer font-medium hover:text-foreground',
+                                            'hover:text-foreground cursor-pointer font-medium',
                                     )}
                                 >
                                     {isSortable ? (
@@ -220,7 +220,7 @@ function SortIcon({
     if (!active || direction === null) {
         return (
             <ArrowUpDown
-                className="size-3.5 text-muted-foreground"
+                className="text-muted-foreground size-3.5"
                 aria-hidden
             />
         );

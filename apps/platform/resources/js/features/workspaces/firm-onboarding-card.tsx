@@ -27,7 +27,7 @@ export default function FirmOnboardingCard() {
     return (
         <Card className="w-full">
             <CardHeader>
-                <Building2 className="size-8 text-muted-foreground" />
+                <Building2 className="text-muted-foreground size-8" />
                 <CardTitle>{t('Set up your firm')}</CardTitle>
                 <CardDescription>
                     {t(
@@ -71,7 +71,7 @@ export default function FirmOnboardingCard() {
                                     </span>
                                     {index < ONBOARDING_STEPS.length - 1 ? (
                                         <span
-                                            className="hidden h-px flex-1 bg-border sm:block"
+                                            className="bg-border hidden h-px flex-1 sm:block"
                                             aria-hidden
                                         />
                                     ) : null}

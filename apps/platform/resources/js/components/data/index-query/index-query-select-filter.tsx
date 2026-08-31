@@ -90,7 +90,7 @@ export default function IndexQuerySelectFilter({
 
         return (
             <div className="flex min-w-40 flex-col gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-muted-foreground text-xs font-medium">
                     {fieldLabel}
                 </span>
                 <Combobox
@@ -165,7 +165,7 @@ export default function IndexQuerySelectFilter({
 
     return (
         <div className="flex min-w-40 flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-muted-foreground text-xs font-medium">
                 {fieldLabel}
             </span>
             <Select

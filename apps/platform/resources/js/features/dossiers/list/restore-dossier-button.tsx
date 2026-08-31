@@ -30,7 +30,7 @@ export default function RestoreDossierButton({
                         {t('Restore client first')}
                     </LinkButton>
                 ) : null}
-                <p className="max-w-52 text-right text-xs text-muted-foreground">
+                <p className="text-muted-foreground max-w-52 text-right text-xs">
                     {canRestoreClient
                         ? t('This dossier belongs to an archived client.')
                         : t(

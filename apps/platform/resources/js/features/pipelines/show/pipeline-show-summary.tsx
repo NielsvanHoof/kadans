@@ -23,7 +23,7 @@ export default function PipelineShowSummary({
 
     return (
         <>
-            <Card className="border-l-4 border-l-primary">
+            <Card className="border-l-primary border-l-4">
                 <CardHeader className="pb-3">
                     <CardDescription>{t('Subject')}</CardDescription>
                     <CardTitle className="text-lg">

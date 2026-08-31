@@ -47,7 +47,7 @@ function pageLayout(name: string) {
     }
 }
 
-createInertiaApp({
+void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     /*
      * AriaLocaleProvider is prepended to every page's layout stack rather than
