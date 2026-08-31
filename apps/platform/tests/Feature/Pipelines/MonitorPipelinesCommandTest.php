@@ -13,6 +13,8 @@ use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
+use Spatie\Multitenancy\Events\MadeTenantCurrentEvent;
 
 covers(MonitorPipelinesCommand::class);
 
@@ -57,6 +59,31 @@ test('pipelines:monitor marks an inactive run stuck without touching another ten
         ->toBe(PipelineStatus::Stuck)
         ->and(Pipeline::queryWithoutTenantScope()->findOrFail($fresh->id)->status)
         ->toBe(PipelineStatus::Running);
+});
+
+test('pipelines:monitor does not enter idle tenants', function (): void {
+    ['tenant' => $busy] = provisionWorkspace('Busy Firm');
+    ['tenant' => $idle] = provisionWorkspace('Idle Firm');
+
+    monitoredPipeline($busy, PipelineStatus::Running, [
+        'current_stage' => PipelineStepKey::Submit,
+        'started_at' => now()->subHours(2),
+        'last_activity_at' => now()->subHours(2),
+    ]);
+
+    // Drop leftover current tenant so makeCurrent actually fires for $busy,
+    // and so execute()'s finally block does not restore $idle as current.
+    Tenant::forgetCurrent();
+    Event::fake([MadeTenantCurrentEvent::class]);
+
+    Artisan::call('pipelines:monitor');
+
+    Event::assertDispatched(fn (MadeTenantCurrentEvent $event): bool => $event->tenant->is($busy));
+    Event::assertNotDispatched(
+        MadeTenantCurrentEvent::class,
+        fn (MadeTenantCurrentEvent $event): bool => $event->tenant->is($idle),
+    );
+    expect(Artisan::output())->toContain('Marked stuck: 1.');
 });
 
 /**

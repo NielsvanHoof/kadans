@@ -88,6 +88,20 @@ describe('IndexQueryToolbar', () => {
         expect(setFilters).toHaveBeenCalledWith({});
     });
 
+    it('shows a notice when search results were truncated', () => {
+        render(
+            <IndexQueryToolbar
+                config={{ ...config, search_truncated: true }}
+            />,
+        );
+
+        expect(
+            screen.getByText(
+                'Search results are limited to the first matches. Narrow your query to see more.',
+            ),
+        ).toBeInTheDocument();
+    });
+
     it('updates sort from the sort select', async () => {
         const user = userEvent.setup();
         setSort.mockClear();

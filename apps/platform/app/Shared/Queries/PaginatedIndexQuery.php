@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Queries;
 
+use App\Shared\Queries\Filters\ScoutSearchFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -71,7 +72,8 @@ abstract class PaginatedIndexQuery
      *     indexQuery: array{
      *         filters: list<array<string, mixed>>,
      *         sorts: list<array{key: string, label: string}>,
-     *         defaults: array{sort: string}
+     *         defaults: array{sort: string},
+     *         search_truncated: bool
      *     }
      * }
      */
@@ -80,7 +82,15 @@ abstract class PaginatedIndexQuery
         return [
             'filters' => request()->input('filter', []),
             'sort' => request()->query('sort'),
-            'indexQuery' => $this->toolbarMetadata(),
+            'indexQuery' => [
+                ...$this->toolbarMetadata(),
+                // Set during paginate()/simplePaginate() when ScoutSearchFilter
+                // hits scout.key_limit — callers must invoke handle() first.
+                'search_truncated' => (bool) request()->attributes->get(
+                    ScoutSearchFilter::REQUEST_ATTRIBUTE_TRUNCATED,
+                    false,
+                ),
+            ],
         ];
     }
 
