@@ -6,12 +6,21 @@ namespace App\Dossiers\Actions;
 
 use App\Dossiers\Ai\DossierReminderDraftAgent;
 use App\Dossiers\Data\ReminderDraftContextData;
+use App\Tenancy\Enums\TenantAiFeature;
+use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Str;
 
 final readonly class DraftDossierReminderMessageAction
 {
+    public function __construct(private ResolveTenantSettingsQuery $resolveTenantSettings) {}
+
     public function handle(ReminderDraftContextData $context, string $languageLabel): string
     {
+        if (! $this->resolveTenantSettings->isAiFeatureEnabled(TenantAiFeature::ReminderDraft)) {
+            throw new AuthorizationException(__('AI reminder drafts are disabled for this firm.'));
+        }
+
         $agent = new DossierReminderDraftAgent($languageLabel);
 
         $response = $agent->prompt($this->buildPrompt($context));

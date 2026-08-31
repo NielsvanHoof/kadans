@@ -74,7 +74,7 @@ function pageShape(string $url): array
 
     // Shared props are covered by SharedInertiaDataTest; keep this to page props.
     $shared = ['name', 'locale', 'available_locales', 'timezone', 'translations', 'auth',
-        'workspaces', 'current_firm', 'permissions', 'support_session',
+        'workspaces', 'current_firm', 'permissions', 'firm_settings', 'support_session',
         'notifications', 'sidebar_open', 'errors', 'flash'];
 
     return propShape(array_diff_key($page['props'], array_flip($shared)));

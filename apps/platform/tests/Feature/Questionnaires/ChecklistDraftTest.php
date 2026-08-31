@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Questionnaires\Ai\ChecklistDraftAgent;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Tenancy\Enums\Role;
+use App\Tenancy\Models\TenantSetting;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Laravel\Ai\Prompts\AgentPrompt;
 
@@ -133,4 +134,27 @@ test('checklist draft endpoint is rate limited', function (): void {
     $this->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $template]), [
         'description' => 'Anything',
     ])->assertTooManyRequests();
+});
+
+test('checklist draft endpoint is forbidden when the feature is disabled', function (): void {
+    ChecklistDraftAgent::fake([[
+        'items' => [
+            ['title' => 'Bank statement', 'instructions' => 'Last 3 months.', 'type' => 'file'],
+        ],
+    ]]);
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $template = QuestionnaireTemplate::factory()->create(['tenant_id' => $tenant->id]);
+
+    TenantSetting::query()->where('tenant_id', $tenant->id)->update([
+        'ai_checklist_draft_enabled' => false,
+    ]);
+
+    $this->actingAs($owner)
+        ->postJson(workspaceRoute('workspaces.templates.draft-items.store', $tenant, ['template' => $template]), [
+            'description' => 'Anything',
+        ])
+        ->assertForbidden();
+
+    ChecklistDraftAgent::assertNeverPrompted();
 });

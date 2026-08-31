@@ -27,6 +27,7 @@ import type {
     TemplateItem,
 } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useAiFeatureEnabled } from '@/hooks/use-firm-settings';
 import { useTranslation } from '@/hooks/use-translation';
 
 type NewItemDefaults = {
@@ -55,6 +56,7 @@ export default function TemplateItemEditor({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const checklistDraftEnabled = useAiFeatureEnabled('checklist_draft');
     const { post, setData } = useHttp({
         item_ids: [] as number[],
     });
@@ -307,7 +309,7 @@ export default function TemplateItemEditor({
                 />
             )}
 
-            {canManage && (
+            {canManage && checklistDraftEnabled && (
                 <div className="space-y-3 rounded-md border border-dashed p-4">
                     <Field>
                         <FieldLabel htmlFor="checklist-draft-description">

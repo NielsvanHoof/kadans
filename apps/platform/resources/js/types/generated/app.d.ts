@@ -764,6 +764,14 @@ declare namespace App {
     }
     namespace Tenancy {
         namespace Data {
+            export type TenantAiSettingsData = {
+                readonly document_overview: boolean;
+                readonly checklist_draft: boolean;
+                readonly reminder_draft: boolean;
+            };
+            export type TenantSettingsData = {
+                readonly ai: App.Tenancy.Data.TenantAiSettingsData;
+            };
             export type WorkspaceInvitationData = {
                 readonly id: number;
                 readonly email: string;
@@ -822,6 +830,9 @@ declare namespace App {
                 readonly permission_groups: App.Tenancy.Data.WorkspacePermissionGroupData[];
                 readonly can_manage_roles: boolean;
             };
+            export type WorkspaceSettingsPageData = {
+                readonly settings: App.Tenancy.Data.TenantSettingsData;
+            };
         }
         namespace Enums {
             export type PermissionGroup =
@@ -843,6 +854,8 @@ declare namespace App {
                 | "adviser"
                 | "reviewer"
                 | "read-only";
+            export type TenantAiFeature =
+                "document_overview" | "checklist_draft" | "reminder_draft";
             export type TenantMembershipStatus =
                 "invited" | "active" | "suspended";
             export type WorkspacePermission =

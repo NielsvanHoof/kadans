@@ -7,6 +7,7 @@ import {
     LifeBuoy,
     ListChecks,
     ScrollText,
+    Settings,
     ShieldCheck,
     ShieldQuestion,
     UserPlus,
@@ -38,6 +39,7 @@ import { index as mediaIndex } from '@/routes/workspaces/media';
 import { index as membersIndex } from '@/routes/workspaces/members';
 import { index as pipelineIndex } from '@/routes/workspaces/pipelines';
 import { index as rolesIndex } from '@/routes/workspaces/roles';
+import { index as settingsIndex } from '@/routes/workspaces/settings';
 import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
@@ -92,6 +94,15 @@ export function AppSidebar() {
                                 title: t('Roles & permissions'),
                                 href: rolesIndex(currentFirm),
                                 icon: ShieldCheck,
+                            },
+                        ]
+                      : []),
+                  ...(can('tenant.settings.manage')
+                      ? [
+                            {
+                                title: t('Firm settings'),
+                                href: settingsIndex(currentFirm),
+                                icon: Settings,
                             },
                         ]
                       : []),
