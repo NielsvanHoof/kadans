@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react';
+import { usePage } from "@inertiajs/react";
 import {
     ClipboardList,
     FolderGit2,
@@ -9,11 +9,11 @@ import {
     ScrollText,
     Shield,
     Users,
-} from 'lucide-react';
-import AppLogo from '@/components/app-shell/app-logo';
-import { NavMain } from '@/components/app-shell/nav-main';
-import { NavUser } from '@/components/app-shell/nav-user';
-import { WorkspaceSwitcher } from '@/components/app-shell/workspace-switcher';
+} from "lucide-react";
+import AppLogo from "@/components/app-shell/app-logo";
+import { NavMain } from "@/components/app-shell/nav-main";
+import { NavUser } from "@/components/app-shell/nav-user";
+import { WorkspaceSwitcher } from "@/components/app-shell/workspace-switcher";
 import {
     Sidebar,
     SidebarContent,
@@ -51,14 +51,14 @@ export function AppSidebar() {
 
     const mainNavItems: NavItem[] = [
         {
-            title: t('Dashboard'),
+            title: t("Dashboard"),
             href: dashboardRoute,
             icon: LayoutGrid,
         },
         ...(isPlatformSupport
             ? [
                   {
-                      title: t('Platform support'),
+                      title: t("Platform support"),
                       href: platformSupportIndex(),
                       icon: LifeBuoy,
                   },

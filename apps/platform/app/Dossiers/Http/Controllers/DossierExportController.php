@@ -68,7 +68,7 @@ final class DossierExportController extends Controller
         DossierExport $export,
         LogAuditActivityAction $logAuditActivity,
         DownloadDossierExportAction $downloadDossierExport,
-    ): RedirectResponse|StreamedResponse {
+    ): RedirectResponse|StreamedResponse|HttpResponse {
         $this->authorize('export', $dossier);
 
         abort_unless($export->dossier_id === $dossier->id && $export->isDownloadable(), HttpResponse::HTTP_NOT_FOUND);

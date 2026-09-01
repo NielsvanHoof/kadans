@@ -7,7 +7,9 @@ namespace App\Dossiers\Support;
 use App\Dossiers\Actions\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use function sprintf;
@@ -53,7 +55,7 @@ final readonly class StoredFileResponse
         ?string $mimeType = null,
         string $disposition = 'attachment',
         array $headers = [],
-    ): RedirectResponse|StreamedResponse {
+    ): RedirectResponse|StreamedResponse|Response {
         $driver = $this->resolveTemporaryUrl->driverForDisk($disk);
 
         if ($driver === null) {
@@ -68,6 +70,17 @@ final readonly class StoredFileResponse
             )));
 
             abort(404);
+        }
+
+        // Inertia XHR cannot deliver these bytes. A 302 to S3 is followed as a
+        // cross-origin request and fails CORS (bucket CORS is PUT-only for
+        // uploads). A streamed local response looks empty to Inertia's
+        // middleware, which then redirects back. Inertia::location() is a 409
+        // that assigns window.location to this same URL, so the browser
+        // re-requests it as a navigation — the same pattern as
+        // OAuthController::redirect().
+        if (request()->headers->has('X-Inertia')) {
+            return Inertia::location(request()->fullUrl());
         }
 
         if ($driver === 's3') {
