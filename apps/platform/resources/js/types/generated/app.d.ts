@@ -866,7 +866,8 @@ declare namespace App {
                 | "members.assign_role"
                 | "roles.view"
                 | "roles.manage"
-                | "tenant.settings.manage";
+                | "tenant.settings.manage"
+                | "tenant.admin.access";
         }
     }
     namespace WorkspaceNotifications {

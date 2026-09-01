@@ -27,7 +27,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * Staff upload + OCR extraction page + document download.
@@ -131,7 +131,7 @@ final class UploadedDocumentController extends Controller
         LogAuditActivityAction $logAuditActivity,
         UploadedDocumentResponse $uploadedDocumentResponse,
         GuardUploadedDocumentDeliveryAction $guardUploadedDocumentDelivery,
-    ): RedirectResponse|StreamedResponse {
+    ): HttpResponse {
         $this->authorize('download', $uploadedDocument);
 
         $this->assertScannedClean($uploadedDocument, $guardUploadedDocumentDelivery);
@@ -154,7 +154,7 @@ final class UploadedDocumentController extends Controller
         LogAuditActivityAction $logAuditActivity,
         UploadedDocumentResponse $uploadedDocumentResponse,
         GuardUploadedDocumentDeliveryAction $guardUploadedDocumentDelivery,
-    ): RedirectResponse|StreamedResponse {
+    ): HttpResponse {
         $this->authorize('download', $uploadedDocument);
 
         $this->assertScannedClean($uploadedDocument, $guardUploadedDocumentDelivery);
