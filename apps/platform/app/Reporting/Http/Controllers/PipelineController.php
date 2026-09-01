@@ -70,7 +70,7 @@ final class PipelineController extends Controller
         Pipeline $pipeline,
         LogAuditActivityAction $logAuditActivity,
         DownloadDossierExportAction $downloadDossierExport,
-    ): RedirectResponse|StreamedResponse|HttpResponse {
+    ): RedirectResponse|StreamedResponse {
         $this->authorize('download', $pipeline);
 
         $pipeline->loadMissing('pipelineable');
