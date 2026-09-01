@@ -70,8 +70,6 @@ final class OAuthConnection extends Model
         'provider',
         'provider_user_id',
         'email',
-        'access_token',
-        'refresh_token',
         'token_expires_at',
         'scopes',
     ];

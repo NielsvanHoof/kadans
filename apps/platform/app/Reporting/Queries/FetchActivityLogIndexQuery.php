@@ -7,6 +7,11 @@ namespace App\Reporting\Queries;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\Clients\Models\Client;
+use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
+use App\Platform\Models\DataSubjectRequest;
 use App\Shared\Data\PersonOptionData;
 use App\Shared\Queries\Filters\ScoutSearchFilter;
 use App\Shared\Queries\PaginatedIndexQuery;
@@ -130,6 +135,11 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
 
                     $morphTo->morphWith([
                         ClientAccessGrant::class => ['dossier:id,title'],
+                        Client::class => [],
+                        Dossier::class => [],
+                        DocumentRequest::class => ['dossier:id,title'],
+                        UploadedDocument::class => [],
+                        DataSubjectRequest::class => ['client:id,name'],
                     ]);
                 },
             ]);

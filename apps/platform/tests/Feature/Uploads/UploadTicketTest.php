@@ -12,6 +12,7 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Support\StagedUpload;
 use App\Dossiers\Support\UploadTicket;
 use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -205,6 +206,33 @@ describe('claiming', function (): void {
         'random base64' => 'eyJwdXJwb3NlIjoiZG9jdW1lbnQifQ==',
     ]);
 });
+
+test('read-only members cannot issue workspace upload tickets', function (string $purpose): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $reader = workspaceMember($tenant, Role::ReadOnly);
+
+    $payload = match ($purpose) {
+        'audio_recording' => [
+            'purpose' => 'audio_recording',
+            'filename' => 'call.mp3',
+            'content_type' => 'audio/mpeg',
+            'size_bytes' => 1024,
+        ],
+        default => [
+            'purpose' => 'document',
+            'filename' => 'statement.pdf',
+            'content_type' => 'application/pdf',
+            'size_bytes' => 1024,
+        ],
+    };
+
+    $this->actingAs($reader)
+        ->postJson(workspaceRoute('workspaces.upload-tickets.store', $tenant), $payload)
+        ->assertForbidden();
+})->with([
+    'document' => ['document'],
+    'audio' => ['audio_recording'],
+]);
 
 test('the workspace endpoint issues a ticket sealed to the current workspace', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

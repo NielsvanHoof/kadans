@@ -59,7 +59,7 @@ export default function DossierShowContent({
     canUploadAudio,
     canDownloadAudio,
 }: DossierShowContentProps) {
-    const hasFormItems = dossier.document_requests.length > 0;
+    const hasFormItems = dossier.review_summary.total > 0;
 
     return (
         <DossierPermissionsProvider
@@ -94,10 +94,8 @@ function resolvePrimaryAction(
         return null;
     }
 
-    const hasFormItems = dossier.document_requests.length > 0;
-    const hasReadyForReview = dossier.document_requests.some(
-        (request) => request.status === 'submitted',
-    );
+    const hasFormItems = dossier.review_summary.total > 0;
+    const hasReadyForReview = dossier.review_summary.submitted > 0;
     const hasValidInvite = dossier.access_grants.some(
         (grant) => grant.is_valid,
     );

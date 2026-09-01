@@ -1,14 +1,8 @@
 import { usePage } from '@inertiajs/react';
 
-export type FirmAiSettings = {
-    document_overview: boolean;
-    checklist_draft: boolean;
-    reminder_draft: boolean;
-};
+export type FirmSettings = App.Tenancy.Data.TenantSettingsData;
 
-export type FirmSettings = {
-    ai: FirmAiSettings;
-};
+export type FirmAiSettings = FirmSettings['ai'];
 
 /**
  * Firm-wide settings for the active workspace.

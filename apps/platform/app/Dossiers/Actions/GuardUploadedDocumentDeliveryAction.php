@@ -7,6 +7,7 @@ namespace App\Dossiers\Actions;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\UploadedDocument;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Refuse anything GuardDuty has not established as clean.
@@ -33,10 +34,24 @@ final readonly class GuardUploadedDocumentDeliveryAction
      */
     public function handle(UploadedDocument $uploadedDocument): bool
     {
-        $verdict = $this->resolveMalwareScanStatus->handle(
+        return $this->guardStoredFile(
             $uploadedDocument->disk,
             $uploadedDocument->path,
+            $uploadedDocument->original_filename,
+            $uploadedDocument,
         );
+    }
+
+    /**
+     * Shared malware gate for any stored file subject (documents, audio, …).
+     */
+    public function guardStoredFile(
+        string $disk,
+        string $path,
+        string $originalFilename,
+        Model $subject,
+    ): bool {
+        $verdict = $this->resolveMalwareScanStatus->handle($disk, $path);
 
         if ($verdict->permitsDelivery) {
             return true;
@@ -44,9 +59,9 @@ final readonly class GuardUploadedDocumentDeliveryAction
 
         $this->logAuditActivity->handle(
             AuditEvent::FileBlockedByMalwareScan,
-            $uploadedDocument,
+            $subject,
             [
-                'original_filename' => $uploadedDocument->original_filename,
+                'original_filename' => $originalFilename,
                 // Null reads as "no verdict yet", which is the common case and a
                 // materially different situation from a detection.
                 'scan_status' => $verdict->status?->value,

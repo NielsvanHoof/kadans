@@ -69,7 +69,7 @@ test('dossier overview page renders props for each workflow status', function (D
             ->component('dossiers/show')
             ->where('dossier.id', $dossier->id)
             ->where('dossier.status', $status->value)
-            ->has('dossier.document_requests', 1)
+            ->has('dossier.document_requests', 0)
             ->has('dossier.review_summary')
             ->has('dossier.access_grants')
             ->has('dossier.exports')
@@ -77,7 +77,9 @@ test('dossier overview page renders props for each workflow status', function (D
             ->has('can_manage')
             ->has('can_edit')
             ->has('can_review')
-            ->has('can_download'));
+            ->has('can_download')
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->has('document_requests', 1)));
 })->with([
     DossierStatus::Draft,
     DossierStatus::AwaitingClient,
@@ -274,7 +276,9 @@ test('empty dossier overview exposes zero form items for invite gating', functio
             ->has('dossier.document_requests', 0)
             ->where('dossier.review_summary.total', 0)
             ->where('dossier.ready_to_complete', false)
-            ->missing('templates'));
+            ->missing('templates')
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->has('document_requests', 0)));
 });
 
 test('read-only member can view overview builder and review with restricted action flags', function (): void {
@@ -471,7 +475,8 @@ test('dossier overview serializes only the latest pipeline per uploaded document
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/show')
-            ->where('dossier.document_requests.0.uploaded_documents.0.pipeline.id', $latestPipeline->id));
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->where('document_requests.0.uploaded_documents.0.pipeline.id', $latestPipeline->id)));
 });
 
 test('dossier overview keeps every valid grant and bounds expired grant history', function (): void {

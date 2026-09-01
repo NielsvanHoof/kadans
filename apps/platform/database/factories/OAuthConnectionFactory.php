@@ -31,11 +31,20 @@ final class OAuthConnectionFactory extends Factory
             'provider' => OAuthProvider::Microsoft,
             'provider_user_id' => (string) fake()->unique()->numerify('################'),
             'email' => fake()->safeEmail(),
-            'access_token' => 'fake-access-token',
-            'refresh_token' => 'fake-refresh-token',
             'token_expires_at' => now()->addHour(),
             'scopes' => OAuthProvider::Microsoft->scopes(),
         ];
+    }
+
+    #[Override]
+    public function configure(): static
+    {
+        return $this->afterMaking(function (OAuthConnection $connection): void {
+            $connection->forceFill([
+                'access_token' => 'fake-access-token',
+                'refresh_token' => 'fake-refresh-token',
+            ]);
+        });
     }
 
     public function forProvider(OAuthProvider $provider): static

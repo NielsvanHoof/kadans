@@ -33,7 +33,6 @@ final class FetchUploadedDocumentShowQuery
      *         processing_error: string|null,
      *         pipeline: array<string, mixed>|null,
      *         extraction: DocumentExtractionPayload|null,
-     *         raw_json: string|null
      *     },
      *     document_request: array{id: int, title: string}|null,
      *     dossier: array{id: int, title: string}|null,
@@ -45,11 +44,12 @@ final class FetchUploadedDocumentShowQuery
         $uploadedDocument->load([
             'documentRequest:id,dossier_id,title,tenant_id',
             'documentRequest.dossier:id,title,tenant_id',
-            'pipelines.steps',
+            'latestPipeline.steps',
         ]);
 
         $documentRequest = $uploadedDocument->documentRequest;
         $dossier = $documentRequest?->dossier;
+        $latestPipeline = $uploadedDocument->latestPipeline;
 
         return [
             'uploaded_document' => [
@@ -59,9 +59,10 @@ final class FetchUploadedDocumentShowQuery
                 'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
                 'processing_status' => $uploadedDocument->processing_status->value,
                 'processing_error' => $uploadedDocument->processing_error,
-                'pipeline' => $this->latestPipeline($uploadedDocument),
+                'pipeline' => $latestPipeline === null
+                    ? null
+                    : PipelineData::fromModel($latestPipeline)->toArray(),
                 'extraction' => $this->parseExtraction($uploadedDocument->extracted_text),
-                'raw_json' => $uploadedDocument->extracted_text,
             ],
             'document_request' => $documentRequest === null ? null : [
                 'id' => $documentRequest->id,
@@ -73,18 +74,6 @@ final class FetchUploadedDocumentShowQuery
             ],
             'can_download' => request()->user()?->can('download', $uploadedDocument) ?? false,
         ];
-    }
-
-    /**
-     * Row shape is owned by PipelineData; see its generated TypeScript.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function latestPipeline(UploadedDocument $uploadedDocument): ?array
-    {
-        $pipeline = $uploadedDocument->pipelines->sortByDesc('id')->first();
-
-        return $pipeline === null ? null : PipelineData::fromModel($pipeline)->toArray();
     }
 
     /**

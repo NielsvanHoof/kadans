@@ -14,6 +14,13 @@ const identity = (key: string) => key;
 function dossier(overrides: Partial<Dossier> = {}): Dossier {
     return {
         document_requests: [],
+        review_summary: {
+            total: 0,
+            pending: 0,
+            submitted: 0,
+            accepted: 0,
+            rejected: 0,
+        },
         access_grants: [],
         status: 'draft',
         ...overrides,
@@ -46,7 +53,13 @@ describe('dossierStageCompletion', () => {
     it('completes prepare once a questionnaire item exists', () => {
         const completion = dossierStageCompletion(
             dossier({
-                document_requests: [{ id: 1 }] as Dossier['document_requests'],
+                review_summary: {
+                    total: 1,
+                    pending: 1,
+                    submitted: 0,
+                    accepted: 0,
+                    rejected: 0,
+                },
             }),
         );
 

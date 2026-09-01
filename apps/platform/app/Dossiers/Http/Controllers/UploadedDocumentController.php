@@ -25,9 +25,11 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Throwable;
 
 /**
  * Staff upload + OCR extraction page + document download.
@@ -46,24 +48,26 @@ final class UploadedDocumentController extends Controller
         // (dossier → documentRequest). Tenant scope is already applied.
         $this->authorize('view', $dossier);
 
-        /*
-         * The files are already in the bucket; what arrives here are the
-         * tickets that name them. Every ticket is claimed before any of them
-         * is stored, so a batch with one bad ticket fails whole rather than
-         * half-importing (each successful handle() dispatches an OCR run).
-         */
-        $uploads = array_map(
-            fn (string $ticket): StagedUpload => $claimUploadTicket->handle(
-                $ticket,
-                UploadPurpose::Document,
-                $tenant->id,
-                'documents',
-            ),
-            $request->array('documents'),
-        );
+        try {
+            $uploads = array_map(
+                fn (string $ticket): StagedUpload => $claimUploadTicket->handle(
+                    $ticket,
+                    UploadPurpose::Document,
+                    $tenant->id,
+                    'documents',
+                ),
+                $request->array('documents'),
+            );
 
-        foreach ($uploads as $upload) {
-            $uploadStaffDocument->handle($documentRequest, $upload);
+            foreach ($uploads as $upload) {
+                $uploadStaffDocument->handle($documentRequest, $upload);
+            }
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors(['documents' => __('Something went wrong while uploading the document. Please try again.')]);
         }
 
         Toast::success(__('Document uploaded.'));

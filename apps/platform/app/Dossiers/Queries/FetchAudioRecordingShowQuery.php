@@ -47,10 +47,11 @@ final class FetchAudioRecordingShowQuery
      */
     public function handle(AudioRecording $audioRecording): array
     {
-        $audioRecording->load(['dossier:id,title,tenant_id', 'pipelines.steps', 'calendarLinks']);
+        $audioRecording->load(['dossier:id,title,tenant_id', 'latestPipeline.steps', 'calendarLinks']);
 
         $dossier = $audioRecording->dossier;
         $user = request()->user();
+        $latestPipeline = $audioRecording->latestPipeline;
 
         return [
             'audio_recording' => [
@@ -62,7 +63,9 @@ final class FetchAudioRecordingShowQuery
                 'transcription_error' => $audioRecording->transcription_error,
                 'transcript' => $audioRecording->transcript,
                 'segments' => $audioRecording->segments,
-                'pipeline' => $this->latestPipeline($audioRecording),
+                'pipeline' => $latestPipeline === null
+                    ? null
+                    : PipelineData::fromModel($latestPipeline)->toArray(),
                 'calendar_links' => array_values($audioRecording->calendarLinks
                     ->map(fn (AudioRecordingCalendarLink $link): array => [
                         'id' => $link->id,
@@ -142,17 +145,5 @@ final class FetchAudioRecordingShowQuery
             'connection_status' => 'ready',
             'reconnect_url' => null,
         ];
-    }
-
-    /**
-     * Row shape is owned by PipelineData; see its generated TypeScript.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function latestPipeline(AudioRecording $audioRecording): ?array
-    {
-        $pipeline = $audioRecording->pipelines->sortByDesc('id')->first();
-
-        return $pipeline === null ? null : PipelineData::fromModel($pipeline)->toArray();
     }
 }

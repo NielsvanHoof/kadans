@@ -227,12 +227,13 @@ test('support session stays read-only even when the user is also a firm member',
     // Membership without a Spatie role on purpose — workspaceMember() would assign one,
     // and this case asserts support stay read-only even with bare firm membership.
     $support = User::factory()->platformSupport()->create();
-    TenantMembership::query()->create([
+    $membership = new TenantMembership;
+    $membership->forceFill([
         'tenant_id' => $tenant->id,
         'user_id' => $support->id,
         'status' => TenantMembershipStatus::Active,
         'joined_at' => now(),
-    ]);
+    ])->saveOrFail();
 
     $this->actingAs($support)
         ->post(route('platform.support.store', $tenant), [

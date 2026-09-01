@@ -49,9 +49,15 @@ function translationKeysUsedInDirectory(string $directory): array
         }
         $contents = (string) file_get_contents($file->getPathname());
 
-        if (preg_match_all("/__\\('([^']+)'/", $contents, $matches) !== false) {
-            foreach ($matches[1] as $key) {
-                $keys[] = $key;
+        if (preg_match_all("/__\\('((?:\\\\'|[^'])*)'/", $contents, $singleQuotedMatches) !== false) {
+            foreach ($singleQuotedMatches[1] as $key) {
+                $keys[] = str_replace("\\'", "'", $key);
+            }
+        }
+
+        if (preg_match_all('/__\\("((?:\\\\"|[^"])*)"/', $contents, $doubleQuotedMatches) !== false) {
+            foreach ($doubleQuotedMatches[1] as $key) {
+                $keys[] = str_replace('\\"', '"', $key);
             }
         }
     }

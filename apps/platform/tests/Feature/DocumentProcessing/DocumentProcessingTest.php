@@ -85,11 +85,14 @@ test('staff dossier show includes processing fields for uploaded documents', fun
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/show')
-            ->has('dossier.document_requests.0.uploaded_documents.0', fn (Assert $document): Assert => $document
-                ->where('original_filename', 'payslip.pdf')
-                ->where('processing_status', DocumentProcessingStatus::Pending->value)
-                ->missing('extracted_text')
-                ->etc()
+            ->has('dossier.document_requests', 0)
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->has('document_requests.0.uploaded_documents.0', fn (Assert $document): Assert => $document
+                    ->where('original_filename', 'payslip.pdf')
+                    ->where('processing_status', DocumentProcessingStatus::Pending->value)
+                    ->missing('extracted_text')
+                    ->etc()
+                )
             )
         );
 });

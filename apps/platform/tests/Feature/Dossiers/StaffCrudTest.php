@@ -69,8 +69,10 @@ test('staff can create a client, dossier, and document request', function (): vo
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dossiers/show')
-            ->has('dossier.document_requests', 1)
-            ->where('dossier.status', 'draft'));
+            ->has('dossier.document_requests', 0)
+            ->where('dossier.status', 'draft')
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->has('document_requests', 1)));
 
     expect(DocumentRequest::query()->where('dossier_id', $dossier->id)->first())
         ->not->toBeNull()

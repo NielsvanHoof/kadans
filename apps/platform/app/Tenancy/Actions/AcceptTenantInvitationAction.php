@@ -75,7 +75,14 @@ final readonly class AcceptTenantInvitationAction
                     'invited_at' => $membership->invited_at ?? $locked->created_at,
                 ])->saveOrFail();
             } else {
-                $membership = TenantMembership::query()->create(['tenant_id' => $tenant->id, 'user_id' => $user->id, 'status' => TenantMembershipStatus::Active, 'invited_at' => $locked->created_at, 'joined_at' => now()]);
+                $membership = new TenantMembership;
+                $membership->forceFill([
+                    'tenant_id' => $tenant->id,
+                    'user_id' => $user->id,
+                    'status' => TenantMembershipStatus::Active,
+                    'invited_at' => $locked->created_at,
+                    'joined_at' => now(),
+                ])->saveOrFail();
             }
 
             $this->memberRoles->syncRole($user, $tenant, $locked->role);

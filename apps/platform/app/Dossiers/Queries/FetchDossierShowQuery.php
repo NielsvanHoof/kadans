@@ -11,6 +11,7 @@ use App\Dossiers\Data\DossierClientSummaryData;
 use App\Dossiers\Data\DossierExportData;
 use App\Dossiers\Data\DossierShowData;
 use App\Dossiers\Data\StaffAudioRecordingData;
+use App\Dossiers\Data\StaffDocumentRequestData;
 use App\Dossiers\Enums\AudioRecordingPermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
@@ -57,8 +58,11 @@ final readonly class FetchDossierShowQuery
             'can_download' => $request->user()?->hasTenantPermission(UploadedDocumentPermission::Download) ?? false,
             'can_upload_audio' => $request->user()?->can('create', [AudioRecording::class, $dossier]) ?? false,
             'can_download_audio' => $request->user()?->hasTenantPermission(AudioRecordingPermission::Download) ?? false,
-            // Core overview first; exports + audio load after paint (below the fold).
+            // Core overview first; questionnaire rows, exports, and audio load after paint.
             'dossier' => fn (): array => $this->dossierPayload($dossier)->toArray(),
+            'document_requests' => Inertia::defer(
+                fn (): array => $this->documentRequestRows($dossier),
+            ),
             'exports' => Inertia::defer(
                 fn (): array => $this->exportRows($dossier, $canDownload),
             ),
@@ -74,8 +78,7 @@ final readonly class FetchDossierShowQuery
             'client:id,name,email',
             'responsibleUser:id,name,email',
             'documentRequests' => fn ($query) => $query
-                ->with(['uploadedDocuments', 'reviewedBy:id,name'])
-                ->with('uploadedDocuments.latestPipeline.steps')
+                ->with('reviewedBy:id,name')
                 ->oldest('sort_order'),
         ]);
 
@@ -88,6 +91,7 @@ final readonly class FetchDossierShowQuery
         $mapped = $this->mapStaffDocumentRequestRowsQuery->handle(
             $dossier,
             $dossier->documentRequests,
+            includeUploadedDocuments: false,
         );
 
         $responsibleUser = $dossier->responsibleUser;
@@ -122,13 +126,36 @@ final readonly class FetchDossierShowQuery
                 name: $client->name,
                 email: $client->email,
             ),
-            documentRequests: $mapped->rows,
+            documentRequests: [],
             accessGrants: $this->accessGrantRows($dossier),
             // Filled by deferred top-level props after first paint.
             exports: [],
             audioRecordings: [],
             exportsCount: $dossier->exports_count ?? 0,
             audioRecordingsCount: $dossier->audio_recordings_count ?? 0,
+        );
+    }
+
+    /**
+     * @return list<array<array-key, mixed>>
+     */
+    private function documentRequestRows(Dossier $dossier): array
+    {
+        $dossier->load([
+            'documentRequests' => fn ($query) => $query
+                ->with(['uploadedDocuments', 'reviewedBy:id,name'])
+                ->with('uploadedDocuments.latestPipeline.steps')
+                ->oldest('sort_order'),
+        ]);
+
+        $mapped = $this->mapStaffDocumentRequestRowsQuery->handle(
+            $dossier,
+            $dossier->documentRequests,
+        );
+
+        return array_map(
+            static fn (StaffDocumentRequestData $row): array => $row->toArray(),
+            $mapped->rows,
         );
     }
 

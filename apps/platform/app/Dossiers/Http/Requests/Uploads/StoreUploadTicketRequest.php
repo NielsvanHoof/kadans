@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Uploads;
 
+use App\Dossiers\Enums\AudioRecordingPermission;
+use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\UploadPurpose;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -22,13 +24,22 @@ final class StoreUploadTicketRequest extends FormRequest
     use LocalizesValidationAttributes;
 
     /**
-     * Authorization is the route's, not the payload's: a ticket grants a write
-     * into the staging prefix and nothing more, and the dossier-level check
-     * happens when the ticket is spent.
+     * A ticket grants a write into the staging prefix. Purpose selects which
+     * upload permission must be held — document staff uploads and audio uploads
+     * are gated separately.
      */
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        $user = $this->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return match ($this->purpose()) {
+            UploadPurpose::Document => $user->hasTenantPermission(DocumentRequestPermission::Upload),
+            UploadPurpose::AudioRecording => $user->hasTenantPermission(AudioRecordingPermission::Upload),
+        };
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

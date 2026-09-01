@@ -165,16 +165,23 @@ final readonly class CompleteOAuthCallbackAction
         string $providerUserId,
         ?string $email,
     ): OAuthConnection {
-        return DB::transaction(fn (): OAuthConnection => OAuthConnection::query()->create([
-            'user_id' => $user->id,
-            'provider' => $provider,
-            'provider_user_id' => $providerUserId,
-            'email' => $email,
-            'access_token' => $socialiteUser->token,
-            'refresh_token' => $socialiteUser->refreshToken,
-            'token_expires_at' => $this->expiresAt($socialiteUser),
-            'scopes' => $this->scopes($socialiteUser, $provider),
-        ]));
+        return DB::transaction(function () use ($provider, $user, $socialiteUser, $providerUserId, $email): OAuthConnection {
+            $connection = OAuthConnection::query()->create([
+                'user_id' => $user->id,
+                'provider' => $provider,
+                'provider_user_id' => $providerUserId,
+                'email' => $email,
+                'token_expires_at' => $this->expiresAt($socialiteUser),
+                'scopes' => $this->scopes($socialiteUser, $provider),
+            ]);
+
+            $connection->forceFill([
+                'access_token' => $socialiteUser->token,
+                'refresh_token' => $socialiteUser->refreshToken,
+            ])->save();
+
+            return $connection;
+        });
     }
 
     private function refreshTokens(

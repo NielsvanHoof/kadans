@@ -114,13 +114,14 @@ final class DemoDataSeeder extends Seeder
 
     private function addMember(Tenant $tenant, User $user, Role $role): void
     {
-        TenantMembership::query()->create([
+        $membership = new TenantMembership;
+        $membership->forceFill([
             'tenant_id' => $tenant->getKey(),
             'user_id' => $user->getKey(),
             'status' => TenantMembershipStatus::Active,
             'joined_at' => now()->subMonths(4),
             'last_accessed_at' => now()->subDays(1),
-        ]);
+        ])->saveOrFail();
 
         setPermissionsTeamId($tenant->getKey());
         $user->unsetRelation('roles');

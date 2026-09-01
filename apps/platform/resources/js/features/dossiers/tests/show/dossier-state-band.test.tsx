@@ -34,6 +34,13 @@ function dossier(overrides: Partial<Dossier> = {}): Dossier {
         id: 7,
         status: 'awaiting_client',
         document_requests: [],
+        review_summary: {
+            total: 0,
+            pending: 0,
+            submitted: 0,
+            accepted: 0,
+            rejected: 0,
+        },
         access_grants: [],
         ...overrides,
     } as Dossier;
@@ -70,7 +77,13 @@ describe('DossierStateBand', () => {
      */
     it('hints only at the stage the dossier is actually on', () => {
         renderBand({
-            document_requests: [{ id: 1, status: 'pending' }] as never,
+            review_summary: {
+                total: 1,
+                pending: 1,
+                submitted: 0,
+                accepted: 0,
+                rejected: 0,
+            },
         });
 
         expect(
@@ -96,7 +109,13 @@ describe('DossierStateBand', () => {
 
     it('selects the access panel instead of navigating for the invite stage', async () => {
         const { onSelectInvite } = renderBand({
-            document_requests: [{ id: 1, status: 'pending' }] as never,
+            review_summary: {
+                total: 1,
+                pending: 1,
+                submitted: 0,
+                accepted: 0,
+                rejected: 0,
+            },
         });
 
         await userEvent.click(
@@ -114,7 +133,13 @@ describe('DossierStateBand', () => {
 
     it('opens the review route once items exist', () => {
         renderBand({
-            document_requests: [{ id: 1, status: 'submitted' }] as never,
+            review_summary: {
+                total: 1,
+                pending: 0,
+                submitted: 1,
+                accepted: 0,
+                rejected: 0,
+            },
             access_grants: [validGrant],
         });
 

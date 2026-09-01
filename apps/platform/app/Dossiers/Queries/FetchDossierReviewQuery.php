@@ -45,7 +45,7 @@ final readonly class FetchDossierReviewQuery
             'client:id,name,email',
             'documentRequests' => fn ($query) => $query
                 ->with(['uploadedDocuments', 'reviewedBy:id,name'])
-                ->with('uploadedDocuments.pipelines.steps')
+                ->with('uploadedDocuments.latestPipeline.steps')
                 ->oldest('sort_order'),
         ]);
 

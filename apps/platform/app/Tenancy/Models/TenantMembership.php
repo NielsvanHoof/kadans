@@ -60,12 +60,7 @@ final class TenantMembership extends Model
      */
     #[Override]
     protected $fillable = [
-        'tenant_id',
-        'user_id',
         'job_title',
-        'status',
-        'invited_at',
-        'joined_at',
         'last_accessed_at',
     ];
 
