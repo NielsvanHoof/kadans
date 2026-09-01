@@ -6,10 +6,6 @@ use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use App\Platform\Support\WorkerQueues;
 use Illuminate\Support\Facades\Config;
 
-// WorkerQueues is constants-only (no executable lines). covers() makes PHPUnit
-// treat the target as unexecuted and, with --coverage, those tests warn. PHPUnit
-// 13 fails the run on PHPUnit warnings even when every assertion passed.
-
 /**
  * @return array<string, array<string, mixed>>
  */

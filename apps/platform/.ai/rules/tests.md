@@ -14,7 +14,7 @@ Pest `test()` over `it()`. No PHPUnit class-based tests. Use `describe()` to gro
 
 Use `->with([...])` datasets for role matrices, enum/status tables, and validation case tables that only differ by inputs — named keys (`'read only' => Role::ReadOnly`). Do **not** dataset unique happy paths or multi-step workflows. Exemplar: `tests/Feature/Pipelines/PipelinePolicyTest.php`.
 
-Add `covers(SomeClass::class)` (or `mutates()`) at the top of focused Feature/Unit files that target a single class — policies, transitions, actions, queries, mappers. Skip it on broad HTTP/Inertia flow files that touch many classes.
+Add `covers(SomeClass::class)` (or `mutates()`) at the top of focused Feature/Unit files that target a single class — policies, transitions, actions, queries, mappers. Skip it on broad HTTP/Inertia flow files that touch many classes. Do **not** `covers()` classes outside `phpunit.xml` `<source><include>` (currently `app/`): seeders under `database/` make PHPUnit 13 warn "not a valid target for code coverage", and `failOnPhpunitWarning` then fails `composer test:coverage:ci` while every assertion still passed.
 
 Mutation testing is **local only** (not a CI gate): `composer test:mutate` mutates each `covers()` file in isolation so other targets are not scored as UNCOVERED. Needs PCOV or Xdebug. Close untested mutants with stronger assertions; `@pest-mutate-ignore` only for intentional noise with a reason. Do **not** add `--mutate` to `ci:check`.
 

@@ -7,7 +7,8 @@ use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 
-covers(SystemQuestionnaireTemplateSeeder::class);
+// Seeders live under database/, outside phpunit.xml <source>app</source>.
+// PHPUnit 13 warns "not a valid target for code coverage" and fails CI.
 
 test('system questionnaire template seeder creates missing templates once', function (): void {
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
