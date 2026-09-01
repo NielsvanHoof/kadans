@@ -126,8 +126,16 @@ return [
      * When set to true, Laravel\Octane\Events\OperationTerminated event listener will be registered
      * this will refresh permissions on every TickTerminated, TaskTerminated and RequestTerminated
      * NOTE: This should not be needed in most cases, but an Octane/Vapor combination benefited from it.
+     *
+     * Required here. PermissionRegistrar is a per-worker singleton that holds the
+     * whole permission collection in memory, and forgetCachedPermissions() only
+     * clears the Redis key plus the worker that called it. Provisioning a firm
+     * (SyncTenantRolesAction) therefore leaves every other FrankenPHP worker with
+     * a collection that predates the new tenant's roles, so the owner's very first
+     * dashboard visits alternate 200/403 depending on which worker answers, until
+     * the workers happen to recycle.
      */
-    'register_octane_reset_listener' => false,
+    'register_octane_reset_listener' => true,
 
     /*
      * Events will fire when a role or permission is assigned/unassigned:

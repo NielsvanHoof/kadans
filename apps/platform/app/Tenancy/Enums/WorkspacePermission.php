@@ -16,6 +16,7 @@ enum WorkspacePermission: string implements TenantPermission
     case ViewRoles = 'roles.view';
     case ManageRoles = 'roles.manage';
     case ManageSettings = 'tenant.settings.manage';
+    case AccessAdmin = 'tenant.admin.access';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum WorkspacePermission: string implements TenantPermission
             self::ViewRoles => __('View roles'),
             self::ManageRoles => __('Manage roles'),
             self::ManageSettings => __('Manage firm settings'),
+            self::AccessAdmin => __('Access the admin area'),
         };
     }
 
@@ -42,13 +44,14 @@ enum WorkspacePermission: string implements TenantPermission
             self::ViewRoles => __('See which permissions each role grants.'),
             self::ManageRoles => __('Change what each role is allowed to do.'),
             self::ManageSettings => __('Change firm-wide settings.'),
+            self::AccessAdmin => __('Open the firm administration area.'),
         };
     }
 
     public function group(): PermissionGroup
     {
         return match ($this) {
-            self::ManageSettings => PermissionGroup::Settings,
+            self::ManageSettings, self::AccessAdmin => PermissionGroup::Settings,
             default => PermissionGroup::Members,
         };
     }
@@ -56,8 +59,8 @@ enum WorkspacePermission: string implements TenantPermission
     public function defaultRoles(): array
     {
         return match ($this) {
-            // Firm settings and reshaping roles stay owner-only.
-            self::ManageSettings, self::ManageRoles => [],
+            // Reshaping roles stays owner-only; firm settings is an administrator job.
+            self::ManageRoles => [],
             default => [Role::Administrator],
         };
     }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\TenantSetting;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -20,11 +21,34 @@ test('owner can view firm settings', function (): void {
             ->where('settings.ai.reminder_draft', true));
 });
 
-test('administrator cannot view firm settings', function (): void {
+test('administrator can view and update firm settings', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
-    $administrator = workspaceMember($tenant, App\Tenancy\Enums\Role::Administrator);
+    $administrator = workspaceMember($tenant, Role::Administrator);
+
+    $this->withoutVite();
 
     $this->actingAs($administrator)
+        ->get(workspaceRoute('workspaces.settings.index', $tenant))
+        ->assertOk();
+
+    $this->actingAs($administrator)
+        ->patch(workspaceRoute('workspaces.settings.update', $tenant), [
+            'ai_document_overview_enabled' => false,
+            'ai_checklist_draft_enabled' => true,
+            'ai_reminder_draft_enabled' => true,
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.settings.index', $tenant));
+
+    expect(TenantSetting::query()->where('tenant_id', $tenant->id)->first())
+        ->not->toBeNull()
+        ->ai_document_overview_enabled->toBeFalse();
+});
+
+test('adviser cannot view firm settings', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+    $adviser = workspaceMember($tenant, Role::Adviser);
+
+    $this->actingAs($adviser)
         ->get(workspaceRoute('workspaces.settings.index', $tenant))
         ->assertForbidden();
 });
@@ -61,7 +85,7 @@ test('new firms start with all ai features enabled', function (): void {
 
 test('firm settings are shared with every workspace member', function (): void {
     ['tenant' => $tenant] = provisionWorkspace();
-    $administrator = workspaceMember($tenant, App\Tenancy\Enums\Role::Administrator);
+    $administrator = workspaceMember($tenant, Role::Administrator);
 
     TenantSetting::query()->where('tenant_id', $tenant->id)->update([
         'ai_checklist_draft_enabled' => false,

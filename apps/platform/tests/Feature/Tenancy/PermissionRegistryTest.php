@@ -77,6 +77,22 @@ test('resolves a permission back from its stored name', function (): void {
         ->and($registry->isRegistered('nope.nope'))->toBeFalse();
 });
 
+test('grants admin area access to administrators only', function (): void {
+    $registry = resolve(PermissionRegistry::class);
+
+    expect($registry->valuesForRole(Role::Administrator))
+        ->toContain(WorkspacePermission::AccessAdmin->value);
+
+    foreach ([Role::Adviser, Role::Reviewer, Role::ReadOnly] as $role) {
+        expect($registry->valuesForRole($role))
+            ->not->toContain(WorkspacePermission::AccessAdmin->value);
+    }
+
+    // Owners are implicit, so the enum must not name them.
+    expect(WorkspacePermission::AccessAdmin->defaultRoles())
+        ->toBe([Role::Administrator]);
+});
+
 /**
  * The intended default capability matrix. Changing any expectation here is a
  * deliberate product decision about what a role may do, not a refactor.
@@ -84,9 +100,12 @@ test('resolves a permission back from its stored name', function (): void {
 test('gives each role its intended default capabilities', function (): void {
     $registry = resolve(PermissionRegistry::class);
 
-    // Administrator runs the firm but does not own its settings.
+    // Administrator runs the firm, firm settings included, but may not reshape
+    // roles and does not handle data-subject requests.
     expect($registry->valuesForRole(Role::Administrator))
-        ->not->toContain(WorkspacePermission::ManageSettings->value)
+        ->toContain(WorkspacePermission::AccessAdmin->value)
+        ->toContain(WorkspacePermission::ManageSettings->value)
+        ->not->toContain(WorkspacePermission::ManageRoles->value)
         ->toContain(AuditPermission::View->value)
         ->toContain(ClientPermission::View->value)
         ->toContain(WorkspacePermission::AssignMemberRoles->value);
