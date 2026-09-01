@@ -51,6 +51,7 @@ export const TENANT_PERMISSIONS = [
     'roles.view',
     'roles.manage',
     'tenant.settings.manage',
+    'tenant.admin.access',
     'data_subject.view',
     'data_subject.manage',
 ] as const;

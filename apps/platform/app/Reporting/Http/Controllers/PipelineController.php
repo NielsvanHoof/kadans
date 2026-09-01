@@ -23,7 +23,6 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class PipelineController extends Controller
 {
@@ -70,7 +69,7 @@ final class PipelineController extends Controller
         Pipeline $pipeline,
         LogAuditActivityAction $logAuditActivity,
         DownloadDossierExportAction $downloadDossierExport,
-    ): RedirectResponse|StreamedResponse {
+    ): HttpResponse {
         $this->authorize('download', $pipeline);
 
         $pipeline->loadMissing('pipelineable');

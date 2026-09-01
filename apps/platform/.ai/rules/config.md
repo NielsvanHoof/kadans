@@ -3,6 +3,7 @@ paths:
   - 'config/**'
   - config/queue.php
   - config/horizon.php
+  - config/permission.php
 ---
 
 # Config
@@ -36,3 +37,12 @@ Every `maxProcesses` must stay strictly above its own supervisor's queue count. 
 
 ## Sessions live on Redis DB 2
 When session.driver is redis, SESSION_CONNECTION must be the dedicated `session` Redis connection on REDIS_SESSION_DB (default 2), not the default connection (DB 0, queue/Horizon) or cache (DB 1). ProductionConfigurationValidator rejects a missing connection or a session DB that equals default. Numbered DBs share instance maxmemory — this is FLUSHDB isolation, not eviction isolation.
+
+## Spatie permission cache does NOT re-hydrate per request under Octane
+`PermissionRegistrar` is bound as a `singleton`, so each FrankenPHP worker holds the whole permission collection in memory for its lifetime. `forgetCachedPermissions()` clears the Redis key **and only the calling worker's** copy — every other worker keeps serving its stale collection until it recycles.
+
+Consequence (a real 403 bug, reproduced 2026-09-01): provisioning a firm runs `SyncTenantRolesAction`, which creates that tenant's roles. Workers that cached beforehand cannot see role rows for the new tenant, so `$user->can('dossiers.view')` is false there and `DashboardController@show`'s `authorize('viewAny', Dossier::class)` throws. The owner's first visits to the new workspace dashboard then alternate 200/403 depending on which worker answers, and heal on their own once workers recycle — which is what makes it look intermittent. The audit log records it as `access.denied` / "This action is unauthorized.".
+
+Fix in place: `permission.register_octane_reset_listener => true` (the package's own `OperationTerminated` listener). Guarded by a test in `tests/Feature/Platform/OctaneConfigurationTest.php`. Do not set it back to the vendor default of `false`.
+
+Corrects the claim in `.ai/rules/app.md` ("Known scaling ceilings") that the registrar "re-hydrates per request" — it hydrates once per worker. With the listener on, it now genuinely does re-read the Redis blob every request, so that entry's cost estimate is the accurate one.

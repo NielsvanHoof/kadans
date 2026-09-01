@@ -34,6 +34,10 @@ declare module '@inertiajs/core' {
             current_firm: Firm | null;
             /** Every registered tenant permission, resolved for the current firm. */
             permissions: Partial<TenantPermissionMap>;
+            /** Firm-wide settings for the active workspace. */
+            firm_settings:
+                | import('@/hooks/use-firm-settings').FirmSettings
+                | null;
             support_session: SupportSessionShared | null;
             notifications: WorkspaceNotificationsSummary | null | undefined;
             sidebar_open: boolean;

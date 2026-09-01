@@ -7,9 +7,7 @@ import {
     LifeBuoy,
     ListChecks,
     ScrollText,
-    ShieldCheck,
-    ShieldQuestion,
-    UserPlus,
+    Shield,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-shell/app-logo';
@@ -25,26 +23,27 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAdminSections } from '@/layouts/admin/admin-sections';
 import { dashboard } from '@/routes';
 import { index as platformSupportIndex } from '@/routes/platform/support';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { index as activityIndex } from '@/routes/workspaces/activity';
 import { index as clientIndex } from '@/routes/workspaces/clients';
-import { index as dataSubjectRequestIndex } from '@/routes/workspaces/data-subject-requests';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
-import { index as membersIndex } from '@/routes/workspaces/members';
 import { index as pipelineIndex } from '@/routes/workspaces/pipelines';
-import { index as rolesIndex } from '@/routes/workspaces/roles';
 import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
     const { current_firm: currentFirm, auth } = usePage().props;
     const { can } = usePermissions();
+    const { isCurrentOrParentUrl } = useCurrentUrl();
     const { t } = useTranslation();
+    const adminSections = useAdminSections();
     const dashboardRoute = currentFirm
         ? workspaceDashboard(currentFirm)
         : dashboard();
@@ -77,24 +76,6 @@ export function AppSidebar() {
                       href: clientIndex(currentFirm),
                       icon: Users,
                   },
-                  ...(can('members.view')
-                      ? [
-                            {
-                                title: t('Members'),
-                                href: membersIndex(currentFirm),
-                                icon: UserPlus,
-                            },
-                        ]
-                      : []),
-                  ...(can('roles.view')
-                      ? [
-                            {
-                                title: t('Roles & permissions'),
-                                href: rolesIndex(currentFirm),
-                                icon: ShieldCheck,
-                            },
-                        ]
-                      : []),
                   {
                       title: t('Templates'),
                       href: templateIndex(currentFirm),
@@ -110,21 +91,24 @@ export function AppSidebar() {
                       href: activityIndex(currentFirm),
                       icon: ScrollText,
                   },
-                  ...(can('data_subject.view')
-                      ? [
-                            {
-                                title: t('Data-subject requests'),
-                                href: dataSubjectRequestIndex(currentFirm),
-                                icon: ShieldQuestion,
-                            },
-                        ]
-                      : []),
                   ...(can('pipelines.view')
                       ? [
                             {
                                 title: t('Pipelines'),
                                 href: pipelineIndex(currentFirm),
                                 icon: ListChecks,
+                            },
+                        ]
+                      : []),
+                  ...(can('tenant.admin.access') && adminSections.length > 0
+                      ? [
+                            {
+                                title: t('Admin'),
+                                href: adminSections[0].href,
+                                icon: Shield,
+                                isActive: adminSections.some((section) =>
+                                    isCurrentOrParentUrl(section.href),
+                                ),
                             },
                         ]
                       : []),

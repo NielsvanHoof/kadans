@@ -20,6 +20,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useAiFeatureEnabled } from '@/hooks/use-firm-settings';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
@@ -35,6 +36,7 @@ export default function DossierReminderComposeDialog({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const reminderDraftEnabled = useAiFeatureEnabled('reminder_draft');
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const messageFieldId = useId();
@@ -111,24 +113,32 @@ export default function DossierReminderComposeDialog({
                                 />
                             </Field>
 
-                            <DialogFooter className="gap-2 sm:justify-between">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    isDisabled={drafting}
-                                    onClick={generateDraft}
-                                >
-                                    {drafting ? (
-                                        <Spinner />
-                                    ) : (
-                                        <Sparkles aria-hidden="true" />
-                                    )}
-                                    {drafting
-                                        ? t('Generating…')
-                                        : message
-                                          ? t('Regenerate draft')
-                                          : t('Generate draft')}
-                                </Button>
+                            <DialogFooter
+                                className={
+                                    reminderDraftEnabled
+                                        ? 'gap-2 sm:justify-between'
+                                        : 'gap-2 sm:justify-end'
+                                }
+                            >
+                                {reminderDraftEnabled ? (
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        isDisabled={drafting}
+                                        onClick={generateDraft}
+                                    >
+                                        {drafting ? (
+                                            <Spinner />
+                                        ) : (
+                                            <Sparkles aria-hidden="true" />
+                                        )}
+                                        {drafting
+                                            ? t('Generating…')
+                                            : message
+                                              ? t('Regenerate draft')
+                                              : t('Generate draft')}
+                                    </Button>
+                                ) : null}
                                 <Button type="submit" isDisabled={processing}>
                                     {processing ? (
                                         <Spinner />

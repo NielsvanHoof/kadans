@@ -26,6 +26,9 @@ import type { IndexQueryConfig } from '@/types/pagination';
 
 const SEARCH_DEBOUNCE_MS = 500;
 
+/** Hard cap for index search fields — enough for real queries, not dump pastes. */
+const SEARCH_MAX_LENGTH = 255;
+
 /**
  * Generic filter + sort toolbar driven by controller-provided indexQuery config.
  * Stays interactive while results reload — pending UI lives on IndexQueryResults.
@@ -53,7 +56,11 @@ export default function IndexQueryToolbar({
         const initial: Record<string, string> = {};
         for (const filter of config.filters) {
             if (filter.type === 'search') {
-                initial[filter.key] = filters[filter.key] ?? '';
+                // Clamp URL values too — someone can share a ?q=… longer than the cap.
+                initial[filter.key] = (filters[filter.key] ?? '').slice(
+                    0,
+                    SEARCH_MAX_LENGTH,
+                );
             }
         }
         return initial;
@@ -72,7 +79,10 @@ export default function IndexQueryToolbar({
 
             for (const filter of config.filters) {
                 if (filter.type === 'search') {
-                    const value = filters[filter.key] ?? '';
+                    const value = (filters[filter.key] ?? '').slice(
+                        0,
+                        SEARCH_MAX_LENGTH,
+                    );
 
                     if (next[filter.key] !== value) {
                         next[filter.key] = value;
@@ -120,8 +130,11 @@ export default function IndexQueryToolbar({
     );
 
     function handleSearchChange(key: string, value: string): void {
+        // maxLength covers typing; slice covers paste into browsers that ignore it.
+        const clipped = value.slice(0, SEARCH_MAX_LENGTH);
+
         setDrafts((prev) => {
-            const nextDrafts = { ...prev, [key]: value };
+            const nextDrafts = { ...prev, [key]: clipped };
             debouncedApplySearchDrafts(nextDrafts);
             return nextDrafts;
         });
@@ -178,6 +191,7 @@ export default function IndexQueryToolbar({
                         id={`index-filter-${filter.key}`}
                         type="search"
                         value={drafts[filter.key] ?? ''}
+                        maxLength={SEARCH_MAX_LENGTH}
                         placeholder={t(filter.label)}
                         onFocus={handleSearchFocus}
                         onBlur={handleSearchBlur}
@@ -241,10 +255,7 @@ export default function IndexQueryToolbar({
     // hides its content with the `hidden` attribute, which a breakpoint cannot
     // undo — the desktop row has to be a genuinely different tree.
     const truncationNotice = config.search_truncated ? (
-        <p
-            role="status"
-            className="text-muted-foreground text-sm text-pretty"
-        >
+        <p role="status" className="text-muted-foreground text-sm text-pretty">
             {t(
                 'Search results are limited to the first matches. Narrow your query to see more.',
             )}

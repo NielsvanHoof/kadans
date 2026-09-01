@@ -7,16 +7,25 @@ namespace App\Questionnaires\Actions;
 use App\Questionnaires\Ai\ChecklistDraftAgent;
 use App\Questionnaires\Data\DraftedChecklistItemData;
 use App\Questionnaires\Enums\QuestionnaireItemType;
+use App\Tenancy\Enums\TenantAiFeature;
+use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 
 final readonly class DraftQuestionnaireChecklistItemsAction
 {
+    public function __construct(private ResolveTenantSettingsQuery $resolveTenantSettings) {}
+
     /**
      * @return list<DraftedChecklistItemData>
      */
     public function handle(string $description, string $languageLabel): array
     {
+        if (! $this->resolveTenantSettings->isAiFeatureEnabled(TenantAiFeature::ChecklistDraft)) {
+            throw new AuthorizationException(__('AI checklist suggestions are disabled for this firm.'));
+        }
+
         $agent = new ChecklistDraftAgent($languageLabel);
 
         $response = $agent->prompt($description);

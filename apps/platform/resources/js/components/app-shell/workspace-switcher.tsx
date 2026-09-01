@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react';
+import { Building2, Check, ChevronsUpDown, Plus, Settings } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuGroup,
@@ -13,13 +13,16 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
 import { create as createFirm } from '@/routes/firms';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
+import { index as settingsIndex } from '@/routes/workspaces/settings';
 
 export function WorkspaceSwitcher() {
     const { current_firm: currentFirm, workspaces } = usePage().props;
     const { t } = useTranslation();
+    const { can } = usePermissions();
 
     if (!currentFirm) {
         return null;
@@ -71,6 +74,14 @@ export function WorkspaceSwitcher() {
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
+                            {can('tenant.settings.manage') && (
+                                <DropdownMenuItem
+                                    href={settingsIndex(currentFirm).url}
+                                >
+                                    <Settings />
+                                    <span>{t('Firm settings')}</span>
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                                 onAction={() => router.visit(createFirm.url())}
                             >

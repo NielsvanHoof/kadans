@@ -12,7 +12,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/ClientPortal/** | .ai/rules/client-portal.md |
 | app/Platform/Console/Commands/Retention/** | .ai/rules/commands-retention.md |
 | app/{DocumentProcessing,AudioProcessing}/Console/Commands/** | .ai/rules/commands.md |
-| config/**, config/queue.php, config/horizon.php | .ai/rules/config.md |
+| config/**, config/queue.php, config/horizon.php, config/permission.php | .ai/rules/config.md |
 | app/Integrations/Http/Connectors/** | .ai/rules/connectors.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
@@ -46,6 +46,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Tenancy/Http/Middleware/** | .ai/rules/middleware.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/*/Models/** | .ai/rules/models.md |
+| resources/js/features/security/passkeys/** | .ai/rules/passkeys.md |
 | app/Pipelines/** | .ai/rules/pipelines.md |
 | app/Platform/Models/DataSubjectRequest.php | .ai/rules/platform-models.md |
 | app/Providers/** | .ai/rules/providers.md |
@@ -57,6 +58,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Platform/Http/SharedProps/** | .ai/rules/shared-props.md |
 | infra/src/shared/** | .ai/rules/shared.md |
+| app/Dossiers/Support/StoredFileResponse.php | .ai/rules/support.md |
 | app/Tenancy/** | .ai/rules/tenancy.md |
 | tests/** | .ai/rules/tests.md |
 | app/*/{Transitions,Policies,Http/Controllers}/** | .ai/rules/transitions-policies-http-controllers.md |

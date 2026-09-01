@@ -35,6 +35,7 @@ Route::middleware([
         require __DIR__.'/tenant/clients.php';
         require __DIR__.'/tenant/members.php';
         require __DIR__.'/tenant/roles.php';
+        require __DIR__.'/tenant/settings.php';
         require __DIR__.'/tenant/questionnaires.php';
         require __DIR__.'/tenant/dossiers.php';
         require __DIR__.'/tenant/uploads.php';

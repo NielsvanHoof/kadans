@@ -102,6 +102,32 @@ describe('IndexQueryToolbar', () => {
         ).toBeInTheDocument();
     });
 
+    it('caps search input at 255 characters', async () => {
+        const user = userEvent.setup();
+        setFilters.mockClear();
+
+        render(<IndexQueryToolbar config={config} />);
+
+        const search = screen.getByRole('searchbox', { name: 'Search' });
+
+        expect(search).toHaveAttribute('maxLength', '255');
+
+        await user.click(search);
+        // Paste a string longer than the cap — onChange must clip it.
+        fireEvent.change(search, {
+            target: { value: 'a'.repeat(300) },
+        });
+        fireEvent.blur(search);
+
+        await waitFor(() => {
+            expect(setFilters).toHaveBeenCalledWith({
+                status: 'open',
+                q: 'a'.repeat(255),
+            });
+        });
+        expect(search).toHaveValue('a'.repeat(255));
+    });
+
     it('updates sort from the sort select', async () => {
         const user = userEvent.setup();
         setSort.mockClear();

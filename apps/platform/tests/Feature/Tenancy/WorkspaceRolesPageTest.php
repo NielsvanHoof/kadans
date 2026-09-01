@@ -154,7 +154,7 @@ test('owners hold every registered permission on the matrix', function (): void 
         });
 });
 
-test('firm settings show as owner-only on the matrix', function (): void {
+test('firm settings show as owner and administrator on the matrix', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner)
@@ -165,7 +165,7 @@ test('firm settings show as owner-only on the matrix', function (): void {
             $groups = $page->toArray()['props']['permission_groups'];
 
             expect(grantedRolesFor($groups, WorkspacePermission::ManageSettings->value))
-                ->toBe([Role::Owner->value]);
+                ->toBe([Role::Owner->value, Role::Administrator->value]);
         });
 });
 

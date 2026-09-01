@@ -7,6 +7,8 @@ namespace App\DocumentProcessing\Services\Ocr\Normalization;
 use App\DocumentProcessing\Ai\DocumentOverviewAgent;
 use App\DocumentProcessing\Contracts\Ocr\DocumentExtraction;
 use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
+use App\Tenancy\Enums\TenantAiFeature;
+use App\Tenancy\Queries\ResolveTenantSettingsQuery;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use RuntimeException;
@@ -28,12 +30,22 @@ use function mb_strlen;
  */
 final readonly class AgentDocumentOverviewNormalizer implements DocumentOverviewNormalizer
 {
+    public function __construct(
+        private ResolveTenantSettingsQuery $resolveTenantSettings,
+    ) {}
+
     /**
      * @param  DocumentExtractionPayload  $payload
      * @return DocumentOverview
      */
     public function describe(array $payload): array
     {
+        if (! $this->resolveTenantSettings->isAiFeatureEnabled(TenantAiFeature::DocumentOverview)) {
+            Log::info('OCR: document overview skipped — AI feature disabled for firm.');
+
+            return $this->emptyOverview();
+        }
+
         $context = $this->buildContext($payload);
 
         if ($context === '') {

@@ -6,6 +6,7 @@ namespace App\Platform\Http\Middleware;
 
 use App\Accounts\Actions\Localization\ResolveApplicationTimezoneAction;
 use App\Accounts\Models\User;
+use App\Platform\Http\SharedProps\FirmSettingsProps;
 use App\Platform\Http\SharedProps\LocaleProps;
 use App\Platform\Http\SharedProps\SupportSessionProps;
 use App\Platform\Http\SharedProps\TenantPermissionProps;
@@ -39,6 +40,7 @@ final class HandleInertiaRequests extends Middleware
         private readonly ResolveApplicationTimezoneAction $resolveApplicationTimezone,
         private readonly SupportSessionProps $supportSessionProps,
         private readonly TenantPermissionProps $tenantPermissionProps,
+        private readonly FirmSettingsProps $firmSettingsProps,
         private readonly TimezoneProps $timezoneProps,
         private readonly WorkspaceProps $workspaceProps,
     ) {}
@@ -110,6 +112,7 @@ final class HandleInertiaRequests extends Middleware
             // Whole registered permission set for the current firm — the frontend
             // gates on this rather than on per-feature booleans defined here.
             'permissions' => fn (): array => ($this->tenantPermissionProps)($user),
+            'firm_settings' => fn (): ?array => ($this->firmSettingsProps)($user),
             // Staff bell inbox — deferred so non-bell pages stay cheap.
             'notifications' => (function () use ($user) {
                 $tenant = Tenant::current();

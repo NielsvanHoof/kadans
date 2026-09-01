@@ -6,10 +6,8 @@ namespace App\Dossiers\Actions;
 
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Support\StoredFileResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Serves a completed export archive as an attachment.
@@ -29,7 +27,7 @@ final readonly class DownloadDossierExportAction
 {
     public function __construct(private StoredFileResponse $storedFileResponse) {}
 
-    public function handle(DossierExport $export): RedirectResponse|StreamedResponse
+    public function handle(DossierExport $export): HttpResponse
     {
         $disk = $export->disk;
         $path = $export->path;
