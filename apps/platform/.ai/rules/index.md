@@ -46,6 +46,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Tenancy/Http/Middleware/** | .ai/rules/middleware.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/*/Models/** | .ai/rules/models.md |
+| resources/js/features/security/passkeys/** | .ai/rules/passkeys.md |
 | app/Pipelines/** | .ai/rules/pipelines.md |
 | app/Platform/Models/DataSubjectRequest.php | .ai/rules/platform-models.md |
 | app/Providers/** | .ai/rules/providers.md |
@@ -57,6 +58,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Platform/Http/SharedProps/** | .ai/rules/shared-props.md |
 | infra/src/shared/** | .ai/rules/shared.md |
+| app/Dossiers/Support/StoredFileResponse.php | .ai/rules/support.md |
 | app/Tenancy/** | .ai/rules/tenancy.md |
 | tests/** | .ai/rules/tests.md |
 | app/*/{Transitions,Policies,Http/Controllers}/** | .ai/rules/transitions-policies-http-controllers.md |

@@ -7,6 +7,7 @@ use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Dossiers\Support\StoredFileResponse;
+use App\Platform\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -30,6 +31,23 @@ function fakeSignableS3Disk(): void
         fn (string $path, $expiration, array $options): string => 'https://signed.example/'.$path
             .'?disposition='.rawurlencode((string) ($options['ResponseContentDisposition'] ?? '')),
     );
+}
+
+/**
+ * Headers for a real Inertia visit, including the asset version.
+ *
+ * Sending X-Inertia without the version is a mismatch 409 whose
+ * X-Inertia-Location is this request URL — not the S3 hand-off.
+ *
+ * @return array<string, string>
+ */
+function inertiaVisitHeaders(): array
+{
+    return [
+        'X-Inertia' => 'true',
+        'X-Inertia-Version' => (string) resolve(HandleInertiaRequests::class)->version(request()),
+        'X-Requested-With' => 'XMLHttpRequest',
+    ];
 }
 
 test('an audio recording on s3 is handed off to storage instead of streamed through a worker', function (): void {
@@ -136,4 +154,42 @@ test('a completed dossier export on s3 is handed off to storage', function (): v
     expect($response->headers->get('location'))
         ->toStartWith('https://signed.example/exports/acme.zip')
         ->toContain(rawurlencode('attachment; filename=acme-payroll-export.zip'));
+});
+
+test('an inertia visit to a stored file uses a location response of the same url', function (): void {
+    fakeSignableS3Disk();
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Acme Payroll',
+    ]);
+    $export = DossierExport::factory()
+        ->completed('exports/acme.zip')
+        ->create([
+            'tenant_id' => $tenant->id,
+            'dossier_id' => $dossier->id,
+            'disk' => 's3',
+        ]);
+
+    Storage::disk('s3')->put((string) $export->path, 'zip-bytes');
+
+    $url = URL::temporarySignedRoute(
+        'workspaces.dossiers.exports.download',
+        now()->addMinutes(5),
+        ['tenant' => $tenant, 'dossier' => $dossier, 'export' => $export],
+    );
+
+    // Password confirmation plus passkey verify both resume the intended URL
+    // as an Inertia XHR. A 302 to S3 would be followed as CORS and fail.
+    $response = $this->actingAs($owner)
+        ->withSession(['auth.password_confirmed_at' => Date::now()->timestamp])
+        ->withHeaders(inertiaVisitHeaders())
+        ->get($url);
+
+    $response->assertConflict()
+        ->assertHeader('X-Inertia-Location', $url);
 });

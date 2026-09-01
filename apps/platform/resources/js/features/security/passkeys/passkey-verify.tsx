@@ -19,6 +19,22 @@ type Props = {
     separator?: string;
 };
 
+/**
+ * File-delivery routes 302 to a signed S3 URL. Inertia XHR following that hop
+ * fails CORS because the bucket only allows PUT for uploads. A full page load
+ * lets the browser follow the redirect as a navigation instead.
+ */
+export function isFileDownloadUrl(
+    href: string,
+    origin: string = window.location.origin,
+): boolean {
+    try {
+        return new URL(href, origin).pathname.endsWith('/download');
+    } catch {
+        return false;
+    }
+}
+
 export default function PasskeyVerify({
     routes,
     label,
@@ -34,7 +50,15 @@ export default function PasskeyVerify({
             },
         }),
         onSuccess: (response) => {
-            router.visit(response.redirect ?? '/');
+            const href = response.redirect ?? '/';
+
+            if (isFileDownloadUrl(href)) {
+                window.location.assign(href);
+
+                return;
+            }
+
+            router.visit(href);
         },
     });
 

@@ -22,6 +22,7 @@ use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ClientPortalUploadController extends Controller
@@ -121,7 +122,7 @@ final class ClientPortalUploadController extends Controller
         int $uploadedDocument,
         UploadedDocumentResponse $uploadedDocumentResponse,
         GuardUploadedDocumentDeliveryAction $guardUploadedDocumentDelivery,
-    ): RedirectResponse|StreamedResponse {
+    ): RedirectResponse|StreamedResponse|HttpResponse {
         [, $uploadedDocumentModel] = $this->uploadedDocumentOnGrantedDossier(
             $request,
             $documentRequest,
