@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { DraftedChecklistItem } from '@/features/questionnaires/types';
-import { mockUseTranslation } from '@/test/mocks';
+import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
 
 /**
  * TemplateItemEditor's own logic worth verifying lives in the AI "suggest
@@ -15,6 +15,9 @@ import { mockUseTranslation } from '@/test/mocks';
 const reorderPost = vi.fn();
 const draftPost = vi.fn();
 const toastError = vi.fn();
+
+// The firm's AI opt-outs gate the suggestion box (see useAiFeatureEnabled).
+let checklistDraftEnabled = true;
 const routerPost = vi.fn(
     (
         _url: string,
@@ -51,6 +54,16 @@ vi.mock('@inertiajs/react', () => ({
 
         return { post: reorderPost, setData: vi.fn() };
     },
+    usePage: () =>
+        mockInertiaPage({
+            firm_settings: {
+                ai: {
+                    document_overview: true,
+                    checklist_draft: checklistDraftEnabled,
+                    reminder_draft: true,
+                },
+            },
+        }),
 }));
 
 vi.mock('@/hooks/use-current-workspace', () => ({
@@ -78,6 +91,7 @@ beforeEach(() => {
     draftPost.mockReset();
     toastError.mockReset();
     routerPost.mockClear();
+    checklistDraftEnabled = true;
 });
 
 async function generateSuggestions(
@@ -98,6 +112,18 @@ async function generateSuggestions(
 }
 
 describe('TemplateItemEditor — AI suggestions', () => {
+    it('hides the suggestion box when the firm opted out of checklist drafts', () => {
+        checklistDraftEnabled = false;
+
+        render(<TemplateItemEditor templateId={1} items={[]} canManage />);
+
+        expect(screen.queryByLabelText('Suggest items with AI')).toBeNull();
+        // The manual editor must survive the opt-out.
+        expect(
+            screen.getByText('No items yet. Add your first question below.'),
+        ).toBeInTheDocument();
+    });
+
     it('shows the empty state when there are no items yet', () => {
         render(<TemplateItemEditor templateId={1} items={[]} canManage />);
 
