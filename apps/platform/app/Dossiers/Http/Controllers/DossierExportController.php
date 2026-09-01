@@ -32,7 +32,7 @@ final class DossierExportController extends Controller
 
         $createDossierExport->handle($dossier, $this->currentUser());
 
-        Toast::success(__('Dossier export queued.'));
+        Toast::success(__('Preparing dossier export. You\'ll get a download link when it\'s ready.'));
 
         return to_route(
             'workspaces.dossiers.show',

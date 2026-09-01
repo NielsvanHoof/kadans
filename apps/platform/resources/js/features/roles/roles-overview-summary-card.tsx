@@ -11,9 +11,6 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { manage as manageRoles } from '@/routes/workspaces/roles';
 
-/**
- * Compact summary that keeps the overview page focused.
- */
 export default function RolesOverviewSummaryCard({
     roles,
     canManageRoles,
@@ -32,10 +29,10 @@ export default function RolesOverviewSummaryCard({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{t('Custom roles summary')}</CardTitle>
+                <CardTitle>{t('Custom roles')}</CardTitle>
                 <CardDescription>
                     {t(
-                        'Use a dedicated page to create and manage custom roles without crowding this permissions overview.',
+                        'See how many custom roles exist and which are assigned to members.',
                     )}
                 </CardDescription>
             </CardHeader>
@@ -62,7 +59,7 @@ export default function RolesOverviewSummaryCard({
                         size="sm"
                         href={manageRoles(currentWorkspace).url}
                     >
-                        {t('Open role management')}
+                        {t('Manage roles')}
                     </LinkButton>
                 ) : null}
             </CardContent>

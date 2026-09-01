@@ -12,9 +12,6 @@ import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import PortalShell from '@/layouts/portal/portal-shell';
 
-/**
- * Client portal dossier page — magic-link access, no staff layout.
- */
 export default function PortalShow({
     firm,
     dossier,
@@ -65,7 +62,7 @@ export default function PortalShow({
                 {dossier.status !== 'completed' ? (
                     <p className="border-border/70 bg-card text-muted-foreground rounded-xl border px-4 py-3 text-base text-pretty shadow-xs">
                         {t(
-                            'Your answers are saved as you go. You can close this page and return to your link later.',
+                            'Your answers are saved as you go. You can leave and come back using the same link.',
                         )}
                     </p>
                 ) : null}
@@ -86,7 +83,7 @@ export default function PortalShow({
                 <div className="text-muted-foreground space-y-1 text-center text-sm text-pretty">
                     <p>
                         {t(
-                            'This is a secure upload page for :firm. Do not share this link.',
+                            'This is a private link for :firm. Keep it confidential.',
                             { firm: firm.name },
                         )}
                     </p>

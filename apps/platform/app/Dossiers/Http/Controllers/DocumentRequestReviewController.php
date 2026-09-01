@@ -48,7 +48,7 @@ final class DocumentRequestReviewController extends Controller
 
         Toast::success($decision === DocumentRequestStatus::Accepted
             ? __('Item approved.')
-            : __('Changes requested. The client notification has been queued.'));
+            : __('Changes requested. The client will be notified by email.'));
 
         return $this->redirectToReview($dossier);
     }

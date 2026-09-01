@@ -13,9 +13,6 @@ import { cn } from '@/lib/utils';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
-/**
- * Compact sortable canvas row. Only the selected field expands its client preview.
- */
 export default function QuestionnaireBuilderItem({
     documentRequest,
     index,

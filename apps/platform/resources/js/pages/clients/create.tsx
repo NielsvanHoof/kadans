@@ -8,9 +8,6 @@ import {
     create as createClient,
 } from '@/routes/workspaces/clients';
 
-/**
- * Create a new client for the current firm.
- */
 export default function CreateClient() {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();

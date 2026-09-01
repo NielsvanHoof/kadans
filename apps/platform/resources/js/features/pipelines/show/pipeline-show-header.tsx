@@ -16,9 +16,6 @@ import {
     index as pipelineIndex,
 } from '@/routes/workspaces/pipelines';
 
-/**
- * Back link, title, status badge, and run actions for the pipeline show page.
- */
 export default function PipelineShowHeader({
     pipeline,
     canDelete = false,
@@ -49,9 +46,7 @@ export default function PipelineShowHeader({
                     level={1}
                     className="mb-0"
                     title={`${pipelineTypeLabel(pipeline.type, t)} #${pipeline.id}`}
-                    description={t(
-                        'A detailed execution trace for this long-running process.',
-                    )}
+                    description={t('Step-by-step details for this job.')}
                     badge={<PipelineStatusBadge status={pipeline.status} />}
                 />
             </div>
@@ -71,7 +66,7 @@ export default function PipelineShowHeader({
                         })}
                     >
                         <Download aria-hidden="true" />
-                        {t('Download payload')}
+                        {t('Download raw data')}
                     </a>
                 ) : null}
 
@@ -87,7 +82,7 @@ export default function PipelineShowHeader({
 
                 {canDelete ? (
                     <ConfirmDestroyDialog
-                        title={t('Delete pipeline run?')}
+                        title={t('Delete this job?')}
                         description={t(
                             'This removes the execution record and its step history. It does not delete the underlying dossier or document.',
                         )}

@@ -26,6 +26,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Dossiers/Queries/** | .ai/rules/dossiers-queries.md |
 | app/Integrations/Enums/OAuthProvider.php | .ai/rules/enums.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
+| lang/**, resources/js/**, app/**/Enums/**, app/**/Http/Controllers/**, app/Audit/Enums/** | .ai/rules/customer-facing-copy.md |
 | app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |
 | app/Integrations/Http/Connectors/Google/** | .ai/rules/google.md |

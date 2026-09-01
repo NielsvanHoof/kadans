@@ -12,9 +12,6 @@ import {
     index as dossierIndex,
 } from '@/routes/workspaces/dossiers';
 
-/**
- * Create a new dossier for an existing client.
- */
 export default function CreateDossier({
     clients,
     responsible_staff: responsibleStaff,

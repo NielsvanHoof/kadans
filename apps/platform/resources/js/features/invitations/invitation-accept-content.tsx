@@ -12,10 +12,6 @@ import type { InvitationShowProps } from '@/features/invitations/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { login } from '@/routes';
 
-/**
- * Accept / register UI for a workspace invitation token.
- * Keeps the Inertia page thin — layout chrome stays on the page.
- */
 export default function InvitationAcceptContent({
     token,
     firm,
@@ -72,11 +68,10 @@ export default function InvitationAcceptContent({
             {!auth.authenticated && (
                 <div className="space-y-6">
                     <p className="text-muted-foreground text-sm">
-                        {t('Already have an account?')}{' '}
-                        <TextLink href={login()}>{t('Log in')}</TextLink>{' '}
-                        {t('with :email, then return to this page.', {
-                            email: invitation.email,
-                        })}
+                        {t(
+                            'Log in with :email, then come back here to accept the invitation.',
+                            { email: invitation.email },
+                        )}
                     </p>
 
                     {canRegister && (

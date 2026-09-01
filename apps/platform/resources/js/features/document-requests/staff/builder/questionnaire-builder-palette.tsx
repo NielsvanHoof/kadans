@@ -11,9 +11,6 @@ import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
-/**
- * Compact searchable palette of registered components plus optional templates.
- */
 export default function QuestionnaireBuilderPalette({
     templates,
     canEdit,
@@ -74,8 +71,8 @@ export default function QuestionnaireBuilderPalette({
                         type="search"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder={t('Search components…')}
-                        aria-label={t('Search components…')}
+                        placeholder={t('Search fields…')}
+                        aria-label={t('Search fields…')}
                         className="h-8 pl-8 text-sm"
                         autoComplete="off"
                     />
@@ -84,7 +81,7 @@ export default function QuestionnaireBuilderPalette({
 
             {filtered.length === 0 ? (
                 <p className="text-muted-foreground text-xs">
-                    {t('No matching components.')}
+                    {t('No matching fields.')}
                 </p>
             ) : (
                 <ul className="space-y-1.5">
@@ -161,7 +158,7 @@ function PaletteItem({
                         'focus-visible:ring-ring/50 flex min-w-0 flex-1 touch-none items-center gap-2 rounded-md px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:outline-none',
                         !disabled && 'cursor-grab active:cursor-grabbing',
                     )}
-                    aria-label={t('Drag :component', { component: label })}
+                    aria-label={t('Drag :field', { field: label })}
                     title={description}
                     disabled={disabled}
                     {...listeners}
@@ -180,7 +177,7 @@ function PaletteItem({
                     variant="outline"
                     className="size-8 shrink-0"
                     isDisabled={disabled}
-                    aria-label={t('Add :component', { component: label })}
+                    aria-label={t('Add :field', { field: label })}
                     onClick={onAdd}
                 >
                     <Plus aria-hidden="true" />

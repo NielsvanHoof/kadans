@@ -25,10 +25,6 @@ const TypeIcons: Record<string, LucideIcon> = {
     client_portal_new_device: Smartphone,
 };
 
-/**
- * Single inbox row — marks read then navigates to the target.
- * Separate delete control keeps the list from filling up indefinitely.
- */
 export default function NotificationListItem({
     notification,
     workspace,

@@ -14,7 +14,7 @@ describe('ExtractionRawJson', () => {
     it('shows an empty state without a payload', () => {
         render(<ExtractionRawJson rawJson={null} />);
 
-        expect(screen.getByText('No raw payload is available.')).toBeVisible();
+        expect(screen.getByText('No raw data is available.')).toBeVisible();
     });
 
     it('warns about unmasked personal data before revealing anything', () => {
@@ -22,7 +22,7 @@ describe('ExtractionRawJson', () => {
 
         expect(
             screen.getByText(
-                'This contains unmasked personal data, including any BSN and IBAN found in the document.',
+                'This shows sensitive client data in full, including BSN and IBAN if present.',
             ),
         ).toBeVisible();
     });
@@ -33,7 +33,9 @@ describe('ExtractionRawJson', () => {
 
         expect(screen.queryByText(/287505030/)).not.toBeInTheDocument();
 
-        await user.click(screen.getByRole('button', { name: 'Show raw JSON' }));
+        await user.click(
+            screen.getByRole('button', { name: 'Show full data' }),
+        );
 
         expect(screen.getByText(/287505030/)).toBeVisible();
     });
@@ -42,8 +44,12 @@ describe('ExtractionRawJson', () => {
         const user = userEvent.setup();
         render(<ExtractionRawJson rawJson={RAW} />);
 
-        await user.click(screen.getByRole('button', { name: 'Show raw JSON' }));
-        await user.click(screen.getByRole('button', { name: 'Hide raw JSON' }));
+        await user.click(
+            screen.getByRole('button', { name: 'Show full data' }),
+        );
+        await user.click(
+            screen.getByRole('button', { name: 'Hide full data' }),
+        );
 
         expect(screen.queryByText(/287505030/)).not.toBeInTheDocument();
     });
@@ -56,7 +62,9 @@ describe('ExtractionRawJson', () => {
             screen.queryByRole('button', { name: 'Copy' }),
         ).not.toBeInTheDocument();
 
-        await user.click(screen.getByRole('button', { name: 'Show raw JSON' }));
+        await user.click(
+            screen.getByRole('button', { name: 'Show full data' }),
+        );
 
         expect(screen.getByRole('button', { name: 'Copy' })).toBeVisible();
     });

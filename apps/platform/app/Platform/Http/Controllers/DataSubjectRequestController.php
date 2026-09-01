@@ -89,7 +89,7 @@ final class DataSubjectRequestController extends Controller
         if ($dataSubjectRequest->type === DataSubjectRequestType::Export) {
             dispatch(new GenerateDataSubjectExportJob($dataSubjectRequest->id))->afterCommit();
 
-            Toast::success(__('Building the export. It will appear here when it is ready.'));
+            Toast::success(__('Preparing the export. You\'ll get a download link when it\'s ready.'));
         } else {
             $anonymizeDataSubject->handle($dataSubjectRequest, $this->currentUser());
 

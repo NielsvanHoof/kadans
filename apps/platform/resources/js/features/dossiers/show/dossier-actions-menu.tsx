@@ -14,10 +14,6 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { edit as editDossier } from '@/routes/workspaces/dossiers';
 
-/**
- * Compact overflow menu for secondary dossier actions (edit / archive).
- * Keeps the page header free for the primary CTA and status badge.
- */
 export default function DossierActionsMenu({
     dossierId,
     dossierTitle,

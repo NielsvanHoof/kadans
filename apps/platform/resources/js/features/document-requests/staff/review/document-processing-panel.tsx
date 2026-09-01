@@ -16,9 +16,6 @@ import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 
-/**
- * Compact file strip on the dossier: status + download + link to extraction page.
- */
 export default function DocumentProcessingPanel({
     uploadedDocument,
     canDownload,
@@ -47,7 +44,7 @@ export default function DocumentProcessingPanel({
                                 uploadedDocument.processing_status,
                             )}
                         >
-                            {t('OCR :status', {
+                            {t('Scan :status', {
                                 status: documentProcessingStatusLabel(
                                     uploadedDocument.processing_status,
                                     t,

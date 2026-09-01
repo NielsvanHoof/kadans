@@ -31,7 +31,7 @@ export default function BulkRestoreClientsButton({
                     : t('Restore :count clients?', { count })
             }
             description={t(
-                'The selected clients will appear in lists again. Their dossiers stay archived until restored separately.',
+                'The selected clients will be visible again. Their dossiers stay archived until you restore them separately.',
             )}
             confirmLabel={
                 count === 1

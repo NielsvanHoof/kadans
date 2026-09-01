@@ -19,7 +19,7 @@ export default function RestoreClientButton({
         <ConfirmDestroyDialog
             title={t('Restore :name?', { name: clientName })}
             description={t(
-                'The client and their dossiers will appear in lists again.',
+                'This client and their dossiers will be visible again.',
             )}
             confirmLabel={t('Restore client')}
             confirmVariant="default"

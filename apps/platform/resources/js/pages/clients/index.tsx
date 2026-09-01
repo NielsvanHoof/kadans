@@ -17,9 +17,6 @@ import {
 import { create as createDossier } from '@/routes/workspaces/dossiers';
 import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
-/**
- * Clients index — people and organisations for document collection.
- */
 export default function ClientIndex({
     clients,
     indexQuery,

@@ -68,7 +68,6 @@ final class UploadedDocumentController extends Controller
 
         Toast::success(__('Document uploaded.'));
 
-        // Staff uploads land on the focused review page.
         return to_route(
             'workspaces.dossiers.review',
             $this->workspaceRouteParameters(['dossier' => $dossier]),
@@ -204,7 +203,7 @@ final class UploadedDocumentController extends Controller
         abort_unless(
             $guardUploadedDocumentDelivery->handle($uploadedDocument),
             403,
-            __('This file has not been cleared by the malware scanner.'),
+            __('This file hasn\'t passed our security check yet. Try again in a moment.'),
         );
     }
 }

@@ -40,7 +40,7 @@ enum WorkspacePermission: string implements TenantPermission
             self::InviteMembers => __('Send, resend, and revoke invitations to join the firm.'),
             self::SuspendMembers => __('Temporarily block a member from accessing the firm.'),
             self::RemoveMembers => __('Permanently remove a member from the firm.'),
-            self::AssignMemberRoles => __('Change what a member is allowed to do. Grants privilege escalation.'),
+            self::AssignMemberRoles => __('Change a member\'s role and what they can access.'),
             self::ViewRoles => __('See which permissions each role grants.'),
             self::ManageRoles => __('Change what each role is allowed to do.'),
             self::ManageSettings => __('Change firm-wide settings.'),

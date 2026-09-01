@@ -17,7 +17,7 @@ export function ConfidenceBadge({ confidence }: { confidence: number }) {
               : 'secondary';
 
     return (
-        <Badge variant={variant} title={t('OCR confidence from Textract')}>
+        <Badge variant={variant} title={t('Scan confidence')}>
             {percent}%
         </Badge>
     );

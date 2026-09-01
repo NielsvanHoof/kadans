@@ -12,10 +12,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { index as requestIndex } from '@/routes/workspaces/data-subject-requests';
 import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
-/**
- * Data-subject requests — the firm's record of clients exercising their access
- * and erasure rights, and the deadline for answering each one.
- */
 export default function DataSubjectRequestIndex({
     requests,
     indexQuery,
@@ -34,7 +30,7 @@ export default function DataSubjectRequestIndex({
     setLayoutProps({
         breadcrumbs: [
             {
-                title: t('Data-subject requests'),
+                title: t('Privacy requests'),
                 href: requestIndex(currentWorkspace),
             },
         ],
@@ -42,13 +38,13 @@ export default function DataSubjectRequestIndex({
 
     return (
         <>
-            <Head title={t('Data-subject requests')} />
+            <Head title={t('Privacy requests')} />
 
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
                 <Heading
                     level={1}
                     className="mb-0"
-                    title={t('Data-subject requests')}
+                    title={t('Privacy requests')}
                     description={t(
                         'Track requests from clients for a copy of their data or for its erasure, and the deadline for answering each one.',
                     )}

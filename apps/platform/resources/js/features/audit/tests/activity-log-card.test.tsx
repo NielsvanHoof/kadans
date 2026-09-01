@@ -69,7 +69,7 @@ describe('ActivityLogCard', () => {
         expect(screen.getByText('No audit events yet')).toBeInTheDocument();
         expect(
             screen.getByText(
-                'Audit events will appear here as your team works in this workspace.',
+                'No activity yet. Actions your team takes will show up here.',
             ),
         ).toBeInTheDocument();
     });

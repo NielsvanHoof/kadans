@@ -114,7 +114,7 @@ describe('AppSidebar', () => {
         for (const gone of [
             'Members',
             'Roles & permissions',
-            'Data-subject requests',
+            'Privacy requests',
         ]) {
             expect(screen.queryByRole('link', { name: gone })).toBeNull();
         }

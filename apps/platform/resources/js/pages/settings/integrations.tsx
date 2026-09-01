@@ -58,7 +58,7 @@ export default function Integrations({
                         icon={Link2}
                         title={t('No integrations available')}
                         description={t(
-                            'SSO providers are not configured on this environment.',
+                            "Single sign-on isn't set up yet. Contact your administrator.",
                         )}
                     />
                 )}

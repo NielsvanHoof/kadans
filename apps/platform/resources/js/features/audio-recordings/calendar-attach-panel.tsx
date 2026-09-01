@@ -245,7 +245,7 @@ export default function CalendarAttachPanel({
             {connectionStatus === 'unconfigured' ? (
                 <p className="text-muted-foreground text-sm">
                     {t(
-                        'Google Calendar is not configured on this environment.',
+                        "Google Calendar isn't connected yet. Contact your administrator.",
                     )}
                 </p>
             ) : null}

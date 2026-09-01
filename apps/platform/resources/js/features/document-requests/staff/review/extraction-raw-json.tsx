@@ -37,7 +37,7 @@ export default function ExtractionRawJson({
     }, []);
 
     if (rawJson === null || rawJson === '') {
-        return <EmptyState title={t('No raw payload is available.')} />;
+        return <EmptyState title={t('No raw data is available.')} />;
     }
 
     const copyRawJson = async () => {
@@ -60,7 +60,7 @@ export default function ExtractionRawJson({
                 <ShieldAlert className="mt-0.5 size-4 shrink-0" />
                 <span>
                     {t(
-                        'This contains unmasked personal data, including any BSN and IBAN found in the document.',
+                        'This shows sensitive client data in full, including BSN and IBAN if present.',
                     )}
                 </span>
             </p>
@@ -77,7 +77,7 @@ export default function ExtractionRawJson({
                     ) : (
                         <Eye className="size-3.5" />
                     )}
-                    {isRevealed ? t('Hide raw JSON') : t('Show raw JSON')}
+                    {isRevealed ? t('Hide full data') : t('Show full data')}
                 </Button>
                 {isRevealed && (
                     <Button

@@ -19,10 +19,6 @@ type SupportTenant = {
     slug: string;
 };
 
-/**
- * Internal firm picker for platform support — enter any firm read-only.
- * Search uses Spatie Query Builder filter[q].
- */
 export default function PlatformSupport({
     tenants,
     filters = {},

@@ -33,7 +33,6 @@ export default function DossierPanels({
     dossier,
     panel,
     onSelectPanel,
-    accessGrantToken,
     accessGrantPortalUrl,
     hasFormItems,
 }: {
@@ -151,7 +150,6 @@ export default function DossierPanels({
                             {accessGrantPortalUrl ? (
                                 <PortalLinkBanner
                                     portalUrl={accessGrantPortalUrl}
-                                    token={accessGrantToken}
                                 />
                             ) : null}
 

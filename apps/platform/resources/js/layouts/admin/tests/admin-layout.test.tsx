@@ -61,7 +61,7 @@ describe('AdminLayout', () => {
         expect(railItems()).toEqual([
             'Members',
             'Roles & permissions',
-            'Data-subject requests',
+            'Privacy requests',
             'Firm settings',
         ]);
         expect(

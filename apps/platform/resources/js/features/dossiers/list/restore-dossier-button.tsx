@@ -45,7 +45,7 @@ export default function RestoreDossierButton({
         <ConfirmDestroyDialog
             title={t('Restore this dossier?')}
             description={t(
-                'The dossier will appear in lists again and can be opened by your team.',
+                'Your team will be able to open this dossier again.',
             )}
             confirmLabel={t('Restore dossier')}
             confirmVariant="default"

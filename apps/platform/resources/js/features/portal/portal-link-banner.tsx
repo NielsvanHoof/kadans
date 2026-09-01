@@ -5,26 +5,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 
-/** How long the button shows "Copied" before reverting. */
 const COPIED_FEEDBACK_MS = 2000;
 
 /**
- * One-time flash of the client portal URL after creating an access grant.
- * The plain token cannot be retrieved again after this page load.
- *
- * An inline alert rather than its own card: it appears at the top of the Access
- * panel for one page load, and a card would read as permanent furniture.
+ * One-time flash of the client portal URL after creating a portal link.
  */
-export default function PortalLinkBanner({
-    portalUrl,
-    token = null,
-}: {
-    portalUrl: string;
-    token?: string | null;
-}) {
+export default function PortalLinkBanner({ portalUrl }: { portalUrl: string }) {
     const { t } = useTranslation();
     const [, copy] = useCopyToClipboard();
-    // Local flag so the label resets after a short delay (clipboard lib keeps the value).
     const [justCopied, setJustCopied] = useState(false);
     const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,7 +47,7 @@ export default function PortalLinkBanner({
             <AlertDescription className="gap-3">
                 <p>
                     {t(
-                        'Copy this link now. The plain token is shown once and cannot be retrieved again.',
+                        "Copy this link now. It's shown only once and can't be viewed again.",
                     )}
                 </p>
                 <code className="border-brand-border/60 bg-card font-data block max-w-full overflow-x-auto rounded-md border px-3 py-2 text-xs break-all">
@@ -75,11 +63,6 @@ export default function PortalLinkBanner({
                     >
                         {justCopied ? t('Copied') : t('Copy portal link')}
                     </Button>
-                    {token && (
-                        <span className="font-data text-muted-foreground text-xs">
-                            {t('Token: :token…', { token: token.slice(0, 8) })}
-                        </span>
-                    )}
                 </div>
             </AlertDescription>
         </Alert>

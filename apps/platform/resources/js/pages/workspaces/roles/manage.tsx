@@ -13,9 +13,6 @@ import {
     index as rolesIndex,
 } from '@/routes/workspaces/roles';
 
-/**
- * Dedicated workspace role management page.
- */
 export default function WorkspaceRolesManage({
     roles,
     permission_groups: permissionGroups,

@@ -17,9 +17,6 @@ import {
 } from '@/routes/workspaces/templates';
 import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
-/**
- * Template library — system packs and firm-owned copies in separate tabs.
- */
 export default function TemplateIndex({
     system_templates: systemTemplates,
     firm_templates: firmTemplates,

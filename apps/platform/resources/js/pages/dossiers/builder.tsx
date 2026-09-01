@@ -9,9 +9,6 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
-/**
- * Full-bleed questionnaire builder for a dossier.
- */
 export default function BuilderDossier({
     dossier,
     templates = [],

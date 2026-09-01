@@ -35,7 +35,7 @@ enum PermissionGroup: string
             self::Processing => __('Document processing'),
             self::Members => __('Members'),
             self::Audit => __('Audit log'),
-            self::DataSubjectRequests => __('Data-subject requests'),
+            self::DataSubjectRequests => __('Privacy requests'),
             self::Settings => __('Firm settings'),
         };
     }

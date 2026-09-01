@@ -12,10 +12,6 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { setClientCookie } from '@/lib/set-client-cookie';
 
-/**
- * Compact header language control with the Languages (A/文) glyph.
- * Syncs localStorage + cookie + server the same way as settings LocaleTabs.
- */
 export default function LocaleMenu() {
     const { t, locale, availableLocales } = useTranslation();
 

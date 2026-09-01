@@ -168,7 +168,7 @@ export default function ReviewDossier({
                                 <p className="text-muted-foreground text-sm">
                                     {t(
                                         firstInFlightDocument === null
-                                            ? 'Document analysis is still running. Results will update automatically.'
+                                            ? 'Document analysis is still running. Results will update shortly.'
                                             : ocrReviewBannerMessage(
                                                   firstInFlightDocument,
                                               ),

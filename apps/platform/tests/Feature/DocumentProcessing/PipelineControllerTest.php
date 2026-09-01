@@ -205,7 +205,7 @@ test('an authorized member can retry a failed run and it is re-queued', function
         ->post(workspaceRoute('workspaces.pipelines.retry', $tenant, ['pipeline' => $pipeline]))
         ->assertRedirect(workspaceRoute('workspaces.pipelines.show', $tenant, ['pipeline' => $pipeline]))
         ->assertInertiaFlash('toast.type', 'success')
-        ->assertInertiaFlash('toast.message', __('Pipeline retry queued.'));
+        ->assertInertiaFlash('toast.message', __('Retry started. Results will update when processing finishes.'));
 
     actingInWorkspace($tenant);
 

@@ -16,16 +16,6 @@ import {
     review as reviewDossier,
 } from '@/routes/workspaces/dossiers';
 
-/**
- * Compact Build Form → Send Invite → Review strip.
- *
- * Build Form and Review open dedicated routes; Send Invite selects the Access
- * panel on this page, so it is a button rather than a link.
- *
- * Only the current stage carries its hint. Hints on every stage made this
- * bulky enough to need its own card — and a hint on a finished stage tells
- * the reader nothing they can act on.
- */
 export default function DossierWorkflowLinks({
     dossier,
     onSelectInvite,

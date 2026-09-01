@@ -236,9 +236,7 @@ export default function TemplateShowContent({
                             ? t(
                                   'System templates are read-only. Copy to customise.',
                               )
-                            : t(
-                                  'Add, edit, or remove items. Drag the grip to reorder.',
-                              )}
+                            : t('Add, edit, or remove items. Drag to reorder.')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

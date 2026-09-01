@@ -16,7 +16,6 @@ export type TemplateCategoryOption = {
     label: string;
 };
 
-/** Compact template row for index / apply pickers. */
 export type TemplateSummary =
     App.Questionnaires.Data.QuestionnaireTemplateRowData;
 

@@ -34,7 +34,7 @@ final class DossierReminderController extends Controller
             $request->validated('message'),
         );
 
-        Toast::success(__('Client reminder queued with a fresh secure link.'));
+        Toast::success(__('Client reminder sent with a fresh secure link.'));
 
         return to_route(
             'workspaces.dossiers.show',

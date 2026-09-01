@@ -17,7 +17,7 @@ export const STAGE_LABELS: Record<DossierWorkflowStage, string> = {
  * English keys for dossier stage hints. Pass through `t()` for display.
  */
 export const STAGE_HINTS: Record<DossierWorkflowStage, string> = {
-    prepare: 'Drag components onto the canvas to build the client form.',
+    prepare: 'Build the client form by dragging fields into place.',
     invite: 'Send a portal link so the client can complete the form. Then continue to Review.',
     review: 'Check submissions, approve or request changes, then complete the dossier.',
 };

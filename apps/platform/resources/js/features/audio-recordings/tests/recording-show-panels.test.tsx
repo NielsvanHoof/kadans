@@ -129,7 +129,7 @@ describe('RecordingShowPanels', () => {
         expect(tabNames()).toContain('Calendar');
         expect(
             screen.getByText(
-                'Transcription is still running. The transcript will appear automatically.',
+                'Transcription is still running. The transcript will be ready shortly.',
             ),
         ).toBeInTheDocument();
     });

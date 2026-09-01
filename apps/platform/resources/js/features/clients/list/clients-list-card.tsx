@@ -15,9 +15,6 @@ import {
 } from '@/routes/workspaces/clients';
 import type { Paginated } from '@/types/pagination';
 
-/**
- * Client list for the clients index page.
- */
 export default function ClientsListCard({
     clients,
     canManage = false,

@@ -10,9 +10,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { index as mediaIndex } from '@/routes/workspaces/media';
 import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
-/**
- * Media library index — all document requests across dossiers.
- */
 export default function MediaLibraryIndex({
     documents,
     can_download: canDownload,

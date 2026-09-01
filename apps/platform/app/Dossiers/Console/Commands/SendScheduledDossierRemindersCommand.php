@@ -46,7 +46,7 @@ final class SendScheduledDossierRemindersCommand extends Command
             );
         }
 
-        info(__('Queued :count scheduled client reminders.', [
+        info(__('Sent :count scheduled client reminders.', [
             'count' => $sentCount,
         ]));
 

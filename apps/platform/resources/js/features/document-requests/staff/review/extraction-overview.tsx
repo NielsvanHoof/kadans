@@ -6,7 +6,7 @@ import type { DocumentExtraction } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
- * Document type, OCR confidence, summary, and extraction notes.
+ * Document type, scan confidence, summary, and extraction notes.
  *
  * No heading of its own — the enclosing tab already labels this panel.
  */
@@ -30,7 +30,11 @@ export default function ExtractionOverview({
         documentConfidence === null &&
         keyedNotes.length === 0
     ) {
-        return <EmptyState title={t('No overview was generated.')} />;
+        return (
+            <EmptyState
+                title={t("We couldn't generate a summary for this document.")}
+            />
+        );
     }
 
     return (
@@ -46,7 +50,7 @@ export default function ExtractionOverview({
             {documentConfidence !== null && (
                 <p className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
                     <span className="text-foreground font-medium">
-                        {t('OCR confidence')}:
+                        {t('Scan confidence')}:
                     </span>
                     <ConfidenceBadge confidence={documentConfidence} />
                 </p>

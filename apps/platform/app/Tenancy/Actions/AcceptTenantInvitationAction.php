@@ -65,7 +65,7 @@ final readonly class AcceptTenantInvitationAction
             if ($membership instanceof TenantMembership) {
                 if ($membership->status === TenantMembershipStatus::Active) {
                     throw ValidationException::withMessages([
-                        'invitation' => __('You are already a member of this workspace.'),
+                        'invitation' => __('You are already a member.'),
                     ]);
                 }
 

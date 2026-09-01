@@ -45,7 +45,6 @@ export type Pipeline = App.Pipelines.Data.PipelineData;
 
 export type PipelineStep = App.Pipelines.Data.PipelineStepData;
 
-/** Compact dossier row for index / dashboard lists. */
 export type DossierSummary = App.Dossiers.Data.DossierIndexRowData;
 
 export type ArchivedDossierSummary = App.Dossiers.Data.ArchivedDossierRowData;

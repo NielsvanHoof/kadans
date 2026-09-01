@@ -43,7 +43,7 @@ export default function QuestionnaireBuilderCanvas({
     return (
         <section
             className="flex h-full min-h-0 min-w-0 flex-col"
-            aria-label={t('Client form canvas')}
+            aria-label={t('Client form')}
         >
             {/* Sticky toolbar stays visible while the field list scrolls. */}
             <div className="bg-background/95 sticky top-0 z-10 mb-3 space-y-1 pb-2 backdrop-blur-sm">
@@ -56,9 +56,7 @@ export default function QuestionnaireBuilderCanvas({
                     </p>
                 </div>
                 <p className="text-muted-foreground text-xs">
-                    {t(
-                        'This is the form the client will fill in. Drag components here to build it.',
-                    )}
+                    {t('Build the client form by dragging fields here.')}
                 </p>
             </div>
 
@@ -74,9 +72,9 @@ export default function QuestionnaireBuilderCanvas({
                 {isEmpty ? (
                     <EmptyState
                         variant="panel"
-                        title={t('Drop a component to start the form')}
+                        title={t('Drop a field to start the form')}
                         description={t(
-                            'Drag from the Components panel, or add one below to get started.',
+                            'Pick a field from the left, or add one below.',
                         )}
                         action={
                             canEdit ? (
