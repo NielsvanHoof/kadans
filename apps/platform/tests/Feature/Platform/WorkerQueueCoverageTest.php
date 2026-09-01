@@ -6,8 +6,6 @@ use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use App\Platform\Support\WorkerQueues;
 use Illuminate\Support\Facades\Config;
 
-covers(WorkerQueues::class);
-
 /**
  * @return array<string, array<string, mixed>>
  */

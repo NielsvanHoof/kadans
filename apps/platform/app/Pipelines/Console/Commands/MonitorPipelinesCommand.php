@@ -13,6 +13,7 @@ use DateTimeInterface;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
@@ -113,7 +114,14 @@ final class MonitorPipelinesCommand extends Command
     /**
      * Running pipelines past the inactivity cutoff, keyed by tenant.
      *
-     * @return Collection<int|string, Collection<int, Pipeline>>
+     * groupBy() returns an Eloquent collection of Eloquent collections, which
+     * has no writable type: Eloquent\Collection's template is bound to Model, so
+     * it cannot hold collections, and Collection::TValue is not covariant, so the
+     * groups are not base collections either. toBase() makes the outer one
+     * genuinely base; the groups stay Eloquent collections, which is what they
+     * are — do not "tidy" the inner type to Collection, it will not type-check.
+     *
+     * @return Collection<int|string, EloquentCollection<int, Pipeline>>
      */
     private function stuckPipelinesByTenant(DateTimeInterface $cutoff): Collection
     {
@@ -130,6 +138,6 @@ final class MonitorPipelinesCommand extends Command
                     });
             });
 
-        return $stuckQuery->get()->groupBy('tenant_id');
+        return $stuckQuery->get()->groupBy('tenant_id')->toBase();
     }
 }

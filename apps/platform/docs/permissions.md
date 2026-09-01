@@ -141,9 +141,20 @@ instead be able to add their own roles alongside the presets — `is_system` is 
 discriminator that keeps `tenancy:sync-roles` off those rows.
 
 `WorkspacePermission::ManageRoles` (`roles.manage`) exists with
-`defaultRoles() => []`, making it owner-only by the same convention as
-`ManageSettings`. Firm-authored (non-system) roles may only include permissions
-that are not owner-only and that the actor already holds — see
+`defaultRoles() => []`, which is the convention that makes a permission
+owner-only — `PermissionRegistry::isOwnerOnly()` is derived from it rather than
+declared separately. The owner-only set is `roles.manage`, `data_subject.view`
+and `data_subject.manage`.
+
+`tenant.settings.manage` is **no longer** owner-only: Administrators hold it by
+default, so they can open the firm settings (AI feature toggles) alongside the
+rest of the admin area. Because owner-only is inferred from `defaultRoles()`,
+that also makes it assignable to firm-authored roles — which is delegation, not
+escalation, since the allowlist is still intersected with what the acting user
+holds.
+
+Firm-authored (non-system) roles may only include permissions that are not
+owner-only and that the actor already holds — see
 `PermissionRegistry::firmAssignableValues()` and the store/update role requests.
 That blocks the path where an Administrator is assigned a custom role carrying
 `roles.manage` and then escalates further.

@@ -255,10 +255,7 @@ export default function IndexQueryToolbar({
     // hides its content with the `hidden` attribute, which a breakpoint cannot
     // undo — the desktop row has to be a genuinely different tree.
     const truncationNotice = config.search_truncated ? (
-        <p
-            role="status"
-            className="text-muted-foreground text-sm text-pretty"
-        >
+        <p role="status" className="text-muted-foreground text-sm text-pretty">
             {t(
                 'Search results are limited to the first matches. Narrow your query to see more.',
             )}

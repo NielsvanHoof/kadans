@@ -15,6 +15,15 @@ test('uses FrankenPHP with bounded worker lifetimes', function (): void {
         ->toBe(120);
 });
 
+test('resets the per-worker Spatie permission collection between requests', function (): void {
+    // PermissionRegistrar is a singleton holding every permission in worker memory,
+    // and forgetCachedPermissions() only clears the Redis key plus the worker that
+    // called it. Without this listener, provisioning a firm leaves every other
+    // worker unable to see the new tenant's roles, so the owner's first dashboard
+    // visits alternate 200/403 until the workers recycle.
+    expect(config('permission.register_octane_reset_listener'))->toBeTrue();
+});
+
 test('lets the Sail supervisor own the local HTTP server and Horizon own the queues', function (): void {
     $commandNames = collect(DevCommands::commands())->pluck('name');
 

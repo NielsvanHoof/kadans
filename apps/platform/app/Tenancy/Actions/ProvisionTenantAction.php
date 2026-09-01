@@ -20,7 +20,10 @@ use function setPermissionsTeamId;
 
 final readonly class ProvisionTenantAction
 {
-    public function __construct(private SyncTenantRolesAction $syncTenantRoles) {}
+    public function __construct(
+        private SyncTenantRolesAction $syncTenantRoles,
+        private ProvisionTenantSettingsAction $provisionTenantSettings,
+    ) {}
 
     public function handle(
         string $name,
@@ -48,6 +51,8 @@ final readonly class ProvisionTenantAction
                 $owner->unsetRelation('roles');
                 $owner->unsetRelation('permissions');
                 $owner->assignRole($ownerRole->value);
+
+                $this->provisionTenantSettings->handle($tenant);
 
                 return $tenant;
             });

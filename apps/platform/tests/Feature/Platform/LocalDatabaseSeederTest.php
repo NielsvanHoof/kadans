@@ -6,7 +6,8 @@ use App\Questionnaires\Models\QuestionnaireTemplate;
 use Database\Seeders\LocalDatabaseSeeder;
 use Spatie\Permission\Models\Permission;
 
-covers(LocalDatabaseSeeder::class);
+// Seeders live under database/, outside phpunit.xml <source>app</source>.
+// PHPUnit 13 warns "not a valid target for code coverage" and fails CI.
 
 test('local database seeder runs the production-safe baseline in local or testing', function (): void {
     expect(app()->environment())->toBeIn(['local', 'testing']);

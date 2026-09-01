@@ -37,6 +37,17 @@ use Override;
  * @method static Builder<static> newModelQuery()
  * @method static Builder<static> newQuery()
  * @method static Builder<static> query()
+ * @method static Builder<static>|AudioRecordingCalendarLink whereAudioRecordingId($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereCreatedAt($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereExternalEventId($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereExternalEventUrl($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereExternalFileId($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereId($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereLinkedAt($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereLinkedByUserId($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereProvider($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereTenantId($value)
+ * @method static Builder<static>|AudioRecordingCalendarLink whereUpdatedAt($value)
  *
  * @mixin \Eloquent
  */

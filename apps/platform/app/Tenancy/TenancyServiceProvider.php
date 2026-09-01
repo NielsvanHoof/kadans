@@ -10,9 +10,11 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Models\TenantRole;
+use App\Tenancy\Models\TenantSetting;
 use App\Tenancy\Policies\TenantInvitationPolicy;
 use App\Tenancy\Policies\TenantMembershipPolicy;
 use App\Tenancy\Policies\TenantRolePolicy;
+use App\Tenancy\Policies\TenantSettingsPolicy;
 use App\Tenancy\Support\PermissionRegistry;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
@@ -41,6 +43,7 @@ final class TenancyServiceProvider extends ServiceProvider
         Gate::policy(TenantInvitation::class, TenantInvitationPolicy::class);
         Gate::policy(TenantMembership::class, TenantMembershipPolicy::class);
         Gate::policy(TenantRole::class, TenantRolePolicy::class);
+        Gate::policy(TenantSetting::class, TenantSettingsPolicy::class);
 
         $this->configureSupportPermissionGate();
     }

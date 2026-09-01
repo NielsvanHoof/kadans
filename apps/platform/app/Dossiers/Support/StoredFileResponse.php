@@ -43,6 +43,17 @@ final readonly class StoredFileResponse
     ) {}
 
     /**
+     * Three outcomes, all Symfony responses: a signed-URL redirect (S3), a
+     * streamed body (local disk), or a 409 Inertia location (XHR visit).
+     *
+     * Callers declare a bare Response rather than repeating this union. It
+     * collapses to Response anyway — both other arms extend it — and spelling
+     * it out in a caller invites Rector's NarrowWideUnionReturnTypeRector to
+     * strip Response back off, because it cannot resolve Inertia::location()
+     * through the facade. That narrowing makes every download endpoint fatal on
+     * an Inertia visit; the stored-file return type test in
+     * tests/Architecture/AppArchitectureTest.php is what catches it.
+     *
      * @param  'attachment'|'inline'  $disposition
      * @param  array<string, string>  $headers  Applied to the streamed path only; the
      *                                          signed path is served by S3, which

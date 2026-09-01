@@ -18,7 +18,6 @@ use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class DossierExportController extends Controller
 {
@@ -68,7 +67,7 @@ final class DossierExportController extends Controller
         DossierExport $export,
         LogAuditActivityAction $logAuditActivity,
         DownloadDossierExportAction $downloadDossierExport,
-    ): RedirectResponse|StreamedResponse|HttpResponse {
+    ): HttpResponse {
         $this->authorize('export', $dossier);
 
         abort_unless($export->dossier_id === $dossier->id && $export->isDownloadable(), HttpResponse::HTTP_NOT_FOUND);

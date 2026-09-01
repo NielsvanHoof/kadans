@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-aria-components';
 import AriaLocaleProvider from '@/components/app-shell/aria-locale-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { initializeTheme } from '@/hooks/use-appearance';
+import AdminLayout from '@/layouts/admin/admin-layout';
 import AppLayout from '@/layouts/app/app-layout';
 import AuthLayout from '@/layouts/auth/auth-layout';
 import DossierBuilderLayout from '@/layouts/dossiers/dossier-builder-layout';
@@ -42,6 +43,12 @@ function pageLayout(name: string) {
             return OnboardingLayout;
         case name.startsWith('settings/'):
             return [AppLayout, SettingsLayout];
+        case name === 'workspaces/members/index':
+        case name === 'workspaces/roles/index':
+        case name === 'data-subject-requests/index':
+        case name === 'workspaces/settings/index':
+            // Firm administration — one rail across the section landing pages.
+            return [AppLayout, AdminLayout];
         default:
             return AppLayout;
     }

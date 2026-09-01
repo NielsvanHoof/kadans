@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Override;
 use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Contracts\IsTenant;
@@ -48,6 +49,8 @@ use function in_array;
  * @method static Builder<static>|Tenant whereName($value)
  * @method static Builder<static>|Tenant whereSlug($value)
  * @method static Builder<static>|Tenant whereUpdatedAt($value)
+ *
+ * @property-read TenantSetting|null $settings
  *
  * @mixin \Eloquent
  */
@@ -88,6 +91,14 @@ final class Tenant extends Model implements IsTenant
     public function dossiers(): HasMany
     {
         return $this->hasMany(Dossier::class);
+    }
+
+    /**
+     * @return HasOne<TenantSetting, $this>
+     */
+    public function settings(): HasOne
+    {
+        return $this->hasOne(TenantSetting::class);
     }
 
     /**

@@ -27,7 +27,10 @@ export function NavMain({
                 <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
                 <SidebarMenu>
                     {items.map((item) => {
-                        const isActive = isCurrentOrParentUrl(item.href);
+                        // An explicit flag lets a single entry (Admin) stay lit
+                        // across sibling URLs it does not itself point at.
+                        const isActive =
+                            item.isActive ?? isCurrentOrParentUrl(item.href);
 
                         return (
                             <SidebarMenuItem key={item.title}>

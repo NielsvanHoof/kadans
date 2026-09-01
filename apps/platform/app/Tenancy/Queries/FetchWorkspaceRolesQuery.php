@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
-use function in_array;
+use function is_int;
 
 /**
  * Assembles the workspace roles Inertia page payload.
@@ -64,12 +64,19 @@ final readonly class FetchWorkspaceRolesQuery
 
         $presetOrder = Role::values();
 
-        return $roles->sortBy([
-            static fn (TenantRole $role): int => $role->is_system ? 0 : 1,
-            static fn (TenantRole $role): int|string => in_array($role->name, $presetOrder, true)
-                ? (int) array_search($role->name, $presetOrder, true)
-                : $role->name,
-        ])->values();
+        return $roles->sortBy(
+            static function (TenantRole $role) use ($presetOrder): string {
+                $tier = $role->is_system ? '0' : '1';
+                $index = array_search($role->name, $presetOrder, true);
+
+                $position = is_int($index)
+                    ? mb_str_pad((string) $index, 2, '0', STR_PAD_LEFT)
+                    : '99_'.$role->name;
+
+                return $tier.'_'.$position;
+            },
+            SORT_STRING,
+        )->values();
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Enums\Role;
+use App\Tenancy\Models\TenantSetting;
 use Laravel\Ai\Prompts\AgentPrompt;
 
 test('staff can generate a reminder draft mentioning outstanding items', function (): void {
@@ -129,4 +130,31 @@ test('reminder draft endpoint is rate limited', function (): void {
 
     $this->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))
         ->assertTooManyRequests();
+});
+
+test('reminder draft endpoint is forbidden when the feature is disabled', function (): void {
+    DossierReminderDraftAgent::fake(['Draft message.']);
+
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'status' => DossierStatus::AwaitingClient,
+    ]);
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'status' => DocumentRequestStatus::Pending,
+    ]);
+
+    TenantSetting::query()->where('tenant_id', $tenant->id)->update([
+        'ai_reminder_draft_enabled' => false,
+    ]);
+
+    $this->actingAs($owner)
+        ->postJson(workspaceRoute('workspaces.dossiers.reminders.draft', $tenant, ['dossier' => $dossier]))
+        ->assertForbidden();
+
+    DossierReminderDraftAgent::assertNeverPrompted();
 });

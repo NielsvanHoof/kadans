@@ -1,41 +1,71 @@
-import { render, screen, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import { mockInertiaPage, mockUseTranslation } from '@/test/mocks';
-import type { TenantPermission } from '@/types/generated/tenant-permissions';
 
-const firm = { name: 'Acme', slug: 'acme' };
-let pageProps: Record<string, unknown> = {};
+const currentFirm = { slug: 'acme', name: 'Acme Legal' };
+
+const pageProps: Record<string, unknown> = {
+    current_firm: currentFirm,
+    workspaces: [currentFirm],
+    permissions: {},
+    auth: { user: { id: 1, name: 'Ada', is_platform_support: false } },
+};
+let currentUrl = '/workspaces/acme/dashboard';
 
 vi.mock('@inertiajs/react', () => ({
-    usePage: () => mockInertiaPage(pageProps, '/workspaces/acme/dashboard'),
+    router: { visit: vi.fn() },
+    usePage: () => mockInertiaPage(pageProps, currentUrl),
 }));
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
-vi.mock('@/hooks/use-mobile', () => ({
-    useIsMobile: () => false,
-}));
+const indexStub = (segment: string) => ({
+    index: (firm: { slug: string }) => ({
+        url: `/workspaces/${firm.slug}/${segment}`,
+    }),
+});
 
-vi.mock('@/components/app-shell/workspace-switcher', () => ({
-    WorkspaceSwitcher: () => null,
+vi.mock('@/routes', () => ({
+    dashboard: () => ({ url: '/dashboard' }),
+    logout: Object.assign(() => ({ url: '/logout' }), { url: () => '/logout' }),
 }));
+vi.mock('@/routes/workspaces', () => ({
+    dashboard: Object.assign(
+        (firm: { slug: string }) => ({ url: `/workspaces/${firm.slug}` }),
+        { url: (firm: { slug: string }) => `/workspaces/${firm.slug}` },
+    ),
+}));
+vi.mock('@/routes/firms', () => ({ create: { url: () => '/firms/create' } }));
+vi.mock('@/routes/platform/support', () => indexStub('support'));
+vi.mock('@/routes/workspaces/activity', () => indexStub('activity'));
+vi.mock('@/routes/workspaces/clients', () => indexStub('clients'));
+vi.mock('@/routes/workspaces/dossiers', () => indexStub('dossiers'));
+vi.mock('@/routes/workspaces/media', () => indexStub('media'));
+vi.mock('@/routes/workspaces/pipelines', () => indexStub('pipelines'));
+vi.mock('@/routes/workspaces/templates', () => indexStub('templates'));
+vi.mock('@/routes/workspaces/members', () => indexStub('members'));
+vi.mock('@/routes/workspaces/roles', () => indexStub('roles'));
+vi.mock('@/routes/workspaces/data-subject-requests', () =>
+    indexStub('data-subject-requests'),
+);
+vi.mock('@/routes/workspaces/settings', () => indexStub('settings'));
 
+vi.mock('@/components/app-shell/app-logo', () => ({
+    default: () => <div>Logo</div>,
+}));
 vi.mock('@/components/app-shell/nav-user', () => ({
-    NavUser: () => null,
+    NavUser: () => <div>Nav user</div>,
+}));
+vi.mock('@/components/app-shell/workspace-switcher', () => ({
+    WorkspaceSwitcher: () => <div>Workspace switcher</div>,
 }));
 
-const { AppSidebar } = await import('@/components/app-shell/app-sidebar');
+// Imported lazily: a static import would pull `use-translation` into the module
+// graph before `@/test/mocks` is evaluated, and the vi.mock factory would throw.
 const { SidebarProvider } = await import('@/components/ui/sidebar');
+const { AppSidebar } = await import('@/components/app-shell/app-sidebar');
 
-function renderSidebar(
-    permissions: Partial<Record<TenantPermission, boolean>>,
-): void {
-    pageProps = {
-        current_firm: firm,
-        auth: { user: { is_platform_support: false } },
-        permissions,
-    };
-
+function renderSidebar() {
     render(
         <SidebarProvider>
             <AppSidebar />
@@ -43,56 +73,67 @@ function renderSidebar(
     );
 }
 
-function platformNav(): HTMLElement {
-    return screen.getByRole('navigation', { name: 'Platform' });
+function adminLink() {
+    return screen.queryByRole('link', { name: 'Admin' });
 }
 
-beforeEach(() => {
-    pageProps = {};
-});
-
 describe('AppSidebar', () => {
-    it('hides firm links the user cannot open', () => {
-        renderSidebar({
-            'dossiers.view': true,
-            'templates.view': true,
-            'document_requests.view': true,
-        });
+    it('hides the admin entry without tenant.admin.access', () => {
+        pageProps.permissions = { 'members.view': true, 'roles.view': true };
 
-        const nav = platformNav();
+        renderSidebar();
 
-        expect(within(nav).getByRole('link', { name: 'Dashboard' })).toBeVisible();
-        expect(within(nav).getByRole('link', { name: 'Dossiers' })).toBeVisible();
-        expect(within(nav).getByRole('link', { name: 'Templates' })).toBeVisible();
-        expect(
-            within(nav).getByRole('link', { name: 'Media Library' }),
-        ).toBeVisible();
-        expect(within(nav).queryByRole('link', { name: 'Clients' })).toBeNull();
-        expect(within(nav).queryByRole('link', { name: 'Activity' })).toBeNull();
-        expect(within(nav).queryByRole('link', { name: 'Members' })).toBeNull();
-        expect(
-            within(nav).queryByRole('link', { name: 'Roles & permissions' }),
-        ).toBeNull();
-        expect(
-            within(nav).queryByRole('link', { name: 'Data-subject requests' }),
-        ).toBeNull();
-        expect(within(nav).queryByRole('link', { name: 'Pipelines' })).toBeNull();
+        expect(adminLink()).toBeNull();
     });
 
-    it('shows Clients and Activity when those view permissions are granted', () => {
-        renderSidebar({
-            'dossiers.view': true,
-            'clients.view': true,
-            'audit.view': true,
-        });
+    it('points the admin entry at the first section the user may reach', () => {
+        pageProps.permissions = {
+            'tenant.admin.access': true,
+            'roles.view': true,
+            'tenant.settings.manage': true,
+        };
 
-        const nav = platformNav();
+        renderSidebar();
 
-        expect(within(nav).getByRole('link', { name: 'Clients' })).toBeVisible();
-        expect(within(nav).getByRole('link', { name: 'Activity' })).toBeVisible();
-        expect(within(nav).queryByRole('link', { name: 'Templates' })).toBeNull();
+        // members.view is absent, so Roles is the first reachable section.
+        expect(adminLink()).toHaveAttribute('href', '/workspaces/acme/roles');
+    });
+
+    it('no longer lists the sections that moved into admin', () => {
+        pageProps.permissions = {
+            'tenant.admin.access': true,
+            'members.view': true,
+            'roles.view': true,
+            'data_subject.view': true,
+            'tenant.settings.manage': true,
+        };
+
+        renderSidebar();
+
+        expect(adminLink()).toHaveAttribute('href', '/workspaces/acme/members');
+        for (const gone of [
+            'Members',
+            'Roles & permissions',
+            'Data-subject requests',
+        ]) {
+            expect(screen.queryByRole('link', { name: gone })).toBeNull();
+        }
+        // Templates deliberately stayed a top-level destination.
         expect(
-            within(nav).queryByRole('link', { name: 'Media Library' }),
-        ).toBeNull();
+            screen.getByRole('link', { name: 'Templates' }),
+        ).toBeInTheDocument();
+    });
+
+    it('keeps the admin entry active on a section it does not link to', () => {
+        pageProps.permissions = {
+            'tenant.admin.access': true,
+            'members.view': true,
+            'tenant.settings.manage': true,
+        };
+        currentUrl = '/workspaces/acme/settings';
+
+        renderSidebar();
+
+        expect(adminLink()).toHaveAttribute('aria-current', 'page');
     });
 });

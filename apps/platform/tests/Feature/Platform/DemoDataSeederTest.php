@@ -10,10 +10,10 @@ use App\Pipelines\Models\Pipeline;
 use App\Reporting\Queries\FetchDashboardTrendQuery;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
-use Database\Seeders\DemoDataSeeder;
 use Database\Seeders\LocalDatabaseSeeder;
 
-covers(DemoDataSeeder::class);
+// Seeders live under database/, outside phpunit.xml <source>app</source>.
+// PHPUnit 13 warns "not a valid target for code coverage" and fails CI.
 
 /**
  * The demo seeder backs live walkthroughs, so it fails in the worst possible

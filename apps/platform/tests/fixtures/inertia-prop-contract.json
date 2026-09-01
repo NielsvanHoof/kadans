@@ -28,6 +28,7 @@
         "indexQuery.filters.0.key": "string",
         "indexQuery.filters.0.label": "string",
         "indexQuery.filters.0.type": "string",
+        "indexQuery.search_truncated": "bool",
         "indexQuery.sorts.0.key": "string",
         "indexQuery.sorts.0.label": "string",
         "sort": "null"
@@ -177,6 +178,7 @@
         "indexQuery.filters.0.key": "string",
         "indexQuery.filters.0.label": "string",
         "indexQuery.filters.0.type": "string",
+        "indexQuery.search_truncated": "bool",
         "indexQuery.sorts.0.key": "string",
         "indexQuery.sorts.0.label": "string",
         "sort": "null"
@@ -207,6 +209,7 @@
         "indexQuery.filters.0.key": "string",
         "indexQuery.filters.0.label": "string",
         "indexQuery.filters.0.type": "string",
+        "indexQuery.search_truncated": "bool",
         "indexQuery.sorts.0.key": "string",
         "indexQuery.sorts.0.label": "string",
         "sort": "null"

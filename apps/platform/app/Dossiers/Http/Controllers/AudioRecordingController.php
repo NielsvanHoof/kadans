@@ -27,7 +27,6 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 /**
@@ -128,7 +127,7 @@ final class AudioRecordingController extends Controller
         LogAuditActivityAction $logAuditActivity,
         ResolveMalwareScanStatusAction $resolveMalwareScanStatus,
         StoredFileResponse $storedFileResponse,
-    ): RedirectResponse|StreamedResponse|HttpResponse {
+    ): HttpResponse {
         $this->authorize('download', $audioRecording);
 
         // Client-uploaded bytes in the same bucket as the documents, so GuardDuty

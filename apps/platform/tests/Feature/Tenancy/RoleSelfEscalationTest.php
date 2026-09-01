@@ -28,7 +28,12 @@ test('owner-only permissions cannot be included in a firm-authored role', functi
         ->exists())->toBeFalse();
 });
 
-test('firm settings cannot be included in a firm-authored role', function (): void {
+/**
+ * Firm settings became administrator-level, so an owner may now delegate it to
+ * a firm-authored role. That is delegation, not escalation: the assignable
+ * allowlist is still intersected with what the acting user already holds.
+ */
+test('an owner may delegate firm settings to a firm-authored role', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
 
     $this->actingAs($owner)
@@ -36,6 +41,24 @@ test('firm settings cannot be included in a firm-authored role', function (): vo
             'name' => 'settings-editor',
             'permissions' => [
                 WorkspacePermission::ManageSettings->value,
+            ],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(TenantRole::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('name', 'settings-editor')
+        ->exists())->toBeTrue();
+});
+
+test('roles.manage still cannot be included in a firm-authored role', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $this->actingAs($owner)
+        ->post(workspaceRoute('workspaces.roles.store', $tenant), [
+            'name' => 'role-editor',
+            'permissions' => [
+                WorkspacePermission::ManageRoles->value,
             ],
         ])
         ->assertSessionHasErrors('permissions.0');
@@ -95,10 +118,10 @@ test('firm assignable values exclude owner-only permissions', function (): void 
     $registry = resolve(PermissionRegistry::class);
 
     expect($registry->isOwnerOnly(WorkspacePermission::ManageRoles))->toBeTrue()
-        ->and($registry->isOwnerOnly(WorkspacePermission::ManageSettings))->toBeTrue()
+        ->and($registry->isOwnerOnly(WorkspacePermission::ManageSettings))->toBeFalse()
         ->and($registry->isOwnerOnly(WorkspacePermission::ViewMembers))->toBeFalse()
         ->and($registry->firmAssignableValues())
         ->not->toContain(WorkspacePermission::ManageRoles->value)
-        ->not->toContain(WorkspacePermission::ManageSettings->value)
+        ->toContain(WorkspacePermission::ManageSettings->value)
         ->toContain(WorkspacePermission::ViewMembers->value);
 });
