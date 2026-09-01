@@ -29,7 +29,7 @@ final readonly class DownloadDossierExportAction
 {
     public function __construct(private StoredFileResponse $storedFileResponse) {}
 
-    public function handle(DossierExport $export): RedirectResponse|StreamedResponse
+    public function handle(DossierExport $export): RedirectResponse|StreamedResponse|HttpResponse
     {
         $disk = $export->disk;
         $path = $export->path;

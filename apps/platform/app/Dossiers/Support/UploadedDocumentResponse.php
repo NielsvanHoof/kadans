@@ -6,6 +6,7 @@ namespace App\Dossiers\Support;
 
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Http\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -51,7 +52,7 @@ final readonly class UploadedDocumentResponse
     public function serve(
         UploadedDocument $uploadedDocument,
         string $disposition,
-    ): RedirectResponse|StreamedResponse {
+    ): RedirectResponse|StreamedResponse|Response {
         return $this->storedFileResponse->serve(
             $uploadedDocument->disk,
             $uploadedDocument->path,
