@@ -6,14 +6,6 @@ import PortalShell from '@/layouts/portal/portal-shell';
 
 type PortalSessionEndReason = App.ClientPortal.Enums.PortalSessionEndReason;
 
-/**
- * Explains a portal session that stopped working.
- *
- * Clients used to land on the app-wide error page here, which — because they
- * are not signed in and never will be — offered them a "Go to login" button.
- * This page answers the only two questions they actually have: is my work gone,
- * and what do I do now.
- */
 export default function PortalEnded({
     reason,
     firm_name,

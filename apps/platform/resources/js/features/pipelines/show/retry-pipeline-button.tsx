@@ -26,7 +26,7 @@ export default function RetryPipelineButton({
 
     return (
         <ConfirmDestroyDialog
-            title={t('Retry pipeline run?')}
+            title={t('Retry this job?')}
             description={t(
                 'The run restarts from its first step. Results from the failed attempt are discarded.',
             )}

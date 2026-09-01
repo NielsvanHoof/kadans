@@ -42,7 +42,6 @@ final readonly class InitializeTenantFromRoute
 
         $this->supportSession->clearIfExpired($user);
 
-        // Membership or active platform support session for this firm.
         abort_unless($user->canAccessTenant($tenant), Response::HTTP_NOT_FOUND);
 
         $tenant->makeCurrent();

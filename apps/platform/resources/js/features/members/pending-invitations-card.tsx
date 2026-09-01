@@ -39,7 +39,7 @@ export default function PendingInvitationsCard({
                         variant="compact"
                         title={t('No pending invitations')}
                         description={t(
-                            'Invited members will appear here until they accept.',
+                            'No pending invitations. People you invite will show here until they join.',
                         )}
                     />
                 </CardContent>

@@ -118,7 +118,7 @@ describe('ProcessingHealthCard', () => {
 
         expect(screen.getByText('Provider returned 500')).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: /OCR document/ }),
+            screen.getByRole('link', { name: /Document scan/ }),
         ).toHaveAttribute('href', expect.stringContaining('/pipelines/7'));
     });
 
@@ -132,6 +132,6 @@ describe('ProcessingHealthCard', () => {
             />,
         );
 
-        expect(screen.getByText('OCR document')).toBeInTheDocument();
+        expect(screen.getByText('Document scan')).toBeInTheDocument();
     });
 });

@@ -102,7 +102,7 @@ export default function PipelinesListCard({
                         tenant: currentWorkspace,
                         pipeline: pipeline.id,
                     })}
-                    aria-label={t('View pipeline :id', { id: pipeline.id })}
+                    aria-label={t('View job :id', { id: pipeline.id })}
                     className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex rounded-md p-1"
                 >
                     <ArrowRight aria-hidden="true" className="size-4" />
@@ -116,8 +116,8 @@ export default function PipelinesListCard({
             title={t('Pipeline runs')}
             description={
                 pipelines.total === 1
-                    ? t('1 pipeline run')
-                    : t(':count pipeline runs', { count: pipelines.total })
+                    ? t('1 job')
+                    : t(':count jobs', { count: pipelines.total })
             }
             columns={columns}
             rows={pipelines.data}
@@ -125,9 +125,9 @@ export default function PipelinesListCard({
             emptyState={
                 <EmptyState
                     icon={Activity}
-                    title={t('No pipeline runs found.')}
+                    title={t('No background jobs found.')}
                     description={t(
-                        'Long-running OCR and export processes will appear here as they run.',
+                        'No processing jobs yet. Document scans and exports will show here when they run.',
                     )}
                 />
             }

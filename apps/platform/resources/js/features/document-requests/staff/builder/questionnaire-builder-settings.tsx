@@ -170,9 +170,7 @@ export default function QuestionnaireBuilderSettings({
                             form.setInstructions(event.target.value)
                         }
                         onBlur={form.saveDraft}
-                        placeholder={t(
-                            'Optional help text shown to the client…',
-                        )}
+                        placeholder={t('Help text for the client (optional)…')}
                     />
                 </Field>
 
@@ -283,7 +281,7 @@ function EmptySettingsPanel() {
         >
             <h3 className="text-sm font-semibold">{t('Field settings')}</h3>
             <p className="text-muted-foreground mt-1 text-xs">
-                {t('Select a field on the canvas to edit its settings.')}
+                {t('Select a field to edit its settings.')}
             </p>
         </aside>
     );

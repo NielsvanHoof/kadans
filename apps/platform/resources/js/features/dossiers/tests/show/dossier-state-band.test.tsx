@@ -80,7 +80,7 @@ describe('DossierStateBand', () => {
         ).toBeInTheDocument();
         expect(
             screen.queryByText(
-                'Drag components onto the canvas to build the client form.',
+                'Build the client form by dragging fields into place.',
             ),
         ).not.toBeInTheDocument();
     });

@@ -9,10 +9,6 @@ import {
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
 
-/**
- * Dedicated OCR extraction page for a single uploaded document.
- * Thin page: breadcrumbs + Head; body lives in the document-requests feature.
- */
 export default function ShowUploadedDocument(props: UploadedDocumentShowProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();

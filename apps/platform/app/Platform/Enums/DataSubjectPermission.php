@@ -16,8 +16,8 @@ enum DataSubjectPermission: string implements TenantPermission
     public function label(): string
     {
         return match ($this) {
-            self::View => __('View data-subject requests'),
-            self::Manage => __('Manage data-subject requests'),
+            self::View => __('View privacy requests'),
+            self::Manage => __('Manage privacy requests'),
         };
     }
 

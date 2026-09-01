@@ -10,9 +10,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { index as activityIndex } from '@/routes/workspaces/activity';
 import type { IndexQueryConfig, SimplePaginated } from '@/types/pagination';
 
-/**
- * Tenant activity / audit log index.
- */
 export default function ActivityLogIndex({
     activities,
     indexQuery,
@@ -44,7 +41,7 @@ export default function ActivityLogIndex({
                     level={1}
                     className="mb-0"
                     title={t('Activity')}
-                    description={t('Latest audit events for this workspace.')}
+                    description={t('Recent actions by your team.')}
                 />
 
                 <IndexQueryToolbar config={indexQuery} />

@@ -52,7 +52,7 @@ export default function PipelineIndex({
                     className="mb-0"
                     title={t('Pipelines')}
                     description={t(
-                        'Monitor OCR, exports, and other long-running processes across this workspace.',
+                        'Track document scans, exports, and other background jobs.',
                     )}
                 />
 

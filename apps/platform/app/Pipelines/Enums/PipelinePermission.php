@@ -28,10 +28,10 @@ enum PipelinePermission: string implements TenantPermission
     public function description(): string
     {
         return match ($this) {
-            self::View => __('Inspect OCR and export runs, including their steps and failures.'),
+            self::View => __('View document processing and export history, including errors.'),
             self::Retry => __('Re-run a failed or stuck OCR, transcription, or export run.'),
-            self::Cancel => __('Stop a queued or running OCR, transcription, or export run.'),
-            self::Delete => __('Remove a finished processing run and its stored payload.'),
+            self::Cancel => __('Stop a pending or running OCR, transcription, or export run.'),
+            self::Delete => __('Delete a completed processing job and its stored data.'),
         };
     }
 

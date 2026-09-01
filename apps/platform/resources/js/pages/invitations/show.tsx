@@ -3,10 +3,6 @@ import InvitationAcceptContent from '@/features/invitations/invitation-accept-co
 import type { InvitationShowProps } from '@/features/invitations/types';
 import { useTranslation } from '@/hooks/use-translation';
 
-/**
- * Accept a workspace invitation — login/accept for existing users, or register.
- * Thin page: layout chrome only; UI lives in features/invitations.
- */
 export default function InvitationShow(props: InvitationShowProps) {
     const { t } = useTranslation();
 

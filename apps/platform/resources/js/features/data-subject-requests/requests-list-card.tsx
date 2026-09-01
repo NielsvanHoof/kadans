@@ -45,7 +45,7 @@ export default function RequestsListCard({
     // collapses them to one column and throws "Found N cells and 1 columns".
     return (
         <Card className="overflow-x-auto p-0">
-            <Table aria-label={t('Data-subject requests')}>
+            <Table aria-label={t('Privacy requests')}>
                 <TableHeader>
                     <TableHead isRowHeader>{t('Client')}</TableHead>
                     <TableHead className="hidden sm:table-cell">

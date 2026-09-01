@@ -52,7 +52,7 @@ export default function ActivityLogCard({
                 {rows.length === 0 ? (
                     <EmptyState
                         title={t(
-                            'Audit events will appear here as your team works in this workspace.',
+                            'No activity yet. Actions your team takes will show up here.',
                         )}
                     />
                 ) : (

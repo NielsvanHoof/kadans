@@ -57,7 +57,7 @@ describe('DocumentExtractionView', () => {
         expect(screen.getByRole('tab', { name: 'Overview' })).toBeVisible();
         expect(screen.getByRole('tab', { name: '1 fields' })).toBeVisible();
         expect(screen.getByRole('tab', { name: '1 tables' })).toBeVisible();
-        expect(screen.getByRole('tab', { name: 'Raw JSON' })).toBeVisible();
+        expect(screen.getByRole('tab', { name: 'Full data' })).toBeVisible();
     });
 
     it('opens on the overview tab, showing type, confidence and notes', () => {

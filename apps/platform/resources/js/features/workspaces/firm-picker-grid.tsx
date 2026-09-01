@@ -12,9 +12,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { create as createFirm } from '@/routes/firms';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 
-/**
- * Firm picker grid for the global (pre-workspace) dashboard.
- */
 export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
     const { t } = useTranslation();
 

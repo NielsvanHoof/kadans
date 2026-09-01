@@ -69,7 +69,7 @@ describe('RestoreClientButton', () => {
         // one keeps a well-meaning "let's unify the wording" change honest.
         expect(
             await screen.findByText(
-                'The client and their dossiers will appear in lists again.',
+                'This client and their dossiers will be visible again.',
             ),
         ).toBeInTheDocument();
     });

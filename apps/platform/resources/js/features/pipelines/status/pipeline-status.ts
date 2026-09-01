@@ -61,7 +61,7 @@ export function pipelineTypeLabel(
     t: (key: string) => string,
 ): string {
     const labels: Record<string, string> = {
-        ocr_document: 'OCR document',
+        ocr_document: 'Document scan',
         dossier_export: 'Dossier export',
         audio_transcription: 'Audio transcription',
     };
@@ -84,16 +84,13 @@ export function pipelineTypeLabel(
 const PIPELINE_ERROR_CODE_LABELS: Record<string, string> = {
     pipeline_inactive:
         'This run recorded no activity within the monitoring window and was marked stuck.',
-    result_processing_failed:
-        'Processing the provider result failed on every attempt.',
+    result_processing_failed: 'Processing failed after several attempts.',
     ocr_job_failed: 'Reading this document failed.',
     dossier_export_failed: 'Building the dossier export failed.',
-    transcribe_provider_failed:
-        'The transcription provider reported a failure.',
+    transcribe_provider_failed: 'Transcription failed.',
     transcription_job_failed: 'Transcribing this recording failed.',
-    textract_FAILED: 'The OCR provider could not read this document.',
-    textract_PARTIAL_SUCCESS:
-        'The OCR provider could read only part of this document.',
+    textract_FAILED: "We couldn't read this document.",
+    textract_PARTIAL_SUCCESS: 'We could read only part of this document.',
 };
 
 export function pipelineErrorCodeLabel(

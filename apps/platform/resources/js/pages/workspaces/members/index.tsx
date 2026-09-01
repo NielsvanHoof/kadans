@@ -13,9 +13,6 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as membersIndex } from '@/routes/workspaces/members';
 
-/**
- * Workspace staff members — invite, change roles, suspend, or remove.
- */
 export default function WorkspaceMembersIndex({
     members,
     invitations,
@@ -50,7 +47,7 @@ export default function WorkspaceMembersIndex({
                     level={1}
                     title={t('Members')}
                     description={t(
-                        'Invite colleagues and manage who can access this workspace.',
+                        'Invite colleagues and manage who has access.',
                     )}
                 />
                 {roleFilter ? (

@@ -54,7 +54,7 @@ final readonly class IssueUploadTicketAction
         throw_unless(
             $this->presigner->supports($disk),
             ValidationException::withMessages([
-                $errorKey => __('Direct uploads are not available on this environment.'),
+                $errorKey => __('Direct uploads aren\'t available right now. Please try again later.'),
             ]),
         );
 

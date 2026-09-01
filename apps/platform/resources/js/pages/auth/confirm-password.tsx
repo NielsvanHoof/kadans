@@ -19,9 +19,7 @@ export default function ConfirmPassword() {
 
     setLayoutProps({
         title: t('Confirm password'),
-        description: t(
-            'This is a secure area of the application. Please confirm your password before continuing.',
-        ),
+        description: t('For your security, confirm your password to continue.'),
     });
 
     return (

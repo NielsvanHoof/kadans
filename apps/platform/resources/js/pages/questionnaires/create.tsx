@@ -23,9 +23,6 @@ import {
     index as templateIndex,
 } from '@/routes/workspaces/templates';
 
-/**
- * Create a blank firm-owned questionnaire template.
- */
 export default function CreateTemplate({
     categories,
 }: {

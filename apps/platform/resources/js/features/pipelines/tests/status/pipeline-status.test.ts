@@ -66,7 +66,7 @@ describe('pipelineStepStatusTone', () => {
 describe('pipelineTypeLabel', () => {
     it('resolves known pipeline types and falls back to the raw key', () => {
         expect(pipelineTypeLabel('ocr_document', identity)).toBe(
-            'OCR document',
+            'Document scan',
         );
         expect(pipelineTypeLabel('custom_job', identity)).toBe('custom_job');
     });
@@ -90,11 +90,11 @@ describe('pipelineErrorCodeLabel', () => {
 
     it('resolves the per-status Textract codes the OCR path composes', () => {
         expect(pipelineErrorCodeLabel('textract_FAILED', identity)).toBe(
-            'The OCR provider could not read this document.',
+            "We couldn't read this document.",
         );
         expect(
             pipelineErrorCodeLabel('textract_PARTIAL_SUCCESS', identity),
-        ).toBe('The OCR provider could read only part of this document.');
+        ).toBe('We could read only part of this document.');
     });
 
     it('returns null for an unknown code so callers can fall back to the raw message', () => {

@@ -44,7 +44,7 @@ final readonly class RefreshOAuthAccessTokenAction
 
         if (! is_string($clientId) || $clientId === '' || ! is_string($clientSecret) || $clientSecret === '') {
             throw new OAuthTokenRefreshFailedException(
-                __('Google OAuth is not configured.'),
+                __('Google sign-in isn\'t set up yet. Contact your administrator.'),
             );
         }
 

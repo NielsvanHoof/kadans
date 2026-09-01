@@ -89,7 +89,7 @@ export default function RecordingShowPanels({
                             <p className="text-muted-foreground flex items-center gap-2 text-sm">
                                 <Spinner className="size-4 shrink-0" />
                                 {t(
-                                    'Transcription is still running. The transcript will appear automatically.',
+                                    'Transcription is still running. The transcript will be ready shortly.',
                                 )}
                             </p>
                         ) : null}

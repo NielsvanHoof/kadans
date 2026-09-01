@@ -98,7 +98,7 @@ export default function MyWorkCard({ myWork }: { myWork: DashboardMyWork }) {
                         variant="compact"
                         title={t('Nothing is assigned to you right now.')}
                         description={t(
-                            'Dossiers appear here once you are set as the responsible staff member.',
+                            "No dossiers assigned to you yet. When you're set as responsible, they'll show up here.",
                         )}
                     />
                 ) : (

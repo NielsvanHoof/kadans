@@ -42,7 +42,7 @@ export default function ProcessingHealthCard({
                     <CardTitle>{t('Processing health')}</CardTitle>
                     <CardDescription>
                         {t(
-                            'Failed and stuck runs across OCR, transcription, and export.',
+                            'Failed or stuck document scans, transcriptions, and exports.',
                         )}
                     </CardDescription>
                 </div>

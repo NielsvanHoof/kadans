@@ -20,7 +20,7 @@ export function ocrProcessingMessage(
     uploadedDocument: UploadedDocument,
 ): string {
     if (isWaitingForTextract(uploadedDocument)) {
-        return 'Waiting for AWS Textract to finish (often a few minutes). Results will update automatically.';
+        return 'Still scanning your document. This usually takes a few minutes — results will appear when ready.';
     }
 
     return 'Analyzing document structure (forms and tables)…';
@@ -30,18 +30,18 @@ export function ocrRunningBannerMessage(
     uploadedDocument: UploadedDocument,
 ): string {
     if (isWaitingForTextract(uploadedDocument)) {
-        return 'Waiting for AWS Textract to finish (often a few minutes). Results will appear automatically.';
+        return 'Still scanning your document. This usually takes a few minutes — results will appear when ready.';
     }
 
-    return 'Analysis is still running. Results will appear automatically.';
+    return 'Analysis is still running. Results will update shortly.';
 }
 
 export function ocrReviewBannerMessage(
     uploadedDocument: UploadedDocument,
 ): string {
     if (isWaitingForTextract(uploadedDocument)) {
-        return 'Waiting for AWS Textract to finish (often a few minutes). Results will update automatically.';
+        return 'Still scanning your document. This usually takes a few minutes — results will appear when ready.';
     }
 
-    return 'Document analysis is still running. Results will update automatically.';
+    return 'Document analysis is still running. Results will update shortly.';
 }

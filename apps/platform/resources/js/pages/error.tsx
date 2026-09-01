@@ -18,10 +18,6 @@ type Props = {
     status: ErrorStatus;
 };
 
-/**
- * Standalone HTTP error page (403/404/500/503).
- * No app sidebar — works for guests and authenticated users.
- */
 export default function ErrorPage({ status }: Props) {
     const { t } = useTranslation();
     const { auth, name } = usePage().props;
@@ -32,7 +28,7 @@ export default function ErrorPage({ status }: Props) {
     const copyByStatus: Record<ErrorStatus, ErrorCopy> = {
         403: {
             title: t('Forbidden'),
-            description: t('Sorry, you are not allowed to access this page.'),
+            description: t("You don't have permission to view this page."),
             icon: ShieldOff,
         },
         404: {

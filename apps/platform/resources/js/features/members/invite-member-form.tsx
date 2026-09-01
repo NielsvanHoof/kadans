@@ -53,9 +53,7 @@ export default function InviteMemberForm({
             <CardHeader>
                 <CardTitle>{t('Invite member')}</CardTitle>
                 <CardDescription>
-                    {t(
-                        'Send an email invitation to join this workspace with a role.',
-                    )}
+                    {t('Send an email invitation with a role.')}
                 </CardDescription>
             </CardHeader>
             <CardContent>

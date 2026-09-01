@@ -102,7 +102,7 @@ final class PipelineController extends Controller
 
         $retryPipeline->handle($pipeline, $this->currentUser());
 
-        Toast::success(__('Pipeline retry queued.'));
+        Toast::success(__('Retry started. Results will update when processing finishes.'));
 
         return to_route(
             'workspaces.pipelines.show',

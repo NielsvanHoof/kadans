@@ -11,9 +11,6 @@ import {
     index as templateIndex,
 } from '@/routes/workspaces/templates';
 
-/**
- * View or edit a questionnaire template and its items.
- */
 export default function ShowTemplate({
     template,
     categories,

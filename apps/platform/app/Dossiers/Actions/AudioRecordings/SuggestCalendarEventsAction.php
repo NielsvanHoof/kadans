@@ -46,7 +46,7 @@ final readonly class SuggestCalendarEventsAction
 
         if (! OAuthProvider::Google->isConfigured()) {
             throw new OAuthTokenRefreshFailedException(
-                __('Google OAuth is not configured.'),
+                __('Google sign-in isn\'t set up yet. Contact your administrator.'),
             );
         }
 

@@ -32,7 +32,7 @@ export default function BulkRestoreDossiersButton({
                     : t('Restore :count dossiers?', { count })
             }
             description={t(
-                'The selected dossiers will appear in lists again and can be opened by your team.',
+                'Your team will be able to open the selected dossiers again.',
             )}
             confirmLabel={
                 count === 1

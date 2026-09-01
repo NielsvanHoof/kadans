@@ -8,9 +8,6 @@ import {
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
 
-/**
- * Staff dossier overview — follow-up, invite, and links to builder/review.
- */
 export default function ShowDossier({
     dossier,
     access_grant_token: accessGrantToken = null,

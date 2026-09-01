@@ -9,9 +9,6 @@ type PageProps = {
     firms: Firm[];
 };
 
-/**
- * Global dashboard — pick a firm to enter its workspace.
- */
 export default function Dashboard({ firms }: PageProps) {
     const { t } = useTranslation();
     setLayoutProps({

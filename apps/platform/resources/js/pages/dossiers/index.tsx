@@ -17,9 +17,6 @@ import {
 } from '@/routes/workspaces/dossiers';
 import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
-/**
- * Dossiers index — list of all firm dossiers.
- */
 export default function DossierIndex({
     dossiers,
     indexQuery,

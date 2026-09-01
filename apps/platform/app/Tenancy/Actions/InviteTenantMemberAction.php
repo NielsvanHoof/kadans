@@ -52,7 +52,7 @@ final readonly class InviteTenantMemberAction
 
             if ($existingMemberQuery->toBase()->exists()) {
                 throw ValidationException::withMessages([
-                    'email' => __('This person is already a member of this workspace.'),
+                    'email' => __('This person is already a member.'),
                 ]);
             }
 

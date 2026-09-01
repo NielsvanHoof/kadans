@@ -64,6 +64,11 @@ describe('MyWorkCard', () => {
         expect(
             screen.getByText('Nothing is assigned to you right now.'),
         ).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                "No dossiers assigned to you yet. When you're set as responsible, they'll show up here.",
+            ),
+        ).toBeInTheDocument();
     });
 
     it('always shows the three counters, including at zero', () => {

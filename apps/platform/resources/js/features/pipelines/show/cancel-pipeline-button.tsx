@@ -26,7 +26,7 @@ export default function CancelPipelineButton({
 
     return (
         <ConfirmDestroyDialog
-            title={t('Cancel pipeline run?')}
+            title={t('Cancel this job?')}
             description={t(
                 'The run stops where it is and its remaining steps are skipped. The document or export is released so it can be processed again later.',
             )}

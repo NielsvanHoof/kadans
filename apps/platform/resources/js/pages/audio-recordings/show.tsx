@@ -9,10 +9,6 @@ import {
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
 
-/**
- * Dedicated transcript page for a single audio recording.
- * Thin page: breadcrumbs + Head; body lives in the audio-recordings feature.
- */
 export default function ShowAudioRecording(props: AudioRecordingShowProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();

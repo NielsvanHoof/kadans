@@ -36,7 +36,7 @@ enum PipelineType: string
     public function label(): string
     {
         return match ($this) {
-            self::OcrDocument => __('OCR document'),
+            self::OcrDocument => __('Document scan'),
             self::DossierExport => __('Dossier export'),
             self::AudioTranscription => __('Audio transcription'),
         };

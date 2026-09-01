@@ -11,10 +11,6 @@ import type { Appearance } from '@/hooks/use-appearance';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useTranslation } from '@/hooks/use-translation';
 
-/**
- * Compact header appearance control (Light / Dark / System).
- * Trigger icon follows the resolved theme so the control reads at a glance.
- */
 export default function AppearanceMenu() {
     const { appearance, resolvedAppearance, updateAppearance } =
         useAppearance();

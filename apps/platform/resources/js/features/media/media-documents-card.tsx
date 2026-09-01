@@ -51,7 +51,7 @@ export default function MediaDocumentsCard({
                 {rows.length === 0 ? (
                     <EmptyState
                         title={t(
-                            'Document requests will appear here once you add them to a dossier.',
+                            'No document requests yet. Add items to a dossier to get started.',
                         )}
                     />
                 ) : (

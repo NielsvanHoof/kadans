@@ -14,9 +14,6 @@ import {
     index as rolesIndex,
 } from '@/routes/workspaces/roles';
 
-/**
- * Reference view of what each role in this firm is allowed to do.
- */
 export default function WorkspaceRolesIndex({
     roles,
     permission_groups: permissionGroups,
@@ -48,9 +45,7 @@ export default function WorkspaceRolesIndex({
                         level={1}
                         className="mb-0"
                         title={t('Roles & permissions')}
-                        description={t(
-                            'Review which permissions each role grants in this workspace.',
-                        )}
+                        description={t('See what each role is allowed to do.')}
                     />
                     {canManageRoles ? (
                         <LinkButton href={manageRoles(currentWorkspace).url}>

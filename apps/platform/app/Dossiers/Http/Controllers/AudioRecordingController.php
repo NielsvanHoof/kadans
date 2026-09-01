@@ -145,7 +145,7 @@ final class AudioRecordingController extends Controller
                 ],
             );
 
-            abort(403, __('This file has not been cleared by the malware scanner.'));
+            abort(403, __('This file hasn\'t passed our security check yet. Try again in a moment.'));
         }
 
         $logAuditActivity->handle(

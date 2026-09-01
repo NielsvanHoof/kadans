@@ -21,7 +21,7 @@ export default function DesktopRequiredGate({
                 icon={Monitor}
                 title={t('Form builder needs a larger screen')}
                 description={t(
-                    'Building a client form uses a side-by-side palette, canvas, and settings panel. Open this page on a desktop or laptop to continue.',
+                    'The form builder needs a larger screen. Open this on a desktop or laptop to continue.',
                 )}
                 action={
                     <LinkButton href={backHref}>

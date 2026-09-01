@@ -97,7 +97,7 @@ describe('BulkRestoreClientsButton', () => {
         // is the difference between a surprised user and an informed one.
         expect(
             await screen.findByText(
-                'The selected clients will appear in lists again. Their dossiers stay archived until restored separately.',
+                'The selected clients will be visible again. Their dossiers stay archived until you restore them separately.',
             ),
         ).toBeInTheDocument();
     });

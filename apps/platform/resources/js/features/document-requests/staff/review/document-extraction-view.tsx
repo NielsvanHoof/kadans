@@ -61,7 +61,7 @@ export default function DocumentExtractionView({
                     <TabsTrigger id="tables">
                         {t(':count tables', { count: tables.length })}
                     </TabsTrigger>
-                    <TabsTrigger id="raw">{t('Raw JSON')}</TabsTrigger>
+                    <TabsTrigger id="raw">{t('Full data')}</TabsTrigger>
                 </TabsList>
             </ScrollArea>
 

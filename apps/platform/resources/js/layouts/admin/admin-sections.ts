@@ -48,7 +48,7 @@ export function useAdminSections(): NavItem[] {
         ...(can('data_subject.view')
             ? [
                   {
-                      title: t('Data-subject requests'),
+                      title: t('Privacy requests'),
                       href: dataSubjectRequestIndex(currentWorkspace),
                       icon: null,
                   },

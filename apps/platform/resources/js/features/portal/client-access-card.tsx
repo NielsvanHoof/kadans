@@ -43,7 +43,7 @@ export default function ClientAccessCard({
     return (
         <div className="space-y-4">
             {accessGrants.length === 0 ? (
-                <EmptyState title={t('No access grants yet.')} />
+                <EmptyState title={t('No portal links yet.')} />
             ) : (
                 <div className="divide-y rounded-md border">
                     {accessGrants.map((grant) => (

@@ -47,7 +47,7 @@ final class ClientAccessGrantController extends Controller
         $request->session()->flash('access_grant_portal_url', $portalUrl);
 
         if ($sendInvite) {
-            Toast::success(__('Client invite queued. Copy the portal link now if you need it again.'));
+            Toast::success(__('Invitation sent. Copy the portal link now — you won\'t see it again.'));
         } else {
             Toast::success(__('Client access link created. Copy it now — it will not be shown again.'));
         }
@@ -69,7 +69,7 @@ final class ClientAccessGrantController extends Controller
 
         $revokeClientPortalAccess->handle($grant, $user);
 
-        Toast::success(__('Client access grant revoked.'));
+        Toast::success(__('Portal link revoked.'));
 
         return to_route(
             'workspaces.dossiers.show',
