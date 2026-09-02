@@ -100,7 +100,7 @@ describe('DocumentProcessingPanel', () => {
 
         expect(
             screen.getByText(
-                'Waiting for AWS Textract to finish (often a few minutes). Results will update automatically.',
+                'Still scanning your document. This usually takes a few minutes — results will appear when ready.',
             ),
         ).toBeInTheDocument();
     });

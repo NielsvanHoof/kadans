@@ -31,7 +31,7 @@ import { createApplicationAccessManagedPolicy } from "./shared/policies.js";
  * never branch on the environment name. See src/environments/settings.ts.
  *
  * Compute (ECS/ALB/edge/cache) was removed in TASK-43.3 — Laravel Cloud owns the
- * application runtime. This program is the data plane plus public RDS.
+ * application runtime. This program is the data plane; RDS is optional per stack.
  */
 
 const config = loadPlatformConfig();
@@ -75,9 +75,10 @@ const mail = createMail(config);
 const dns = createPlatformDns(config, mail);
 
 /*
- * Long-lived credentials belong to exactly one environment (decision-3), and
- * scripts/sync-ocr-credentials.sh reads the `local` stack. A second key elsewhere
- * would be a standing credential with nothing consuming it.
+ * Long-lived credentials belong to each non-production data-plane stack that
+ * runs real OCR (`local` for Sail, `staging` for Laravel Cloud). Production
+ * stays off until it gets its own stack. Never share one SQS completion queue
+ * across environments — see infra/README.md.
  */
 const operator = settings.applicationUserAccess
   ? createOcrOperatorAccess(config, accessPolicy, mail.sendPolicy)
@@ -87,8 +88,8 @@ const credentials = operator === undefined
   : exportOcrOperatorCredentials(operator);
 
 /*
- * VPC + public RDS when the database is on. Every deployed environment turns
- * this on so Laravel Cloud can reach Postgres over the internet.
+ * VPC + public RDS when `databaseEnabled` is true (production, staging).
+ * Local Sail uses Docker Postgres and skips this block.
  */
 const dataStore = settings.databaseEnabled
   ? (() => {

@@ -26,7 +26,7 @@ export default function DossierWorkflowLinks({
     const { t } = useTranslation();
     const currentWorkspace = useCurrentWorkspace();
     const completion = dossierStageCompletion(dossier);
-    const hasFormItems = dossier.document_requests.length > 0;
+    const hasFormItems = dossier.review_summary.total > 0;
     const routeArgs = {
         tenant: currentWorkspace,
         dossier: dossier.id,

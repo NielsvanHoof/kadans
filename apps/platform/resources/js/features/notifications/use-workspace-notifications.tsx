@@ -15,20 +15,13 @@ export function useWorkspaceNotifications(tenantSlug: string): void {
         });
     }, []);
 
+    // Transcription used to filter the whole pipeline.updated stream. Because
+    // this hook mounts in AppLayout that made every staff member a subscriber
+    // to every run in the firm, on every page — the reason that stream could
+    // not be narrowed. Both events share this channel and the same reload.
     useEcho(
         `workspaces.${tenantSlug}`,
-        '.client.questionnaire.completed',
-        reloadNotifications,
-        [tenantSlug],
-    );
-
-    // Transcription completion has its own event now. It used to filter the
-    // whole pipeline.updated stream for it, and because this hook mounts in
-    // AppLayout that made every staff member a subscriber to every run in the
-    // firm, on every page — the reason that stream could not be narrowed.
-    useEcho(
-        `workspaces.${tenantSlug}`,
-        '.audio.transcription.completed',
+        ['.client.questionnaire.completed', '.audio.transcription.completed'],
         reloadNotifications,
         [tenantSlug],
     );

@@ -708,8 +708,8 @@ test('portal locale follows the browser language when no cookie is set', functio
                 $translations = $props['translations'];
 
                 expect($translations['For :name'])->toBe('Voor :name')
-                    ->and($translations['This is a secure upload page for :firm. Do not share this link.'])
-                    ->toBe('Dit is een beveiligde uploadpagina voor :firm. Deel deze link niet.');
+                    ->and($translations['This is a private link for :firm. Keep it confidential.'])
+                    ->toBe('Dit is een privélink voor :firm. Houd deze vertrouwelijk.');
             }));
 });
 

@@ -1,2 +1,4 @@
 config:
   aws:region: eu-west-1
+  qompose-platform:databasePassword:
+    secure: AAABAMXUwQ3OfL04wAgmjwOOlIDHoUiTrHaAZfsxzNvDyJGIjPsWCv2XXz/Uo/qM3+O7TJ19PZP+kUrvbwkYUQ==

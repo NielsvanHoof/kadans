@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 // Dossiers / Clients while browsing account settings.
 Route::middleware([
     'auth',
+    'verified',
     InitializeTenantFromSession::class,
     SetPermissionTeamContext::class,
 ])->group(function (): void {

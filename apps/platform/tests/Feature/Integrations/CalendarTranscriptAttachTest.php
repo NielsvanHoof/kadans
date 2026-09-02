@@ -243,11 +243,13 @@ test('refresh oauth access token updates google connection', function (): void {
     $user = User::factory()->create();
     $connection = OAuthConnection::factory()->forProvider(OAuthProvider::Google)->create([
         'user_id' => $user->id,
-        'access_token' => 'old-access',
-        'refresh_token' => 'refresh-token',
         'token_expires_at' => Date::now()->subMinute(),
         'scopes' => googleWorkspaceScopes(),
     ]);
+    $connection->forceFill([
+        'access_token' => 'old-access',
+        'refresh_token' => 'refresh-token',
+    ])->save();
 
     Http::fake([
         'oauth2.googleapis.com/token' => Http::response([

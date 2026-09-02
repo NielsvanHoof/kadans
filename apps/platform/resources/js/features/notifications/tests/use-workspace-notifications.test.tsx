@@ -17,10 +17,15 @@ vi.mock('@laravel/echo-react', () => ({
     configureEcho: vi.fn(),
     useEcho: (
         channel: string,
-        event: string,
+        event: string | string[],
         handler: (event: unknown) => void,
     ) => {
-        echoHandlers[event] = handler;
+        const events = Array.isArray(event) ? event : [event];
+
+        for (const name of events) {
+            echoHandlers[name] = handler;
+        }
+
         echoChannels.push(channel);
     },
 }));
@@ -75,9 +80,10 @@ describe('useWorkspaceNotifications', () => {
         // channel's events to all its subscribers whether or not a listener is
         // bound, so a bulk upload woke every open tab hundreds of times.
         expect(echoHandlers['.pipeline.updated']).toBeUndefined();
-        // Two useEcho calls, one per event, but only the one channel — Echo
-        // dedupes the underlying subscription.
-        expect([...new Set(echoChannels)]).toEqual(['workspaces.acme']);
+        // One useEcho call, both events, one channel.
+        expect(echoChannels).toEqual(['workspaces.acme']);
+        expect(echoHandlers['.client.questionnaire.completed']).toBeDefined();
+        expect(echoHandlers['.audio.transcription.completed']).toBeDefined();
     });
 });
 

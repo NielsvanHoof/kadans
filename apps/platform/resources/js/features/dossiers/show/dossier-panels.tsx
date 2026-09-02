@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { DocumentRequest } from '@/features/document-requests/types';
 import { useDossierCapabilities } from '@/features/dossiers/permissions/dossier-permissions-context';
 import AudioRecordingsCard from '@/features/dossiers/show/audio-recordings-card';
 import DossierExportCard from '@/features/dossiers/show/dossier-export-card';
 import {
     type DossierPanel,
     validAccessGrants,
-    waitingDocumentRequests,
 } from '@/features/dossiers/show/dossier-panel';
 import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import type { Dossier, DossierExport } from '@/features/dossiers/types';
@@ -79,9 +79,8 @@ export default function DossierPanels({
                                 {t('Waiting')}
                                 <PanelCount
                                     value={
-                                        waitingDocumentRequests(
-                                            dossier.document_requests,
-                                        ).length
+                                        dossier.review_summary.pending +
+                                        dossier.review_summary.rejected
                                     }
                                 />
                             </TabsTrigger>
@@ -131,10 +130,15 @@ export default function DossierPanels({
                         id="waiting"
                         className="scroll-mt-20 outline-none"
                     >
-                        <WaitingItemsSummary
-                            dossier={dossier}
-                            onSelectAccess={() => onSelectPanel('access')}
-                        />
+                        <Deferred
+                            data="document_requests"
+                            fallback={<WaitingItemsSkeleton />}
+                        >
+                            <DeferredWaitingItemsSummary
+                                dossier={dossier}
+                                onSelectAccess={() => onSelectPanel('access')}
+                            />
+                        </Deferred>
                     </TabsContent>
 
                     <TabsContent
@@ -262,5 +266,37 @@ function DeferredExportCard({ dossier }: { dossier: Dossier }) {
                 exports,
             }}
         />
+    );
+}
+
+function DeferredWaitingItemsSummary({
+    dossier,
+    onSelectAccess,
+}: {
+    dossier: Dossier;
+    onSelectAccess: () => void;
+}) {
+    const documentRequests = usePage().props
+        .document_requests as DocumentRequest[];
+
+    return (
+        <WaitingItemsSummary
+            dossier={{
+                ...dossier,
+                document_requests: documentRequests,
+            }}
+            onSelectAccess={onSelectAccess}
+        />
+    );
+}
+
+/** Pulsing placeholder while the deferred `document_requests` prop resolves. */
+function WaitingItemsSkeleton() {
+    return (
+        <div aria-busy="true" className="space-y-3">
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+        </div>
     );
 }

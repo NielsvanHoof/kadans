@@ -23,21 +23,15 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as settingsIndex } from '@/routes/workspaces/settings';
 
-type SettingsPayload = {
-    settings: {
-        ai: {
-            document_overview: boolean;
-            checklist_draft: boolean;
-            reminder_draft: boolean;
-        };
-    };
-};
+type WorkspaceSettingsPageProps = App.Tenancy.Data.WorkspaceSettingsPageData;
 
 /**
  * Owner-only firm settings. AI toggles opt out of Bedrock-backed helpers
  * while leaving manual workflows available.
  */
-export default function WorkspaceSettingsIndex({ settings }: SettingsPayload) {
+export default function WorkspaceSettingsIndex({
+    settings,
+}: WorkspaceSettingsPageProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
     const [documentOverview, setDocumentOverview] = useState(

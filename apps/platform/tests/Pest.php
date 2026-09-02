@@ -424,12 +424,13 @@ function workspaceMember(Tenant $tenant, Role $role, ?User $user = null): User
 {
     $user ??= User::factory()->create();
 
-    TenantMembership::query()->create([
+    $membership = new TenantMembership;
+    $membership->forceFill([
         'tenant_id' => $tenant->id,
         'user_id' => $user->id,
         'status' => TenantMembershipStatus::Active,
         'joined_at' => now(),
-    ]);
+    ])->saveOrFail();
 
     actingInWorkspace($tenant);
     $user->assignRole($role->value);

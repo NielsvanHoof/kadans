@@ -52,7 +52,6 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     'firms.activate' => 'membership-check: ActiveTenantController asserts User::canAccessTenant.',
 
     // no-resource — the request names no resource to authorize against.
-    'workspaces.upload-tickets.store' => 'no-resource: signs a PUT into the current workspace staging prefix. The tenant comes from the route binding, which the workspace middleware stack has already validated membership for, and ClaimUploadTicketAction re-checks it when the ticket is spent.',
 
     // middleware — the route group is gated before the controller runs.
     'platform.support.index' => 'middleware: EnsurePlatformSupport.',
@@ -116,7 +115,7 @@ function methodSource(ReflectionMethod $method): string
  */
 function consultsGate(string $source): bool
 {
-    return array_any(['->can(', '->cannot(', 'Gate::', '->allows(', '->denies(', '$this->authorize('], fn (string $needle): bool => str_contains($source, $needle));
+    return array_any(['->can(', '->cannot(', 'Gate::', '->allows(', '->denies(', '$this->authorize(', '->hasTenantPermission('], fn (string $needle): bool => str_contains($source, $needle));
 }
 
 /**

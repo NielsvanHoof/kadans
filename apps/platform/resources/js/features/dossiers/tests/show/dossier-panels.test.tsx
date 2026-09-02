@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import type { DocumentRequest } from '@/features/document-requests/types';
 import type { DossierPanel } from '@/features/dossiers/show/dossier-panel';
 import type { Dossier } from '@/features/dossiers/types';
 import type { AccessGrant } from '@/features/portal/types';
@@ -70,18 +69,6 @@ vi.mock('@/features/portal/portal-link-banner', () => ({
 const { default: DossierPanels } =
     await import('@/features/dossiers/show/dossier-panels');
 
-function documentRequest(
-    status: DocumentRequest['status'],
-    isApplicable = true,
-): DocumentRequest {
-    return {
-        id: Math.random(),
-        title: 'Balans',
-        status,
-        is_applicable: isApplicable,
-    } as DocumentRequest;
-}
-
 function dossier(overrides: Partial<Dossier> = {}): Dossier {
     return {
         id: 7,
@@ -91,6 +78,13 @@ function dossier(overrides: Partial<Dossier> = {}): Dossier {
         access_grants: [],
         exports_count: 0,
         audio_recordings_count: 0,
+        review_summary: {
+            total: 0,
+            pending: 0,
+            submitted: 0,
+            accepted: 0,
+            rejected: 0,
+        },
         ...overrides,
     } as Dossier;
 }
@@ -116,6 +110,7 @@ function renderPanels({
 } & Partial<Dossier> = {}) {
     state.props = {
         current_firm: { slug: 'acme', name: 'Acme' },
+        document_requests: [],
         ...(audioRecordings === undefined
             ? {}
             : { audio_recordings: audioRecordings }),
@@ -239,11 +234,13 @@ describe('DossierPanels', () => {
 
     it('counts the items the client still owes', () => {
         renderPanels({
-            document_requests: [
-                documentRequest('pending'),
-                documentRequest('rejected'),
-                documentRequest('accepted'),
-            ],
+            review_summary: {
+                total: 3,
+                pending: 1,
+                submitted: 0,
+                accepted: 1,
+                rejected: 1,
+            },
         });
 
         expect(tabNames()).toContain('Waiting2');
@@ -257,11 +254,13 @@ describe('DossierPanels', () => {
      */
     it('leaves out unanswered items the client is not being asked for', () => {
         renderPanels({
-            document_requests: [
-                documentRequest('pending'),
-                documentRequest('pending', false),
-                documentRequest('rejected', false),
-            ],
+            review_summary: {
+                total: 1,
+                pending: 1,
+                submitted: 0,
+                accepted: 0,
+                rejected: 0,
+            },
         });
 
         expect(tabNames()).toContain('Waiting1');

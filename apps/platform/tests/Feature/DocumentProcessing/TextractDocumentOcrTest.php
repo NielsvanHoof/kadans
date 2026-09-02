@@ -30,6 +30,7 @@ beforeEach(function (): void {
 
 test('textract start persists job id and leaves document processing', function (): void {
     Event::fake([MessageLogged::class]);
+    $this->freezeTime();
 
     $uploaded = createUploadedDocumentForTextractTest();
 
@@ -41,7 +42,7 @@ test('textract start persists job id and leaves document processing', function (
             && ($args['FeatureTypes'] ?? null) === ['FORMS', 'TABLES']
             && ($args['NotificationChannel']['SNSTopicArn'] ?? null) === 'arn:aws:sns:eu-west-1:123:textract'
             && ($args['NotificationChannel']['RoleArn'] ?? null) === 'arn:aws:iam::123:role/textract-sns'
-            && ($args['ClientRequestToken'] ?? null) === hash('sha256', $uploaded->id.':'.$uploaded->path)
+            && ($args['ClientRequestToken'] ?? null) === hash('sha256', $uploaded->id.':'.$uploaded->path.':'.now()->toIso8601String())
             && ($args['JobTag'] ?? null) === (string) $uploaded->id))
         ->andReturn(new Result(['JobId' => 'textract-job-abc']));
 
@@ -68,6 +69,46 @@ test('textract start persists job id and leaves document processing', function (
     Event::assertDispatched(fn (MessageLogged $log): bool => $log->level === 'info'
         && str_contains($log->message, 'OCR: orchestrator deferred')
         && ($log->context['textract_job_id'] ?? null) === 'textract-job-abc');
+});
+
+test('textract start sends a different client request token after a later claim', function (): void {
+    $this->freezeTime();
+
+    $uploaded = createUploadedDocumentForTextractTest([
+        'processing_status' => DocumentProcessingStatus::Processing,
+        'processing_started_at' => now(),
+    ]);
+
+    $tokens = [];
+
+    $textract = Mockery::mock(TextractClient::class);
+    $textract->shouldReceive('startDocumentAnalysis')
+        ->twice()
+        ->with(Mockery::on(function (array $args) use (&$tokens): bool {
+            $token = $args['ClientRequestToken'] ?? null;
+
+            if (! is_string($token) || $token === '') {
+                return false;
+            }
+
+            $tokens[] = $token;
+
+            return true;
+        }))
+        ->andReturn(new Result(['JobId' => 'textract-job-abc']));
+
+    $this->app->instance(TextractClient::class, $textract);
+
+    resolve(TextractDocumentOcr::class)->start($uploaded);
+
+    $uploaded->forceFill([
+        'processing_started_at' => now()->addMinute(),
+    ])->save();
+
+    resolve(TextractDocumentOcr::class)->start($uploaded->fresh());
+
+    expect($tokens)->toHaveCount(2)
+        ->and($tokens[0])->not->toBe($tokens[1]);
 });
 
 test('textract start does not attach a job id after the upload is replaced', function (): void {

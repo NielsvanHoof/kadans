@@ -117,3 +117,14 @@ test("production scanner policy includes GuardDuty EventBridge managed-rule acce
   assert.ok(sids.includes("MonitorGuardDutyEventRule"));
   assert.ok(sids.includes("AllowPutValidationObject"));
 });
+
+test("the OCR CMK grants Textract the same way it grants Transcribe", () => {
+  const key = stack.named("ocr-key");
+
+  assert.ok(key);
+
+  const serialized = String(key.inputs.policy);
+
+  assert.ok(serialized.includes("textract.amazonaws.com"));
+  assert.ok(serialized.includes("AllowAmazonTextractToUseKey"));
+});

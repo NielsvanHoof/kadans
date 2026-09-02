@@ -1,8 +1,9 @@
 # Qompose platform infrastructure
 
 One Pulumi program, one stack per environment. After TASK-43.3 it provisions the
-**data plane only**: documents/OCR/Transcribe, public RDS, SES, and (on `local`)
-the application IAM user. Application compute runs on Laravel Cloud.
+**data plane only**: documents/OCR/Transcribe, SES, and (where enabled) public RDS.
+The `local` stack is OCR/data-plane only — Sail uses Docker Postgres. Application
+compute runs on Laravel Cloud.
 
 ```
 src/
@@ -32,17 +33,20 @@ will find it. The whole production/staging/local delta should be a settings-file
 | `deletionProtection` | `true` | `false` | `false` |
 | `databaseMultiAz` | `true` | `false` | `false` |
 | `databaseBackupRetentionDays` | 14 | 3 | 1 |
-| `databaseEnabled` | `true` | `true` | `true` |
-| `databasePubliclyAccessible` | `true` | `true` | `true` |
+| `databaseEnabled` | `true` | `true` | `false` |
+| `databasePubliclyAccessible` | `true` | `true` | `false` |
 | `dnsSubdomain` | `null` | `staging` | `local` |
 | `crossRegionSnapshotCopy` | `true` | `false` | `false` |
 | `monthlyBudgetUsd` | 200 | 75 | 25 |
-| `applicationUserAccess` | `false` | `false` | `true` |
+| `applicationUserAccess` | `false` | `true` | `true` |
 
-Every stack is documents/OCR plus public RDS for Laravel Cloud. `applicationUserAccess`
-is the correctness constraint: exactly one environment mints the long-lived IAM
-user + access key (decision-3), and `scripts/sync-ocr-credentials.sh` reads the
-`local` stack. Floci remains the everyday local S3 path with mock OCR drivers.
+Production and staging are documents/OCR plus public RDS. `local` is OCR/data-plane
+only — Sail uses Docker Postgres. `local` and `staging` each mint a scoped IAM
+user for their **own** bucket and completion queues. Never point two runtimes at
+the same `TEXTRACT_RESULTS_QUEUE_URL` — staging Cloud and local Sail would race
+and delete each other's notifications. `composer env:aws` syncs the `local` stack;
+`composer env:aws-staging` syncs staging outputs for reference. Floci remains the
+everyday local S3 path with mock OCR drivers.
 
 ## What the stack builds
 
@@ -50,7 +54,7 @@ user + access key (decision-3), and `scripts/sync-ocr-credentials.sh` reads the
 flowchart TB
   Cloud[Laravel Cloud] --> RDS[(Public RDS Postgres)]
   Cloud --> Docs[S3 documents · OCR · Transcribe]
-  Cloud --> IAM[App IAM user · local stack]
+  Cloud --> IAM[App IAM user · per stack]
   Cloud --> SES[SES]
   Docs --> KMS[KMS]
   RDS --> VPC[VPC · public subnets · DB SG]
@@ -58,8 +62,8 @@ flowchart TB
 
 Laravel Cloud runs the app. This stack owns the AWS data plane the app reaches
 over the public internet: the documents bucket and OCR/Transcribe queues, a
-public Postgres instance allowlisted to Cloud egress CIDRs, SES, and — on
-`local` only — the IAM user whose keys Sail and Cloud share.
+public Postgres instance allowlisted to Cloud egress CIDRs, SES, and — on stacks
+with `applicationUserAccess` — the IAM user scoped to that stack's resources.
 
 **Network.** Two public subnets, no NAT. The VPC exists only to host public RDS;
 confinement is the database security group's Laravel Cloud egress allowlist, not
@@ -164,39 +168,43 @@ pulumi config set --secret databasePassword '…' --stack staging
 The workflow removes obsolete compute-era config keys (`imageTag`, `appKey`,
 Reverb/Sentry/cache secrets) on each run.
 
-## Local `.env` (`local` stack only)
+## Local `.env` (`local` stack)
 
-Sail defaults to Floci + mock OCR drivers. For real Textract/Transcribe against AWS,
-bring up the documents-only `local` stack, then sync credentials on the **host**
-(not via Sail — Pulumi is not in the container):
+Sail defaults to Floci + mock OCR drivers. For real Textract/Transcribe against the
+**local** data plane, bring up the `local` stack and sync credentials on the
+**host** (not via Sail — Pulumi is not in the container):
 
 ```bash
 cd apps/platform/infra && pulumi up -s local
-cd apps/platform && composer env:aws     # or: cd infra && ./scripts/sync-ocr-credentials.sh
+cd apps/platform && composer env:aws     # writes aws-local.env + aws.env
 composer env:floci   # back to Sail's local AWS; env:aws re-applies the cached profile
 ```
 
-That writes gitignored `env/profiles/aws.env` and upserts `FILESYSTEM_DISK=s3`,
+That writes gitignored `env/profiles/aws-local.env` and upserts `FILESYSTEM_DISK=s3`,
 `OCR_DRIVER=textract`, `TRANSCRIPTION_DRIVER=transcribe`, the IAM keys, the bucket
 and the queue URLs into `.env`, clearing the Floci endpoints.
 
-The `local` stack creates that IAM user and access key — and, today, **so does the
-deployed application use it**. IAM roles hand temporary credentials to something AWS
-already recognises: an ECS task, an EC2 instance, a Lambda. A PHP process on your
-laptop is none of those, and neither is a Laravel Cloud container. So both
-authenticate the same way, with the same long-lived key: `applicationUserAccess` is
-`true` only in the `local` stack, which is why the user it mints is tagged
-`Purpose: Sail + Laravel Cloud …`.
+## Laravel Cloud staging ( `staging` stack )
 
-The key is acceptable *because* the policy is narrow — one bucket, the OCR and
-Transcribe queues, Bedrock, one KMS key, plus SES send attached separately. It is
-not acceptable because it is short-lived, because it is not. **Rotation is the whole
-mitigation** (see below), and the blast radius spans both environments: a key leaked
-from a laptop is production's key. Recorded as decision-10.
+Staging uses a **separate** bucket, SNS topic, and SQS queues (`qompose-staging-*`).
+After `pulumi up -s staging`, copy stack outputs into Laravel Cloud environment
+variables — at minimum `AWS_*`, `TEXTRACT_*`, and `TRANSCRIBE_RESULTS_QUEUE_URL` from:
 
-When staging and production get their own AWS stacks, each Laravel Cloud environment
-should carry a key minted by its matching stack, and this paragraph should shrink
-back to being about laptops.
+```bash
+cd apps/platform/infra
+pulumi stack output --stack staging
+# or preview locally:
+PULUMI_STACK=staging ./scripts/sync-ocr-credentials.sh   # writes env/profiles/aws-staging.env
+```
+
+**Do not** reuse the local stack queue URLs on Cloud staging; that races with Sail
+and drops completions silently.
+
+Each stack mints its own IAM user when `applicationUserAccess` is true. The key is
+acceptable *because* the policy is narrow — one bucket, that stack's OCR and
+Transcribe queues, Bedrock, one KMS key, plus SES send attached separately.
+**Rotation is the whole mitigation** — see below. Recorded as decision-10 (partially
+superseded: local and staging no longer share one key/queue).
 
 ### Rotating the application access key
 

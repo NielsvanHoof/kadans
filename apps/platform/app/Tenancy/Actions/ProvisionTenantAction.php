@@ -39,13 +39,14 @@ final readonly class ProvisionTenantAction
 
                 $this->seedRolesForTenant($tenant);
 
-                TenantMembership::query()->create([
+                $membership = new TenantMembership;
+                $membership->forceFill([
                     'tenant_id' => $tenant->id,
                     'user_id' => $owner->id,
                     'status' => TenantMembershipStatus::Active,
                     'joined_at' => now(),
                     'last_accessed_at' => now(),
-                ]);
+                ])->saveOrFail();
 
                 setPermissionsTeamId($tenant->id);
                 $owner->unsetRelation('roles');

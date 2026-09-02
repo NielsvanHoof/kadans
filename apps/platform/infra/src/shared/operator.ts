@@ -16,12 +16,12 @@ export interface OcrOperatorAccess {
  * A scoped IAM user is the honest option for both.
  *
  * The key is acceptable *because* the policy is narrow — documents bucket,
- * OCR/Transcribe queues, Bedrock, KMS, and (separately) SES send. Exactly one
- * environment mints it (`applicationUserAccess`); `scripts/sync-ocr-credentials.sh`
- * reads the `local` stack.
+ * OCR/Transcribe queues, Bedrock, KMS, and (separately) SES send. Each stack
+ * that sets `applicationUserAccess` mints its own user scoped to that stack's
+ * resources. Sync credentials with `PULUMI_STACK=<stack> ./scripts/sync-ocr-credentials.sh`.
  *
- * Resource names (`ocr-local-user`, `ocr-local`, …) stay byte-identical so Pulumi
- * does not recreate the user and rotate the key out from under `.env` files.
+ * Resource names (`ocr-local-user`, `ocr-local`, …) stay byte-identical per stack
+ * so Pulumi does not recreate the user and rotate the key out from under env files.
  */
 export function createOcrOperatorAccess(
   config: PlatformConfig,
@@ -34,7 +34,7 @@ export function createOcrOperatorAccess(
     name: environment.resourceName("ocr-local"),
     path: "/qompose/",
     tags: {
-      Purpose: "Sail + Laravel Cloud Textract / Transcribe / Bedrock / SES",
+      Purpose: `Application OCR / Transcribe / Bedrock / SES - ${environment.name}`,
     },
   });
 

@@ -8,12 +8,12 @@ use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Clients\Models\Client;
-use App\Platform\Actions\DataSubject\AnonymizeDataSubjectAction;
 use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
 use App\Platform\Actions\DataSubject\RefuseDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Http\Requests\RefuseDataSubjectRequestRequest;
 use App\Platform\Http\Requests\StoreDataSubjectRequestRequest;
+use App\Platform\Jobs\AnonymizeDataSubjectJob;
 use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Queries\FetchDataSubjectRequestIndexQuery;
@@ -76,13 +76,12 @@ final class DataSubjectRequestController extends Controller
     }
 
     /**
-     * Export is queued because the archive reads every stored file; erasure runs
-     * inline so the operator sees the outcome on the response they confirmed.
+     * Export and erasure both run off the request cycle: export archives every
+     * stored file; erasure can touch many dossiers, storage objects, and rows.
      */
     public function fulfil(
         Tenant $tenant,
         DataSubjectRequest $dataSubjectRequest,
-        AnonymizeDataSubjectAction $anonymizeDataSubject,
     ): RedirectResponse {
         $this->authorize('fulfil', $dataSubjectRequest);
 
@@ -91,9 +90,12 @@ final class DataSubjectRequestController extends Controller
 
             Toast::success(__('Preparing the export. You\'ll get a download link when it\'s ready.'));
         } else {
-            $anonymizeDataSubject->handle($dataSubjectRequest, $this->currentUser());
+            dispatch(new AnonymizeDataSubjectJob(
+                $dataSubjectRequest->id,
+                $this->currentUser()->id,
+            ))->afterCommit();
 
-            Toast::success(__('The client’s identity has been erased. Retained records were kept.'));
+            Toast::success(__('Erasure is running. The client’s identity will be removed while retained records are kept.'));
         }
 
         return to_route('workspaces.data-subject-requests.index', $this->workspaceRouteParameters());

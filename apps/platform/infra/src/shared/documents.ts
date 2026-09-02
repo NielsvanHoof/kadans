@@ -244,7 +244,7 @@ export function createDocumentInfrastructure(
         resources: [textractTopic.arn],
       }, {
         effect: "Allow",
-        actions: ["kms:Decrypt", "kms:GenerateDataKey"],
+        actions: ["kms:Decrypt", "kms:GenerateDataKey*"],
         resources: [encryptionKey.arn],
       }],
     }).json,

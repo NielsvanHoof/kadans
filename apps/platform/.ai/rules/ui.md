@@ -1,6 +1,7 @@
 ---
 paths:
   - 'resources/js/components/ui/**'
+  - resources/js/components/ui/badge.tsx
 ---
 
 # Ui
@@ -26,3 +27,9 @@ Two hard rules:
 `size="xs"` / `icon-xs` are deliberately left small: they are inline affordances inside table rows and chips, which WCAG 2.5.8 exempts.
 
 When auditing touch targets, measure the *effective* hit area, not the element box. checkbox.tsx uses `after:absolute after:-inset-x-3 after:-inset-y-2` to turn a 16px box into a 40x32 target, and React Aria renders a visually-hidden native `<input>` that is never the real target — measuring raw `<input>` rects reports phantom 13x13 failures.
+
+## Wrapping button triggers need md:h-auto
+buttonVariants size sm/default/lg set a fixed height at md: (md:h-6, md:h-7, md:h-8). twMerge treats those as a different utility from h-auto, so a wrapping CollapsibleTrigger still clips at desktop width and the extra lines overflow onto the content below. Override with both h-auto and md:h-auto (and items-start) whenever the trigger label is allowed to wrap.
+
+## Badge is a chip, not an icon pip
+Badge is a status chip (h-6, rounded-md, wash destructive). Do not use it as a corner count on an icon button — the chip sits on the glyph. Use a small solid rounded-full span (h-4, bg-destructive, absolute -top-1 -right-1) and overflow-visible on the button.

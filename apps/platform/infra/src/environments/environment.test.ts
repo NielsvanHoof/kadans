@@ -30,35 +30,33 @@ test("staging is the cheap, destroyable public-RDS shape", () => {
   assert.equal(environment.settings.crossRegionSnapshotCopy, false);
   assert.equal(environment.settings.databaseEnabled, true);
   assert.equal(environment.settings.databasePubliclyAccessible, true);
-  assert.equal(environment.settings.applicationUserAccess, false);
+  assert.equal(environment.settings.applicationUserAccess, true);
   assert.equal(environment.settings.dnsSubdomain, "staging");
 });
 
-test("local is the OCR data plane plus public RDS, and owns the app IAM user", () => {
+test("local is the OCR data plane only — Sail uses Docker Postgres", () => {
   const environment = deploymentEnvironmentFromStack("local");
 
   assert.equal(environment.name, "local");
-  assert.equal(environment.settings.databaseEnabled, true);
-  assert.equal(environment.settings.databasePubliclyAccessible, true);
+  assert.equal(environment.settings.databaseEnabled, false);
   assert.equal(environment.settings.deletionProtection, false);
   assert.equal(environment.settings.applicationUserAccess, true);
   assert.equal(environment.settings.dnsSubdomain, "local");
-  assert.ok(environment.settings.databaseIngressCidrs.length > 0);
 });
 
-// Exactly one environment may mint the long-lived Sail access key (decision-3);
-// scripts/sync-ocr-credentials.sh reads the local stack.
-test("only local mints the application IAM user", () => {
+// Production stays off until it gets its own stack; local and staging each mint
+// a scoped IAM user for their own bucket and completion queues.
+test("local and staging mint application IAM users; production does not", () => {
   assert.equal(
     deploymentEnvironmentFromStack("local").settings.applicationUserAccess,
     true,
   );
   assert.equal(
-    deploymentEnvironmentFromStack("production").settings.applicationUserAccess,
-    false,
+    deploymentEnvironmentFromStack("staging").settings.applicationUserAccess,
+    true,
   );
   assert.equal(
-    deploymentEnvironmentFromStack("staging").settings.applicationUserAccess,
+    deploymentEnvironmentFromStack("production").settings.applicationUserAccess,
     false,
   );
 });
@@ -77,4 +75,8 @@ test("resource names are stable and environment scoped", () => {
 
   assert.equal(production.resourceName("documents"), "qompose-production-documents");
   assert.equal(local.resourceName("ocr-local-user"), "qompose-local-ocr-local-user");
+  assert.equal(
+    deploymentEnvironmentFromStack("staging").resourceName("textract-results"),
+    "qompose-staging-textract-results",
+  );
 });

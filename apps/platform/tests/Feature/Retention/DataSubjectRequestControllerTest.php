@@ -10,6 +10,7 @@ use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectPermission;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
+use App\Platform\Jobs\AnonymizeDataSubjectJob;
 use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use App\Platform\Models\DataSubjectRequest;
 use App\Tenancy\Enums\Role;
@@ -141,7 +142,9 @@ test('fulfilling an export queues the build rather than blocking the request', f
     );
 });
 
-test('fulfilling an erasure anonymizes the client immediately', function (): void {
+test('fulfilling an erasure queues anonymization rather than blocking the request', function (): void {
+    Queue::fake();
+
     ['owner' => $owner, 'tenant' => $tenant, 'client' => $client] = requestFixture();
 
     $request = resolve(LogDataSubjectRequestAction::class)
@@ -153,7 +156,14 @@ test('fulfilling an erasure anonymizes the client immediately', function (): voi
         ]))
         ->assertRedirect();
 
-    expect($client->refresh()->name)->toBe("Erased client #{$client->id}");
+    Queue::assertPushed(
+        AnonymizeDataSubjectJob::class,
+        fn (AnonymizeDataSubjectJob $job): bool => $job->dataSubjectRequestId === $request->id
+            && $job->fulfilledByUserId === $owner->id
+            && $job->queue === 'dossier-export',
+    );
+
+    expect($client->refresh()->name)->toBe('Marieke de Vries');
 });
 
 test('a refusal requires a reason', function (): void {

@@ -4,6 +4,7 @@ paths:
   - .dockerignore
   - vite.config.ts
   - vite.lint.ts
+  - package.json
 ---
 
 # Docker
@@ -30,3 +31,6 @@ Wire babel-plugin-react-compiler with @rolldown/plugin-babel + reactCompilerPres
 
 ## Vite+ is the frontend toolchain
 Use vp via npm scripts (dev/build/check/test), not standalone vite/eslint/prettier/biome. Pin vite-plus. Import boundaries live in vite.lint.ts as Oxlint no-restricted-imports; overrides last-match-wins so each list restates the pages/ ban. Keep npm run types:check (codegen then tsc) as the type gate — do not enable lint.options.typeCheck. vp test must not load Wayfinder (VITEST=true uses react() only). After any npm package change, install on host and in Sail. Platform CI uses setup-vp (see `.ai/rules/workflows.md`); do not install a global `vp` into the Sail image.
+
+## Babel 8 is compiler-only; no concurrently
+Babel is v8 (@babel/core ^8) and is used only for the React Compiler via @rolldown/plugin-babel in vite.config.ts. There is no babel.config. Do not add concurrently back — vp / artisan dev replace it. After npm package changes, install on the host and in Sail.

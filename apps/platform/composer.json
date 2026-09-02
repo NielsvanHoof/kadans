@@ -13,7 +13,7 @@
         "aws/aws-php-sns-message-validator": "^1.10",
         "aws/aws-sdk-php": "^3.388",
         "inertiajs/inertia-laravel": "^3.0",
-        "laravel/ai": "^0.10.2",
+        "laravel/ai": "^0.11",
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",
@@ -91,6 +91,7 @@
         ],
         "env:floci": "bash scripts/use-aws-profile.sh floci",
         "env:aws": "bash scripts/use-aws-profile.sh aws",
+        "env:aws-staging": "bash scripts/use-aws-profile.sh aws-staging",
         "lint": [
             "pint --parallel"
         ],

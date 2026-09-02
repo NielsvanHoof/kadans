@@ -83,6 +83,7 @@ final class UploadedDocumentProcessingTransitions
             ->update([
                 'processing_status' => DocumentProcessingStatus::Pending->value,
                 'textract_job_id' => null,
+                'processing_started_at' => null,
             ]);
     }
 

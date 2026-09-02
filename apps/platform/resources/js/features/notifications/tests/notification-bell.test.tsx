@@ -137,6 +137,20 @@ describe('NotificationBell', () => {
         expect(screen.getByText('3')).toBeInTheDocument();
     });
 
+    it('renders the unread count as a corner pip on the bell', () => {
+        pageProps.notifications = summary({ unread_count: 1 });
+
+        render(<NotificationBell />);
+
+        const pip = screen.getByText('1');
+
+        expect(pip.tagName).toBe('SPAN');
+        expect(pip.className).toContain('absolute');
+        expect(pip.className).toContain('rounded-full');
+        expect(pip.className).toContain('bg-destructive');
+        expect(pip.className).not.toContain('bg-destructive/10');
+    });
+
     it('caps the displayed badge count at 99+', () => {
         pageProps.notifications = summary({ unread_count: 150 });
 

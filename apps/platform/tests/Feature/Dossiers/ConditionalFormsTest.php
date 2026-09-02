@@ -100,11 +100,12 @@ test('hidden fields do not block dossier completion and retain answers for audit
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->where('dossier.ready_to_complete', true)
-            ->where('dossier.document_requests.0.is_visible', true)
-            ->where('dossier.document_requests.0.is_applicable', true)
-            ->where('dossier.document_requests.1.is_visible', false)
-            ->where('dossier.document_requests.1.is_applicable', false)
-            ->where('dossier.document_requests.1.answer_text', '12'));
+            ->loadDeferredProps(fn (Assert $reload): Assert => $reload
+                ->where('document_requests.0.is_visible', true)
+                ->where('document_requests.0.is_applicable', true)
+                ->where('document_requests.1.is_visible', false)
+                ->where('document_requests.1.is_applicable', false)
+                ->where('document_requests.1.answer_text', '12')));
 
     resolve(CompleteDossierAction::class)->handle(
         $context['dossier']->fresh(),

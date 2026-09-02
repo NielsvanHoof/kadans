@@ -3,14 +3,15 @@
 #
 # Usage:
 #   scripts/use-aws-profile.sh floci
-#   scripts/use-aws-profile.sh aws
+#   scripts/use-aws-profile.sh aws              # local Pulumi stack (Sail)
+#   scripts/use-aws-profile.sh aws-staging      # staging Pulumi stack
 #
-# Profiles live in env/profiles/<name>.env. The aws profile is gitignored and
+# Profiles live in env/profiles/<name>.env. AWS profiles are gitignored and
 # written by infra/scripts/sync-ocr-credentials.sh (Pulumi outputs + IAM keys).
 #
 # Flags:
 #   --apply-only   Never invoke sync; fail if the profile file is missing.
-#                  Used by sync-ocr-credentials.sh after it writes aws.env.
+#                  Used by sync-ocr-credentials.sh after it writes a profile.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -24,14 +25,14 @@ APPLY_ONLY=0
 PROFILE=""
 
 usage() {
-  echo "Usage: $0 [--apply-only] <floci|aws>" >&2
+  echo "Usage: $0 [--apply-only] <floci|aws|aws-staging>" >&2
   exit 1
 }
 
 for arg in "$@"; do
   case "$arg" in
     --apply-only) APPLY_ONLY=1 ;;
-    floci|aws) PROFILE="$arg" ;;
+    floci|aws|aws-staging) PROFILE="$arg" ;;
     -h|--help) usage ;;
     *)
       echo "Unknown argument: $arg" >&2
@@ -50,24 +51,34 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+resolve_sync_stack() {
+  case "$PROFILE" in
+    aws) echo "local" ;;
+    aws-staging) echo "staging" ;;
+    *) echo "" ;;
+  esac
+}
+
+SYNC_STACK="$(resolve_sync_stack)"
+
 # Pulumi + stack credentials live on the host. Sail has neither.
-if [[ "$PROFILE" == "aws" && ! -f "$PROFILE_FILE" && "${LARAVEL_SAIL:-0}" == "1" ]]; then
-  echo "No cached aws profile, and Pulumi cannot run inside Sail." >&2
+if [[ -n "$SYNC_STACK" && ! -f "$PROFILE_FILE" && "${LARAVEL_SAIL:-0}" == "1" ]]; then
+  echo "No cached $PROFILE profile, and Pulumi cannot run inside Sail." >&2
   echo "On the host (not sail):" >&2
-  echo "  composer env:aws" >&2
+  echo "  composer env:$PROFILE" >&2
   echo "Or:" >&2
-  echo "  cd infra && ./scripts/sync-ocr-credentials.sh" >&2
+  echo "  PULUMI_STACK=$SYNC_STACK cd infra && ./scripts/sync-ocr-credentials.sh" >&2
   exit 1
 fi
 
-if [[ "$PROFILE" == "aws" && ! -f "$PROFILE_FILE" ]]; then
+if [[ -n "$SYNC_STACK" && ! -f "$PROFILE_FILE" ]]; then
   if [[ "$APPLY_ONLY" -eq 1 ]]; then
     echo "Missing cached AWS profile at $PROFILE_FILE" >&2
     exit 1
   fi
 
-  echo "No cached aws profile — running sync-ocr-credentials.sh…"
-  exec "$SYNC_SCRIPT"
+  echo "No cached $PROFILE profile — running sync-ocr-credentials.sh (stack=$SYNC_STACK)…"
+  PULUMI_STACK="$SYNC_STACK" exec "$SYNC_SCRIPT"
 fi
 
 if [[ ! -f "$PROFILE_FILE" ]]; then

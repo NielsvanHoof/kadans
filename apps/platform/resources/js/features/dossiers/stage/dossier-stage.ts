@@ -50,7 +50,7 @@ export type DossierStageCompletionState = 'completed' | 'incomplete';
 export function dossierStageCompletion(
     dossier: Dossier,
 ): Record<DossierWorkflowStage, DossierStageCompletionState> {
-    const prepareDone = dossier.document_requests.length > 0;
+    const prepareDone = dossier.review_summary.total > 0;
     // Invite is complete when portal access exists or the dossier already moved on.
     const inviteDone =
         dossier.access_grants.some((grant) => grant.is_valid) ||

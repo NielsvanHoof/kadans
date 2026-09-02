@@ -5,6 +5,7 @@ paths:
   - 'app/**/Enums/**'
   - 'app/**/Http/Controllers/**'
   - 'app/Audit/Enums/**'
+  - 'resources/js/**/*.tsx'
 ---
 
 # Customer-facing copy and comments

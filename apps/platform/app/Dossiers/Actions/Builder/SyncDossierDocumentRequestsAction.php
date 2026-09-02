@@ -127,7 +127,7 @@ final readonly class SyncDossierDocumentRequestsAction
         $documentRequests = DocumentRequest::query()
             ->whereBelongsTo($dossier)
             ->with(['uploadedDocuments', 'reviewedBy:id,name'])
-            ->with('uploadedDocuments.pipelines.steps')
+            ->with('uploadedDocuments.latestPipeline.steps')
             ->oldest('sort_order')
             ->get();
 

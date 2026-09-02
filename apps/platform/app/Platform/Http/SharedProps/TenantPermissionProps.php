@@ -7,8 +7,10 @@ namespace App\Platform\Http\SharedProps;
 use App\Accounts\Models\User;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;
+use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\WorkspaceMemberRoles;
 
 /**
  * Every registered permission, resolved for the current user in the current firm.
@@ -49,10 +51,29 @@ final readonly class TenantPermissionProps
 
         $permissions = [];
 
+        if ($onSupportSession) {
+            foreach ($this->permissionRegistry->all() as $permission) {
+                $permissions[$permission->value] = $supportSession->allowsPermission($permission);
+            }
+
+            return $permissions;
+        }
+
+        $memberRoles = resolve(WorkspaceMemberRoles::class);
+        $roleName = $memberRoles->roleFor($user, $tenant);
+
+        if ($roleName === Role::Owner->value) {
+            foreach ($this->permissionRegistry->all() as $permission) {
+                $permissions[$permission->value] = true;
+            }
+
+            return $permissions;
+        }
+
+        $granted = array_flip($user->getAllPermissions()->pluck('name')->all());
+
         foreach ($this->permissionRegistry->all() as $permission) {
-            $permissions[$permission->value] = $onSupportSession
-                ? $supportSession->allowsPermission($permission)
-                : $user->can($permission->value);
+            $permissions[$permission->value] = isset($granted[$permission->value]);
         }
 
         return $permissions;

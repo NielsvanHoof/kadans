@@ -16,8 +16,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Integrations/Http/Connectors/** | .ai/rules/connectors.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
+| lang/**, resources/js/**, app/**/Enums/**, app/**/Http/Controllers/**, app/Audit/Enums/**, resources/js/**/*.tsx | .ai/rules/customer-facing-copy.md |
 | resources/js/components/data/** | .ai/rules/data.md |
-| docker/**, .dockerignore, vite.config.ts, vite.lint.ts | .ai/rules/docker.md |
+| docker/**, .dockerignore, vite.config.ts, vite.lint.ts, package.json | .ai/rules/docker.md |
 | app/{DocumentProcessing,AudioProcessing}/Actions/** | .ai/rules/document-processing-audio-processing-actions.md |
 | app/{DocumentProcessing,AudioProcessing,Shared}/** | .ai/rules/document-processing-audio-processing-shared.md |
 | app/{DocumentProcessing,AudioProcessing}/** | .ai/rules/document-processing-audio-processing.md |
@@ -26,7 +27,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Dossiers/Queries/** | .ai/rules/dossiers-queries.md |
 | app/Integrations/Enums/OAuthProvider.php | .ai/rules/enums.md |
 | resources/js/components/feedback/** | .ai/rules/feedback.md |
-| lang/**, resources/js/**, app/**/Enums/**, app/**/Http/Controllers/**, app/Audit/Enums/** | .ai/rules/customer-facing-copy.md |
 | app/Shared/Queries/Filters/** | .ai/rules/filters.md |
 | rector.php | .ai/rules/general.md |
 | app/Integrations/Http/Connectors/Google/** | .ai/rules/google.md |
@@ -63,6 +63,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Tenancy/** | .ai/rules/tenancy.md |
 | tests/** | .ai/rules/tests.md |
 | app/*/{Transitions,Policies,Http/Controllers}/** | .ai/rules/transitions-policies-http-controllers.md |
-| resources/js/components/ui/** | .ai/rules/ui.md |
+| resources/js/components/ui/**, resources/js/components/ui/badge.tsx | .ai/rules/ui.md |
 | app/Dossiers/Actions/Uploads/** | .ai/rules/uploads.md |
 | .github/workflows/** | .ai/rules/workflows.md |
