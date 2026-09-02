@@ -104,7 +104,7 @@ test('notifications expose telescope tags for their subjects', function (): void
         ]);
 });
 
-test('inbox notifications the bell reloads from Echo are not queued', function (): void {
+test('inbox notifications the bell reloads from Echo are queued', function (): void {
     expect(new ClientQuestionnaireCompletedNotification(
         tenantId: 1,
         dossierId: 9,
@@ -112,7 +112,7 @@ test('inbox notifications the bell reloads from Echo are not queued', function (
         clientName: 'Jane',
         message: 'Done',
         dossierUrl: 'https://example.test/dossiers/9',
-    ))->not->toBeInstanceOf(ShouldQueue::class)
+    ))->toBeInstanceOf(ShouldQueue::class)
         ->and(new AudioTranscriptionCompletedNotification(
             tenantId: 1,
             audioRecordingId: 3,
@@ -120,5 +120,5 @@ test('inbox notifications the bell reloads from Echo are not queued', function (
             dossierId: 9,
             dossierTitle: 'Payroll',
             audioRecordingUrl: 'https://example.test/audio/3',
-        ))->not->toBeInstanceOf(ShouldQueue::class);
+        ))->toBeInstanceOf(ShouldQueue::class);
 });
