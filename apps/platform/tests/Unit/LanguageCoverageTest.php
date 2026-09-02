@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Platform\Support\Localization\TranslationCallSiteScanner;
+
 /**
  * @return array{english: array<string, string>, dutch: array<string, string>}
  */
@@ -30,139 +32,38 @@ function loadTranslationFiles(string $projectRoot): array
 }
 
 /**
+ * Thin wrappers over TranslationCallSiteScanner so this test keeps reading as a
+ * coverage check. The patterns live in the scanner because `lang:organize`
+ * decides where a key belongs from the same call sites — a second
+ * implementation here would place keys this test then reports as missing.
+ *
  * @return list<string>
  */
 function translationKeysUsedInDirectory(string $directory): array
 {
-    $keys = [];
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($directory),
+    return TranslationCallSiteScanner::flatten(
+        new TranslationCallSiteScanner()->phpKeysByFile($directory),
     );
-
-    foreach ($iterator as $file) {
-        if (! $file->isFile()) {
-            continue;
-        }
-        if ($file->getExtension() !== 'php') {
-            continue;
-        }
-        $contents = (string) file_get_contents($file->getPathname());
-
-        if (preg_match_all("/__\\('((?:\\\\'|[^'])*)'/", $contents, $singleQuotedMatches) !== false) {
-            foreach ($singleQuotedMatches[1] as $key) {
-                $keys[] = str_replace("\\'", "'", $key);
-            }
-        }
-
-        if (preg_match_all('/__\\("((?:\\\\"|[^"])*)"/', $contents, $doubleQuotedMatches) !== false) {
-            foreach ($doubleQuotedMatches[1] as $key) {
-                $keys[] = str_replace('\\"', '"', $key);
-            }
-        }
-    }
-
-    return array_values(array_unique($keys));
 }
 
 /**
- * Extract static t('…') / t("…") keys from frontend TypeScript sources.
- * Skips dynamic calls like t(variable) or t(definition.label).
- *
  * @return list<string>
  */
 function frontendTranslationKeysUsedInDirectory(string $directory): array
 {
-    $keys = [];
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($directory),
+    return TranslationCallSiteScanner::flatten(
+        new TranslationCallSiteScanner()->frontendLiteralKeysByFile($directory),
     );
-
-    foreach ($iterator as $file) {
-        if (! $file->isFile()) {
-            continue;
-        }
-
-        $extension = $file->getExtension();
-
-        if ($extension !== 'ts' && $extension !== 'tsx') {
-            continue;
-        }
-
-        $contents = (string) file_get_contents($file->getPathname());
-
-        // Match t('key') and t("key"), including keys that span multiple lines.
-        if (preg_match_all("/\\bt\\(\\s*(['\"])(.*?)\\1/s", $contents, $matches) !== false) {
-            foreach ($matches[2] as $key) {
-                // Collapse whitespace from multiline string literals.
-                $normalized = preg_replace('/\s+/', ' ', $key);
-
-                if (is_string($normalized) && $normalized !== '') {
-                    $keys[] = mb_trim($normalized);
-                }
-            }
-        }
-    }
-
-    return array_values(array_unique($keys));
 }
 
 /**
- * Extract English strings from frontend label maps that are later passed to t().
- *
- * Catches `_LABELS` / `labels` object literals (e.g. pipeline status modules)
- * that never appear as literal t('…') calls and would otherwise escape coverage.
- *
  * @return list<string>
  */
 function frontendLabelMapTranslationKeysUsedInDirectory(string $directory): array
 {
-    $keys = [];
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($directory),
+    return TranslationCallSiteScanner::flatten(
+        new TranslationCallSiteScanner()->frontendLabelMapKeysByFile($directory),
     );
-
-    foreach ($iterator as $file) {
-        if (! $file->isFile()) {
-            continue;
-        }
-
-        $extension = $file->getExtension();
-
-        if ($extension !== 'ts' && $extension !== 'tsx') {
-            continue;
-        }
-
-        $contents = (string) file_get_contents($file->getPathname());
-
-        // const FOO_LABELS = { … } / export const FOO_LABELS: Record<…> = { … }
-        // and inline `const labels: Record<string, string> = { … }`.
-        if (preg_match_all(
-            '/(?:export\s+)?const\s+(?:\w+_LABELS|labels)\b[^=]*=\s*\{(.*?)\};/s',
-            $contents,
-            $mapMatches,
-        ) === false) {
-            continue;
-        }
-
-        foreach ($mapMatches[1] as $mapBody) {
-            if (preg_match_all("/:\\s*(['\"])(.*?)\\1/s", $mapBody, $valueMatches) === false) {
-                continue;
-            }
-
-            foreach ($valueMatches[2] as $value) {
-                $normalized = preg_replace('/\s+/', ' ', $value);
-
-                if (is_string($normalized) && $normalized !== '') {
-                    $keys[] = mb_trim($normalized);
-                }
-            }
-        }
-    }
-
-    return array_values(array_unique($keys));
 }
 
 test('keeps English and Dutch translation keys fully aligned', function (): void {
