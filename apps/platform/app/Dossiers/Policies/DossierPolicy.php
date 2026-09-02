@@ -76,6 +76,23 @@ final class DossierPolicy
             && ! $dossier->status->isLocked();
     }
 
+    /**
+     * Deliberately not gated on `! $dossier->status->isLocked()`.
+     *
+     * Every other write gate here refuses a completed dossier, but rolling
+     * over a *finished* period is the whole point — last year's closed annual
+     * accounts are exactly what this year's dossier starts from. Nothing on
+     * the source is mutated, so the lock has nothing to protect.
+     */
+    public function rollOver(User $user, Dossier $dossier): bool
+    {
+        return $this->userHasPermissionInTenant(
+            $user,
+            $dossier->tenant,
+            DossierPermission::RollOver,
+        );
+    }
+
     public function export(User $user, Dossier $dossier): bool
     {
         return $this->userHasPermissionInTenant(

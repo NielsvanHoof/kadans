@@ -60,6 +60,7 @@ declare namespace App {
                 | "dossier.deleted"
                 | "client.deleted"
                 | "dossier.restored"
+                | "dossier.rolled_over"
                 | "client.restored"
                 | "document_request.deleted"
                 | "questionnaire_template.deleted"
@@ -273,6 +274,8 @@ declare namespace App {
                 readonly client_name: string;
                 readonly title: string;
                 readonly reference: string | null;
+                readonly period_year: number | null;
+                readonly period_label: string | null;
                 readonly status: App.Dossiers.Enums.DossierStatus;
                 readonly due_date: string | null;
                 readonly responsible_name: string | null;
@@ -293,10 +296,19 @@ declare namespace App {
                 readonly accepted: number;
                 readonly rejected: number;
             };
+            export type DossierRolledFromData = {
+                readonly id: number;
+                readonly title: string;
+                readonly period_label: string | null;
+                readonly period_year: number | null;
+            };
             export type DossierShowData = {
                 readonly id: number;
                 readonly title: string;
                 readonly reference: string | null;
+                readonly period_year: number | null;
+                readonly period_label: string | null;
+                readonly rolled_from: App.Dossiers.Data.DossierRolledFromData | null;
                 readonly status: App.Dossiers.Enums.DossierStatus;
                 readonly due_date: string | null;
                 readonly responsible_staff: App.Shared.Data.PersonOptionData | null;
@@ -394,7 +406,8 @@ declare namespace App {
                 | "dossiers.restore"
                 | "dossiers.complete"
                 | "dossiers.export"
-                | "dossiers.send_reminder";
+                | "dossiers.send_reminder"
+                | "dossiers.roll_over";
             export type DossierReminderSource = "manual" | "scheduled";
             export type DossierStatus =
                 "draft" | "awaiting_client" | "in_review" | "completed";

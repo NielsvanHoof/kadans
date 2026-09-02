@@ -18,6 +18,7 @@ enum DossierPermission: string implements TenantPermission
     case Complete = 'dossiers.complete';
     case Export = 'dossiers.export';
     case SendReminder = 'dossiers.send_reminder';
+    case RollOver = 'dossiers.roll_over';
 
     public function label(): string
     {
@@ -30,6 +31,7 @@ enum DossierPermission: string implements TenantPermission
             self::Complete => __('Complete dossiers'),
             self::Export => __('Export dossiers'),
             self::SendReminder => __('Send client reminders'),
+            self::RollOver => __('Roll dossiers over to a new period'),
         };
     }
 
@@ -44,6 +46,7 @@ enum DossierPermission: string implements TenantPermission
             self::Complete => __('Mark a dossier as finished, locking further edits.'),
             self::Export => __('Generate a downloadable archive of an entire dossier.'),
             self::SendReminder => __('Email a client asking for outstanding documents.'),
+            self::RollOver => __('Start the next period from an existing dossier, keeping its questions and answers.'),
         };
     }
 
@@ -62,7 +65,8 @@ enum DossierPermission: string implements TenantPermission
             self::Delete,
             self::Restore,
             self::Export,
-            self::SendReminder => [Role::Administrator, Role::Adviser],
+            self::SendReminder,
+            self::RollOver => [Role::Administrator, Role::Adviser],
         };
     }
 }

@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { ArrowRight, Mail, Plus } from 'lucide-react';
 import Heading from '@/components/primitives/heading';
 import { Button, LinkButton } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { useUrlTab } from '@/hooks/use-url-tab';
 import {
     builder as builderDossier,
     review as reviewDossier,
+    show as showDossier,
 } from '@/routes/workspaces/dossiers';
 
 type DossierShowContentProps = {
@@ -38,6 +40,7 @@ type DossierShowContentProps = {
     canDownload: boolean;
     canUploadAudio: boolean;
     canDownloadAudio: boolean;
+    canRollOver: boolean;
 };
 
 type PrimaryAction =
@@ -58,6 +61,7 @@ export default function DossierShowContent({
     canDownload,
     canUploadAudio,
     canDownloadAudio,
+    canRollOver,
 }: DossierShowContentProps) {
     const hasFormItems = dossier.review_summary.total > 0;
 
@@ -70,6 +74,7 @@ export default function DossierShowContent({
             canSendReminder={canSendReminder}
             canUploadAudio={canUploadAudio}
             canDownloadAudio={canDownloadAudio}
+            canRollOver={canRollOver}
             dossierStatus={dossier.status}
             hasFormItems={hasFormItems}
         >
@@ -162,7 +167,7 @@ function DossierShowBody({
     hasFormItems: boolean;
 }) {
     const { t } = useTranslation();
-    const { canManage, canReview, canDownload, canEditDetails } =
+    const { canManage, canReview, canDownload, canEditDetails, canRollOver } =
         useDossierCapabilities();
     const currentWorkspace = useCurrentWorkspace();
 
@@ -198,9 +203,29 @@ function DossierShowBody({
                      * names a dossier, and font-data carries slashed-zero so 0
                      * and O stay apart in codes like this one.
                      */}
-                    {dossier.reference ? (
+                    {dossier.reference || dossier.period_label ? (
                         <p className="font-data text-muted-foreground mb-1 text-xs tracking-[0.08em] uppercase">
-                            {dossier.reference}
+                            {[dossier.reference, dossier.period_label]
+                                .filter(Boolean)
+                                .join(' · ')}
+                        </p>
+                    ) : null}
+                    {dossier.rolled_from ? (
+                        <p className="text-muted-foreground mb-1 text-xs">
+                            {t('Rolled over from :period', {
+                                period:
+                                    dossier.rolled_from.period_label ??
+                                    dossier.rolled_from.title,
+                            })}{' '}
+                            <Link
+                                href={showDossier({
+                                    tenant: currentWorkspace,
+                                    dossier: dossier.rolled_from.id,
+                                })}
+                                className="underline hover:no-underline"
+                            >
+                                {t('View that period')}
+                            </Link>
                         </p>
                     ) : null}
                     <Heading
@@ -236,10 +261,10 @@ function DossierShowBody({
                         <DossierContextRailBody dossier={dossier} />
                     </DossierStatusSheet>
                     <DossierActionsMenu
-                        dossierId={dossier.id}
-                        dossierTitle={dossier.title}
+                        dossier={dossier}
                         canEditDetails={canEditDetails}
                         canManage={canManage}
+                        canRollOver={canRollOver}
                     />
                 </div>
             </div>

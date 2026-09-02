@@ -54,6 +54,27 @@ enum QuestionnaireItemType: string
     }
 
     /**
+     * Whether an answer to this type survives a roll-over into the next period.
+     *
+     * Everything except an uploaded file is a stable fact the client restated
+     * verbatim every year (legal form, shareholders, bank details, KYC
+     * answers). A file is filed *for* a period — last year's annual report is
+     * not this year's — so a File item is always rolled over empty.
+     *
+     * Not mirrored into resources/js/.../item-types/generated.ts: rolling over
+     * is a staff decision taken once for the whole dossier, so no frontend
+     * registry branches on it.
+     */
+    public function carriesAnswerAcrossPeriods(): bool
+    {
+        return match ($this) {
+            self::Text, self::Textarea, self::Date, self::Number,
+            self::Boolean, self::Choice, self::MultiSelect => true,
+            self::File => false,
+        };
+    }
+
+    /**
      * Whether an answer to this type can drive another field's visibility rule.
      * Only types with a fixed, comparable set of answers qualify.
      */
