@@ -3,32 +3,44 @@
 declare(strict_types=1);
 
 use App\Platform\Support\Localization\TranslationCallSiteScanner;
+use App\Shared\Support\Localization\TranslationDomains;
 
 /**
+ * Merge every domain file for a locale. Deliberately dumb and independent of
+ * LoadFrontendTranslationsAction / FileLoader so this remains a second check.
+ *
  * @return array{english: array<string, string>, dutch: array<string, string>}
  */
 function loadTranslationFiles(string $projectRoot): array
 {
-    /** @var array<string, string> $englishTranslations */
-    $englishTranslations = json_decode(
-        (string) file_get_contents($projectRoot.'/lang/en.json'),
-        true,
-        512,
-        JSON_THROW_ON_ERROR,
-    );
-
-    /** @var array<string, string> $dutchTranslations */
-    $dutchTranslations = json_decode(
-        (string) file_get_contents($projectRoot.'/lang/nl.json'),
-        true,
-        512,
-        JSON_THROW_ON_ERROR,
-    );
-
     return [
-        'english' => $englishTranslations,
-        'dutch' => $dutchTranslations,
+        'english' => mergeDomainTranslationFiles($projectRoot, 'en'),
+        'dutch' => mergeDomainTranslationFiles($projectRoot, 'nl'),
     ];
+}
+
+/**
+ * @return array<string, string>
+ */
+function mergeDomainTranslationFiles(string $projectRoot, string $locale): array
+{
+    $merged = [];
+
+    foreach (TranslationDomains::NAMES as $domain) {
+        $path = $projectRoot.'/'.TranslationDomains::relativePath($domain, $locale);
+
+        /** @var array<string, string> $chunk */
+        $chunk = json_decode(
+            (string) file_get_contents($path),
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+
+        $merged = [...$merged, ...$chunk];
+    }
+
+    return $merged;
 }
 
 /**
@@ -80,9 +92,9 @@ test('keeps English and Dutch translation keys fully aligned', function (): void
     $missingInEnglish = array_values(array_diff($dutchKeys, $englishKeys));
 
     expect($missingInDutch)
-        ->toBeEmpty('Missing keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR))
+        ->toBeEmpty('Missing keys in Dutch domain files: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR))
         ->and($missingInEnglish)
-        ->toBeEmpty('Missing keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
 test('covers every backend translation key in both locale files', function (): void {
@@ -96,7 +108,7 @@ test('covers every backend translation key in both locale files', function (): v
     ));
 
     expect($missingInEnglish)
-        ->toBeEmpty('Missing backend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing backend keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
 test('covers every frontend translation key in both locale files', function (): void {
@@ -114,9 +126,9 @@ test('covers every frontend translation key in both locale files', function (): 
     $missingInDutch = array_values(array_diff($frontendKeys, $dutchKeys));
 
     expect($missingInEnglish)
-        ->toBeEmpty('Missing frontend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
+        ->toBeEmpty('Missing frontend keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
         ->and($missingInDutch)
-        ->toBeEmpty('Missing frontend keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing frontend keys in Dutch domain files: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
 });
 
 test('requires pipeline label-map strings in both locale files', function (): void {
@@ -146,9 +158,9 @@ test('requires pipeline label-map strings in both locale files', function (): vo
     $missingInDutch = array_values(array_diff($requiredPipelineLabels, array_keys($translations['dutch'])));
 
     expect($missingInEnglish)
-        ->toBeEmpty('Missing pipeline label keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
+        ->toBeEmpty('Missing pipeline label keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
         ->and($missingInDutch)
-        ->toBeEmpty('Missing pipeline label keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing pipeline label keys in Dutch domain files: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
 });
 
 /**

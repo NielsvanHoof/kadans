@@ -99,6 +99,11 @@ return [
         'English' => 'Accounts',
         'Nederlands' => 'Accounts',
 
+        // resources/views/vendor/mail/{html,text}/message.blade.php — views
+        // are outside the scanner roots (app/, resources/js), so the call
+        // site is invisible to placement.
+        'All rights reserved.' => 'Shared',
+
         // resources/js/features/document-requests/item-types/definitions.ts —
         // the map is questionnaireItemTypeDefinitionsByType, which the
         // *_LABELS|labels scanner cannot match, and it is read as

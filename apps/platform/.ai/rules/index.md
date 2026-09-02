@@ -16,7 +16,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Integrations/Http/Connectors/** | .ai/rules/connectors.md |
 | app/**/Contracts/** | .ai/rules/contracts.md |
 | app/*/Http/Controllers/** | .ai/rules/controllers.md |
-| lang/**, resources/js/**, app/**/Enums/**, app/**/Http/Controllers/**, app/Audit/Enums/**, resources/js/**/*.tsx | .ai/rules/customer-facing-copy.md |
+| lang/**, app/*/lang/**, resources/js/**, app/**/Enums/**, app/**/Http/Controllers/**, app/Audit/Enums/**, resources/js/**/*.tsx | .ai/rules/customer-facing-copy.md |
 | resources/js/components/data/** | .ai/rules/data.md |
 | docker/**, .dockerignore, vite.config.ts, vite.lint.ts, package.json | .ai/rules/docker.md |
 | app/{DocumentProcessing,AudioProcessing}/Actions/** | .ai/rules/document-processing-audio-processing-actions.md |
