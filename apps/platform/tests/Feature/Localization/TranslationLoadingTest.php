@@ -21,7 +21,7 @@ test('frontend dictionary equals the Laravel translator dictionary for every loc
     ksort($backend, SORT_STRING);
 
     expect($frontend)->toBe($backend)
-        ->and(count($frontend))->toBe(1501);
+        ->and(count($frontend))->toBe(1496);
 })->with(Locale::values());
 
 test('a missing translation file throws MissingTranslationsException', function (): void {

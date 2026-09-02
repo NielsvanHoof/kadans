@@ -217,3 +217,58 @@ test('keeps English and Dutch validation rule keys aligned', function (): void {
         ->and($missingInEnglish)
         ->toBeEmpty('Missing validation keys in en: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
+
+/**
+ * Reverse coverage: every key must have a call site or be pinned.
+ *
+ * Converts the sentence-key flaw from silent (edit English → Dutch orphan
+ * renders English forever) to loud. Pins cover dynamic producers the
+ * scanners cannot see; everything else must appear at a literal call site.
+ */
+test('every translation key has a call site or is pinned', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+    $translations = loadTranslationFiles($projectRoot);
+
+    /** @var array{pins: array<string, string>} $config */
+    $config = require $projectRoot.'/config/translations.php';
+    $pins = array_keys($config['pins']);
+
+    $referenced = array_values(array_unique([
+        ...translationKeysUsedInDirectory($projectRoot.'/app'),
+        ...frontendTranslationKeysUsedInDirectory($projectRoot.'/resources/js'),
+        ...frontendLabelMapTranslationKeysUsedInDirectory($projectRoot.'/resources/js'),
+    ]));
+
+    $orphans = array_values(array_diff(
+        array_keys($translations['english']),
+        $referenced,
+        $pins,
+    ));
+
+    expect($orphans)
+        ->toBeEmpty('Orphan translation keys (no call site, not pinned): '.json_encode($orphans, JSON_THROW_ON_ERROR));
+});
+
+test('pins cover every PipelineStatus headline and Locale label', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+
+    /** @var array{pins: array<string, string>} $config */
+    $config = require $projectRoot.'/config/translations.php';
+    $pins = array_keys($config['pins']);
+
+    // Generated from the enums so adding a case orphans loudly rather than
+    // shipping an English filter label inside Dutch UI.
+    $expected = [
+        ...array_map(
+            static fn (App\Pipelines\Enums\PipelineStatus $status): string => Illuminate\Support\Str::headline($status->value),
+            App\Pipelines\Enums\PipelineStatus::cases(),
+        ),
+        ...array_map(
+            static fn (App\Accounts\Enums\Locale $locale): string => $locale->label(),
+            App\Accounts\Enums\Locale::cases(),
+        ),
+    ];
+
+    expect(array_values(array_diff($expected, $pins)))
+        ->toBeEmpty('Enum-derived keys missing from translations.pins');
+});
