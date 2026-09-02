@@ -4,8 +4,9 @@ import type { EnvironmentSettings } from "./settings.js";
 /**
  * Staging data plane: documents/OCR + public RDS for Laravel Cloud staging.
  *
- * Application compute runs on Laravel Cloud. This stack only owns the AWS data
- * plane the app reaches over the public internet.
+ * Application compute runs on Laravel Cloud. This stack owns the AWS data
+ * plane the staging app reaches — separate bucket, SNS/SQS queues, and IAM
+ * user from the `local` stack so Sail and Cloud do not race on completions.
  *
  * `deletionProtection: false` so the stack stays destroyable.
  */
@@ -25,8 +26,7 @@ export const stagingSettings: EnvironmentSettings = {
   crossRegionSnapshotCopy: false,
   monthlyBudgetUsd: 75,
 
-  // Credentials live on the `local` stack (decision-3); Cloud uses that key too.
-  applicationUserAccess: false,
+  applicationUserAccess: true,
   databaseEnabled: true,
   databasePubliclyAccessible: true,
   databaseIngressCidrs: LARAVEL_CLOUD_EU_WEST_1_IPV4_CIDRS,

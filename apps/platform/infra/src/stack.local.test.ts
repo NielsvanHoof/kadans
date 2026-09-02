@@ -42,9 +42,9 @@ test("local documents bucket allows Laravel Cloud browser uploads", () => {
   assert.deepEqual(rules[0].allowedHeaders, ["content-type"]);
 });
 
-test("local builds a public RDS without application compute", () => {
-  assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), true);
-  assert.equal(stack.hasType("aws:rds/instance:Instance"), true);
+test("local has no RDS or VPC — Sail uses Docker Postgres", () => {
+  assert.equal(stack.hasType("aws:ec2/vpc:Vpc"), false);
+  assert.equal(stack.hasType("aws:rds/instance:Instance"), false);
   assert.equal(stack.hasType("aws:ecs/cluster:Cluster"), false);
   assert.equal(stack.hasType("aws:elasticache/replicationGroup:ReplicationGroup"), false);
   assert.equal(stack.hasType("aws:lb/loadBalancer:LoadBalancer"), false);
@@ -53,15 +53,12 @@ test("local builds a public RDS without application compute", () => {
   assert.equal(stack.hasType("aws:ecr/repository:Repository"), false);
   assert.equal(stack.hasType("aws:secretsmanager/secret:Secret"), false);
   assert.equal(stack.ofType("aws:ecs/service:Service").length, 0);
-
-  const database = stack.named("database");
-  assert.ok(database);
-  assert.equal(database.inputs.publiclyAccessible, true);
+  assert.equal(stack.named("database"), undefined);
 });
 
 /*
- * decision-3: the long-lived Sail key lives on local so sync-ocr-credentials.sh
- * has exactly one stack to read.
+ * Local mints the Sail OCR operator. Staging mints its own user for Laravel Cloud.
+ * Each stack's queues are scoped by resourceName — never share TEXTRACT_RESULTS_QUEUE_URL.
  */
 test("local mints the Sail OCR operator credentials", () => {
   assert.equal(stack.hasType("aws:iam/user:User"), true);
@@ -70,11 +67,7 @@ test("local mints the Sail OCR operator credentials", () => {
 });
 
 /*
- * decision-10: this one IAM user is what both Sail and Laravel Cloud authenticate
- * with, so what it can reach is the whole blast radius. Both attachments matter and
- * for different reasons — the app-access policy is the shared parity document, while
- * SES send is deliberately kept out of it and attached separately. Asserting only
- * that a user exists would pass with either one silently missing.
+ * Local and staging each mint an IAM user; production does not yet.
  */
 test("the operator user carries both the app-access and SES send policies", () => {
   const attachments = stack.ofType(
@@ -113,4 +106,50 @@ test("local scanner policy includes GuardDuty EventBridge managed-rule access", 
   assert.ok(sids.includes("ManageGuardDutyEventRule"));
   assert.ok(sids.includes("MonitorGuardDutyEventRule"));
   assert.ok(sids.includes("AllowPutValidationObject"));
+});
+
+test("the OCR CMK lets Textract decrypt documents and publish to encrypted SNS", () => {
+  const key = stack.named("ocr-key");
+
+  assert.ok(key);
+
+  const policy = JSON.parse(String(key.inputs.policy)) as {
+    Statement: Array<{
+      Sid?: string;
+      Principal?: { Service?: string | string[] };
+      Action?: string | string[];
+    }>;
+  };
+
+  const publish = policy.Statement.find(
+    (statement) => statement.Sid === "AllowAwsServicesToPublishEncryptedMessages",
+  );
+
+  assert.ok(publish);
+  const publishServices = [publish.Principal?.Service].flat();
+  assert.ok(
+    publishServices.includes("textract.amazonaws.com"),
+    "encrypted SNS publish must name textract.amazonaws.com or completions never arrive",
+  );
+
+  const textract = policy.Statement.find(
+    (statement) => statement.Sid === "AllowAmazonTextractToUseKey",
+  );
+
+  assert.ok(textract, "Textract needs its own key grant to read SSE-KMS PDFs");
+  assert.equal(textract.Principal?.Service, "textract.amazonaws.com");
+  const textractActions = [textract.Action].flat();
+  assert.ok(textractActions.includes("kms:Decrypt"));
+  assert.ok(textractActions.includes("kms:GenerateDataKey"));
+  assert.ok(textractActions.includes("kms:CreateGrant"));
+});
+
+test("the Textract publish role can generate data keys for encrypted SNS", () => {
+  const document = stack.policyDocuments.find((policyDocument) => {
+    const serialized = JSON.stringify(policyDocument);
+
+    return serialized.includes("sns:Publish") && serialized.includes("kms:GenerateDataKey*");
+  });
+
+  assert.ok(document, "textract publish policy must allow GenerateDataKey* for SNS SSE");
 });

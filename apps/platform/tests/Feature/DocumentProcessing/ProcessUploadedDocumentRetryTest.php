@@ -97,7 +97,8 @@ test('a retryable failure after the provider was reached leaves the document rec
 
     // Reset for the next attempt rather than left mid-flight.
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending)
-        ->and($uploaded->textract_job_id)->toBeNull();
+        ->and($uploaded->textract_job_id)->toBeNull()
+        ->and($uploaded->processing_started_at)->toBeNull();
 
     // And the next attempt can genuinely claim it.
     expect(resolve(UploadedDocumentProcessingTransitions::class)->claim($uploaded, $uploaded->path))

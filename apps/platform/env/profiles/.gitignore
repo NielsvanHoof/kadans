@@ -1,2 +1,4 @@
 # Gitignored — written by infra/scripts/sync-ocr-credentials.sh (real AWS keys).
 /env/profiles/aws.env
+/env/profiles/aws-local.env
+/env/profiles/aws-staging.env

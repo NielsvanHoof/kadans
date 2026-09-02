@@ -49,8 +49,9 @@ export default function QuestionnaireBuilderTemplates({
                 type="button"
                 variant="ghost"
                 size="sm"
-                // Allow the helper line to wrap in the narrow palette column.
-                className="group h-auto w-full justify-between gap-2 px-0 py-1 text-left whitespace-normal"
+                // size="sm" sets md:h-6, which beats h-auto at desktop widths.
+                // Without md:h-auto the wrapped helper overflows onto the label.
+                className="group h-auto w-full items-start justify-between gap-2 px-0 py-1 text-left whitespace-normal md:h-auto"
             >
                 <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">

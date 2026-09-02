@@ -68,6 +68,8 @@ export default defineConfig(({ mode }) => {
                   }),
                   inertia({ ssr: false }),
                   react(),
+                  // Babel 8 is ESM-only and used here only for the React Compiler.
+                  // Vite/rolldown already transpile; there is no babel.config.
                   babel({ presets: [reactCompilerPreset()] }),
                   tailwindcss(),
                   wayfinder({

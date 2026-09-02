@@ -61,7 +61,7 @@ export default function NotificationBell() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="relative size-9"
+                    className="relative overflow-visible"
                     aria-label={
                         unreadCount > 0
                             ? t('Notifications, :count unread', {
@@ -72,12 +72,14 @@ export default function NotificationBell() {
                 >
                     <Bell className="size-5" aria-hidden="true" />
                     {unreadCount > 0 && (
-                        <Badge
-                            variant="destructive"
-                            className="absolute -top-0.5 -right-0.5 h-5 min-w-5 justify-center rounded-full px-1 text-xs leading-none tabular-nums"
+                        // Chip Badge is h-6 + a wash fill; on size="icon" that
+                        // sits on the bell. This pip stays a solid corner count.
+                        <span
+                            aria-hidden="true"
+                            className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[0.625rem] leading-none font-medium tabular-nums"
                         >
                             {unreadCount > 99 ? '99+' : unreadCount}
-                        </Badge>
+                        </span>
                     )}
                 </Button>
                 <Popover className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden p-0">

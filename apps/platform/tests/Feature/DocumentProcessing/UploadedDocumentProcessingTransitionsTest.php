@@ -124,3 +124,20 @@ describe('fail', function (): void {
             ->and($this->transitions->failForPath($document->fresh(), 'other-path.pdf', 'stale'))->toBeFalse();
     });
 });
+
+describe('resetForRetry', function (): void {
+    test('returns a processing document to pending so the next claim is a new Textract job', function (): void {
+        $document = createDocumentForProcessingTransitions([
+            'processing_status' => DocumentProcessingStatus::Processing,
+            'textract_job_id' => 'job-1',
+            'processing_started_at' => now(),
+        ]);
+
+        $this->transitions->resetForRetry($document, $document->path);
+
+        expect($document->fresh())
+            ->processing_status->toBe(DocumentProcessingStatus::Pending)
+            ->textract_job_id->toBeNull()
+            ->processing_started_at->toBeNull();
+    });
+});

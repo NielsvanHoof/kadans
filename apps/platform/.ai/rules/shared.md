@@ -15,10 +15,12 @@ credentials were removed with the resources they described.
 Laravel Cloud is not something AWS can hand a role to, so `AWS_ACCESS_KEY_ID` and
 `AWS_SECRET_ACCESS_KEY` **must be set** in the deployed environment. This inverts the
 old ECS rule that they stay absent so the SDK falls through to a task role; there is
-no task role. Today the deployed app uses the *same* key the `local` stack mints —
-`applicationUserAccess` is `true` only there, and `production.ts`/`staging.ts` set it
-`false` (stack tests assert neither mints a user). Recorded as decision-10; rotation
-runbook in `infra/README.md`.
+no task role. `local` and `staging` each mint a scoped IAM user (`applicationUserAccess:
+true`); production stays off until it gets its own stack. **Never point two runtimes
+at the same `TEXTRACT_RESULTS_QUEUE_URL`** — staging Cloud and local Sail would race
+on SQS and delete each other's completions. Sync: `composer env:aws` (local),
+`composer env:aws-staging` (staging outputs). Recorded as decision-10 (partially
+superseded); rotation runbook in `infra/README.md`.
 
 SES is attached to the IAM user as a *separate* managed policy (`ocr-local-mail`), not
 folded into `policies.ts`. The parity rule for that shared policy exists so the
@@ -87,3 +89,13 @@ A single secret anywhere inside a property wraps the *entire* property in
 `{[specialSig]: secretSig, value: …}`, so one secret nested in a structure turns its
 containing array into an object. `testing/harness.ts` unwraps these; without it
 assertions read `undefined` and blame themselves.
+
+## OCR CMK must grant Textract
+The OCR CMK must name textract.amazonaws.com the same way it already names transcribe.amazonaws.com (S3 decrypt plus encrypted SNS publish). Without that grant, StartDocumentAnalysis still returns a JobId and the job can even SUCCEED, but SNS never publishes onto the KMS-encrypted topic — textract:consume polls an empty queue forever. ClientRequestToken must change on each claim (include processing_started_at) or a retry reuses the same JobId and AWS will not re-fire SNS.
+
+## One Textract completion queue per runtime
+Each Pulumi stack owns `qompose-<stack>-textract-results`. Local Sail uses the `local`
+stack; Laravel Cloud staging uses the `staging` stack. Sharing one queue across
+environments causes the foreign `textract:consume` to receive the SNS message, fail
+document lookup, and delete it — the owning environment stays stuck on
+provider_processing while Textract already SUCCEEDED.

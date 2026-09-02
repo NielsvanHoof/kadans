@@ -106,11 +106,13 @@ Flip only the AWS/storage-related keys in `.env` without replacing the whole fil
 
 ```bash
 composer env:floci   # Sail Floci S3/SES/CloudTrail/Bedrock + mock OCR/transcription
-composer env:aws     # real AWS from cached Pulumi profile (or sync if missing)
+composer env:aws     # real AWS local stack (Sail) — cached from `pulumi up -s local`
+composer env:aws-staging  # print/sync staging stack outputs (Laravel Cloud vars)
 ```
 
 - **floci** — applies [`env/profiles/floci.env`](../env/profiles/floci.env) (dummy creds, safe to commit). Safe via Sail: `vendor/bin/sail composer env:floci`.
-- **aws** — applies gitignored `env/profiles/aws.env`. Run on the **host** (not Sail): Pulumi CLI + stack credentials are outside the container. First time (or after infra changes): `composer env:aws`, which refreshes the cache via `infra/scripts/sync-ocr-credentials.sh` when needed.
+- **aws** — applies gitignored `env/profiles/aws.env` (local stack). Run on the **host**: `composer env:aws`.
+- **aws-staging** — applies `env/profiles/aws-staging.env` after `pulumi up -s staging`. Use stack outputs for Laravel Cloud env vars; **never** point Cloud at the local Textract SQS queue.
 
 After either command:
 

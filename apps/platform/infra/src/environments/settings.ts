@@ -54,20 +54,20 @@ export interface EnvironmentSettings {
   readonly monthlyBudgetUsd: number;
 
   /**
-   * Whether this environment mints the long-lived IAM user + access key that
-   * Sail and Laravel Cloud share for S3/OCR/Transcribe/SES.
+   * Whether this environment mints the long-lived IAM user + access key for
+   * S3/OCR/Transcribe/SES (Sail on `local`, Laravel Cloud on `staging`).
    *
-   * Exactly one environment may own it. `scripts/sync-ocr-credentials.sh` reads
-   * the `local` stack's outputs, so a second key elsewhere would be an extra
-   * standing credential that nothing consumes — the worst kind.
+   * Production stays off until it gets its own stack. Each environment that
+   * mints a key also owns its own bucket and completion queues — never point
+   * two runtimes at the same `TEXTRACT_RESULTS_QUEUE_URL`.
    */
   readonly applicationUserAccess: boolean;
 
   /**
    * Provision RDS (and the VPC it needs).
    *
-   * On for every deployed environment. Public access + ingress CIDRs are how
-   * Laravel Cloud reaches Postgres.
+   * On for production and staging so Laravel Cloud can reach Postgres. Off on
+   * `local` — Sail uses Docker Postgres from `compose.yaml`.
    */
   readonly databaseEnabled: boolean;
 

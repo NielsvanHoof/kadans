@@ -104,16 +104,21 @@ test('notifications expose telescope tags for their subjects', function (): void
         ]);
 });
 
-test('client questionnaire completed notification is queued after commit', function (): void {
-    $notification = new ClientQuestionnaireCompletedNotification(
+test('inbox notifications the bell reloads from Echo are not queued', function (): void {
+    expect(new ClientQuestionnaireCompletedNotification(
         tenantId: 1,
         dossierId: 9,
         dossierTitle: 'Payroll',
         clientName: 'Jane',
         message: 'Done',
         dossierUrl: 'https://example.test/dossiers/9',
-    );
-
-    expect($notification)->toBeInstanceOf(ShouldQueue::class)
-        ->and($notification->afterCommit)->toBeTrue();
+    ))->not->toBeInstanceOf(ShouldQueue::class)
+        ->and(new AudioTranscriptionCompletedNotification(
+            tenantId: 1,
+            audioRecordingId: 3,
+            originalFilename: 'call.mp3',
+            dossierId: 9,
+            dossierTitle: 'Payroll',
+            audioRecordingUrl: 'https://example.test/audio/3',
+        ))->not->toBeInstanceOf(ShouldQueue::class);
 });

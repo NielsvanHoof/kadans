@@ -48,7 +48,10 @@ final readonly class TextractDocumentOcr implements DocumentOcr
         ]);
 
         $result = $this->textract->startDocumentAnalysis([
-            'ClientRequestToken' => hash('sha256', $document->id.':'.$document->path),
+            'ClientRequestToken' => hash(
+                'sha256',
+                $document->id.':'.$document->path.':'.$document->processing_started_at?->toIso8601String(),
+            ),
             'DocumentLocation' => [
                 'S3Object' => [
                     'Bucket' => $bucket,

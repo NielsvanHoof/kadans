@@ -11,6 +11,11 @@ export interface OcrEncryption {
  *
  * Amazon Transcribe reads media and writes JSON transcripts into the same
  * CMK-encrypted bucket, so the service principal must be able to use this key.
+ * Amazon Textract is the same shape: it reads SSE-KMS PDFs and publishes
+ * completion onto the encrypted SNS topic. Without textract.amazonaws.com on
+ * this policy, StartDocumentAnalysis still returns a JobId, then analysis
+ * and/or sns:Publish fail and SQS stays empty — the consume daemon looks
+ * healthy because nothing arrives.
  * EventBridge also needs the key to deliver job events into the encrypted queue.
  * CloudWatch, RDS, Budgets and EventBridge need it to publish onto the encrypted
  * alerts topic — a topic policy grant without these KMS actions is a silent no-op.
@@ -47,6 +52,10 @@ export function createOcrEncryption(config: PlatformConfig): OcrEncryption {
             "rds.amazonaws.com",
             "events.rds.amazonaws.com",
             "budgets.amazonaws.com",
+            // Textract assumes the publish role, then SNS encrypts the
+            // completion with this CMK. Naming the producing service is
+            // the documented SNS SSE requirement.
+            "textract.amazonaws.com",
           ],
         },
         Action: ["kms:Decrypt", "kms:GenerateDataKey*"],
@@ -62,6 +71,21 @@ export function createOcrEncryption(config: PlatformConfig): OcrEncryption {
         Effect: "Allow",
         Principal: {
           Service: "transcribe.amazonaws.com",
+        },
+        Action: ["kms:Decrypt", "kms:GenerateDataKey", "kms:CreateGrant"],
+        Resource: "*",
+        Condition: {
+          StringEquals: {
+            "aws:SourceAccount": accountId,
+          },
+        },
+      }, {
+        // Textract reads the same SSE-KMS documents bucket. Mirror Transcribe:
+        // the service principal cannot use the IAM user's key permissions.
+        Sid: "AllowAmazonTextractToUseKey",
+        Effect: "Allow",
+        Principal: {
+          Service: "textract.amazonaws.com",
         },
         Action: ["kms:Decrypt", "kms:GenerateDataKey", "kms:CreateGrant"],
         Resource: "*",
