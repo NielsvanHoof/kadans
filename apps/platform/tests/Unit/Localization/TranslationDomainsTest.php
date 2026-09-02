@@ -111,8 +111,8 @@ test('merged key count matches the expected dictionary size', function (string $
     $files = loadDomainTranslationFiles($projectRoot, $locale);
     $counts = array_map(static fn (array $file): int => count($file['decoded']), $files);
 
-    // 1,500 pre-split keys + "All rights reserved." − five confirmed-dead entries.
-    expect(array_sum($counts))->toBe(1496);
+    // Pre-split 1,500 + All rights reserved. − confirmed-dead purges.
+    expect(array_sum($counts))->toBe(1416);
 })->with(['en', 'nl']);
 
 test('app lang directories on disk match the registered domain list exactly', function (): void {
