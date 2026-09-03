@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@niels'
 created_date: '2026-09-02 22:07'
+updated_date: '2026-09-03 09:30'
 labels: []
 dependencies: []
 priority: high
@@ -49,3 +50,22 @@ Full plan, including the four-commit sequencing and the verified framework const
 - [ ] #13 The key "All rights reserved." exists in both locales, fixing the English footer in Dutch email
 - [ ] #14 Rules and docs name the new layout, and .ai/rules/index.md maps the new glob
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation complete across seven commits. Verification: PHP 1673 passed / 13217 assertions, frontend 120 files / 649 tests, PHPStan 0 errors, Pint, Rector, vp check and types:check all clean, lang:organize --check green and idempotent.
+
+Layout landed as 13 domains, not the 14 planned. DocumentProcessing turned out to own no copy of its own: its only four __() keys are the generic status words Pending, Failed, Completed and Processing, all shared with other domains, so all four resolve to Shared and the file came out empty. An empty file trips the loaders own throw, so app/DocumentProcessing was folded into Pipelines with a comment recording why.
+
+Key counts: 1500 keys held exactly through commits 1-3 (merged sha256 matched the recorded baseline for both locales, 1500 lines so no duplicates), then 1416 after commit 4 purged 84 dead keys. That 84 matches the design reviews independent count of copy appearing nowhere in resources/js.
+
+Two things caught during final verification that would have failed CI:
+
+1. $this->app->isProduction() is a dynamic call to a static method and failed PHPStan. Replaced with $this->app->environment("production").
+2. Rector wanted three files changed (a redundant string cast, Pest toHaveCount/toHaveSameSize idioms, FQCN-to-import). rector:check is in ci:quality so the branch was red until applied.
+
+The mock interpolation fix had a much wider blast radius than the plan anticipated: 32 assertions across 15 component test files were asserting un-interpolated text. Several were vacuous rather than merely stale, e.g. queryByText(":count suggestions") in an absence check passes whether or not the text is shown, because the raw placeholder never renders. Those now assert something for the first time. Fixed by matching the interpolated shape with a regex wherever the value comes from a fixture, so a fixture change cannot break an unrelated assertion.
+
+Also worth recording about the negative test: my first attempt deleted app/Dossiers/lang/en.json and then requested the nl dictionary. The loader correctly found every nl.json and returned 1416 keys, which looked like the guard had failed. It had not — the test was wrong. Re-run with a matching locale, it throws MissingTranslationsException naming the exact path. This is the same class of mistake the whole change exists to prevent: a check that reports a reassuring number while testing nothing.
+<!-- SECTION:NOTES:END -->
