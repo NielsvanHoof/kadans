@@ -1,4 +1,4 @@
-import { Archive, MoreHorizontal, Pencil } from 'lucide-react';
+import { Archive, CalendarSync, MoreHorizontal, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
@@ -10,27 +10,34 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import DossierRollOverDialog from '@/features/dossiers/roll-over/dossier-roll-over-dialog';
+import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { edit as editDossier } from '@/routes/workspaces/dossiers';
 
 export default function DossierActionsMenu({
-    dossierId,
-    dossierTitle,
+    dossier,
     canEditDetails,
     canManage,
+    canRollOver,
 }: {
-    dossierId: number;
-    dossierTitle: string;
+    dossier: Pick<
+        Dossier,
+        'id' | 'title' | 'period_year' | 'period_label' | 'due_date'
+    >;
     canEditDetails: boolean;
     canManage: boolean;
+    canRollOver: boolean;
 }) {
     const { t } = useTranslation();
     const currentWorkspace = useCurrentWorkspace();
-    // Controlled dialog so archive can open from a dropdown item without nesting.
+    // Controlled dialogs so both can open from a dropdown item without nesting.
     const [archiveOpen, setArchiveOpen] = useState(false);
+    const [rollOverOpen, setRollOverOpen] = useState(false);
+    const dossierId = dossier.id;
 
-    if (!canEditDetails && !canManage) {
+    if (!canEditDetails && !canManage && !canRollOver) {
         return null;
     }
 
@@ -59,7 +66,17 @@ export default function DossierActionsMenu({
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                     ) : null}
-                    {canEditDetails && canManage ? (
+                    {canRollOver ? (
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem
+                                onAction={() => setRollOverOpen(true)}
+                            >
+                                <CalendarSync aria-hidden="true" />
+                                {t('Start next period')}
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                    ) : null}
+                    {(canEditDetails || canRollOver) && canManage ? (
                         <DropdownMenuSeparator />
                     ) : null}
                     {canManage ? (
@@ -76,10 +93,16 @@ export default function DossierActionsMenu({
                 </DropdownMenu>
             </DropdownMenuTrigger>
 
+            <DossierRollOverDialog
+                dossier={dossier}
+                open={rollOverOpen}
+                onOpenChange={setRollOverOpen}
+            />
+
             <ConfirmDestroyDialog
                 open={archiveOpen}
                 onOpenChange={setArchiveOpen}
-                title={t('Archive :title?', { title: dossierTitle })}
+                title={t('Archive :title?', { title: dossier.title })}
                 description={t(
                     'The dossier will be hidden from lists and cannot be opened again. Document requests and files are kept for audit purposes.',
                 )}

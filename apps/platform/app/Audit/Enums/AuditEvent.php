@@ -50,6 +50,7 @@ enum AuditEvent: string
     case DossierDeleted = 'dossier.deleted';
     case ClientDeleted = 'client.deleted';
     case DossierRestored = 'dossier.restored';
+    case DossierRolledOver = 'dossier.rolled_over';
     case ClientRestored = 'client.restored';
     case DocumentRequestDeleted = 'document_request.deleted';
     case QuestionnaireTemplateDeleted = 'questionnaire_template.deleted';
@@ -122,6 +123,7 @@ enum AuditEvent: string
             self::DossierDeleted => __('Dossier archived'),
             self::ClientDeleted => __('Client archived'),
             self::DossierRestored => __('Dossier restored'),
+            self::DossierRolledOver => __('Dossier rolled over to a new period'),
             self::ClientRestored => __('Client restored'),
             self::DocumentRequestDeleted => __('Document request deleted'),
             self::QuestionnaireTemplateDeleted => __('Questionnaire template deleted'),
@@ -163,7 +165,8 @@ enum AuditEvent: string
             self::DossierReminderSent,
             self::DossierReminderFailed,
             self::DossierDeleted,
-            self::DossierRestored => __('Dossiers'),
+            self::DossierRestored,
+            self::DossierRolledOver => __('Dossiers'),
 
             self::DocumentRequestCreated,
             self::DocumentRequestAccepted,

@@ -1,0 +1,23 @@
+{
+    "(No title)": "(Geen titel)",
+    ":provider account disconnected.": ":provider-account ontkoppeld.",
+    ":provider account linked.": ":provider-account gekoppeld.",
+    "Connect": "Koppelen",
+    "Connect Google in Integrations to use calendar features.": "Koppel Google onder Integraties om agenda-functies te gebruiken.",
+    "Connected": "Gekoppeld",
+    "Could not refresh the Google connection. Please reconnect.": "De Google-koppeling kon niet worden vernieuwd. Koppel opnieuw.",
+    "Disconnect": "Ontkoppelen",
+    "Disconnect your current :provider account before linking a different one.": "Ontkoppel eerst je huidige :provider-account voordat je een ander koppelt.",
+    "Google": "Google",
+    "Microsoft": "Microsoft",
+    "No Qompose account for this email.": "Er is geen Qompose-account voor dit e-mailadres.",
+    "Not connected": "Niet gekoppeld",
+    "Reconnect": "Opnieuw koppelen",
+    "Reconnect Google to continue using calendar features.": "Koppel Google opnieuw om agenda-functies te blijven gebruiken.",
+    "Reconnect Google to enable calendar and Drive access.": "Koppel Google opnieuw om agenda- en Drive-toegang in te schakelen.",
+    "Reconnect for calendar access": "Opnieuw koppelen voor agenda-toegang",
+    "Sign-in with :provider expired. Please try again.": "Inloggen met :provider is verlopen. Probeer het opnieuw.",
+    "This :provider account does not match the one linked to your Qompose account.": "Dit :provider-account komt niet overeen met het account dat aan je Qompose-account is gekoppeld.",
+    "This :provider account is already linked to another Qompose user.": "Dit :provider-account is al gekoppeld aan een andere Qompose-gebruiker.",
+    "Token refresh is not available for :provider yet.": "Tokenvernieuwing is nog niet beschikbaar voor :provider."
+}

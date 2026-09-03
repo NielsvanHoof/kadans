@@ -88,6 +88,8 @@ test('dossier page props keep their contract', function (): void {
         'tenant_id' => $tenant->id,
         'client_id' => $client->id,
         'reference' => 'REF-1',
+        'period_year' => 2025,
+        'period_label' => 'Jaarrekening 2025',
         'due_date' => now()->addWeek(),
         'reminder_interval_days' => 7,
     ]);

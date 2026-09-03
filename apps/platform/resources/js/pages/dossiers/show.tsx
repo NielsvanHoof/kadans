@@ -19,6 +19,7 @@ export default function ShowDossier({
     can_download: canDownload,
     can_upload_audio: canUploadAudio,
     can_download_audio: canDownloadAudio,
+    can_roll_over: canRollOver,
 }: {
     dossier: Dossier;
     access_grant_token?: string | null;
@@ -30,6 +31,7 @@ export default function ShowDossier({
     can_download: boolean;
     can_upload_audio: boolean;
     can_download_audio: boolean;
+    can_roll_over: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -64,6 +66,7 @@ export default function ShowDossier({
                 canDownload={canDownload}
                 canUploadAudio={canUploadAudio}
                 canDownloadAudio={canDownloadAudio}
+                canRollOver={canRollOver}
             />
         </>
     );

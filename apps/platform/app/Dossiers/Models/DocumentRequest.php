@@ -38,6 +38,7 @@ use Override;
  * @property string|null $answer_text
  * @property bool|null $answer_boolean
  * @property CarbonImmutable|null $answered_at
+ * @property CarbonImmutable|null $carried_forward_at
  * @property int|null $reviewed_by
  * @property CarbonImmutable|null $reviewed_at
  * @property string|null $rejection_reason
@@ -58,6 +59,7 @@ use Override;
  * @method static Builder<static>|DocumentRequest whereAnswerOptionIds($value)
  * @method static Builder<static>|DocumentRequest whereAnswerText($value)
  * @method static Builder<static>|DocumentRequest whereAnsweredAt($value)
+ * @method static Builder<static>|DocumentRequest whereCarriedForwardAt($value)
  * @method static Builder<static>|DocumentRequest whereConfiguration($value)
  * @method static Builder<static>|DocumentRequest whereCreatedAt($value)
  * @method static Builder<static>|DocumentRequest whereDossierId($value)
@@ -97,6 +99,7 @@ final class DocumentRequest extends TenantOwnedModel
         'answer_boolean',
         'answer_option_ids',
         'answered_at',
+        'carried_forward_at',
         'reviewed_by',
         'reviewed_at',
         'rejection_reason',
@@ -241,6 +244,7 @@ final class DocumentRequest extends TenantOwnedModel
             'answer_boolean' => 'boolean',
             'answer_option_ids' => 'array',
             'answered_at' => 'datetime',
+            'carried_forward_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'sort_order' => 'integer',
         ];

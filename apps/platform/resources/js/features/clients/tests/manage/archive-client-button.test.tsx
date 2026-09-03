@@ -68,7 +68,7 @@ describe('ArchiveClientButton', () => {
 
         expect(
             await screen.findByText(
-                'This client and their :count dossiers will be archived. They will no longer appear in lists.',
+                'This client and their 3 dossiers will be archived. They will no longer appear in lists.',
             ),
         ).toBeInTheDocument();
     });
@@ -87,7 +87,9 @@ describe('ArchiveClientButton', () => {
         await openDialog(0);
 
         expect(
-            await screen.findByRole('alertdialog', { name: 'Archive :name?' }),
+            await screen.findByRole('alertdialog', {
+                name: 'Archive Bakkerij de Vries?',
+            }),
         ).toBeInTheDocument();
     });
 });

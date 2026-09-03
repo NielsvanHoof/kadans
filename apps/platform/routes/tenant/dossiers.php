@@ -9,6 +9,7 @@ use App\Dossiers\Http\Controllers\DossierController;
 use App\Dossiers\Http\Controllers\DossierExportController;
 use App\Dossiers\Http\Controllers\DossierReminderController;
 use App\Dossiers\Http\Controllers\DossierReminderDraftController;
+use App\Dossiers\Http\Controllers\DossierRollOverController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +50,9 @@ Route::post('dossiers/{dossier}/complete', [DossierCompletionController::class, 
     ->name('dossiers.complete');
 Route::post('dossiers/{dossier}/apply-template', [DocumentRequestController::class, 'applyTemplate'])
     ->name('dossiers.apply-template');
+// No RequirePassword: this streams no document bytes, it creates a dossier.
+Route::post('dossiers/{dossier}/roll-over', [DossierRollOverController::class, 'store'])
+    ->name('dossiers.roll-over');
 
 Route::scopeBindings()->group(function (): void {
     Route::post('dossiers/{dossier}/exports', [DossierExportController::class, 'store'])

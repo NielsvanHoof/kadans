@@ -55,7 +55,7 @@ const clients = paginate([archived(1, 'Ada', 2), archived(2, 'Grace', 1)]);
 
 function bulkToolbar(): HTMLElement {
     const label =
-        screen.queryByText('1 selected') ?? screen.getByText(':count selected');
+        screen.queryByText('1 selected') ?? screen.getByText(/\d+ selected/);
     const toolbar = label.parentElement;
 
     if (!toolbar) {
@@ -94,9 +94,7 @@ describe('ArchivedClientsCard', () => {
         // Retention is the reason this card exists: an archived client's dossiers
         // are kept, not deleted, until the retention window closes. The count is
         // what tells an operator how much is still there.
-        expect(
-            screen.getByText(/:count dossiers retained/),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/\d+ dossiers retained/)).toBeInTheDocument();
         expect(screen.getByText(/1 dossier retained/)).toBeInTheDocument();
     });
 

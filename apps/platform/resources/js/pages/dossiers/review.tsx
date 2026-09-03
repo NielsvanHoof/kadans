@@ -127,6 +127,8 @@ export default function ReviewDossier({
                 // Audio recordings are not surfaced on the review queue.
                 canUploadAudio={false}
                 canDownloadAudio={false}
+                // Rolling over is an overview action; the queue is for reviewing.
+                canRollOver={false}
                 dossierStatus={dossier.status}
                 hasFormItems={documentRequests.length > 0}
             >

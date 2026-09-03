@@ -110,11 +110,11 @@ describe('BulkArchiveClientsButton', () => {
 
         expect(
             await screen.findByRole('alertdialog', {
-                name: 'Archive :count clients?',
+                name: 'Archive 2 clients?',
             }),
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('button', { name: 'Archive :count clients' }),
+            screen.getByRole('button', { name: 'Archive 2 clients' }),
         ).toBeInTheDocument();
     });
 
@@ -125,7 +125,7 @@ describe('BulkArchiveClientsButton', () => {
         // is the only place the user is told that before confirming.
         expect(
             await screen.findByText(
-                'The selected clients and their :count dossiers will be archived. They will no longer appear in lists.',
+                'The selected clients and their 5 dossiers will be archived. They will no longer appear in lists.',
             ),
         ).toBeInTheDocument();
     });

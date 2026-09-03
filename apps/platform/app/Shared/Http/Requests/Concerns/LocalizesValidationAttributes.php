@@ -30,6 +30,7 @@ trait LocalizesValidationAttributes
             'instructions' => __('Instructions'),
             'client_id' => __('Client'),
             'reference' => __('Reference (optional)'),
+            'due_date' => __('Due date'),
             'document' => __('Document'),
             'audio' => __('Audio recording'),
             'decision' => __('Decision'),

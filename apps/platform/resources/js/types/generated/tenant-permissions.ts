@@ -13,6 +13,7 @@ export const TENANT_PERMISSIONS = [
     'dossiers.complete',
     'dossiers.export',
     'dossiers.send_reminder',
+    'dossiers.roll_over',
     'document_requests.view',
     'document_requests.create',
     'document_requests.update',

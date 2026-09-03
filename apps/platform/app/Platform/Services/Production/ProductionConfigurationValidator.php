@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Platform\Services\Production;
 
+use App\Accounts\Enums\Locale;
 use App\Accounts\Enums\TwoFactorEnforcement;
 use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
 use App\Dossiers\Jobs\GenerateDossierExportJob;
 use App\Platform\Jobs\GenerateDataSubjectExportJob;
+use App\Shared\Support\Localization\TranslationDomains;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Uri;
@@ -149,6 +151,9 @@ final readonly class ProductionConfigurationValidator
             $this->hasRestrictedReverbOrigins() ? null : 'reverb.apps.apps.0.allowed_origins',
             $this->incompleteOAuthProviderKey('google'),
             $this->incompleteOAuthProviderKey('microsoft'),
+            // Incomplete copy must fail the deploy, not the first page view —
+            // LoadFrontendTranslationsAction throws the same class of fatal.
+            $this->missingTranslationFileKey(),
         ], static fn (?string $key): bool => $key !== null));
 
         if ($invalidKeys !== []) {
@@ -346,6 +351,28 @@ final readonly class ProductionConfigurationValidator
     private function matches(string $key, string $expected): ?string
     {
         return $this->config->get($key) === $expected ? null : $key;
+    }
+
+    /**
+     * Every registered domain must ship both locale files. A missing file
+     * would otherwise 500 every page once LoadFrontendTranslationsAction
+     * throws — failing boot surfaces it at deploy time instead.
+     */
+    private function missingTranslationFileKey(): ?string
+    {
+        foreach (TranslationDomains::NAMES as $domain) {
+            foreach (Locale::values() as $locale) {
+                $path = $this->application->basePath(
+                    TranslationDomains::relativePath($domain, $locale),
+                );
+
+                if (! is_readable($path) || filesize($path) === 0) {
+                    return TranslationDomains::relativePath($domain, $locale);
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

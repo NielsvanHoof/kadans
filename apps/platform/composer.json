@@ -108,9 +108,13 @@
             "composer audit",
             "npm audit --audit-level=high"
         ],
+        "lang:check": [
+            "@php artisan lang:organize --check"
+        ],
         "ci:quality": [
             "Composer\\Config::disableProcessTimeout",
             "@security:check",
+            "@lang:check",
             "npm run types:check",
             "npm run check",
             "npm run build",

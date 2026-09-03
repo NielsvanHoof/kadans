@@ -78,7 +78,7 @@ describe('RecentDossiersCard', () => {
         render(<RecentDossiersCard dossiers={[dossier()]} />);
 
         expect(screen.queryByText('No due date')).not.toBeInTheDocument();
-        expect(screen.queryByText(/Due :date/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Due /)).not.toBeInTheDocument();
     });
 
     it('falls back to "No due date" when only a responsible name is set', () => {
@@ -99,6 +99,6 @@ describe('RecentDossiersCard', () => {
             />,
         );
 
-        expect(screen.getByText(/Due :date/)).toBeInTheDocument();
+        expect(screen.getByText(/Due /)).toBeInTheDocument();
     });
 });

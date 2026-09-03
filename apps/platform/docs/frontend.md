@@ -117,7 +117,7 @@ See [Permissions](permissions.md) for how abilities are defined on the backend.
 
 ## Localization
 
-User-facing copy uses **JSON sentence keys** in `lang/en.json` and `lang/nl.json`. Consume with `useTranslation()` → `t('Full sentence')` on the frontend, or `__('Full sentence')` in PHP for toasts and notifications.
+User-facing copy uses **JSON sentence keys** in `app/<Domain>/lang/{en,nl}.json`. Consume with `useTranslation()` → `t('Full sentence')` on the frontend, or `__('Full sentence')` in PHP for toasts and notifications. Placement is derived by `php artisan lang:organize` from call sites; do not hand-edit the domain files or recreate `lang/{locale}.json` (the base path merges last and would silently override every domain).
 
 Keep `lang/{locale}/*.php` for framework bags only (validation, auth, passwords, pagination). Do not add new dotted short keys for UI copy.
 

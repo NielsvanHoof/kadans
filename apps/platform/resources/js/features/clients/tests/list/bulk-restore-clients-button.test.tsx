@@ -84,7 +84,7 @@ describe('BulkRestoreClientsButton', () => {
 
         expect(
             await screen.findByRole('alertdialog', {
-                name: 'Restore :count clients?',
+                name: 'Restore 2 clients?',
             }),
         ).toBeInTheDocument();
     });

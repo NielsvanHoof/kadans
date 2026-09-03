@@ -59,6 +59,21 @@ export default function DossiersListCard({
             ),
         },
         {
+            key: 'period',
+            header: t('Period'),
+            // Hidden below lg like the other secondary columns: the period is
+            // usually already in the title, so it earns space only once there
+            // is room for it.
+            className: 'hidden lg:table-cell',
+            cell: (dossier) => (
+                <span className="text-muted-foreground text-sm">
+                    {dossier.period_label ??
+                        dossier.period_year?.toString() ??
+                        t('No period')}
+                </span>
+            ),
+        },
+        {
             key: 'due_date',
             header: t('Due'),
             className: 'hidden md:table-cell',

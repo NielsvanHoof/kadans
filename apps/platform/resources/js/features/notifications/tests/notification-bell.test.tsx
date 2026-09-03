@@ -131,7 +131,7 @@ describe('NotificationBell', () => {
 
         expect(
             screen.getByRole('button', {
-                name: 'Notifications, :count unread',
+                name: /Notifications, \d+ unread/,
             }),
         ).toBeInTheDocument();
         expect(screen.getByText('3')).toBeInTheDocument();
@@ -187,7 +187,7 @@ describe('NotificationBell', () => {
 
         const dialog = testUtilUser.createTester('Dialog', {
             root: screen.getByRole('button', {
-                name: 'Notifications, :count unread',
+                name: /Notifications, \d+ unread/,
             }),
             overlayType: 'popover',
         });
@@ -250,7 +250,7 @@ describe('NotificationBell', () => {
 
         const dialog = testUtilUser.createTester('Dialog', {
             root: screen.getByRole('button', {
-                name: 'Notifications, :count unread',
+                name: /Notifications, \d+ unread/,
             }),
             overlayType: 'popover',
         });
