@@ -161,4 +161,3 @@ return [
         'Preparing' => 'Dossiers',
     ],
 ];
-

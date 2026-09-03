@@ -113,7 +113,7 @@ final class OrganizeTranslationsCommand extends Command
 
             // One owner keeps it; several or none means it is not domain copy.
             $placement[$key] = count($domains) === 1
-                ? (string) array_key_first($domains)
+                ? array_key_first($domains)
                 : TranslationDomains::FallbackDomain;
         }
 

@@ -72,9 +72,7 @@ describe('WaitingChaseHeader', () => {
     it('states when the active portal link expires', () => {
         renderHeader({ access_grants: [grant()] });
 
-        expect(
-            screen.getByText('Portal link expires :date'),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/Portal link expires/)).toBeInTheDocument();
     });
 
     it('warns when every link has lapsed', () => {
@@ -100,8 +98,8 @@ describe('WaitingChaseHeader', () => {
             last_client_message_sent_at: '2026-08-20T09:00:00+00:00',
         });
 
-        expect(screen.getByText(/:count items open/)).toBeInTheDocument();
-        expect(screen.getByText(/last asked :date/)).toBeInTheDocument();
+        expect(screen.getByText(/\d+ items open/)).toBeInTheDocument();
+        expect(screen.getByText(/last asked /)).toBeInTheDocument();
     });
 
     it('says so when the client has never been asked', () => {

@@ -21,7 +21,7 @@ test('frontend dictionary equals the Laravel translator dictionary for every loc
     ksort($backend, SORT_STRING);
 
     expect($frontend)->toBe($backend)
-        ->and(count($frontend))->toBe(1416);
+        ->and($frontend)->toHaveCount(1416);
 })->with(Locale::values());
 
 test('a missing translation file throws MissingTranslationsException', function (): void {
@@ -33,7 +33,7 @@ test('a missing translation file throws MissingTranslationsException', function 
 
         // Construct directly — the container singleton may already hold a
         // memoized dictionary from an earlier test in this process.
-        expect(fn () => (new LoadFrontendTranslationsAction)->handle('en'))
+        expect(fn (): array => (new LoadFrontendTranslationsAction)->handle('en'))
             ->toThrow(MissingTranslationsException::class, $path);
     } finally {
         File::put($path, $original);
@@ -60,7 +60,7 @@ test('the loader registers each domain exactly once across resolutions', functio
     }
 
     // Pins the Octane no-growth property: resolving again must not append paths.
-    expect(count($second->jsonPaths()))->toBe(count($jsonPaths));
+    expect($second->jsonPaths())->toHaveSameSize($jsonPaths);
 });
 
 test('a shipped environment fails to boot when copy is missing', function (): void {

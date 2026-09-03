@@ -32,7 +32,7 @@ describe('ThroughputTrendCard', () => {
         render(<ThroughputTrendCard trend={eightWeeks} />);
 
         expect(
-            screen.getByText(':count received over the last 8 weeks'),
+            screen.getByText('21 received over the last 8 weeks'),
         ).toBeInTheDocument();
     });
 

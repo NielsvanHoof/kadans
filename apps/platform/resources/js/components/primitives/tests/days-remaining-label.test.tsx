@@ -28,13 +28,13 @@ describe('DaysRemainingLabel', () => {
     it('counts days for anything further out', () => {
         render(<DaysRemainingLabel daysRemaining={5} />);
 
-        expect(screen.getByText('Due in :count days')).toBeInTheDocument();
+        expect(screen.getByText('Due in 5 days')).toBeInTheDocument();
     });
 
     it('reads a negative count as overdue, not as a negative due date', () => {
         render(<DaysRemainingLabel daysRemaining={-3} />);
 
-        expect(screen.getByText(':count days overdue')).toBeInTheDocument();
+        expect(screen.getByText('3 days overdue')).toBeInTheDocument();
         expect(screen.queryByText(/Due in/)).not.toBeInTheDocument();
     });
 

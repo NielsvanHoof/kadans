@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Enums\Locale;
+use App\Pipelines\Enums\PipelineStatus;
 use App\Platform\Support\Localization\TranslationCallSiteScanner;
 use App\Shared\Support\Localization\TranslationDomains;
+use Illuminate\Support\Str;
 
 /**
  * Merge every domain file for a locale. Deliberately dumb and independent of
@@ -260,12 +263,12 @@ test('pins cover every PipelineStatus headline and Locale label', function (): v
     // shipping an English filter label inside Dutch UI.
     $expected = [
         ...array_map(
-            static fn (App\Pipelines\Enums\PipelineStatus $status): string => Illuminate\Support\Str::headline($status->value),
-            App\Pipelines\Enums\PipelineStatus::cases(),
+            static fn (PipelineStatus $status): string => Str::headline($status->value),
+            PipelineStatus::cases(),
         ),
         ...array_map(
-            static fn (App\Accounts\Enums\Locale $locale): string => $locale->label(),
-            App\Accounts\Enums\Locale::cases(),
+            static fn (Locale $locale): string => $locale->label(),
+            Locale::cases(),
         ),
     ];
 

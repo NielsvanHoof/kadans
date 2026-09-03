@@ -63,7 +63,7 @@ const clients = paginate([
  */
 function bulkToolbar(): HTMLElement {
     const label =
-        screen.queryByText('1 selected') ?? screen.getByText(':count selected');
+        screen.queryByText('1 selected') ?? screen.getByText(/\d+ selected/);
     const toolbar = label.parentElement;
 
     if (!toolbar) {
@@ -127,7 +127,7 @@ describe('ClientsListCard', () => {
 
         expect(
             await screen.findByText(
-                'The selected clients and their :count dossiers will be archived. They will no longer appear in lists.',
+                /^The selected clients and their \d+ dossiers will be archived\./,
             ),
         ).toBeInTheDocument();
     });

@@ -72,12 +72,12 @@ final class PlatformServiceProvider extends ServiceProvider
     {
         Gate::policy(DataSubjectRequest::class, DataSubjectRequestPolicy::class);
 
-        // Surface missing __() keys in non-production. dictionary[key] ?? key
-        // otherwise renders the English sentence and looks identical to a
-        // working translation in the en locale — the reason
-        // "All rights reserved." shipped English footers in Dutch mail.
+        // Surface missing __() keys outside production. The fallback is the key
+        // itself, which for English copy renders identically to a working
+        // translation — the reason "All rights reserved." shipped English
+        // footers in Dutch mail unnoticed.
         Lang::handleMissingKeysUsing(function (string $key, array $replace, string $locale): string {
-            if (! $this->app->isProduction()) {
+            if (! $this->app->environment('production')) {
                 Log::warning("Missing translation key [{$key}] for locale [{$locale}].");
             }
 
