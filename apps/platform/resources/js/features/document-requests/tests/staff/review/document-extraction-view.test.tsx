@@ -96,6 +96,36 @@ describe('DocumentExtractionView', () => {
         expect(screen.getByRole('tab', { name: '0 tables' })).toBeVisible();
     });
 
+    it('keeps Full data empty when the raw payload is missing', async () => {
+        const user = userEvent.setup();
+        render(
+            <DocumentExtractionView extraction={extraction()} rawJson={null} />,
+        );
+
+        await user.click(screen.getByRole('tab', { name: 'Full data' }));
+
+        expect(screen.getByText('No raw data is available.')).toBeVisible();
+    });
+
+    it('offers a reveal on Full data when the raw payload is present', async () => {
+        const user = userEvent.setup();
+        render(
+            <DocumentExtractionView
+                extraction={extraction()}
+                rawJson='{"document_type":"payslip"}'
+            />,
+        );
+
+        await user.click(screen.getByRole('tab', { name: 'Full data' }));
+
+        expect(
+            screen.getByRole('button', { name: 'Show full data' }),
+        ).toBeVisible();
+        expect(
+            screen.queryByText('No raw data is available.'),
+        ).not.toBeInTheDocument();
+    });
+
     it('shows an empty state when there is no extraction at all', () => {
         render(<DocumentExtractionView extraction={null} rawJson={null} />);
 

@@ -33,6 +33,7 @@ final class FetchUploadedDocumentShowQuery
      *         processing_error: string|null,
      *         pipeline: array<string, mixed>|null,
      *         extraction: DocumentExtractionPayload|null,
+     *         raw_json: string|null,
      *     },
      *     document_request: array{id: int, title: string}|null,
      *     dossier: array{id: int, title: string}|null,
@@ -51,6 +52,8 @@ final class FetchUploadedDocumentShowQuery
         $dossier = $documentRequest?->dossier;
         $latestPipeline = $uploadedDocument->latestPipeline;
 
+        $extractedText = $uploadedDocument->extracted_text;
+
         return [
             'uploaded_document' => [
                 'id' => $uploadedDocument->id,
@@ -62,7 +65,8 @@ final class FetchUploadedDocumentShowQuery
                 'pipeline' => $latestPipeline === null
                     ? null
                     : PipelineData::fromModel($latestPipeline)->toArray(),
-                'extraction' => $this->parseExtraction($uploadedDocument->extracted_text),
+                'extraction' => $this->parseExtraction($extractedText),
+                'raw_json' => $extractedText,
             ],
             'document_request' => $documentRequest === null ? null : [
                 'id' => $documentRequest->id,
