@@ -17,9 +17,6 @@ export function useTranslation() {
         const dictionary = translations as Record<string, string>;
         const missing = !(key in dictionary);
 
-        // In en, a missing key renders identically to a working translation —
-        // the English sentence is both the key and the fallback. Surface it
-        // in development so copy edits cannot silently orphan Dutch.
         if (missing && import.meta.env.DEV) {
             console.error(`Missing translation key: ${key}`);
         }

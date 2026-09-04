@@ -44,7 +44,7 @@ test('opening the builder acquires the lock for the visitor', function (): void 
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('dossiers/builder')
+            ->component('workspaces/dossiers/builder')
             ->where('builder_lock.is_mine', true)
             ->where('builder_lock.holder.name', 'Alice Owner')
             ->has('builder_lock.token')

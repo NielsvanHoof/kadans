@@ -122,7 +122,7 @@ describe('stampPageContext', () => {
     });
 
     it('identifies the user by id and nothing else', () => {
-        stampPageContext('dossiers/show', {
+        stampPageContext('workspaces/dossiers/show', {
             auth: { user: { id: 42 } },
             current_firm: { slug: 'acme' },
         });
@@ -139,7 +139,7 @@ describe('stampPageContext', () => {
     });
 
     it('tags the firm and the page component', () => {
-        stampPageContext('dossiers/show', {
+        stampPageContext('workspaces/dossiers/show', {
             auth: { user: { id: 42 } },
             current_firm: { slug: 'acme' },
         });
@@ -147,7 +147,7 @@ describe('stampPageContext', () => {
         expect(Sentry.setTag).toHaveBeenCalledWith('workspace', 'acme');
         expect(Sentry.setTag).toHaveBeenCalledWith(
             'inertia_component',
-            'dossiers/show',
+            'workspaces/dossiers/show',
         );
     });
 
@@ -239,7 +239,7 @@ describe('initializeObservability', () => {
         onNavigate?.({
             detail: {
                 page: {
-                    component: 'dossiers/show',
+                    component: 'workspaces/dossiers/show',
                     props: {
                         auth: { user: { id: 7 } },
                         current_firm: { slug: 'acme' },
@@ -252,7 +252,7 @@ describe('initializeObservability', () => {
         expect(Sentry.setTag).toHaveBeenCalledWith('workspace', 'acme');
         expect(Sentry.setTag).toHaveBeenCalledWith(
             'inertia_component',
-            'dossiers/show',
+            'workspaces/dossiers/show',
         );
     });
 

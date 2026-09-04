@@ -12,6 +12,7 @@ use App\Platform\Jobs\GenerateDataSubjectExportJob;
 use App\Shared\Support\Localization\TranslationDomains;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Uri;
 use LogicException;
 
@@ -100,67 +101,124 @@ final readonly class ProductionConfigurationValidator
 
     public function validate(): void
     {
-        if (! $this->runsUnderShippedEnvironment() || $this->isPackageDiscovery()) {
+        if (
+            ! $this->runsUnderShippedEnvironment() ||
+            $this->isPackageDiscovery()
+        ) {
             return;
         }
 
-        $invalidKeys = array_values(array_filter([
-            $this->config->get('app.debug') === false ? null : 'app.debug',
-            $this->isHttpsUrl() ? null : 'app.url',
-            $this->hasRetryAfterAboveJobTimeouts() ? null : 'queue.connections.redis.retry_after',
-            $this->hasVerifiedDatabaseTls() ? null : 'database.connections.pgsql.sslmode',
-            $this->hasDatabaseRootCertificate() ? null : 'database.connections.pgsql.sslrootcert',
-            $this->matches('database.redis.default.scheme', 'tls'),
-            $this->matches('database.redis.cache.scheme', 'tls'),
-            $this->matches('database.redis.session.scheme', 'tls'),
-            $this->matches('session.driver', 'redis'),
-            $this->hasDedicatedSessionRedisConnection() ? null : 'session.connection',
-            $this->hasSessionRedisIsolatedFromDefault() ? null : 'database.redis.session.database',
-            $this->config->get('session.encrypt') === true ? null : 'session.encrypt',
-            $this->config->get('session.secure') === true ? null : 'session.secure',
-            $this->hasSecureSessionDomain() ? null : 'session.domain',
-            $this->matches('filesystems.default', 's3'),
-            $this->config->get('filesystems.disks.s3.throw') === true ? null : 'filesystems.disks.s3.throw',
-            $this->config->get('filesystems.disks.s3.report') === true ? null : 'filesystems.disks.s3.report',
-            $this->matches('broadcasting.default', 'reverb'),
-            $this->matches('ocr.driver', 'textract'),
-            // Both provider drivers, not just OCR: a mock transcriber silently
-            // produces fabricated transcripts instead of failing.
-            $this->matches('transcription.driver', 'transcribe'),
-            $this->hasProductionSearchDriver() ? null : 'scout.driver',
-            $this->unapprovedAiProviderKey(),
-            $this->disallowedAiModelKey(),
-            $this->hasHorizonAllowList() ? null : 'horizon.allowed_emails',
-            $this->hasErrorReporting() ? null : 'sentry.dsn',
-            $this->hasBrowserErrorReporting() ? null : 'services.sentry.browser_dsn',
-            $this->unshippedLogChannelKey(),
-            $this->hasSafeSessionSameSite() ? null : 'session.same_site',
-            $this->hasPortalIdleWindowInsideSessionLifetime() ? null : 'portal.session_idle_minutes',
-            $this->enforcesTwoFactor() ? null : 'security.two_factor.enforcement',
-            $this->config->get('security.malware_scanning.enabled') === true
-                ? null
-                : 'security.malware_scanning.enabled',
-            $this->hasDeliveringMailer() ? null : 'mail.default',
-            $this->hasValidMailFromAddress() ? null : 'mail.from.address',
-            $this->hasTrustedProxies() ? null : 'production.trusted_proxies',
-            $this->hasAllowedHosts() ? null : 'production.allowed_hosts',
-            $this->hasProductionReverbKey() ? null : 'reverb.apps.apps.0.key',
-            $this->hasProductionReverbSecret() ? null : 'reverb.apps.apps.0.secret',
-            $this->hasHttpsReverbScheme() ? null : 'reverb.apps.apps.0.options.scheme',
-            $this->hasReverbTlsEnabled() ? null : 'reverb.apps.apps.0.options.useTLS',
-            $this->hasRestrictedReverbOrigins() ? null : 'reverb.apps.apps.0.allowed_origins',
-            $this->incompleteOAuthProviderKey('google'),
-            $this->incompleteOAuthProviderKey('microsoft'),
-            // Incomplete copy must fail the deploy, not the first page view —
-            // LoadFrontendTranslationsAction throws the same class of fatal.
-            $this->missingTranslationFileKey(),
-        ], static fn (?string $key): bool => $key !== null));
+        $invalidKeys = array_values(
+            array_filter(
+                [
+                    $this->config->get('app.debug') === false
+                        ? null
+                        : 'app.debug',
+                    $this->isHttpsUrl() ? null : 'app.url',
+                    $this->hasRetryAfterAboveJobTimeouts()
+                        ? null
+                        : 'queue.connections.redis.retry_after',
+                    $this->hasVerifiedDatabaseTls()
+                        ? null
+                        : 'database.connections.pgsql.sslmode',
+                    $this->hasDatabaseRootCertificate()
+                        ? null
+                        : 'database.connections.pgsql.sslrootcert',
+                    $this->matches('database.redis.default.scheme', 'tls'),
+                    $this->matches('database.redis.cache.scheme', 'tls'),
+                    $this->matches('database.redis.session.scheme', 'tls'),
+                    $this->matches('session.driver', 'redis'),
+                    $this->hasDedicatedSessionRedisConnection()
+                        ? null
+                        : 'session.connection',
+                    $this->hasSessionRedisIsolatedFromDefault()
+                        ? null
+                        : 'database.redis.session.database',
+                    $this->config->get('session.encrypt') === true
+                        ? null
+                        : 'session.encrypt',
+                    $this->config->get('session.secure') === true
+                        ? null
+                        : 'session.secure',
+                    $this->hasSecureSessionDomain() ? null : 'session.domain',
+                    $this->matches('filesystems.default', 's3'),
+                    $this->config->get('filesystems.disks.s3.throw') === true
+                        ? null
+                        : 'filesystems.disks.s3.throw',
+                    $this->config->get('filesystems.disks.s3.report') === true
+                        ? null
+                        : 'filesystems.disks.s3.report',
+                    $this->matches('broadcasting.default', 'reverb'),
+                    $this->matches('ocr.driver', 'textract'),
+                    // Both provider drivers, not just OCR: a mock transcriber silently
+                    // produces fabricated transcripts instead of failing.
+                    $this->matches('transcription.driver', 'transcribe'),
+                    $this->hasProductionSearchDriver() ? null : 'scout.driver',
+                    $this->unapprovedAiProviderKey(),
+                    $this->disallowedAiModelKey(),
+                    $this->hasHorizonAllowList()
+                        ? null
+                        : 'horizon.allowed_emails',
+                    $this->hasErrorReporting() ? null : 'sentry.dsn',
+                    $this->hasBrowserErrorReporting()
+                        ? null
+                        : 'services.sentry.browser_dsn',
+                    $this->unshippedLogChannelKey(),
+                    $this->hasSafeSessionSameSite()
+                        ? null
+                        : 'session.same_site',
+                    $this->hasPortalIdleWindowInsideSessionLifetime()
+                        ? null
+                        : 'portal.session_idle_minutes',
+                    $this->enforcesTwoFactor()
+                        ? null
+                        : 'security.two_factor.enforcement',
+                    $this->config->get('security.malware_scanning.enabled') ===
+                    true
+                        ? null
+                        : 'security.malware_scanning.enabled',
+                    $this->hasDeliveringMailer() ? null : 'mail.default',
+                    $this->hasValidMailFromAddress()
+                        ? null
+                        : 'mail.from.address',
+                    $this->hasTrustedProxies()
+                        ? null
+                        : 'production.trusted_proxies',
+                    $this->hasAllowedHosts()
+                        ? null
+                        : 'production.allowed_hosts',
+                    $this->hasProductionReverbKey()
+                        ? null
+                        : 'reverb.apps.apps.0.key',
+                    $this->hasProductionReverbSecret()
+                        ? null
+                        : 'reverb.apps.apps.0.secret',
+                    $this->hasHttpsReverbScheme()
+                        ? null
+                        : 'reverb.apps.apps.0.options.scheme',
+                    $this->hasReverbTlsEnabled()
+                        ? null
+                        : 'reverb.apps.apps.0.options.useTLS',
+                    $this->hasRestrictedReverbOrigins()
+                        ? null
+                        : 'reverb.apps.apps.0.allowed_origins',
+                    $this->incompleteOAuthProviderKey('google'),
+                    $this->incompleteOAuthProviderKey('microsoft'),
+                    // Incomplete copy must fail the deploy, not the first page view —
+                    // LoadFrontendTranslationsAction throws the same class of fatal.
+                    $this->missingTranslationFileKey(),
+                ],
+                static fn (?string $key): bool => $key !== null,
+            ),
+        );
 
         if ($invalidKeys !== []) {
-            throw new LogicException(sprintf(
-                'Unsafe production configuration: %s.',
-                implode(', ', $invalidKeys),
-            ));
+            throw new LogicException(
+                sprintf(
+                    'Unsafe production configuration: %s.',
+                    implode(', ', $invalidKeys),
+                ),
+            );
         }
     }
 
@@ -182,7 +240,10 @@ final readonly class ProductionConfigurationValidator
             return false;
         }
 
-        return array_any($allowed, fn ($email): bool => is_string($email) && mb_trim($email) !== '');
+        return array_any(
+            $allowed,
+            fn ($email): bool => is_string($email) && mb_trim($email) !== '',
+        );
     }
 
     /**
@@ -204,13 +265,19 @@ final readonly class ProductionConfigurationValidator
         }
 
         foreach ($agents as $agent => $settings) {
-            $configured = is_array($settings) ? ($settings['provider'] ?? null) : null;
+            $configured = is_array($settings)
+                ? $settings['provider'] ?? null
+                : null;
 
-            $resolved = is_string($configured) && mb_trim($configured) !== ''
-                ? $configured
-                : $this->config->get('ai.default');
+            $resolved =
+                is_string($configured) && mb_trim($configured) !== ''
+                    ? $configured
+                    : $this->config->get('ai.default');
 
-            if (! is_string($resolved) || ! in_array($resolved, self::APPROVED_AI_PROVIDERS, true)) {
+            if (
+                ! is_string($resolved) ||
+                ! in_array($resolved, self::APPROVED_AI_PROVIDERS, true)
+            ) {
                 return sprintf('ai.agents.%s.provider', (string) $agent);
             }
         }
@@ -239,7 +306,9 @@ final readonly class ProductionConfigurationValidator
         }
 
         foreach ($agents as $agent => $settings) {
-            $configured = is_array($settings) ? ($settings['model'] ?? null) : null;
+            $configured = is_array($settings)
+                ? $settings['model'] ?? null
+                : null;
 
             if (! is_string($configured) || mb_trim($configured) === '') {
                 continue;
@@ -264,7 +333,13 @@ final readonly class ProductionConfigurationValidator
 
     private function isDisallowedAiModel(string $model): bool
     {
-        return array_any(self::DISALLOWED_AI_MODEL_FRAGMENTS, fn (string $fragment): bool => str_contains(mb_strtolower($model), $fragment));
+        return array_any(
+            self::DISALLOWED_AI_MODEL_FRAGMENTS,
+            fn (string $fragment): bool => str_contains(
+                mb_strtolower($model),
+                $fragment,
+            ),
+        );
     }
 
     /**
@@ -292,10 +367,19 @@ final readonly class ProductionConfigurationValidator
             return true;
         }
 
-        $sessionDatabase = $this->config->get('database.redis.session.database');
-        $defaultDatabase = $this->config->get('database.redis.default.database');
+        $sessionDatabase = $this->config->get(
+            'database.redis.session.database',
+        );
+        $defaultDatabase = $this->config->get(
+            'database.redis.default.database',
+        );
 
-        if ($sessionDatabase === null || $sessionDatabase === '' || $defaultDatabase === null || $defaultDatabase === '') {
+        if (
+            $sessionDatabase === null ||
+            $sessionDatabase === '' ||
+            $defaultDatabase === null ||
+            $defaultDatabase === ''
+        ) {
             return false;
         }
 
@@ -320,7 +404,9 @@ final readonly class ProductionConfigurationValidator
 
     private function largestJobTimeoutSeconds(): int
     {
-        $transcriptionTimeout = $this->config->get('transcription.timeouts.job');
+        $transcriptionTimeout = $this->config->get(
+            'transcription.timeouts.job',
+        );
 
         return max(
             GenerateDataSubjectExportJob::TIMEOUT_SECONDS,
@@ -366,7 +452,7 @@ final readonly class ProductionConfigurationValidator
                     TranslationDomains::relativePath($domain, $locale),
                 );
 
-                if (! is_readable($path) || filesize($path) === 0) {
+                if (! File::isReadable($path) || File::size($path) === 0) {
                     return TranslationDomains::relativePath($domain, $locale);
                 }
             }
@@ -431,7 +517,12 @@ final readonly class ProductionConfigurationValidator
             return null;
         }
 
-        foreach (['services.'.$provider.'.client_secret', 'services.'.$provider.'.redirect'] as $key) {
+        foreach (
+            [
+                'services.'.$provider.'.client_secret',
+                'services.'.$provider.'.redirect',
+            ] as $key
+        ) {
             $value = $this->config->get($key);
 
             if (! is_string($value) || mb_trim($value) === '') {
@@ -460,7 +551,9 @@ final readonly class ProductionConfigurationValidator
         }
 
         if ($default !== 'stack') {
-            return $this->channelShipsOffHost($default) ? null : 'logging.default';
+            return $this->channelShipsOffHost($default)
+                ? null
+                : 'logging.default';
         }
 
         $channels = $this->config->get('logging.channels.stack.channels');
@@ -471,7 +564,8 @@ final readonly class ProductionConfigurationValidator
 
         $ships = array_any(
             $channels,
-            fn (mixed $channel): bool => is_string($channel) && $this->channelShipsOffHost($channel),
+            fn (mixed $channel): bool => is_string($channel) &&
+                $this->channelShipsOffHost($channel),
         );
 
         return $ships ? null : 'logging.channels.stack.channels';
@@ -481,7 +575,8 @@ final readonly class ProductionConfigurationValidator
     {
         $driver = $this->config->get("logging.channels.{$channel}.driver");
 
-        return is_string($driver) && ! in_array($driver, self::FILE_LOG_DRIVERS, true);
+        return is_string($driver) &&
+            ! in_array($driver, self::FILE_LOG_DRIVERS, true);
     }
 
     /**
@@ -493,8 +588,10 @@ final readonly class ProductionConfigurationValidator
     {
         $enforcement = $this->config->get('security.two_factor.enforcement');
 
-        return $enforcement !== TwoFactorEnforcement::Off->value
-            && TwoFactorEnforcement::tryFrom(is_string($enforcement) ? $enforcement : '') instanceof TwoFactorEnforcement;
+        return $enforcement !== TwoFactorEnforcement::Off->value &&
+            TwoFactorEnforcement::tryFrom(
+                is_string($enforcement) ? $enforcement : '',
+            ) instanceof TwoFactorEnforcement;
     }
 
     /**
@@ -503,7 +600,11 @@ final readonly class ProductionConfigurationValidator
      */
     private function hasSafeSessionSameSite(): bool
     {
-        return in_array($this->config->get('session.same_site'), ['lax', 'strict'], true);
+        return in_array(
+            $this->config->get('session.same_site'),
+            ['lax', 'strict'],
+            true,
+        );
     }
 
     /**
@@ -514,7 +615,8 @@ final readonly class ProductionConfigurationValidator
     {
         $driver = $this->config->get('scout.driver');
 
-        return is_string($driver) && ! in_array($driver, ['collection', 'null'], true);
+        return is_string($driver) &&
+            ! in_array($driver, ['collection', 'null'], true);
     }
 
     private function hasDeliveringMailer(): bool
@@ -528,7 +630,8 @@ final readonly class ProductionConfigurationValidator
     {
         $address = $this->config->get('mail.from.address');
 
-        return is_string($address) && filter_var($address, FILTER_VALIDATE_EMAIL) !== false;
+        return is_string($address) &&
+            filter_var($address, FILTER_VALIDATE_EMAIL) !== false;
     }
 
     /**
@@ -538,13 +641,15 @@ final readonly class ProductionConfigurationValidator
      */
     private function hasSecureSessionDomain(): bool
     {
-        $applicationHost = Uri::of((string) $this->config->get('app.url'))->host();
+        $applicationHost = Uri::of(
+            (string) $this->config->get('app.url'),
+        )->host();
         $sessionDomain = $this->config->get('session.domain');
 
-        return is_string($applicationHost)
-            && $applicationHost !== ''
-            && is_string($sessionDomain)
-            && mb_strtolower($sessionDomain) === $applicationHost;
+        return is_string($applicationHost) &&
+            $applicationHost !== '' &&
+            is_string($sessionDomain) &&
+            mb_strtolower($sessionDomain) === $applicationHost;
     }
 
     /**
@@ -594,23 +699,34 @@ final readonly class ProductionConfigurationValidator
             return false;
         }
 
-        $entries = array_values(array_filter(
-            array_map(trim(...), explode(',', $proxies)),
-            static fn (string $entry): bool => $entry !== '',
-        ));
+        $entries = array_values(
+            array_filter(
+                array_map(trim(...), explode(',', $proxies)),
+                static fn (string $entry): bool => $entry !== '',
+            ),
+        );
 
         if ($entries === []) {
             return false;
         }
 
-        return array_all($entries, fn (string $entry): bool => ! in_array($entry, ['REMOTE_ADDR', '*', '**', '0.0.0.0/0', '::/0'], true));
+        return array_all(
+            $entries,
+            fn (string $entry): bool => ! in_array(
+                $entry,
+                ['REMOTE_ADDR', '*', '**', '0.0.0.0/0', '::/0'],
+                true,
+            ),
+        );
     }
 
     private function hasAllowedHosts(): bool
     {
         $hosts = $this->config->get('production.allowed_hosts');
 
-        return is_array($hosts) && $hosts !== [] && ! $this->allowsUntrustedHost($hosts);
+        return is_array($hosts) &&
+            $hosts !== [] &&
+            ! $this->allowsUntrustedHost($hosts);
     }
 
     /**
@@ -637,19 +753,24 @@ final readonly class ProductionConfigurationValidator
     {
         $key = $this->config->get('reverb.apps.apps.0.key');
 
-        return is_string($key) && $key !== '' && $key !== self::DEV_REVERB_APP_KEY;
+        return is_string($key) &&
+            $key !== '' &&
+            $key !== self::DEV_REVERB_APP_KEY;
     }
 
     private function hasProductionReverbSecret(): bool
     {
         $secret = $this->config->get('reverb.apps.apps.0.secret');
 
-        return is_string($secret) && $secret !== '' && $secret !== self::DEV_REVERB_APP_SECRET;
+        return is_string($secret) &&
+            $secret !== '' &&
+            $secret !== self::DEV_REVERB_APP_SECRET;
     }
 
     private function hasHttpsReverbScheme(): bool
     {
-        return $this->config->get('reverb.apps.apps.0.options.scheme') === 'https';
+        return $this->config->get('reverb.apps.apps.0.options.scheme') ===
+            'https';
     }
 
     private function hasReverbTlsEnabled(): bool
@@ -661,7 +782,9 @@ final readonly class ProductionConfigurationValidator
     {
         $origins = $this->config->get('reverb.apps.apps.0.allowed_origins');
 
-        return is_array($origins) && $origins !== [] && ! in_array('*', $origins, true);
+        return is_array($origins) &&
+            $origins !== [] &&
+            ! in_array('*', $origins, true);
     }
 
     /**
@@ -686,6 +809,7 @@ final readonly class ProductionConfigurationValidator
         // Read live CLI argv — Request::server() is a request snapshot and misses Composer.
         $arguments = $_SERVER['argv'] ?? [];
 
-        return is_array($arguments) && in_array('package:discover', $arguments, true);
+        return is_array($arguments) &&
+            in_array('package:discover', $arguments, true);
     }
 }

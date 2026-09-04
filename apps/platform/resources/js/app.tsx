@@ -32,7 +32,7 @@ function pageLayout(name: string) {
         case name.startsWith('legal/'):
             // Public privacy / cookies / terms — own shell, no staff chrome.
             return null;
-        case name === 'dossiers/builder':
+        case name === 'workspaces/dossiers/builder':
             // Full-bleed form builder without the app sidebar.
             return DossierBuilderLayout;
         case name.startsWith('auth/'):
@@ -45,7 +45,7 @@ function pageLayout(name: string) {
             return [AppLayout, SettingsLayout];
         case name === 'workspaces/members/index':
         case name === 'workspaces/roles/index':
-        case name === 'data-subject-requests/index':
+        case name === 'workspaces/data-subject-requests/index':
         case name === 'workspaces/settings/index':
             // Firm administration — one rail across the section landing pages.
             return [AppLayout, AdminLayout];

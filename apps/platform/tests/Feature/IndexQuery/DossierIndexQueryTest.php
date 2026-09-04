@@ -56,7 +56,7 @@ test('dossiers index filters by status and search', function (): void {
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[status]=draft')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/index')
+            ->component('workspaces/dossiers/index')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.title', 'Payroll 2025')
             ->where('dossiers.data.0.status', 'draft')

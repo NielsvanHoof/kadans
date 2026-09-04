@@ -11,9 +11,9 @@ import {
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-shell/app-logo';
-import { NavMain } from '@/components/app-shell/nav-main';
-import { NavUser } from '@/components/app-shell/nav-user';
-import { WorkspaceSwitcher } from '@/components/app-shell/workspace-switcher';
+import NavMain from '@/components/app-shell/nav-main';
+import NavUser from '@/components/app-shell/nav-user';
+import WorkspaceSwitcher from '@/components/app-shell/workspace-switcher';
 import {
     Sidebar,
     SidebarContent,
@@ -38,7 +38,7 @@ import { index as pipelineIndex } from '@/routes/workspaces/pipelines';
 import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
-export function AppSidebar() {
+export default function AppSidebar() {
     const { current_firm: currentFirm, auth } = usePage().props;
     const { can } = usePermissions();
     const { isCurrentOrParentUrl } = useCurrentUrl();

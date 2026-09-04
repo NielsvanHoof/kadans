@@ -71,7 +71,7 @@ function CalendarUnlinkForm({
     );
 }
 
-type Props = {
+type CalendarAttachPanelProps = {
     audioRecordingId: number;
     transcriptionStatus: string;
     calendarLinks: AudioRecordingCalendarLink[];
@@ -92,7 +92,7 @@ export default function CalendarAttachPanel({
     provider,
     connectionStatus,
     reconnectUrl,
-}: Props) {
+}: CalendarAttachPanelProps) {
     const { t } = useTranslation();
     const currentWorkspace = useCurrentWorkspace();
     const [events, setEvents] = useState<CalendarEventSuggestion[]>([]);

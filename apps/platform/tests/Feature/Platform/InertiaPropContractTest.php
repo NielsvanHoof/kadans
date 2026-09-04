@@ -110,12 +110,12 @@ test('dossier page props keep their contract', function (): void {
     $this->actingAs($owner);
 
     $shapes = [
-        'dossiers/index' => pageShape(workspaceRoute('workspaces.dossiers.index', $tenant)),
-        'dossiers/show' => pageShape(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier])),
-        'dossiers/review' => pageShape(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier])),
-        'dossiers/builder' => pageShape(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier])),
-        'dossiers/archived' => pageShape(workspaceRoute('workspaces.dossiers.archived', $tenant)),
-        'clients/index' => pageShape(workspaceRoute('workspaces.clients.index', $tenant)),
+        'workspaces/dossiers/index' => pageShape(workspaceRoute('workspaces.dossiers.index', $tenant)),
+        'workspaces/dossiers/show' => pageShape(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier])),
+        'workspaces/dossiers/review' => pageShape(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier])),
+        'workspaces/dossiers/builder' => pageShape(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier])),
+        'workspaces/dossiers/archived' => pageShape(workspaceRoute('workspaces.dossiers.archived', $tenant)),
+        'workspaces/clients/index' => pageShape(workspaceRoute('workspaces.clients.index', $tenant)),
     ];
 
     $fixture = __DIR__.'/../../fixtures/inertia-prop-contract.json';

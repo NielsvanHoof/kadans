@@ -46,7 +46,7 @@ final class DataSubjectRequestController extends Controller
 
         $canManage = $this->currentUser()->can('create', DataSubjectRequest::class);
 
-        return Inertia::render('data-subject-requests/index', [
+        return Inertia::render('workspaces/data-subject-requests/index', [
             'requests' => $fetchIndex->handle(),
             ...$fetchIndex->indexQueryProps(),
             'can_manage' => $canManage,

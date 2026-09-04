@@ -45,7 +45,7 @@ final class DossierController extends Controller
     {
         $this->authorize('viewAny', Dossier::class);
 
-        return Inertia::render('dossiers/index', [
+        return Inertia::render('workspaces/dossiers/index', [
             'dossiers' => $fetchDossierIndex->handle(),
             ...$fetchDossierIndex->indexQueryProps(),
             'can_manage' => $request->user()?->can('create', Dossier::class) ?? false,
@@ -59,7 +59,7 @@ final class DossierController extends Controller
     ): Response {
         $this->authorize('create', Dossier::class);
 
-        return Inertia::render('dossiers/create', [
+        return Inertia::render('workspaces/dossiers/create', [
             'clients' => array_map(
                 static fn (PersonOptionData $client): array => $client->toArray(),
                 $getDossierCreateData->handle(),
@@ -78,7 +78,7 @@ final class DossierController extends Controller
     ): Response {
         $this->authorize('viewAny', Dossier::class);
 
-        return Inertia::render('dossiers/archived', [
+        return Inertia::render('workspaces/dossiers/archived', [
             'dossiers' => $fetchArchivedDossiers->handle(),
             ...$fetchArchivedDossiers->indexQueryProps(),
             'can_restore' => $request->user()?->can('restoreAny', Dossier::class) ?? false,
@@ -108,14 +108,14 @@ final class DossierController extends Controller
     ): Response {
         $this->authorize('view', $dossier);
 
-        if (! $this->isDossierPartialReload($request, 'dossiers/show')) {
+        if (! $this->isDossierPartialReload($request, 'workspaces/dossiers/show')) {
             $logAuditActivity->handle(
                 AuditEvent::DossierViewed,
                 $dossier,
             );
         }
 
-        return Inertia::render('dossiers/show', $fetchDossierShow->handle($request, $dossier));
+        return Inertia::render('workspaces/dossiers/show', $fetchDossierShow->handle($request, $dossier));
     }
 
     /**
@@ -129,7 +129,7 @@ final class DossierController extends Controller
     ): Response {
         $this->authorize('view', $dossier);
 
-        return Inertia::render('dossiers/builder', $fetchDossierBuilder->handle($request, $dossier));
+        return Inertia::render('workspaces/dossiers/builder', $fetchDossierBuilder->handle($request, $dossier));
     }
 
     /**
@@ -143,7 +143,7 @@ final class DossierController extends Controller
     ): Response {
         $this->authorize('view', $dossier);
 
-        return Inertia::render('dossiers/review', $fetchDossierReview->handle($request, $dossier));
+        return Inertia::render('workspaces/dossiers/review', $fetchDossierReview->handle($request, $dossier));
     }
 
     public function edit(
@@ -153,7 +153,7 @@ final class DossierController extends Controller
     ): Response {
         $this->authorize('update', $dossier);
 
-        return Inertia::render('dossiers/edit', $fetchDossierEdit->handle($tenant, $dossier));
+        return Inertia::render('workspaces/dossiers/edit', $fetchDossierEdit->handle($tenant, $dossier));
     }
 
     public function update(

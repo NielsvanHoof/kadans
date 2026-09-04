@@ -34,7 +34,7 @@ test('staff can view system and firm templates', function (): void {
         ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('questionnaires/index')
+            ->component('workspaces/questionnaires/index')
             ->has('system_templates.data', 4)
             ->where('system_templates.total', 4)
             ->has('firm_templates.data', 1)
@@ -71,7 +71,7 @@ test('owner can create view update and delete a firm template', function (): voi
         ->get(workspaceRoute('workspaces.templates.create', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('questionnaires/create')
+            ->component('workspaces/questionnaires/create')
             ->has('categories'));
 
     // Omit description so CreateQuestionnaireTemplateAction's null branch is exercised.
@@ -109,7 +109,7 @@ test('owner can create view update and delete a firm template', function (): voi
     $this->get(workspaceRoute('workspaces.templates.show', $tenant, ['template' => $template]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('questionnaires/show')
+            ->component('workspaces/questionnaires/show')
             ->where('template.id', $template->id)
             ->where('template.name', 'Firm onboarding pack')
             ->where('template.description', null)

@@ -35,7 +35,7 @@ vi.mock('@/routes/workspaces/settings', () => ({
 // Imported lazily: a static import would pull `use-translation` into the module
 // graph before `@/test/mocks` is evaluated, and the vi.mock factory would throw.
 const { SidebarProvider } = await import('@/components/ui/sidebar');
-const { WorkspaceSwitcher } =
+const { default: WorkspaceSwitcher } =
     await import('@/components/app-shell/workspace-switcher');
 
 async function openSwitcher() {

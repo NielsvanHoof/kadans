@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
-import { UserInfo } from '@/components/app-shell/user-info';
+import UserInfo from '@/components/app-shell/user-info';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -13,11 +13,11 @@ import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
-type Props = {
+type UserMenuContentProps = {
     user: User;
 };
 
-export function UserMenuContent({ user }: Props) {
+export default function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
     const { t } = useTranslation();
 

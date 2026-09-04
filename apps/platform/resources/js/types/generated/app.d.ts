@@ -557,6 +557,11 @@ declare namespace App {
     }
     namespace Questionnaires {
         namespace Data {
+            export type DraftedChecklistItemData = {
+                readonly title: string;
+                readonly instructions: string;
+                readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
+            };
             export type QuestionnaireTemplateItemData = {
                 readonly id: number;
                 readonly type: App.Questionnaires.Enums.QuestionnaireItemType;

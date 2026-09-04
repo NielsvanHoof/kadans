@@ -36,7 +36,7 @@ test('tenant member can view dossiers in their workspace', function (): void {
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->where('dossier.title', 'Annual accounts 2025'));
 });
 

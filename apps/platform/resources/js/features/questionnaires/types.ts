@@ -5,10 +5,7 @@
  * apply-picker types are refined, because their `configuration` is a free-form
  * JSON column in PHP while the builder needs its structure.
  */
-import type {
-    QuestionnaireItemConfiguration,
-    QuestionnaireItemType,
-} from '@/features/document-requests/types';
+import type { QuestionnaireItemConfiguration } from '@/features/document-requests/types';
 
 /** Category option for template forms. */
 export type TemplateCategoryOption = {
@@ -44,12 +41,8 @@ export type ApplyTemplateOption = Omit<
 };
 
 /**
- * AI-suggested checklist item from the draft-items endpoint — hand-typed
- * since the response is a plain JSON array, not a generated Data payload.
- * Never persisted directly; only used to seed the existing "Add item" form.
+ * AI-suggested checklist item from the draft-items endpoint. Never persisted
+ * directly; only used to seed the existing "Add item" form.
  */
-export type DraftedChecklistItem = {
-    title: string;
-    instructions: string;
-    type: QuestionnaireItemType;
-};
+export type DraftedChecklistItem =
+    App.Questionnaires.Data.DraftedChecklistItemData;

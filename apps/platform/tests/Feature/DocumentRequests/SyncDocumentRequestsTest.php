@@ -196,7 +196,7 @@ test('builder page embeds template items when templates exist', function (): voi
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('dossiers/builder')
+            ->component('workspaces/dossiers/builder')
             ->has('templates.0.items')
             ->where('templates.0.items.0.type', fn ($type): bool => is_string($type)));
 });

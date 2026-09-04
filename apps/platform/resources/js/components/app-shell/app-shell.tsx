@@ -4,14 +4,18 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import type { AppVariant } from '@/types';
 
-type Props = {
+type AppShellProps = {
     children: ReactNode;
     variant?: AppVariant;
     /** Merged onto the header-variant shell wrapper (e.g. h-dvh for fullscreen pages). */
     className?: string;
 };
 
-export function AppShell({ children, variant = 'sidebar', className }: Props) {
+export default function AppShell({
+    children,
+    variant = 'sidebar',
+    className,
+}: AppShellProps) {
     const isOpen = usePage().props.sidebar_open;
 
     if (variant === 'header') {

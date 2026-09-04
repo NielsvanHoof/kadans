@@ -14,11 +14,11 @@ type ErrorCopy = {
     icon: LucideIcon;
 };
 
-type Props = {
+type ErrorPageProps = {
     status: ErrorStatus;
 };
 
-export default function ErrorPage({ status }: Props) {
+export default function ErrorPage({ status }: ErrorPageProps) {
     const { t } = useTranslation();
     const { auth, name } = usePage().props;
     const isAuthenticated = auth.user !== null;

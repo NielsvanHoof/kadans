@@ -8,12 +8,12 @@ import PasskeyRegistration from '@/features/security/passkeys/passkey-register';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Passkey } from '@/types/auth';
 
-export type Props = {
+export type ManagePasskeysProps = {
     canManagePasskeys?: boolean;
     passkeys?: Passkey[];
 };
 
-export default function ManagePasskeys(props: Props) {
+export default function ManagePasskeys(props: ManagePasskeysProps) {
     const passkeys = props.passkeys ?? [];
     const { t } = useTranslation();
 

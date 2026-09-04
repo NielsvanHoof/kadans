@@ -11,7 +11,7 @@ type OAuthConnectionSummary = {
     email: string | null;
 };
 
-type Props = {
+type IntegrationsProps = {
     oauthProviders: string[];
     oauthConnections: OAuthConnectionSummary[];
 };
@@ -19,7 +19,7 @@ type Props = {
 export default function Integrations({
     oauthProviders,
     oauthConnections,
-}: Props) {
+}: IntegrationsProps) {
     const { t } = useTranslation();
 
     setLayoutProps({

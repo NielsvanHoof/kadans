@@ -21,7 +21,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
-type Props = {
+type LoginProps = {
     status?: string;
     canResetPassword: boolean;
     oauthProviders?: string[];
@@ -31,7 +31,7 @@ export default function Login({
     status,
     canResetPassword,
     oauthProviders = [],
-}: Props) {
+}: LoginProps) {
     const { t } = useTranslation();
 
     setLayoutProps({

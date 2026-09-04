@@ -1,5 +1,5 @@
 {
-    "dossiers/index": {
+    "workspaces/dossiers/index": {
         "can_manage": "bool",
         "dossiers.current_page": "int",
         "dossiers.data.0.client_name": "string",
@@ -35,7 +35,7 @@
         "indexQuery.sorts.0.label": "string",
         "sort": "null"
     },
-    "dossiers/show": {
+    "workspaces/dossiers/show": {
         "access_grant_portal_url": "null",
         "access_grant_token": "null",
         "can_download": "bool",
@@ -76,7 +76,7 @@
         "dossier.status": "string",
         "dossier.title": "string"
     },
-    "dossiers/review": {
+    "workspaces/dossiers/review": {
         "can_download": "bool",
         "can_edit": "bool",
         "can_manage": "bool",
@@ -112,7 +112,7 @@
         "dossier.status": "string",
         "dossier.title": "string"
     },
-    "dossiers/builder": {
+    "workspaces/dossiers/builder": {
         "builder_lock.expires_at": "string",
         "builder_lock.holder.email": "string",
         "builder_lock.holder.id": "int",
@@ -143,7 +143,7 @@
         "dossier.title": "string",
         "templates": "list<empty>"
     },
-    "dossiers/archived": {
+    "workspaces/dossiers/archived": {
         "can_restore": "bool",
         "can_restore_clients": "bool",
         "dossiers.current_page": "int",
@@ -172,7 +172,7 @@
         "indexQuery.sorts.0.label": "string",
         "sort": "null"
     },
-    "clients/index": {
+    "workspaces/clients/index": {
         "can_manage": "bool",
         "clients.current_page": "int",
         "clients.data.0.dossiers_count": "int",
