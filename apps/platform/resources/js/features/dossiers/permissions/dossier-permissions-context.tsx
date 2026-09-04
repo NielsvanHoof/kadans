@@ -19,6 +19,15 @@ export type DossierCapabilities = {
     /** Upload an audio recording (server already accounts for dossier status). */
     canUploadAudio: boolean;
     canDownloadAudio: boolean;
+    /**
+     * Start the next period from this dossier.
+     *
+     * Deliberately not narrowed by dossier status, unlike every other write
+     * capability here: rolling over a *completed* period is the primary use
+     * case, and DossierPolicy::rollOver() leaves the lock check out for the
+     * same reason.
+     */
+    canRollOver: boolean;
     dossierStatus: DossierStatus;
 };
 
@@ -31,6 +40,7 @@ export type DossierCapabilitiesInput = {
     canSendReminder: boolean;
     canUploadAudio: boolean;
     canDownloadAudio: boolean;
+    canRollOver: boolean;
     dossierStatus: DossierStatus;
     hasFormItems: boolean;
 };
@@ -51,6 +61,7 @@ export function deriveDossierCapabilities(
         canCreateInvite: canEditStructure && input.hasFormItems,
         canUploadAudio: input.canUploadAudio,
         canDownloadAudio: input.canDownloadAudio,
+        canRollOver: input.canRollOver,
         dossierStatus: input.dossierStatus,
     };
 }
@@ -67,6 +78,7 @@ export function DossierPermissionsProvider({
     canSendReminder,
     canUploadAudio,
     canDownloadAudio,
+    canRollOver,
     dossierStatus,
     hasFormItems,
     children,
@@ -81,6 +93,7 @@ export function DossierPermissionsProvider({
                 canSendReminder,
                 canUploadAudio,
                 canDownloadAudio,
+                canRollOver,
                 dossierStatus,
                 hasFormItems,
             }),
@@ -92,6 +105,7 @@ export function DossierPermissionsProvider({
             canSendReminder,
             canUploadAudio,
             canDownloadAudio,
+            canRollOver,
             dossierStatus,
             hasFormItems,
         ],

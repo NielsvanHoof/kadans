@@ -54,7 +54,7 @@ test('partially reloading a dossier does not write another view audit entry', fu
         Header::INERTIA => 'true',
         // Inertia returns 409 when the asset version header is missing/mismatched.
         Header::VERSION => resolve(HandleInertiaRequests::class)->version(request()) ?? '',
-        Header::PARTIAL_COMPONENT => 'dossiers/show',
+        Header::PARTIAL_COMPONENT => 'workspaces/dossiers/show',
         Header::PARTIAL_ONLY => 'dossier',
     ])->get($url)->assertOk();
 

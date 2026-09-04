@@ -10,7 +10,7 @@ import TwoFactorSetupStep from '@/features/security/two-factor/two-factor-setup-
 import TwoFactorVerificationStep from '@/features/security/two-factor/two-factor-verification-step';
 import { useTranslation } from '@/hooks/use-translation';
 
-type Props = {
+type TwoFactorSetupModalProps = {
     isOpen: boolean;
     onClose: () => void;
     requiresConfirmation: boolean;
@@ -35,7 +35,7 @@ export default function TwoFactorSetupModal({
     clearSetupData,
     fetchSetupData,
     errors,
-}: Props) {
+}: TwoFactorSetupModalProps) {
     const { t } = useTranslation();
     const [showVerificationStep, setShowVerificationStep] =
         useState<boolean>(false);

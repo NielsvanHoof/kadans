@@ -46,102 +46,165 @@ beforeEach(function (): void {
     $this->start = resolve(StartPipelineAction::class);
 });
 
-it('opens a pending run with every step of its type seeded', function (): void {
-    $document = startableDocument();
+test(
+    'opens a pending run with every step of its type seeded',
+    function (): void {
+        $document = startableDocument();
 
-    $pipeline = $this->start->handle($document, PipelineType::OcrDocument, $this->owner, ['source' => 'staff']);
+        $pipeline = $this->start->handle(
+            $document,
+            PipelineType::OcrDocument,
+            $this->owner,
+            ['source' => 'staff'],
+        );
 
-    expect($pipeline)
-        ->status->toBe(PipelineStatus::Pending)
-        ->type->toBe(PipelineType::OcrDocument)
-        ->initiated_by->toBe($this->owner->id)
-        ->pipelineable_id->toBe($document->id)
-        ->and($pipeline->metadata)->toBe(['source' => 'staff'])
-        ->and($pipeline->steps->sortBy('position')->pluck('key')->all())
-        ->toBe(PipelineType::OcrDocument->stepKeys())
-        ->and($pipeline->steps->every(
-            fn ($step): bool => $step->status === PipelineStepStatus::Pending,
-        ))->toBeTrue();
-});
+        expect($pipeline)
+            ->status->toBe(PipelineStatus::Pending)
+            ->type->toBe(PipelineType::OcrDocument)
+            ->initiated_by->toBe($this->owner->id)
+            ->pipelineable_id->toBe($document->id)
+            ->and($pipeline->metadata)
+            ->toBe(['source' => 'staff'])
+            ->and($pipeline->steps->sortBy('position')->pluck('key')->all())
+            ->toBe(PipelineType::OcrDocument->stepKeys())
+            ->and(
+                $pipeline->steps->every(
+                    fn ($step): bool => $step->status ===
+                        PipelineStepStatus::Pending,
+                ),
+            )
+            ->toBeTrue();
+    },
+);
 
-it('queues the OCR job with the document it has to read', function (): void {
+test('queues the OCR job with the document it has to read', function (): void {
     $document = startableDocument();
 
     $pipeline = $this->start->handle($document, PipelineType::OcrDocument);
 
     Queue::assertPushed(
         ProcessUploadedDocumentJob::class,
-        fn (ProcessUploadedDocumentJob $job): bool => $job->uploadedDocumentId === $document->id
-            && $job->expectedPath === $document->path
-            && $job->pipelineId === $pipeline->id
-            && $job->queue === 'ocr',
+        fn (
+            ProcessUploadedDocumentJob $job,
+        ): bool => $job->uploadedDocumentId === $document->id &&
+            $job->expectedPath === $document->path &&
+            $job->pipelineId === $pipeline->id &&
+            $job->queue === 'ocr',
     );
 });
 
-it('queues the transcription job with the recording it has to transcribe', function (): void {
-    $recording = startableRecording();
+test(
+    'queues the transcription job with the recording it has to transcribe',
+    function (): void {
+        $recording = startableRecording();
 
-    $pipeline = $this->start->handle($recording, PipelineType::AudioTranscription, $this->owner);
+        $pipeline = $this->start->handle(
+            $recording,
+            PipelineType::AudioTranscription,
+            $this->owner,
+        );
 
-    Queue::assertPushed(
+        Queue::assertPushed(
+            ProcessAudioRecordingJob::class,
+            fn (
+                ProcessAudioRecordingJob $job,
+            ): bool => $job->audioRecordingId === $recording->id &&
+                $job->expectedPath === $recording->path &&
+                $job->pipelineId === $pipeline->id &&
+                $job->queue === 'transcription',
+        );
+    },
+);
+
+test(
+    'queues the export job, which carries only the run it belongs to',
+    function (): void {
+        $export = startableExport();
+
+        $pipeline = $this->start->handle(
+            $export,
+            PipelineType::DossierExport,
+            $this->owner,
+        );
+
+        Queue::assertPushed(
+            GenerateDossierExportJob::class,
+            fn (GenerateDossierExportJob $job): bool => $job->pipelineId ===
+                $pipeline->id && $job->queue === 'dossier-export',
+        );
+    },
+);
+
+test(
+    'dispatches after commit for every type, so a rolled back subject queues nothing',
+    function (PipelineType $type, string $jobClass, Closure $subject): void {
+        $this->start->handle($subject(), $type, $this->owner);
+
+        // Callers invoke this inside the transaction that creates the subject, so a
+        // worker picking the job up pre-commit would find neither row. Queue::fake()
+        // records pushes immediately, hence asserting the flag rather than the timing.
+        Queue::assertPushed(
+            $jobClass,
+            fn (object $job): bool => $job->afterCommit === true,
+        );
+    },
+)->with([
+    'ocr' => [
+        PipelineType::OcrDocument,
+        ProcessUploadedDocumentJob::class,
+        startableDocument(...),
+    ],
+    'transcription' => [
+        PipelineType::AudioTranscription,
         ProcessAudioRecordingJob::class,
-        fn (ProcessAudioRecordingJob $job): bool => $job->audioRecordingId === $recording->id
-            && $job->expectedPath === $recording->path
-            && $job->pipelineId === $pipeline->id
-            && $job->queue === 'transcription',
-    );
-});
-
-it('queues the export job, which carries only the run it belongs to', function (): void {
-    $export = startableExport();
-
-    $pipeline = $this->start->handle($export, PipelineType::DossierExport, $this->owner);
-
-    Queue::assertPushed(
+        startableRecording(...),
+    ],
+    'export' => [
+        PipelineType::DossierExport,
         GenerateDossierExportJob::class,
-        fn (GenerateDossierExportJob $job): bool => $job->pipelineId === $pipeline->id
-            && $job->queue === 'dossier-export',
-    );
-});
-
-it('dispatches after commit for every type, so a rolled back subject queues nothing', function (
-    PipelineType $type,
-    string $jobClass,
-    Closure $subject,
-): void {
-    $this->start->handle($subject(), $type, $this->owner);
-
-    // Callers invoke this inside the transaction that creates the subject, so a
-    // worker picking the job up pre-commit would find neither row. Queue::fake()
-    // records pushes immediately, hence asserting the flag rather than the timing.
-    Queue::assertPushed($jobClass, fn (object $job): bool => $job->afterCommit === true);
-})->with([
-    'ocr' => [PipelineType::OcrDocument, ProcessUploadedDocumentJob::class, startableDocument(...)],
-    'transcription' => [PipelineType::AudioTranscription, ProcessAudioRecordingJob::class, startableRecording(...)],
-    'export' => [PipelineType::DossierExport, GenerateDossierExportJob::class, startableExport(...)],
+        startableExport(...),
+    ],
 ]);
 
-it('refuses a subject that does not belong to the pipeline type', function (): void {
-    $document = startableDocument();
+test(
+    'refuses a subject that does not belong to the pipeline type',
+    function (): void {
+        $document = startableDocument();
 
-    expect(fn (): Pipeline => $this->start->handle($document, PipelineType::DossierExport))
-        ->toThrow(RuntimeException::class);
+        expect(
+            fn (): Pipeline => $this->start->handle(
+                $document,
+                PipelineType::DossierExport,
+            ),
+        )->toThrow(RuntimeException::class);
 
-    // The guard runs before anything is written, so no half-open run is left behind.
-    expect(Pipeline::query()->count())->toBe(0);
-    Queue::assertNothingPushed();
-});
+        // The guard runs before anything is written, so no half-open run is left behind.
+        expect(Pipeline::query()->count())->toBe(0);
+        Queue::assertNothingPushed();
+    },
+);
 
-it('refuses a type whose owning domain forgot to register a runner', function (): void {
-    expect(fn (): object => new PipelineRunnerRegistry()->for(PipelineType::OcrDocument))
-        ->toThrow(RuntimeException::class, 'No runner registered for pipeline type [ocr_document].');
-});
+test(
+    'refuses a type whose owning domain forgot to register a runner',
+    function (): void {
+        expect(
+            fn (): object => new PipelineRunnerRegistry()->for(
+                PipelineType::OcrDocument,
+            ),
+        )->toThrow(
+            RuntimeException::class,
+            'No runner registered for pipeline type [ocr_document].',
+        );
+    },
+);
 
 function startableDossier(): Dossier
 {
     return Dossier::factory()->create([
         'tenant_id' => test()->tenant->id,
-        'client_id' => Client::factory()->create(['tenant_id' => test()->tenant->id])->id,
+        'client_id' => Client::factory()->create([
+            'tenant_id' => test()->tenant->id,
+        ])->id,
     ]);
 }
 

@@ -15,12 +15,12 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Passkey } from '@/types/auth';
 
-type Props = {
+type PasskeyItemProps = {
     passkey: Passkey;
     onDelete: (id: number, onError: () => void) => void;
 };
 
-export default function PasskeyItem({ passkey, onDelete }: Props) {
+export default function PasskeyItem({ passkey, onDelete }: PasskeyItemProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const { t } = useTranslation();
 

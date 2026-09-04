@@ -25,6 +25,10 @@ final class DossierShowData extends Data
         public readonly int $id,
         public readonly string $title,
         public readonly ?string $reference,
+        public readonly ?int $periodYear,
+        public readonly ?string $periodLabel,
+        /** Set when this dossier was started from a previous period. */
+        public readonly ?DossierRolledFromData $rolledFrom,
         public readonly DossierStatus $status,
         public readonly ?string $dueDate,
         public readonly ?PersonOptionData $responsibleStaff,

@@ -46,7 +46,7 @@ test('an owner can open the requests screen', function (): void {
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->where('can_manage', true)
             ->has('requests.data', 1)
             ->has('clients', 1));
@@ -66,7 +66,7 @@ test('the requests screen still lists a request after its client is archived', f
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->has('requests.data', 1)
             ->where('requests.data.0.client_name', 'Marieke de Vries'));
 });
@@ -285,7 +285,7 @@ test('the requests index is paginated rather than loading every request ever log
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->has('requests.data', 15)
             ->where('requests.total', 40)
             ->where('requests.last_page', 3)
@@ -320,7 +320,7 @@ test('the requests index keeps open requests ahead of closed ones', function ():
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->where('requests.data.0.id', $open->id)
             ->etc());
 });

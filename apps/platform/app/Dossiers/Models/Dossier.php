@@ -36,6 +36,9 @@ use function is_string;
  * @property int $tenant_id
  * @property string $title
  * @property string|null $reference
+ * @property int|null $period_year
+ * @property string|null $period_label
+ * @property int|null $rolled_from_dossier_id
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property int $client_id
@@ -63,6 +66,9 @@ use function is_string;
  * @property-read EloquentCollection<int, DossierExport> $exports
  * @property-read int|null $exports_count
  * @property-read User|null $responsibleUser
+ * @property-read Dossier|null $rolledFromDossier
+ * @property-read EloquentCollection<int, Dossier> $rolledOverDossiers
+ * @property-read int|null $rolled_over_dossiers_count
  * @property-read Tenant $tenant
  *
  * @method static DossierFactory factory($count = null, $state = [])
@@ -78,7 +84,10 @@ use function is_string;
  * @method static EloquentBuilder<static>|Dossier whereLastClientMessageSentAt($value)
  * @method static EloquentBuilder<static>|Dossier whereLastClientOpenedAt($value)
  * @method static EloquentBuilder<static>|Dossier whereNextReminderAt($value)
+ * @method static EloquentBuilder<static>|Dossier wherePeriodLabel($value)
+ * @method static EloquentBuilder<static>|Dossier wherePeriodYear($value)
  * @method static EloquentBuilder<static>|Dossier whereReference($value)
+ * @method static EloquentBuilder<static>|Dossier whereRolledFromDossierId($value)
  * @method static EloquentBuilder<static>|Dossier whereReminderIntervalDays($value)
  * @method static EloquentBuilder<static>|Dossier whereResponsibleUserId($value)
  * @method static EloquentBuilder<static>|Dossier whereStatus($value)
@@ -107,6 +116,9 @@ final class Dossier extends TenantOwnedModel
         'client_id',
         'title',
         'reference',
+        'period_year',
+        'period_label',
+        'rolled_from_dossier_id',
         'status',
         'responsible_user_id',
         'due_date',
@@ -145,7 +157,7 @@ final class Dossier extends TenantOwnedModel
      * `clients.name` is a qualified column (dot kept as-is by qualifyColumn) so
      * archive/live search can match the related client without a denormalized field.
      *
-     * @return array{id: int, title: string, reference: string, 'clients.name': string}
+     * @return array{id: int, title: string, reference: string, period_label: string, 'clients.name': string}
      */
     public function toSearchableArray(): array
     {
@@ -153,6 +165,7 @@ final class Dossier extends TenantOwnedModel
             'id' => $this->id,
             'title' => $this->title,
             'reference' => $this->reference ?? '',
+            'period_label' => $this->period_label ?? '',
             // Empty on the fresh model Scout uses for column discovery (avoids N+1).
             // Loaded for collection-engine hits when the model exists in the DB.
             'clients.name' => $this->clientNameForSearch(),
@@ -255,6 +268,26 @@ final class Dossier extends TenantOwnedModel
     }
 
     /**
+     * The previous period's dossier this one was rolled over from.
+     *
+     * @return BelongsTo<Dossier, $this>
+     */
+    public function rolledFromDossier(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'rolled_from_dossier_id');
+    }
+
+    /**
+     * Later periods rolled over from this dossier.
+     *
+     * @return HasMany<Dossier, $this>
+     */
+    public function rolledOverDossiers(): HasMany
+    {
+        return $this->hasMany(self::class, 'rolled_from_dossier_id');
+    }
+
+    /**
      * @return HasMany<AudioRecording, $this>
      */
     public function audioRecordings(): HasMany
@@ -298,6 +331,7 @@ final class Dossier extends TenantOwnedModel
     {
         return [
             'status' => DossierStatus::class,
+            'period_year' => 'integer',
             'due_date' => 'date',
             'reminder_interval_days' => 'integer',
             'next_reminder_at' => 'datetime',

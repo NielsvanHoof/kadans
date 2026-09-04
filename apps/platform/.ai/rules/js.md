@@ -17,7 +17,7 @@ Import boundaries (Oxlint-enforced in `vite.lint.ts`): `components/` must not im
 
 Forms: Inertia `<Form>` + Wayfinder `.form()` by default. `useForm` only for multipart uploads needing progress.
 
-UI copy uses JSON sentence keys in `lang/en.json` / `lang/nl.json` via `t('Full sentence')`. `lang/{locale}/*.php` is for framework bags only — no new dotted short keys.
+UI copy uses JSON sentence keys in `app/<Domain>/lang/{en,nl}.json` via `t('Full sentence')`. Run `php artisan lang:organize` to place keys. `lang/{locale}/*.php` is for framework bags only — no new dotted short keys. Never recreate `lang/{locale}.json`.
 
 Permissions are gated by server-sent boolean props (`can_view`, `can_update`); the client only hides or disables.
 

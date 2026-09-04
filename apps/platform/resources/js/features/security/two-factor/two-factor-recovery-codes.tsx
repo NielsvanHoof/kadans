@@ -32,7 +32,7 @@ const RECOVERY_CODE_SKELETONS = [
     'recovery-code-skeleton-8',
 ] as const;
 
-type Props = {
+type TwoFactorRecoveryCodesProps = {
     recoveryCodesList: string[];
     fetchRecoveryCodes: () => Promise<void>;
     errors: string[];
@@ -42,7 +42,7 @@ export default function TwoFactorRecoveryCodes({
     recoveryCodesList,
     fetchRecoveryCodes,
     errors,
-}: Props) {
+}: TwoFactorRecoveryCodesProps) {
     const { t } = useTranslation();
     const [codesAreVisible, setCodesAreVisible] = useState<boolean>(false);
     const codesSectionRef = useRef<HTMLUListElement | null>(null);

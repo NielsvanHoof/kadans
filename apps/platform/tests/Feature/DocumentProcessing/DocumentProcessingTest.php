@@ -84,7 +84,7 @@ test('staff dossier show includes processing fields for uploaded documents', fun
         ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->has('dossier.document_requests', 0)
             ->loadDeferredProps(fn (Assert $reload): Assert => $reload
                 ->has('document_requests.0.uploaded_documents.0', fn (Assert $document): Assert => $document

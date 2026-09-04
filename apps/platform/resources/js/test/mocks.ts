@@ -21,7 +21,26 @@ import {
 export function mockUseTranslation() {
     return {
         useTranslation: () => ({
-            t: (key: string) => key,
+            // Mirror the real hook's replaceAll interpolation so component
+            // tests can catch placeholder bugs the previous identity mock
+            // would silently hide.
+            t: (
+                key: string,
+                replacements: Record<string, string | number> = {},
+            ): string => {
+                let translation = key;
+
+                for (const [placeholder, value] of Object.entries(
+                    replacements,
+                )) {
+                    translation = translation.replaceAll(
+                        `:${placeholder}`,
+                        String(value),
+                    );
+                }
+
+                return translation;
+            },
             locale: 'en',
             availableLocales: [],
         }),

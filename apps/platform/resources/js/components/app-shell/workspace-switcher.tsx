@@ -19,7 +19,7 @@ import { create as createFirm } from '@/routes/firms';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { index as settingsIndex } from '@/routes/workspaces/settings';
 
-export function WorkspaceSwitcher() {
+export default function WorkspaceSwitcher() {
     const { current_firm: currentFirm, workspaces } = usePage().props;
     const { t } = useTranslation();
     const { can } = usePermissions();

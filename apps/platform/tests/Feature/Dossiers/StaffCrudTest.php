@@ -25,7 +25,7 @@ test('staff can create a client, dossier, and document request', function (): vo
         ->get(workspaceRoute('workspaces.clients.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('clients/index')
+            ->component('workspaces/clients/index')
             ->has('clients.data', 0)
             ->where('clients.total', 0)
             ->has('indexQuery'));
@@ -42,7 +42,7 @@ test('staff can create a client, dossier, and document request', function (): vo
     $this->get(workspaceRoute('workspaces.dossiers.create', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/create')
+            ->component('workspaces/dossiers/create')
             ->has('clients', 1)
             ->where('clients.0.id', $client->id)
             ->where('clients.0.name', 'Jane Client')
@@ -68,7 +68,7 @@ test('staff can create a client, dossier, and document request', function (): vo
     $this->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->has('dossier.document_requests', 0)
             ->where('dossier.status', 'draft')
             ->loadDeferredProps(fn (Assert $reload): Assert => $reload

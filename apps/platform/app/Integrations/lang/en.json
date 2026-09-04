@@ -1,0 +1,23 @@
+{
+    "(No title)": "(No title)",
+    ":provider account disconnected.": ":provider account disconnected.",
+    ":provider account linked.": ":provider account linked.",
+    "Connect": "Connect",
+    "Connect Google in Integrations to use calendar features.": "Connect Google in Integrations to use calendar features.",
+    "Connected": "Connected",
+    "Could not refresh the Google connection. Please reconnect.": "Could not refresh the Google connection. Please reconnect.",
+    "Disconnect": "Disconnect",
+    "Disconnect your current :provider account before linking a different one.": "Disconnect your current :provider account before linking a different one.",
+    "Google": "Google",
+    "Microsoft": "Microsoft",
+    "No Qompose account for this email.": "No Qompose account for this email.",
+    "Not connected": "Not connected",
+    "Reconnect": "Reconnect",
+    "Reconnect Google to continue using calendar features.": "Reconnect Google to continue using calendar features.",
+    "Reconnect Google to enable calendar and Drive access.": "Reconnect Google to enable calendar and Drive access.",
+    "Reconnect for calendar access": "Reconnect for calendar access",
+    "Sign-in with :provider expired. Please try again.": "Sign-in with :provider expired. Please try again.",
+    "This :provider account does not match the one linked to your Qompose account.": "This :provider account does not match the one linked to your Qompose account.",
+    "This :provider account is already linked to another Qompose user.": "This :provider account is already linked to another Qompose user.",
+    "Token refresh is not available for :provider yet.": "Token refresh is not available for :provider yet."
+}

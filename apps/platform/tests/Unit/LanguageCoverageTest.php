@@ -2,167 +2,83 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Enums\Locale;
+use App\Pipelines\Enums\PipelineStatus;
+use App\Platform\Support\Localization\TranslationCallSiteScanner;
+use App\Shared\Support\Localization\TranslationDomains;
+use Illuminate\Support\Str;
+
 /**
+ * Merge every domain file for a locale. Deliberately dumb and independent of
+ * LoadFrontendTranslationsAction / FileLoader so this remains a second check.
+ *
  * @return array{english: array<string, string>, dutch: array<string, string>}
  */
 function loadTranslationFiles(string $projectRoot): array
 {
-    /** @var array<string, string> $englishTranslations */
-    $englishTranslations = json_decode(
-        (string) file_get_contents($projectRoot.'/lang/en.json'),
-        true,
-        512,
-        JSON_THROW_ON_ERROR,
-    );
-
-    /** @var array<string, string> $dutchTranslations */
-    $dutchTranslations = json_decode(
-        (string) file_get_contents($projectRoot.'/lang/nl.json'),
-        true,
-        512,
-        JSON_THROW_ON_ERROR,
-    );
-
     return [
-        'english' => $englishTranslations,
-        'dutch' => $dutchTranslations,
+        'english' => mergeDomainTranslationFiles($projectRoot, 'en'),
+        'dutch' => mergeDomainTranslationFiles($projectRoot, 'nl'),
     ];
 }
 
 /**
+ * @return array<string, string>
+ */
+function mergeDomainTranslationFiles(string $projectRoot, string $locale): array
+{
+    $merged = [];
+
+    foreach (TranslationDomains::NAMES as $domain) {
+        $path = $projectRoot.'/'.TranslationDomains::relativePath($domain, $locale);
+
+        /** @var array<string, string> $chunk */
+        $chunk = json_decode(
+            (string) file_get_contents($path),
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+
+        $merged = [...$merged, ...$chunk];
+    }
+
+    return $merged;
+}
+
+/**
+ * Thin wrappers over TranslationCallSiteScanner so this test keeps reading as a
+ * coverage check. The patterns live in the scanner because `lang:organize`
+ * decides where a key belongs from the same call sites — a second
+ * implementation here would place keys this test then reports as missing.
+ *
  * @return list<string>
  */
 function translationKeysUsedInDirectory(string $directory): array
 {
-    $keys = [];
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($directory),
+    return TranslationCallSiteScanner::flatten(
+        new TranslationCallSiteScanner()->phpKeysByFile($directory),
     );
-
-    foreach ($iterator as $file) {
-        if (! $file->isFile()) {
-            continue;
-        }
-        if ($file->getExtension() !== 'php') {
-            continue;
-        }
-        $contents = (string) file_get_contents($file->getPathname());
-
-        if (preg_match_all("/__\\('((?:\\\\'|[^'])*)'/", $contents, $singleQuotedMatches) !== false) {
-            foreach ($singleQuotedMatches[1] as $key) {
-                $keys[] = str_replace("\\'", "'", $key);
-            }
-        }
-
-        if (preg_match_all('/__\\("((?:\\\\"|[^"])*)"/', $contents, $doubleQuotedMatches) !== false) {
-            foreach ($doubleQuotedMatches[1] as $key) {
-                $keys[] = str_replace('\\"', '"', $key);
-            }
-        }
-    }
-
-    return array_values(array_unique($keys));
 }
 
 /**
- * Extract static t('…') / t("…") keys from frontend TypeScript sources.
- * Skips dynamic calls like t(variable) or t(definition.label).
- *
  * @return list<string>
  */
 function frontendTranslationKeysUsedInDirectory(string $directory): array
 {
-    $keys = [];
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($directory),
+    return TranslationCallSiteScanner::flatten(
+        new TranslationCallSiteScanner()->frontendLiteralKeysByFile($directory),
     );
-
-    foreach ($iterator as $file) {
-        if (! $file->isFile()) {
-            continue;
-        }
-
-        $extension = $file->getExtension();
-
-        if ($extension !== 'ts' && $extension !== 'tsx') {
-            continue;
-        }
-
-        $contents = (string) file_get_contents($file->getPathname());
-
-        // Match t('key') and t("key"), including keys that span multiple lines.
-        if (preg_match_all("/\\bt\\(\\s*(['\"])(.*?)\\1/s", $contents, $matches) !== false) {
-            foreach ($matches[2] as $key) {
-                // Collapse whitespace from multiline string literals.
-                $normalized = preg_replace('/\s+/', ' ', $key);
-
-                if (is_string($normalized) && $normalized !== '') {
-                    $keys[] = mb_trim($normalized);
-                }
-            }
-        }
-    }
-
-    return array_values(array_unique($keys));
 }
 
 /**
- * Extract English strings from frontend label maps that are later passed to t().
- *
- * Catches `_LABELS` / `labels` object literals (e.g. pipeline status modules)
- * that never appear as literal t('…') calls and would otherwise escape coverage.
- *
  * @return list<string>
  */
 function frontendLabelMapTranslationKeysUsedInDirectory(string $directory): array
 {
-    $keys = [];
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($directory),
+    return TranslationCallSiteScanner::flatten(
+        new TranslationCallSiteScanner()->frontendLabelMapKeysByFile($directory),
     );
-
-    foreach ($iterator as $file) {
-        if (! $file->isFile()) {
-            continue;
-        }
-
-        $extension = $file->getExtension();
-
-        if ($extension !== 'ts' && $extension !== 'tsx') {
-            continue;
-        }
-
-        $contents = (string) file_get_contents($file->getPathname());
-
-        // const FOO_LABELS = { … } / export const FOO_LABELS: Record<…> = { … }
-        // and inline `const labels: Record<string, string> = { … }`.
-        if (preg_match_all(
-            '/(?:export\s+)?const\s+(?:\w+_LABELS|labels)\b[^=]*=\s*\{(.*?)\};/s',
-            $contents,
-            $mapMatches,
-        ) === false) {
-            continue;
-        }
-
-        foreach ($mapMatches[1] as $mapBody) {
-            if (preg_match_all("/:\\s*(['\"])(.*?)\\1/s", $mapBody, $valueMatches) === false) {
-                continue;
-            }
-
-            foreach ($valueMatches[2] as $value) {
-                $normalized = preg_replace('/\s+/', ' ', $value);
-
-                if (is_string($normalized) && $normalized !== '') {
-                    $keys[] = mb_trim($normalized);
-                }
-            }
-        }
-    }
-
-    return array_values(array_unique($keys));
 }
 
 test('keeps English and Dutch translation keys fully aligned', function (): void {
@@ -179,9 +95,9 @@ test('keeps English and Dutch translation keys fully aligned', function (): void
     $missingInEnglish = array_values(array_diff($dutchKeys, $englishKeys));
 
     expect($missingInDutch)
-        ->toBeEmpty('Missing keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR))
+        ->toBeEmpty('Missing keys in Dutch domain files: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR))
         ->and($missingInEnglish)
-        ->toBeEmpty('Missing keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
 test('covers every backend translation key in both locale files', function (): void {
@@ -195,7 +111,7 @@ test('covers every backend translation key in both locale files', function (): v
     ));
 
     expect($missingInEnglish)
-        ->toBeEmpty('Missing backend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing backend keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
 });
 
 test('covers every frontend translation key in both locale files', function (): void {
@@ -213,9 +129,9 @@ test('covers every frontend translation key in both locale files', function (): 
     $missingInDutch = array_values(array_diff($frontendKeys, $dutchKeys));
 
     expect($missingInEnglish)
-        ->toBeEmpty('Missing frontend keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
+        ->toBeEmpty('Missing frontend keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
         ->and($missingInDutch)
-        ->toBeEmpty('Missing frontend keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing frontend keys in Dutch domain files: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
 });
 
 test('requires pipeline label-map strings in both locale files', function (): void {
@@ -245,9 +161,9 @@ test('requires pipeline label-map strings in both locale files', function (): vo
     $missingInDutch = array_values(array_diff($requiredPipelineLabels, array_keys($translations['dutch'])));
 
     expect($missingInEnglish)
-        ->toBeEmpty('Missing pipeline label keys in en.json: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
+        ->toBeEmpty('Missing pipeline label keys in English domain files: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR))
         ->and($missingInDutch)
-        ->toBeEmpty('Missing pipeline label keys in nl.json: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
+        ->toBeEmpty('Missing pipeline label keys in Dutch domain files: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR));
 });
 
 /**
@@ -303,4 +219,59 @@ test('keeps English and Dutch validation rule keys aligned', function (): void {
         ->toBeEmpty('Missing validation keys in nl: '.json_encode($missingInDutch, JSON_THROW_ON_ERROR))
         ->and($missingInEnglish)
         ->toBeEmpty('Missing validation keys in en: '.json_encode($missingInEnglish, JSON_THROW_ON_ERROR));
+});
+
+/**
+ * Reverse coverage: every key must have a call site or be pinned.
+ *
+ * Converts the sentence-key flaw from silent (edit English → Dutch orphan
+ * renders English forever) to loud. Pins cover dynamic producers the
+ * scanners cannot see; everything else must appear at a literal call site.
+ */
+test('every translation key has a call site or is pinned', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+    $translations = loadTranslationFiles($projectRoot);
+
+    /** @var array{pins: array<string, string>} $config */
+    $config = require $projectRoot.'/config/translations.php';
+    $pins = array_keys($config['pins']);
+
+    $referenced = array_values(array_unique([
+        ...translationKeysUsedInDirectory($projectRoot.'/app'),
+        ...frontendTranslationKeysUsedInDirectory($projectRoot.'/resources/js'),
+        ...frontendLabelMapTranslationKeysUsedInDirectory($projectRoot.'/resources/js'),
+    ]));
+
+    $orphans = array_values(array_diff(
+        array_keys($translations['english']),
+        $referenced,
+        $pins,
+    ));
+
+    expect($orphans)
+        ->toBeEmpty('Orphan translation keys (no call site, not pinned): '.json_encode($orphans, JSON_THROW_ON_ERROR));
+});
+
+test('pins cover every PipelineStatus headline and Locale label', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+
+    /** @var array{pins: array<string, string>} $config */
+    $config = require $projectRoot.'/config/translations.php';
+    $pins = array_keys($config['pins']);
+
+    // Generated from the enums so adding a case orphans loudly rather than
+    // shipping an English filter label inside Dutch UI.
+    $expected = [
+        ...array_map(
+            static fn (PipelineStatus $status): string => Str::headline($status->value),
+            PipelineStatus::cases(),
+        ),
+        ...array_map(
+            static fn (Locale $locale): string => $locale->label(),
+            Locale::cases(),
+        ),
+    ];
+
+    expect(array_values(array_diff($expected, $pins)))
+        ->toBeEmpty('Enum-derived keys missing from translations.pins');
 });

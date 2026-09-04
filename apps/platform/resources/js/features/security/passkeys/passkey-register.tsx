@@ -11,11 +11,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/use-translation';
 
-type Props = {
+type PasskeyRegistrationProps = {
     onSuccess: () => void;
 };
 
-export default function PasskeyRegistration({ onSuccess }: Props) {
+export default function PasskeyRegistration({
+    onSuccess,
+}: PasskeyRegistrationProps) {
     const { t } = useTranslation();
     const [name, setName] = useState(() => {
         const ua = navigator.userAgent;

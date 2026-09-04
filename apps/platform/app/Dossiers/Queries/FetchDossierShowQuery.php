@@ -9,6 +9,7 @@ use App\Clients\Models\Client;
 use App\Dossiers\Data\DossierAccessGrantData;
 use App\Dossiers\Data\DossierClientSummaryData;
 use App\Dossiers\Data\DossierExportData;
+use App\Dossiers\Data\DossierRolledFromData;
 use App\Dossiers\Data\DossierShowData;
 use App\Dossiers\Data\StaffAudioRecordingData;
 use App\Dossiers\Data\StaffDocumentRequestData;
@@ -54,6 +55,7 @@ final readonly class FetchDossierShowQuery
             'can_manage' => $request->user()?->can('create', DocumentRequest::class) ?? false,
             'can_edit' => $request->user()?->can('update', $dossier) ?? false,
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
+            'can_roll_over' => $request->user()?->can('rollOver', $dossier) ?? false,
             'can_review' => $request->user()?->hasTenantPermission(DocumentRequestPermission::Review) ?? false,
             'can_download' => $request->user()?->hasTenantPermission(UploadedDocumentPermission::Download) ?? false,
             'can_upload_audio' => $request->user()?->can('create', [AudioRecording::class, $dossier]) ?? false,
@@ -77,6 +79,7 @@ final readonly class FetchDossierShowQuery
         $dossier->load([
             'client:id,name,email',
             'responsibleUser:id,name,email',
+            'rolledFromDossier:id,title,period_label,period_year',
             'documentRequests' => fn ($query) => $query
                 ->with('reviewedBy:id,name')
                 ->oldest('sort_order'),
@@ -100,6 +103,9 @@ final readonly class FetchDossierShowQuery
             id: $dossier->id,
             title: $dossier->title,
             reference: $dossier->reference,
+            periodYear: $dossier->period_year,
+            periodLabel: $dossier->period_label,
+            rolledFrom: $this->rolledFromPayload($dossier),
             status: $dossier->status,
             dueDate: $dossier->due_date?->toDateString(),
             responsibleStaff: $responsibleUser instanceof User
@@ -133,6 +139,25 @@ final readonly class FetchDossierShowQuery
             audioRecordings: [],
             exportsCount: $dossier->exports_count ?? 0,
             audioRecordingsCount: $dossier->audio_recordings_count ?? 0,
+        );
+    }
+
+    /**
+     * The previous period this dossier was started from, when there is one.
+     */
+    private function rolledFromPayload(Dossier $dossier): ?DossierRolledFromData
+    {
+        $source = $dossier->rolledFromDossier;
+
+        if (! $source instanceof Dossier) {
+            return null;
+        }
+
+        return new DossierRolledFromData(
+            id: $source->id,
+            title: $source->title,
+            periodLabel: $source->period_label,
+            periodYear: $source->period_year,
         );
     }
 

@@ -18,6 +18,7 @@ function input(
         canSendReminder: true,
         canUploadAudio: true,
         canDownloadAudio: true,
+        canRollOver: true,
         dossierStatus: 'draft',
         hasFormItems: true,
         ...overrides,

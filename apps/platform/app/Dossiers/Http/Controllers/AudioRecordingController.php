@@ -104,7 +104,7 @@ final class AudioRecordingController extends Controller
             ]);
         }
 
-        return Inertia::render('audio-recordings/show', $props);
+        return Inertia::render('workspaces/audio-recordings/show', $props);
     }
 
     /**

@@ -1,6 +1,7 @@
 ---
 paths:
   - 'lang/**'
+  - 'app/*/lang/**'
   - 'resources/js/**'
   - 'app/**/Enums/**'
   - 'app/**/Http/Controllers/**'
@@ -29,8 +30,12 @@ UI strings are product copy for accounting/legal firms — not dev notes, scaffo
 
 ## Translation keys
 
-- Full English sentences as keys in `lang/en.json` / `lang/nl.json` via `t('…')` / `__()`.
-- Change a string → update the call site, `en.json`, and `nl.json` together.
+- Full English sentences as keys in `app/<Domain>/lang/{en,nl}.json` via `t('…')` / `__()`.
+- Copy for a domain lives beside that domain. Run `php artisan lang:organize` rather than hand-placing a key — placement is derived from call sites.
+- Never create `lang/{locale}.json`: FileLoader merges the base lang path last, so a retained monolith silently wins every collision and the co-located files become inert.
+- Textual insertion into the JSON files is no longer legitimate — they are machine-written by `lang:organize`.
+- A React string's copy lives in its PHP domain directory (see `config/translations.php` for the JS path → domain map).
+- Change a string → update the call site and re-run `lang:organize` so both locales stay aligned.
 - `lang/{locale}/*.php` is for framework bags only — no new dotted short keys.
 - Remove orphan keys when copy is deleted; do not leave unused entries.
 
@@ -45,3 +50,6 @@ Do **not** add:
 - Inline comments that restate the next line.
 
 **Do** keep comments for non-obvious traps: React Aria quirks, Mobile Safari zoom, security gates for PII, Octane/state, measured layout fixes.
+
+## Never recreate lang/{locale}.json beside domain files
+FileLoader::loadJsonPaths merges array_merge($jsonPaths, $paths) — the base lang/ path is last and wins every collision. A leftover or recreated lang/en.json makes every app/*/lang file inert while tests still pass and Dutch pages still render. Delete the monolith on switchover; lang:organize --check fails if it returns. Framework bags stay in lang/{locale}/*.php only.

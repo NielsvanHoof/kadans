@@ -190,7 +190,7 @@ export default function UploadedDocumentShowContent({
 
                 <DocumentExtractionView
                     extraction={uploadedDocument.extraction}
-                    rawJson={null}
+                    rawJson={uploadedDocument.raw_json}
                 />
             </div>
         </div>

@@ -1,7 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { ChevronsUpDown } from 'lucide-react';
-import { UserInfo } from '@/components/app-shell/user-info';
-import { UserMenuContent } from '@/components/app-shell/user-menu-content';
+import UserInfo from '@/components/app-shell/user-info';
+import UserMenuContent from '@/components/app-shell/user-menu-content';
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -12,7 +12,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
-export function NavUser() {
+export default function NavUser() {
     const { auth } = usePage().props;
 
     if (!auth.user) {

@@ -11,7 +11,7 @@ export type OAuthConnectionSummary = {
     has_workspace_scopes?: boolean;
 };
 
-export type Props = {
+type ManageConnectedAccountsProps = {
     oauthProviders: string[];
     oauthConnections: OAuthConnectionSummary[];
 };
@@ -23,7 +23,7 @@ export type Props = {
 export default function ManageConnectedAccounts({
     oauthProviders,
     oauthConnections,
-}: Props) {
+}: ManageConnectedAccountsProps) {
     const { t } = useTranslation();
 
     const connectionByProvider = Object.fromEntries(

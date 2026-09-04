@@ -1,10 +1,12 @@
 {
-    "dossiers/index": {
+    "workspaces/dossiers/index": {
         "can_manage": "bool",
         "dossiers.current_page": "int",
         "dossiers.data.0.client_name": "string",
         "dossiers.data.0.due_date": "string",
         "dossiers.data.0.id": "int",
+        "dossiers.data.0.period_label": "string",
+        "dossiers.data.0.period_year": "int",
         "dossiers.data.0.reference": "string",
         "dossiers.data.0.responsible_name": "null",
         "dossiers.data.0.status": "string",
@@ -33,7 +35,7 @@
         "indexQuery.sorts.0.label": "string",
         "sort": "null"
     },
-    "dossiers/show": {
+    "workspaces/dossiers/show": {
         "access_grant_portal_url": "null",
         "access_grant_token": "null",
         "can_download": "bool",
@@ -41,6 +43,7 @@
         "can_edit": "bool",
         "can_manage": "bool",
         "can_review": "bool",
+        "can_roll_over": "bool",
         "can_send_reminder": "bool",
         "can_upload_audio": "bool",
         "dossier.access_grants": "list<empty>",
@@ -58,6 +61,8 @@
         "dossier.last_client_message_sent_at": "null",
         "dossier.last_client_opened_at": "null",
         "dossier.next_reminder_at": "null",
+        "dossier.period_label": "string",
+        "dossier.period_year": "int",
         "dossier.ready_to_complete": "bool",
         "dossier.reference": "string",
         "dossier.reminder_interval_days": "int",
@@ -67,10 +72,11 @@
         "dossier.review_summary.rejected": "int",
         "dossier.review_summary.submitted": "int",
         "dossier.review_summary.total": "int",
+        "dossier.rolled_from": "null",
         "dossier.status": "string",
         "dossier.title": "string"
     },
-    "dossiers/review": {
+    "workspaces/dossiers/review": {
         "can_download": "bool",
         "can_edit": "bool",
         "can_manage": "bool",
@@ -106,7 +112,7 @@
         "dossier.status": "string",
         "dossier.title": "string"
     },
-    "dossiers/builder": {
+    "workspaces/dossiers/builder": {
         "builder_lock.expires_at": "string",
         "builder_lock.holder.email": "string",
         "builder_lock.holder.id": "int",
@@ -137,7 +143,7 @@
         "dossier.title": "string",
         "templates": "list<empty>"
     },
-    "dossiers/archived": {
+    "workspaces/dossiers/archived": {
         "can_restore": "bool",
         "can_restore_clients": "bool",
         "dossiers.current_page": "int",
@@ -166,7 +172,7 @@
         "indexQuery.sorts.0.label": "string",
         "sort": "null"
     },
-    "clients/index": {
+    "workspaces/clients/index": {
         "can_manage": "bool",
         "clients.current_page": "int",
         "clients.data.0.dossiers_count": "int",

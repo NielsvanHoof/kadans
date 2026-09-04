@@ -67,7 +67,9 @@ describe('PortalFileRequestContent uploads', () => {
             />,
         );
 
-        const link = screen.getByRole('link', { name: 'Download :filename' });
+        const link = screen.getByRole('link', {
+            name: 'Download payslip-january.pdf',
+        });
 
         expect(link).toHaveAttribute(
             'href',
@@ -85,10 +87,12 @@ describe('PortalFileRequestContent uploads', () => {
 
         // Reading back what you sent is not the same permission as changing it.
         expect(
-            screen.getByRole('link', { name: 'Download :filename' }),
+            screen.getByRole('link', { name: 'Download payslip-january.pdf' }),
         ).toBeInTheDocument();
         expect(
-            screen.queryByRole('button', { name: 'Remove :filename' }),
+            screen.queryByRole('button', {
+                name: 'Remove payslip-january.pdf',
+            }),
         ).not.toBeInTheDocument();
     });
 
@@ -107,10 +111,10 @@ describe('PortalFileRequestContent uploads', () => {
         );
 
         expect(
-            screen.getByRole('link', { name: 'Download :filename' }),
+            screen.getByRole('link', { name: 'Download payslip-january.pdf' }),
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('button', { name: 'Remove :filename' }),
+            screen.getByRole('button', { name: 'Remove payslip-january.pdf' }),
         ).toBeInTheDocument();
     });
 
@@ -138,7 +142,7 @@ describe('PortalFileRequestContent uploads', () => {
         );
 
         expect(
-            screen.getAllByRole('link', { name: 'Download :filename' }),
+            screen.getAllByRole('link', { name: /^Download / }),
         ).toHaveLength(2);
     });
 });

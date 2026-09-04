@@ -153,9 +153,7 @@ describe('WaitingItemsSummary', () => {
         ]);
 
         expect(screen.getByText('Photo is cut off.')).toBeInTheDocument();
-        expect(
-            screen.getByText('Returned by :name on :date'),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/^Returned by /)).toBeInTheDocument();
     });
 
     it('marks an item optional only when it is not required', () => {
@@ -200,7 +198,7 @@ describe('WaitingItemsSummary', () => {
 
         await user.click(
             screen.getByRole('button', {
-                name: 'Not currently asked (:count)',
+                name: /Not currently asked \(\d+\)/,
             }),
         );
 
@@ -225,7 +223,7 @@ describe('WaitingItemsSummary', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByRole('button', {
-                name: 'Not currently asked (:count)',
+                name: /Not currently asked \(\d+\)/,
             }),
         ).toBeInTheDocument();
     });

@@ -24,28 +24,29 @@ test('staff can open the OCR extraction page for an uploaded document', function
         'title' => 'Payslip',
         'status' => DocumentRequestStatus::Submitted,
     ]);
+    $extractedText = json_encode([
+        'document_type' => 'payslip',
+        'summary' => 'January payslip',
+        'fields' => [
+            [
+                'label' => 'BSN',
+                'value' => '123456789',
+                'confidence' => 0.97,
+                'sensitivity' => 'bsn',
+            ],
+        ],
+        'tables' => [
+            [
+                'title' => 'Earnings',
+                'headers' => ['Code', 'Amount'],
+                'rows' => [['1000', '2500']],
+            ],
+        ],
+        'notes' => [],
+        'confidence' => 0.94,
+    ], JSON_THROW_ON_ERROR);
     $uploaded = UploadedDocument::factory()->processed(
-        json_encode([
-            'document_type' => 'payslip',
-            'summary' => 'January payslip',
-            'fields' => [
-                [
-                    'label' => 'BSN',
-                    'value' => '123456789',
-                    'confidence' => 0.97,
-                    'sensitivity' => 'bsn',
-                ],
-            ],
-            'tables' => [
-                [
-                    'title' => 'Earnings',
-                    'headers' => ['Code', 'Amount'],
-                    'rows' => [['1000', '2500']],
-                ],
-            ],
-            'notes' => [],
-            'confidence' => 0.94,
-        ], JSON_THROW_ON_ERROR),
+        $extractedText,
     )->create([
         'tenant_id' => $tenant->id,
         'document_request_id' => $documentRequest->id,
@@ -60,7 +61,7 @@ test('staff can open the OCR extraction page for an uploaded document', function
         ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('uploaded-documents/show')
+            ->component('workspaces/uploaded-documents/show')
             ->where('uploaded_document.original_filename', 'payslip.pdf')
             ->where('uploaded_document.processing_status', DocumentProcessingStatus::Completed->value)
             ->where('uploaded_document.extraction.document_type', 'payslip')
@@ -69,6 +70,7 @@ test('staff can open the OCR extraction page for an uploaded document', function
             ->where('uploaded_document.extraction.fields.0.value', '123456789')
             ->where('uploaded_document.extraction.fields.0.confidence', 0.97)
             ->where('uploaded_document.extraction.fields.0.sensitivity', 'bsn')
+            ->where('uploaded_document.raw_json', $extractedText)
             ->where('dossier.id', $dossier->id)
             ->where('document_request.title', 'Payslip')
         );
@@ -183,6 +185,7 @@ test('extraction page island returns json for the uploaded document', function (
         ->assertOk()
         ->assertJsonPath('uploaded_document.processing_status', DocumentProcessingStatus::Completed->value)
         ->assertJsonPath('uploaded_document.extraction.document_type', 'payslip')
+        ->assertJsonPath('uploaded_document.raw_json', $uploaded->extracted_text)
         ->assertJsonMissingPath('document_request')
         ->assertJsonMissingPath('dossier');
 });

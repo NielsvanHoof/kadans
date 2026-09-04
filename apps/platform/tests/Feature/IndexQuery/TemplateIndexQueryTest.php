@@ -30,7 +30,7 @@ test('templates index paginates system and firm buckets independently', function
         ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('questionnaires/index')
+            ->component('workspaces/questionnaires/index')
             ->where('system_templates.total', 4)
             ->has('firm_templates.data', 15)
             ->where('firm_templates.total', 16)

@@ -89,7 +89,9 @@ describe('RestoreClientButton', () => {
         );
 
         expect(
-            await screen.findByRole('alertdialog', { name: 'Restore :name?' }),
+            await screen.findByRole('alertdialog', {
+                name: 'Restore Bakkerij de Vries?',
+            }),
         ).toBeInTheDocument();
     });
 });

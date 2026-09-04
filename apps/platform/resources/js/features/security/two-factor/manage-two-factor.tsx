@@ -9,13 +9,13 @@ import { useTwoFactorAuth } from '@/features/security/two-factor/use-two-factor-
 import { useTranslation } from '@/hooks/use-translation';
 import { disable, enable } from '@/routes/two-factor';
 
-export type Props = {
+export type ManageTwoFactorProps = {
     canManageTwoFactor?: boolean;
     requiresConfirmation?: boolean;
     twoFactorEnabled?: boolean;
 };
 
-export default function ManageTwoFactor(props: Props) {
+export default function ManageTwoFactor(props: ManageTwoFactorProps) {
     const requiresConfirmation = props.requiresConfirmation ?? false;
     const twoFactorEnabled = props.twoFactorEnabled ?? false;
     const { t } = useTranslation();

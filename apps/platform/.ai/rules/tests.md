@@ -36,3 +36,10 @@ Commit `tests/.pest/shards.json` and refresh with `composer test:shards:update`.
 
 ## No Pest TIA or CodeQL
 Do not enable Pest TIA (`pest()->tia()` / `--tia` / `PEST_TIA`) — it requires the app to be the git repository root and is incompatible with `apps/platform` in the monorepo. Do not add CodeQL or `codeql-action` SARIF uploads to platform CI until the repo is public or has GitHub Advanced Security.
+
+## Rebuild the Inertia prop contract fixture through docker compose exec, not sail
+InertiaPropContractTest's docblock says `REBUILD_INERTIA_CONTRACT=1 vendor/bin/sail artisan test --filter='prop contract'`. That does not work: the var is set on the host shell and Sail does not forward it, so the run just fails again with the same diff. Use `docker compose exec -e REBUILD_INERTIA_CONTRACT=1 laravel.test php vendor/bin/pest tests/Feature/Platform/InertiaPropContractTest.php`.
+
+Also `--filter='prop contract'` matches nothing; the test name resolves to `dossier_page_props_keep_their_contract`. Pass the file path instead.
+
+Before rebuilding, pin any new nullable field in the test's factory setup (as `reference` and `due_date` already are). A field left null records as the type `"null"`, which asserts nothing and flaps.

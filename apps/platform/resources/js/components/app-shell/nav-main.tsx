@@ -9,7 +9,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useTranslation } from '@/hooks/use-translation';
 import type { NavItem } from '@/types';
 
-export function NavMain({
+export default function NavMain({
     items,
     label,
 }: {

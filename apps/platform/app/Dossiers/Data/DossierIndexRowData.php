@@ -19,6 +19,8 @@ final class DossierIndexRowData extends Data
         public readonly string $clientName,
         public readonly string $title,
         public readonly ?string $reference,
+        public readonly ?int $periodYear,
+        public readonly ?string $periodLabel,
         public readonly DossierStatus $status,
         public readonly ?string $dueDate,
         public readonly ?string $responsibleName,

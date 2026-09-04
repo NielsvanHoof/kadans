@@ -56,7 +56,7 @@ test('dossiers index filters by status and search', function (): void {
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[status]=draft')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/index')
+            ->component('workspaces/dossiers/index')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.title', 'Payroll 2025')
             ->where('dossiers.data.0.status', 'draft')
@@ -167,4 +167,36 @@ test('dossiers index surfaces scout search truncation when the key limit is hit'
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('dossiers.data', 2)
             ->where('indexQuery.search_truncated', true));
+});
+
+test('dossiers index searches on the period label and returns it in the row', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+
+    Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Annual accounts',
+        'reference' => 'ANN-2025',
+        'period_year' => 2025,
+        'period_label' => 'Boekjaar 2025',
+    ]);
+    Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Payroll',
+        'reference' => 'PAY-2024',
+        'period_year' => 2024,
+        'period_label' => 'Boekjaar 2024',
+    ]);
+
+    // The period is in toSearchableArray, so a firm can find last year's work
+    // by the name it gives the period rather than by title or reference.
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[q]=Boekjaar+2025')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->has('dossiers.data', 1)
+            ->where('dossiers.data.0.period_label', 'Boekjaar 2025')
+            ->where('dossiers.data.0.period_year', 2025));
 });

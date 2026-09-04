@@ -1,9 +1,9 @@
 import { Deferred } from '@inertiajs/react';
 import { Bell } from 'lucide-react';
-import { AppContent } from '@/components/app-shell/app-content';
-import { AppShell } from '@/components/app-shell/app-shell';
-import { AppSidebar } from '@/components/app-shell/app-sidebar';
-import { AppSidebarHeader } from '@/components/app-shell/app-sidebar-header';
+import AppContent from '@/components/app-shell/app-content';
+import AppShell from '@/components/app-shell/app-shell';
+import AppSidebar from '@/components/app-shell/app-sidebar';
+import AppSidebarHeader from '@/components/app-shell/app-sidebar-header';
 import SkipToMainContent from '@/components/primitives/skip-to-main-content';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/features/notifications/notification-bell';

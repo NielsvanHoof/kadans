@@ -66,7 +66,7 @@ test('dossier overview page renders props for each workflow status', function (D
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->where('dossier.id', $dossier->id)
             ->where('dossier.status', $status->value)
             ->has('dossier.document_requests', 0)
@@ -98,7 +98,7 @@ test('dossier builder page renders lean builder props', function (): void {
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/builder')
+            ->component('workspaces/dossiers/builder')
             ->where('dossier.id', $dossier->id)
             ->where('dossier.title', $dossier->title)
             ->where('dossier.status', DossierStatus::Draft->value)
@@ -246,7 +246,7 @@ test('dossier review page renders lean review props', function (): void {
         ->get(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/review')
+            ->component('workspaces/dossiers/review')
             ->where('dossier.id', $dossier->id)
             ->has('dossier.client')
             ->has('dossier.document_requests', 1)
@@ -272,7 +272,7 @@ test('empty dossier overview exposes zero form items for invite gating', functio
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->has('dossier.document_requests', 0)
             ->where('dossier.review_summary.total', 0)
             ->where('dossier.ready_to_complete', false)
@@ -293,7 +293,7 @@ test('read-only member can view overview builder and review with restricted acti
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->where('can_manage', false)
             ->where('can_edit', false)
             ->where('can_review', false));
@@ -302,7 +302,7 @@ test('read-only member can view overview builder and review with restricted acti
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/builder')
+            ->component('workspaces/dossiers/builder')
             ->where('can_manage', false)
             ->where('builder_lock.is_mine', false)
             ->missing('can_edit')
@@ -312,7 +312,7 @@ test('read-only member can view overview builder and review with restricted acti
         ->get(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/review')
+            ->component('workspaces/dossiers/review')
             ->where('can_manage', false)
             ->where('can_edit', false)
             ->where('can_review', false));
@@ -330,7 +330,7 @@ test('reviewer can view dossier surfaces with review permissions only', function
         ->get(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/review')
+            ->component('workspaces/dossiers/review')
             ->where('can_manage', false)
             ->where('can_edit', false)
             ->where('can_review', true)
@@ -356,7 +356,7 @@ test('dossier overview with multiple audio recordings resolves can_delete withou
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->missing('audio_recordings')
             ->loadDeferredProps(fn (Assert $reload): Assert => $reload
                 ->has('audio_recordings', 2)
@@ -387,7 +387,7 @@ test('dossier overview exposes synchronous export and recording counts for the t
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->where('dossier.audio_recordings_count', 2)
             ->where('dossier.exports_count', 3)
             ->where('dossier.audio_recordings', [])
@@ -407,7 +407,7 @@ test('dossier overview counts are zero when nothing has been exported or recorde
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->where('dossier.audio_recordings_count', 0)
             ->where('dossier.exports_count', 0));
 });
@@ -439,7 +439,7 @@ test('dossier overview signs the days remaining on the due date', function (): v
             ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
             ->assertOk()
             ->assertInertia(fn (Assert $page): Assert => $page
-                ->component('dossiers/show')
+                ->component('workspaces/dossiers/show')
                 ->where('dossier.days_remaining', $expected));
     }
 });
@@ -474,7 +474,7 @@ test('dossier overview serializes only the latest pipeline per uploaded document
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->loadDeferredProps(fn (Assert $reload): Assert => $reload
                 ->where('document_requests.0.uploaded_documents.0.pipeline.id', $latestPipeline->id)));
 });
@@ -506,7 +506,7 @@ test('dossier overview keeps every valid grant and bounds expired grant history'
         ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->has('dossier.access_grants', 21)
             ->where('dossier.access_grants.0.id', $validGrant->id)
             ->where('dossier.access_grants.0.is_valid', true));

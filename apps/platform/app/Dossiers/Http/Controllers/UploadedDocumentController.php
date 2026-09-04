@@ -108,7 +108,7 @@ final class UploadedDocumentController extends Controller
             ],
         );
 
-        return Inertia::render('uploaded-documents/show', $props);
+        return Inertia::render('workspaces/uploaded-documents/show', $props);
     }
 
     /**

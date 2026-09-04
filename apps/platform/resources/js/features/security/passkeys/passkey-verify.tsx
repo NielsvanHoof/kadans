@@ -9,7 +9,7 @@ import { Field, FieldGroup } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 
-type Props = {
+type PasskeyVerifyProps = {
     routes?: {
         options: UrlMethodPair;
         submit: UrlMethodPair;
@@ -40,7 +40,7 @@ export default function PasskeyVerify({
     label,
     loadingLabel,
     separator,
-}: Props = {}) {
+}: PasskeyVerifyProps = {}) {
     const { t } = useTranslation();
     const { verify, isLoading, error, isSupported } = usePasskeyVerify({
         ...(routes && {

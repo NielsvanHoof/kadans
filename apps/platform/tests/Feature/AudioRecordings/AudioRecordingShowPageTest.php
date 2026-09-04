@@ -34,7 +34,7 @@ test('staff can open the transcript page for an audio recording', function (): v
         ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('audio-recordings/show')
+            ->component('workspaces/audio-recordings/show')
             ->where('audio_recording.original_filename', 'call.mp3')
             ->where('audio_recording.transcription_status', TranscriptionStatus::Completed->value)
             ->where('audio_recording.transcript', 'Hello, this is a test call.')

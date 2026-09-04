@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import OAuthProviderIcon from '@/features/integrations/oauth-provider-icon';
 import { cn } from '@/lib/utils';
 
-type Props = {
+type OAuthProviderButtonProps = {
     provider: string;
     href: string;
     children: ReactNode;
@@ -23,7 +23,7 @@ export default function OAuthProviderButton({
     href,
     children,
     className,
-}: Props) {
+}: OAuthProviderButtonProps) {
     return (
         <a
             href={href}

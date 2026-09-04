@@ -31,7 +31,7 @@ describe('PasskeyItem', () => {
 
         expect(screen.getByText('MacBook Pro')).toBeInTheDocument();
         expect(screen.getByText('iCloud Keychain')).toBeInTheDocument();
-        expect(screen.getByText('Added :when')).toBeInTheDocument();
+        expect(screen.getByText('Added 2 days ago')).toBeInTheDocument();
     });
 
     it('shows the last-used line only when the passkey has been used', () => {
@@ -41,7 +41,7 @@ describe('PasskeyItem', () => {
                 onDelete={vi.fn()}
             />,
         );
-        expect(screen.queryByText(/Last used :when/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Last used /)).not.toBeInTheDocument();
 
         rerender(
             <PasskeyItem
@@ -49,7 +49,7 @@ describe('PasskeyItem', () => {
                 onDelete={vi.fn()}
             />,
         );
-        expect(screen.getByText(/Last used :when/)).toBeInTheDocument();
+        expect(screen.getByText(/Last used /)).toBeInTheDocument();
     });
 
     it('confirms via the alert dialog before calling onDelete', async () => {

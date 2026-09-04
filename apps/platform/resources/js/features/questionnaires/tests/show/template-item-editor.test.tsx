@@ -107,7 +107,7 @@ async function generateSuggestions(
     await user.click(screen.getByRole('button', { name: 'Suggest items' }));
 
     await waitFor(() =>
-        expect(screen.getByText(':count suggestions')).toBeInTheDocument(),
+        expect(screen.getByText(/\d+ suggestions/)).toBeInTheDocument(),
     );
 }
 
@@ -202,9 +202,7 @@ describe('TemplateItemEditor — AI suggestions', () => {
         await user.click(screen.getByRole('button', { name: 'Add all' }));
 
         await waitFor(() => expect(routerPost).toHaveBeenCalledTimes(2));
-        expect(
-            screen.queryByText(':count suggestions'),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/\d+ suggestions/)).not.toBeInTheDocument();
     });
 
     it('toasts when the draft endpoint fails and leaves the trigger actionable', async () => {
@@ -226,9 +224,7 @@ describe('TemplateItemEditor — AI suggestions', () => {
         expect(
             screen.getByRole('button', { name: 'Suggest items' }),
         ).toBeEnabled();
-        expect(
-            screen.queryByText(':count suggestions'),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/\d+ suggestions/)).not.toBeInTheDocument();
     });
 
     it('toasts partial failure when Add all hits an error mid-sequence', async () => {
@@ -252,7 +248,9 @@ describe('TemplateItemEditor — AI suggestions', () => {
 
         await waitFor(() =>
             expect(toastError).toHaveBeenCalledWith(
-                'Could not add :count of the suggestions. The rest were applied.',
+                expect.stringMatching(
+                    /^Could not add \d+ of the suggestions\./,
+                ),
             ),
         );
         expect(routerPost).toHaveBeenCalledTimes(2);

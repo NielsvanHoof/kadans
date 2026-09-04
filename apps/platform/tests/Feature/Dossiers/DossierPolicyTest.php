@@ -46,6 +46,7 @@ test('owner can manage and follow up a draft dossier', function (): void {
         ->and($policy->update($owner, $dossier))->toBeTrue()
         ->and($policy->restore($owner, $dossier))->toBeTrue()
         ->and($policy->sendReminder($owner, $dossier))->toBeTrue()
+        ->and($policy->rollOver($owner, $dossier))->toBeTrue()
         ->and($policy->delete($owner, $dossier))->toBeTrue();
 });
 
@@ -77,7 +78,21 @@ test('read-only members can view dossiers but cannot create or complete', functi
         ->and($policy->create($reader))->toBeFalse()
         ->and($policy->restore($reader, $dossier))->toBeFalse()
         ->and($policy->sendReminder($reader, $dossier))->toBeFalse()
+        ->and($policy->rollOver($reader, $dossier))->toBeFalse()
         ->and($policy->complete($reader, $dossier))->toBeFalse();
+});
+
+test('completed dossiers can still be rolled over', function (): void {
+    $context = dossierPolicyContext(DossierStatus::Completed);
+
+    expect($context['policy']->rollOver($context['owner'], $context['dossier']))->toBeTrue();
+});
+
+test('reviewers cannot roll a dossier over', function (): void {
+    $context = dossierPolicyContext();
+    $reviewer = workspaceMember($context['tenant'], Role::Reviewer);
+
+    expect($context['policy']->rollOver($reviewer, $context['dossier']))->toBeFalse();
 });
 
 test('users outside the tenant cannot view the dossier', function (): void {
