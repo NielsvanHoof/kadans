@@ -35,9 +35,20 @@ final readonly class IntegerBound
         private ClampDirection $direction,
     ) {}
 
+    /**
+     * The inherited value, clamped into the band a firm could have chosen.
+     *
+     * Clamped rather than raw because an operator can misconfigure it — a zero
+     * or a negative idle window, or one longer than the session store will
+     * honour. Reporting the raw value here would let a bad deploy through the
+     * one place that is supposed to catch it, and would also show the reader a
+     * default that is not the one actually applied.
+     */
     public function platform(): ?int
     {
-        return ($this->platform)();
+        $configured = ($this->platform)();
+
+        return $configured === null ? null : $this->clamp($configured);
     }
 
     /**
@@ -52,17 +63,12 @@ final readonly class IntegerBound
             return $this->platform();
         }
 
-        $ceiling = $this->max();
-
-        return max(
-            $this->min(),
-            $ceiling === null ? $override : min($ceiling, $override),
-        );
+        return $this->clamp($override);
     }
 
     public function min(): int
     {
-        $platform = $this->platform();
+        $platform = ($this->platform)();
 
         if ($this->direction === ClampDirection::HigherIsStricter && $platform !== null) {
             return max($this->hardMin, $platform);
@@ -74,7 +80,7 @@ final readonly class IntegerBound
     public function max(): ?int
     {
         $hardMax = ($this->hardMax)();
-        $platform = $this->platform();
+        $platform = ($this->platform)();
 
         if ($this->direction === ClampDirection::LowerIsStricter && $platform !== null) {
             return $hardMax === null ? $platform : min($hardMax, $platform);
@@ -96,5 +102,15 @@ final readonly class IntegerBound
         }
 
         return $rules;
+    }
+
+    private function clamp(int $value): int
+    {
+        $ceiling = $this->max();
+
+        return max(
+            $this->min(),
+            $ceiling === null ? $value : min($ceiling, $value),
+        );
     }
 }
