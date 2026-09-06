@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tenancy;
 
+use App\Accounts\Contracts\TwoFactorEnforcementSource;
 use App\Accounts\Models\User;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Models\Tenant;
@@ -16,6 +17,7 @@ use App\Tenancy\Policies\TenantMembershipPolicy;
 use App\Tenancy\Policies\TenantRolePolicy;
 use App\Tenancy\Policies\TenantSettingsPolicy;
 use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\TenantTwoFactorEnforcementSource;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -35,6 +37,14 @@ final class TenancyServiceProvider extends ServiceProvider
             static fn (): PermissionRegistry => new PermissionRegistry(
                 Config::array('tenant-permissions.enums'),
             ),
+        );
+
+        // Accounts sits below Tenancy and owns this contract; we supply the
+        // firm-aware answer. Registered after AccountsServiceProvider, whose
+        // null-object binding this deliberately replaces.
+        $this->app->scoped(
+            TwoFactorEnforcementSource::class,
+            TenantTwoFactorEnforcementSource::class,
         );
     }
 

@@ -383,7 +383,20 @@ the policy and `App\Accounts\Http\Middleware\RequireTwoFactorAuthentication` app
 | `by_permission` | Staff whose role in the current workspace carries `security.two_factor.permission` — `documents.download` by default. |
 
 `grace_days` (14 by default) is counted from account creation so a new hire can work
-while they enrol; 0 requires enrolment before the first page load.
+while they enrol; 0 requires enrolment before the first page load. It stays a
+platform setting: it is not covered by the strictness ordering below, so a firm
+cannot shorten it.
+
+**A firm may raise the bar, never lower it.** The setting above is a floor. On the
+firm settings page a firm can move itself up the table — `off` → `by_permission` →
+`all` — and the middleware applies `TwoFactorEnforcement::strictest()` against the
+configured level itself rather than trusting whatever it is handed. So the effective
+level is at least the platform one by construction: a firm's row saying `off`, a
+mistaken implementation, or a hand-edited database cannot weaken it, and the boot
+guard below keeps covering every firm without knowing that firms exist. The ordering
+is a total order only because `security.two_factor.permission` is platform-wide — if
+that key ever became per-firm, `by_permission` would stop being a subset of `all` and
+the comparison would be meaningless.
 
 Three details that are load-bearing:
 

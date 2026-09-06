@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Accounts\AccountsServiceProvider;
 use App\AudioProcessing\AudioProcessingServiceProvider;
 use App\Audit\AuditServiceProvider;
 use App\ClientPortal\ClientPortalServiceProvider;
@@ -28,6 +29,9 @@ return [
     TypeScriptTransformerServiceProvider::class,
     PlatformServiceProvider::class,
     IntegrationsServiceProvider::class,
+    // Before Tenancy on purpose: Tenancy rebinds TwoFactorEnforcementSource and
+    // the last binding wins.
+    AccountsServiceProvider::class,
     TenancyServiceProvider::class,
     PipelinesServiceProvider::class,
     DocumentProcessingServiceProvider::class,
