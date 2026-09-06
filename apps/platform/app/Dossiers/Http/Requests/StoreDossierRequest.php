@@ -9,9 +9,12 @@ use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Settings\FirmSettingBounds;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Override;
 use RuntimeException;
 
 final class StoreDossierRequest extends FormRequest
@@ -52,8 +55,31 @@ final class StoreDossierRequest extends FormRequest
                     ->where('tenant_id', $this->tenantId())
                     ->where('status', TenantMembershipStatus::Active->value),
             ],
-            'reminder_interval_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'reminder_interval_days' => FirmSettingBounds::reminderIntervalDays()->rules(),
         ];
+    }
+
+    /**
+     * Fall back to the firm's house rhythm when the caller said nothing at all.
+     *
+     * Absent and empty are different answers here. An absent key means the
+     * caller expressed no preference, so the firm default applies. A key that
+     * is present but empty means "no reminders on this dossier", which must
+     * survive untouched — filling it would turn reminders on for a dossier
+     * whose author deliberately turned them off.
+     */
+    #[Override]
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('reminder_interval_days')) {
+            return;
+        }
+
+        $default = resolve(ResolveTenantSettingsQuery::class)->defaultReminderIntervalDays();
+
+        if ($default !== null) {
+            $this->merge(['reminder_interval_days' => $default]);
+        }
     }
 
     private function tenantId(): int

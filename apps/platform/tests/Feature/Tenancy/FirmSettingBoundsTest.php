@@ -13,7 +13,7 @@ covers(FirmSettingBounds::class);
 /**
  * @return list<int>
  */
-function probeValues(IntegerBound $bound): array
+function probeValuesForBoundsTest(IntegerBound $bound): array
 {
     $min = $bound->min();
     $max = $bound->max() ?? $min + 10;
@@ -28,7 +28,7 @@ function probeValues(IntegerBound $bound): array
 test('validation and the read-time clamp agree on every value', function (string $name): void {
     $bound = FirmSettingBounds::$name();
 
-    foreach (probeValues($bound) as $value) {
+    foreach (probeValuesForBoundsTest($bound) as $value) {
         $passes = Validator::make(
             ['value' => $value],
             ['value' => $bound->rules()],

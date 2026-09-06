@@ -9,6 +9,7 @@ use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Settings\FirmSettingBounds;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -51,7 +52,9 @@ final class UpdateDossierRequest extends FormRequest
                     ->where('tenant_id', $this->tenantId())
                     ->where('status', TenantMembershipStatus::Active->value),
             ],
-            'reminder_interval_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            // No firm-default fallback here, unlike on create: an edit that
+            // omits the field must not switch reminders back on.
+            'reminder_interval_days' => FirmSettingBounds::reminderIntervalDays()->rules(),
         ];
     }
 

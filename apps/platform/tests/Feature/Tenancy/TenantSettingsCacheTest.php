@@ -13,7 +13,7 @@ covers(ResolveTenantSettingsQuery::class);
 /**
  * @return array{0: mixed, 1: int}
  */
-function countingQueries(Closure $callback): array
+function countQueriesForSettingsCacheTest(Closure $callback): array
 {
     $count = 0;
     DB::listen(function () use (&$count): void {
@@ -30,7 +30,7 @@ test('repeated reads in one request hit the database once', function (): void {
     $query = resolve(ResolveTenantSettingsQuery::class);
     TenantSettingsCache::forget($tenant->id);
 
-    [, $queryCount] = countingQueries(function () use ($query, $tenant): void {
+    [, $queryCount] = countQueriesForSettingsCacheTest(function () use ($query, $tenant): void {
         $query->forTenantOrNull($tenant);
         $query->forTenantOrNull($tenant);
         $query->forTenantOrNull($tenant);
