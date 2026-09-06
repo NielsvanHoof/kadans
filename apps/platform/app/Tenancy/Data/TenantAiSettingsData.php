@@ -17,12 +17,16 @@ final class TenantAiSettingsData extends Data
         public readonly bool $reminderDraft,
     ) {}
 
-    public static function fromModel(TenantSetting $settings): self
+    /**
+     * A firm with no settings row yet gets the shipped defaults, so provisioning
+     * order can never leave a page unable to render.
+     */
+    public static function fromModel(?TenantSetting $settings): self
     {
         return new self(
-            documentOverview: $settings->ai_document_overview_enabled,
-            checklistDraft: $settings->ai_checklist_draft_enabled,
-            reminderDraft: $settings->ai_reminder_draft_enabled,
+            documentOverview: $settings?->ai_document_overview_enabled ?? true,
+            checklistDraft: $settings?->ai_checklist_draft_enabled ?? true,
+            reminderDraft: $settings?->ai_reminder_draft_enabled ?? true,
         );
     }
 }

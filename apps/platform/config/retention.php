@@ -98,4 +98,29 @@ return [
     'data_subject_response_days' => (int) env('RETENTION_DATA_SUBJECT_RESPONSE_DAYS', 30),
     'data_subject_export_hours' => (int) env('RETENTION_DATA_SUBJECT_EXPORT_HOURS', 72),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Per-firm retention band
+    |--------------------------------------------------------------------------
+    |
+    | The window a firm may choose for itself on the firm settings page. Unlike
+    | the security settings, retention is not a one-sided clamp: a shorter
+    | window is stricter for privacy, a longer one is stricter for a statutory
+    | bookkeeping obligation. So a firm picks inside an explicit band rather
+    | than being allowed only to tighten.
+    |
+    | The values above stay the default a firm inherits when it chooses nothing.
+    |
+    */
+    'tenant_bounds' => [
+        'archived_days' => [
+            'min' => (int) env('RETENTION_TENANT_MIN_ARCHIVED_DAYS', 365),
+            'max' => (int) env('RETENTION_TENANT_MAX_ARCHIVED_DAYS', 3650),
+        ],
+        'activity_log_days' => [
+            'min' => (int) env('RETENTION_TENANT_MIN_ACTIVITY_LOG_DAYS', 365),
+            'max' => (int) env('RETENTION_TENANT_MAX_ACTIVITY_LOG_DAYS', 3650),
+        ],
+    ],
+
 ];

@@ -6,30 +6,22 @@ namespace App\Tenancy\Actions;
 
 use App\Tenancy\Data\TenantSettingsData;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Models\TenantSetting;
 use App\Tenancy\Queries\ResolveTenantSettingsQuery;
 
 final readonly class UpdateTenantSettingsAction
 {
     public function __construct(private ResolveTenantSettingsQuery $resolveTenantSettings) {}
 
-    public function handle(Tenant $tenant, TenantSettingsData $settings): TenantSettingsData
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    public function handle(Tenant $tenant, array $attributes): TenantSettingsData
     {
-        $model = TenantSetting::query()->firstOrCreate(
-            ['tenant_id' => $tenant->id],
-            [
-                'ai_document_overview_enabled' => true,
-                'ai_checklist_draft_enabled' => true,
-                'ai_reminder_draft_enabled' => true,
-            ],
-        );
+        // forTenant() rather than a firstOrCreate spelled out again here: the
+        // shipped defaults belong in one place.
+        $this->resolveTenantSettings->forTenant($tenant)->update($attributes);
 
-        $model->update([
-            'ai_document_overview_enabled' => $settings->ai->documentOverview,
-            'ai_checklist_draft_enabled' => $settings->ai->checklistDraft,
-            'ai_reminder_draft_enabled' => $settings->ai->reminderDraft,
-        ]);
-
+        // The row's saved event has already dropped the cache entry by now.
         return $this->resolveTenantSettings->handle($tenant);
     }
 }

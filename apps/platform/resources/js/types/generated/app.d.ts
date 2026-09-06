@@ -782,13 +782,45 @@ declare namespace App {
     }
     namespace Tenancy {
         namespace Data {
+            export type FirmSettingData = {
+                readonly override: number | null;
+                readonly effective: number | null;
+                readonly platform_default: number | null;
+                readonly min: number;
+                readonly max: number | null;
+            };
+            export type FirmSharedSettingsData = {
+                readonly ai: App.Tenancy.Data.TenantAiSettingsData;
+                readonly reminders: App.Tenancy.Data.TenantReminderSettingsData;
+            };
             export type TenantAiSettingsData = {
                 readonly document_overview: boolean;
                 readonly checklist_draft: boolean;
                 readonly reminder_draft: boolean;
             };
+            export type TenantPortalSettingsData = {
+                readonly session_idle_minutes: App.Tenancy.Data.FirmSettingData;
+                readonly session_absolute_minutes: App.Tenancy.Data.FirmSettingData;
+            };
+            export type TenantReminderSettingsData = {
+                readonly default_interval_days: App.Tenancy.Data.FirmSettingData;
+            };
+            export type TenantRetentionSettingsData = {
+                readonly archived_days: App.Tenancy.Data.FirmSettingData;
+                readonly activity_log_days: App.Tenancy.Data.FirmSettingData;
+            };
+            export type TenantSecuritySettingsData = {
+                readonly two_factor_enforcement_override: string | null;
+                readonly two_factor_enforcement: string;
+                readonly platform_two_factor_enforcement: string;
+                readonly allowed_enforcement_levels: string[];
+            };
             export type TenantSettingsData = {
                 readonly ai: App.Tenancy.Data.TenantAiSettingsData;
+                readonly security: App.Tenancy.Data.TenantSecuritySettingsData;
+                readonly portal: App.Tenancy.Data.TenantPortalSettingsData;
+                readonly reminders: App.Tenancy.Data.TenantReminderSettingsData;
+                readonly retention: App.Tenancy.Data.TenantRetentionSettingsData;
             };
             export type WorkspaceInvitationData = {
                 readonly id: number;

@@ -22,3 +22,12 @@ Remove, suspend, and demote must call WorkspaceMemberRoles::lockOwnerMutations($
 
 ## Staff-options cache, no membership observers
 Staff dropdowns go through FetchResponsibleStaffOptionsQuery + StaffOptionsCache (Cache::flexible, tenant id in the key, 500 cap). Forget from Invite/Accept/Remove/Suspend/UpdateRole/Provision after the transaction commits — never from TenantMembership model events, because last_accessed_at writes every 5 minutes and would thrash the cache. Do not route this through TenantCacheInvalidator (Reporting-owned). The members page payload stays uncached (viewer-specific) but is LIMITed to 500; do not paginate that UI.
+
+## Mutating the tenant row needs an explicit rebind — makeCurrent() short-circuits
+The multitenancy package binds the current tenant with `app()->instance('currentTenant', …)`, and `ImplementsTenant::makeCurrent()` returns early whenever `isCurrent()` matches — and `isCurrent()` compares only the primary key.
+
+On Octane the container outlives the request, so after a write to the `tenants` row the worker keeps serving the *previous* attribute values from the object it bound earlier: `InitializeTenantFromRoute` loads a fresh record every request, calls `makeCurrent()`, and that call does nothing. It self-corrects only when the worker happens to serve a different firm.
+
+`RenameTenantAction` is the only writer today and handles it: `Tenant::forgetCurrent()` then `makeCurrent()`. Any future action that updates a tenant attribute must do the same, or `Tenant::current()->name` goes stale for the rest of the worker's life.
+
+A test that asserts the outcome on the *next* request catches this; one that asserts the write or the flash flag does not.

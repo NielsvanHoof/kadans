@@ -57,6 +57,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Platform/Actions/Retention/** | .ai/rules/retention.md |
 | routes/** | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |
+| app/Tenancy/Settings/** | .ai/rules/settings.md |
 | app/Platform/Http/SharedProps/** | .ai/rules/shared-props.md |
 | infra/src/shared/** | .ai/rules/shared.md |
 | app/Dossiers/Support/StoredFileResponse.php | .ai/rules/support.md |
