@@ -36,19 +36,28 @@ final readonly class IntegerBound
     ) {}
 
     /**
-     * The inherited value, clamped into the band a firm could have chosen.
+     * The value a firm inherits when it has chosen nothing.
      *
-     * Clamped rather than raw because an operator can misconfigure it — a zero
-     * or a negative idle window, or one longer than the session store will
-     * honour. Reporting the raw value here would let a bad deploy through the
-     * one place that is supposed to catch it, and would also show the reader a
-     * default that is not the one actually applied.
+     * Clamped for the directional settings, where the hard limits describe what
+     * the value may physically be — a zero or negative idle window, or one
+     * longer than the session store will honour, is a misconfiguration and must
+     * not reach the portal just because nobody overrode it.
+     *
+     * Left alone for a banded setting, where the limits describe the range
+     * offered to a *firm* rather than a limit on the value itself. An operator
+     * running a staging environment with a thirty-day retention window is doing
+     * something legitimate, and silently raising it to the firm floor would
+     * mean nothing was ever pruned there.
      */
     public function platform(): ?int
     {
         $configured = ($this->platform)();
 
-        return $configured === null ? null : $this->clamp($configured);
+        if ($configured === null || $this->direction === ClampDirection::Banded) {
+            return $configured;
+        }
+
+        return $this->clamp($configured);
     }
 
     /**

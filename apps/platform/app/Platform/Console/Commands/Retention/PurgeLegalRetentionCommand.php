@@ -9,12 +9,12 @@ use App\Dossiers\Models\Dossier;
 use App\Platform\Actions\Retention\PurgeExpiredClientAction;
 use App\Platform\Actions\Retention\PurgeExpiredDossierAction;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Queries\ResolveTenantSettingsQuery;
 use App\Tenancy\TenantContext;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
 use function Laravel\Prompts\info;
@@ -28,9 +28,10 @@ final class PurgeLegalRetentionCommand extends Command
         TenantContext $tenantContext,
         PurgeExpiredDossierAction $purgeExpiredDossier,
         PurgeExpiredClientAction $purgeExpiredClient,
+        ResolveTenantSettingsQuery $resolveTenantSettings,
     ): int {
         $limit = max(1, (int) $this->option('limit'));
-        $cutoff = now()->subDays(Config::integer('retention.archived_days'));
+        $tenantsProcessed = 0;
         $dossierSummary = [
             'purged' => 0,
             'activity_rows_deleted' => 0,
@@ -45,11 +46,17 @@ final class PurgeLegalRetentionCommand extends Command
             $tenantContext,
             $purgeExpiredDossier,
             $purgeExpiredClient,
-            $cutoff,
+            $resolveTenantSettings,
             $limit,
             &$dossierSummary,
             &$clientSummary,
+            &$tenantsProcessed,
         ): void {
+            // Resolved per firm: retention is the firm's own decision, so one
+            // sweep runs against as many cutoffs as there are firms.
+            $cutoff = now()->subDays($resolveTenantSettings->retentionArchivedDays($tenant));
+            $tenantsProcessed++;
+
             $tenantContext->runForTenant($tenant, function () use (
                 $purgeExpiredDossier,
                 $purgeExpiredClient,
@@ -70,7 +77,8 @@ final class PurgeLegalRetentionCommand extends Command
         });
 
         Log::info('Legal retention purge completed.', [
-            'cutoff' => $cutoff->toIso8601String(),
+            // No single cutoff to report any more — each firm has its own.
+            'tenants_processed' => $tenantsProcessed,
             'dossiers_purged' => $dossierSummary['purged'],
             'clients_purged' => $clientSummary['purged'],
             'activity_rows_deleted' => $dossierSummary['activity_rows_deleted'] + $clientSummary['activity_rows_deleted'],

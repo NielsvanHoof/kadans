@@ -428,14 +428,25 @@ no filename in `tests/Feature/DocumentProcessing/ProcessUploadedDocumentJobTest.
 
 `config/retention.php` drives scheduled purging:
 
-| Data | Default |
-|---|---|
-| Archived clients and dossiers (with stored files and activity) | 1095 days |
-| Activity log | 1095 days |
-| Portal access grants | 90 days |
-| Member invitations | 90 days |
-| Database notifications | 90 days |
-| Failed queue jobs | 168 hours |
+| Data | Default | Per firm |
+|---|---|---|
+| Archived clients and dossiers (with stored files and activity) | 2555 days | 365–3650 |
+| Activity log | 2555 days | 365–3650 |
+| Portal access grants | 90 days | — |
+| Member invitations | 90 days | — |
+| Database notifications | 90 days | — |
+| Failed queue jobs | 168 hours | — |
+
+The first two rows are the firm's own decision, set on the firm settings page
+and applied per firm by `retention:purge-legal` and `retention:prune-activity-log`
+— one sweep runs against as many cutoffs as there are firms. The default is seven
+years, matching the retention an accounting firm holding client financial records
+is normally subject to; the band exists because not every record a firm holds
+falls under that obligation, and storage limitation pushes the other way. A firm
+cannot leave the band, and a value edited outside it directly in the database is
+clamped when it is read.
+
+The remaining rows are platform operations and are not firm-configurable.
 
 ### Data-subject requests
 

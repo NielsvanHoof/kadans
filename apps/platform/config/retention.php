@@ -12,8 +12,14 @@ return [
     | Soft-deleted clients and dossiers are permanently purged after this many
     | days, including stored files and related activity log entries.
     |
+    | Seven years by default, matching the retention an accounting firm holding
+    | client financial records is normally subject to. This is the value a firm
+    | inherits when it has chosen nothing; each firm can pick its own inside
+    | `tenant_bounds` below, because the obligation is theirs to judge and not
+    | every record they hold falls under it.
+    |
     */
-    'archived_days' => (int) env('RETENTION_ARCHIVED_DAYS', 1095),
+    'archived_days' => (int) env('RETENTION_ARCHIVED_DAYS', 2555),
 
     /*
     |--------------------------------------------------------------------------
@@ -25,7 +31,7 @@ return [
     | record retention by default.
     |
     */
-    'activity_log_days' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', env('RETENTION_ARCHIVED_DAYS', 1095)),
+    'activity_log_days' => (int) env('RETENTION_ACTIVITY_LOG_DAYS', env('RETENTION_ARCHIVED_DAYS', 2555)),
 
     /*
     |--------------------------------------------------------------------------

@@ -100,3 +100,29 @@ test('an unrecognised configured enforcement fails closed', function (): void {
     expect(FirmSettingBounds::twoFactorEnforcement()->platform())
         ->toBe(TwoFactorEnforcement::AllStaff);
 });
+
+test('a misconfigured directional platform value is clamped before it applies', function (): void {
+    // The portal limits describe what the value may physically be, so a bad
+    // deploy must not reach a client session just because nobody overrode it.
+    Config::set('session.lifetime', 120);
+    Config::set('portal.session_idle_minutes', 0);
+    expect(FirmSettingBounds::portalSessionIdleMinutes()->platform())->toBe(1);
+
+    Config::set('portal.session_idle_minutes', 1440);
+    expect(FirmSettingBounds::portalSessionIdleMinutes()->platform())->toBe(60);
+});
+
+test('a banded platform value is left as the operator configured it', function (): void {
+    // Here the band is the range offered to a firm, not a limit on the value.
+    // Raising a staging environment's short window to the firm floor would mean
+    // nothing was ever pruned there.
+    Config::set('retention.archived_days', 30);
+    Config::set('retention.tenant_bounds.archived_days', ['min' => 365, 'max' => 3650]);
+
+    $bound = FirmSettingBounds::retentionArchivedDays();
+
+    expect($bound->platform())->toBe(30)
+        ->and($bound->resolve(null))->toBe(30)
+        // A firm's own choice is still held to the band.
+        ->and($bound->resolve(10))->toBe(365);
+});

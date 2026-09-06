@@ -6,13 +6,13 @@ namespace App\Platform\Console\Commands\Retention;
 
 use App\Audit\Models\Activity;
 use App\Tenancy\Models\Tenant;
+use App\Tenancy\Queries\ResolveTenantSettingsQuery;
 use App\Tenancy\TenantContext;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Config;
 
 use function Laravel\Prompts\info;
 use function sprintf;
@@ -36,22 +36,35 @@ final class PruneActivityLogCommand extends Command
      */
     private const int MAX_BATCHES_PER_TENANT = 100;
 
-    public function handle(TenantContext $tenantContext): int
-    {
-        $cutoff = now()->subDays(Config::integer('retention.activity_log_days'));
+    public function handle(
+        TenantContext $tenantContext,
+        ResolveTenantSettingsQuery $resolveTenantSettings,
+    ): int {
         $limit = max(1, (int) $this->option('limit'));
         $deleted = 0;
+        $tenantsProcessed = 0;
 
-        Tenant::query()->each(function (Tenant $tenant) use ($tenantContext, $cutoff, $limit, &$deleted): void {
+        Tenant::query()->each(function (Tenant $tenant) use (
+            $tenantContext,
+            $resolveTenantSettings,
+            $limit,
+            &$deleted,
+            &$tenantsProcessed,
+        ): void {
+            // Resolved per firm, so one sweep runs against as many cutoffs as
+            // there are firms rather than a single platform-wide date.
+            $cutoff = now()->subDays($resolveTenantSettings->retentionActivityLogDays($tenant));
+            $tenantsProcessed++;
+
             $tenantContext->runForTenant($tenant, function () use ($tenant, $cutoff, $limit, &$deleted): void {
                 $deleted += $this->pruneTenant($tenant, $cutoff, $limit);
             });
         });
 
         info(sprintf(
-            'Deleted %d activity log row(s) created on or before %s.',
+            'Deleted %d activity log row(s) across %d firm(s), each past its own retention window.',
             $deleted,
-            $cutoff->toDateString(),
+            $tenantsProcessed,
         ));
 
         return self::SUCCESS;
