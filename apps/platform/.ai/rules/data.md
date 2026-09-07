@@ -15,3 +15,6 @@ Why it exists: six controls stacked one per row measured 338px on a 375px screen
 The count badge is not decoration. Collapsing filters is only safe if an applied filter stays visible somewhere, otherwise a filtered list looks wrong with no discoverable cause. Keep it if you restructure this.
 
 Testing the mobile branch: test/setup.ts stubs matchMedia to always report `matches: false`, so the desktop tree is all you get by default. Mock `@/hooks/use-mobile` through vi.hoisted to exercise the other branch.
+
+## IndexQuery labels are already localized — do not t() them
+`toolbarMetadata()` runs `__('Search')`, `__('Newest first')`, enum `label()`, and staff names through PHP before the payload reaches the client. Calling `t(filter.label)` / `t(option.label)` looks up the Dutch (or English) string as if it were a key. In Dutch that logs `Missing translation key: Zoeken` on every render; the UI still looks right because `t()` falls back to the key. Chrome the React tree owns (`Sort`, `Filters`, `All`, `No matching options.`) still goes through `t()`. Never wrap person names or other dynamic values.

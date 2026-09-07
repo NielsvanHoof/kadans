@@ -332,16 +332,16 @@
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
-            "version": "3.2.0",
+            "version": "3.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/CarbonPHP/carbon-doctrine-types.git",
-                "reference": "18ba5ddfec8976260ead6e866180bd5d2f71aa1d"
+                "reference": "5fa5eacafd9ef47c8c6ab9143fc901ba0194d3dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/CarbonPHP/carbon-doctrine-types/zipball/18ba5ddfec8976260ead6e866180bd5d2f71aa1d",
-                "reference": "18ba5ddfec8976260ead6e866180bd5d2f71aa1d",
+                "url": "https://api.github.com/repos/CarbonPHP/carbon-doctrine-types/zipball/5fa5eacafd9ef47c8c6ab9143fc901ba0194d3dc",
+                "reference": "5fa5eacafd9ef47c8c6ab9143fc901ba0194d3dc",
                 "shasum": ""
             },
             "require": {
@@ -356,6 +356,11 @@
                 "phpunit/phpunit": "^10.3"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "3.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "Carbon\\Doctrine\\": "src/Carbon/Doctrine/"
@@ -381,7 +386,7 @@
             ],
             "support": {
                 "issues": "https://github.com/CarbonPHP/carbon-doctrine-types/issues",
-                "source": "https://github.com/CarbonPHP/carbon-doctrine-types/tree/3.2.0"
+                "source": "https://github.com/CarbonPHP/carbon-doctrine-types/tree/3.2.1"
             },
             "funding": [
                 {
@@ -397,7 +402,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-02-09T16:56:22+00:00"
+            "time": "2026-09-06T14:11:38+00:00"
         },
         {
             "name": "clue/redis-protocol",
@@ -6597,22 +6602,22 @@
         },
         {
             "name": "saloonphp/saloon",
-            "version": "v4.0.0",
+            "version": "v4.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/saloonphp/saloon.git",
-                "reference": "1307b1d72cacdd2c9c20978cdf7a0b720b4bf3bb"
+                "reference": "7eb41570730a3fb84bb434d3d88ae6b9c7dd6650"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/saloonphp/saloon/zipball/1307b1d72cacdd2c9c20978cdf7a0b720b4bf3bb",
-                "reference": "1307b1d72cacdd2c9c20978cdf7a0b720b4bf3bb",
+                "url": "https://api.github.com/repos/saloonphp/saloon/zipball/7eb41570730a3fb84bb434d3d88ae6b9c7dd6650",
+                "reference": "7eb41570730a3fb84bb434d3d88ae6b9c7dd6650",
                 "shasum": ""
             },
             "require": {
-                "guzzlehttp/guzzle": "^7.6",
-                "guzzlehttp/promises": "^1.5 || ^2.0",
-                "guzzlehttp/psr7": "^2.0",
+                "guzzlehttp/guzzle": "^7.6 || ^8.0",
+                "guzzlehttp/promises": "^1.5 || ^2.0 || ^3.0",
+                "guzzlehttp/psr7": "^2.0 || ^3.0",
                 "php": "^8.2",
                 "psr/http-factory": "^1.0",
                 "psr/http-message": "^1.1 || ^2.0"
@@ -6666,7 +6671,7 @@
             ],
             "support": {
                 "issues": "https://github.com/saloonphp/saloon/issues",
-                "source": "https://github.com/saloonphp/saloon/tree/v4.0.0"
+                "source": "https://github.com/saloonphp/saloon/tree/v4.0.1"
             },
             "funding": [
                 {
@@ -6674,7 +6679,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-17T22:58:33+00:00"
+            "time": "2026-09-04T20:48:33+00:00"
         },
         {
             "name": "sentry/sentry",
@@ -14280,16 +14285,16 @@
         },
         {
             "name": "laravel/boost",
-            "version": "v2.7.0",
+            "version": "v2.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/boost.git",
-                "reference": "b19e98a8637cb69b2aab7b5b6c5fe9e2c79d182f"
+                "reference": "1ffcccb0f5f041c68bebea4d907cc15533d0838f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/boost/zipball/b19e98a8637cb69b2aab7b5b6c5fe9e2c79d182f",
-                "reference": "b19e98a8637cb69b2aab7b5b6c5fe9e2c79d182f",
+                "url": "https://api.github.com/repos/laravel/boost/zipball/1ffcccb0f5f041c68bebea4d907cc15533d0838f",
+                "reference": "1ffcccb0f5f041c68bebea4d907cc15533d0838f",
                 "shasum": ""
             },
             "require": {
@@ -14342,7 +14347,7 @@
                 "issues": "https://github.com/laravel/boost/issues",
                 "source": "https://github.com/laravel/boost"
             },
-            "time": "2026-08-26T21:39:22+00:00"
+            "time": "2026-09-07T04:38:53+00:00"
         },
         {
             "name": "laravel/mcp",
@@ -15751,16 +15756,16 @@
         },
         {
             "name": "pestphp/pest-plugin-phpstan",
-            "version": "v5.2.0",
+            "version": "v5.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pestphp/pest-plugin-phpstan.git",
-                "reference": "2ae56517be5acd06757fdb6f024ed99ca1a14617"
+                "reference": "5739943b6f436c0ef3787538f8713d3d76ec3ede"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pestphp/pest-plugin-phpstan/zipball/2ae56517be5acd06757fdb6f024ed99ca1a14617",
-                "reference": "2ae56517be5acd06757fdb6f024ed99ca1a14617",
+                "url": "https://api.github.com/repos/pestphp/pest-plugin-phpstan/zipball/5739943b6f436c0ef3787538f8713d3d76ec3ede",
+                "reference": "5739943b6f436c0ef3787538f8713d3d76ec3ede",
                 "shasum": ""
             },
             "require": {
@@ -15818,7 +15823,7 @@
                 "unit"
             ],
             "support": {
-                "source": "https://github.com/pestphp/pest-plugin-phpstan/tree/v5.2.0"
+                "source": "https://github.com/pestphp/pest-plugin-phpstan/tree/v5.2.1"
             },
             "funding": [
                 {
@@ -15838,7 +15843,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-08-23T17:26:23+00:00"
+            "time": "2026-09-06T02:51:17+00:00"
         },
         {
             "name": "pestphp/pest-plugin-profanity",
