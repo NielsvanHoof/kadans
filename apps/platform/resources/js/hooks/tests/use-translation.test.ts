@@ -11,6 +11,7 @@ const repeatedKey = [
     ':count',
     'pending.',
 ].join(' ');
+const rangeKey = ['Showing :from–:to of', ':total'].join(' ');
 const missingKey = ['Definitely', 'missing', 'test-only', 'key'].join(' ');
 
 const pageProps = {
@@ -19,6 +20,7 @@ const pageProps = {
     translations: {
         [helloKey]: 'Hallo :name',
         [repeatedKey]: 'You have :count items and :count pending.',
+        [rangeKey]: ':from–:to van :total weergegeven',
     } as Record<string, string>,
 };
 
@@ -45,6 +47,14 @@ describe('useTranslation', () => {
         expect(result.current.t(repeatedKey, { count: 3 })).toBe(
             'You have 3 items and 3 pending.',
         );
+    });
+
+    it('does not treat :to as a prefix of :total', () => {
+        const { result } = renderHook(() => useTranslation());
+
+        expect(
+            result.current.t(rangeKey, { from: 1, to: 15, total: 15 }),
+        ).toBe('1–15 van 15 weergegeven');
     });
 
     it('leaves an unmatched placeholder literal and reports a missing key', () => {

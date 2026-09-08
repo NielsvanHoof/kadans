@@ -1,24 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
+import { mockUseTranslation } from '@/test/mocks';
 import type { Paginated } from '@/types/pagination';
 
-vi.mock('@/hooks/use-translation', () => ({
-    useTranslation: () => ({
-        t: (key: string, replacements?: Record<string, string | number>) => {
-            if (!replacements) {
-                return key;
-            }
-
-            return Object.entries(replacements).reduce(
-                (result, [token, value]) =>
-                    result.replace(`:${token}`, String(value)),
-                key,
-            );
-        },
-        locale: 'en',
-        availableLocales: [],
-    }),
-}));
+vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock('@inertiajs/react', () => ({
     Link: ({
@@ -118,15 +103,15 @@ describe('IndexPagination', () => {
         render(
             <IndexPagination
                 paginator={makePaginator({
-                    total: 3,
+                    total: 15,
                     from: 1,
-                    to: 3,
+                    to: 15,
                     last_page: 1,
                 })}
             />,
         );
 
-        expect(screen.getByText('Showing 1–3 of 3')).toBeInTheDocument();
+        expect(screen.getByText('Showing 1–15 of 15')).toBeInTheDocument();
         expect(
             screen.queryByRole('navigation', { name: /pagination/i }),
         ).not.toBeInTheDocument();
