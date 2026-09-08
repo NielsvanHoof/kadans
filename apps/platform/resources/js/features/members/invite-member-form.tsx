@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import WorkspaceMemberController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceMemberController';
+import WorkspaceMemberController from '@/actions/App/Tenancy/Http/Controllers/Members/WorkspaceMemberController';
 import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {

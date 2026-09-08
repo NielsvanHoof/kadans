@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
+use App\ClientPortal\Notifications\Outreach\ClientQuestionnaireCompletedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

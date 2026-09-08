@@ -188,3 +188,57 @@ test('guests cannot view the media library', function (): void {
     $this->get(workspaceRoute('workspaces.media.index', 'acme-accountants'))
         ->assertRedirect(route('login'));
 });
+
+test('media library search matches uploaded document ocr content', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Payroll 2026',
+    ]);
+    $matching = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'March statement',
+    ]);
+    $other = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'Unrelated ID scan',
+    ]);
+
+    UploadedDocument::factory()->processed(json_encode([
+        'document_type' => 'bank_statement',
+        'summary' => 'Monthly salary payments for March.',
+        'fields' => [
+            [
+                'label' => 'IBAN',
+                'value' => 'NL18 RABO 0123 4567 89',
+                'confidence' => 0.99,
+                'sensitivity' => 'iban',
+            ],
+        ],
+        'tables' => [],
+        'notes' => [],
+        'confidence' => 0.96,
+    ], JSON_THROW_ON_ERROR))->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $matching->id,
+        'original_filename' => 'salary-march.pdf',
+    ]);
+    UploadedDocument::factory()->processed('Passport scan')->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $other->id,
+        'original_filename' => 'passport.pdf',
+    ]);
+
+    $this->actingAs($owner)
+        ->get(workspaceRoute('workspaces.media.index', $tenant).'?filter[q]=NL18RABO0123456789')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('workspaces/media/index')
+            ->has('documents.data', 1)
+            ->where('documents.data.0.title', 'March statement'));
+});

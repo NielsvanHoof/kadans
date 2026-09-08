@@ -11,7 +11,7 @@ use App\Pipelines\Enums\PipelinePermission;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 
 test('registers only enums implementing the tenant permission contract', function (): void {
     foreach (config()->array('tenant-permissions.enums') as $enum) {

@@ -11,7 +11,7 @@ use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
+use App\Tenancy\Notifications\Members\WorkspaceMemberInviteNotification;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;

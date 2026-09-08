@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;

@@ -116,11 +116,14 @@ return [
     ],
 
     /*
-     * When set to true, the method for checking permissions will be registered on the gate.
-     * Set this to false if you want to implement custom logic for checking permissions.
+     * Spatie's Gate::before looks up every ability as a permission name, so
+     * policy methods such as viewAny throw PermissionDoesNotExist (and log a
+     * missing translation for the vendor exception copy) on every authorize().
+     * TenancyServiceProvider registers a Gate::before that only handles names
+     * in PermissionRegistry, plus the support-session overlay.
      */
 
-    'register_permission_check_method' => true,
+    'register_permission_check_method' => false,
 
     /*
      * When set to true, Laravel\Octane\Events\OperationTerminated event listener will be registered

@@ -1,5 +1,5 @@
-import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
-import UploadTicketController from '@/actions/App/Dossiers/Http/Controllers/UploadTicketController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocuments/UploadedDocumentController';
+import UploadTicketController from '@/actions/App/Dossiers/Http/Controllers/Uploads/UploadTicketController';
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

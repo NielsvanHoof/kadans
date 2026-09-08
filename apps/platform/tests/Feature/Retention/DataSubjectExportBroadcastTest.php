@@ -6,7 +6,7 @@ use App\Clients\Models\Client;
 use App\Platform\Actions\DataSubject\GenerateDataSubjectExportAction;
 use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectRequestType;
-use App\Platform\Events\DataSubjectExportCompleted;
+use App\Platform\Events\DataSubject\DataSubjectExportCompleted;
 use Illuminate\Support\Facades\Event;
 
 test('completing an export broadcasts to the workspace private channel', function (): void {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Dossiers\Console\Commands\SendScheduledDossierRemindersCommand;
+use App\Dossiers\Console\Commands\Reminders\SendScheduledDossierRemindersCommand;
 use App\Pipelines\Console\Commands\MonitorPipelinesCommand;
 use App\Pipelines\Console\Commands\RetryDuePipelinesCommand;
 use Illuminate\Support\Facades\App;

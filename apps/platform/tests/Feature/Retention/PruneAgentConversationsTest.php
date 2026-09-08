@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Platform\Console\Commands\Retention\PruneAgentConversationsCommand;
-use App\Questionnaires\Ai\ChecklistDraftAgent;
+use App\Questionnaires\Ai\ChecklistDraft\ChecklistDraftAgent;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
+use App\DocumentProcessing\Jobs\Ocr\ApplyTextractResultJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;

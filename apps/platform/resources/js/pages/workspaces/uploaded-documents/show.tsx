@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocuments/UploadedDocumentController';
 import UploadedDocumentShowContent from '@/features/document-requests/staff/review/uploaded-document-show-content';
 import type { UploadedDocumentShowProps } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

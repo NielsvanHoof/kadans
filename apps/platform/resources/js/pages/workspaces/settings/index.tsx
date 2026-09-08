@@ -1,6 +1,6 @@
 import { Head, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
-import WorkspaceSettingsController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceSettingsController';
+import WorkspaceSettingsController from '@/actions/App/Tenancy/Http/Controllers/Settings/WorkspaceSettingsController';
 import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +23,8 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as settingsIndex } from '@/routes/workspaces/settings';
 
-type WorkspaceSettingsPageProps = App.Tenancy.Data.WorkspaceSettingsPageData;
+type WorkspaceSettingsPageProps =
+    App.Tenancy.Data.Settings.WorkspaceSettingsPageData;
 
 /**
  * Owner-only firm settings. AI toggles opt out of Bedrock-backed helpers
@@ -42,6 +43,9 @@ export default function WorkspaceSettingsIndex({
     );
     const [reminderDraft, setReminderDraft] = useState(
         settings.ai.reminder_draft,
+    );
+    const [documentSearch, setDocumentSearch] = useState(
+        settings.ai.document_search,
     );
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -67,6 +71,7 @@ export default function WorkspaceSettingsIndex({
                 ai_document_overview_enabled: documentOverview,
                 ai_checklist_draft_enabled: checklistDraft,
                 ai_reminder_draft_enabled: reminderDraft,
+                ai_document_search_enabled: documentSearch,
             },
             {
                 preserveScroll: true,
@@ -166,6 +171,27 @@ export default function WorkspaceSettingsIndex({
                                 </div>
                             </Field>
 
+                            <Field
+                                orientation="horizontal"
+                                className="items-start gap-3"
+                            >
+                                <Checkbox
+                                    id="ai-document-search"
+                                    isSelected={documentSearch}
+                                    onChange={setDocumentSearch}
+                                />
+                                <div className="grid gap-1">
+                                    <FieldLabel htmlFor="ai-document-search">
+                                        {t('Document search')}
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        {t(
+                                            'Search and ask questions about uploaded documents in this workspace.',
+                                        )}
+                                    </FieldDescription>
+                                </div>
+                            </Field>
+
                             <InputError
                                 message={errors.ai_document_overview_enabled}
                             />
@@ -174,6 +200,9 @@ export default function WorkspaceSettingsIndex({
                             />
                             <InputError
                                 message={errors.ai_reminder_draft_enabled}
+                            />
+                            <InputError
+                                message={errors.ai_document_search_enabled}
                             />
 
                             <Field orientation="horizontal">

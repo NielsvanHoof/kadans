@@ -6,7 +6,7 @@ use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;

@@ -11,7 +11,8 @@ import type { DocumentRequest } from '@/features/document-requests/types';
 export type DossierStatus = App.Dossiers.Enums.DossierStatus;
 
 /** Review progress counts shared by overview and review surfaces. */
-export type DossierReviewSummary = App.Dossiers.Data.DossierReviewSummaryData;
+export type DossierReviewSummary =
+    App.Dossiers.Data.Lifecycle.DossierReviewSummaryData;
 
 /**
  * Payloads carrying questionnaire items swap in the refined DocumentRequest,
@@ -22,16 +23,19 @@ type WithItems<T> = Omit<T, 'document_requests'> & {
 };
 
 /** Full dossier payload for the staff overview (show) page. */
-export type Dossier = WithItems<App.Dossiers.Data.DossierShowData>;
+export type Dossier = WithItems<App.Dossiers.Data.Lifecycle.DossierShowData>;
 
 /** Lean dossier payload for the questionnaire builder page. */
-export type DossierBuilder = WithItems<App.Dossiers.Data.DossierBuilderData>;
+export type DossierBuilder =
+    WithItems<App.Dossiers.Data.Builder.DossierBuilderData>;
 
 /** Exclusive builder edit lease returned with the builder page / lock endpoints. */
-export type DossierBuilderLock = App.Dossiers.Data.DossierBuilderLockData;
+export type DossierBuilderLock =
+    App.Dossiers.Data.Builder.DossierBuilderLockData;
 
 /** Lean dossier payload for the review queue page. */
-export type DossierReview = WithItems<App.Dossiers.Data.DossierReviewData>;
+export type DossierReview =
+    WithItems<App.Dossiers.Data.DocumentRequests.DossierReviewData>;
 
 /** Fields needed by the review progress / complete card. */
 export type DossierWorkflowProgress = Pick<
@@ -39,15 +43,16 @@ export type DossierWorkflowProgress = Pick<
     'id' | 'status' | 'review_summary' | 'ready_to_complete'
 >;
 
-export type DossierExport = App.Dossiers.Data.DossierExportData;
+export type DossierExport = App.Dossiers.Data.Exports.DossierExportData;
 
 export type Pipeline = App.Pipelines.Data.PipelineData;
 
 export type PipelineStep = App.Pipelines.Data.PipelineStepData;
 
-export type DossierSummary = App.Dossiers.Data.DossierIndexRowData;
+export type DossierSummary = App.Dossiers.Data.Lifecycle.DossierIndexRowData;
 
-export type ArchivedDossierSummary = App.Dossiers.Data.ArchivedDossierRowData;
+export type ArchivedDossierSummary =
+    App.Dossiers.Data.Lifecycle.ArchivedDossierRowData;
 
 export type EditableDossier = Pick<
     Dossier,

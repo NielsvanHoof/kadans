@@ -18,7 +18,8 @@ test('owner can view firm settings', function (): void {
             ->component('workspaces/settings/index')
             ->where('settings.ai.document_overview', true)
             ->where('settings.ai.checklist_draft', true)
-            ->where('settings.ai.reminder_draft', true));
+            ->where('settings.ai.reminder_draft', true)
+            ->where('settings.ai.document_search', true));
 });
 
 test('administrator can view and update firm settings', function (): void {
@@ -36,6 +37,7 @@ test('administrator can view and update firm settings', function (): void {
             'ai_document_overview_enabled' => false,
             'ai_checklist_draft_enabled' => true,
             'ai_reminder_draft_enabled' => true,
+            'ai_document_search_enabled' => true,
         ])
         ->assertRedirect(workspaceRoute('workspaces.settings.index', $tenant));
 
@@ -61,6 +63,7 @@ test('owner can update firm settings', function (): void {
             'ai_document_overview_enabled' => false,
             'ai_checklist_draft_enabled' => false,
             'ai_reminder_draft_enabled' => true,
+            'ai_document_search_enabled' => false,
         ])
         ->assertRedirect(workspaceRoute('workspaces.settings.index', $tenant));
 
@@ -69,7 +72,8 @@ test('owner can update firm settings', function (): void {
     expect($settings)->not->toBeNull()
         ->and($settings->ai_document_overview_enabled)->toBeFalse()
         ->and($settings->ai_checklist_draft_enabled)->toBeFalse()
-        ->and($settings->ai_reminder_draft_enabled)->toBeTrue();
+        ->and($settings->ai_reminder_draft_enabled)->toBeTrue()
+        ->and($settings->ai_document_search_enabled)->toBeFalse();
 });
 
 test('new firms start with all ai features enabled', function (): void {
@@ -80,7 +84,8 @@ test('new firms start with all ai features enabled', function (): void {
     expect($settings)->not->toBeNull()
         ->and($settings->ai_document_overview_enabled)->toBeTrue()
         ->and($settings->ai_checklist_draft_enabled)->toBeTrue()
-        ->and($settings->ai_reminder_draft_enabled)->toBeTrue();
+        ->and($settings->ai_reminder_draft_enabled)->toBeTrue()
+        ->and($settings->ai_document_search_enabled)->toBeTrue();
 });
 
 test('firm settings are shared with every workspace member', function (): void {
@@ -91,10 +96,13 @@ test('firm settings are shared with every workspace member', function (): void {
         'ai_checklist_draft_enabled' => false,
     ]);
 
+    $this->withoutVite();
+
     $this->actingAs($administrator)
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->where('firm_settings.ai.checklist_draft', false)
-            ->where('firm_settings.ai.document_overview', true));
+            ->where('firm_settings.ai.document_overview', true)
+            ->where('firm_settings.ai.document_search', true));
 });

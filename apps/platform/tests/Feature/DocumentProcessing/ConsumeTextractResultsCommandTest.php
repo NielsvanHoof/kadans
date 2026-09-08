@@ -6,7 +6,7 @@ use App\Clients\Models\Client;
 use App\DocumentProcessing\Console\Commands\Ocr\ConsumeTextractResultsCommand;
 use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
+use App\DocumentProcessing\Jobs\Ocr\ApplyTextractResultJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;

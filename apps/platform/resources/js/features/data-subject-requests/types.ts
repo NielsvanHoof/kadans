@@ -1,4 +1,5 @@
-export type DataSubjectRequest = App.Platform.Data.DataSubjectRequestData;
+export type DataSubjectRequest =
+    App.Platform.Data.DataSubject.DataSubjectRequestData;
 
 export type DataSubjectRequestStatus =
     App.Platform.Enums.DataSubjectRequestStatus;

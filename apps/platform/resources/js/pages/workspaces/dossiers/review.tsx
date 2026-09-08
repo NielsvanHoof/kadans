@@ -1,7 +1,7 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocuments/UploadedDocumentController';
 import Heading from '@/components/primitives/heading';
 import { LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

@@ -45,6 +45,7 @@ return [
         'resources/js/features/audit' => 'Audit',
         'resources/js/features/clients' => 'Clients',
         'resources/js/features/dashboard' => 'Reporting',
+        'resources/js/features/document-search' => 'Reporting',
         'resources/js/features/data-subject-requests' => 'Platform',
         'resources/js/features/document-requests' => 'Questionnaires',
         'resources/js/features/dossiers' => 'Dossiers',
@@ -159,5 +160,14 @@ return [
         // dossier-export-card.tsx — ternary string literals inside t().
         'Ready' => 'Dossiers',
         'Preparing' => 'Dossiers',
+
+        // FailedQueueJobsCheck / StuckPipelinesCheck — Spatie Health calls
+        // trans() on Result::$notificationMessage with the check meta. The
+        // English key is passed untranslated; wrapping ok()/failed() in __()
+        // would look up the Dutch sentence as a key.
+        'No jobs failed permanently in the last :within_minutes minutes.' => 'Platform',
+        ':failed_jobs job(s) failed permanently in the last :within_minutes minutes.' => 'Platform',
+        'No stuck pipelines.' => 'Platform',
+        ':stuck_pipelines pipeline(s) are stuck and need attention.' => 'Platform',
     ],
 ];

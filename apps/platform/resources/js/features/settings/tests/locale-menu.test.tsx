@@ -20,13 +20,16 @@ vi.mock('@inertiajs/react', () => ({
         }),
 }));
 
-vi.mock('@/actions/App/Accounts/Http/Controllers/LocaleController', () => ({
-    default: {
-        update: {
-            url: () => '/locale',
+vi.mock(
+    '@/actions/App/Accounts/Http/Controllers/Localization/LocaleController',
+    () => ({
+        default: {
+            update: {
+                url: () => '/locale',
+            },
         },
-    },
-}));
+    }),
+);
 
 const { default: LocaleMenu } = await import('@/features/settings/locale-menu');
 

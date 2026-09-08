@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Queries;
+namespace App\Tenancy\Queries\Workspace;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Data\WorkspaceNavItemData;
+use App\Tenancy\Data\Workspace\WorkspaceNavItemData;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Builder;

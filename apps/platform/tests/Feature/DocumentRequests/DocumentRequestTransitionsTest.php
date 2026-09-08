@@ -10,7 +10,7 @@ use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Validation\ValidationException;
 

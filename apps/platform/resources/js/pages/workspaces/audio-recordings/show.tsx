@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import AudioRecordingController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordingController';
+import AudioRecordingController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordings/AudioRecordingController';
 import AudioRecordingShowContent from '@/features/audio-recordings/audio-recording-show-content';
 import type { AudioRecordingShowProps } from '@/features/audio-recordings/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

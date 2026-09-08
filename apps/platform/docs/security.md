@@ -178,7 +178,7 @@ noncurrent-version expiry, and a bucket policy denying non-TLS transport.
 GuardDuty Malware Protection scans every object as it lands in the documents
 bucket and writes its verdict back onto the object as a
 `GuardDutyMalwareScanStatus` tag. `download` and `preview` read that tag before
-serving anything — `App\Dossiers\Actions\ResolveMalwareScanStatusAction` — and
+serving anything — `App\Dossiers\Actions\Uploads\ResolveMalwareScanStatusAction` — and
 refuse everything that is not explicitly `NO_THREATS_FOUND`. Audio recordings go
 through the same gate: they are client-uploaded bytes in the same bucket.
 
@@ -229,7 +229,7 @@ else.
 
 ## AI and inference
 
-Three features send workspace data to a model, and one of them sends document
+Five features send workspace data to a model. Two of them send document
 content. This section exists because `docs/security.md` documented the KMS key and
 the retention schedule in detail and said nothing about data leaving for inference.
 
@@ -238,8 +238,12 @@ the retention schedule in detail and said nothing about data leaving for inferen
 | Document overview | OCR-extracted **field labels and values** — for a payslip, employer, employee name and pay figures; for an ID card, name, document number, date of birth | `ai.agents.document_overview` |
 | Checklist drafting | A free-text description a staff member typed, which may contain client specifics | `ai.agents.checklist_draft` |
 | Reminder drafting | Client name, dossier title, due date, titles of outstanding items | `ai.agents.dossier_reminder` |
+| Document embeddings | **Overview only** — filename, `document_type`, `summary`, and `notes` — written at OCR complete. Identifiers (IBAN, BSN, table cells) stay in the tenant-scoped `searchable_text` column and are never embedded | `ai.default_for_embeddings` (Titan Text Embeddings V2) |
+| Document search Ask | The staff question plus **in-tenant search hits** (filename, type, summary, client, dossier). The tool does not dump extracted field values | `ai.agents.document_search` |
 
-**All three run on AWS Bedrock in-region**, not a separate vendor. The region falls
+**These flows run on AWS Bedrock in-region**, not a separate vendor. Titan Text
+Embeddings V2 is the embeddings model (`amazon.titan-embed-text-v2:0`, 1024
+dimensions). The region falls
 through `AWS_BEDROCK_REGION` → `AWS_DEFAULT_REGION` → `eu-west-1`, and the document
 overview agent pins `eu.amazon.nova-pro-v1:0` — the `eu.` prefix is a cross-region
 inference profile that keeps inference inside EU regions. Authentication is the same
@@ -270,7 +274,8 @@ Two details worth keeping:
   have rerouted client document fields to whatever the default named, silently, in
   production. `ProductionConfigurationValidator` now resolves each agent the same way
   `ResolvesConfiguredModel` does and refuses to boot on anything outside
-  `APPROVED_AI_PROVIDERS`. The fallback itself is `bedrock`, so the failure mode is
+  `APPROVED_AI_PROVIDERS`. Embeddings are pinned the same way: `ai.default_for_embeddings`
+  must be `bedrock`. The fallback itself is `bedrock`, so the failure mode is
   degraded-to-correct rather than degraded-to-elsewhere. decision-11.
 
 **Not covered here:** transcription and OCR do not go through this path at all. They

@@ -15,14 +15,14 @@ use App\Tenancy\Policies\TenantInvitationPolicy;
 use App\Tenancy\Policies\TenantMembershipPolicy;
 use App\Tenancy\Policies\TenantRolePolicy;
 use App\Tenancy\Policies\TenantSettingsPolicy;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Override;
 
 /**
- * Tenancy container bindings, policies, and support Gate overlay.
+ * Tenancy container bindings, policies, and permission Gate overlay.
  */
 final class TenancyServiceProvider extends ServiceProvider
 {
@@ -45,40 +45,38 @@ final class TenancyServiceProvider extends ServiceProvider
         Gate::policy(TenantRole::class, TenantRolePolicy::class);
         Gate::policy(TenantSetting::class, TenantSettingsPolicy::class);
 
-        $this->configureSupportPermissionGate();
+        $this->configurePermissionGate();
     }
 
     /**
-     * Grant read-only abilities to platform support users in an active firm session.
-     * Hard-denies mutate abilities while a support session is active.
-     * Only intercepts Spatie permission strings — policy methods (viewAny, etc.) continue normally.
+     * Resolve Spatie permission strings on the Gate, including the support overlay.
+     *
+     * Spatie's own Gate::before (`register_permission_check_method`) looks up
+     * every ability as a permission name. Policy methods such as viewAny then
+     * throw PermissionDoesNotExist, which translates vendor exception copy on
+     * every authorize() call. We skip unregistered abilities so policies run.
      */
-    private function configureSupportPermissionGate(): void
+    private function configurePermissionGate(): void
     {
         Gate::before(function (mixed $user, string $ability): ?bool {
-            if (! $user instanceof User || ! $user->isPlatformSupport()) {
+            if (! $user instanceof User) {
                 return null;
             }
 
-            // Policy abilities like "viewAny" must not be short-circuited here.
             if (! resolve(PermissionRegistry::class)->isRegistered($ability)) {
                 return null;
             }
 
             $tenant = Tenant::current();
-
-            if (! $tenant instanceof Tenant) {
-                return null;
-            }
-
             $supportSession = resolve(SupportSessionState::class);
 
             // Support session takes priority over firm membership (read-only overlay).
-            if (! $supportSession->isActiveFor($tenant)) {
-                return null;
+            if ($user->isPlatformSupport() && $tenant instanceof Tenant && $supportSession->isActiveFor($tenant)) {
+                return $supportSession->allowsPermission($ability);
             }
 
-            return $supportSession->allowsPermission($ability);
+            // Return null (not false) on deny so later Gate checks and policies still run.
+            return $user->checkPermissionTo($ability) ? true : null;
         });
     }
 }

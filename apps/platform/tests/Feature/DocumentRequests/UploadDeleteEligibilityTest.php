@@ -8,7 +8,7 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 
 covers(DocumentRequestTransitions::class);
 

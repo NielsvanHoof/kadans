@@ -40,7 +40,7 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 vi.mock(
-    '@/actions/App/Tenancy/Http/Controllers/WorkspaceRoleController',
+    '@/actions/App/Tenancy/Http/Controllers/Roles/WorkspaceRoleController',
     () => {
         const form = () => ({ action: '/roles', method: 'post' as const });
 

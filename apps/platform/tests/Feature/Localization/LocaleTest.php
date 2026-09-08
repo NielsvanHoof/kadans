@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Notifications\ClientPortalInviteNotification;
+use App\ClientPortal\Notifications\Outreach\ClientPortalInviteNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Http\Middleware\HandleInertiaRequests;

@@ -14,19 +14,19 @@ export type TemplateCategoryOption = {
 };
 
 export type TemplateSummary =
-    App.Questionnaires.Data.QuestionnaireTemplateRowData;
+    App.Questionnaires.Data.Templates.QuestionnaireTemplateRowData;
 
 /** One item inside a template editor. */
 export type TemplateItem =
-    App.Questionnaires.Data.QuestionnaireTemplateItemData;
+    App.Questionnaires.Data.Templates.QuestionnaireTemplateItemData;
 
 /** Full template payload for the show/editor page. */
 export type TemplateDetail =
-    App.Questionnaires.Data.QuestionnaireTemplateShowData;
+    App.Questionnaires.Data.Templates.QuestionnaireTemplateShowData;
 
 /** Template item payload embedded on the builder apply picker. */
 export type ApplyTemplateItem = Omit<
-    App.Questionnaires.Data.QuestionnaireTemplateItemOptionData,
+    App.Questionnaires.Data.Templates.QuestionnaireTemplateItemOptionData,
     'configuration'
 > & {
     configuration: QuestionnaireItemConfiguration | null;
@@ -34,7 +34,7 @@ export type ApplyTemplateItem = Omit<
 
 /** Template option on the dossier apply picker. */
 export type ApplyTemplateOption = Omit<
-    App.Questionnaires.Data.QuestionnaireTemplateOptionData,
+    App.Questionnaires.Data.Templates.QuestionnaireTemplateOptionData,
     'items'
 > & {
     items: ApplyTemplateItem[];
@@ -45,4 +45,4 @@ export type ApplyTemplateOption = Omit<
  * directly; only used to seed the existing "Add item" form.
  */
 export type DraftedChecklistItem =
-    App.Questionnaires.Data.DraftedChecklistItemData;
+    App.Questionnaires.Data.ChecklistDraft.DraftedChecklistItemData;

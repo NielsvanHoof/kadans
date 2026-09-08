@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Platform\Http\Controllers\SupportSessionController;
+use App\Platform\Http\Controllers\SupportSession\SupportSessionController;
 use App\Platform\Http\Middleware\EnsurePlatformSupport;
 use Illuminate\Support\Facades\Route;
 

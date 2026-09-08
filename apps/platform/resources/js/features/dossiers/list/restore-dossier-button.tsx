@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react';
-import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
+import DossierController from '@/actions/App/Dossiers/Http/Controllers/Lifecycle/DossierController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button, LinkButton } from '@/components/ui/button';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

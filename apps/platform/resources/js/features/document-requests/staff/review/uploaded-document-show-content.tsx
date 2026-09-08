@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocuments/UploadedDocumentController';
 import ErrorState from '@/components/primitives/error-state';
 import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';

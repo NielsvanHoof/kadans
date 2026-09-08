@@ -3,14 +3,14 @@
 declare(strict_types=1);
 
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
-use App\ClientPortal\Events\ClientQuestionnaireCompleted;
-use App\ClientPortal\Notifications\ClientChangesRequestedNotification;
-use App\ClientPortal\Notifications\ClientPortalNewDeviceNotification;
-use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\ClientPortal\Events\Outreach\ClientQuestionnaireCompleted;
+use App\ClientPortal\Notifications\Outreach\ClientChangesRequestedNotification;
+use App\ClientPortal\Notifications\Outreach\ClientQuestionnaireCompletedNotification;
+use App\ClientPortal\Notifications\Session\ClientPortalNewDeviceNotification;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
+use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
 use App\Pipelines\Events\PipelineUpdated;
-use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
+use App\Tenancy\Notifications\Members\WorkspaceMemberInviteNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Date;
 

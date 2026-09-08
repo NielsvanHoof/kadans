@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Dossiers\Http\Controllers\AudioRecordingCalendarController;
-use App\Dossiers\Http\Controllers\AudioRecordingController;
+use App\Dossiers\Http\Controllers\AudioRecordings\AudioRecordingCalendarController;
+use App\Dossiers\Http\Controllers\AudioRecordings\AudioRecordingController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;

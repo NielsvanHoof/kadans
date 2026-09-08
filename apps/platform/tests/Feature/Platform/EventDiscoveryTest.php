@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\ClientPortal\Listeners\LogClientPortalInviteFailed;
-use App\ClientPortal\Listeners\LogClientPortalInviteSent;
-use App\Tenancy\Listeners\AddCurrentTenantToContext;
-use App\Tenancy\Listeners\RemoveCurrentTenantFromContext;
+use App\ClientPortal\Listeners\Outreach\LogClientPortalInviteFailed;
+use App\ClientPortal\Listeners\Outreach\LogClientPortalInviteSent;
+use App\Tenancy\Listeners\Workspace\AddCurrentTenantToContext;
+use App\Tenancy\Listeners\Workspace\RemoveCurrentTenantFromContext;
 use Spatie\Multitenancy\Events\ForgotCurrentTenantEvent;
 use Spatie\Multitenancy\Events\MadeTenantCurrentEvent;
 

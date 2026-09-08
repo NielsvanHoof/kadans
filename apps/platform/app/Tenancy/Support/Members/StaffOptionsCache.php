@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Support;
+namespace App\Tenancy\Support\Members;
 
 use Closure;
 use Illuminate\Support\Facades\Cache;

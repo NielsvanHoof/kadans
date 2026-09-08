@@ -24,7 +24,7 @@ return [
     | Every enum listed here must implement App\Tenancy\Contracts\TenantPermission.
     | This is the single place that knows the full permission set: the seeder,
     | the role sync command, and the support-session gate all read it through
-    | App\Tenancy\Support\PermissionRegistry.
+    | App\Tenancy\Support\Roles\PermissionRegistry.
     |
     | Adding a permission to a domain means adding a case to that domain's enum.
     | Adding a whole new domain means adding one line here.

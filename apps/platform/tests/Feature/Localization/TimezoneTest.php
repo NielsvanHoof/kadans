@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 use App\Accounts\Actions\Localization\ResolveApplicationTimezoneAction;
 use App\Accounts\Models\User;
-use App\Accounts\Support\DisplayTimezones;
-use App\ClientPortal\Notifications\ClientPortalInviteNotification;
+use App\Accounts\Support\Localization\DisplayTimezones;
+use App\ClientPortal\Notifications\Outreach\ClientPortalInviteNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
-use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
+use App\Tenancy\Notifications\Members\WorkspaceMemberInviteNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Collection;

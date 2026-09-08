@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
-use App\ClientPortal\Support\PortalSessionWindow;
+use App\ClientPortal\Support\Session\PortalSessionWindow;
 use Illuminate\Support\Facades\Config;
 
 covers(PortalSessionWindow::class);

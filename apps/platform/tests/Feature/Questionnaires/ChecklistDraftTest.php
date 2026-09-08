@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Questionnaires\Ai\ChecklistDraftAgent;
+use App\Questionnaires\Ai\ChecklistDraft\ChecklistDraftAgent;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\TenantSetting;

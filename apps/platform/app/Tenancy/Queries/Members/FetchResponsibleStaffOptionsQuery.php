@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Queries;
+namespace App\Tenancy\Queries\Members;
 
 use App\Accounts\Models\User;
 use App\Shared\Data\PersonOptionData;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Support\StaffOptionsCache;
+use App\Tenancy\Support\Members\StaffOptionsCache;
 use Illuminate\Database\Eloquent\Builder;
 
 /**

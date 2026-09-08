@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 use App\Audit\Enums\AuditPermission;
 use App\Dossiers\Enums\DossierPermission;
-use App\Tenancy\Actions\SyncTenantRolesAction;
+use App\Tenancy\Actions\Roles\SyncTenantRolesAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantRole as RoleModel;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use Spatie\Permission\Models\Permission as PermissionModel;
 
 use function Pest\Laravel\artisan;

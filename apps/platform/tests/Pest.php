@@ -2,22 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Actions\Profile\CreateNewUser;
+use App\Accounts\Actions\Security\ResetUserPassword;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Support\StagedUpload;
-use App\Dossiers\Support\UploadTicket;
+use App\Dossiers\Support\Uploads\StagedUpload;
+use App\Dossiers\Support\Uploads\UploadTicket;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
-use App\Reporting\Queries\ActivityLogRowMapper;
+use App\Reporting\Queries\ActivityLog\ActivityLogRowMapper;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Queries\PaginatedIndexQuery;
-use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Actions\Provisioning\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
@@ -29,6 +31,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Support\Header;
+use Laravel\Ai\Embeddings;
 use Tests\TestCase;
 
 /*
@@ -45,6 +48,11 @@ use Tests\TestCase;
 // Feature tests hit the database by default; individual files must not re-declare this.
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function (): void {
+        // UploadedDocument::searchable() embeds overview text. PHPUnit uses
+        // the collection driver, but toSearchableEmbedding() still runs.
+        Embeddings::fake();
+    })
     ->in('Feature');
 
 // Model unit tests need the Laravel app for Eloquent, but not the database.
@@ -58,7 +66,12 @@ pest()->presets()->custom('qompose', fn (): array => [
     expect('App')
         ->toUseStrictTypes(),
 
+    // Layer-first domains (`App\Clients\Actions`) and Dossiers
+    // layer-then-concern (`App\Dossiers\Actions\Lifecycle`) must both match.
     expect('App\*\Actions')
+        ->classes()
+        ->toBeFinal(),
+    expect('App\*\Actions\*')
         ->classes()
         ->toBeFinal(),
 
@@ -69,6 +82,13 @@ pest()->presets()->custom('qompose', fn (): array => [
         ->ignoring([
             'App\Accounts\Actions',
         ]),
+    expect('App\*\Actions\*')
+        ->classes()
+        ->toHaveSuffix('Action')
+        ->ignoring([
+            CreateNewUser::class,
+            ResetUserPassword::class,
+        ]),
 
     expect('App\*\Actions')
         ->classes()
@@ -76,6 +96,13 @@ pest()->presets()->custom('qompose', fn (): array => [
         ->ignoring([
             'App\Accounts\Actions',
             LogTenantActivityAction::class,
+        ]),
+    expect('App\*\Actions\*')
+        ->classes()
+        ->toHaveMethod('handle')
+        ->ignoring([
+            CreateNewUser::class,
+            ResetUserPassword::class,
         ]),
 
     expect('App\*\Actions')
@@ -85,9 +112,23 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\Accounts\Actions',
             LogTenantActivityAction::class,
         ]),
+    expect('App\*\Actions\*')
+        ->classes()
+        ->not->toHaveMethod('__invoke')
+        ->ignoring([
+            CreateNewUser::class,
+            ResetUserPassword::class,
+        ]),
 
     // Read models end in Query; Spatie filters and row mappers are not Queries.
     expect('App\*\Queries')
+        ->classes()
+        ->toHaveSuffix('Query')
+        ->ignoring([
+            'App\Shared\Queries\Filters',
+            ActivityLogRowMapper::class,
+        ]),
+    expect('App\*\Queries\*')
         ->classes()
         ->toHaveSuffix('Query')
         ->ignoring([
@@ -103,12 +144,26 @@ pest()->presets()->custom('qompose', fn (): array => [
             'App\Shared\Queries\Filters',
             ActivityLogRowMapper::class,
         ]),
+    expect('App\*\Queries\*')
+        ->classes()
+        ->toHaveMethod('handle')
+        ->ignoring([
+            'App\Shared\Queries\Filters',
+            ActivityLogRowMapper::class,
+        ]),
 
     expect('App\*\Queries')
         ->classes()
         ->not->toHaveMethod('__invoke')
         ->ignoring([
             PaginatedIndexQuery::class,
+            'App\Shared\Queries\Filters',
+            ActivityLogRowMapper::class,
+        ]),
+    expect('App\*\Queries\*')
+        ->classes()
+        ->not->toHaveMethod('__invoke')
+        ->ignoring([
             'App\Shared\Queries\Filters',
             ActivityLogRowMapper::class,
         ]),
@@ -119,6 +174,13 @@ pest()->presets()->custom('qompose', fn (): array => [
         ->ignoring([
             PaginatedIndexQuery::class,
         ]),
+    expect('App\*\Queries\*')
+        ->classes()
+        ->toBeFinal()
+        ->ignoring([
+            'App\Shared\Queries\Filters',
+            ActivityLogRowMapper::class,
+        ]),
 
     expect(Controller::class)
         ->toBeAbstract(),
@@ -126,6 +188,11 @@ pest()->presets()->custom('qompose', fn (): array => [
     // Per-controller action contracts live in tests/Unit/ControllerActionsTest.php;
     // one global allowlist here permitted any listed name on every controller.
     expect('App\*\Http\Controllers')
+        ->classes()
+        ->toExtend(Controller::class)
+        ->toHaveSuffix('Controller')
+        ->ignoring(Controller::class),
+    expect('App\*\Http\Controllers\*')
         ->classes()
         ->toExtend(Controller::class)
         ->toHaveSuffix('Controller')

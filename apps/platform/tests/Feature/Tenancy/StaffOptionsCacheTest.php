@@ -3,14 +3,14 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Tenancy\Actions\AcceptTenantInvitationAction;
-use App\Tenancy\Actions\InviteTenantMemberAction;
-use App\Tenancy\Actions\RemoveTenantMemberAction;
+use App\Tenancy\Actions\Invitations\AcceptTenantInvitationAction;
+use App\Tenancy\Actions\Members\InviteTenantMemberAction;
+use App\Tenancy\Actions\Members\RemoveTenantMemberAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Queries\FetchResponsibleStaffOptionsQuery;
-use App\Tenancy\Support\StaffOptionsCache;
+use App\Tenancy\Queries\Members\FetchResponsibleStaffOptionsQuery;
+use App\Tenancy\Support\Members\StaffOptionsCache;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;

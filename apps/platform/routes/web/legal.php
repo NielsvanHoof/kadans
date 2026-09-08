@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Platform\Http\Controllers\LegalDocumentController;
+use App\Platform\Http\Controllers\Legal\LegalDocumentController;
 use Illuminate\Support\Facades\Route;
 
 /*

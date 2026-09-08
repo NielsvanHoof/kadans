@@ -58,6 +58,9 @@
         <env name="OCR_DRIVER" value="mock"/>
         <env name="TRANSCRIPTION_DRIVER" value="mock"/>
         <env name="SCOUT_DRIVER" value="collection"/>
+        <!-- Titan V2 has no eu. inference profile. Pin so a local .env still
+             using eu.amazon.titan-embed-text-v2:0 cannot flip this assertion. -->
+        <env name="AI_BEDROCK_EMBEDDINGS_MODEL" value="amazon.titan-embed-text-v2:0"/>
         <!-- Off for the suite: there is no GuardDuty tagging a faked disk, so a
              developer with this on in .env would fail every download test for a
              reason unrelated to what it covers. The gate's own tests turn it on

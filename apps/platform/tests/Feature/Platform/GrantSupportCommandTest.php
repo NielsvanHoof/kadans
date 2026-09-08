@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Accounts\Enums\PlatformRole;
 use App\Accounts\Models\User;
-use App\Platform\Console\Commands\GrantSupportCommand;
-use App\Platform\Console\Commands\RevokeSupportCommand;
+use App\Platform\Console\Commands\SupportSession\GrantSupportCommand;
+use App\Platform\Console\Commands\SupportSession\RevokeSupportCommand;
 
 covers(GrantSupportCommand::class, RevokeSupportCommand::class);
 

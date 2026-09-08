@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
 
-export type FirmSettings = App.Tenancy.Data.TenantSettingsData;
+export type FirmSettings = App.Tenancy.Data.Settings.TenantSettingsData;
 
 export type FirmAiSettings = FirmSettings['ai'];
 

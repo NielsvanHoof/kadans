@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-use App\DocumentProcessing\Ai\DocumentOverviewAgent;
-use App\Dossiers\Ai\DossierReminderDraftAgent;
-use App\Questionnaires\Ai\ChecklistDraftAgent;
+use App\DocumentProcessing\Ai\Ocr\DocumentOverviewAgent;
+use App\DocumentProcessing\Ai\Search\DocumentSearchAgent;
+use App\DocumentProcessing\Ai\Search\Tools\SearchUploadedDocuments;
+use App\Dossiers\Ai\Reminders\DossierReminderDraftAgent;
+use App\Questionnaires\Ai\ChecklistDraft\ChecklistDraftAgent;
 use Tests\TestCase;
 
 pest()
@@ -13,7 +15,8 @@ pest()
 test('agents resolve their provider from the ai.agents config slot', function (): void {
     expect((new DocumentOverviewAgent)->provider())->toBe('bedrock')
         ->and(new ChecklistDraftAgent('Dutch')->provider())->toBe('bedrock')
-        ->and(new DossierReminderDraftAgent('Dutch')->provider())->toBe('bedrock');
+        ->and(new DossierReminderDraftAgent('Dutch')->provider())->toBe('bedrock')
+        ->and(new DocumentSearchAgent('Dutch')->provider())->toBe('bedrock');
 });
 
 test('a per-agent model override is applied', function (): void {
@@ -89,16 +92,29 @@ test('an unpinned agent leaves the model unset so the provider default applies',
         ->toBe(['bedrock' => null]);
 });
 
+test('bedrock embeddings use on-demand titan without a geographic inference prefix', function (): void {
+    expect(config('ai.providers.bedrock.models.embeddings.default'))->toBe('amazon.titan-embed-text-v2:0');
+});
+
+test('the document search agent asks the tool for one short token at a time', function (): void {
+    expect(new DocumentSearchAgent('Dutch')->instructions())
+        ->toContain('one short token')
+        ->and(new SearchUploadedDocuments()->description())
+        ->toContain('short token');
+});
+
 test('agents resolve their timeout from the ai.agents config slot', function (): void {
     config([
         'ai.agents.document_overview.timeout' => 45,
         'ai.agents.checklist_draft.timeout' => 30,
         'ai.agents.dossier_reminder.timeout' => 20,
+        'ai.agents.document_search.timeout' => 30,
     ]);
 
     expect((new DocumentOverviewAgent)->timeout())->toBe(45)
         ->and(new ChecklistDraftAgent('Dutch')->timeout())->toBe(30)
-        ->and(new DossierReminderDraftAgent('Dutch')->timeout())->toBe(20);
+        ->and(new DossierReminderDraftAgent('Dutch')->timeout())->toBe(20)
+        ->and(new DocumentSearchAgent('Dutch')->timeout())->toBe(30);
 });
 
 test('an agent slot without a timeout falls back to the shared default', function (): void {

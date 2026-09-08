@@ -1,6 +1,7 @@
-export type WorkspaceRole = App.Tenancy.Data.WorkspaceRoleData;
+export type WorkspaceRole = App.Tenancy.Data.Roles.WorkspaceRoleData;
 
-export type WorkspacePermission = App.Tenancy.Data.WorkspacePermissionData;
+export type WorkspacePermission =
+    App.Tenancy.Data.Roles.WorkspacePermissionData;
 
 export type WorkspacePermissionGroup =
-    App.Tenancy.Data.WorkspacePermissionGroupData;
+    App.Tenancy.Data.Roles.WorkspacePermissionGroupData;

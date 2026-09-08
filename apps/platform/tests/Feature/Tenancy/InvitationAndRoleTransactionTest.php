@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Tenancy\Actions\CreateTenantRoleAction;
-use App\Tenancy\Actions\RegisterAndAcceptTenantInvitationAction;
-use App\Tenancy\Actions\UpdateTenantRoleAction;
+use App\Tenancy\Actions\Invitations\RegisterAndAcceptTenantInvitationAction;
+use App\Tenancy\Actions\Roles\CreateTenantRoleAction;
+use App\Tenancy\Actions\Roles\UpdateTenantRoleAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantInvitation;

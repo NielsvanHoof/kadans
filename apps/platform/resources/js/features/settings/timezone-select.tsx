@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import type { Key } from 'react-aria-components';
-import TimezoneController from '@/actions/App/Accounts/Http/Controllers/TimezoneController';
+import TimezoneController from '@/actions/App/Accounts/Http/Controllers/Localization/TimezoneController';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
     Select,

@@ -37,7 +37,7 @@ use App\Tenancy\Models\TenantRole;
 use App\Tenancy\Policies\TenantInvitationPolicy;
 use App\Tenancy\Policies\TenantMembershipPolicy;
 use App\Tenancy\Policies\TenantRolePolicy;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use App\Tenancy\TenancyServiceProvider;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;

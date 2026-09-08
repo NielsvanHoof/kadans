@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Tenancy\Console\Commands\CreateOwnerCommand;
+use App\Tenancy\Console\Commands\Provisioning\CreateOwnerCommand;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;

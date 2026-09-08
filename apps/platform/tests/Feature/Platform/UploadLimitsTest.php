@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Dossiers\Enums\UploadPurpose;
-use App\Dossiers\Support\AudioUploadLimits;
-use App\Dossiers\Support\DocumentUploadLimits;
+use App\Dossiers\Support\AudioRecordings\AudioUploadLimits;
+use App\Dossiers\Support\Uploads\DocumentUploadLimits;
 
 /**
  * The dropzones and the server must agree on what they accept.

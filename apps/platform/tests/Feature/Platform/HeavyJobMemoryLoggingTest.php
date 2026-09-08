@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
-use App\Platform\Listeners\LogHeavyJobMemoryUsage;
-use App\Platform\Listeners\StartJobPeakMemoryWindow;
-use App\Platform\Support\WorkerQueues;
+use App\DocumentProcessing\Jobs\Ocr\ApplyTextractResultJob;
+use App\Platform\Listeners\Observability\LogHeavyJobMemoryUsage;
+use App\Platform\Listeners\Observability\StartJobPeakMemoryWindow;
+use App\Platform\Support\Observability\WorkerQueues;
 use App\Shared\Support\PeakMemory;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Log\LogManager;

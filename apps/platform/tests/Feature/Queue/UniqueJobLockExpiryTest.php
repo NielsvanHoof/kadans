@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
+use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;

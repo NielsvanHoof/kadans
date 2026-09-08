@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Notifications;
+namespace App\Tenancy\Notifications\Members;
 
 use App\Tenancy\Enums\Role;
 use Carbon\CarbonInterface;

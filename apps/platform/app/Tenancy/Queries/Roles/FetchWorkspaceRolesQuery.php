@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Queries;
+namespace App\Tenancy\Queries\Roles;
 
 use App\Accounts\Models\User;
 use App\Tenancy\Contracts\TenantPermission;
-use App\Tenancy\Data\WorkspacePermissionData;
-use App\Tenancy\Data\WorkspacePermissionGroupData;
-use App\Tenancy\Data\WorkspaceRoleData;
-use App\Tenancy\Data\WorkspaceRolesPageData;
+use App\Tenancy\Data\Roles\WorkspacePermissionData;
+use App\Tenancy\Data\Roles\WorkspacePermissionGroupData;
+use App\Tenancy\Data\Roles\WorkspaceRoleData;
+use App\Tenancy\Data\Roles\WorkspaceRolesPageData;
 use App\Tenancy\Enums\PermissionGroup;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;

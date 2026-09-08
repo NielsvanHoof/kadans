@@ -6,8 +6,8 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Support\PermissionRegistry;
-use App\Tenancy\Support\WorkspaceMemberRoles;
+use App\Tenancy\Support\Members\WorkspaceMemberRoles;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 
 test('owner-only permissions cannot be included in a firm-authored role', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();

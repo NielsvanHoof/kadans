@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Dossiers\Http\Controllers\DocumentRequestController;
-use App\Dossiers\Http\Controllers\DossierBuilderLockController;
-use App\Dossiers\Http\Controllers\DossierCompletionController;
-use App\Dossiers\Http\Controllers\DossierController;
-use App\Dossiers\Http\Controllers\DossierExportController;
-use App\Dossiers\Http\Controllers\DossierReminderController;
-use App\Dossiers\Http\Controllers\DossierReminderDraftController;
-use App\Dossiers\Http\Controllers\DossierRollOverController;
+use App\Dossiers\Http\Controllers\Builder\DossierBuilderLockController;
+use App\Dossiers\Http\Controllers\DocumentRequests\DocumentRequestController;
+use App\Dossiers\Http\Controllers\Exports\DossierExportController;
+use App\Dossiers\Http\Controllers\Lifecycle\DossierCompletionController;
+use App\Dossiers\Http\Controllers\Lifecycle\DossierController;
+use App\Dossiers\Http\Controllers\Lifecycle\DossierRollOverController;
+use App\Dossiers\Http\Controllers\Reminders\DossierReminderController;
+use App\Dossiers\Http\Controllers\Reminders\DossierReminderDraftController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;

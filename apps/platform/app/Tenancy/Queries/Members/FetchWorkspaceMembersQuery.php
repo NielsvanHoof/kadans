@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Queries;
+namespace App\Tenancy\Queries\Members;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Data\WorkspaceInvitationData;
-use App\Tenancy\Data\WorkspaceMemberData;
-use App\Tenancy\Data\WorkspaceMembersPageData;
-use App\Tenancy\Data\WorkspaceRoleOptionData;
+use App\Tenancy\Data\Invitations\WorkspaceInvitationData;
+use App\Tenancy\Data\Members\WorkspaceMemberData;
+use App\Tenancy\Data\Members\WorkspaceMembersPageData;
+use App\Tenancy\Data\Members\WorkspaceRoleOptionData;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Support\WorkspaceMemberRoles;
+use App\Tenancy\Support\Members\WorkspaceMemberRoles;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;

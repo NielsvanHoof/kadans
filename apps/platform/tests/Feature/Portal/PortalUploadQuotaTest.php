@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
-use App\ClientPortal\Actions\SubmitPortalUploadAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Submissions\SubmitPortalUploadAction;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
@@ -11,7 +11,7 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Support\DocumentUploadLimits;
+use App\Dossiers\Support\Uploads\DocumentUploadLimits;
 use App\Pipelines\Models\Pipeline;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;

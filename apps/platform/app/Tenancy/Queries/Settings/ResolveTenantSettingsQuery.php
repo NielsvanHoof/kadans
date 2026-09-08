@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Queries;
+namespace App\Tenancy\Queries\Settings;
 
-use App\Tenancy\Data\TenantSettingsData;
+use App\Tenancy\Data\Settings\TenantSettingsData;
 use App\Tenancy\Enums\TenantAiFeature;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantSetting;
@@ -18,6 +18,7 @@ final readonly class ResolveTenantSettingsQuery
         'ai_document_overview_enabled' => true,
         'ai_checklist_draft_enabled' => true,
         'ai_reminder_draft_enabled' => true,
+        'ai_document_search_enabled' => true,
     ];
 
     public function handle(?Tenant $tenant = null): TenantSettingsData

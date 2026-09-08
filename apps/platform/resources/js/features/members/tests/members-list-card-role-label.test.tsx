@@ -31,7 +31,7 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 vi.mock(
-    '@/actions/App/Tenancy/Http/Controllers/WorkspaceMemberController',
+    '@/actions/App/Tenancy/Http/Controllers/Members/WorkspaceMemberController',
     () => {
         const form = () => ({ action: '/members/1', method: 'post' as const });
 

@@ -6,7 +6,7 @@ use App\Accounts\Models\User;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;

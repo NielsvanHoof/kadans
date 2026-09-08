@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Queries;
+namespace App\Tenancy\Queries\Members;
 
 use App\Accounts\Models\User;
 use App\Tenancy\Enums\TenantMembershipStatus;

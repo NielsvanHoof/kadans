@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Http\Controllers\ActiveTenantController;
-use App\Tenancy\Http\Controllers\FirmController;
-use App\Tenancy\Http\Controllers\WorkspaceOnboardingController;
+use App\Tenancy\Http\Controllers\Provisioning\WorkspaceOnboardingController;
+use App\Tenancy\Http\Controllers\Settings\FirmController;
+use App\Tenancy\Http\Controllers\Workspace\ActiveTenantController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('firms/create', [FirmController::class, 'create'])

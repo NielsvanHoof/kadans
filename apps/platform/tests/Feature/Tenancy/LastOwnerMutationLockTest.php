@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Actions\RemoveTenantMemberAction;
-use App\Tenancy\Actions\SuspendTenantMemberAction;
-use App\Tenancy\Actions\UpdateTenantMemberRoleAction;
+use App\Tenancy\Actions\Members\RemoveTenantMemberAction;
+use App\Tenancy\Actions\Members\SuspendTenantMemberAction;
+use App\Tenancy\Actions\Members\UpdateTenantMemberRoleAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Support\WorkspaceMemberRoles;
+use App\Tenancy\Support\Members\WorkspaceMemberRoles;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 
