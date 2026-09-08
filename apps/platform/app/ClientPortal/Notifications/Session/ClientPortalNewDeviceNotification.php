@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Notifications;
+namespace App\ClientPortal\Notifications\Session;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

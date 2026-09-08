@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\Exports;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Actions\CreateDossierExportAction;
-use App\Dossiers\Actions\DownloadDossierExportAction;
-use App\Dossiers\Data\DossierExportData;
+use App\Dossiers\Actions\Exports\CreateDossierExportAction;
+use App\Dossiers\Actions\Exports\DownloadDossierExportAction;
+use App\Dossiers\Data\Exports\DossierExportData;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\DossierExport;
 use App\Shared\Http\Controllers\Controller;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Listeners;
+namespace App\Tenancy\Listeners\Workspace;
 
 use App\Shared\Observability\ObservabilityContext;
 use App\Tenancy\Models\Tenant;

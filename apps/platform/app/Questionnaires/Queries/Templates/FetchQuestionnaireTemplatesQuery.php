@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Queries;
+namespace App\Questionnaires\Queries\Templates;
 
-use App\Questionnaires\Data\QuestionnaireTemplateRowData;
-use App\Questionnaires\Data\QuestionnaireTemplatesPageData;
+use App\Questionnaires\Data\Templates\QuestionnaireTemplateRowData;
+use App\Questionnaires\Data\Templates\QuestionnaireTemplatesPageData;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Shared\Queries\Filters\ScoutSearchFilter;

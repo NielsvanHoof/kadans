@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Console\Commands;
+namespace App\Tenancy\Console\Commands\Roles;
 
 use App\Tenancy\Contracts\TenantPermission;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;

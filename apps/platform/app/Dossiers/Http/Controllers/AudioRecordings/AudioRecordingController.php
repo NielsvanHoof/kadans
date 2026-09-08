@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\AudioRecordings;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Actions\AudioRecordings\DeleteAudioRecordingAction;
 use App\Dossiers\Actions\AudioRecordings\UploadAudioRecordingAction;
-use App\Dossiers\Actions\GuardUploadedDocumentDeliveryAction;
+use App\Dossiers\Actions\UploadedDocuments\GuardUploadedDocumentDeliveryAction;
 use App\Dossiers\Actions\Uploads\ClaimUploadTicketAction;
-use App\Dossiers\Data\StaffAudioRecordingData;
+use App\Dossiers\Data\AudioRecordings\StaffAudioRecordingData;
 use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Http\Requests\AudioRecordings\StoreAudioRecordingRequest;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Queries\FetchAudioRecordingShowQuery;
+use App\Dossiers\Queries\AudioRecordings\FetchAudioRecordingShowQuery;
 use App\Dossiers\Support\StoredFileResponse;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;

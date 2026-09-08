@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\AudioRecordings;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Models\AudioRecording;

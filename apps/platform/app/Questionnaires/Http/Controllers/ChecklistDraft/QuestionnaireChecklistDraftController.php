@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Http\Controllers;
+namespace App\Questionnaires\Http\Controllers\ChecklistDraft;
 
 use App\Accounts\Enums\Locale;
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
-use App\Questionnaires\Actions\DraftQuestionnaireChecklistItemsAction;
-use App\Questionnaires\Data\DraftedChecklistItemData;
-use App\Questionnaires\Http\Requests\StoreChecklistDraftRequest;
+use App\Questionnaires\Actions\ChecklistDraft\DraftQuestionnaireChecklistItemsAction;
+use App\Questionnaires\Data\ChecklistDraft\DraftedChecklistItemData;
+use App\Questionnaires\Http\Requests\ChecklistDraft\StoreChecklistDraftRequest;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;

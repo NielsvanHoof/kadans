@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\Reminders;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
-use App\Dossiers\Actions\SendDossierReminderAction;
+use App\Dossiers\Actions\Reminders\SendDossierReminderAction;
 use App\Dossiers\Enums\DossierReminderSource;
-use App\Dossiers\Http\Requests\StoreDossierReminderRequest;
+use App\Dossiers\Http\Requests\Reminders\StoreDossierReminderRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;

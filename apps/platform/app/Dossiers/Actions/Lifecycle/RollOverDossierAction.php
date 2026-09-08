@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\Lifecycle;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Data\RollOverDossierData;
+use App\Dossiers\Data\Lifecycle\RollOverDossierData;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;

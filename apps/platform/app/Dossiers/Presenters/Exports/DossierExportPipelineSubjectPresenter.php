@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Presenters;
+namespace App\Dossiers\Presenters\Exports;
 
 use App\Dossiers\Models\DossierExport;
+use App\Dossiers\Presenters\Lifecycle\DossierWorkspaceHref;
 use App\Pipelines\Contracts\PipelineSubjectPresenter;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;

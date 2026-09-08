@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Data;
+namespace App\ClientPortal\Data\Workspace;
 
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Questionnaires\Enums\QuestionnaireItemType;

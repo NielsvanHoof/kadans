@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Actions;
+namespace App\Tenancy\Actions\Invitations;
 
 use App\Accounts\Models\User;
-use App\Accounts\Support\DisplayTimezones;
+use App\Accounts\Support\Localization\DisplayTimezones;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
-use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
+use App\Tenancy\Notifications\Members\WorkspaceMemberInviteNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Listeners;
+namespace App\Platform\Listeners\Observability;
 
-use App\Platform\Support\WorkerQueues;
+use App\Platform\Support\Observability\WorkerQueues;
 use App\Shared\Support\PeakMemory;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Log;

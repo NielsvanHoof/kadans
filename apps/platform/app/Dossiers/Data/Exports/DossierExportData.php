@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\Exports;
 
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\DossierExport;

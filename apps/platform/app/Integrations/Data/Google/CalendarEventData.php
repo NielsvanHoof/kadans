@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Data;
+namespace App\Integrations\Data\Google;
 
 use App\Integrations\Enums\OAuthProvider;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Data;
+namespace App\Tenancy\Data\Settings;
 
 use App\Tenancy\Models\TenantSetting;
 use Spatie\LaravelData\Data;

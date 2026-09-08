@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Queries;
+namespace App\Platform\Queries\DataSubject;
 
-use App\Platform\Data\DataSubjectRequestData;
+use App\Platform\Data\DataSubject\DataSubjectRequestData;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Models\DataSubjectRequest;

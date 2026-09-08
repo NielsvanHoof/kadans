@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Ai;
+namespace App\Dossiers\Ai\Reminders;
 
 use App\Shared\Concerns\ResolvesConfiguredModel;
 use Laravel\Ai\Contracts\Agent;

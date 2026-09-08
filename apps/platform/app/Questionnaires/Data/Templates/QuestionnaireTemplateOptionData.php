@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Data;
+namespace App\Questionnaires\Data\Templates;
 
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;

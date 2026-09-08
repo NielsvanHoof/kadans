@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Data;
+namespace App\Reporting\Data\MediaLibrary;
 
 use App\Dossiers\Enums\DocumentRequestStatus;
 use Spatie\LaravelData\Data;

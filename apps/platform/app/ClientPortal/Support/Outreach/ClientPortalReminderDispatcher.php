@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Support;
+namespace App\ClientPortal\Support\Outreach;
 
 use App\Accounts\Models\User;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
-use App\ClientPortal\Notifications\ClientPortalReminderNotification;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
+use App\ClientPortal\Notifications\Outreach\ClientPortalReminderNotification;
 use App\Clients\Models\Client;
-use App\Dossiers\Contracts\ClientPortalReminders;
+use App\Dossiers\Contracts\Reminders\ClientPortalReminders;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;

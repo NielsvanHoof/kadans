@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Support;
+namespace App\Reporting\Support\Dashboard;
 
-use App\Reporting\Data\DashboardMetricsData;
+use App\Reporting\Data\Dashboard\DashboardMetricsData;
 use Closure;
 use Illuminate\Support\Facades\Cache;
 

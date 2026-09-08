@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\Builder;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Models\Dossier;

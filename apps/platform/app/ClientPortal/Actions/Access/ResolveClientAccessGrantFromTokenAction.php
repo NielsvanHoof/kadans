@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Access;
 
 use App\ClientPortal\Models\ClientAccessGrant;
 use Illuminate\Support\Timebox;

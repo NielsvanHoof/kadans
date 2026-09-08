@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Session;
 
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
@@ -10,11 +10,11 @@ use App\Audit\Enums\AuditEvent;
 use App\ClientPortal\Enums\NewPortalDeviceAction;
 use App\ClientPortal\Enums\PortalDeviceOutcome;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Notifications\ClientPortalNewDeviceNotification;
+use App\ClientPortal\Notifications\Session\ClientPortalNewDeviceNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\FetchActiveUsersForTenantQuery;
+use App\Tenancy\Queries\Members\FetchActiveUsersForTenantQuery;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;

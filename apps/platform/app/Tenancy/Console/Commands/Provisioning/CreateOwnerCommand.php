@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Console\Commands;
+namespace App\Tenancy\Console\Commands\Provisioning;
 
-use App\Accounts\Actions\CreateNewUser;
-use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Accounts\Actions\Profile\CreateNewUser;
+use App\Tenancy\Actions\Provisioning\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Console\Attributes\Description;

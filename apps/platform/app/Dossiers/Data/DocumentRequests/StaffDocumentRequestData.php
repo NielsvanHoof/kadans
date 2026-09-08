@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\DocumentRequests;
 
 use App\Accounts\Models\User;
+use App\Dossiers\Data\UploadedDocuments\StaffUploadedDocumentData;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Questionnaires\Enums\QuestionnaireItemType;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\Exports;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\DossierExport;
-use App\Dossiers\Transitions\DossierExportTransitions;
+use App\Dossiers\Transitions\Exports\DossierExportTransitions;
 use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;

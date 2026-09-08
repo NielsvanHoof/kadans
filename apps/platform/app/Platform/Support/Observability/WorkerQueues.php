@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Support;
+namespace App\Platform\Support\Observability;
 
 /**
  * Queues Horizon (and local Sail via `php artisan horizon`) must drain.

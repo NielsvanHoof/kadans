@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Transitions;
+namespace App\DocumentProcessing\Transitions\Ocr;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Services\Ocr\FlattenExtractedTextForSearch;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Support\Facades\DB;
 
@@ -46,6 +47,8 @@ final class UploadedDocumentProcessingTransitions
                 'processing_status' => DocumentProcessingStatus::Processing,
                 'processing_error' => null,
                 'extracted_text' => null,
+                'searchable_text' => null,
+                'embedding' => null,
                 'textract_job_id' => null,
                 'processing_started_at' => $locked->processing_started_at ?? now(),
                 'processing_finished_at' => null,
@@ -105,11 +108,23 @@ final class UploadedDocumentProcessingTransitions
             ->update([
                 'processing_status' => DocumentProcessingStatus::Completed->value,
                 'extracted_text' => $extractedText,
+                'searchable_text' => $this->searchableText($document, $extractedText),
+                'embedding' => null,
                 'processing_error' => null,
                 'processing_finished_at' => now(),
             ]);
 
-        return $updated === 1;
+        if ($updated !== 1) {
+            return false;
+        }
+
+        // query()->update() skips Scout observers. searchable_text is already
+        // in the update; searchable() writes the collection/database index
+        // and the overview embedding.
+        $document->refresh();
+        $document->searchable();
+
+        return true;
     }
 
     /**
@@ -156,5 +171,13 @@ final class UploadedDocumentProcessingTransitions
             ]);
 
         return $updated === 1;
+    }
+
+    private function searchableText(UploadedDocument $document, string $extractedText): string
+    {
+        return new FlattenExtractedTextForSearch()->searchableText(
+            $document->original_filename,
+            $extractedText,
+        );
     }
 }

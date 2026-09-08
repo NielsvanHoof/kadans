@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Requests;
+namespace App\ClientPortal\Http\Requests\Submissions;
 
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Support\DocumentUploadLimits;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Support\Uploads\DocumentUploadLimits;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Console\Commands;
+namespace App\Platform\Console\Commands\SupportSession;
 
 use App\Accounts\Models\User;
 use Illuminate\Console\Attributes\Description;

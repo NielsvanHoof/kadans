@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Support;
+namespace App\ClientPortal\Support\Session;
 
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\IpUtils;

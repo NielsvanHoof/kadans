@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Http\Controllers;
+namespace App\Reporting\Http\Controllers\ActivityLog;
 
 use App\Audit\Models\Activity;
-use App\Reporting\Queries\FetchActivityLogIndexQuery;
+use App\Reporting\Queries\ActivityLog\FetchActivityLogIndexQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Inertia\Inertia;

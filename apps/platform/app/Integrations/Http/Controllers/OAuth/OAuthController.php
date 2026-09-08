@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Http\Controllers;
+namespace App\Integrations\Http\Controllers\OAuth;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Accounts\Models\User;
-use App\Integrations\Actions\CompleteOAuthCallbackAction;
-use App\Integrations\Actions\UnlinkOAuthConnectionAction;
+use App\Integrations\Actions\OAuth\CompleteOAuthCallbackAction;
+use App\Integrations\Actions\OAuth\UnlinkOAuthConnectionAction;
 use App\Integrations\Enums\OAuthProvider;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;

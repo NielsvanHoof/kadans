@@ -9,7 +9,7 @@ use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Support\TenantLookup;
+use App\Tenancy\Support\Workspace\TenantLookup;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;

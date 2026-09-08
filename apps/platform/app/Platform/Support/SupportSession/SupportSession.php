@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Support;
+namespace App\Platform\Support\SupportSession;
 
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditPermission;

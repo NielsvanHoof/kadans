@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Actions;
+namespace App\Tenancy\Actions\Members;
 
 use App\Accounts\Models\User;
-use App\Accounts\Support\DisplayTimezones;
+use App\Accounts\Support\Localization\DisplayTimezones;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Notifications\WorkspaceMemberInviteNotification;
-use App\Tenancy\Support\StaffOptionsCache;
-use App\Tenancy\Support\WorkspaceMemberRoles;
+use App\Tenancy\Notifications\Members\WorkspaceMemberInviteNotification;
+use App\Tenancy\Support\Members\StaffOptionsCache;
+use App\Tenancy\Support\Members\WorkspaceMemberRoles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\Reminders;
 
 /**
  * Prompt context for DossierReminderDraftAgent — assembled server-side only.

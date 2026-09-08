@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\Dashboard;
 
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Data\DashboardFollowUpItemData;
-use App\Reporting\Data\DashboardFollowUpSignalsData;
+use App\Reporting\Data\Dashboard\DashboardFollowUpItemData;
+use App\Reporting\Data\Dashboard\DashboardFollowUpSignalsData;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;

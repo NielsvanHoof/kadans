@@ -9,7 +9,7 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierLocks;
-use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
+use App\Questionnaires\Actions\Templates\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\DB;
 

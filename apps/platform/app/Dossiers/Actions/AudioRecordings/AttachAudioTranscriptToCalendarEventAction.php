@@ -8,10 +8,10 @@ use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\AudioRecordingCalendarLink;
-use App\Integrations\Actions\ResolveGoogleConnectorAction;
+use App\Integrations\Actions\Google\ResolveGoogleConnectorAction;
 use App\Integrations\Enums\OAuthProvider;
 use App\Integrations\Exceptions\OAuthTokenRefreshFailedException;
-use App\Integrations\Services\GoogleWorkspaceClient;
+use App\Integrations\Services\Google\GoogleWorkspaceClient;
 use Illuminate\Support\Facades\Date;
 use RuntimeException;
 

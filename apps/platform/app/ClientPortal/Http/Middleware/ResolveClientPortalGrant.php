@@ -6,7 +6,7 @@ namespace App\ClientPortal\Http\Middleware;
 
 use App\ClientPortal\Enums\PortalSessionEndReason;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Support\PortalSessionWindow;
+use App\ClientPortal\Support\Session\PortalSessionWindow;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Closure;

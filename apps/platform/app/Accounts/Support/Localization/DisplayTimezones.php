@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Support;
+namespace App\Accounts\Support\Localization;
 
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;

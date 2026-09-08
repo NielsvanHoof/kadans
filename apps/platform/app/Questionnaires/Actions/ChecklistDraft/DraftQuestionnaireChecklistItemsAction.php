@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Actions;
+namespace App\Questionnaires\Actions\ChecklistDraft;
 
-use App\Questionnaires\Ai\ChecklistDraftAgent;
-use App\Questionnaires\Data\DraftedChecklistItemData;
+use App\Questionnaires\Ai\ChecklistDraft\ChecklistDraftAgent;
+use App\Questionnaires\Data\ChecklistDraft\DraftedChecklistItemData;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Enums\TenantAiFeature;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Responses\StructuredAgentResponse;

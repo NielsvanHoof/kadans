@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Http\Controllers;
+namespace App\Platform\Http\Controllers\Readiness;
 
 use App\Platform\Contracts\Production\ReadinessCheck;
 use App\Shared\Http\Controllers\Controller;

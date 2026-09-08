@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Notifications;
+namespace App\ClientPortal\Notifications\Outreach;
 
-use App\Accounts\Support\DisplayTimezones;
+use App\Accounts\Support\Localization\DisplayTimezones;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use Carbon\CarbonInterface;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Ai;
+namespace App\DocumentProcessing\Ai\Ocr;
 
 use App\Shared\Concerns\ResolvesConfiguredModel;
 use Illuminate\Contracts\JsonSchema\JsonSchema;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Queries;
+namespace App\Questionnaires\Queries\Templates;
 
-use App\Questionnaires\Data\QuestionnaireTemplateItemData;
-use App\Questionnaires\Data\QuestionnaireTemplateShowData;
+use App\Questionnaires\Data\Templates\QuestionnaireTemplateItemData;
+use App\Questionnaires\Data\Templates\QuestionnaireTemplateShowData;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 
 final class FetchQuestionnaireTemplateShowQuery

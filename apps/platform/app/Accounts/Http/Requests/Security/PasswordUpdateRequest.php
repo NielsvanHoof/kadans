@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Http\Requests;
+namespace App\Accounts\Http\Requests\Security;
 
 use App\Accounts\Concerns\PasswordValidationRules;
 use App\Accounts\Http\Concerns\AuthorizesAnyAuthenticatedUser;

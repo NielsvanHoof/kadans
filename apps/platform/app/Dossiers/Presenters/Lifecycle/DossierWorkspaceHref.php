@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Presenters;
+namespace App\Dossiers\Presenters\Lifecycle;
 
 use App\Tenancy\Models\Tenant;
 

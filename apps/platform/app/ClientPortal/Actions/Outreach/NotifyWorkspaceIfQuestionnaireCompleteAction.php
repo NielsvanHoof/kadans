@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Outreach;
 
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Events\ClientQuestionnaireCompleted;
-use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
+use App\ClientPortal\Events\Outreach\ClientQuestionnaireCompleted;
+use App\ClientPortal\Notifications\Outreach\ClientQuestionnaireCompletedNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
+use App\Dossiers\Queries\Lifecycle\DossierHasOutstandingClientItemsQuery;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\FetchActiveUsersForTenantQuery;
+use App\Tenancy\Queries\Members\FetchActiveUsersForTenantQuery;
 use RuntimeException;
 
 /**

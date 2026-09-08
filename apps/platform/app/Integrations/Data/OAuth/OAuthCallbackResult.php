@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Data;
+namespace App\Integrations\Data\OAuth;
 
 use App\Accounts\Models\User;
 use App\Integrations\Models\OAuthConnection;

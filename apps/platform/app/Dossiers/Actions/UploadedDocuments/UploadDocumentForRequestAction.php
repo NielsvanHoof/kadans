@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions\DocumentRequests;
+namespace App\Dossiers\Actions\UploadedDocuments;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Support\DocumentPresigner;
 use App\Dossiers\Support\DossierLocks;
-use App\Dossiers\Support\StagedUpload;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Support\Uploads\DocumentPresigner;
+use App\Dossiers\Support\Uploads\StagedUpload;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Pipelines\Actions\StartPipelineAction;
 use App\Pipelines\Enums\PipelineType;
 use App\Questionnaires\Enums\QuestionnaireItemType;
@@ -107,6 +107,8 @@ final readonly class UploadDocumentForRequestAction
                     'rejection_reason' => null,
                     'processing_status' => DocumentProcessingStatus::Pending,
                     'extracted_text' => null,
+                    'searchable_text' => null,
+                    'embedding' => null,
                     'textract_job_id' => null,
                     'processing_error' => null,
                     'processing_started_at' => null,

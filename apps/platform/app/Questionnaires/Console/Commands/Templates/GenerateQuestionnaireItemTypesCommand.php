@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Console\Commands;
+namespace App\Questionnaires\Console\Commands\Templates;
 
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Console\Attributes\Description;

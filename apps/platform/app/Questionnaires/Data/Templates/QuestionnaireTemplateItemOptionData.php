@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Data;
+namespace App\Questionnaires\Data\Templates;
 
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Spatie\LaravelData\Data;

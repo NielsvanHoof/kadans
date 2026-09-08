@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Queries;
+namespace App\Platform\Queries\SupportSession;
 
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Builder;

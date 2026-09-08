@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\Lifecycle;
 
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Data\PersonOptionData;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\FetchResponsibleStaffOptionsQuery;
+use App\Tenancy\Queries\Members\FetchResponsibleStaffOptionsQuery;
 use RuntimeException;
 
 /**

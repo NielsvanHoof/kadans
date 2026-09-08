@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Listeners;
+namespace App\ClientPortal\Listeners\Access;
 
-use App\ClientPortal\Actions\RevokeClientPortalAccessAction;
+use App\ClientPortal\Actions\Access\RevokeClientPortalAccessAction;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\Dossiers\Events\DossierArchived;
+use App\Dossiers\Events\Lifecycle\DossierArchived;
 
 /**
  * Archiving a dossier must invalidate any live magic-link access to it.

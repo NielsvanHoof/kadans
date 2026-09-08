@@ -8,7 +8,7 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Platform\Models\DataSubjectRequest;
-use App\Platform\Transitions\DataSubjectRequestTransitions;
+use App\Platform\Transitions\DataSubject\DataSubjectRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 

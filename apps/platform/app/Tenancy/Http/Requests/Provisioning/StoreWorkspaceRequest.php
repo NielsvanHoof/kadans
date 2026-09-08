@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Requests;
+namespace App\Tenancy\Http\Requests\Provisioning;
 
 use App\Accounts\Http\Concerns\AuthorizesAnyAuthenticatedUser;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;

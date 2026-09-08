@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Submissions;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\ClientPortal\Actions\Outreach\NotifyWorkspaceIfQuestionnaireCompleteAction;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\Dossiers\Actions\DocumentRequests\UploadDocumentForRequestAction;
+use App\Dossiers\Actions\UploadedDocuments\UploadDocumentForRequestAction;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Support\DocumentUploadLimits;
-use App\Dossiers\Support\StagedUpload;
-use App\Dossiers\Transitions\DossierTransitions;
+use App\Dossiers\Support\Uploads\DocumentUploadLimits;
+use App\Dossiers\Support\Uploads\StagedUpload;
+use App\Dossiers\Transitions\Lifecycle\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 

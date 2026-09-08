@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\Builder;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Actions\Builder\AcquireDossierBuilderLockAction;
-use App\Dossiers\Data\DossierBuilderData;
-use App\Dossiers\Data\DossierBuilderLockData;
+use App\Dossiers\Data\Builder\DossierBuilderData;
+use App\Dossiers\Data\Builder\DossierBuilderLockData;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Questionnaires\Data\QuestionnaireTemplateOptionData;
-use App\Questionnaires\Queries\FetchQuestionnaireTemplateOptionsQuery;
+use App\Dossiers\Queries\DocumentRequests\MapStaffDocumentRequestRowsQuery;
+use App\Questionnaires\Data\Templates\QuestionnaireTemplateOptionData;
+use App\Questionnaires\Queries\Templates\FetchQuestionnaireTemplateOptionsQuery;
 use Illuminate\Http\Request;
 
 /**

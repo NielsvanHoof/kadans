@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/*/Listeners/**'
+  - 'app/**/Listeners/**'
 ---
 
 # Listeners

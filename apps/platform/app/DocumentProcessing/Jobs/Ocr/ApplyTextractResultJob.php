@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Jobs;
+namespace App\DocumentProcessing\Jobs\Ocr;
 
 use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
 use App\DocumentProcessing\Actions\Ocr\FailTextractExtractionAction;

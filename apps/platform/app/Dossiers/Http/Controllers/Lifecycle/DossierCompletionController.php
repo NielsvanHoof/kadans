@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\Lifecycle;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
-use App\Dossiers\Actions\CompleteDossierAction;
-use App\Dossiers\Http\Requests\CompleteDossierRequest;
+use App\Dossiers\Actions\Lifecycle\CompleteDossierAction;
+use App\Dossiers\Http\Requests\Lifecycle\CompleteDossierRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;

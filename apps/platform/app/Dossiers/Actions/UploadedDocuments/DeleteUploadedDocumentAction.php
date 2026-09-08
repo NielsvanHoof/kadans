@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions\DocumentRequests;
+namespace App\Dossiers\Actions\UploadedDocuments;
 
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Pipelines\Actions\DeletePipelinesForSubjectsAction;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\DB;

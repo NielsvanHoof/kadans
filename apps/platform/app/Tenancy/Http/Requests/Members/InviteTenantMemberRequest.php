@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Requests;
+namespace App\Tenancy\Http\Requests\Members;
 
 use App\Accounts\Models\User;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
-use App\Tenancy\Support\WorkspaceMemberRoles;
+use App\Tenancy\Support\Members\WorkspaceMemberRoles;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Support;
+namespace App\Dossiers\Support\Uploads;
 
 use Aws\S3\S3Client;
 use DateTimeInterface;

@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Controllers;
+namespace App\Tenancy\Http\Controllers\Roles;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
-use App\Tenancy\Actions\CreateTenantRoleAction;
-use App\Tenancy\Actions\DeleteTenantRoleAction;
-use App\Tenancy\Actions\UpdateTenantRoleAction;
-use App\Tenancy\Http\Requests\StoreTenantRoleRequest;
-use App\Tenancy\Http\Requests\UpdateTenantRoleRequest;
+use App\Tenancy\Actions\Roles\CreateTenantRoleAction;
+use App\Tenancy\Actions\Roles\DeleteTenantRoleAction;
+use App\Tenancy\Actions\Roles\UpdateTenantRoleAction;
+use App\Tenancy\Http\Requests\Roles\StoreTenantRoleRequest;
+use App\Tenancy\Http\Requests\Roles\UpdateTenantRoleRequest;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Queries\FetchWorkspaceRolesQuery;
+use App\Tenancy\Queries\Roles\FetchWorkspaceRolesQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;

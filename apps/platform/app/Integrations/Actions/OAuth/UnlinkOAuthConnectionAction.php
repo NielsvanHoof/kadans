@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Actions;
+namespace App\Integrations\Actions\OAuth;
 
 use App\Accounts\Models\User;
 use App\Integrations\Enums\OAuthProvider;

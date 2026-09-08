@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Contracts;
+namespace App\Dossiers\Contracts\Reminders;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DossierReminderSource;

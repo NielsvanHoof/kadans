@@ -80,6 +80,8 @@ final readonly class TextractDocumentOcr implements DocumentOcr
             ->update([
                 'textract_job_id' => $jobId,
                 'extracted_text' => null,
+                'searchable_text' => null,
+                'embedding' => null,
                 'processing_error' => null,
                 'processing_finished_at' => null,
             ]);
@@ -96,6 +98,7 @@ final readonly class TextractDocumentOcr implements DocumentOcr
         }
 
         $document->refresh();
+        $document->searchable();
 
         Log::info('OCR: Textract job started — awaiting SNS/SQS completion.', [
             'uploaded_document_id' => $document->id,

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Runners;
+namespace App\DocumentProcessing\Runners\Ocr;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Contracts\PipelineRunner;
 use App\Pipelines\Enums\PipelineType;
@@ -33,10 +33,13 @@ final class OcrPipelineRunner implements PipelineRunner
             'processing_status' => DocumentProcessingStatus::Pending,
             'processing_error' => null,
             'extracted_text' => null,
+            'searchable_text' => null,
+            'embedding' => null,
             'textract_job_id' => null,
             'processing_started_at' => null,
             'processing_finished_at' => null,
         ])->saveQuietly();
+        $subject->unsearchable();
     }
 
     public function dispatch(Pipeline $pipeline, Model $subject): void

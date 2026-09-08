@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Transitions;
+namespace App\Dossiers\Transitions\DocumentRequests;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;

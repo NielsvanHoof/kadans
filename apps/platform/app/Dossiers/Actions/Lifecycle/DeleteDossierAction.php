@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\Lifecycle;
 
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Events\DossierArchived;
+use App\Dossiers\Events\Lifecycle\DossierArchived;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;

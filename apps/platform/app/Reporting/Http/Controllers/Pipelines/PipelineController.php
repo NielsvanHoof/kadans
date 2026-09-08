@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Http\Controllers;
+namespace App\Reporting\Http\Controllers\Pipelines;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Actions\DownloadDossierExportAction;
+use App\Dossiers\Actions\Exports\DownloadDossierExportAction;
 use App\Dossiers\Models\DossierExport;
 use App\Pipelines\Actions\CancelPipelineAction;
 use App\Pipelines\Actions\DeletePipelineAction;
 use App\Pipelines\Actions\RetryPipelineAction;
 use App\Pipelines\Models\Pipeline;
-use App\Reporting\Queries\FetchPipelineIndexQuery;
-use App\Reporting\Queries\FetchPipelineShowQuery;
+use App\Reporting\Queries\Pipelines\FetchPipelineIndexQuery;
+use App\Reporting\Queries\Pipelines\FetchPipelineShowQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;

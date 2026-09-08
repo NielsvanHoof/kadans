@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Jobs;
+namespace App\DocumentProcessing\Jobs\Ocr;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\OcrProcessingOutcome;
 use App\DocumentProcessing\Services\Ocr\OcrOrchestrator;
-use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
+use App\DocumentProcessing\Transitions\Ocr\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;

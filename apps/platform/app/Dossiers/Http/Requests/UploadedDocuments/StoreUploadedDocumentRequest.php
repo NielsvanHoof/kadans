@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Requests\DocumentRequests;
+namespace App\Dossiers\Http\Requests\UploadedDocuments;
 
 use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Support\DocumentUploadLimits;
+use App\Dossiers\Support\Uploads\DocumentUploadLimits;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\DocumentRequests;
 
 use App\Dossiers\Actions\Builder\ApplyQuestionnaireTemplateToDossierAction;
 use App\Dossiers\Actions\Builder\CreateDocumentRequestAction;
@@ -10,7 +10,7 @@ use App\Dossiers\Actions\Builder\DeleteDocumentRequestAction;
 use App\Dossiers\Actions\Builder\ReorderDocumentRequestsAction;
 use App\Dossiers\Actions\Builder\SyncDossierDocumentRequestsAction;
 use App\Dossiers\Actions\Builder\UpdateDocumentRequestAction;
-use App\Dossiers\Data\StaffDocumentRequestData;
+use App\Dossiers\Data\DocumentRequests\StaffDocumentRequestData;
 use App\Dossiers\Http\Requests\Builder\ApplyQuestionnaireTemplateRequest;
 use App\Dossiers\Http\Requests\Builder\ReorderDocumentRequestsRequest;
 use App\Dossiers\Http\Requests\Builder\StoreDocumentRequestRequest;

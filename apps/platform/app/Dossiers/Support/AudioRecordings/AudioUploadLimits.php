@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Support;
+namespace App\Dossiers\Support\AudioRecordings;
 
 /**
  * Per-file ceiling for staff audio recording uploads.

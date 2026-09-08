@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Requests\Concerns;
+namespace App\Dossiers\Http\Requests\Builder\Concerns;
 
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

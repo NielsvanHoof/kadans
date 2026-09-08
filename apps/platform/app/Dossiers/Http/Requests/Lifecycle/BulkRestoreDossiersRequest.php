@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Requests;
+namespace App\Dossiers\Http\Requests\Lifecycle;
 
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;

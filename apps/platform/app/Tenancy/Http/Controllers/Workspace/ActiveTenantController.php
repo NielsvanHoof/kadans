@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Controllers;
+namespace App\Tenancy\Http\Controllers\Workspace;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Shared\Http\Controllers\Controller;

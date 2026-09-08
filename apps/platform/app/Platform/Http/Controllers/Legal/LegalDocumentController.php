@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Http\Controllers;
+namespace App\Platform\Http\Controllers\Legal;
 
 use App\Accounts\Actions\Localization\ResolveApplicationLocaleAction;
-use App\Platform\Actions\ResolveLegalDocumentContentAction;
+use App\Platform\Actions\Legal\ResolveLegalDocumentContentAction;
 use App\Platform\Enums\LegalDocument;
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\Request;

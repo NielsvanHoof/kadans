@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\DocumentProcessing\Presenters;
+namespace App\DocumentProcessing\Presenters\Ocr;
 
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Presenters\DossierWorkspaceHref;
+use App\Dossiers\Presenters\Lifecycle\DossierWorkspaceHref;
 use App\Pipelines\Contracts\PipelineSubjectPresenter;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;

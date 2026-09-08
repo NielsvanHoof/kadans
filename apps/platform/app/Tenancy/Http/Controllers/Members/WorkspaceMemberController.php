@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Controllers;
+namespace App\Tenancy\Http\Controllers\Members;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
-use App\Tenancy\Actions\InviteTenantMemberAction;
-use App\Tenancy\Actions\RemoveTenantMemberAction;
-use App\Tenancy\Actions\SuspendTenantMemberAction;
-use App\Tenancy\Actions\UpdateTenantMemberRoleAction;
+use App\Tenancy\Actions\Members\InviteTenantMemberAction;
+use App\Tenancy\Actions\Members\RemoveTenantMemberAction;
+use App\Tenancy\Actions\Members\SuspendTenantMemberAction;
+use App\Tenancy\Actions\Members\UpdateTenantMemberRoleAction;
 use App\Tenancy\Enums\TenantMembershipStatus;
-use App\Tenancy\Http\Requests\InviteTenantMemberRequest;
-use App\Tenancy\Http\Requests\UpdateTenantMemberRequest;
+use App\Tenancy\Http\Requests\Members\InviteTenantMemberRequest;
+use App\Tenancy\Http\Requests\Members\UpdateTenantMemberRequest;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Queries\FetchWorkspaceMembersQuery;
+use App\Tenancy\Queries\Members\FetchWorkspaceMembersQuery;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;

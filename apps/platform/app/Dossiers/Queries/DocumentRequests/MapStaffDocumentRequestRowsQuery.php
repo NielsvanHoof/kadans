@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\DocumentRequests;
 
 use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
-use App\Dossiers\Data\DossierReviewSummaryData;
-use App\Dossiers\Data\StaffDocumentRequestData;
-use App\Dossiers\Data\StaffDocumentRequestRowsData;
-use App\Dossiers\Data\StaffUploadedDocumentData;
+use App\Dossiers\Data\DocumentRequests\StaffDocumentRequestData;
+use App\Dossiers\Data\DocumentRequests\StaffDocumentRequestRowsData;
+use App\Dossiers\Data\Lifecycle\DossierReviewSummaryData;
+use App\Dossiers\Data\UploadedDocuments\StaffUploadedDocumentData;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

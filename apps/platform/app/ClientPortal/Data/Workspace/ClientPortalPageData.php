@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Data;
+namespace App\ClientPortal\Data\Workspace;
 
+use App\ClientPortal\Data\Session\PortalSessionData;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 

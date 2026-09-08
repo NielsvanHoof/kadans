@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Http\Controllers;
+namespace App\Platform\Http\Controllers\SupportSession;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
-use App\Platform\Actions\EndSupportSessionAction;
-use App\Platform\Actions\StartSupportSessionAction;
-use App\Platform\Http\Requests\StartSupportSessionRequest;
-use App\Platform\Queries\FetchPlatformSupportTenantsQuery;
+use App\Platform\Actions\SupportSession\EndSupportSessionAction;
+use App\Platform\Actions\SupportSession\StartSupportSessionAction;
+use App\Platform\Http\Requests\SupportSession\StartSupportSessionRequest;
+use App\Platform\Queries\SupportSession\FetchPlatformSupportTenantsQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;

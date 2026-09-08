@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Actions;
+namespace App\Questionnaires\Actions\Templates;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;

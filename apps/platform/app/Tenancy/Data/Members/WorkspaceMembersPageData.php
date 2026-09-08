@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Data;
+namespace App\Tenancy\Data\Members;
 
+use App\Tenancy\Data\Invitations\WorkspaceInvitationData;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\Exports;
 
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;

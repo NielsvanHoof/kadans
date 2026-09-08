@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Http\Controllers;
+namespace App\Accounts\Http\Controllers\Security;
 
-use App\Accounts\Http\Requests\PasswordUpdateRequest;
-use App\Accounts\Http\Requests\TwoFactorAuthenticationRequest;
+use App\Accounts\Http\Requests\Security\PasswordUpdateRequest;
+use App\Accounts\Http\Requests\Security\TwoFactorAuthenticationRequest;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;

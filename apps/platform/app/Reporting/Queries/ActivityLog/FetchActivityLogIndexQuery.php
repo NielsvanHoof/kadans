@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\ActivityLog;
 
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
@@ -16,7 +16,7 @@ use App\Shared\Data\PersonOptionData;
 use App\Shared\Queries\Filters\ScoutSearchFilter;
 use App\Shared\Queries\PaginatedIndexQuery;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\FetchResponsibleStaffOptionsQuery;
+use App\Tenancy\Queries\Members\FetchResponsibleStaffOptionsQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;

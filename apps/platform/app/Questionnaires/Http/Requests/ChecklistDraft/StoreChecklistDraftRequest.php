@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Http\Requests;
+namespace App\Questionnaires\Http\Requests\ChecklistDraft;
 
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;

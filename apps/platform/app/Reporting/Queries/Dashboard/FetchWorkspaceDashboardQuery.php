@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\Dashboard;
 
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
@@ -11,9 +11,9 @@ use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Pipelines\Models\Pipeline;
-use App\Reporting\Data\DashboardMetricsData;
-use App\Reporting\Data\DashboardRecentDossierData;
-use App\Reporting\Support\WorkspaceDashboardCache;
+use App\Reporting\Data\Dashboard\DashboardMetricsData;
+use App\Reporting\Data\Dashboard\DashboardRecentDossierData;
+use App\Reporting\Support\Dashboard\WorkspaceDashboardCache;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Http\Request;

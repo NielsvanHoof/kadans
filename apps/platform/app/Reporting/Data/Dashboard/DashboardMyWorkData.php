@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Data;
+namespace App\Reporting\Data\Dashboard;
 
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -14,7 +14,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  * a tenant-wide cache key, so per-user counters stored there would be served to
  * every other member of the firm for the rest of the TTL.
  *
- * @see \App\Reporting\Support\WorkspaceDashboardCache
+ * @see \App\Reporting\Support\Dashboard\WorkspaceDashboardCache
  */
 #[TypeScript]
 final class DashboardMyWorkData extends Data

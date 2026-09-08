@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\UploadedDocuments;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\Dossiers\Actions\Uploads\ResolveMalwareScanStatusAction;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Model;
 

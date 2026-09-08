@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\Lifecycle;
 
 use App\Clients\Models\Client;
-use App\Dossiers\Data\ArchivedDossierRowData;
+use App\Dossiers\Data\Lifecycle\ArchivedDossierRowData;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Queries\Filters\ScoutSearchFilter;
 use App\Shared\Queries\PaginatedIndexQuery;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Console\Commands;
+namespace App\Tenancy\Console\Commands\Roles;
 
-use App\Tenancy\Actions\SyncTenantRolesAction;
+use App\Tenancy\Actions\Roles\SyncTenantRolesAction;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;

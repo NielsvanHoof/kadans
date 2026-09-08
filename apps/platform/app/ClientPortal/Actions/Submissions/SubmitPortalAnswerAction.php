@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Submissions;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\ClientPortal\Actions\Outreach\NotifyWorkspaceIfQuestionnaireCompleteAction;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Actions\DocumentRequests\SubmitQuestionnaireAnswerAction;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Support\DossierLocks;
-use App\Dossiers\Transitions\DossierTransitions;
+use App\Dossiers\Transitions\Lifecycle\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 

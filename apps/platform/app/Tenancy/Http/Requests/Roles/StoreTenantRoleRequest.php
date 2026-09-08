@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Requests;
+namespace App\Tenancy\Http\Requests\Roles;
 
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
-use App\Tenancy\Http\Requests\Concerns\ValidatesAssignableRolePermissions;
+use App\Tenancy\Http\Requests\Roles\Concerns\ValidatesAssignableRolePermissions;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole;
 use Illuminate\Contracts\Validation\ValidationRule;

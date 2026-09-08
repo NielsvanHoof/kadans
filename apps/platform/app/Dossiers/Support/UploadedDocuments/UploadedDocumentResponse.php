@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Support;
+namespace App\Dossiers\Support\UploadedDocuments;
 
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\StoredFileResponse;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;

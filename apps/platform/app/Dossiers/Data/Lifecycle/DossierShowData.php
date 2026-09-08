@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\Lifecycle;
 
+use App\Dossiers\Data\AudioRecordings\StaffAudioRecordingData;
+use App\Dossiers\Data\DocumentRequests\StaffDocumentRequestData;
+use App\Dossiers\Data\Exports\DossierExportData;
 use App\Dossiers\Enums\DossierStatus;
 use App\Shared\Data\PersonOptionData;
 use Spatie\LaravelData\Data;

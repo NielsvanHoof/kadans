@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Transitions;
+namespace App\Platform\Transitions\DataSubject;
 
 use App\Accounts\Models\User;
 use App\Platform\Enums\DataSubjectRequestStatus;

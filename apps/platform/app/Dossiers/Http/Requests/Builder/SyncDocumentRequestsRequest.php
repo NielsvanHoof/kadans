@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Builder;
 
-use App\Dossiers\Http\Requests\Concerns\AuthorizesDocumentRequestReplacement;
-use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
+use App\Dossiers\Http\Requests\Builder\Concerns\AuthorizesDossierBuilderMutation;
+use App\Dossiers\Http\Requests\UploadedDocuments\Concerns\AuthorizesDocumentRequestReplacement;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Enums\QuestionnaireItemType;

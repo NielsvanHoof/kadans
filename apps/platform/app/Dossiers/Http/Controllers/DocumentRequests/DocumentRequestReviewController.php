@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\DocumentRequests;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\DocumentRequests\ReviewDocumentRequestAction;

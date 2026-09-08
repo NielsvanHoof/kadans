@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\UploadedDocuments;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Models\UploadedDocument;

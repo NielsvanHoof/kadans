@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Http\Controllers;
+namespace App\Reporting\Http\Controllers\Dashboard;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Queries\FetchWorkspaceDashboardQuery;
+use App\Reporting\Queries\Dashboard\FetchWorkspaceDashboardQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Queries\FetchActiveTenantMembershipsForUserQuery;
+use App\Tenancy\Queries\Workspace\FetchActiveTenantMembershipsForUserQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

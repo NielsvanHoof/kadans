@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\AudioRecordings;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\AudioRecordings\AttachAudioTranscriptToCalendarEventAction;
@@ -11,7 +11,7 @@ use App\Dossiers\Actions\AudioRecordings\SuggestCalendarEventsAction;
 use App\Dossiers\Http\Requests\AudioRecordings\AttachAudioTranscriptToCalendarEventRequest;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\AudioRecordingCalendarLink;
-use App\Integrations\Data\CalendarEventData;
+use App\Integrations\Data\Google\CalendarEventData;
 use App\Integrations\Exceptions\OAuthTokenRefreshFailedException;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;

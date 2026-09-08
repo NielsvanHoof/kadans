@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Access;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
-use App\ClientPortal\Actions\IssueClientPortalAccessAction;
-use App\ClientPortal\Actions\RevokeClientPortalAccessAction;
-use App\ClientPortal\Http\Requests\StoreClientAccessGrantRequest;
+use App\ClientPortal\Actions\Access\IssueClientPortalAccessAction;
+use App\ClientPortal\Actions\Access\RevokeClientPortalAccessAction;
+use App\ClientPortal\Http\Requests\Access\StoreClientAccessGrantRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;

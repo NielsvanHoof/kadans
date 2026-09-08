@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Actions;
+namespace App\Tenancy\Actions\Roles;
 
 use App\Tenancy\Enums\Role as RoleEnum;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantRole as RoleModel;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use Spatie\Permission\Models\Permission as PermissionModel;
 use Spatie\Permission\PermissionRegistrar;
 

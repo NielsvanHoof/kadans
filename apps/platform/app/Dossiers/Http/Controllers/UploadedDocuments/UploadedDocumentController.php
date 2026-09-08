@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\UploadedDocuments;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
-use App\Dossiers\Actions\DocumentRequests\UploadStaffDocumentAction;
-use App\Dossiers\Actions\GuardUploadedDocumentDeliveryAction;
+use App\Dossiers\Actions\UploadedDocuments\DeleteUploadedDocumentAction;
+use App\Dossiers\Actions\UploadedDocuments\GuardUploadedDocumentDeliveryAction;
+use App\Dossiers\Actions\UploadedDocuments\UploadStaffDocumentAction;
 use App\Dossiers\Actions\Uploads\ClaimUploadTicketAction;
-use App\Dossiers\Data\StaffUploadedDocumentData;
+use App\Dossiers\Data\UploadedDocuments\StaffUploadedDocumentData;
 use App\Dossiers\Enums\UploadPurpose;
-use App\Dossiers\Http\Requests\DocumentRequests\StoreUploadedDocumentRequest;
+use App\Dossiers\Http\Requests\UploadedDocuments\StoreUploadedDocumentRequest;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Queries\FetchUploadedDocumentShowQuery;
-use App\Dossiers\Support\StagedUpload;
-use App\Dossiers\Support\UploadedDocumentResponse;
+use App\Dossiers\Queries\UploadedDocuments\FetchUploadedDocumentShowQuery;
+use App\Dossiers\Support\UploadedDocuments\UploadedDocumentResponse;
+use App\Dossiers\Support\Uploads\StagedUpload;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Builder;
 
+use App\Dossiers\Http\Requests\Builder\Concerns\AuthorizesDossierBuilderMutation;
 use App\Dossiers\Http\Requests\Builder\Concerns\ValidatesQuestionnaireItemConfiguration;
-use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
 use App\Dossiers\Models\DocumentRequest;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;

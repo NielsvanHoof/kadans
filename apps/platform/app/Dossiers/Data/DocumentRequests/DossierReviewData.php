@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\DocumentRequests;
 
+use App\Dossiers\Data\Lifecycle\DossierClientSummaryData;
+use App\Dossiers\Data\Lifecycle\DossierReviewSummaryData;
 use App\Dossiers\Enums\DossierStatus;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;

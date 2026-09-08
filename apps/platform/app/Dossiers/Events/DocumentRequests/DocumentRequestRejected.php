@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Events;
+namespace App\Dossiers\Events\DocumentRequests;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Models\DocumentRequest;

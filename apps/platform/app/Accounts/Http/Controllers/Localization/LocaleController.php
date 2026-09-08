@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Http\Controllers;
+namespace App\Accounts\Http\Controllers\Localization;
 
 use App\Accounts\Actions\Localization\ResolveApplicationTimezoneAction;
-use App\Accounts\Http\Requests\LocaleUpdateRequest;
-use App\Accounts\Support\DisplayTimezones;
+use App\Accounts\Http\Requests\Localization\LocaleUpdateRequest;
+use App\Accounts\Support\Localization\DisplayTimezones;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;

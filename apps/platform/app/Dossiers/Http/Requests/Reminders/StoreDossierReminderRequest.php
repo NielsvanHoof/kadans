@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Requests;
+namespace App\Dossiers\Http\Requests\Reminders;
 
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;

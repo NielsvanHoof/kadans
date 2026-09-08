@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\ActivityLog;
 
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
@@ -10,10 +10,10 @@ use App\Audit\Models\Activity;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Data\ActivityLogAttributeChangesData;
-use App\Reporting\Data\ActivityLogPropertiesData;
-use App\Reporting\Data\ActivityLogRowData;
-use App\Reporting\Data\ActivityLogSubjectData;
+use App\Reporting\Data\ActivityLog\ActivityLogAttributeChangesData;
+use App\Reporting\Data\ActivityLog\ActivityLogPropertiesData;
+use App\Reporting\Data\ActivityLog\ActivityLogRowData;
+use App\Reporting\Data\ActivityLog\ActivityLogSubjectData;
 use App\Shared\Database\MorphType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;

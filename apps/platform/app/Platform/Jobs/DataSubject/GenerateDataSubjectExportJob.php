@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Jobs;
+namespace App\Platform\Jobs\DataSubject;
 
 use App\Platform\Actions\DataSubject\GenerateDataSubjectExportAction;
 use App\Platform\Models\DataSubjectRequest;

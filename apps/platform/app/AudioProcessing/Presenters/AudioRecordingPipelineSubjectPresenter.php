@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\AudioProcessing\Presenters;
 
 use App\Dossiers\Models\AudioRecording;
-use App\Dossiers\Presenters\DossierWorkspaceHref;
+use App\Dossiers\Presenters\Lifecycle\DossierWorkspaceHref;
 use App\Pipelines\Contracts\PipelineSubjectPresenter;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;

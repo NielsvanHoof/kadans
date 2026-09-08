@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Support;
+namespace App\Reporting\Support\Dashboard;
 
 use App\Shared\Cache\TenantCacheInvalidator;
 

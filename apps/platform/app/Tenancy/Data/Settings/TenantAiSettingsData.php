@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Data;
+namespace App\Tenancy\Data\Settings;
 
 use App\Tenancy\Models\TenantSetting;
 use Spatie\LaravelData\Data;
@@ -15,6 +15,7 @@ final class TenantAiSettingsData extends Data
         public readonly bool $documentOverview,
         public readonly bool $checklistDraft,
         public readonly bool $reminderDraft,
+        public readonly bool $documentSearch,
     ) {}
 
     public static function fromModel(TenantSetting $settings): self
@@ -23,6 +24,7 @@ final class TenantAiSettingsData extends Data
             documentOverview: $settings->ai_document_overview_enabled,
             checklistDraft: $settings->ai_checklist_draft_enabled,
             reminderDraft: $settings->ai_reminder_draft_enabled,
+            documentSearch: $settings->ai_document_search_enabled,
         );
     }
 }

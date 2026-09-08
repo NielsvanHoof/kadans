@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Transitions;
+namespace App\Dossiers\Transitions\Lifecycle;
 
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;

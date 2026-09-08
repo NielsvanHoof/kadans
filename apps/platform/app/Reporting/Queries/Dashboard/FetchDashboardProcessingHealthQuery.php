@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\Dashboard;
 
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Models\Pipeline;
-use App\Reporting\Data\DashboardPipelineFailureData;
-use App\Reporting\Data\DashboardProcessingHealthData;
+use App\Reporting\Data\Dashboard\DashboardPipelineFailureData;
+use App\Reporting\Data\Dashboard\DashboardProcessingHealthData;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Str;
 

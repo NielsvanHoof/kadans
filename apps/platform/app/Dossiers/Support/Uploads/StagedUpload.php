@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Support;
+namespace App\Dossiers\Support\Uploads;
 
 /**
  * A file the browser has already PUT to S3, verified against the object store.

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\DocumentRequests;
 
 use App\Clients\Models\Client;
-use App\Dossiers\Data\DossierClientSummaryData;
-use App\Dossiers\Data\DossierReviewData;
+use App\Dossiers\Data\DocumentRequests\DossierReviewData;
+use App\Dossiers\Data\Lifecycle\DossierClientSummaryData;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\DocumentRequest;

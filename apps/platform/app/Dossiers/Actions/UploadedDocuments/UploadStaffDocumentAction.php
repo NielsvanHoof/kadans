@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions\DocumentRequests;
+namespace App\Dossiers\Actions\UploadedDocuments;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
@@ -10,8 +10,8 @@ use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Support\StagedUpload;
-use App\Dossiers\Transitions\DossierTransitions;
+use App\Dossiers\Support\Uploads\StagedUpload;
+use App\Dossiers\Transitions\Lifecycle\DossierTransitions;
 
 /**
  * Staff upload: move the staged file into place, mark the dossier in review, and audit.

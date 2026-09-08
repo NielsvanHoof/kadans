@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Events;
+namespace App\Platform\Events\DataSubject;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;

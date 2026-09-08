@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Listeners;
+namespace App\Platform\Listeners\Observability;
 
 use App\Shared\Support\PeakMemory;
 use Illuminate\Queue\Events\JobProcessing;

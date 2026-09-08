@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Listeners;
+namespace App\ClientPortal\Listeners\Outreach;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Notifications\ClientChangesRequestedNotification;
+use App\ClientPortal\Notifications\Outreach\ClientChangesRequestedNotification;
 use App\Dossiers\Models\DocumentRequest;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;

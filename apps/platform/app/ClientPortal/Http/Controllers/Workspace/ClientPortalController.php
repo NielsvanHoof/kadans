@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Workspace;
 
-use App\ClientPortal\Actions\RecordClientPortalAccessAction;
+use App\ClientPortal\Actions\Session\RecordClientPortalAccessAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Queries\FetchClientPortalQuery;
-use App\ClientPortal\Support\PortalSessionWindow;
+use App\ClientPortal\Queries\Workspace\FetchClientPortalQuery;
+use App\ClientPortal\Support\Session\PortalSessionWindow;
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

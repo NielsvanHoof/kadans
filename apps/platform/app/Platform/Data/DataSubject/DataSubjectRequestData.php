@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Data;
+namespace App\Platform\Data\DataSubject;
 
 use App\Clients\Models\Client;
 use App\Platform\Models\DataSubjectRequest;

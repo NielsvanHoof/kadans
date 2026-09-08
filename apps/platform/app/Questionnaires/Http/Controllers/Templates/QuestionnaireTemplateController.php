@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Http\Controllers;
+namespace App\Questionnaires\Http\Controllers\Templates;
 
-use App\Questionnaires\Actions\CopyQuestionnaireTemplateAction;
-use App\Questionnaires\Actions\CreateQuestionnaireTemplateAction;
-use App\Questionnaires\Actions\DeleteQuestionnaireTemplateAction;
-use App\Questionnaires\Actions\UpdateQuestionnaireTemplateAction;
+use App\Questionnaires\Actions\Templates\CopyQuestionnaireTemplateAction;
+use App\Questionnaires\Actions\Templates\CreateQuestionnaireTemplateAction;
+use App\Questionnaires\Actions\Templates\DeleteQuestionnaireTemplateAction;
+use App\Questionnaires\Actions\Templates\UpdateQuestionnaireTemplateAction;
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
-use App\Questionnaires\Http\Requests\StoreQuestionnaireTemplateRequest;
-use App\Questionnaires\Http\Requests\UpdateQuestionnaireTemplateRequest;
+use App\Questionnaires\Http\Requests\Templates\StoreQuestionnaireTemplateRequest;
+use App\Questionnaires\Http\Requests\Templates\UpdateQuestionnaireTemplateRequest;
 use App\Questionnaires\Models\QuestionnaireTemplate;
-use App\Questionnaires\Queries\FetchQuestionnaireTemplateShowQuery;
-use App\Questionnaires\Queries\FetchQuestionnaireTemplatesQuery;
+use App\Questionnaires\Queries\Templates\FetchQuestionnaireTemplateShowQuery;
+use App\Questionnaires\Queries\Templates\FetchQuestionnaireTemplatesQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;

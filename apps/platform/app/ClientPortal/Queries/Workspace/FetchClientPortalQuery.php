@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Queries;
+namespace App\ClientPortal\Queries\Workspace;
 
 use App\Accounts\Models\User;
-use App\ClientPortal\Data\ClientPortalPageData;
-use App\ClientPortal\Data\PortalClientData;
-use App\ClientPortal\Data\PortalDocumentRequestData;
-use App\ClientPortal\Data\PortalDossierData;
-use App\ClientPortal\Data\PortalFirmData;
-use App\ClientPortal\Data\PortalNextIncompleteData;
-use App\ClientPortal\Data\PortalProgressData;
-use App\ClientPortal\Data\PortalSessionData;
-use App\ClientPortal\Data\PortalUploadedDocumentData;
+use App\ClientPortal\Data\Session\PortalSessionData;
+use App\ClientPortal\Data\Workspace\ClientPortalPageData;
+use App\ClientPortal\Data\Workspace\PortalClientData;
+use App\ClientPortal\Data\Workspace\PortalDocumentRequestData;
+use App\ClientPortal\Data\Workspace\PortalDossierData;
+use App\ClientPortal\Data\Workspace\PortalFirmData;
+use App\ClientPortal\Data\Workspace\PortalNextIncompleteData;
+use App\ClientPortal\Data\Workspace\PortalProgressData;
+use App\ClientPortal\Data\Workspace\PortalUploadedDocumentData;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Support\PortalSessionWindow;
+use App\ClientPortal\Support\Session\PortalSessionWindow;
 use App\Clients\Models\Client;
 use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
@@ -24,7 +24,7 @@ use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 

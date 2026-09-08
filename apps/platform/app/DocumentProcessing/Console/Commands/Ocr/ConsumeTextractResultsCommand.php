@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Console\Commands\Ocr;
 
-use App\DocumentProcessing\Jobs\ApplyTextractResultJob;
+use App\DocumentProcessing\Jobs\Ocr\ApplyTextractResultJob;
 use App\Dossiers\Models\UploadedDocument;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Http\Requests;
+namespace App\Platform\Http\Requests\DataSubject;
 
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Models\DataSubjectRequest;

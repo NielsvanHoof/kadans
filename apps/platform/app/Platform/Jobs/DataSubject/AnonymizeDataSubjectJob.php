@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Jobs;
+namespace App\Platform\Jobs\DataSubject;
 
 use App\Accounts\Models\User;
 use App\Platform\Actions\DataSubject\AnonymizeDataSubjectAction;

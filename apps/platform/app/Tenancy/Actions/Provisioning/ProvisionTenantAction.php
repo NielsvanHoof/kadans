@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Actions;
+namespace App\Tenancy\Actions\Provisioning;
 
 use App\Accounts\Models\User;
+use App\Tenancy\Actions\Roles\SyncTenantRolesAction;
 use App\Tenancy\Enums\Role as RoleEnum;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
-use App\Tenancy\Support\StaffOptionsCache;
+use App\Tenancy\Support\Members\StaffOptionsCache;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

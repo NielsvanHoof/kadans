@@ -6,7 +6,7 @@ namespace App\Platform\Http\SharedProps;
 
 use App\Accounts\Models\User;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 
 /**
  * Firm-wide settings visible to every member in the current workspace.

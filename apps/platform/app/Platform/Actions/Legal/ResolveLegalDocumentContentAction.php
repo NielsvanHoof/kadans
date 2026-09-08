@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Actions;
+namespace App\Platform\Actions\Legal;
 
 use App\Accounts\Enums\Locale;
 use App\Platform\Enums\LegalDocument;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\Lifecycle;
 
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
@@ -12,7 +12,7 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierLocks;
-use App\Dossiers\Transitions\DossierTransitions;
+use App\Dossiers\Transitions\Lifecycle\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 

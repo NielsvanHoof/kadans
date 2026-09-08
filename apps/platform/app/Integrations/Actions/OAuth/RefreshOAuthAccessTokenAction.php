@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Actions;
+namespace App\Integrations\Actions\OAuth;
 
 use App\Integrations\Enums\OAuthProvider;
 use App\Integrations\Exceptions\OAuthTokenRefreshFailedException;

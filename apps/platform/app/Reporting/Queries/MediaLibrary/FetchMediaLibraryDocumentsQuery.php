@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\MediaLibrary;
 
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Reporting\Data\MediaLibraryDocumentRowData;
-use App\Reporting\Data\MediaLibraryDossierSummaryData;
-use App\Reporting\Data\MediaLibraryUploadedDocumentData;
+use App\Reporting\Data\MediaLibrary\MediaLibraryDocumentRowData;
+use App\Reporting\Data\MediaLibrary\MediaLibraryDossierSummaryData;
+use App\Reporting\Data\MediaLibrary\MediaLibraryUploadedDocumentData;
 use App\Shared\Queries\Filters\ScoutSearchFilter;
 use App\Shared\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
@@ -103,7 +103,12 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
     protected function allowedFilters(): array
     {
         return [
-            ScoutSearchFilter::make(DocumentRequest::class),
+            ScoutSearchFilter::makeMatchingSelfOrRelated(
+                DocumentRequest::class,
+                UploadedDocument::class,
+                'uploadedDocuments',
+                relatedHybrid: true,
+            ),
             AllowedFilter::exact('status'),
         ];
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Session;
 
 use App\ClientPortal\Enums\PortalSessionEndReason;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;

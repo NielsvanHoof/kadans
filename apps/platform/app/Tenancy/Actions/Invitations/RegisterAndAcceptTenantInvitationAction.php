@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Actions;
+namespace App\Tenancy\Actions\Invitations;
 
-use App\Accounts\Actions\CreateNewUser;
+use App\Accounts\Actions\Profile\CreateNewUser;
 use App\Tenancy\Models\TenantInvitation;
 use App\Tenancy\Models\TenantMembership;
 use Illuminate\Auth\Events\Registered;

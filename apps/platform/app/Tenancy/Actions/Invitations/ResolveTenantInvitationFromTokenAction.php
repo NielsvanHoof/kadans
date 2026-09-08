@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Actions;
+namespace App\Tenancy\Actions\Invitations;
 
 use App\Tenancy\Models\TenantInvitation;
 

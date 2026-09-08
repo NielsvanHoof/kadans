@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Http\Requests;
+namespace App\Platform\Http\Requests\SupportSession;
 
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;

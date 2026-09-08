@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Access;
 
 use App\Accounts\Models\User;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\DossierLocks;
-use App\Dossiers\Transitions\DossierTransitions;
+use App\Dossiers\Transitions\Lifecycle\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

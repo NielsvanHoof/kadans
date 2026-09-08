@@ -9,8 +9,6 @@ use App\Pipelines\Models\Pipeline;
 use Spatie\Health\Checks\Check;
 use Spatie\Health\Checks\Result;
 
-use function sprintf;
-
 /**
  * Surface pipelines that stopped making progress.
  *
@@ -47,7 +45,7 @@ final class StuckPipelinesCheck extends Check
             ->shortSummary((string) $stuck);
 
         if ($stuck > $this->failWhenMoreThan) {
-            return $result->failed(sprintf('%d pipeline(s) are stuck and need attention.', $stuck));
+            return $result->failed(':stuck_pipelines pipeline(s) are stuck and need attention.');
         }
 
         return $result->ok('No stuck pipelines.');

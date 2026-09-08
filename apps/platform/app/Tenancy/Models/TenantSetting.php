@@ -18,6 +18,7 @@ use Override;
  * @property bool $ai_document_overview_enabled
  * @property bool $ai_checklist_draft_enabled
  * @property bool $ai_reminder_draft_enabled
+ * @property bool $ai_document_search_enabled
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Tenant $tenant
@@ -33,6 +34,7 @@ use Override;
  * @method static Builder<static>|TenantSetting whereId($value)
  * @method static Builder<static>|TenantSetting whereTenantId($value)
  * @method static Builder<static>|TenantSetting whereUpdatedAt($value)
+ * @method static Builder<static>|TenantSetting whereAiDocumentSearchEnabled($value)
  *
  * @mixin \Eloquent
  */
@@ -50,6 +52,7 @@ final class TenantSetting extends Model
         'ai_document_overview_enabled',
         'ai_checklist_draft_enabled',
         'ai_reminder_draft_enabled',
+        'ai_document_search_enabled',
     ];
 
     /**
@@ -70,6 +73,7 @@ final class TenantSetting extends Model
             'ai_document_overview_enabled' => 'boolean',
             'ai_checklist_draft_enabled' => 'boolean',
             'ai_reminder_draft_enabled' => 'boolean',
+            'ai_document_search_enabled' => 'boolean',
         ];
     }
 }

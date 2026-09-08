@@ -6,7 +6,7 @@ namespace App\Dossiers\Models;
 
 use App\Accounts\Models\User;
 use App\Dossiers\Enums\DocumentRequestStatus;
-use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
+use App\Questionnaires\Actions\Templates\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Concerns\InvalidatesTenantCaches;
 use App\Tenancy\Models\Tenant;

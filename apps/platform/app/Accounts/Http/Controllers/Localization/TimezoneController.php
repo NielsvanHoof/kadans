@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Http\Controllers;
+namespace App\Accounts\Http\Controllers\Localization;
 
-use App\Accounts\Http\Requests\TimezoneUpdateRequest;
+use App\Accounts\Http\Requests\Localization\TimezoneUpdateRequest;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;

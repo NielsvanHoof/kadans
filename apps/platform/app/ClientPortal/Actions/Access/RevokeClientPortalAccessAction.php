@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Access;
 
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;

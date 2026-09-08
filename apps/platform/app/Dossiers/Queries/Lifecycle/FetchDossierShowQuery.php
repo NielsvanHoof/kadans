@@ -2,23 +2,24 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\Lifecycle;
 
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
-use App\Dossiers\Data\DossierAccessGrantData;
-use App\Dossiers\Data\DossierClientSummaryData;
-use App\Dossiers\Data\DossierExportData;
-use App\Dossiers\Data\DossierRolledFromData;
-use App\Dossiers\Data\DossierShowData;
-use App\Dossiers\Data\StaffAudioRecordingData;
-use App\Dossiers\Data\StaffDocumentRequestData;
+use App\Dossiers\Data\AudioRecordings\StaffAudioRecordingData;
+use App\Dossiers\Data\DocumentRequests\StaffDocumentRequestData;
+use App\Dossiers\Data\Exports\DossierExportData;
+use App\Dossiers\Data\Lifecycle\DossierAccessGrantData;
+use App\Dossiers\Data\Lifecycle\DossierClientSummaryData;
+use App\Dossiers\Data\Lifecycle\DossierRolledFromData;
+use App\Dossiers\Data\Lifecycle\DossierShowData;
 use App\Dossiers\Enums\AudioRecordingPermission;
 use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Queries\DocumentRequests\MapStaffDocumentRequestRowsQuery;
 use App\Shared\Data\PersonOptionData;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Http\Request;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Actions;
+namespace App\ClientPortal\Actions\Outreach;
 
-use App\ClientPortal\Notifications\ClientChangesRequestedNotification;
+use App\ClientPortal\Notifications\Outreach\ClientChangesRequestedNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Actions;
+namespace App\Integrations\Actions\OAuth;
 
 use App\Accounts\Models\User;
-use App\Integrations\Data\OAuthCallbackResult;
+use App\Integrations\Data\OAuth\OAuthCallbackResult;
 use App\Integrations\Enums\OAuthProvider;
 use App\Integrations\Models\OAuthConnection;
 use Carbon\CarbonImmutable;

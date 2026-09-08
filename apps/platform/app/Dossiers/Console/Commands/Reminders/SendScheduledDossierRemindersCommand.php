@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Console\Commands;
+namespace App\Dossiers\Console\Commands\Reminders;
 
 use App\Accounts\Models\User;
-use App\Dossiers\Actions\SendDossierReminderAction;
+use App\Dossiers\Actions\Reminders\SendDossierReminderAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\FetchActiveUsersForTenantQuery;
+use App\Tenancy\Queries\Members\FetchActiveUsersForTenantQuery;
 use App\Tenancy\TenantContext;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;

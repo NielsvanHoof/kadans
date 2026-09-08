@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Session;
 
-use App\ClientPortal\Actions\RegisterClientPortalDeviceAction;
-use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
+use App\ClientPortal\Actions\Access\ResolveClientAccessGrantFromTokenAction;
+use App\ClientPortal\Actions\Session\RegisterClientPortalDeviceAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Support\PortalDeviceFingerprint;
-use App\ClientPortal\Support\PortalSessionWindow;
+use App\ClientPortal\Support\Session\PortalDeviceFingerprint;
+use App\ClientPortal\Support\Session\PortalSessionWindow;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\Dashboard;
 
 use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Data\DashboardAgendaItemData;
-use App\Reporting\Data\DashboardMyWorkData;
+use App\Reporting\Data\Dashboard\DashboardAgendaItemData;
+use App\Reporting\Data\Dashboard\DashboardMyWorkData;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;

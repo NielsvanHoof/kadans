@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Queries;
+namespace App\Questionnaires\Queries\Templates;
 
-use App\Questionnaires\Data\QuestionnaireTemplateItemOptionData;
-use App\Questionnaires\Data\QuestionnaireTemplateOptionData;
+use App\Questionnaires\Data\Templates\QuestionnaireTemplateItemOptionData;
+use App\Questionnaires\Data\Templates\QuestionnaireTemplateOptionData;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 
 use function count;

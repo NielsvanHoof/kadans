@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\Pipelines;
 
 use App\Pipelines\Contracts\PipelineSubjectPresenter;
 use App\Pipelines\Data\PipelineShowData;

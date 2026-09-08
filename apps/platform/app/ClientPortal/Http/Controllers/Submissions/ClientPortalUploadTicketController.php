@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Submissions;
 
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
-use App\ClientPortal\Http\Requests\StorePortalUploadTicketRequest;
+use App\ClientPortal\Http\Requests\Submissions\StorePortalUploadTicketRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Actions\Uploads\IssueUploadTicketAction;
 use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Support\DocumentUploadLimits;
+use App\Dossiers\Support\Uploads\DocumentUploadLimits;
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;

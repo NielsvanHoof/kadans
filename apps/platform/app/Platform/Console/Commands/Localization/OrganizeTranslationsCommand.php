@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Console\Commands;
+namespace App\Platform\Console\Commands\Localization;
 
 use App\Accounts\Enums\Locale;
 use App\Platform\Support\Localization\TranslationCallSiteScanner;

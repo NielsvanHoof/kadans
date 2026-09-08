@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Services;
+namespace App\Integrations\Services\Google;
 
-use App\Integrations\Data\CalendarEventData;
+use App\Integrations\Data\Google\CalendarEventData;
 use App\Integrations\Data\Google\CalendarEventItemData;
 use App\Integrations\Enums\OAuthProvider;
 use App\Integrations\Http\Connectors\Google\GoogleConnector;

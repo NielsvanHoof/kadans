@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Support;
+namespace App\Platform\Support\SupportSession;
 
 use App\Accounts\Models\User;
 use App\Audit\Enums\AuditEvent;
-use App\Platform\Actions\EndSupportSessionAction;
+use App\Platform\Actions\SupportSession\EndSupportSessionAction;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;

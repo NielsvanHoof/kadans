@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Jobs;
+namespace App\Dossiers\Jobs\Exports;
 
-use App\Dossiers\Actions\GenerateDossierExportAction;
-use App\Dossiers\Actions\MarkDossierExportFailedAction;
+use App\Dossiers\Actions\Exports\GenerateDossierExportAction;
+use App\Dossiers\Actions\Exports\MarkDossierExportFailedAction;
 use App\Dossiers\Models\DossierExport;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;

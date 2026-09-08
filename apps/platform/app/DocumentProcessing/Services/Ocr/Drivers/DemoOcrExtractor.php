@@ -6,6 +6,7 @@ namespace App\DocumentProcessing\Services\Ocr\Drivers;
 
 use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Services\Ocr\FlattenExtractedTextForSearch;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\Facades\Log;
@@ -39,6 +40,11 @@ final readonly class DemoOcrExtractor implements DocumentOcr
             ->update([
                 'processing_status' => DocumentProcessingStatus::Completed->value,
                 'extracted_text' => $extractedText,
+                'searchable_text' => new FlattenExtractedTextForSearch()->searchableText(
+                    $document->original_filename,
+                    $extractedText,
+                ),
+                'embedding' => null,
                 'processing_error' => null,
                 'processing_finished_at' => now(),
                 'textract_job_id' => null,
@@ -55,6 +61,7 @@ final readonly class DemoOcrExtractor implements DocumentOcr
         }
 
         $document->refresh();
+        $document->searchable();
     }
 
     public function extract(UploadedDocument $document): string

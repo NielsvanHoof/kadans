@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Controllers;
+namespace App\Tenancy\Http\Controllers\Invitations;
 
 use App\Accounts\Models\User;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
-use App\Tenancy\Actions\AcceptTenantInvitationAction;
-use App\Tenancy\Actions\RegisterAndAcceptTenantInvitationAction;
-use App\Tenancy\Actions\ResolveTenantInvitationFromTokenAction;
+use App\Tenancy\Actions\Invitations\AcceptTenantInvitationAction;
+use App\Tenancy\Actions\Invitations\RegisterAndAcceptTenantInvitationAction;
+use App\Tenancy\Actions\Invitations\ResolveTenantInvitationFromTokenAction;
 use App\Tenancy\Enums\Role;
-use App\Tenancy\Http\Requests\RegisterFromInvitationRequest;
+use App\Tenancy\Http\Requests\Invitations\RegisterFromInvitationRequest;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Http\RedirectResponse;

@@ -8,7 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Services\Ocr\TextractExtractionPipeline;
-use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
+use App\DocumentProcessing\Transitions\Ocr\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Actions\PrepareProviderPipelineForProviderResultAction;
 use App\Pipelines\Actions\ResolveProviderPipelineForSubjectAction;
@@ -178,6 +178,7 @@ final readonly class CompleteTextractExtractionAction
             }
 
             $document->refresh();
+            $document->searchable();
 
             if ($pipeline instanceof Pipeline) {
                 $this->pipelineState->complete($pipeline, PipelineStepKey::ProcessResults);

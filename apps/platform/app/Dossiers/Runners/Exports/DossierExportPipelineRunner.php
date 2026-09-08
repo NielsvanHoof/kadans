@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Runners;
+namespace App\Dossiers\Runners\Exports;
 
-use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
 use App\Dossiers\Models\DossierExport;
-use App\Dossiers\Transitions\DossierExportTransitions;
+use App\Dossiers\Transitions\Exports\DossierExportTransitions;
 use App\Pipelines\Contracts\PipelineRunner;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;

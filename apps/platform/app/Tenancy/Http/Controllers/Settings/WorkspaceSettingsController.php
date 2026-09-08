@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Controllers;
+namespace App\Tenancy\Http\Controllers\Settings;
 
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
-use App\Tenancy\Actions\UpdateTenantSettingsAction;
-use App\Tenancy\Data\WorkspaceSettingsPageData;
-use App\Tenancy\Http\Requests\UpdateTenantSettingsRequest;
+use App\Tenancy\Actions\Settings\UpdateTenantSettingsAction;
+use App\Tenancy\Data\Settings\WorkspaceSettingsPageData;
+use App\Tenancy\Http\Requests\Settings\UpdateTenantSettingsRequest;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;

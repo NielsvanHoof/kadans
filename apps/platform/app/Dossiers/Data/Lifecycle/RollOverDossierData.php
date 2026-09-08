@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\Lifecycle;
 
 /**
  * Staff-supplied details for the dossier a roll-over creates.

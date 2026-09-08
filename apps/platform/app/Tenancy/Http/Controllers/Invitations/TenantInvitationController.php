@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Controllers;
+namespace App\Tenancy\Http\Controllers\Invitations;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
-use App\Tenancy\Actions\ResendTenantInvitationAction;
-use App\Tenancy\Actions\RevokeTenantInvitationAction;
+use App\Tenancy\Actions\Invitations\ResendTenantInvitationAction;
+use App\Tenancy\Actions\Invitations\RevokeTenantInvitationAction;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantInvitation;
 use Illuminate\Http\RedirectResponse;

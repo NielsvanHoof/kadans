@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Queries;
+namespace App\Dossiers\Queries\UploadedDocuments;
 
 use App\DocumentProcessing\Contracts\Ocr\DocumentExtraction;
 use App\Dossiers\Models\UploadedDocument;

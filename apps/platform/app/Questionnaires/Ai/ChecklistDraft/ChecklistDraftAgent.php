@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Ai;
+namespace App\Questionnaires\Ai\ChecklistDraft;
 
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Shared\Concerns\ResolvesConfiguredModel;

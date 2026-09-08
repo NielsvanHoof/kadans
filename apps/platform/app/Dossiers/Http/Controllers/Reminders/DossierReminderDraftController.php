@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\Reminders;
 
 use App\Accounts\Enums\Locale;
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Dossiers\Actions\DocumentRequests\ResolveApplicableDocumentRequestsAction;
-use App\Dossiers\Actions\DraftDossierReminderMessageAction;
-use App\Dossiers\Data\ReminderDraftContextData;
+use App\Dossiers\Actions\Reminders\DraftDossierReminderMessageAction;
+use App\Dossiers\Data\Reminders\ReminderDraftContextData;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
+use App\Dossiers\Queries\Lifecycle\DossierHasOutstandingClientItemsQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\JsonResponse;

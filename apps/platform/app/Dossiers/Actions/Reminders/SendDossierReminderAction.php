@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\Reminders;
 
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Contracts\ClientPortalReminders;
+use App\Dossiers\Contracts\Reminders\ClientPortalReminders;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Queries\DossierHasOutstandingClientItemsQuery;
+use App\Dossiers\Queries\Lifecycle\DossierHasOutstandingClientItemsQuery;
 use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;

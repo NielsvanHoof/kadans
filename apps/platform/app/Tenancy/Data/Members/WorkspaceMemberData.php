@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Data;
+namespace App\Tenancy\Data\Members;
 
 use App\Tenancy\Enums\TenantMembershipStatus;
 use Spatie\LaravelData\Data;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Http\Requests;
+namespace App\Accounts\Http\Requests\Localization;
 
 use App\Accounts\Http\Concerns\AuthorizesAnyAuthenticatedUser;
-use App\Accounts\Support\DisplayTimezones;
+use App\Accounts\Support\Localization\DisplayTimezones;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;

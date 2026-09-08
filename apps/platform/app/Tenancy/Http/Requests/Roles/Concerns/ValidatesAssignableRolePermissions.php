@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Requests\Concerns;
+namespace App\Tenancy\Http\Requests\Roles\Concerns;
 
 use App\Accounts\Models\User;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 
 /**
  * Permissions allowed on firm-authored roles: not owner-only, and held by the actor.

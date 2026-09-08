@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Support;
+namespace App\Dossiers\Support\Builder;
 
 /**
  * Exclusive builder edit-lease timing.

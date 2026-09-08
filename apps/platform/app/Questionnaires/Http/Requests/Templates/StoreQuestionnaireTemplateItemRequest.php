@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Http\Requests;
+namespace App\Questionnaires\Http\Requests\Templates;
 
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Questionnaires\Models\QuestionnaireTemplate;

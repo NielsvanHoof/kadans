@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Http\Controllers;
+namespace App\Reporting\Http\Controllers\MediaLibrary;
 
 use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\DocumentRequest;
-use App\Reporting\Queries\FetchMediaLibraryDocumentsQuery;
+use App\Reporting\Queries\MediaLibrary\FetchMediaLibraryDocumentsQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Http\Request;

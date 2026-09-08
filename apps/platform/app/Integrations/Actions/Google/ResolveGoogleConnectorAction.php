@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Integrations\Actions;
+namespace App\Integrations\Actions\Google;
 
 use App\Accounts\Models\User;
+use App\Integrations\Actions\OAuth\RefreshOAuthAccessTokenAction;
 use App\Integrations\Enums\OAuthProvider;
 use App\Integrations\Exceptions\OAuthTokenRefreshFailedException;
 use App\Integrations\Http\Connectors\Google\GoogleConnector;

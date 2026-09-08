@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Listeners;
+namespace App\ClientPortal\Listeners\Outreach;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Notifications\ClientPortalInviteNotification;
+use App\ClientPortal\Notifications\Outreach\ClientPortalInviteNotification;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Illuminate\Notifications\Events\NotificationFailed;

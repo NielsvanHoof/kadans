@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Actions;
+namespace App\Accounts\Actions\Profile;
 
 use App\Accounts\Concerns\PasswordValidationRules;
 use App\Accounts\Concerns\ProfileValidationRules;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Actions;
+namespace App\Dossiers\Actions\Reminders;
 
-use App\Dossiers\Ai\DossierReminderDraftAgent;
-use App\Dossiers\Data\ReminderDraftContextData;
+use App\Dossiers\Ai\Reminders\DossierReminderDraftAgent;
+use App\Dossiers\Data\Reminders\ReminderDraftContextData;
 use App\Tenancy\Enums\TenantAiFeature;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Str;
 

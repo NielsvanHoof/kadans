@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Session;
 
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;

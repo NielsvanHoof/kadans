@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Platform\Http\Controllers;
+namespace App\Platform\Http\Controllers\DataSubject;
 
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
@@ -11,12 +11,12 @@ use App\Clients\Models\Client;
 use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
 use App\Platform\Actions\DataSubject\RefuseDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectRequestType;
-use App\Platform\Http\Requests\RefuseDataSubjectRequestRequest;
-use App\Platform\Http\Requests\StoreDataSubjectRequestRequest;
-use App\Platform\Jobs\AnonymizeDataSubjectJob;
-use App\Platform\Jobs\GenerateDataSubjectExportJob;
+use App\Platform\Http\Requests\DataSubject\RefuseDataSubjectRequestRequest;
+use App\Platform\Http\Requests\DataSubject\StoreDataSubjectRequestRequest;
+use App\Platform\Jobs\DataSubject\AnonymizeDataSubjectJob;
+use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Platform\Models\DataSubjectRequest;
-use App\Platform\Queries\FetchDataSubjectRequestIndexQuery;
+use App\Platform\Queries\DataSubject\FetchDataSubjectRequestIndexQuery;
 use App\Shared\Data\PersonOptionData;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;

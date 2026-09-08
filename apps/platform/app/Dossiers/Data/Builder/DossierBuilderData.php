@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Data;
+namespace App\Dossiers\Data\Builder;
 
+use App\Dossiers\Data\DocumentRequests\StaffDocumentRequestData;
 use App\Dossiers\Enums\DossierStatus;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;

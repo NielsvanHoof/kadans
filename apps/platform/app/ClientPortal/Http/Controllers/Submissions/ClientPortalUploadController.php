@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Submissions;
 
-use App\ClientPortal\Actions\SubmitPortalUploadAction;
+use App\ClientPortal\Actions\Submissions\SubmitPortalUploadAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
-use App\ClientPortal\Http\Requests\StorePortalUploadedDocumentRequest;
+use App\ClientPortal\Http\Requests\Submissions\StorePortalUploadedDocumentRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
-use App\Dossiers\Actions\GuardUploadedDocumentDeliveryAction;
+use App\Dossiers\Actions\UploadedDocuments\DeleteUploadedDocumentAction;
+use App\Dossiers\Actions\UploadedDocuments\GuardUploadedDocumentDeliveryAction;
 use App\Dossiers\Actions\Uploads\ClaimUploadTicketAction;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Support\StagedUpload;
-use App\Dossiers\Support\UploadedDocumentResponse;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Support\UploadedDocuments\UploadedDocumentResponse;
+use App\Dossiers\Support\Uploads\StagedUpload;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use Illuminate\Http\RedirectResponse;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Accounts\Models;
 
 use App\Accounts\Enums\PlatformRole;
-use App\Accounts\Support\DisplayTimezones;
+use App\Accounts\Support\Localization\DisplayTimezones;
 use App\Integrations\Models\OAuthConnection;
 use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;

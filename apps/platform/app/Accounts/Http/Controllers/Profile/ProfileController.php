@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Accounts\Http\Controllers;
+namespace App\Accounts\Http\Controllers\Profile;
 
-use App\Accounts\Http\Requests\ProfileDeleteRequest;
-use App\Accounts\Http\Requests\ProfileUpdateRequest;
+use App\Accounts\Http\Requests\Profile\ProfileDeleteRequest;
+use App\Accounts\Http\Requests\Profile\ProfileUpdateRequest;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Shared\Http\Controllers\Controller;

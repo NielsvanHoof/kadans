@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dossiers\Http\Controllers;
+namespace App\Dossiers\Http\Controllers\Lifecycle;
 
-use App\Dossiers\Actions\RollOverDossierAction;
-use App\Dossiers\Http\Requests\RollOverDossierRequest;
+use App\Dossiers\Actions\Lifecycle\RollOverDossierAction;
+use App\Dossiers\Http\Requests\Lifecycle\RollOverDossierRequest;
 use App\Dossiers\Models\Dossier;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;

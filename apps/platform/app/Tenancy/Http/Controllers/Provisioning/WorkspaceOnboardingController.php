@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Controllers;
+namespace App\Tenancy\Http\Controllers\Provisioning;
 
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
-use App\Tenancy\Actions\ProvisionTenantAction;
-use App\Tenancy\Http\Requests\StoreWorkspaceRequest;
+use App\Tenancy\Actions\Provisioning\ProvisionTenantAction;
+use App\Tenancy\Http\Requests\Provisioning\StoreWorkspaceRequest;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;

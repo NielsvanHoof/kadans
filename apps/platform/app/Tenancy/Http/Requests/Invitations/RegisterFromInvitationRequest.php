@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tenancy\Http\Requests;
+namespace App\Tenancy\Http\Requests\Invitations;
 
 use App\Accounts\Concerns\PasswordValidationRules;
 use App\Accounts\Concerns\ProfileValidationRules;

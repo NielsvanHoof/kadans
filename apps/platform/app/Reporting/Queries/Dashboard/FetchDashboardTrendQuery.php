@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Reporting\Queries;
+namespace App\Reporting\Queries\Dashboard;
 
 use App\Dossiers\Models\DocumentRequest;
-use App\Reporting\Data\DashboardTrendPointData;
+use App\Reporting\Data\Dashboard\DashboardTrendPointData;
 use App\Tenancy\Models\Tenant;
 
 /**

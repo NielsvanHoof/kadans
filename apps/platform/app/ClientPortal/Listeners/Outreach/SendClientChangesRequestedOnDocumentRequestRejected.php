@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Listeners;
+namespace App\ClientPortal\Listeners\Outreach;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\ClientPortal\Actions\SendClientChangesRequestedNotificationAction;
-use App\Dossiers\Events\DocumentRequestRejected;
+use App\ClientPortal\Actions\Outreach\SendClientChangesRequestedNotificationAction;
+use App\Dossiers\Events\DocumentRequests\DocumentRequestRejected;
 
 /**
  * Tell the client which item needs redoing after staff reject it.

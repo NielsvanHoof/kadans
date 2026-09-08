@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Support;
+namespace App\ClientPortal\Support\Session;
 
 use App\ClientPortal\Models\ClientAccessGrant;
 use Carbon\CarbonImmutable;

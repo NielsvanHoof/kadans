@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\ClientPortal\Http\Controllers;
+namespace App\ClientPortal\Http\Controllers\Submissions;
 
-use App\ClientPortal\Actions\SubmitPortalAnswerAction;
+use App\ClientPortal\Actions\Submissions\SubmitPortalAnswerAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
-use App\ClientPortal\Http\Requests\StorePortalQuestionnaireAnswerRequest;
+use App\ClientPortal\Http\Requests\Submissions\StorePortalQuestionnaireAnswerRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\DocumentRequest;
 use App\Shared\Http\Controllers\Controller;

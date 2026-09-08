@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Questionnaires\Http\Controllers;
+namespace App\Questionnaires\Http\Controllers\Templates;
 
-use App\Questionnaires\Actions\CreateQuestionnaireTemplateItemAction;
-use App\Questionnaires\Actions\DeleteQuestionnaireTemplateItemAction;
-use App\Questionnaires\Actions\ReorderQuestionnaireTemplateItemsAction;
-use App\Questionnaires\Actions\UpdateQuestionnaireTemplateItemAction;
-use App\Questionnaires\Http\Requests\ReorderQuestionnaireTemplateItemsRequest;
-use App\Questionnaires\Http\Requests\StoreQuestionnaireTemplateItemRequest;
-use App\Questionnaires\Http\Requests\UpdateQuestionnaireTemplateItemRequest;
+use App\Questionnaires\Actions\Templates\CreateQuestionnaireTemplateItemAction;
+use App\Questionnaires\Actions\Templates\DeleteQuestionnaireTemplateItemAction;
+use App\Questionnaires\Actions\Templates\ReorderQuestionnaireTemplateItemsAction;
+use App\Questionnaires\Actions\Templates\UpdateQuestionnaireTemplateItemAction;
+use App\Questionnaires\Http\Requests\Templates\ReorderQuestionnaireTemplateItemsRequest;
+use App\Questionnaires\Http\Requests\Templates\StoreQuestionnaireTemplateItemRequest;
+use App\Questionnaires\Http\Requests\Templates\UpdateQuestionnaireTemplateItemRequest;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use App\Shared\Http\Controllers\Controller;
