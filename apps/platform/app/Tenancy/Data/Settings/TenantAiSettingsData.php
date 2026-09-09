@@ -25,10 +25,10 @@ final class TenantAiSettingsData extends Data
     public static function fromModel(?TenantSetting $settings): self
     {
         return new self(
-            documentOverview: $settings?->ai_document_overview_enabled ?? true,
-            checklistDraft: $settings?->ai_checklist_draft_enabled ?? true,
-            reminderDraft: $settings?->ai_reminder_draft_enabled ?? true,
-            documentSearch: $settings?->ai_document_search_enabled ?? true,
+            documentOverview: $settings->ai_document_overview_enabled ?? true,
+            checklistDraft: $settings->ai_checklist_draft_enabled ?? true,
+            reminderDraft: $settings->ai_reminder_draft_enabled ?? true,
+            documentSearch: $settings->ai_document_search_enabled ?? true,
         );
     }
 }

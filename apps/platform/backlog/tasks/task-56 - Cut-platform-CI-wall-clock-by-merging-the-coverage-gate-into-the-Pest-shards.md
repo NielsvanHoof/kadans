@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@NielsvanHoof'
 created_date: '2026-09-09 12:22'
-updated_date: '2026-09-09 12:36'
+updated_date: '2026-09-09 12:46'
 labels:
   - ci
   - performance
@@ -48,4 +48,14 @@ Key discovery: a .cov file is not a serialized CodeCoverage object. php-code-cov
 Also refreshed tests/.pest/shards.json: it was stale (Pest warned 238 files vs the 225 recorded), now 238 files / 281.2s / ~70.3s per shard.
 
 Out of scope, found while verifying: 'composer ci:static' fails on this branch because phpstan reports 4 nullsafe.neverNull errors in app/Tenancy/Data/Settings/TenantAiSettingsData.php lines 28-31. Untouched by this task and pre-existing. Deliberately not fixed: the naive '?->' to '->' change would break the documented 'firm with no settings row yet gets the shipped defaults' behaviour, so it needs a real decision, not a lint-silencing edit.
+
+Fixed the pre-existing phpstan blocker as well (was previously flagged as out of scope, on a mistaken reading).
+
+Correction: I first claimed removing '?->' would break the 'no settings row' default. That was wrong. '??' uses isset semantics and short-circuits property access on a null left-hand side, so $null->anything ?? 'x' yields 'x' with no error - verified directly. PHPStan was right and the nullsafe was genuinely redundant.
+
+Changed the 4 lines in app/Tenancy/Data/Settings/TenantAiSettingsData.php from '?->' to '->' and extended the docblock so the next reader (or agent) does not revert it into a phpstan failure.
+
+fromModel() had no test at all, so added tests/Unit/Models/TenantAiSettingsDataTest.php (3 tests, 12 assertions), placed in Unit/Models because it needs the app for Eloquent casts but not the database. It locks the real risk of this change: that a stored 'false' could fall through '??' to the enabled default. It does not - Eloquent's __isset() reports a non-null attribute as set, so only a missing or null attribute defaults to true.
+
+Verification: phpstan 'No errors'; pint PASS (1084 files); composer ci:static fully green; 41 tests pass across every consumer of the mapper (WorkspaceSettings, DocumentOverviewTenantSettings, DocumentSearch, FirmPortalSessionWindow, FirmRetentionWindow). shards.json refreshed again for the added file: 239 classes, ~69.8s per shard.
 <!-- SECTION:NOTES:END -->
