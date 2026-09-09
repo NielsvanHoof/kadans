@@ -99,7 +99,7 @@ declare namespace App {
                 export type ClientPortalPageData = {
                     readonly firm: App.ClientPortal.Data.Workspace.PortalFirmData;
                     readonly dossier: App.ClientPortal.Data.Workspace.PortalDossierData;
-                    readonly session: unknown;
+                    readonly session: App.ClientPortal.Data.Session.PortalSessionData;
                 };
                 export type PortalClientData = {
                     readonly name: string;
@@ -864,7 +864,7 @@ declare namespace App {
                 };
                 export type WorkspaceMembersPageData = {
                     readonly members: App.Tenancy.Data.Members.WorkspaceMemberData[];
-                    readonly invitations: unknown[];
+                    readonly invitations: App.Tenancy.Data.Invitations.WorkspaceInvitationData[];
                     readonly role_options: App.Tenancy.Data.Members.WorkspaceRoleOptionData[];
                     readonly can_assign_owner: boolean;
                     readonly role_filter: string | null;
@@ -900,14 +900,46 @@ declare namespace App {
                 };
             }
             namespace Settings {
+                export type FirmSettingData = {
+                    readonly override: number | null;
+                    readonly effective: number | null;
+                    readonly platform_default: number | null;
+                    readonly min: number;
+                    readonly max: number | null;
+                };
+                export type FirmSharedSettingsData = {
+                    readonly ai: App.Tenancy.Data.Settings.TenantAiSettingsData;
+                    readonly reminders: App.Tenancy.Data.Settings.TenantReminderSettingsData;
+                };
                 export type TenantAiSettingsData = {
                     readonly document_overview: boolean;
                     readonly checklist_draft: boolean;
                     readonly reminder_draft: boolean;
                     readonly document_search: boolean;
                 };
+                export type TenantPortalSettingsData = {
+                    readonly session_idle_minutes: App.Tenancy.Data.Settings.FirmSettingData;
+                    readonly session_absolute_minutes: App.Tenancy.Data.Settings.FirmSettingData;
+                };
+                export type TenantReminderSettingsData = {
+                    readonly default_interval_days: App.Tenancy.Data.Settings.FirmSettingData;
+                };
+                export type TenantRetentionSettingsData = {
+                    readonly archived_days: App.Tenancy.Data.Settings.FirmSettingData;
+                    readonly activity_log_days: App.Tenancy.Data.Settings.FirmSettingData;
+                };
+                export type TenantSecuritySettingsData = {
+                    readonly two_factor_enforcement_override: string | null;
+                    readonly two_factor_enforcement: string;
+                    readonly platform_two_factor_enforcement: string;
+                    readonly allowed_enforcement_levels: string[];
+                };
                 export type TenantSettingsData = {
                     readonly ai: App.Tenancy.Data.Settings.TenantAiSettingsData;
+                    readonly security: App.Tenancy.Data.Settings.TenantSecuritySettingsData;
+                    readonly portal: App.Tenancy.Data.Settings.TenantPortalSettingsData;
+                    readonly reminders: App.Tenancy.Data.Settings.TenantReminderSettingsData;
+                    readonly retention: App.Tenancy.Data.Settings.TenantRetentionSettingsData;
                 };
                 export type WorkspaceSettingsPageData = {
                     readonly settings: App.Tenancy.Data.Settings.TenantSettingsData;

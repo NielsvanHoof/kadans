@@ -20,6 +20,7 @@ use App\Reporting\Http\Controllers\Pipelines\PipelineController;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Http\Controllers\Invitations\AcceptTenantInvitationController;
 use App\Tenancy\Http\Controllers\Invitations\TenantInvitationController;
+use App\Tenancy\Http\Controllers\Settings\WorkspaceSettingsController;
 use App\WorkspaceNotifications\Http\Controllers\WorkspaceNotificationController;
 
 /*
@@ -118,6 +119,10 @@ const CONTROLLER_NON_REST_ACTIONS = [
         'accept', 'register',
     ],
     TenantInvitationController::class => ['resend'],
+
+    // The firm record, not its settings row: a separate write with its own
+    // redirect, so it cannot share the `update` action.
+    WorkspaceSettingsController::class => ['updateFirm'],
 
     WorkspaceNotificationController::class => ['destroyAll'],
 

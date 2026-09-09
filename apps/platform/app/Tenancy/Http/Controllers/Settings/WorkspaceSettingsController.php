@@ -6,9 +6,11 @@ namespace App\Tenancy\Http\Controllers\Settings;
 
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
+use App\Tenancy\Actions\Settings\RenameTenantAction;
 use App\Tenancy\Actions\Settings\UpdateTenantSettingsAction;
 use App\Tenancy\Data\Settings\WorkspaceSettingsPageData;
 use App\Tenancy\Http\Requests\Settings\UpdateTenantSettingsRequest;
+use App\Tenancy\Http\Requests\Settings\UpdateWorkspaceRequest;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 use Illuminate\Http\RedirectResponse;
@@ -21,9 +23,7 @@ final class WorkspaceSettingsController extends Controller
         Tenant $tenant,
         ResolveTenantSettingsQuery $resolveTenantSettings,
     ): Response {
-        $settings = $resolveTenantSettings->forTenant($tenant);
-
-        $this->authorize('view', $settings);
+        $this->authorize('view', $resolveTenantSettings->forTenant($tenant));
 
         return Inertia::render(
             'workspaces/settings/index',
@@ -38,10 +38,32 @@ final class WorkspaceSettingsController extends Controller
         UpdateTenantSettingsRequest $request,
         UpdateTenantSettingsAction $updateTenantSettings,
     ): RedirectResponse {
-        $updateTenantSettings->handle($tenant, $request->settingsData());
+        $updateTenantSettings->handle($tenant, $request->settingsAttributes());
 
         Toast::success(__('Firm settings saved.'));
 
+        return to_route('workspaces.settings.index', $this->workspaceRouteParameters());
+    }
+
+    public function updateFirm(
+        Tenant $tenant,
+        UpdateWorkspaceRequest $request,
+        RenameTenantAction $renameTenant,
+    ): RedirectResponse {
+        $renameTenant->handle(
+            $tenant,
+            (string) $request->validated('name'),
+            (string) $request->validated('slug'),
+        );
+
+        // The switcher list is a once prop; without this it would keep showing
+        // the old name until the next full page load.
+        $request->session()->flash('inertia.refresh.workspaces', true);
+
+        Toast::success(__('Firm details saved.'));
+
+        // workspaceRouteParameters() reads the route-bound tenant, which the
+        // action just renamed — so this resolves to the new address.
         return to_route('workspaces.settings.index', $this->workspaceRouteParameters());
     }
 }

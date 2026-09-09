@@ -9,10 +9,13 @@ use App\Tenancy\Models\Tenant;
 use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 
 /**
- * Firm-wide settings visible to every member in the current workspace.
+ * The firm settings every member needs on every page.
  *
- * Owners change these on the firm settings page; other staff need the flags
- * to hide AI affordances without calling gated endpoints first.
+ * Staff need the AI flags to hide affordances rather than discover them by
+ * calling a disabled endpoint, and the reminder default to prefill a new
+ * dossier. Everything else a firm configures — its security, portal and
+ * retention policy — ships only to the settings page: this prop is on every
+ * authenticated response and goes to every role.
  */
 final readonly class FirmSettingsProps
 {
@@ -33,6 +36,6 @@ final readonly class FirmSettingsProps
             return null;
         }
 
-        return $this->resolveTenantSettings->handle($tenant)->toArray();
+        return $this->resolveTenantSettings->shared($tenant)->toArray();
     }
 }

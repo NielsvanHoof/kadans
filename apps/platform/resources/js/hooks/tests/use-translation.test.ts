@@ -52,9 +52,9 @@ describe('useTranslation', () => {
     it('does not treat :to as a prefix of :total', () => {
         const { result } = renderHook(() => useTranslation());
 
-        expect(
-            result.current.t(rangeKey, { from: 1, to: 15, total: 15 }),
-        ).toBe('1–15 van 15 weergegeven');
+        expect(result.current.t(rangeKey, { from: 1, to: 15, total: 15 })).toBe(
+            '1–15 van 15 weergegeven',
+        );
     });
 
     it('leaves an unmatched placeholder literal and reports a missing key', () => {

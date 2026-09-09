@@ -111,6 +111,14 @@
         "lang:check": [
             "@php artisan lang:organize --check"
         ],
+        "ci:static": [
+            "Composer\\Config::disableProcessTimeout",
+            "@security:check",
+            "@lang:check",
+            "@rector:check",
+            "@lint:check",
+            "@types:check"
+        ],
         "ci:quality": [
             "Composer\\Config::disableProcessTimeout",
             "@security:check",

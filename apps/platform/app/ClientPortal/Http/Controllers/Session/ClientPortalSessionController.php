@@ -9,6 +9,7 @@ use App\ClientPortal\Actions\Session\RegisterClientPortalDeviceAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\ClientPortal\Support\Session\PortalDeviceFingerprint;
+use App\ClientPortal\Support\Session\PortalSessionLimits;
 use App\ClientPortal\Support\Session\PortalSessionWindow;
 use App\Shared\Http\Controllers\Controller;
 use App\Tenancy\Models\Tenant;
@@ -41,7 +42,12 @@ final class ClientPortalSessionController extends Controller
 
         // Both deadlines are stamped here. Only the idle one moves after this,
         // and only in ResolveClientPortalGrant.
-        $window = PortalSessionWindow::open($grant);
+        // Keyed by the grant's tenant, not the current one: this route sits
+        // outside the resolver middleware, so no tenant is current here.
+        $window = PortalSessionWindow::open(
+            $grant,
+            PortalSessionLimits::forTenant($grant->tenant_id),
+        );
 
         $request->session()->regenerate(destroy: true);
         $request->session()->put([

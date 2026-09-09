@@ -5,11 +5,27 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
+import {
+    local,
+    type LocalVariantDefinition,
+} from 'laravel-vite-plugin/fonts';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, lazyPlugins, loadEnv } from 'vite-plus';
 
 import { frontendLint } from './vite.lint.ts';
+
+const vendoredVariants = (
+    slug: string,
+    weights: number[],
+): LocalVariantDefinition[] =>
+    weights.map((weight) => ({
+        weight,
+        style: 'normal',
+        src: [
+            `resources/fonts/${slug}-${weight}.woff2`,
+            `resources/fonts/${slug}-${weight}.woff`,
+        ],
+    }));
 
 export default defineConfig(({ mode }) => {
     /*
@@ -55,13 +71,17 @@ export default defineConfig(({ mode }) => {
                       refresh: true,
                       fonts: [
                           // Brand face from qompose.nl — Poppins carries body and display.
-                          bunny('Poppins', {
-                              weights: [400, 500, 600, 700],
+                          local('Poppins', {
+                              variants: vendoredVariants('poppins', [
+                                  400, 500, 600, 700,
+                              ]),
                               optimizedFallbacks: false,
                           }),
                           // Data/meta face for timestamps, counters, and dense document metadata.
-                          bunny('IBM Plex Mono', {
-                              weights: [400, 500],
+                          local('IBM Plex Mono', {
+                              variants: vendoredVariants('ibm-plex-mono', [
+                                  400, 500,
+                              ]),
                               optimizedFallbacks: false,
                           }),
                       ],

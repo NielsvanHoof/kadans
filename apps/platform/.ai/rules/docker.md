@@ -34,3 +34,12 @@ Use vp via npm scripts (dev/build/check/test), not standalone vite/eslint/pretti
 
 ## Babel 8 is compiler-only; no concurrently
 Babel is v8 (@babel/core ^8) and is used only for the React Compiler via @rolldown/plugin-babel in vite.config.ts. There is no babel.config. Do not add concurrently back — vp / artisan dev replace it. After npm package changes, install on the host and in Sail.
+
+## Fonts are vendored in resources/fonts, not fetched from Bunny
+`vite.config.ts` loads Poppins and IBM Plex Mono with the `local()` provider from files committed in `resources/fonts/`. Do not switch back to `bunny()`/`google()`: the remote providers fetch the @font-face CSS plus every variant file during `vp build`, so a connect timeout on a CI runner failed the whole build (both the quality and coverage jobs build, so it was two chances to flake per run). Nothing served to the browser changed — the plugin always emitted the files into `public/build`, and the app CSP never allowed fonts.bunny.net (that entry is Telescope-only).
+
+Two traps when touching this:
+- Declare weights explicitly via `variants`. Do NOT use the shorthand `src:` directory form — `inferWeightFromFilename()` reads filename segments right-to-left and matches `normal` as a weight keyword for 400, so Bunny's own `poppins-latin-700-normal.woff2` naming resolves to 400 and collapses every weight into one face. The vendored files are named `<slug>-<weight>.<ext>` for this reason.
+- Adding a weight or subset now means downloading that file into `resources/fonts/` too. There is no network fallback; a missing file fails the build with "Local font file not found", which is intended.
+
+Incidental fix: with a `unicode-range` present the plugin emits one @font-face per file, so the woff rule shadowed the woff2 rule for identical descriptors. The local provider emits one rule per variant with both formats in a single `src`, so browsers now negotiate woff2 properly.
