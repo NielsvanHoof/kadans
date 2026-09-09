@@ -5,12 +5,14 @@ on:
     paths:
       - "apps/platform/**"
       - ".github/workflows/platform.yml"
+      - ".github/actions/setup-platform-php/**"
   push:
     branches:
       - main
     paths:
       - "apps/platform/**"
       - ".github/workflows/platform.yml"
+      - ".github/actions/setup-platform-php/**"
 
 permissions:
   contents: read
@@ -27,23 +29,29 @@ env:
   PHP_VERSION: "8.5"
   NODE_VERSION: "24"
 
+# The suite runs ONCE, split across four time-balanced Pest shards. Each shard
+# writes `--coverage-php` and the `coverage-gate` job merges them to enforce the
+# line floor — see scripts/coverage-gate.php. Do not add a job that runs the
+# whole suite again to measure coverage.
 jobs:
-  quality:
-    name: Application quality
+  # Deliberately thin. The Pest shards need the Vite manifest and nothing else
+  # (tests/TestCase.php pins Vite to built-manifest mode), so keeping the static
+  # gates out of this job is what lets the shards start without waiting on them.
+  build:
+    name: Frontend build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Check out source
         uses: actions/checkout@v7
 
+      # `npm run build` needs a working artisan: vite.config.ts loads the
+      # Wayfinder plugin, which shells out to `artisan wayfinder:generate`.
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: ./.github/actions/setup-platform-php
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: bcmath, intl, mbstring, pcntl, pdo_pgsql, redis, sqlite3, zip
-          coverage: none
-          tools: composer:v2
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@v1.18.0
@@ -54,22 +62,92 @@ jobs:
           run-install: |
             - args: ['--frozen-lockfile']
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Prepare the application
+        run: |
+          cp .env.ci .env
+          php artisan key:generate --no-interaction
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v7
+        with:
+          name: platform-frontend-build
+          path: apps/platform/public/build
+          retention-days: 1
+          if-no-files-found: error
+
+  # PHP static gates only (composer audit, lang, rector, pint, phpstan). Node is
+  # installed because `security:check` also runs `npm audit`.
+  quality:
+    name: Application quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: ./.github/actions/setup-platform-php
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1.18.0
+        with:
+          working-directory: apps/platform
+          node-version: ${{ env.NODE_VERSION }}
+          cache: true
+          run-install: |
+            - args: ['--frozen-lockfile']
 
       - name: Prepare the application
         run: |
           cp .env.ci .env
           php artisan key:generate --no-interaction
 
-      # Static analysis, frontend checks, and Vite build — PHP Pest runs in the
-      # sharded `tests` job so wall-clock time stays balanced.
       - name: Run static quality gates
-        run: composer ci:quality
+        run: composer ci:static
 
-      # ci:quality regenerates these; any change means the committed output is stale.
-      # Uses status --porcelain rather than `diff` so a generated file that was
-      # never committed is caught too, not just a modified one.
+  # Frontend type generation, lint/format, and the frontend coverage floor. This
+  # is the ONLY place `npm run test:coverage` runs.
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: ./.github/actions/setup-platform-php
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1.18.0
+        with:
+          working-directory: apps/platform
+          node-version: ${{ env.NODE_VERSION }}
+          cache: true
+          run-install: |
+            - args: ['--frozen-lockfile']
+
+      - name: Prepare the application
+        run: |
+          cp .env.ci .env
+          php artisan key:generate --no-interaction
+
+      # Regenerates the committed TypeScript, then type checks it.
+      - name: Check types
+        run: npm run types:check
+
+      # The step above regenerates these; any change means the committed output
+      # is stale. Uses status --porcelain rather than `diff` so a generated file
+      # that was never committed is caught too, not just a modified one.
       - name: Fail on stale generated TypeScript
         run: |
           paths="resources/js/types/generated resources/js/features/document-requests/item-types/generated.ts"
@@ -81,18 +159,20 @@ jobs:
             exit 1
           fi
 
-      # Feature tests need the built Vite manifest (see Tests\TestCase).
-      - name: Upload frontend build for Pest shards
-        uses: actions/upload-artifact@v7
-        with:
-          name: platform-frontend-build
-          path: apps/platform/public/build
-          retention-days: 1
-          if-no-files-found: error
+      - name: Check formatting and lint
+        run: npm run check
 
+      # Line floor lives in vite.config.ts test.coverage (excludes generated + shadcn ui).
+      - name: Enforce the frontend coverage threshold
+        run: npm run test:coverage
+
+  # Time-balanced via committed tests/.pest/shards.json. Refresh with
+  # `composer test:shards:update` when the suite shape changes a lot.
+  # Use pest directly — `artisan test --parallel --shard` currently fails
+  # forwarding PHPUnit's --runner option under Pest 5.
   tests:
     name: Pest (shard ${{ matrix.shard }}/4)
-    needs: quality
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -105,15 +185,10 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: ./.github/actions/setup-platform-php
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: bcmath, intl, mbstring, pcntl, pdo_pgsql, redis, sqlite3, zip
-          coverage: none
-          tools: composer:v2
-
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
+          coverage: pcov
 
       - name: Download frontend build
         uses: actions/download-artifact@v8
@@ -126,59 +201,51 @@ jobs:
           cp .env.ci .env
           php artisan key:generate --no-interaction
 
-      # Time-balanced via committed tests/.pest/shards.json. Refresh with
-      # `composer test:shards:update` when the suite shape changes a lot.
-      # Use pest directly — `artisan test --parallel --shard` currently fails
-      # forwarding PHPUnit's --runner option under Pest 5.
+      # `--coverage-php` activates collection without rendering the per-file
+      # table, so the shard pays for pcov but not for the report.
       - name: Run Pest shard
-        run: php vendor/bin/pest --parallel --ci --shard=${{ matrix.shard }}/4
+        run: |
+          mkdir -p coverage-shards
+          php vendor/bin/pest --parallel --ci \
+            --shard=${{ matrix.shard }}/4 \
+            --coverage-php=coverage-shards/shard-${{ matrix.shard }}.cov
 
-  coverage:
-    name: Test coverage gate
+      - name: Upload shard coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-shard-${{ matrix.shard }}
+          path: apps/platform/coverage-shards/shard-${{ matrix.shard }}.cov
+          retention-days: 1
+          if-no-files-found: error
+
+  # No single shard sees the whole app, so the floor is only meaningful once the
+  # four shards are merged. Fails under the --min threshold (currently 87%).
+  coverage-gate:
+    name: PHP coverage gate
+    needs: tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Check out source
         uses: actions/checkout@v7
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: ./.github/actions/setup-platform-php
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: bcmath, intl, mbstring, pcntl, pdo_pgsql, redis, sqlite3, zip
-          coverage: pcov
-          tools: composer:v2
 
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@v1.18.0
+      - name: Download shard coverage
+        uses: actions/download-artifact@v8
         with:
-          working-directory: apps/platform
-          node-version: ${{ env.NODE_VERSION }}
-          cache: true
-          run-install: |
-            - args: ['--frozen-lockfile']
+          pattern: coverage-shard-*
+          merge-multiple: true
+          path: apps/platform/coverage-shards
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: Prepare the application
-        run: |
-          cp .env.ci .env
-          php artisan key:generate --no-interaction
-
-      # Feature tests render Inertia pages against the built Vite manifest
-      # (see Tests\TestCase). Coverage runs outside ci:check, so build here.
-      - name: Build frontend assets
-        run: npm run build
-
-      # Fails under the --min threshold in composer.json (currently 87%).
+      # --expect=4 fails on a missing shard rather than reporting the resulting
+      # dip as a genuine coverage regression.
       - name: Enforce the PHP coverage threshold
-        run: composer test:coverage:ci
-
-      # Line floor lives in vite.config.ts test.coverage (excludes generated + shadcn ui).
-      - name: Enforce the frontend coverage threshold
-        run: npm run test:coverage
+        run: php scripts/coverage-gate.php --min=87 --expect=4 coverage-shards/*.cov
 
   postgres-migrations:
     name: PostgreSQL migrations
@@ -202,6 +269,7 @@ jobs:
 
     services:
       postgres:
+        # Must ship pgvector — see .ai/rules/workflows.md.
         image: pgvector/pgvector:pg18
         env:
           POSTGRES_DB: qompose_test
@@ -220,15 +288,10 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: ./.github/actions/setup-platform-php
         with:
           php-version: ${{ env.PHP_VERSION }}
           extensions: bcmath, intl, mbstring, pcntl, pdo_pgsql, zip
-          coverage: none
-          tools: composer:v2
-
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Test clean PostgreSQL migrations
         run: php artisan migrate:fresh --force --no-interaction
