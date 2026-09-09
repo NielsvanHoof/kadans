@@ -77,7 +77,7 @@ test('a firm that has chosen nothing gets the platform window', function (): voi
     Config::set('portal.session_absolute_minutes', 240);
 
     $context = createPortalDossierWithGrant();
-    setFirmPortalWindow($context['tenant']->id, idle: null, absolute: null);
+    setFirmPortalWindow($context['tenant']->id, idle: null);
 
     $this->get(route('portal.exchange', $context['plainTextToken']));
 

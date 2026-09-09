@@ -178,7 +178,7 @@ test('a source asking for less than the platform floor is ignored', function ():
 
     app()->instance(TwoFactorEnforcementSource::class, new class implements TwoFactorEnforcementSource
     {
-        public function forCurrentContext(): ?TwoFactorEnforcement
+        public function forCurrentContext(): TwoFactorEnforcement
         {
             return TwoFactorEnforcement::Off;
         }

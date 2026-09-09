@@ -40,7 +40,6 @@ test('administrator can view and update firm settings', function (): void {
             'ai_checklist_draft_enabled' => true,
             'ai_reminder_draft_enabled' => true,
             'ai_document_search_enabled' => true,
-            'ai_document_search_enabled' => true,
         ])
         ->assertRedirect(workspaceRoute('workspaces.settings.index', $tenant));
 
@@ -66,7 +65,6 @@ test('owner can update firm settings', function (): void {
             'ai_document_overview_enabled' => false,
             'ai_checklist_draft_enabled' => false,
             'ai_reminder_draft_enabled' => true,
-            'ai_document_search_enabled' => true,
             'ai_document_search_enabled' => false,
         ])
         ->assertRedirect(workspaceRoute('workspaces.settings.index', $tenant));
