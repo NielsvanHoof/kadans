@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
-import ProfileController from '@/actions/App/Accounts/Http/Controllers/ProfileController';
+import ProfileController from '@/actions/App/Accounts/Http/Controllers/Profile/ProfileController';
 import Heading from '@/components/primitives/heading';
 import InputError, {
     fieldErrorAriaProps,

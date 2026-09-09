@@ -9,8 +9,8 @@ use App\Tenancy\Contracts\SupportSessionState;
 use App\Tenancy\Contracts\TenantPermission;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Support\PermissionRegistry;
-use App\Tenancy\Support\WorkspaceMemberRoles;
+use App\Tenancy\Support\Members\WorkspaceMemberRoles;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 
 /**
  * Every registered permission, resolved for the current user in the current firm.

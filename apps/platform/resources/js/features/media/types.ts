@@ -1,6 +1,7 @@
 /** Uploaded file attached to a media-library document request. */
 export type MediaUploadedDocument =
-    App.Reporting.Data.MediaLibraryUploadedDocumentData;
+    App.Reporting.Data.MediaLibrary.MediaLibraryUploadedDocumentData;
 
 /** Document request row in the media library. */
-export type MediaDocument = App.Reporting.Data.MediaLibraryDocumentRowData;
+export type MediaDocument =
+    App.Reporting.Data.MediaLibrary.MediaLibraryDocumentRowData;

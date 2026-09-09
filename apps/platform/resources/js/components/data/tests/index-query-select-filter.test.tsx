@@ -4,23 +4,22 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import IndexQuerySelectFilter from '@/components/data/index-query/index-query-select-filter';
 import type { IndexQueryFilterOption } from '@/types/pagination';
 
+const translate = vi.hoisted(() => ({
+    t: (key: string, replacements: Record<string, string | number> = {}) => {
+        let translation = key;
+
+        for (const [placeholder, value] of Object.entries(replacements)) {
+            translation = translation.replace(`:${placeholder}`, String(value));
+        }
+
+        return translation;
+    },
+}));
+
 vi.mock('@/hooks/use-translation', () => ({
     useTranslation: () => ({
-        t: (
-            key: string,
-            replacements: Record<string, string | number> = {},
-        ) => {
-            let translation = key;
-
-            for (const [placeholder, value] of Object.entries(replacements)) {
-                translation = translation.replace(
-                    `:${placeholder}`,
-                    String(value),
-                );
-            }
-
-            return translation;
-        },
+        t: (key: string, replacements: Record<string, string | number> = {}) =>
+            translate.t(key, replacements),
         locale: 'en',
         availableLocales: [],
     }),
@@ -149,5 +148,46 @@ describe('IndexQuerySelectFilter', () => {
         // RAC collections key off `id`; a missing id silently falls back to the
         // rendered text and the filter would post "Beta option 7" as the value.
         expect(onSelectionChange).toHaveBeenCalledWith('event-7');
+    });
+
+    it('renders PHP-localized labels and person names without looking them up again', async () => {
+        const user = userEvent.setup();
+        const identity = translate.t;
+        translate.t = (key: string) => `[[${key}]]`;
+
+        try {
+            render(
+                <IndexQuerySelectFilter
+                    label="Verantwoordelijke"
+                    selectedKey="__all__"
+                    options={[
+                        { value: '1', label: 'Sander' },
+                        { value: 'draft', label: 'Concept' },
+                    ]}
+                    onSelectionChange={vi.fn()}
+                />,
+            );
+
+            expect(screen.getByText('Verantwoordelijke')).toBeInTheDocument();
+            expect(
+                screen.queryByText('[[Verantwoordelijke]]'),
+            ).not.toBeInTheDocument();
+
+            await user.click(
+                screen.getByRole('button', { name: /Verantwoordelijke/ }),
+            );
+
+            expect(
+                await screen.findByRole('option', { name: 'Sander' }),
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole('option', { name: 'Concept' }),
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole('option', { name: '[[All]]' }),
+            ).toBeInTheDocument();
+        } finally {
+            translate.t = identity;
+        }
     });
 });

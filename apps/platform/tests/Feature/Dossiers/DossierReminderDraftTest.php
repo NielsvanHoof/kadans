@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
-use App\Dossiers\Ai\DossierReminderDraftAgent;
+use App\Dossiers\Ai\Reminders\DossierReminderDraftAgent;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;

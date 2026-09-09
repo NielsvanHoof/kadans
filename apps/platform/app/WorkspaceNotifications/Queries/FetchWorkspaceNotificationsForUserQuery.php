@@ -6,8 +6,8 @@ namespace App\WorkspaceNotifications\Queries;
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
-use App\ClientPortal\Notifications\ClientPortalNewDeviceNotification;
-use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
+use App\ClientPortal\Notifications\Outreach\ClientQuestionnaireCompletedNotification;
+use App\ClientPortal\Notifications\Session\ClientPortalNewDeviceNotification;
 use App\Tenancy\Models\Tenant;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationItemData;
 use App\WorkspaceNotifications\Data\WorkspaceNotificationsData;

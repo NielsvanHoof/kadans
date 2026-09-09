@@ -14,7 +14,7 @@ use App\Dossiers\Models\Dossier;
 use App\Platform\Actions\Retention\PurgeSubjectActivityLogAction;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Models\DataSubjectRequest;
-use App\Platform\Transitions\DataSubjectRequestTransitions;
+use App\Platform\Transitions\DataSubject\DataSubjectRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;

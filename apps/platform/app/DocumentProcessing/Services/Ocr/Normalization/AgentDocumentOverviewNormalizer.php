@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\DocumentProcessing\Services\Ocr\Normalization;
 
-use App\DocumentProcessing\Ai\DocumentOverviewAgent;
+use App\DocumentProcessing\Ai\Ocr\DocumentOverviewAgent;
 use App\DocumentProcessing\Contracts\Ocr\DocumentExtraction;
 use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\Tenancy\Enums\TenantAiFeature;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use RuntimeException;

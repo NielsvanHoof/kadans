@@ -6,17 +6,20 @@ namespace App\Dossiers\Models;
 
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Services\Ocr\FlattenExtractedTextForSearch;
 use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\UploadedDocumentFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\AsVector;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Laravel\Scout\Searchable;
 use Override;
 
 /**
@@ -36,6 +39,8 @@ use Override;
  * @property CarbonImmutable|null $updated_at
  * @property DocumentProcessingStatus $processing_status
  * @property string|null $extracted_text
+ * @property string|null $searchable_text
+ * @property array<int, float>|null $embedding
  * @property string|null $processing_error
  * @property CarbonImmutable|null $processing_started_at
  * @property CarbonImmutable|null $processing_finished_at
@@ -71,13 +76,15 @@ use Override;
  * @method static Builder<static>|UploadedDocument whereTextractJobId($value)
  * @method static Builder<static>|UploadedDocument whereUpdatedAt($value)
  * @method static Builder<static>|UploadedDocument whereUploadedAt($value)
+ * @method static Builder<static>|UploadedDocument whereEmbedding($value)
+ * @method static Builder<static>|UploadedDocument whereSearchableText($value)
  *
  * @mixin \Eloquent
  */
 final class UploadedDocument extends TenantOwnedModel
 {
     /** @use HasFactory<UploadedDocumentFactory> */
-    use HasFactory;
+    use HasFactory, Searchable;
 
     /**
      * @var list<string>
@@ -97,11 +104,44 @@ final class UploadedDocument extends TenantOwnedModel
         'rejection_reason',
         'processing_status',
         'extracted_text',
+        'searchable_text',
+        'embedding',
         'processing_error',
         'processing_started_at',
         'processing_finished_at',
         'textract_job_id',
     ];
+
+    /**
+     * Columns Scout's database engine searches with LIKE.
+     *
+     * Integer `id` stays off this array — Postgres has no bigint ILIKE, so a
+     * filename search would 500 the palette after OR-ing every key. tenant_id
+     * stays off so searching "1" cannot match tenant 12. TenantScope already
+     * constrains rows.
+     *
+     * @return array{original_filename: string, searchable_text: string}
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'original_filename' => $this->original_filename,
+            'searchable_text' => $this->searchable_text ?? '',
+        ];
+    }
+
+    /**
+     * Overview text for Titan embeddings. Identifiers stay in searchable_text.
+     */
+    public function toSearchableEmbedding(): ?string
+    {
+        $source = new FlattenExtractedTextForSearch()->embeddingSource(
+            $this->original_filename,
+            $this->extracted_text,
+        );
+
+        return $source === '' ? null : $source;
+    }
 
     /**
      * @return BelongsTo<DocumentRequest, $this>
@@ -151,6 +191,7 @@ final class UploadedDocument extends TenantOwnedModel
             'processing_status' => DocumentProcessingStatus::class,
             'processing_started_at' => 'datetime',
             'processing_finished_at' => 'datetime',
+            'embedding' => AsVector::class,
         ];
     }
 }

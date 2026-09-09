@@ -29,26 +29,29 @@ Convention guides: [Backend](backend.md) · [Frontend](frontend.md) · [Testing]
 
 ### Typical domain layout
 
-A full feature domain (e.g. Dossiers) looks like:
+Mixed domains are **layer-then-concern**: use-case code sits under `app/{Domain}/{Actions,Data,Queries,Http,…}/{Concern}/`. Mixed today: Dossiers, Accounts, ClientPortal, Tenancy, Platform, Reporting, Questionnaires, Integrations, DocumentProcessing. Models, Policies, and Enums stay at the domain root. Cross-feature plumbing stays in `Support/`; feature Support goes in `Support/{Concern}/`.
+
+Thin domains stay flat (Clients, Pipelines, Audit, AudioProcessing, WorkspaceNotifications, Shared):
 
 ```
 app/{Domain}/
-├── Actions/           # writes — one class per use case (*Action::handle)
-├── Console/Commands/  # optional — register path in bootstrap/app.php
-├── Data/              # readonly DTOs for Inertia props
-├── Enums/             # status enums + *Permission implementing TenantPermission
+├── Actions/           # writes — mixed domains: Actions/{Concern}/
+├── Data/
+├── Queries/
 ├── Http/
-│   ├── Controllers/
-│   └── Requests/
+│   ├── Controllers/   # mixed domains: Controllers/{Concern}/
+│   └── Requests/      # mixed domains: Requests/{Concern}/
+├── Console/Commands/  # optional — register path in bootstrap/app.php
+├── Enums/             # status enums + *Permission implementing TenantPermission
 ├── Jobs/              # optional
 ├── Models/
 ├── Policies/          # AuthorizesTenantPermission
-├── Queries/           # reads — Fetch*Query, existence helpers
 ├── Transitions/       # optional state machines
+├── Support/           # optional — cross-feature plumbing; Support/{Concern}/ otherwise
 └── {Domain}ServiceProvider.php  # policies + container bindings
 ```
 
-Thin domains (e.g. Reporting, WorkspaceNotifications) may only have `Http/`, `Queries/`, `Data/`, and sometimes `Actions/` — no models or policies when they reuse another domain’s models.
+Thin domains (e.g. WorkspaceNotifications) may only have `Http/`, `Queries/`, `Data/`, and sometimes `Actions/` — no models or policies when they reuse another domain’s models.
 
 ## Composition root
 
@@ -215,7 +218,7 @@ For directory layout, import rules, Wayfinder, forms, types, permissions UI, i18
 **Payload types are generated.** Domain payload shapes come from the PHP `*Data`
 objects (`php artisan typescript:transform`, part of `npm run types:check`), so
 `features/<domain>/types.ts` is mostly aliases like
-`export type Dossier = App.Dossiers.Data.DossierShowData`. Add a field in the PHP
+`export type Dossier = App.Dossiers.Data.Lifecycle.DossierShowData`. Add a field in the PHP
 DTO, not in TypeScript; CI fails if the committed generated output is stale.
 
 Rough backend → frontend map:

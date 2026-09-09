@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { Archive, Download, LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/DossierExportController';
+import DossierExportController from '@/actions/App/Dossiers/Http/Controllers/Exports/DossierExportController';
 import { Button, buttonVariants } from '@/components/ui/button';
 import type { Dossier, DossierExport } from '@/features/dossiers/types';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Support\TenantLookup;
+use App\Tenancy\Support\Workspace\TenantLookup;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;

@@ -6,7 +6,7 @@ import { mockUseTranslation } from '@/test/mocks';
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock(
-    '@/actions/App/Tenancy/Http/Controllers/WorkspaceSettingsController',
+    '@/actions/App/Tenancy/Http/Controllers/Settings/WorkspaceSettingsController',
     () => ({
         default: {
             update: {
@@ -67,12 +67,12 @@ vi.mock('@inertiajs/react', () => ({
 const { default: FirmSettingsTabs } =
     await import('@/features/workspaces/settings/firm-settings-tabs');
 
-function settings(): App.Tenancy.Data.TenantSettingsData {
+function settings(): App.Tenancy.Data.Settings.TenantSettingsData {
     const number = (
         override: number | null,
         platform: number | null,
         max: number | null,
-    ): App.Tenancy.Data.FirmSettingData => ({
+    ): App.Tenancy.Data.Settings.FirmSettingData => ({
         override,
         effective: override ?? platform,
         platform_default: platform,
@@ -85,6 +85,7 @@ function settings(): App.Tenancy.Data.TenantSettingsData {
             document_overview: true,
             checklist_draft: false,
             reminder_draft: true,
+            document_search: true,
         },
         security: {
             two_factor_enforcement_override: 'all',
@@ -130,6 +131,7 @@ describe('firm settings tabs', () => {
         expect(Object.keys(submitted[0]).sort()).toEqual([
             'ai_checklist_draft_enabled',
             'ai_document_overview_enabled',
+            'ai_document_search_enabled',
             'ai_reminder_draft_enabled',
             'default_reminder_interval_days',
             'portal_session_absolute_minutes',

@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/*/Actions/**'
+  - 'app/**/Actions/**'
 ---
 
 # Actions

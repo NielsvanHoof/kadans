@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Reporting\Data\DashboardMetricsData;
-use App\Reporting\Data\DashboardTrendPointData;
-use App\Reporting\Support\WorkspaceDashboardCache;
+use App\Reporting\Data\Dashboard\DashboardMetricsData;
+use App\Reporting\Data\Dashboard\DashboardTrendPointData;
+use App\Reporting\Support\Dashboard\WorkspaceDashboardCache;
 use Illuminate\Support\Facades\Cache;
 
 covers(WorkspaceDashboardCache::class);

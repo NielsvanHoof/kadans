@@ -6,17 +6,17 @@ How PHP code is organized and written in this application. For the big picture (
 
 Organize code by domain under `app/{Domain}/`. There is no top-level `app/Http` — HTTP lives inside each domain.
 
-A full feature domain typically has:
+Mixed domains are layer-then-concern (`app/Dossiers/Actions/Lifecycle`, `app/Reporting/Queries/Dashboard`). Models, Policies, and Enums stay at `app/{Domain}/{Models,Policies,Enums}`. Thin domains stay flat (Clients, Pipelines, Audit, AudioProcessing, WorkspaceNotifications, Shared).
 
 ```
 app/{Domain}/
-├── Actions/           # writes — one class per use case
-├── Queries/           # reads — index/show payloads
-├── Data/              # Spatie Data DTOs for Inertia and JSON
+├── Actions/           # writes — one class per use case; mixed domains: Actions/{Concern}/
+├── Queries/           # reads — index/show payloads; mixed domains: Queries/{Concern}/
+├── Data/              # Spatie Data DTOs; mixed domains: Data/{Concern}/
 ├── Enums/             # string-backed enums; *Permission implements TenantPermission
 ├── Http/
-│   ├── Controllers/
-│   └── Requests/
+│   ├── Controllers/   # mixed domains: Controllers/{Concern}/
+│   └── Requests/      # mixed domains: Requests/{Concern}/
 ├── Models/
 ├── Policies/
 ├── Jobs/              # optional
@@ -57,7 +57,7 @@ For filterable workspace index lists, extend `Shared\Queries\PaginatedIndexQuery
 
 ## Data objects
 
-Shape Inertia and XHR payloads as `final` classes extending Spatie `Data` under `app/{Domain}/Data/`. Add TypeScript attributes as elsewhere in the codebase so types can be generated for the frontend.
+Shape Inertia and XHR payloads as `final` classes extending Spatie `Data` under `app/{Domain}/Data/` or `app/{Domain}/{Feature}/Data/`. Add TypeScript attributes as elsewhere in the codebase so types can be generated for the frontend.
 
 Reserve plain `final readonly` classes for internal-only value objects that are never sent to the client.
 
@@ -65,7 +65,7 @@ Do not add Eloquent API Resources. Return JSON with `response()->json([...])` bu
 
 ## Validation
 
-Validate HTTP writes with Form Request classes under `app/{Domain}/Http/Requests/`. Use the `LocalizesValidationAttributes` trait for attribute labels. Do not validate inline in controllers.
+Validate HTTP writes with Form Request classes under `app/{Domain}/Http/Requests/` or `app/{Domain}/{Feature}/Http/Requests/`. Use the `LocalizesValidationAttributes` trait for attribute labels. Do not validate inline in controllers.
 
 Fortify contracts and console commands may use inline validation; that is the exception, not the pattern for domain HTTP.
 

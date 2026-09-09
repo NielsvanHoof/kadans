@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Platform\Support\WorkerQueues;
+use App\Platform\Support\Observability\WorkerQueues;
 use App\Shared\Http\Middleware\AddHorizonCspNonce;
 use Illuminate\Support\Str;
 

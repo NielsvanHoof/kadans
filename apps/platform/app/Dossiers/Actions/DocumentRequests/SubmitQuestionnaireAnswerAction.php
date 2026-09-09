@@ -6,7 +6,7 @@ namespace App\Dossiers\Actions\DocumentRequests;
 
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 
 final readonly class SubmitQuestionnaireAnswerAction
 {

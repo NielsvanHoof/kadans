@@ -10,7 +10,7 @@ import InheritedNumberField from '@/features/workspaces/settings/inherited-numbe
 import { useTranslation } from '@/hooks/use-translation';
 
 type FirmPortalSectionProps = {
-    portal: App.Tenancy.Data.TenantPortalSettingsData;
+    portal: App.Tenancy.Data.Settings.TenantPortalSettingsData;
     errors: Record<string, string>;
 };
 

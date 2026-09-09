@@ -16,7 +16,7 @@ export type UploadedTicket = {
  * serialises with a snake_case output mapper (config/data.php), so a local
  * camelCase copy compiles perfectly and reads undefined at runtime.
  */
-type TicketResponse = App.Dossiers.Data.UploadTicketData;
+type TicketResponse = App.Dossiers.Data.Uploads.UploadTicketData;
 
 type DirectUploadState = {
     /** 0–100 across the whole batch, or null when idle. */

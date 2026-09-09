@@ -5,7 +5,8 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as settingsIndex } from '@/routes/workspaces/settings';
 
-type WorkspaceSettingsPageProps = App.Tenancy.Data.WorkspaceSettingsPageData;
+type WorkspaceSettingsPageProps =
+    App.Tenancy.Data.Settings.WorkspaceSettingsPageData;
 
 export default function WorkspaceSettingsIndex({
     settings,

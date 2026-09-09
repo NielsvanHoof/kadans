@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Enums\UploadPurpose;
-use App\Dossiers\Http\Controllers\AudioRecordingController;
+use App\Dossiers\Http\Controllers\AudioRecordings\AudioRecordingController;
 use App\Dossiers\Http\Requests\AudioRecordings\StoreAudioRecordingRequest;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;

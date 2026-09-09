@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Actions\Uploads;
 
-use App\Dossiers\Data\UploadTicketData;
+use App\Dossiers\Data\Uploads\UploadTicketData;
 use App\Dossiers\Enums\UploadPurpose;
-use App\Dossiers\Support\DocumentPresigner;
-use App\Dossiers\Support\UploadTicket;
+use App\Dossiers\Support\Uploads\DocumentPresigner;
+use App\Dossiers\Support\Uploads\UploadTicket;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;

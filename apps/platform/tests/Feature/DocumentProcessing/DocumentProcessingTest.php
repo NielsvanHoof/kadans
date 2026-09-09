@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\Dossiers\Actions\DocumentRequests\UploadDocumentForRequestAction;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
+use App\Dossiers\Actions\UploadedDocuments\UploadDocumentForRequestAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

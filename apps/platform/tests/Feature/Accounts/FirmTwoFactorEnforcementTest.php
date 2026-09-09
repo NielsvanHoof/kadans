@@ -8,7 +8,7 @@ use App\Accounts\Models\User;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantSetting;
-use App\Tenancy\Support\TenantTwoFactorEnforcementSource;
+use App\Tenancy\Support\Settings\TenantTwoFactorEnforcementSource;
 
 covers(TenantTwoFactorEnforcementSource::class);
 

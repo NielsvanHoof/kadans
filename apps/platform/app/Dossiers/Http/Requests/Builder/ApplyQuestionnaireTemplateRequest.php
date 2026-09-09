@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Http\Requests\Builder;
 
-use App\Dossiers\Http\Requests\Concerns\AuthorizesDossierBuilderMutation;
+use App\Dossiers\Http\Requests\Builder\Concerns\AuthorizesDossierBuilderMutation;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;

@@ -8,8 +8,8 @@ const { default: InheritedNumberField } =
     await import('@/features/workspaces/settings/inherited-number-field');
 
 function setting(
-    overrides: Partial<App.Tenancy.Data.FirmSettingData> = {},
-): App.Tenancy.Data.FirmSettingData {
+    overrides: Partial<App.Tenancy.Data.Settings.FirmSettingData> = {},
+): App.Tenancy.Data.Settings.FirmSettingData {
     return {
         override: null,
         effective: 15,

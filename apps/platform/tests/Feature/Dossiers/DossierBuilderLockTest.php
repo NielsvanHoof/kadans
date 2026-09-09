@@ -6,7 +6,7 @@ use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Support\DossierBuilderLock;
+use App\Dossiers\Support\Builder\DossierBuilderLock;
 use App\Tenancy\Enums\Role;
 use Illuminate\Support\Str;
 

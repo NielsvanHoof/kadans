@@ -12,7 +12,7 @@ use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
-use App\Tenancy\Support\WorkspaceMemberRoles;
+use App\Tenancy\Support\Members\WorkspaceMemberRoles;
 
 final readonly class TenantMembershipPolicy
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Dossiers\Support\DocumentPresigner;
+use App\Dossiers\Support\Uploads\DocumentPresigner;
 use Illuminate\Support\Facades\Storage;
 
 covers(DocumentPresigner::class);

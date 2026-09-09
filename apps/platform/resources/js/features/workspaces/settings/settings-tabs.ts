@@ -14,6 +14,7 @@ export const SETTINGS_TAB_FIELDS = {
         'ai_document_overview_enabled',
         'ai_checklist_draft_enabled',
         'ai_reminder_draft_enabled',
+        'ai_document_search_enabled',
     ],
 } as const;
 

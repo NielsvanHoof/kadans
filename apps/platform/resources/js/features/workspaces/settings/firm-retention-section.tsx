@@ -10,7 +10,7 @@ import InheritedNumberField from '@/features/workspaces/settings/inherited-numbe
 import { useTranslation } from '@/hooks/use-translation';
 
 type FirmRetentionSectionProps = {
-    retention: App.Tenancy.Data.TenantRetentionSettingsData;
+    retention: App.Tenancy.Data.Settings.TenantRetentionSettingsData;
     errors: Record<string, string>;
 };
 

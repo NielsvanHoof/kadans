@@ -1,6 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { AlertCircle } from 'lucide-react';
-import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthController';
+import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuth/OAuthController';
 import InputError, {
     fieldErrorAriaProps,
 } from '@/components/primitives/input-error';

@@ -10,7 +10,7 @@ import InheritedNumberField from '@/features/workspaces/settings/inherited-numbe
 import { useTranslation } from '@/hooks/use-translation';
 
 type FirmReminderSectionProps = {
-    reminders: App.Tenancy.Data.TenantReminderSettingsData;
+    reminders: App.Tenancy.Data.Settings.TenantReminderSettingsData;
     errors: Record<string, string>;
 };
 

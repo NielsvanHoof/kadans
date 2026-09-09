@@ -1,6 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { useRef } from 'react';
-import SecurityController from '@/actions/App/Accounts/Http/Controllers/SecurityController';
+import SecurityController from '@/actions/App/Accounts/Http/Controllers/Security/SecurityController';
 import Heading from '@/components/primitives/heading';
 import InputError, {
     fieldErrorAriaProps,

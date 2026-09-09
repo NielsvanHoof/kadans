@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Accounts\Enums\TwoFactorEnforcement;
-use App\Tenancy\Settings\FirmSettingBounds;
-use App\Tenancy\Settings\IntegerBound;
+use App\Tenancy\Support\Settings\FirmSettingBounds;
+use App\Tenancy\Support\Settings\IntegerBound;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
 use App\Clients\Models\Client;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\Dossiers\Jobs\GenerateDossierExportJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
+use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Questionnaires\Console\Commands\GenerateQuestionnaireItemTypesCommand;
+use App\Questionnaires\Console\Commands\Templates\GenerateQuestionnaireItemTypesCommand;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;

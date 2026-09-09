@@ -9,7 +9,7 @@ use App\Pipelines\Events\PipelineUpdated;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Support\TenantLookup;
+use App\Tenancy\Support\Workspace\TenantLookup;
 use Illuminate\Database\Eloquent\Model;
 
 /**

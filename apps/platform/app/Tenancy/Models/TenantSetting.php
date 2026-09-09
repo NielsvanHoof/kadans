@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tenancy\Models;
 
 use App\Accounts\Enums\TwoFactorEnforcement;
-use App\Tenancy\Support\TenantSettingsCache;
+use App\Tenancy\Support\Settings\TenantSettingsCache;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenantSettingFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,6 +20,7 @@ use Override;
  * @property bool $ai_document_overview_enabled
  * @property bool $ai_checklist_draft_enabled
  * @property bool $ai_reminder_draft_enabled
+ * @property bool $ai_document_search_enabled
  * @property TwoFactorEnforcement|null $two_factor_enforcement
  * @property int|null $two_factor_grace_days
  * @property int|null $portal_session_idle_minutes
@@ -42,6 +43,7 @@ use Override;
  * @method static Builder<static>|TenantSetting whereId($value)
  * @method static Builder<static>|TenantSetting whereTenantId($value)
  * @method static Builder<static>|TenantSetting whereUpdatedAt($value)
+ * @method static Builder<static>|TenantSetting whereAiDocumentSearchEnabled($value)
  *
  * @mixin \Eloquent
  */
@@ -59,6 +61,7 @@ final class TenantSetting extends Model
         'ai_document_overview_enabled',
         'ai_checklist_draft_enabled',
         'ai_reminder_draft_enabled',
+        'ai_document_search_enabled',
         'two_factor_enforcement',
         'two_factor_grace_days',
         'portal_session_idle_minutes',
@@ -105,6 +108,7 @@ final class TenantSetting extends Model
             'ai_document_overview_enabled' => 'boolean',
             'ai_checklist_draft_enabled' => 'boolean',
             'ai_reminder_draft_enabled' => 'boolean',
+            'ai_document_search_enabled' => 'boolean',
             'two_factor_enforcement' => TwoFactorEnforcement::class,
             'two_factor_grace_days' => 'integer',
             'portal_session_idle_minutes' => 'integer',

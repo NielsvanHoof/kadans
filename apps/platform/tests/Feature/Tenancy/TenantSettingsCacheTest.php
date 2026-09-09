@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantSetting;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
-use App\Tenancy\Support\TenantSettingsCache;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
+use App\Tenancy\Support\Settings\TenantSettingsCache;
 use Illuminate\Support\Facades\DB;
 
 covers(ResolveTenantSettingsQuery::class);

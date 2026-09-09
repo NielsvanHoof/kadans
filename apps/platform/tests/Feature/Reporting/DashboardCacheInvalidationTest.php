@@ -7,8 +7,8 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Data\DashboardMetricsData;
-use App\Reporting\Support\WorkspaceDashboardCache;
+use App\Reporting\Data\Dashboard\DashboardMetricsData;
+use App\Reporting\Support\Dashboard\WorkspaceDashboardCache;
 use App\Shared\Concerns\InvalidatesTenantCaches;
 use App\Tenancy\Models\Tenant;
 

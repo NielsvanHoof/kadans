@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Accounts\Actions\Localization;
 
 use App\Accounts\Models\User;
-use App\Accounts\Support\DisplayTimezones;
+use App\Accounts\Support\Localization\DisplayTimezones;
 use Illuminate\Http\Request;
 
 use function is_string;

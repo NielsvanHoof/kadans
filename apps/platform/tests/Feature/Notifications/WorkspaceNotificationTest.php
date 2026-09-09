@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use App\Accounts\Models\User;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
-use App\ClientPortal\Notifications\ClientPortalInviteNotification;
-use App\ClientPortal\Notifications\ClientPortalNewDeviceNotification;
-use App\ClientPortal\Notifications\ClientPortalReminderNotification;
-use App\ClientPortal\Notifications\ClientQuestionnaireCompletedNotification;
+use App\ClientPortal\Notifications\Outreach\ClientPortalInviteNotification;
+use App\ClientPortal\Notifications\Outreach\ClientPortalReminderNotification;
+use App\ClientPortal\Notifications\Outreach\ClientQuestionnaireCompletedNotification;
+use App\ClientPortal\Notifications\Session\ClientPortalNewDeviceNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierReminderSource;
 use App\Dossiers\Models\Dossier;

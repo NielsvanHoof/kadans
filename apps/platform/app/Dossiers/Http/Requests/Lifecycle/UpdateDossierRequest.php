@@ -1,0 +1,69 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Dossiers\Http\Requests\Lifecycle;
+
+use App\Dossiers\Models\Dossier;
+use App\Shared\Http\Requests\Concerns\LocalizesValidationAttributes;
+use App\Tenancy\Enums\TenantMembershipStatus;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Models\TenantMembership;
+use App\Tenancy\Support\Settings\FirmSettingBounds;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use RuntimeException;
+
+final class UpdateDossierRequest extends FormRequest
+{
+    use LocalizesValidationAttributes;
+
+    public function authorize(): bool
+    {
+        $dossier = $this->route('dossier');
+
+        return $dossier instanceof Dossier
+            && ($this->user()?->can('update', $dossier) ?? false);
+    }
+
+    /** @return array<string, ValidationRule|array<mixed>|string> */
+    public function rules(): array
+    {
+        $dossier = $this->route('dossier');
+
+        throw_unless($dossier instanceof Dossier, RuntimeException::class, 'Cannot update a dossier without route model binding.');
+
+        return [
+            'title' => ['required', 'string', 'max:255'],
+            'reference' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique((new Dossier)->getTable(), 'reference')
+                    ->where('tenant_id', $this->tenantId())
+                    ->ignore($dossier),
+            ],
+            'due_date' => ['nullable', 'date'],
+            'responsible_user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists((new TenantMembership)->getTable(), 'user_id')
+                    ->where('tenant_id', $this->tenantId())
+                    ->where('status', TenantMembershipStatus::Active->value),
+            ],
+            // No firm-default fallback here, unlike on create: an edit that
+            // omits the field must not switch reminders back on.
+            'reminder_interval_days' => FirmSettingBounds::reminderIntervalDays()->rules(),
+        ];
+    }
+
+    private function tenantId(): int
+    {
+        $tenant = Tenant::current();
+
+        throw_unless($tenant instanceof Tenant, RuntimeException::class, 'Cannot validate a dossier without an active tenant.');
+
+        return $tenant->id;
+    }
+}

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
-use App\ClientPortal\Actions\ResolveClientAccessGrantFromTokenAction;
-use App\ClientPortal\Actions\RevokeClientPortalAccessAction;
+use App\ClientPortal\Actions\Access\ResolveClientAccessGrantFromTokenAction;
+use App\ClientPortal\Actions\Access\RevokeClientPortalAccessAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
-use App\ClientPortal\Listeners\LogClientPortalInviteFailed;
-use App\ClientPortal\Listeners\LogClientPortalInviteSent;
+use App\ClientPortal\Listeners\Outreach\LogClientPortalInviteFailed;
+use App\ClientPortal\Listeners\Outreach\LogClientPortalInviteSent;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Notifications\ClientPortalInviteNotification;
+use App\ClientPortal\Notifications\Outreach\ClientPortalInviteNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;

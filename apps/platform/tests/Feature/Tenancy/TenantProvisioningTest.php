@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Actions\Provisioning\ProvisionTenantAction;
 use App\Tenancy\Enums\Role as RoleEnum;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;

@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/Tenancy/Settings/**'
+  - 'app/Tenancy/Support/Settings/**'
 ---
 
 # Settings

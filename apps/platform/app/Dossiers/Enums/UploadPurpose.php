@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Dossiers\Enums;
 
-use App\Dossiers\Support\AudioUploadLimits;
-use App\Dossiers\Support\DocumentUploadLimits;
+use App\Dossiers\Support\AudioRecordings\AudioUploadLimits;
+use App\Dossiers\Support\Uploads\DocumentUploadLimits;
 
 /**
  * What a direct-to-S3 upload ticket is for.

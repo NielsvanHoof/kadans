@@ -9,7 +9,7 @@ type InheritedNumberFieldProps = {
     name: string;
     label: string;
     description: string;
-    setting: App.Tenancy.Data.FirmSettingData;
+    setting: App.Tenancy.Data.Settings.FirmSettingData;
     error?: string;
     /** Shown after the number in the placeholder and the inherited hint. */
     unit: string;

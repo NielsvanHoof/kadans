@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/*/{Actions,Queries,Services,Transitions}/**'
+  - 'app/**/{Actions,Queries,Services,Transitions}/**'
 ---
 
 # Actions Queries Services Transitions

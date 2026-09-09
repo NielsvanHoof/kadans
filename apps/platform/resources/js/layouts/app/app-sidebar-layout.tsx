@@ -6,6 +6,7 @@ import AppSidebar from '@/components/app-shell/app-sidebar';
 import AppSidebarHeader from '@/components/app-shell/app-sidebar-header';
 import SkipToMainContent from '@/components/primitives/skip-to-main-content';
 import { Button } from '@/components/ui/button';
+import DocumentSearchPalette from '@/features/document-search/document-search-palette';
 import NotificationBell from '@/features/notifications/notification-bell';
 import { WorkspaceNotifications } from '@/features/notifications/use-workspace-notifications';
 import SupportSessionBanner from '@/features/platform/support-session-banner';
@@ -56,6 +57,7 @@ export default function AppSidebarLayout({
                     breadcrumbs={breadcrumbs}
                     actions={
                         <>
+                            <DocumentSearchPalette />
                             <Deferred
                                 data="notifications"
                                 fallback={

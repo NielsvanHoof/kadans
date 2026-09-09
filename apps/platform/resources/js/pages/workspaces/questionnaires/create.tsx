@@ -1,5 +1,5 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import QuestionnaireTemplateController from '@/actions/App/Questionnaires/Http/Controllers/QuestionnaireTemplateController';
+import QuestionnaireTemplateController from '@/actions/App/Questionnaires/Http/Controllers/Templates/QuestionnaireTemplateController';
 import Heading from '@/components/primitives/heading';
 import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';

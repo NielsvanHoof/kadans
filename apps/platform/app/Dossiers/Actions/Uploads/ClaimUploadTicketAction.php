@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\Uploads;
 
 use App\Dossiers\Enums\UploadPurpose;
-use App\Dossiers\Support\DocumentPresigner;
-use App\Dossiers\Support\StagedUpload;
-use App\Dossiers\Support\UploadTicket;
+use App\Dossiers\Support\Uploads\DocumentPresigner;
+use App\Dossiers\Support\Uploads\StagedUpload;
+use App\Dossiers\Support\Uploads\UploadTicket;
 use Illuminate\Validation\ValidationException;
 
 use function in_array;

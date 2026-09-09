@@ -7,7 +7,7 @@ use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
 use App\DocumentProcessing\Contracts\Ocr\DocumentOcr;
 use App\DocumentProcessing\Contracts\Ocr\DocumentOverviewNormalizer;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;

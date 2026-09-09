@@ -8,7 +8,7 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Clients\Models\Client;
-use App\Dossiers\Actions\DeleteDossierAction;
+use App\Dossiers\Actions\Lifecycle\DeleteDossierAction;
 use App\Dossiers\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 

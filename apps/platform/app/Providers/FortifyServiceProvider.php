@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Accounts\Actions\CreateNewUser;
-use App\Accounts\Actions\ResetUserPassword;
+use App\Accounts\Actions\Profile\CreateNewUser;
+use App\Accounts\Actions\Security\ResetUserPassword;
 use App\Integrations\Enums\OAuthProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;

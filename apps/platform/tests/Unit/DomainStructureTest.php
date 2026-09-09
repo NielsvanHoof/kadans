@@ -78,6 +78,68 @@ test('backend namespaces mirror module paths', function (): void {
     }
 });
 
+test('dossiers use-case code nests concerns under layer folders', function (): void {
+    $root = dirname(__DIR__, 2).'/app/Dossiers';
+
+    foreach (['Actions', 'Data', 'Queries', 'Http'] as $layer) {
+        expect($root.'/'.$layer)->toBeDirectory();
+    }
+
+    foreach (
+        [
+            'Lifecycle',
+            'Reminders',
+            'Builder',
+            'DocumentRequests',
+            'Uploads',
+            'UploadedDocuments',
+            'AudioRecordings',
+            'Exports',
+        ] as $featureRoot
+    ) {
+        expect($root.'/'.$featureRoot)->not->toBeDirectory();
+    }
+});
+
+test('mixed domains do not leave use-case PHP at layer roots', function (): void {
+    $app = dirname(__DIR__, 2).'/app';
+    $strays = [];
+
+    foreach (
+        [
+            'Accounts',
+            'ClientPortal',
+            'DocumentProcessing',
+            'Dossiers',
+            'Integrations',
+            'Platform',
+            'Questionnaires',
+            'Reporting',
+            'Tenancy',
+        ] as $domain
+    ) {
+        foreach (
+            [
+                'Actions',
+                'Data',
+                'Queries',
+                'Http/Controllers',
+                'Http/Requests',
+            ] as $layer
+        ) {
+            $directory = $app.'/'.$domain.'/'.$layer;
+            if (! is_dir($directory)) {
+                continue;
+            }
+            foreach (glob($directory.'/*.php') ?: [] as $file) {
+                $strays[] = str_replace($app.'/', 'app/', $file);
+            }
+        }
+    }
+
+    expect($strays)->toBeEmpty();
+});
+
 test(
     'frontend business code is organized by feature domain',
     function (): void {

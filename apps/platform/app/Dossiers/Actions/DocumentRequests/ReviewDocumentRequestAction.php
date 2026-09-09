@@ -8,10 +8,10 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Enums\DocumentRequestStatus;
-use App\Dossiers\Events\DocumentRequestRejected;
+use App\Dossiers\Events\DocumentRequests\DocumentRequestRejected;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Support\DossierLocks;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 

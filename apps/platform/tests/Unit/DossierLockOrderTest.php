@@ -146,7 +146,7 @@ test('the lock scanner finds the locks it is meant to police', function (): void
     // below, so prove it sees both idioms before trusting it.
     expect(lockedModelsIn(LOCK_OWNER))
         ->toContain('Dossier', 'DocumentRequest')
-        ->and(lockedModelsIn('app/ClientPortal/Actions/SubmitPortalAnswerAction.php'))
+        ->and(lockedModelsIn('app/ClientPortal/Actions/Submissions/SubmitPortalAnswerAction.php'))
         ->toBe(['Dossier', 'DocumentRequest', 'ClientAccessGrant']);
 });
 

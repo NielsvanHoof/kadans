@@ -20,7 +20,7 @@ use App\Integrations\Models\OAuthConnection;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Platform\Models\DataSubjectRequest;
-use App\Platform\Support\DebugbarStorageOpen;
+use App\Platform\Support\Observability\DebugbarStorageOpen;
 use App\Questionnaires\Models\QuestionnaireTemplate;
 use App\Questionnaires\Models\QuestionnaireTemplateItem;
 use App\Tenancy\Models\Tenant;

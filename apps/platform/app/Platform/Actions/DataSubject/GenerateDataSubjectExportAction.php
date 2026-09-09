@@ -13,7 +13,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
-use App\Platform\Events\DataSubjectExportCompleted;
+use App\Platform\Events\DataSubject\DataSubjectExportCompleted;
 use App\Platform\Models\DataSubjectRequest;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
@@ -271,6 +271,9 @@ final readonly class GenerateDataSubjectExportAction
                 'mime_type' => $uploadedDocument->mime_type,
                 'size_bytes' => $uploadedDocument->size_bytes,
                 'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
+                // Search derivatives of extracted_text. The zip already holds
+                // the source JSON; do not also ship searchable_text or the
+                // Titan embedding vector.
                 'extracted_text' => $uploadedDocument->extracted_text,
             ];
         }

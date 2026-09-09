@@ -49,7 +49,8 @@ export type DocumentProcessingStatus =
     App.DocumentProcessing.Enums.DocumentProcessingStatus;
 
 /** Uploaded file on a staff dossier document request (list payload — no OCR body). */
-export type UploadedDocument = App.Dossiers.Data.StaffUploadedDocumentData;
+export type UploadedDocument =
+    App.Dossiers.Data.UploadedDocuments.StaffUploadedDocumentData;
 
 /** Parsed Bedrock-structured OCR payload on the extraction page. */
 export type ExtractionFieldSensitivity =
@@ -94,7 +95,7 @@ export type DocumentExtraction = {
  * (`array<string, mixed>`) while the builder needs its structure.
  */
 export type DocumentRequest = Omit<
-    App.Dossiers.Data.StaffDocumentRequestData,
+    App.Dossiers.Data.DocumentRequests.StaffDocumentRequestData,
     'configuration'
 > & {
     configuration: QuestionnaireItemConfiguration | null;
@@ -118,11 +119,11 @@ export function isOrderedBefore(
 
 /** Uploaded file as shown on the client portal (no download id). */
 export type PortalUploadedDocument =
-    App.ClientPortal.Data.PortalUploadedDocumentData;
+    App.ClientPortal.Data.Workspace.PortalUploadedDocumentData;
 
 /** Document request as shown on the client portal. See DocumentRequest re configuration. */
 export type PortalDocumentRequest = Omit<
-    App.ClientPortal.Data.PortalDocumentRequestData,
+    App.ClientPortal.Data.Workspace.PortalDocumentRequestData,
     'configuration'
 > & {
     configuration: QuestionnaireItemConfiguration | null;

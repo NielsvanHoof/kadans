@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

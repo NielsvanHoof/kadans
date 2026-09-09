@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Platform\Http\SharedProps;
 
 use App\Accounts\Models\User;
-use App\Tenancy\Data\WorkspaceNavItemData;
+use App\Tenancy\Data\Workspace\WorkspaceNavItemData;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\FetchWorkspaceNavigationForUserQuery;
+use App\Tenancy\Queries\Workspace\FetchWorkspaceNavigationForUserQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useTranslation } from '@/hooks/use-translation';
 
 type FirmSecuritySectionProps = {
-    security: App.Tenancy.Data.TenantSecuritySettingsData;
+    security: App.Tenancy.Data.Settings.TenantSecuritySettingsData;
     error?: string;
 };
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Http\Controllers\WorkspaceSettingsController;
+use App\Tenancy\Http\Controllers\Settings\WorkspaceSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('settings', [WorkspaceSettingsController::class, 'index'])

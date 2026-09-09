@@ -11,7 +11,7 @@ import FirmToggleField from '@/features/workspaces/settings/firm-toggle-field';
 import { useTranslation } from '@/hooks/use-translation';
 
 type FirmAiSectionProps = {
-    ai: App.Tenancy.Data.TenantAiSettingsData;
+    ai: App.Tenancy.Data.Settings.TenantAiSettingsData;
 };
 
 export default function FirmAiSection({ ai }: FirmAiSectionProps) {
@@ -21,6 +21,7 @@ export default function FirmAiSection({ ai }: FirmAiSectionProps) {
     );
     const [checklistDraft, setChecklistDraft] = useState(ai.checklist_draft);
     const [reminderDraft, setReminderDraft] = useState(ai.reminder_draft);
+    const [documentSearch, setDocumentSearch] = useState(ai.document_search);
 
     return (
         <Card>
@@ -53,6 +54,16 @@ export default function FirmAiSection({ ai }: FirmAiSectionProps) {
                         )}
                         isSelected={checklistDraft}
                         onChange={setChecklistDraft}
+                    />
+
+                    <FirmToggleField
+                        name="ai_document_search_enabled"
+                        label={t('Document search')}
+                        description={t(
+                            'Search and ask questions about uploaded documents in this workspace.',
+                        )}
+                        isSelected={documentSearch}
+                        onChange={setDocumentSearch}
                     />
 
                     <FirmToggleField

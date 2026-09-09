@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Accounts;
 
 use App\Accounts\Contracts\TwoFactorEnforcementSource;
-use App\Accounts\Support\InheritPlatformTwoFactorEnforcement;
+use App\Accounts\Support\Security\InheritPlatformTwoFactorEnforcement;
 use Illuminate\Support\ServiceProvider;
 use Override;
 

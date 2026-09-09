@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
-use App\ClientPortal\Support\PortalSessionLimits;
+use App\ClientPortal\Support\Session\PortalSessionLimits;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantSetting;
 use Illuminate\Support\Facades\Config;
@@ -116,6 +116,7 @@ test('a firm cannot save a window longer than the platform one', function (): vo
             'ai_document_overview_enabled' => true,
             'ai_checklist_draft_enabled' => true,
             'ai_reminder_draft_enabled' => true,
+            'ai_document_search_enabled' => true,
             'portal_session_idle_minutes' => 45,
         ])
         ->assertSessionHasErrors('portal_session_idle_minutes');

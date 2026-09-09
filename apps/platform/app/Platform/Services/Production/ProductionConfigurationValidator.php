@@ -6,9 +6,9 @@ namespace App\Platform\Services\Production;
 
 use App\Accounts\Enums\Locale;
 use App\Accounts\Enums\TwoFactorEnforcement;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\Dossiers\Jobs\GenerateDossierExportJob;
-use App\Platform\Jobs\GenerateDataSubjectExportJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
+use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
+use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Shared\Support\Localization\TranslationDomains;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
@@ -156,6 +156,7 @@ final readonly class ProductionConfigurationValidator
                     $this->hasProductionSearchDriver() ? null : 'scout.driver',
                     $this->unapprovedAiProviderKey(),
                     $this->disallowedAiModelKey(),
+                    $this->matches('ai.default_for_embeddings', 'bedrock'),
                     $this->hasHorizonAllowList()
                         ? null
                         : 'horizon.allowed_emails',

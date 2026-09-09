@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import WorkspaceSettingsController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceSettingsController';
+import WorkspaceSettingsController from '@/actions/App/Tenancy/Http/Controllers/Settings/WorkspaceSettingsController';
 import InputError, {
     fieldErrorAriaProps,
 } from '@/components/primitives/input-error';

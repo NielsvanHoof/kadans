@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Accounts\Models\User;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\DocumentProcessing\Services\Ocr\Drivers\DemoExtractionSamples;
+use App\DocumentProcessing\Services\Ocr\FlattenExtractedTextForSearch;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\AudioRecording;
@@ -23,7 +24,7 @@ use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
 use App\Questionnaires\Enums\QuestionnaireItemType;
-use App\Tenancy\Actions\ProvisionTenantAction;
+use App\Tenancy\Actions\Provisioning\ProvisionTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
@@ -32,6 +33,7 @@ use App\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Ai\Embeddings;
 use Spatie\Activitylog\Facades\Activity;
 
 use function count;
@@ -74,6 +76,8 @@ final class DemoDataSeeder extends Seeder
     public function run(): void
     {
         fake()->seed(self::FAKER_SEED);
+
+        Embeddings::fake();
 
         $owner = $this->createStaffUser('Sanne Biemans', 'sanne@qompose-demo.nl');
         $adviser = $this->createStaffUser('Martijn Bakker', 'martijn@qompose-demo.nl');
@@ -490,6 +494,7 @@ final class DemoDataSeeder extends Seeder
     private function attachUploadedDocument(DocumentRequest $request, string $title, CarbonImmutable $uploadedAt): void
     {
         $filename = mb_strtolower(str_replace([' ', '-'], '-', $title)).'.pdf';
+        $extractedText = $this->extractionFor($title);
 
         $document = UploadedDocument::query()->create([
             'document_request_id' => $request->getKey(),
@@ -500,7 +505,11 @@ final class DemoDataSeeder extends Seeder
             'size_bytes' => fake()->numberBetween(180_000, 3_400_000),
             'uploaded_at' => $uploadedAt,
             'processing_status' => DocumentProcessingStatus::Completed,
-            'extracted_text' => $this->extractionFor($title),
+            'extracted_text' => $extractedText,
+            'searchable_text' => new FlattenExtractedTextForSearch()->searchableText(
+                $filename,
+                $extractedText,
+            ),
             'processing_started_at' => $uploadedAt->addSeconds(4),
             'processing_finished_at' => $uploadedAt->addSeconds(37),
             'created_at' => $uploadedAt,

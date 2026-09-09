@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthController';
+import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuth/OAuthController';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import OAuthProviderButton from '@/features/integrations/oauth-provider-button';

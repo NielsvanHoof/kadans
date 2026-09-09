@@ -144,6 +144,7 @@ test('a retention window outside the band is refused on save', function (int $da
             'ai_document_overview_enabled' => true,
             'ai_checklist_draft_enabled' => true,
             'ai_reminder_draft_enabled' => true,
+            'ai_document_search_enabled' => true,
             'retention_archived_days' => $days,
         ])
         ->assertSessionHasErrors('retention_archived_days');

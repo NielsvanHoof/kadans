@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\Builder;
 
 use App\Accounts\Models\User;
-use App\Dossiers\Data\DossierBuilderLockData;
+use App\Dossiers\Data\Builder\DossierBuilderLockData;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Support\DossierBuilderLock;
+use App\Dossiers\Support\Builder\DossierBuilderLock;
 use App\Dossiers\Support\DossierLocks;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;

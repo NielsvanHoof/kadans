@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Actions\RenameTenantAction;
+use App\Tenancy\Actions\Settings\RenameTenantAction;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Models\Tenant;
 use Inertia\Testing\AssertableInertia as Assert;

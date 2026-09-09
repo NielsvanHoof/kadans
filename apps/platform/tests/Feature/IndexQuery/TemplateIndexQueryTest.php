@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
-use App\Questionnaires\Queries\FetchQuestionnaireTemplatesQuery;
+use App\Questionnaires\Queries\Templates\FetchQuestionnaireTemplatesQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Inertia\Testing\AssertableInertia as Assert;

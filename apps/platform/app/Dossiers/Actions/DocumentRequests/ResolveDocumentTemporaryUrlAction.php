@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\DocumentRequests;
 
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Support\DocumentPresigner;
+use App\Dossiers\Support\Uploads\DocumentPresigner;
 use DateTimeInterface;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;

@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { useState } from 'react';
-import WorkspaceSettingsController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceSettingsController';
+import WorkspaceSettingsController from '@/actions/App/Tenancy/Http/Controllers/Settings/WorkspaceSettingsController';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
@@ -31,7 +31,7 @@ const TAB_ORDER = [
 
 type FirmSettingsTabsProps = {
     firm: Firm;
-    settings: App.Tenancy.Data.TenantSettingsData;
+    settings: App.Tenancy.Data.Settings.TenantSettingsData;
 };
 
 /**

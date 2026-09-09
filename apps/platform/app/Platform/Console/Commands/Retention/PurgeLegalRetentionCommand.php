@@ -9,7 +9,7 @@ use App\Dossiers\Models\Dossier;
 use App\Platform\Actions\Retention\PurgeExpiredClientAction;
 use App\Platform\Actions\Retention\PurgeExpiredDossierAction;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 use App\Tenancy\TenantContext;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Attributes\Description;

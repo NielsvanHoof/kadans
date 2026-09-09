@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Questionnaires\Http\Controllers\QuestionnaireChecklistDraftController;
-use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
-use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
+use App\Questionnaires\Http\Controllers\ChecklistDraft\QuestionnaireChecklistDraftController;
+use App\Questionnaires\Http\Controllers\Templates\QuestionnaireTemplateController;
+use App\Questionnaires\Http\Controllers\Templates\QuestionnaireTemplateItemController;
 use Illuminate\Support\Facades\Route;
 
 /*

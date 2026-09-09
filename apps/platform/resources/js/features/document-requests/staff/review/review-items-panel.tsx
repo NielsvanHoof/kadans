@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestReviewController';
+import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequests/DocumentRequestReviewController';
 import EmptyState from '@/components/primitives/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Questionnaires\Models;
 
-use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
+use App\Questionnaires\Actions\Templates\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Carbon\CarbonImmutable;
 use Database\Factories\QuestionnaireTemplateItemFactory;

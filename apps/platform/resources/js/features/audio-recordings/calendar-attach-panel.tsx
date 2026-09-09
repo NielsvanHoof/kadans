@@ -1,6 +1,6 @@
 import { Form, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import AudioRecordingCalendarController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordingCalendarController';
+import AudioRecordingCalendarController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordings/AudioRecordingCalendarController';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { AudioRecordingCalendarLink } from '@/features/audio-recordings/types';

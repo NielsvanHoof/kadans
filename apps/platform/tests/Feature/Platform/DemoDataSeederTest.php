@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
+use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
+use App\Dossiers\Models\UploadedDocument;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Models\Pipeline;
-use App\Reporting\Queries\FetchDashboardTrendQuery;
+use App\Reporting\Queries\Dashboard\FetchDashboardTrendQuery;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Database\Seeders\LocalDatabaseSeeder;
@@ -66,6 +68,17 @@ test('it seeds the dossier states the walkthrough depends on', function (): void
             ->exists();
 
         expect($emptyDraft)->toBeTrue();
+    });
+});
+
+test('completed demo uploads have searchable text', function (): void {
+    resolve(TenantContext::class)->runForTenant($this->tenant, function (): void {
+        $completed = UploadedDocument::query()
+            ->where('processing_status', DocumentProcessingStatus::Completed)
+            ->whereNotNull('extracted_text')
+            ->firstOrFail();
+
+        expect($completed->searchable_text)->not->toBeEmpty();
     });
 });
 

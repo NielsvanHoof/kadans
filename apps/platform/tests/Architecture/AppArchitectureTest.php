@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
-use App\Dossiers\Actions\DownloadDossierExportAction;
-use App\Dossiers\Http\Controllers\AudioRecordingController;
-use App\Dossiers\Http\Controllers\DossierExportController;
-use App\Dossiers\Http\Controllers\UploadedDocumentController;
+use App\ClientPortal\Http\Controllers\Submissions\ClientPortalUploadController;
+use App\Dossiers\Actions\Exports\DownloadDossierExportAction;
+use App\Dossiers\Http\Controllers\AudioRecordings\AudioRecordingController;
+use App\Dossiers\Http\Controllers\Exports\DossierExportController;
+use App\Dossiers\Http\Controllers\UploadedDocuments\UploadedDocumentController;
 use App\Dossiers\Support\StoredFileResponse;
-use App\Reporting\Http\Controllers\PipelineController;
+use App\Reporting\Http\Controllers\Pipelines\PipelineController;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;

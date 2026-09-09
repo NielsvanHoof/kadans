@@ -1,5 +1,5 @@
 import { Download, X } from 'lucide-react';
-import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadController';
+import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/Submissions/ClientPortalUploadController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {

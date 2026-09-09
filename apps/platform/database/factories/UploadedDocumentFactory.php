@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\DocumentProcessing\Services\Ocr\FlattenExtractedTextForSearch;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Override;
+
+use function is_string;
 
 /**
  * @extends Factory<UploadedDocument>
@@ -34,6 +37,8 @@ final class UploadedDocumentFactory extends Factory
             // New uploads start waiting for the mock OCR job.
             'processing_status' => DocumentProcessingStatus::Pending,
             'extracted_text' => null,
+            'searchable_text' => null,
+            'embedding' => null,
             'processing_error' => null,
             'processing_started_at' => null,
             'processing_finished_at' => null,
@@ -46,13 +51,23 @@ final class UploadedDocumentFactory extends Factory
      */
     public function processed(?string $extractedText = 'Mock OCR extract'): static
     {
-        return $this->state(fn (): array => [
-            'processing_status' => DocumentProcessingStatus::Completed,
-            'extracted_text' => $extractedText,
-            'processing_error' => null,
-            'processing_started_at' => now()->subMinute(),
-            'processing_finished_at' => now(),
-        ]);
+        return $this->state(function (array $attributes) use ($extractedText): array {
+            $filename = is_string($attributes['original_filename'] ?? null)
+                ? $attributes['original_filename']
+                : 'document.pdf';
+
+            return [
+                'processing_status' => DocumentProcessingStatus::Completed,
+                'extracted_text' => $extractedText,
+                'searchable_text' => new FlattenExtractedTextForSearch()->searchableText(
+                    $filename,
+                    $extractedText,
+                ),
+                'processing_error' => null,
+                'processing_started_at' => now()->subMinute(),
+                'processing_finished_at' => now(),
+            ];
+        });
     }
 
     /**
@@ -63,6 +78,8 @@ final class UploadedDocumentFactory extends Factory
         return $this->state(fn (): array => [
             'processing_status' => DocumentProcessingStatus::Processing,
             'extracted_text' => null,
+            'searchable_text' => null,
+            'embedding' => null,
             'processing_error' => null,
             'processing_started_at' => now(),
             'processing_finished_at' => null,
@@ -77,6 +94,8 @@ final class UploadedDocumentFactory extends Factory
         return $this->state(fn (): array => [
             'processing_status' => DocumentProcessingStatus::Failed,
             'extracted_text' => null,
+            'searchable_text' => null,
+            'embedding' => null,
             'processing_error' => $error,
             'processing_started_at' => now()->subMinute(),
             'processing_finished_at' => now(),

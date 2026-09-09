@@ -83,7 +83,10 @@ export default function IndexQuerySelectFilter({
 }) {
     const { t } = useTranslation();
     const isSearchable = options.length >= SEARCHABLE_OPTION_THRESHOLD;
-    const fieldLabel = t(label);
+
+    // Filter labels, option copy, and group headings are already localized in
+    // toolbarMetadata() (__(), enum label(), staff names). t() is only for
+    // chrome this component owns ("All", empty state).
 
     if (isSearchable) {
         const optionGroups = groupFilterOptions(options);
@@ -91,7 +94,7 @@ export default function IndexQuerySelectFilter({
         return (
             <div className="flex min-w-40 flex-col gap-1.5">
                 <span className="text-muted-foreground text-xs font-medium">
-                    {fieldLabel}
+                    {label}
                 </span>
                 <Combobox
                     selectedKey={selectedKey}
@@ -105,12 +108,12 @@ export default function IndexQuerySelectFilter({
                     // Required for the popover to stay open (and show the empty
                     // copy) once the typeahead filters everything out.
                     allowsEmptyCollection
-                    aria-label={fieldLabel}
+                    aria-label={label}
                     className="w-full min-w-40"
                 >
                     <ComboboxInput
-                        placeholder={fieldLabel}
-                        aria-label={fieldLabel}
+                        placeholder={label}
+                        aria-label={label}
                         // The input carries the current selection's label, so
                         // select it on focus — otherwise typing appends to
                         // "All" instead of replacing it.
@@ -138,22 +141,18 @@ export default function IndexQuerySelectFilter({
                                 >
                                     {group.label ? (
                                         <ComboboxLabel>
-                                            {t(group.label)}
+                                            {group.label}
                                         </ComboboxLabel>
                                     ) : null}
-                                    {group.options.map((option) => {
-                                        const optionLabel = t(option.label);
-
-                                        return (
-                                            <ComboboxItem
-                                                key={option.value}
-                                                id={option.value}
-                                                textValue={optionLabel}
-                                            >
-                                                {optionLabel}
-                                            </ComboboxItem>
-                                        );
-                                    })}
+                                    {group.options.map((option) => (
+                                        <ComboboxItem
+                                            key={option.value}
+                                            id={option.value}
+                                            textValue={option.label}
+                                        >
+                                            {option.label}
+                                        </ComboboxItem>
+                                    ))}
                                 </ComboboxGroup>
                             ))}
                         </ComboboxList>
@@ -166,13 +165,13 @@ export default function IndexQuerySelectFilter({
     return (
         <div className="flex min-w-40 flex-col gap-1.5">
             <span className="text-muted-foreground text-xs font-medium">
-                {fieldLabel}
+                {label}
             </span>
             <Select
                 selectedKey={selectedKey}
                 onSelectionChange={(value) => onSelectionChange(String(value))}
-                placeholder={fieldLabel}
-                aria-label={fieldLabel}
+                placeholder={label}
+                aria-label={label}
             >
                 <SelectTrigger className="w-full min-w-40">
                     <SelectValue />
@@ -182,7 +181,7 @@ export default function IndexQuerySelectFilter({
                         <SelectItem id={ALL_VALUE}>{t('All')}</SelectItem>
                         {options.map((option) => (
                             <SelectItem key={option.value} id={option.value}>
-                                {t(option.label)}
+                                {option.label}
                             </SelectItem>
                         ))}
                     </SelectGroup>

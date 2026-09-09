@@ -9,7 +9,7 @@ use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Tenancy\Policies\Concerns\AuthorizesTenantPermission;
 
 final class UploadedDocumentPolicy

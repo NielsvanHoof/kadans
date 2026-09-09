@@ -48,7 +48,9 @@ test('the failed job check passes when nothing failed recently', function (): vo
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
     expect($result->status)->toBe(Status::ok())
-        ->and($result->meta['failed_jobs'])->toBe(0);
+        ->and($result->meta['failed_jobs'])->toBe(0)
+        ->and($result->getNotificationMessage())
+        ->toBe('No jobs failed permanently in the last 60 minutes.');
 });
 
 test('the failed job check fails when a job exhausted its retries', function (): void {
@@ -57,7 +59,18 @@ test('the failed job check fails when a job exhausted its retries', function ():
     $result = FailedQueueJobsCheck::new()->within(60)->run();
 
     expect($result->status)->toBe(Status::failed())
-        ->and($result->meta['failed_jobs'])->toBe(1);
+        ->and($result->meta['failed_jobs'])->toBe(1)
+        ->and($result->getNotificationMessage())
+        ->toBe('1 job(s) failed permanently in the last 60 minutes.');
+});
+
+test('health check notification copy is translated for Dutch', function (): void {
+    app()->setLocale('nl');
+
+    expect(FailedQueueJobsCheck::new()->within(60)->run()->getNotificationMessage())
+        ->toBe('De afgelopen 60 minuten zijn er geen taken definitief mislukt.')
+        ->and(StuckPipelinesCheck::new()->run()->getNotificationMessage())
+        ->toBe('Geen vastgelopen pipelines.');
 });
 
 /**
@@ -78,7 +91,10 @@ test('the stuck pipeline check passes when every pipeline is progressing', funct
 
     Pipeline::factory()->create(['status' => PipelineStatus::Running]);
 
-    expect(StuckPipelinesCheck::new()->run()->status)->toBe(Status::ok());
+    $result = StuckPipelinesCheck::new()->run();
+
+    expect($result->status)->toBe(Status::ok())
+        ->and($result->getNotificationMessage())->toBe('No stuck pipelines.');
 });
 
 /**
@@ -98,7 +114,9 @@ test('the stuck pipeline check sees stuck pipelines in any tenant', function ():
     $result = StuckPipelinesCheck::new()->run();
 
     expect($result->status)->toBe(Status::failed())
-        ->and($result->meta['stuck_pipelines'])->toBe(2);
+        ->and($result->meta['stuck_pipelines'])->toBe(2)
+        ->and($result->getNotificationMessage())
+        ->toBe('2 pipeline(s) are stuck and need attention.');
 });
 
 test('health notifications are on by default in production and off locally', function (): void {

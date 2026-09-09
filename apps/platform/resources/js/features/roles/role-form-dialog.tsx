@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import WorkspaceRoleController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceRoleController';
+import WorkspaceRoleController from '@/actions/App/Tenancy/Http/Controllers/Roles/WorkspaceRoleController';
 import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import {

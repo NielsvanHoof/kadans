@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
+use App\DocumentProcessing\Transitions\Ocr\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;

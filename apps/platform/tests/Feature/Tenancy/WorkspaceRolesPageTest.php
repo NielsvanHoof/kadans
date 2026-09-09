@@ -10,7 +10,7 @@ use App\Tenancy\Enums\PermissionGroup;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\WorkspacePermission;
 use App\Tenancy\Models\TenantRole;
-use App\Tenancy\Support\PermissionRegistry;
+use App\Tenancy\Support\Roles\PermissionRegistry;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;

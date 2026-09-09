@@ -6,7 +6,7 @@ namespace App\Platform\Console\Commands\Retention;
 
 use App\Audit\Models\Activity;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Queries\ResolveTenantSettingsQuery;
+use App\Tenancy\Queries\Settings\ResolveTenantSettingsQuery;
 use App\Tenancy\TenantContext;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Attributes\Description;

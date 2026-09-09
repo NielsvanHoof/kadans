@@ -1,6 +1,6 @@
 import { router, useHttp } from '@inertiajs/react';
 import { useCallback } from 'react';
-import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController';
+import DocumentRequestController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequests/DocumentRequestController';
 import type {
     DocumentRequest,
     QuestionnaireItemConfiguration,

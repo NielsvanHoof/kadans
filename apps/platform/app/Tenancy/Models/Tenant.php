@@ -7,7 +7,7 @@ namespace App\Tenancy\Models;
 use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Questionnaires\Models\QuestionnaireTemplate;
-use App\Tenancy\Support\TenantLookup;
+use App\Tenancy\Support\Workspace\TenantLookup;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\RouteKey;

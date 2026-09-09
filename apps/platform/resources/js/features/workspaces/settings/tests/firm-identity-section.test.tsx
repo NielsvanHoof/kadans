@@ -6,7 +6,7 @@ import { mockUseTranslation } from '@/test/mocks';
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock(
-    '@/actions/App/Tenancy/Http/Controllers/WorkspaceSettingsController',
+    '@/actions/App/Tenancy/Http/Controllers/Settings/WorkspaceSettingsController',
     () => ({
         default: {
             updateFirm: {

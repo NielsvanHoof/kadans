@@ -19,7 +19,7 @@ use App\Clients\Models\Client;
 use App\Clients\Queries\FetchArchivedClientsQuery;
 use App\Clients\Queries\FetchClientIndexQuery;
 use App\Clients\Queries\FetchClientShowQuery;
-use App\Dossiers\Queries\TenantHasAnyDossiersQuery;
+use App\Dossiers\Queries\Lifecycle\TenantHasAnyDossiersQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;

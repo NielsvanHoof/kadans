@@ -12,7 +12,7 @@ use App\Pipelines\Actions\CreatePipelineAction;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Events\PipelineUpdated;
 use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
-use App\Reporting\Queries\FetchPipelineShowQuery;
+use App\Reporting\Queries\Pipelines\FetchPipelineShowQuery;
 use Illuminate\Support\Facades\Event;
 
 test('every pipeline type has a subject presenter registered by its owning domain', function (): void {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
-use App\Reporting\Queries\FetchDashboardProcessingHealthQuery;
+use App\Reporting\Queries\Dashboard\FetchDashboardProcessingHealthQuery;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;

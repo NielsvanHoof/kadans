@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\Dossiers\Jobs\GenerateDossierExportJob;
-use App\Platform\Jobs\GenerateDataSubjectExportJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
+use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
+use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
 
 covers(ProductionConfigurationValidator::class);
@@ -206,6 +206,8 @@ test('production rejects unsafe configuration', function (string $key, mixed $va
     'empty Reverb allowed origins' => ['reverb.apps.apps.0.allowed_origins', []],
     'unapproved inference provider for document overview' => ['ai.agents.document_overview.provider', 'openai'],
     'unapproved inference provider for reminder drafting' => ['ai.agents.dossier_reminder.provider', 'openai'],
+    'unapproved inference provider for document search' => ['ai.agents.document_search.provider', 'openai'],
+    'openai embeddings provider' => ['ai.default_for_embeddings', 'openai'],
     'agents config replaced wholesale' => ['ai.agents', 'nonsense'],
     'Anthropic model on an agent slot' => ['ai.agents.document_overview.model', 'eu.anthropic.claude-sonnet-4-20250514-v1:0'],
     'bare Anthropic model id on an agent slot' => ['ai.agents.document_overview.model', 'anthropic.claude-3-5-sonnet-20240620-v1:0'],

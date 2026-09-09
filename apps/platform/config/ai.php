@@ -23,7 +23,7 @@ return [
     'default_for_images' => 'gemini',
     'default_for_audio' => 'openai',
     'default_for_transcription' => 'openai',
-    'default_for_embeddings' => 'openai',
+    'default_for_embeddings' => 'bedrock',
     'default_for_reranking' => 'cohere',
 
     /*
@@ -96,6 +96,14 @@ return [
             'models' => [
                 'text' => [
                     'default' => env('AI_BEDROCK_MODEL_ID', 'eu.amazon.nova-lite-v1:0'),
+                ],
+                // On-demand Titan V2. AWS does not publish an eu./us. inference
+                // profile for this model — the eu. prefix that Nova uses 404s
+                // into an empty body, and Laravel AI then throws
+                // EmbeddingsCountMismatchException.
+                'embeddings' => [
+                    'default' => env('AI_BEDROCK_EMBEDDINGS_MODEL', 'amazon.titan-embed-text-v2:0'),
+                    'dimensions' => 1024,
                 ],
             ],
         ],
@@ -215,6 +223,12 @@ return [
             'provider' => env('AI_DOSSIER_REMINDER_PROVIDER', 'bedrock'),
             'model' => env('AI_DOSSIER_REMINDER_MODEL'),
             'timeout' => (int) env('AI_DOSSIER_REMINDER_TIMEOUT', 20),
+        ],
+
+        'document_search' => [
+            'provider' => env('AI_DOCUMENT_SEARCH_PROVIDER', 'bedrock'),
+            'model' => env('AI_DOCUMENT_SEARCH_MODEL'),
+            'timeout' => (int) env('AI_DOCUMENT_SEARCH_TIMEOUT', 30),
         ],
     ],
 

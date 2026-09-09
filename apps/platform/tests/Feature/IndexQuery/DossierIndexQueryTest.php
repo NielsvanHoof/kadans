@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Queries\FetchDossierIndexQuery;
+use App\Dossiers\Queries\Lifecycle\FetchDossierIndexQuery;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
