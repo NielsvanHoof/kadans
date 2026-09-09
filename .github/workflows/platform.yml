@@ -202,7 +202,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18-alpine
+        image: pgvector/pgvector:pg18
         env:
           POSTGRES_DB: qompose_test
           POSTGRES_USER: postgres
