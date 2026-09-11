@@ -40,6 +40,44 @@ export function pipelineIsInFlight(status: PipelineStatus): boolean {
     return status === 'pending' || status === 'running';
 }
 
+/**
+ * Whether the show page should stay subscribed to pipeline.updated.
+ *
+ * In-flight runs need live updates as steps advance. A failed run with
+ * next_retry_at booked also needs them — otherwise the "Retry scheduled"
+ * banner stays stale until a manual refresh after the automatic retry fires.
+ */
+export function pipelineNeedsLiveReload(
+    status: PipelineStatus,
+    nextRetryAt: string | null,
+): boolean {
+    return pipelineIsInFlight(status) || nextRetryAt !== null;
+}
+
+export type PipelineRecoveryKind = 'scheduled' | 'staff_action' | null;
+
+/**
+ * Derive the recovery guidance kind from run status and next_retry_at.
+ *
+ * Scheduled: automatic backoff still has budget (failed + next_retry_at).
+ * Staff action: failed past the cap, stuck (never auto-retries), or cancelled.
+ * Null: nothing for staff to recover — pending, running, or completed.
+ */
+export function pipelineRecoveryKind(
+    status: PipelineStatus,
+    nextRetryAt: string | null,
+): PipelineRecoveryKind {
+    if (status === 'failed' && nextRetryAt !== null) {
+        return 'scheduled';
+    }
+
+    if (status === 'failed' || status === 'stuck' || status === 'cancelled') {
+        return 'staff_action';
+    }
+
+    return null;
+}
+
 export function pipelineStepStatusTone(status: PipelineStepStatus): string {
     switch (status) {
         case 'completed':

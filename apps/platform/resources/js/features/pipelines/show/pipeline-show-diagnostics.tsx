@@ -5,13 +5,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import PipelineErrorPanel from '@/features/pipelines/show/pipeline-error-panel';
+import PipelineTechnicalError from '@/features/pipelines/show/pipeline-technical-error';
 import type { PipelineDetail } from '@/features/pipelines/types';
-import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
- * Provider / retry diagnostics and optional metadata JSON for a pipeline run.
+ * Provider identifiers and raw error detail for a pipeline run.
+ *
+ * Recovery timing and the localised failure sentence live in the recovery
+ * banner — this card is the technical evidence an engineer needs.
  */
 export default function PipelineShowDiagnostics({
     pipeline,
@@ -19,7 +21,6 @@ export default function PipelineShowDiagnostics({
     pipeline: PipelineDetail;
 }) {
     const { t } = useTranslation();
-    const { formatDateTime } = useFormatters();
 
     return (
         <div className="space-y-6">
@@ -27,7 +28,9 @@ export default function PipelineShowDiagnostics({
                 <CardHeader>
                     <CardTitle>{t('Diagnostics')}</CardTitle>
                     <CardDescription>
-                        {t('Provider and retry context for this run.')}
+                        {t(
+                            'Provider identifiers and the raw error for this run.',
+                        )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
@@ -48,16 +51,8 @@ export default function PipelineShowDiagnostics({
                                 {pipeline.provider_job_id ?? t('—')}
                             </p>
                         </div>
-                        {pipeline.next_retry_at ? (
-                            <div>
-                                <p className="text-muted-foreground">
-                                    {t('Next retry')}
-                                </p>
-                                <p>{formatDateTime(pipeline.next_retry_at)}</p>
-                            </div>
-                        ) : null}
                     </div>
-                    <PipelineErrorPanel
+                    <PipelineTechnicalError
                         errorCode={pipeline.error_code}
                         errorMessage={pipeline.error_message}
                     />
