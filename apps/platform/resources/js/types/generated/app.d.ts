@@ -478,6 +478,7 @@ declare namespace App {
                 readonly created_at: string;
                 readonly subject_type: string;
                 readonly subject_id: number;
+                readonly subject: App.Pipelines.Data.PipelineSubjectData;
             };
             export type PipelineShowData = {
                 readonly id: number;
@@ -767,6 +768,7 @@ declare namespace App {
                     readonly error_message: string | null;
                     readonly last_activity_at: string | null;
                     readonly is_retryable: boolean;
+                    readonly subject: App.Pipelines.Data.PipelineSubjectData;
                 };
                 export type DashboardProcessingHealthData = {
                     readonly failed: number;

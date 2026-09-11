@@ -37,7 +37,7 @@ final class UploadedDocumentPipelineSubjectPresenter implements PipelineSubjectP
 
     public function context(Model $subject): ?string
     {
-        return $subject instanceof UploadedDocument ? $subject->documentRequest?->dossier?->title : null;
+        return $subject instanceof UploadedDocument ? $this->dossierContext($subject->documentRequest?->dossier) : null;
     }
 
     public function dossierId(Model $subject): ?int

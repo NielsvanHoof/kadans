@@ -7,11 +7,12 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { useReloadOnPipelineUpdated } from '@/features/pipelines/hooks/use-reload-on-pipeline-updated';
+import PipelineRecoveryGuidance from '@/features/pipelines/show/pipeline-recovery-guidance';
 import PipelineShowDiagnostics from '@/features/pipelines/show/pipeline-show-diagnostics';
 import PipelineShowHeader from '@/features/pipelines/show/pipeline-show-header';
 import PipelineShowSummary from '@/features/pipelines/show/pipeline-show-summary';
 import PipelineStepTimeline from '@/features/pipelines/show/pipeline-step-timeline';
-import { pipelineIsInFlight } from '@/features/pipelines/status/pipeline-status';
+import { pipelineNeedsLiveReload } from '@/features/pipelines/status/pipeline-status';
 import type { PipelineDetail } from '@/features/pipelines/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -33,8 +34,9 @@ export default function PipelineShow({
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
 
-    // Keep the show page live while submit / provider / results are still moving.
-    const isInFlight = pipelineIsInFlight(pipeline.status);
+    // Keep the show page live while the run is moving, and while a failed run
+    // still has an automatic retry booked — otherwise the recovery banner
+    // would stay on "Retry scheduled" after the retry already fired.
     useReloadOnPipelineUpdated(
         [
             'pipeline',
@@ -45,7 +47,10 @@ export default function PipelineShow({
             'flash',
         ],
         {
-            enabled: isInFlight,
+            enabled: pipelineNeedsLiveReload(
+                pipeline.status,
+                pipeline.next_retry_at,
+            ),
             // Firm-wide: a run reached from the pipeline list is not
             // necessarily one whose dossier this page knows.
             scope: { on: 'workspace' },
@@ -78,6 +83,8 @@ export default function PipelineShow({
                     canRetry={canRetry}
                     canCancel={canCancel}
                 />
+
+                <PipelineRecoveryGuidance pipeline={pipeline} />
 
                 <PipelineShowSummary pipeline={pipeline} />
 

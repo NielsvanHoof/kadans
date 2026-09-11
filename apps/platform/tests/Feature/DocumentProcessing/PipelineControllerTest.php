@@ -25,6 +25,9 @@ use Inertia\Testing\AssertableInertia as Assert;
 test('an authorized workspace member can view pipeline index and details', function (): void {
     ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
     $document = pipelineDocument($tenant->id);
+    $document->load('documentRequest.dossier.client');
+    $dossier = $document->documentRequest->dossier;
+    $expectedContext = $dossier->client->name.' · '.$dossier->title;
     $pipeline = resolve(CreatePipelineAction::class)->handle($document, PipelineType::OcrDocument);
     resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
 
@@ -36,6 +39,10 @@ test('an authorized workspace member can view pipeline index and details', funct
             ->has('pipelines.data', 1)
             ->where('pipelines.data.0.id', $pipeline->id)
             ->where('pipelines.data.0.status', 'running')
+            ->where('pipelines.data.0.subject.type', 'UploadedDocument')
+            ->where('pipelines.data.0.subject.id', $document->id)
+            ->where('pipelines.data.0.subject.label', $document->original_filename)
+            ->where('pipelines.data.0.subject.context', $expectedContext)
             ->has('indexQuery.filters'));
 
     $this->actingAs($owner)
@@ -66,7 +73,9 @@ test('pipeline index is tenant isolated', function (): void {
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->has('pipelines.data', 1)
-            ->where('pipelines.data.0.id', $pipelineA->id));
+            ->where('pipelines.data.0.id', $pipelineA->id)
+            ->where('pipelines.data.0.subject.id', $documentA->id)
+            ->where('pipelines.data.0.subject.label', $documentA->original_filename));
 
     $this->actingAs($ownerA)
         ->get(workspaceRoute('workspaces.pipelines.show', $tenantA, ['pipeline' => $pipelineB->id]))

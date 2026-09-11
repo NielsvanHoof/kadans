@@ -6,6 +6,7 @@ namespace App\Pipelines\Support;
 
 use App\Pipelines\Contracts\PipelineSubjectPresenter;
 use App\Pipelines\Enums\PipelineType;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Owning domains register their subject presenter here (from their own
@@ -24,6 +25,22 @@ final class PipelineSubjectPresenterRegistry
     public function register(PipelineSubjectPresenter $presenter): void
     {
         $this->presenters[$presenter->type()->value] = $presenter;
+    }
+
+    /** @return array<class-string<Model>, list<string>> */
+    public function eagerLoads(): array
+    {
+        $relations = [];
+
+        foreach ($this->presenters as $presenter) {
+            $subjectClass = $presenter->subjectClass();
+            $relations[$subjectClass] = array_values(array_unique([
+                ...($relations[$subjectClass] ?? []),
+                ...$presenter->eagerLoads(),
+            ]));
+        }
+
+        return $relations;
     }
 
     public function for(PipelineType $type): ?PipelineSubjectPresenter
