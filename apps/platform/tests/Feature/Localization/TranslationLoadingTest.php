@@ -26,7 +26,7 @@ test(
         ksort($frontend, SORT_STRING);
         ksort($backend, SORT_STRING);
 
-        expect($frontend)->toBe($backend)->and($frontend)->toHaveCount(1480);
+        expect($frontend)->toBe($backend)->and($frontend)->toHaveCount(1487);
     },
 )->with(Locale::values());
 
