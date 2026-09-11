@@ -24,7 +24,7 @@ use Illuminate\Support\Str;
  * trait instead would be worse — pipelines write several times per run, and
  * each write would evict the expensive aggregate metrics the cache exists for.
  */
-final class FetchDashboardProcessingHealthQuery
+final readonly class FetchDashboardProcessingHealthQuery
 {
     /** Rows listed under the counters. */
     private const int ROW_LIMIT = 5;
@@ -33,7 +33,7 @@ final class FetchDashboardProcessingHealthQuery
     private const int ERROR_EXCERPT = 160;
 
     public function __construct(
-        private readonly PipelineSubjectPresenterRegistry $subjectPresenters,
+        private PipelineSubjectPresenterRegistry $subjectPresenters,
     ) {}
 
     public function handle(Tenant $tenant): DashboardProcessingHealthData

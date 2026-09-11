@@ -137,7 +137,9 @@ describe('ProcessingHealthCard', () => {
         );
 
         expect(screen.getByText('annual-accounts.pdf')).toBeInTheDocument();
-        expect(screen.getByText('Acme Corp · Annual audit')).toBeInTheDocument();
+        expect(
+            screen.getByText('Acme Corp · Annual audit'),
+        ).toBeInTheDocument();
     });
 
     it('keeps a missing subject identifiable', () => {
@@ -145,15 +147,25 @@ describe('ProcessingHealthCard', () => {
             <ProcessingHealthCard
                 health={health({
                     failed: 1,
-                    recent: [failure({
-                        subject: { type: 'UploadedDocument', id: 12, label: null, context: null, href: null },
-                    })],
+                    recent: [
+                        failure({
+                            subject: {
+                                type: 'UploadedDocument',
+                                id: 12,
+                                label: null,
+                                context: null,
+                                href: null,
+                            },
+                        }),
+                    ],
                 })}
             />,
         );
 
         expect(screen.getByText('UploadedDocument #12')).toBeInTheDocument();
-        expect(screen.queryByText('Acme Corp · Annual audit')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText('Acme Corp · Annual audit'),
+        ).not.toBeInTheDocument();
     });
 
     it('renders a run that carries no error message', () => {

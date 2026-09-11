@@ -76,7 +76,9 @@ describe('PipelinesListCard', () => {
         render(<PipelinesListCard pipelines={paginated([row()])} />);
 
         expect(screen.getByText('annual-accounts.pdf')).toBeInTheDocument();
-        expect(screen.getByText('Acme Corp · Annual audit')).toBeInTheDocument();
+        expect(
+            screen.getByText('Acme Corp · Annual audit'),
+        ).toBeInTheDocument();
     });
 
     it('keeps a missing subject identifiable', () => {

@@ -78,9 +78,9 @@ describe('pipelineRecoveryKind', () => {
         expect(pipelineRecoveryKind('failed', null)).toBe('staff_action');
         expect(pipelineRecoveryKind('stuck', null)).toBe('staff_action');
         expect(pipelineRecoveryKind('cancelled', null)).toBe('staff_action');
-        expect(
-            pipelineRecoveryKind('stuck', '2026-08-17T12:00:00+00:00'),
-        ).toBe('staff_action');
+        expect(pipelineRecoveryKind('stuck', '2026-08-17T12:00:00+00:00')).toBe(
+            'staff_action',
+        );
     });
 
     it('is null while the run is pending, running, or completed', () => {

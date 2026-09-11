@@ -29,7 +29,9 @@ export default function PipelineTechnicalError({
             ) : null}
             {errorMessage !== null ? (
                 <div>
-                    <p className="text-muted-foreground">{t('Error message')}</p>
+                    <p className="text-muted-foreground">
+                        {t('Error message')}
+                    </p>
                     <p className="font-mono text-xs break-words">
                         {errorMessage}
                     </p>
