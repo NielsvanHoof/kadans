@@ -72,10 +72,10 @@ use function is_string;
  * @property-read Tenant $tenant
  *
  * @method static DossierFactory factory($count = null, $state = [])
- * @method static EloquentBuilder<static>|Dossier newModelQuery()
- * @method static EloquentBuilder<static>|Dossier newQuery()
+ * @method static EloquentBuilder<static> newModelQuery()
+ * @method static EloquentBuilder<static> newQuery()
  * @method static EloquentBuilder<static>|Dossier onlyTrashed()
- * @method static EloquentBuilder<static>|Dossier query()
+ * @method static EloquentBuilder<static> query()
  * @method static EloquentBuilder<static>|Dossier whereClientId($value)
  * @method static EloquentBuilder<static>|Dossier whereCreatedAt($value)
  * @method static EloquentBuilder<static>|Dossier whereDeletedAt($value)

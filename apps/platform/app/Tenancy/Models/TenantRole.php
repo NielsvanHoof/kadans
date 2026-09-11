@@ -41,10 +41,10 @@ use Spatie\Permission\Models\Role as SpatieRole;
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
  *
- * @method static Builder<static>|TenantRole newModelQuery()
- * @method static Builder<static>|TenantRole newQuery()
+ * @method static Builder<static> newModelQuery()
+ * @method static Builder<static> newQuery()
  * @method static Builder<static>|TenantRole permission($permissions, bool $without = false)
- * @method static Builder<static>|TenantRole query()
+ * @method static Builder<static> query()
  * @method static Builder<static>|TenantRole whereCreatedAt($value)
  * @method static Builder<static>|TenantRole whereGuardName($value)
  * @method static Builder<static>|TenantRole whereId($value)
