@@ -37,7 +37,7 @@ final class AudioRecordingPipelineSubjectPresenter implements PipelineSubjectPre
 
     public function context(Model $subject): ?string
     {
-        return $subject instanceof AudioRecording ? $subject->dossier?->title : null;
+        return $subject instanceof AudioRecording ? $this->dossierContext($subject->dossier) : null;
     }
 
     public function dossierId(Model $subject): ?int

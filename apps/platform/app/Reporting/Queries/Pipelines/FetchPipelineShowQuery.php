@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Reporting\Queries\Pipelines;
 
-use App\Pipelines\Contracts\PipelineSubjectPresenter;
 use App\Pipelines\Data\PipelineShowData;
 use App\Pipelines\Data\PipelineSubjectData;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
-use App\Shared\Database\MorphType;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 final readonly class FetchPipelineShowQuery
 {
@@ -25,33 +24,20 @@ final readonly class FetchPipelineShowQuery
     {
         $presenter = $this->subjectPresenters->for($pipeline->type);
 
-        $pipeline->load(['steps', 'pipelineable']);
-
-        if ($presenter instanceof PipelineSubjectPresenter && $presenter->eagerLoads() !== []) {
-            $pipeline->loadMorph('pipelineable', [
-                $presenter->subjectClass() => $presenter->eagerLoads(),
-            ]);
-        }
+        $pipeline->load([
+            'steps',
+            'pipelineable' => function (Relation $relation): void {
+                if ($relation instanceof MorphTo) {
+                    $relation->morphWith($this->subjectPresenters->eagerLoads());
+                }
+            },
+        ]);
 
         return [
             'pipeline' => PipelineShowData::fromModel(
                 $pipeline,
-                $this->subjectData($pipeline, $presenter),
+                PipelineSubjectData::fromModel($pipeline, $presenter),
             )->toArray(),
         ];
-    }
-
-    private function subjectData(Pipeline $pipeline, ?PipelineSubjectPresenter $presenter): PipelineSubjectData
-    {
-        $subject = $pipeline->pipelineable;
-        $describable = $presenter instanceof PipelineSubjectPresenter && $subject instanceof Model;
-
-        return new PipelineSubjectData(
-            type: MorphType::classBasename($pipeline->pipelineable_type),
-            id: $pipeline->pipelineable_id,
-            label: $describable ? $presenter->label($subject) : null,
-            context: $describable ? $presenter->context($subject) : null,
-            href: $describable ? $presenter->href($subject, $pipeline) : null,
-        );
     }
 }

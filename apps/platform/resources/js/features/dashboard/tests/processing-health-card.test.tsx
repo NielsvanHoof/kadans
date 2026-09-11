@@ -42,6 +42,13 @@ function failure(
         error_message: 'Provider returned 500',
         last_activity_at: '2026-08-17T10:00:00+00:00',
         is_retryable: true,
+        subject: {
+            type: 'UploadedDocument',
+            id: 12,
+            label: 'annual-accounts.pdf',
+            context: 'Acme Corp · Annual audit',
+            href: null,
+        },
         ...overrides,
     };
 }
@@ -120,6 +127,33 @@ describe('ProcessingHealthCard', () => {
         expect(
             screen.getByRole('link', { name: /Document scan/ }),
         ).toHaveAttribute('href', expect.stringContaining('/pipelines/7'));
+    });
+
+    it('shows the document, client and dossier without opening the run', () => {
+        render(
+            <ProcessingHealthCard
+                health={health({ failed: 1, recent: [failure()] })}
+            />,
+        );
+
+        expect(screen.getByText('annual-accounts.pdf')).toBeInTheDocument();
+        expect(screen.getByText('Acme Corp · Annual audit')).toBeInTheDocument();
+    });
+
+    it('keeps a missing subject identifiable', () => {
+        render(
+            <ProcessingHealthCard
+                health={health({
+                    failed: 1,
+                    recent: [failure({
+                        subject: { type: 'UploadedDocument', id: 12, label: null, context: null, href: null },
+                    })],
+                })}
+            />,
+        );
+
+        expect(screen.getByText('UploadedDocument #12')).toBeInTheDocument();
+        expect(screen.queryByText('Acme Corp · Annual audit')).not.toBeInTheDocument();
     });
 
     it('renders a run that carries no error message', () => {

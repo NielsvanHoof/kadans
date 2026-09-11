@@ -77,7 +77,9 @@ test('rows carry the detail the card links and labels with', function (): void {
         ->and($row->status)->toBe(PipelineStatus::Failed)
         ->and($row->errorMessage)->toBe('Provider returned 500')
         ->and($row->lastActivityAt)->not->toBeNull()
-        ->and($row->isRetryable)->toBeTrue();
+        ->and($row->isRetryable)->toBeTrue()
+        ->and($row->subject->type)->toBeString()
+        ->and($row->subject->id)->toBeInt();
 });
 
 test('a long provider error is truncated rather than shipped whole', function (): void {

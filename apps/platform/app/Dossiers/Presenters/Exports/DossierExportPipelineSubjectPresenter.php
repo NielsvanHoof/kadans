@@ -37,7 +37,7 @@ final class DossierExportPipelineSubjectPresenter implements PipelineSubjectPres
 
     public function context(Model $subject): ?string
     {
-        return $subject instanceof DossierExport ? $subject->dossier?->title : null;
+        return $subject instanceof DossierExport ? $this->dossierContext($subject->dossier) : null;
     }
 
     public function dossierId(Model $subject): ?int

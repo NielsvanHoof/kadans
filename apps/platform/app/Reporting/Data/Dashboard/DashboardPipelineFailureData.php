@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reporting\Data\Dashboard;
 
+use App\Pipelines\Data\PipelineSubjectData;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineType;
 use Spatie\LaravelData\Data;
@@ -23,5 +24,6 @@ final class DashboardPipelineFailureData extends Data
         public readonly ?string $lastActivityAt,
         /** Whether this run can be re-queued, per PipelineStatus::isRetryable(). */
         public readonly bool $isRetryable,
+        public readonly PipelineSubjectData $subject,
     ) {}
 }

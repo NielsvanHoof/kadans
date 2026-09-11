@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Reporting\Queries\Pipelines;
 
 use App\Pipelines\Data\PipelineIndexRowData;
+use App\Pipelines\Data\PipelineSubjectData;
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
+use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
 use App\Shared\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -21,12 +25,15 @@ use Spatie\QueryBuilder\AllowedSort;
  */
 final class FetchPipelineIndexQuery extends PaginatedIndexQuery
 {
+    public function __construct(
+        private readonly PipelineSubjectPresenterRegistry $subjectPresenters,
+    ) {}
+
     /**
-     * @return LengthAwarePaginator<int, array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, created_at: string, subject_type: string, subject_id: int|null}>
+     * @return LengthAwarePaginator<int, array<string, mixed>>
      */
     public function handle(): LengthAwarePaginator
     {
-        /** @var LengthAwarePaginator<int, array{id: int, type: string, status: string, current_stage: string|null, attempt_number: int, last_activity_at: string|null, created_at: string, subject_type: string, subject_id: int|null}> */
         return $this->paginate();
     }
 
@@ -79,7 +86,13 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
     /** @return Builder<Pipeline> */
     protected function subject(): Builder
     {
-        $query = Pipeline::query();
+        $query = Pipeline::query()->with([
+            'pipelineable' => function (Relation $relation): void {
+                if ($relation instanceof MorphTo) {
+                    $relation->morphWith($this->subjectPresenters->eagerLoads());
+                }
+            },
+        ]);
         $query->getQuery()->select([
             'id',
             'type',
@@ -123,6 +136,9 @@ final class FetchPipelineIndexQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var Pipeline $model */
-        return PipelineIndexRowData::fromModel($model)->toArray();
+        return PipelineIndexRowData::fromModel(
+            $model,
+            PipelineSubjectData::fromModel($model, $this->subjectPresenters->for($model->type)),
+        )->toArray();
     }
 }

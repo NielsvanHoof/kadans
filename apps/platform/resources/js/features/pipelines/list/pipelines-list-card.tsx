@@ -28,6 +28,7 @@ export default function PipelinesListCard({
         {
             key: 'type',
             header: t('Process'),
+            className: 'whitespace-normal',
             cell: (pipeline) => (
                 <div className="space-y-1">
                     <Link
@@ -39,25 +40,18 @@ export default function PipelinesListCard({
                     >
                         {pipelineTypeLabel(pipeline.type, t)}
                     </Link>
+                    <p className="text-sm [overflow-wrap:anywhere]">
+                        {pipeline.subject.label ??
+                            `${pipeline.subject.type} #${pipeline.subject.id}`}
+                    </p>
+                    {pipeline.subject.context && (
+                        <p className="text-muted-foreground text-xs [overflow-wrap:anywhere]">
+                            {pipeline.subject.context}
+                        </p>
+                    )}
                     <p className="text-muted-foreground font-mono text-xs">
                         #{pipeline.id}
                     </p>
-                </div>
-            ),
-        },
-        {
-            key: 'subject',
-            header: t('Subject'),
-            className: 'hidden whitespace-normal sm:table-cell',
-            cell: (pipeline) => (
-                <div className="text-sm">
-                    <span className="text-foreground">
-                        {pipeline.subject_type}
-                    </span>
-                    <span className="text-muted-foreground font-mono">
-                        {' '}
-                        #{pipeline.subject_id}
-                    </span>
                 </div>
             ),
         },
