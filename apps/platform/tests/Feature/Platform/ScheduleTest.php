@@ -71,3 +71,25 @@ test('telescope prune is not scheduled outside local', function (): void {
     expect(app()->environment('local'))->toBeFalse()
         ->and(scheduledEventFor('telescope:prune'))->toBeNull();
 });
+
+test('every scheduled command bounds its overlap mutex', function (): void {
+    // Illuminate\Console\Scheduling\ManagesAttributes::$expiresAt. Laravel
+    // releases the mutex in the run's `finally` and on SIGTERM, so this only
+    // bites on SIGKILL and the OOM killer — and then the command is skipped
+    // silently for the whole window, with nothing raised for ScheduleCheck to
+    // see. A day of that is never the answer for a command that runs hourly or
+    // faster, so the framework default is not an acceptable value here.
+    $frameworkDefaultMinutes = 1440;
+
+    foreach (scheduledEvents() as $event) {
+        expect($event->withoutOverlapping)->toBeTrue(sprintf(
+            'Scheduled command [%s] is missing withoutOverlapping().',
+            $event->getSummaryForDisplay(),
+        ))->and($event->expiresAt)->toBeLessThan($frameworkDefaultMinutes, sprintf(
+            'Scheduled command [%s] takes the default %d-minute overlap mutex. '
+            .'Pass an explicit expiry sized to its realistic runtime.',
+            $event->getSummaryForDisplay(),
+            $frameworkDefaultMinutes,
+        ));
+    }
+});

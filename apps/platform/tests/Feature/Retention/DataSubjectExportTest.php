@@ -19,6 +19,7 @@ use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Platform\Models\DataSubjectRequest;
+use App\Platform\Transitions\DataSubject\DataSubjectRequestTransitions;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -123,7 +124,7 @@ test('the export archive carries the client, dossiers, answers, and stored files
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
 
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $request->refresh();
 
@@ -171,7 +172,7 @@ test('the export never contains a portal token', function (): void {
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
 
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $zip = new ZipArchive();
     $zip->open(Storage::disk((string) config('exports.disk'))->path((string) $request->refresh()->path));
@@ -191,7 +192,7 @@ test('an export artefact expires so a copy of one person does not linger', funct
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
 
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $request->refresh();
 
@@ -214,10 +215,10 @@ test('generating twice does nothing the second time', function (): void {
         ->handle($client, $owner, DataSubjectRequestType::Export);
 
     $action = resolve(GenerateDataSubjectExportAction::class);
-    $action->handle($request);
+    $action->handle($request, dataSubjectExportStaleCutoff());
     $completedAt = $request->refresh()->completed_at;
 
-    $action->handle($request->refresh());
+    $action->handle($request->refresh(), dataSubjectExportStaleCutoff());
 
     expect($request->refresh()->completed_at?->toDateTimeString())
         ->toBe($completedAt?->toDateTimeString())
@@ -359,7 +360,7 @@ test('a data-subject export does not grow memory with total archive size', funct
     gc_collect_cycles();
     $before = memory_get_peak_usage(true);
 
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $growth = memory_get_peak_usage(true) - $before;
 
@@ -374,4 +375,94 @@ test('a data-subject export does not grow memory with total archive size', funct
             Storage::disk('local')->allDirectories(),
             static fn (string $directory): bool => str_starts_with($directory, 'data-subject-export-staging-'),
         ))->toBeEmpty();
+});
+
+describe('fulfilment claim', function (): void {
+    /*
+     * ShouldBeUnique stops a second *dispatch*; it does nothing once Redis
+     * re-reserves a job at retry_after, which is 660s against this job's 600s
+     * timeout. So the claim, not the unique lock, is what keeps two workers off
+     * the same ten-minute archive build.
+     */
+
+    test('a second worker arriving mid-build does not build a second archive', function (): void {
+        Storage::fake('local');
+        config(['exports.disk' => 'local']);
+
+        ['owner' => $owner, 'client' => $client] = dataSubjectFixture();
+
+        $request = resolve(LogDataSubjectRequestAction::class)
+            ->handle($client, $owner, DataSubjectRequestType::Export);
+
+        // Stand in for the worker that is already zipping: it holds the claim
+        // and has not reached the Completed write, so status is still Pending.
+        $claimed = resolve(DataSubjectRequestTransitions::class)
+            ->claimForFulfilment($request, dataSubjectExportStaleCutoff());
+
+        expect($claimed)->toBeTrue()
+            ->and($request->refresh()->status)->toBe(DataSubjectRequestStatus::Pending);
+
+        resolve(GenerateDataSubjectExportAction::class)
+            ->handle($request->refresh(), dataSubjectExportStaleCutoff());
+
+        expect($request->refresh()->completed_at)->toBeNull()
+            ->and($request->path)->toBeNull()
+            ->and(Storage::disk('local')->allFiles())
+            ->toBeEmpty()
+            ->and(Activity::query()
+                ->where('event', AuditEvent::DataSubjectExportCompleted->value)
+                ->count())->toBe(0);
+    });
+
+    test('a claim older than the jobs lifecycle is reclaimed without an operator', function (): void {
+        Storage::fake('local');
+        config(['exports.disk' => 'local']);
+
+        ['owner' => $owner, 'client' => $client] = dataSubjectFixture();
+
+        $request = resolve(LogDataSubjectRequestAction::class)
+            ->handle($client, $owner, DataSubjectRequestType::Export);
+
+        // A worker that was SIGKILLed: claimed, never released, long gone.
+        $request->forceFill([
+            'fulfilment_started_at' => now()->subSeconds(
+                GenerateDataSubjectExportJob::lifecycleSeconds() + 60,
+            ),
+        ])->save();
+
+        resolve(GenerateDataSubjectExportAction::class)
+            ->handle($request->refresh(), dataSubjectExportStaleCutoff());
+
+        expect($request->refresh()->status)->toBe(DataSubjectRequestStatus::Completed)
+            ->and($request->path)->not->toBeNull();
+    });
+
+    test('a failure hands the claim back so the retry does not wait out the window', function (): void {
+        Storage::fake('local');
+        config(['exports.disk' => 'local']);
+
+        ['owner' => $owner, 'client' => $client] = dataSubjectFixture();
+
+        $request = resolve(LogDataSubjectRequestAction::class)
+            ->handle($client, $owner, DataSubjectRequestType::Export);
+
+        // Nothing can be written, so the build throws after taking the claim.
+        config(['exports.disk' => 'nonexistent-disk']);
+
+        expect(fn (): mixed => resolve(GenerateDataSubjectExportAction::class)
+            ->handle($request->refresh(), dataSubjectExportStaleCutoff()))
+            ->toThrow(InvalidArgumentException::class)
+            ->and($request->refresh()->fulfilment_started_at)
+            ->toBeNull()
+            ->and($request->status)
+            ->toBe(DataSubjectRequestStatus::Pending);
+
+        // And the immediate retry gets through rather than silently skipping.
+        config(['exports.disk' => 'local']);
+
+        resolve(GenerateDataSubjectExportAction::class)
+            ->handle($request->refresh(), dataSubjectExportStaleCutoff());
+
+        expect($request->refresh()->status)->toBe(DataSubjectRequestStatus::Completed);
+    });
 });

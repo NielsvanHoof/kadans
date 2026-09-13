@@ -202,7 +202,7 @@ test('downloading the archive requires a recent password confirmation', function
 
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $url = workspaceRoute('workspaces.data-subject-requests.download', $tenant, [
         'dataSubjectRequest' => $request->id,
@@ -229,7 +229,7 @@ test('an expired archive is no longer downloadable', function (): void {
 
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $this->travel((int) config('retention.data_subject_export_hours') + 1)->hours();
 

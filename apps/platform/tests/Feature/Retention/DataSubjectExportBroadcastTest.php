@@ -20,7 +20,7 @@ test('completing an export broadcasts to the workspace private channel', functio
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
 
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     Event::assertDispatched(fn (DataSubjectExportCompleted $event): bool => $event->tenantSlug === $tenant->slug
         && $event->dataSubjectRequestId === $request->id

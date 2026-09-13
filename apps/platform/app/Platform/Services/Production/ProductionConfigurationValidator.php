@@ -6,9 +6,7 @@ namespace App\Platform\Services\Production;
 
 use App\Accounts\Enums\Locale;
 use App\Accounts\Enums\TwoFactorEnforcement;
-use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
-use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
-use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
+use App\Platform\Support\Observability\WorkerJobs;
 use App\Shared\Support\Localization\TranslationDomains;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Foundation\Application;
@@ -22,7 +20,6 @@ use function is_int;
 use function is_numeric;
 use function is_readable;
 use function is_string;
-use function max;
 use function mb_trim;
 use function sprintf;
 use function str_contains;
@@ -403,18 +400,20 @@ final readonly class ProductionConfigurationValidator
         return (int) $retryAfter > $this->largestJobTimeoutSeconds();
     }
 
+    /**
+     * Derived from the job registry rather than a list maintained here. The
+     * list that used to live in this method named four of the seven jobs, and
+     * the one it omitted with the largest timeout — AnonymizeDataSubjectJob —
+     * happened to match one that was named, so the guard was correct by
+     * coincidence. WorkerJobCoverageTest now fails when a job is unregistered.
+     *
+     * ProcessAudioRecordingJob reads its own timeout from
+     * `transcription.timeouts.job`, so that config value still reaches this
+     * number — through the job, instead of being re-read alongside it.
+     */
     private function largestJobTimeoutSeconds(): int
     {
-        $transcriptionTimeout = $this->config->get(
-            'transcription.timeouts.job',
-        );
-
-        return max(
-            GenerateDataSubjectExportJob::TIMEOUT_SECONDS,
-            GenerateDossierExportJob::TIMEOUT_SECONDS,
-            ProcessUploadedDocumentJob::TIMEOUT_SECONDS,
-            is_numeric($transcriptionTimeout) ? (int) $transcriptionTimeout : 0,
-        );
+        return WorkerJobs::longestTimeoutSeconds();
     }
 
     /**
