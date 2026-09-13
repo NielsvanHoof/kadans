@@ -67,7 +67,6 @@ final class WorkspaceMemberController extends Controller
         UpdateTenantMemberRoleAction $updateTenantMemberRole,
         SuspendTenantMemberAction $suspendTenantMember,
     ): RedirectResponse {
-        $this->ensureMembershipBelongsToTenant($membership, $tenant);
 
         $user = $this->currentUser();
 
@@ -93,7 +92,6 @@ final class WorkspaceMemberController extends Controller
         TenantMembership $membership,
         RemoveTenantMemberAction $removeTenantMember,
     ): RedirectResponse {
-        $this->ensureMembershipBelongsToTenant($membership, $tenant);
         $this->authorize('remove', $membership);
 
         $user = $this->currentUser();
@@ -103,10 +101,5 @@ final class WorkspaceMemberController extends Controller
         Toast::success(__('Member removed.'));
 
         return to_route('workspaces.members.index', $this->workspaceRouteParameters());
-    }
-
-    private function ensureMembershipBelongsToTenant(TenantMembership $membership, Tenant $tenant): void
-    {
-        abort_if($membership->tenant_id !== $tenant->id, 404);
     }
 }

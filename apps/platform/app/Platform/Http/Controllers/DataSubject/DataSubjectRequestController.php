@@ -8,13 +8,12 @@ use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\Clients\Models\Client;
+use App\Platform\Actions\DataSubject\FulfilDataSubjectRequestAction;
 use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
 use App\Platform\Actions\DataSubject\RefuseDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Http\Requests\DataSubject\RefuseDataSubjectRequestRequest;
 use App\Platform\Http\Requests\DataSubject\StoreDataSubjectRequestRequest;
-use App\Platform\Jobs\DataSubject\AnonymizeDataSubjectJob;
-use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Queries\DataSubject\FetchDataSubjectRequestIndexQuery;
 use App\Shared\Data\PersonOptionData;
@@ -82,19 +81,18 @@ final class DataSubjectRequestController extends Controller
     public function fulfil(
         Tenant $tenant,
         DataSubjectRequest $dataSubjectRequest,
+        FulfilDataSubjectRequestAction $fulfilDataSubjectRequest,
     ): RedirectResponse {
         $this->authorize('fulfil', $dataSubjectRequest);
 
-        if ($dataSubjectRequest->type === DataSubjectRequestType::Export) {
-            dispatch(new GenerateDataSubjectExportJob($dataSubjectRequest->id))->afterCommit();
+        $type = $fulfilDataSubjectRequest->handle(
+            $dataSubjectRequest,
+            $this->currentUser(),
+        );
 
+        if ($type === DataSubjectRequestType::Export) {
             Toast::success(__('Preparing the export. You\'ll get a download link when it\'s ready.'));
         } else {
-            dispatch(new AnonymizeDataSubjectJob(
-                $dataSubjectRequest->id,
-                $this->currentUser()->id,
-            ))->afterCommit();
-
             Toast::success(__('Erasure is running. The client’s identity will be removed while retained records are kept.'));
         }
 

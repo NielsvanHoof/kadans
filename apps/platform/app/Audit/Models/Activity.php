@@ -101,12 +101,14 @@ final class Activity extends SpatieActivity
      * $wheres), not a searchable key. DatabaseEngine LIKEs every key here, so
      * putting tenant_id in this array would make a search of "1" match tenant 12.
      *
-     * @return array{id: int, description: string, event: string}
+     * Omit integer `id` too: Postgres has no bigint ILIKE, so a description
+     * search would 500 the activity index.
+     *
+     * @return array{description: string, event: string}
      */
     public function toSearchableArray(): array
     {
         return [
-            'id' => $this->id,
             'description' => $this->description ?? '',
             'event' => $this->event ?? '',
         ];

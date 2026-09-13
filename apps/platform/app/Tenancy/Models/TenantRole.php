@@ -87,6 +87,32 @@ final class TenantRole extends SpatieRole
     }
 
     /**
+     * Bind only roles for the current workspace.
+     *
+     * Spatie roles are team-scoped in queries we write, but route model binding
+     * uses an unscoped find-by-id. Without this, another firm's role id would
+     * resolve and rely on a controller abort.
+     */
+    #[Override]
+    public function resolveRouteBinding($value, $field = null): ?static
+    {
+        $field ??= $this->getRouteKeyName();
+        $tenant = Tenant::current();
+
+        if (! $tenant instanceof Tenant) {
+            return null;
+        }
+
+        /** @var static|null $role */
+        $role = $this->newQuery()
+            ->where($this->qualifyColumn($field), $value)
+            ->where($this->qualifyColumn('tenant_id'), $tenant->getKey())
+            ->first();
+
+        return $role;
+    }
+
+    /**
      * Translated preset label, falling back to the raw name for firm-authored roles.
      *
      * Presets resolve through Role::label() on every call so the label follows

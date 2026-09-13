@@ -15,6 +15,31 @@ use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
  * The middleware stack, prefix, and name prefix are applied once here
  * so every domain file only declares its own routes.
  */
+
+// Integer bindings must reject non-numeric segments before model resolution —
+// otherwise Postgres raises SQLSTATE 22P02 (uncaught QueryException 500).
+// Same idea as whereUuid on notification ids; keep the regex next to the group
+// that owns these param names. See .ai/rules/routes.md.
+foreach ([
+    'client',
+    'dossier',
+    'export',
+    'membership',
+    'invitation',
+    'role',
+    'pipeline',
+    'template',
+    'item',
+    'documentRequest',
+    'uploadedDocument',
+    'audioRecording',
+    'calendarLink',
+    'grant',
+    'dataSubjectRequest',
+] as $integerParam) {
+    Route::pattern($integerParam, '[0-9]+');
+}
+
 Route::middleware([
     'web',
     'auth',

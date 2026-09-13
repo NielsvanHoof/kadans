@@ -132,6 +132,10 @@ final class UploadedDocument extends TenantOwnedModel
 
     /**
      * Overview text for Titan embeddings. Identifiers stay in searchable_text.
+     *
+     * Scout's database engine treats a null/blank return as an error, so this
+     * stays a filename (and later an overview) string. Pending rows skip the
+     * API via shouldBeSearchable() instead.
      */
     public function toSearchableEmbedding(): ?string
     {
@@ -141,6 +145,18 @@ final class UploadedDocument extends TenantOwnedModel
         );
 
         return $source === '' ? null : $source;
+    }
+
+    /**
+     * Embeddings are written at OCR complete, not on the upload request.
+     *
+     * Scout indexes on Eloquent create(). A pending upload only has a filename,
+     * and Floci's Titan stub returns zero vectors — that 500s the portal POST.
+     * Keyword + vector indexing happens when complete() calls searchable().
+     */
+    public function shouldBeSearchable(): bool
+    {
+        return $this->processing_status === DocumentProcessingStatus::Completed;
     }
 
     /**

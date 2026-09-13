@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Accounts\Http\Controllers\Security;
 
+use App\Accounts\Actions\Security\UpdateUserPasswordAction;
 use App\Accounts\Http\Requests\Security\PasswordUpdateRequest;
 use App\Accounts\Http\Requests\Security\TwoFactorAuthenticationRequest;
 use App\Shared\Http\Controllers\Controller;
@@ -55,11 +56,14 @@ final class SecurityController extends Controller
     /**
      * Update the user's password.
      */
-    public function update(PasswordUpdateRequest $request): RedirectResponse
-    {
-        $request->authenticatedUser()->update([
-            'password' => $request->password,
-        ]);
+    public function update(
+        PasswordUpdateRequest $request,
+        UpdateUserPasswordAction $updateUserPassword,
+    ): RedirectResponse {
+        $updateUserPassword->handle(
+            $request->authenticatedUser(),
+            (string) $request->validated('password'),
+        );
 
         Toast::success(__('Password updated.'));
 

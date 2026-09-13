@@ -19,6 +19,7 @@ use App\Dossiers\Models\UploadedDocument;
 use App\Integrations\Models\OAuthConnection;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Models\PipelineStep;
+use App\Platform\Ai\FlociEmbeddings;
 use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Support\Observability\DebugbarStorageOpen;
 use App\Questionnaires\Models\QuestionnaireTemplate;
@@ -75,6 +76,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureFactoryDiscovery();
         $this->configureDevCommands();
+        FlociEmbeddings::stubIfUsingFloci();
     }
 
     /**

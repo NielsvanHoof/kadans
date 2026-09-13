@@ -368,16 +368,20 @@ final readonly class GenerateDataSubjectExportAction
 
         $grants = [];
 
-        foreach ($grantQuery->get() as $grant) {
-            $grants[] = [
-                'dossier_id' => $grant->dossier_id,
-                'created_at' => $grant->created_at?->toIso8601String(),
-                'expires_at' => $grant->expires_at->toIso8601String(),
-                'revoked_at' => $grant->revoked_at?->toIso8601String(),
-                'last_used_at' => $grant->last_used_at?->toIso8601String(),
-                'opened_from_new_device_at' => $grant->new_device_seen_at?->toIso8601String(),
-            ];
-        }
+        // Chunk so a client with many historic portal grants does not load every
+        // row into the queue worker at once.
+        $grantQuery->chunkById(100, function ($chunk) use (&$grants): void {
+            foreach ($chunk as $grant) {
+                $grants[] = [
+                    'dossier_id' => $grant->dossier_id,
+                    'created_at' => $grant->created_at?->toIso8601String(),
+                    'expires_at' => $grant->expires_at->toIso8601String(),
+                    'revoked_at' => $grant->revoked_at?->toIso8601String(),
+                    'last_used_at' => $grant->last_used_at?->toIso8601String(),
+                    'opened_from_new_device_at' => $grant->new_device_seen_at?->toIso8601String(),
+                ];
+            }
+        });
 
         return $grants;
     }
@@ -413,15 +417,18 @@ final readonly class GenerateDataSubjectExportAction
 
         $entries = [];
 
-        foreach ($query->get() as $activity) {
-            $entries[] = [
-                'event' => $activity->event,
-                'description' => $activity->description,
-                'subject_type' => $activity->subject_type,
-                'subject_id' => $activity->subject_id,
-                'occurred_at' => $activity->created_at?->toIso8601String(),
-            ];
-        }
+        // Chunk so a long-lived client's activity trail cannot OOM the export worker.
+        $query->chunkById(200, function ($chunk) use (&$entries): void {
+            foreach ($chunk as $activity) {
+                $entries[] = [
+                    'event' => $activity->event,
+                    'description' => $activity->description,
+                    'subject_type' => $activity->subject_type,
+                    'subject_id' => $activity->subject_id,
+                    'occurred_at' => $activity->created_at?->toIso8601String(),
+                ];
+            }
+        });
 
         return $entries;
     }

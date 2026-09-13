@@ -81,8 +81,6 @@ final class WorkspaceRoleController extends Controller
     ): RedirectResponse {
         $user = $this->currentUser();
 
-        $this->ensureRoleBelongsToTenant($role, $tenant);
-
         $updateTenantRole->handle(
             $role,
             $user,
@@ -102,7 +100,6 @@ final class WorkspaceRoleController extends Controller
     ): RedirectResponse {
         $user = $this->currentUser();
 
-        $this->ensureRoleBelongsToTenant($role, $tenant);
         $this->authorize('delete', $role);
 
         try {
@@ -135,10 +132,5 @@ final class WorkspaceRoleController extends Controller
         Toast::success(__('Role deleted.'));
 
         return to_route('workspaces.roles.manage', $this->workspaceRouteParameters());
-    }
-
-    private function ensureRoleBelongsToTenant(TenantRole $role, Tenant $tenant): void
-    {
-        abort_if($role->tenant_id !== $tenant->id, 404);
     }
 }

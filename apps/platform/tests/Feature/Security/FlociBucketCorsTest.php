@@ -43,6 +43,8 @@ test('the Floci profile routes SES and Bedrock Runtime through the emulator', fu
     expect($profile)
         ->toContain('MAIL_MAILER=ses')
         ->toContain('AWS_ENDPOINT_URL_BEDROCK_RUNTIME=http://floci:4566')
+        ->and((string) file_get_contents(config_path('ai.php')))
+        ->toContain("env('AWS_ENDPOINT_URL_BEDROCK_RUNTIME')")
         ->and($compose)
         ->toContain('FLOCI_SERVICES_SES_SMTP_HOST: mailpit')
         ->toContain('FLOCI_SERVICES_SES_SMTP_PORT: 1025')

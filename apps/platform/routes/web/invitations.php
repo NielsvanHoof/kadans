@@ -10,12 +10,13 @@ use Illuminate\Support\Facades\Route;
  * middleware because invitees are not active members yet.
  */
 Route::get('invitations/{token}', [AcceptTenantInvitationController::class, 'show'])
+    ->middleware('throttle:20,1')
     ->name('invitations.show');
 
 Route::post('invitations/{token}/accept', [AcceptTenantInvitationController::class, 'accept'])
-    ->middleware('auth')
+    ->middleware(['auth', 'throttle:20,1'])
     ->name('invitations.accept');
 
 Route::post('invitations/{token}/register', [AcceptTenantInvitationController::class, 'register'])
-    ->middleware('guest')
+    ->middleware(['guest', 'throttle:20,1'])
     ->name('invitations.register');
