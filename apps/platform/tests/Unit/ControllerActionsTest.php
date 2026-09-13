@@ -2,24 +2,25 @@
 
 declare(strict_types=1);
 
-use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
+use App\ClientPortal\Http\Controllers\Submissions\ClientPortalUploadController;
 use App\Clients\Http\Controllers\ClientController;
-use App\Dossiers\Http\Controllers\AudioRecordingCalendarController;
-use App\Dossiers\Http\Controllers\AudioRecordingController;
-use App\Dossiers\Http\Controllers\DocumentRequestController;
-use App\Dossiers\Http\Controllers\DocumentRequestReviewController;
-use App\Dossiers\Http\Controllers\DossierBuilderLockController;
-use App\Dossiers\Http\Controllers\DossierController;
-use App\Dossiers\Http\Controllers\DossierExportController;
-use App\Dossiers\Http\Controllers\UploadedDocumentController;
-use App\Integrations\Http\Controllers\OAuthController;
-use App\Platform\Http\Controllers\DataSubjectRequestController;
-use App\Questionnaires\Http\Controllers\QuestionnaireTemplateController;
-use App\Questionnaires\Http\Controllers\QuestionnaireTemplateItemController;
-use App\Reporting\Http\Controllers\PipelineController;
+use App\Dossiers\Http\Controllers\AudioRecordings\AudioRecordingCalendarController;
+use App\Dossiers\Http\Controllers\AudioRecordings\AudioRecordingController;
+use App\Dossiers\Http\Controllers\Builder\DossierBuilderLockController;
+use App\Dossiers\Http\Controllers\DocumentRequests\DocumentRequestController;
+use App\Dossiers\Http\Controllers\DocumentRequests\DocumentRequestReviewController;
+use App\Dossiers\Http\Controllers\Exports\DossierExportController;
+use App\Dossiers\Http\Controllers\Lifecycle\DossierController;
+use App\Dossiers\Http\Controllers\UploadedDocuments\UploadedDocumentController;
+use App\Integrations\Http\Controllers\OAuth\OAuthController;
+use App\Platform\Http\Controllers\DataSubject\DataSubjectRequestController;
+use App\Questionnaires\Http\Controllers\Templates\QuestionnaireTemplateController;
+use App\Questionnaires\Http\Controllers\Templates\QuestionnaireTemplateItemController;
+use App\Reporting\Http\Controllers\Pipelines\PipelineController;
 use App\Shared\Http\Controllers\Controller;
-use App\Tenancy\Http\Controllers\AcceptTenantInvitationController;
-use App\Tenancy\Http\Controllers\TenantInvitationController;
+use App\Tenancy\Http\Controllers\Invitations\AcceptTenantInvitationController;
+use App\Tenancy\Http\Controllers\Invitations\TenantInvitationController;
+use App\Tenancy\Http\Controllers\Settings\WorkspaceSettingsController;
 use App\WorkspaceNotifications\Http\Controllers\WorkspaceNotificationController;
 
 /*
@@ -118,6 +119,10 @@ const CONTROLLER_NON_REST_ACTIONS = [
         'accept', 'register',
     ],
     TenantInvitationController::class => ['resend'],
+
+    // The firm record, not its settings row: a separate write with its own
+    // redirect, so it cannot share the `update` action.
+    WorkspaceSettingsController::class => ['updateFirm'],
 
     WorkspaceNotificationController::class => ['destroyAll'],
 

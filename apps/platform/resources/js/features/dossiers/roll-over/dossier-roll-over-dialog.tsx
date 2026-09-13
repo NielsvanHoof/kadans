@@ -2,7 +2,7 @@ import { parseDate } from '@internationalized/date';
 import { Form } from '@inertiajs/react';
 import { CalendarSync } from 'lucide-react';
 import { useId, useState } from 'react';
-import DossierRollOverController from '@/actions/App/Dossiers/Http/Controllers/DossierRollOverController';
+import DossierRollOverController from '@/actions/App/Dossiers/Http/Controllers/Lifecycle/DossierRollOverController';
 import DatePicker from '@/components/forms/date-picker';
 import InputError, {
     fieldErrorAriaProps,

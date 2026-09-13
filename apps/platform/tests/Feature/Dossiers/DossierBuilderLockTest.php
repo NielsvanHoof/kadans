@@ -6,7 +6,7 @@ use App\Accounts\Models\User;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Support\DossierBuilderLock;
+use App\Dossiers\Support\Builder\DossierBuilderLock;
 use App\Tenancy\Enums\Role;
 use Illuminate\Support\Str;
 
@@ -44,7 +44,7 @@ test('opening the builder acquires the lock for the visitor', function (): void 
         ->get(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('dossiers/builder')
+            ->component('workspaces/dossiers/builder')
             ->where('builder_lock.is_mine', true)
             ->where('builder_lock.holder.name', 'Alice Owner')
             ->has('builder_lock.token')

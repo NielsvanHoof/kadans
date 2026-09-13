@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react';
-import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Dossiers/Http/Controllers/UploadedDocuments/UploadedDocumentController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import ErrorState from '@/components/primitives/error-state';
 import { Badge } from '@/components/ui/badge';

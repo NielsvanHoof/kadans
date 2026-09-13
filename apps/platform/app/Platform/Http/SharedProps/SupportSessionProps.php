@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Platform\Http\SharedProps;
 
 use App\Accounts\Models\User;
-use App\Platform\Support\SupportSession;
-use App\Platform\Support\SupportSessionData;
+use App\Platform\Support\SupportSession\SupportSession;
+use App\Platform\Support\SupportSession\SupportSessionData;
 use App\Tenancy\Models\Tenant;
 
 /**

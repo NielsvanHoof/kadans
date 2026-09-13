@@ -7,7 +7,8 @@ namespace App\Accounts\Actions\Localization;
 use App\Accounts\Enums\Locale;
 use App\Accounts\Exceptions\MissingTranslationsException;
 use App\Shared\Support\Localization\TranslationDomains;
-use Illuminate\Support\Facades\File;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
+use Illuminate\Filesystem\Filesystem;
 
 use function in_array;
 use function is_array;
@@ -34,6 +35,8 @@ final class LoadFrontendTranslationsAction
      * @var array<string, array<string, string>>
      */
     private array $dictionaries = [];
+
+    public function __construct(private readonly Filesystem $files) {}
 
     /**
      * @return array<string, string>
@@ -64,14 +67,25 @@ final class LoadFrontendTranslationsAction
         $translations = [];
 
         foreach (TranslationDomains::NAMES as $domain) {
-            $path = app_path("{$domain}/".TranslationDomains::RelativeDirectory."/{$locale}.json");
+            $path = app_path(
+                "{$domain}/".
+                    TranslationDomains::RelativeDirectory.
+                    "/{$locale}.json",
+            );
 
-            if (! File::isReadable($path) || File::size($path) === 0) {
+            try {
+                $contents = $this->files->get($path);
+            } catch (FileNotFoundException) {
                 throw MissingTranslationsException::forPath($path);
             }
 
+            throw_if(
+                mb_trim($contents) === '',
+                MissingTranslationsException::forPath($path),
+            );
+
             /** @var array<string, string> $chunk */
-            $chunk = json_decode(File::get($path), true, 512, JSON_THROW_ON_ERROR);
+            $chunk = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
 
             throw_unless(
                 is_array($chunk),

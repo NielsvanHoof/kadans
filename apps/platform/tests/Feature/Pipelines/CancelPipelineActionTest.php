@@ -6,7 +6,7 @@ use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
@@ -48,66 +48,97 @@ beforeEach(function (): void {
     $this->cancel = resolve(CancelPipelineAction::class);
 });
 
-it('closes a running run and skips the steps that never happened', function (): void {
-    $document = cancellableDocument();
-    $pipeline = cancellablePipeline($document);
-    resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
-    resolve(PipelineState::class)->complete($pipeline, PipelineStepKey::Submit);
-    resolve(PipelineState::class)->start($pipeline, PipelineStepKey::ProviderProcessing);
+test(
+    'closes a running run and skips the steps that never happened',
+    function (): void {
+        $document = cancellableDocument();
+        $pipeline = cancellablePipeline($document);
+        resolve(PipelineState::class)->start(
+            $pipeline,
+            PipelineStepKey::Submit,
+        );
+        resolve(PipelineState::class)->complete(
+            $pipeline,
+            PipelineStepKey::Submit,
+        );
+        resolve(PipelineState::class)->start(
+            $pipeline,
+            PipelineStepKey::ProviderProcessing,
+        );
 
-    $this->cancel->handle($pipeline->fresh(), $this->owner);
+        $this->cancel->handle($pipeline->fresh(), $this->owner);
 
-    expect($pipeline->fresh())
-        ->status->toBe(PipelineStatus::Cancelled)
-        ->current_stage->toBeNull()
-        ->completed_at->toBeNull()
-        ->and($pipeline->fresh()->steps->sortBy('position')->pluck('status')->all())->toBe([
-            PipelineStepStatus::Completed,
-            PipelineStepStatus::Skipped,
-            PipelineStepStatus::Skipped,
-        ]);
-});
+        expect($pipeline->fresh())
+            ->status->toBe(PipelineStatus::Cancelled)
+            ->current_stage->toBeNull()
+            ->completed_at->toBeNull()
+            ->and(
+                $pipeline
+                    ->fresh()
+                    ->steps->sortBy('position')
+                    ->pluck('status')
+                    ->all(),
+            )
+            ->toBe([
+                PipelineStepStatus::Completed,
+                PipelineStepStatus::Skipped,
+                PipelineStepStatus::Skipped,
+            ]);
+    },
+);
 
-it('releases a subject that was left mid-flight so it is not wedged in processing', function (): void {
-    Queue::fake();
-    $document = cancellableDocument();
-    $document->forceFill([
-        'processing_status' => DocumentProcessingStatus::Processing,
-        'textract_job_id' => 'stale-textract-job',
-        'processing_started_at' => now()->subMinutes(30),
-    ])->saveQuietly();
-    $pipeline = cancellablePipeline($document);
+test(
+    'releases a subject that was left mid-flight so it is not wedged in processing',
+    function (): void {
+        Queue::fake();
+        $document = cancellableDocument();
+        $document
+            ->forceFill([
+                'processing_status' => DocumentProcessingStatus::Processing,
+                'textract_job_id' => 'stale-textract-job',
+                'processing_started_at' => now()->subMinutes(30),
+            ])
+            ->saveQuietly();
+        $pipeline = cancellablePipeline($document);
 
-    $this->cancel->handle($pipeline, $this->owner);
+        $this->cancel->handle($pipeline, $this->owner);
 
-    expect($document->fresh())
-        ->processing_status->toBe(DocumentProcessingStatus::Pending)
-        ->textract_job_id->toBeNull()
-        ->processing_started_at->toBeNull();
+        expect($document->fresh())
+            ->processing_status->toBe(DocumentProcessingStatus::Pending)
+            ->textract_job_id->toBeNull()
+            ->processing_started_at->toBeNull();
 
-    // Cancelling must not re-queue the work it just stopped.
-    Queue::assertNotPushed(ProcessUploadedDocumentJob::class);
-});
+        // Cancelling must not re-queue the work it just stopped.
+        Queue::assertNotPushed(ProcessUploadedDocumentJob::class);
+    },
+);
 
-it('still closes the run when the subject has already been purged', function (): void {
-    $document = cancellableDocument();
-    $pipeline = cancellablePipeline($document);
+test(
+    'still closes the run when the subject has already been purged',
+    function (): void {
+        $document = cancellableDocument();
+        $pipeline = cancellablePipeline($document);
 
-    $document->forceDelete();
+        $document->forceDelete();
 
-    $this->cancel->handle($pipeline->fresh(), $this->owner);
+        $this->cancel->handle($pipeline->fresh(), $this->owner);
 
-    expect($pipeline->fresh()->status)->toBe(PipelineStatus::Cancelled);
-});
+        expect($pipeline->fresh()->status)->toBe(PipelineStatus::Cancelled);
+    },
+);
 
-it('refuses to cancel a run that is already closed', function (PipelineStatus $status): void {
+test('refuses to cancel a run that is already closed', function (
+    PipelineStatus $status,
+): void {
     $pipeline = cancellablePipeline(cancellableDocument());
     Pipeline::query()
         ->whereKey($pipeline->getKey())
         ->update(['status' => $status->value]);
 
-    expect(fn () => $this->cancel->handle($pipeline, $this->owner))
-        ->toThrow(ValidationException::class, 'Only a pending or running pipeline can be cancelled.');
+    expect(fn () => $this->cancel->handle($pipeline, $this->owner))->toThrow(
+        ValidationException::class,
+        'Only a pending or running pipeline can be cancelled.',
+    );
 })->with([
     'completed' => [PipelineStatus::Completed],
     'failed' => [PipelineStatus::Failed],
@@ -115,7 +146,7 @@ it('refuses to cancel a run that is already closed', function (PipelineStatus $s
     'cancelled' => [PipelineStatus::Cancelled],
 ]);
 
-it('records an audit entry and broadcasts the closed run', function (): void {
+test('records an audit entry and broadcasts the closed run', function (): void {
     $pipeline = cancellablePipeline(cancellableDocument());
     resolve(PipelineState::class)->start($pipeline, PipelineStepKey::Submit);
 
@@ -123,66 +154,113 @@ it('records an audit entry and broadcasts the closed run', function (): void {
 
     $this->cancel->handle($pipeline->fresh(), $this->owner);
 
-    Event::assertDispatched(fn (PipelineUpdated $event): bool => $event->pipelineId === $pipeline->id
-        && $event->status === PipelineStatus::Cancelled->value);
+    Event::assertDispatched(
+        fn (PipelineUpdated $event): bool => $event->pipelineId ===
+            $pipeline->id &&
+            $event->status === PipelineStatus::Cancelled->value,
+    );
 
     $activity = Activity::query()
         ->where('event', AuditEvent::PipelineCancelled->value)
         ->where('subject_id', $pipeline->id)
         ->sole();
 
-    expect($activity->causer_id)->toBe($this->owner->id)
-        ->and($activity->getProperty('previous_status'))->toBe(PipelineStatus::Running->value)
-        ->and($activity->getProperty('cancelled_at_stage'))->toBe(PipelineStepKey::Submit->value);
+    expect($activity->causer_id)
+        ->toBe($this->owner->id)
+        ->and($activity->getProperty('previous_status'))
+        ->toBe(PipelineStatus::Running->value)
+        ->and($activity->getProperty('cancelled_at_stage'))
+        ->toBe(PipelineStepKey::Submit->value);
 });
 
 describe('authorization', function (): void {
-    it('lets a permitted user cancel an open run from the show page', function (): void {
-        $pipeline = cancellablePipeline(cancellableDocument());
+    it(
+        'lets a permitted user cancel an open run from the show page',
+        function (): void {
+            $pipeline = cancellablePipeline(cancellableDocument());
 
-        $this->actingAs($this->owner)
-            ->post(workspaceRoute('workspaces.pipelines.cancel', $this->tenant, ['pipeline' => $pipeline]))
-            ->assertRedirect(workspaceRoute('workspaces.pipelines.show', $this->tenant, ['pipeline' => $pipeline]));
+            $this->actingAs($this->owner)
+                ->post(
+                    workspaceRoute(
+                        'workspaces.pipelines.cancel',
+                        $this->tenant,
+                        ['pipeline' => $pipeline],
+                    ),
+                )
+                ->assertRedirect(
+                    workspaceRoute('workspaces.pipelines.show', $this->tenant, [
+                        'pipeline' => $pipeline,
+                    ]),
+                );
 
-        expect($pipeline->fresh()->status)->toBe(PipelineStatus::Cancelled);
-    });
+            expect($pipeline->fresh()->status)->toBe(PipelineStatus::Cancelled);
+        },
+    );
 
     // Cancel defaults to Administrator + Adviser, so a Reviewer must be refused.
-    it('forbids a member whose role does not carry the cancel permission', function (): void {
-        $member = workspaceMember($this->tenant, Role::Reviewer);
-        $pipeline = cancellablePipeline(cancellableDocument());
+    it(
+        'forbids a member whose role does not carry the cancel permission',
+        function (): void {
+            $member = workspaceMember($this->tenant, Role::Reviewer);
+            $pipeline = cancellablePipeline(cancellableDocument());
 
-        $this->actingAs($member)
-            ->post(workspaceRoute('workspaces.pipelines.cancel', $this->tenant, ['pipeline' => $pipeline]))
-            ->assertForbidden();
+            $this->actingAs($member)
+                ->post(
+                    workspaceRoute(
+                        'workspaces.pipelines.cancel',
+                        $this->tenant,
+                        ['pipeline' => $pipeline],
+                    ),
+                )
+                ->assertForbidden();
 
-        expect($pipeline->fresh()->status)->toBe(PipelineStatus::Pending);
-    });
+            expect($pipeline->fresh()->status)->toBe(PipelineStatus::Pending);
+        },
+    );
 
     it('forbids cancelling a run that is already closed', function (): void {
         $pipeline = cancellablePipeline(cancellableDocument());
-        $pipeline->forceFill(['status' => PipelineStatus::Completed])->saveQuietly();
+        $pipeline
+            ->forceFill(['status' => PipelineStatus::Completed])
+            ->saveQuietly();
 
         $this->actingAs($this->owner)
-            ->post(workspaceRoute('workspaces.pipelines.cancel', $this->tenant, ['pipeline' => $pipeline]))
+            ->post(
+                workspaceRoute('workspaces.pipelines.cancel', $this->tenant, [
+                    'pipeline' => $pipeline,
+                ]),
+            )
             ->assertForbidden();
     });
 
-    it('exposes can_cancel on the show page only while the run is open', function (): void {
-        $open = cancellablePipeline(cancellableDocument());
-        $closed = cancellablePipeline(cancellableDocument());
-        $closed->forceFill(['status' => PipelineStatus::Completed])->saveQuietly();
+    it(
+        'exposes can_cancel on the show page only while the run is open',
+        function (): void {
+            $open = cancellablePipeline(cancellableDocument());
+            $closed = cancellablePipeline(cancellableDocument());
+            $closed
+                ->forceFill(['status' => PipelineStatus::Completed])
+                ->saveQuietly();
 
-        $this->actingAs($this->owner)
-            ->get(workspaceRoute('workspaces.pipelines.show', $this->tenant, ['pipeline' => $open]))
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page->where('can_cancel', true));
+            $this->actingAs($this->owner)
+                ->get(
+                    workspaceRoute('workspaces.pipelines.show', $this->tenant, [
+                        'pipeline' => $open,
+                    ]),
+                )
+                ->assertOk()
+                ->assertInertia(fn ($page) => $page->where('can_cancel', true));
 
-        $this->actingAs($this->owner)
-            ->get(workspaceRoute('workspaces.pipelines.show', $this->tenant, ['pipeline' => $closed]))
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page->where('can_cancel', false));
-    });
+            $this->actingAs($this->owner)
+                ->get(
+                    workspaceRoute('workspaces.pipelines.show', $this->tenant, [
+                        'pipeline' => $closed,
+                    ]),
+                )
+                ->assertOk()
+                ->assertInertia(fn ($page) => $page->where('can_cancel', false));
+        },
+    );
 });
 
 function cancellableDocument(): UploadedDocument

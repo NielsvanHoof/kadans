@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Platform\Support\DebugbarStorageOpen;
+use App\Platform\Support\Observability\DebugbarStorageOpen;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 

@@ -2,8 +2,8 @@ import { Form, useHttp } from '@inertiajs/react';
 import { Send, Sparkles } from 'lucide-react';
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
-import DossierReminderController from '@/actions/App/Dossiers/Http/Controllers/DossierReminderController';
-import DossierReminderDraftController from '@/actions/App/Dossiers/Http/Controllers/DossierReminderDraftController';
+import DossierReminderController from '@/actions/App/Dossiers/Http/Controllers/Reminders/DossierReminderController';
+import DossierReminderDraftController from '@/actions/App/Dossiers/Http/Controllers/Reminders/DossierReminderDraftController';
 import InputError, {
     fieldErrorAriaProps,
 } from '@/components/primitives/input-error';

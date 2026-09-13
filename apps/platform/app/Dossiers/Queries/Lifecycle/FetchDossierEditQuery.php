@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Dossiers\Queries\Lifecycle;
+
+use App\Clients\Models\Client;
+use App\Dossiers\Models\Dossier;
+use App\Shared\Data\PersonOptionData;
+use App\Tenancy\Models\Tenant;
+use App\Tenancy\Queries\Members\FetchResponsibleStaffOptionsQuery;
+use RuntimeException;
+
+/**
+ * Shape dossier edit-form props for Inertia.
+ */
+final readonly class FetchDossierEditQuery
+{
+    public function __construct(
+        private FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
+    ) {}
+
+    /**
+     * PersonOptionData is passed through as a Data object; Inertia serialises it.
+     *
+     * @return array{
+     *     dossier: array{
+     *         id: int,
+     *         title: string,
+     *         reference: string|null,
+     *         due_date: string|null,
+     *         responsible_user_id: int|null,
+     *         reminder_interval_days: int|null,
+     *         client: array{name: string, email: string}
+     *     },
+     *     responsible_staff: list<PersonOptionData>
+     * }
+     */
+    public function handle(Tenant $tenant, Dossier $dossier): array
+    {
+        $dossier->load('client:id,name,email');
+        $client = $dossier->client;
+
+        throw_unless($client instanceof Client, RuntimeException::class, 'Dossier client is missing.');
+
+        return [
+            'dossier' => [
+                'id' => $dossier->id,
+                'title' => $dossier->title,
+                'reference' => $dossier->reference,
+                'due_date' => $dossier->due_date?->toDateString(),
+                'responsible_user_id' => $dossier->responsible_user_id,
+                'reminder_interval_days' => $dossier->reminder_interval_days,
+                'client' => [
+                    'name' => $client->name,
+                    'email' => $client->email,
+                ],
+            ],
+            'responsible_staff' => $this->fetchResponsibleStaffOptions->handle($tenant),
+        ];
+    }
+}

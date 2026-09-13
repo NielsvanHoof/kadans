@@ -42,10 +42,10 @@ vi.mock('@/routes/profile', () => ({
 }));
 
 vi.mock('@/components/app-shell/user-info', () => ({
-    UserInfo: () => <div>User info</div>,
+    default: () => <div>User info</div>,
 }));
 
-const { UserMenuContent } =
+const { default: UserMenuContent } =
     await import('@/components/app-shell/user-menu-content');
 
 describe('UserMenuContent', () => {

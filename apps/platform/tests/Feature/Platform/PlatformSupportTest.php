@@ -12,7 +12,7 @@ use App\Dossiers\Enums\DocumentRequestPermission;
 use App\Dossiers\Enums\DossierPermission;
 use App\Dossiers\Enums\UploadedDocumentPermission;
 use App\Dossiers\Models\Dossier;
-use App\Platform\Support\SupportSession;
+use App\Platform\Support\SupportSession\SupportSession;
 use App\Questionnaires\Enums\QuestionnaireTemplatePermission;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Enums\WorkspacePermission;

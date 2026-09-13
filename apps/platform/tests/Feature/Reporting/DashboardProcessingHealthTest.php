@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Pipelines\Enums\PipelineStatus;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Models\Pipeline;
-use App\Reporting\Queries\FetchDashboardProcessingHealthQuery;
+use App\Reporting\Queries\Dashboard\FetchDashboardProcessingHealthQuery;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -77,7 +77,9 @@ test('rows carry the detail the card links and labels with', function (): void {
         ->and($row->status)->toBe(PipelineStatus::Failed)
         ->and($row->errorMessage)->toBe('Provider returned 500')
         ->and($row->lastActivityAt)->not->toBeNull()
-        ->and($row->isRetryable)->toBeTrue();
+        ->and($row->isRetryable)->toBeTrue()
+        ->and($row->subject->type)->toBeString()
+        ->and($row->subject->id)->toBeInt();
 });
 
 test('a long provider error is truncated rather than shipped whole', function (): void {

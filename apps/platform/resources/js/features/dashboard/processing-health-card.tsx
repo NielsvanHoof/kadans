@@ -116,6 +116,15 @@ export default function ProcessingHealthCard({
                                                 status={run.status}
                                             />
                                         </span>
+                                        <span className="mt-1 block text-sm [overflow-wrap:anywhere]">
+                                            {run.subject.label ??
+                                                `${run.subject.type} #${run.subject.id}`}
+                                        </span>
+                                        {run.subject.context && (
+                                            <span className="text-muted-foreground mt-1 block text-xs [overflow-wrap:anywhere]">
+                                                {run.subject.context}
+                                            </span>
+                                        )}
                                         {run.error_message && (
                                             <span className="text-muted-foreground mt-1 block truncate text-xs">
                                                 {run.error_message}

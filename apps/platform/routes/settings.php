@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Accounts\Http\Controllers\LocaleController;
-use App\Accounts\Http\Controllers\ProfileController;
-use App\Accounts\Http\Controllers\SecurityController;
-use App\Accounts\Http\Controllers\TimezoneController;
-use App\Integrations\Http\Controllers\IntegrationsSettingsController;
+use App\Accounts\Http\Controllers\Localization\LocaleController;
+use App\Accounts\Http\Controllers\Localization\TimezoneController;
+use App\Accounts\Http\Controllers\Profile\ProfileController;
+use App\Accounts\Http\Controllers\Security\SecurityController;
+use App\Integrations\Http\Controllers\OAuth\IntegrationsSettingsController;
 use App\Tenancy\Http\Middleware\InitializeTenantFromSession;
 use App\Tenancy\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Auth\Middleware\RequirePassword;

@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { lazy, Suspense } from 'react';
-import ClientPortalAnswerController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalAnswerController';
+import ClientPortalAnswerController from '@/actions/App/ClientPortal/Http/Controllers/Submissions/ClientPortalAnswerController';
 import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -88,7 +88,8 @@ export function PortalTextDocumentAnswer({
                         >
                             {processing
                                 ? t('Saving…')
-                                : documentRequest.answer_text
+                                : documentRequest.answer_text &&
+                                    !documentRequest.is_carried_forward
                                   ? t('Update answer')
                                   : t('Submit answer')}
                         </Button>
@@ -295,7 +296,8 @@ export function PortalMultiSelectDocumentAnswer({
                         >
                             {processing
                                 ? t('Saving…')
-                                : selected.size > 0
+                                : selected.size > 0 &&
+                                    !documentRequest.is_carried_forward
                                   ? t('Update answer')
                                   : t('Submit answer')}
                         </Button>

@@ -1,6 +1,6 @@
 ---
 paths:
-  - app/Dossiers/Http/Controllers/AudioRecordingCalendarController.php
+  - app/Dossiers/Http/Controllers/AudioRecordings/AudioRecordingCalendarController.php
 ---
 
 # Dossiers Http Controllers

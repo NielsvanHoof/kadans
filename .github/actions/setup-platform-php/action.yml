@@ -1,0 +1,56 @@
+name: Set up platform PHP
+description: >-
+  Install PHP with the platform's extension set, restore the Composer download
+  cache, and install Composer dependencies.
+
+inputs:
+  php-version:
+    description: PHP version to install.
+    required: true
+  extensions:
+    description: PHP extensions to install.
+    required: false
+    default: bcmath, intl, mbstring, pcntl, pdo_pgsql, redis, sqlite3, zip
+  coverage:
+    description: Coverage driver for setup-php (none, pcov, xdebug).
+    required: false
+    default: none
+  working-directory:
+    description: >-
+      Directory holding composer.json. A composite action does not inherit the
+      caller's `defaults.run.working-directory`, so it has to be passed in.
+    required: false
+    default: apps/platform
+
+runs:
+  using: composite
+  steps:
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        extensions: ${{ inputs.extensions }}
+        coverage: ${{ inputs.coverage }}
+        tools: composer:v2
+
+    # Cache Composer's download cache rather than vendor/ itself: restoring a
+    # populated vendor/ skips post-autoload-dump, which is what regenerates
+    # bootstrap/cache/packages.php via `artisan package:discover`.
+    - name: Resolve the Composer cache directory
+      id: composer-cache
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the Composer cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: composer-${{ runner.os }}-php${{ inputs.php-version }}-${{ hashFiles(format('{0}/composer.lock', inputs.working-directory)) }}
+        restore-keys: |
+          composer-${{ runner.os }}-php${{ inputs.php-version }}-
+
+    - name: Install PHP dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: composer install --no-interaction --no-progress --prefer-dist

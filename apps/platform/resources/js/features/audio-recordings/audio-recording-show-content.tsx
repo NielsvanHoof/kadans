@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import AudioRecordingController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordingController';
+import AudioRecordingController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordings/AudioRecordingController';
 import Heading from '@/components/primitives/heading';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants, LinkButton } from '@/components/ui/button';

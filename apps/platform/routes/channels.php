@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Accounts\Models\User;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
-use App\Tenancy\Support\WorkspaceChannelAccess;
+use App\Tenancy\Support\Workspace\WorkspaceChannelAccess;
 use Illuminate\Support\Facades\Broadcast;
 
 /*

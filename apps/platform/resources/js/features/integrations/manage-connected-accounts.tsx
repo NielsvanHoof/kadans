@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthController';
+import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuth/OAuthController';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import OAuthProviderButton from '@/features/integrations/oauth-provider-button';
@@ -11,7 +11,7 @@ export type OAuthConnectionSummary = {
     has_workspace_scopes?: boolean;
 };
 
-export type Props = {
+type ManageConnectedAccountsProps = {
     oauthProviders: string[];
     oauthConnections: OAuthConnectionSummary[];
 };
@@ -23,7 +23,7 @@ export type Props = {
 export default function ManageConnectedAccounts({
     oauthProviders,
     oauthConnections,
-}: Props) {
+}: ManageConnectedAccountsProps) {
     const { t } = useTranslation();
 
     const connectionByProvider = Object.fromEntries(

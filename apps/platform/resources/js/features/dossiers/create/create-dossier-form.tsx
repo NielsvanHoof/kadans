@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
+import DossierController from '@/actions/App/Dossiers/Http/Controllers/Lifecycle/DossierController';
 import EmptyState from '@/components/primitives/empty-state';
 import InputError from '@/components/primitives/input-error';
 import { Button, LinkButton } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import type {
     ResponsibleStaffOption,
 } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useDefaultReminderIntervalDays } from '@/hooks/use-firm-settings';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
@@ -36,6 +37,9 @@ export default function CreateDossierForm({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    // Prefills only here: the edit form passes the dossier's own interval, so a
+    // dossier with reminders deliberately off is never handed the firm default.
+    const defaultReminderIntervalDays = useDefaultReminderIntervalDays();
 
     if (clients.length === 0) {
         return (
@@ -127,6 +131,9 @@ export default function CreateDossierForm({
 
                     <DossierFollowUpFields
                         responsibleStaff={responsibleStaff}
+                        defaultReminderIntervalDays={
+                            defaultReminderIntervalDays
+                        }
                         errors={errors}
                     />
 

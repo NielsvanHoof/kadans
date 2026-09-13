@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
-use App\Dossiers\Actions\GenerateDossierExportAction;
+use App\Dossiers\Actions\Exports\GenerateDossierExportAction;
 use App\Dossiers\Enums\DossierExportStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

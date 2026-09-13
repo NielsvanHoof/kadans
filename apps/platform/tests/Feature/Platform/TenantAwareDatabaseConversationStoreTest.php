@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Platform\Ai\TenantAwareDatabaseConversationStore;
-use App\Questionnaires\Ai\ChecklistDraftAgent;
+use App\Questionnaires\Ai\ChecklistDraft\ChecklistDraftAgent;
 use App\Tenancy\Models\Tenant;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;

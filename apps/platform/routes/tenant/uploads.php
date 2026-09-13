@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Dossiers\Http\Controllers\UploadTicketController;
+use App\Dossiers\Http\Controllers\Uploads\UploadTicketController;
 use Illuminate\Support\Facades\Route;
 
 /*

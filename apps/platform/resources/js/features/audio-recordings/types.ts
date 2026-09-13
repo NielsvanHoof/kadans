@@ -10,7 +10,8 @@ export type TranscriptSegment = {
 };
 
 /** Uploaded audio on a staff dossier (list/live payload — no transcript body). */
-export type AudioRecording = App.Dossiers.Data.StaffAudioRecordingData;
+export type AudioRecording =
+    App.Dossiers.Data.AudioRecordings.StaffAudioRecordingData;
 
 /** Calendar event this transcript was attached to. */
 export type AudioRecordingCalendarLink = {

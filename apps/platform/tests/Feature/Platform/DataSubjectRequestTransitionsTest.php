@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Clients\Models\Client;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Models\DataSubjectRequest;
-use App\Platform\Transitions\DataSubjectRequestTransitions;
+use App\Platform\Transitions\DataSubject\DataSubjectRequestTransitions;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;

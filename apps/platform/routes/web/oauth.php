@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Integrations\Enums\OAuthProvider;
-use App\Integrations\Http\Controllers\OAuthController;
+use App\Integrations\Http\Controllers\OAuth\OAuthController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 

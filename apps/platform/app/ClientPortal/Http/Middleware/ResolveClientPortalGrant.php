@@ -6,7 +6,8 @@ namespace App\ClientPortal\Http\Middleware;
 
 use App\ClientPortal\Enums\PortalSessionEndReason;
 use App\ClientPortal\Models\ClientAccessGrant;
-use App\ClientPortal\Support\PortalSessionWindow;
+use App\ClientPortal\Support\Session\PortalSessionLimits;
+use App\ClientPortal\Support\Session\PortalSessionWindow;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\TenantContext;
 use Closure;
@@ -105,7 +106,7 @@ final readonly class ResolveClientPortalGrant
         // Fail fast if a later query runs without the portal tenant.
         $this->tenantContext->enableStrict();
 
-        $window = $window->extend($grant);
+        $window = $window->extend($grant, PortalSessionLimits::forTenant($grant->tenant_id));
         $request->session()->put(
             self::SESSION_EXPIRES_AT,
             $window->idleExpiresAt->getTimestamp(),

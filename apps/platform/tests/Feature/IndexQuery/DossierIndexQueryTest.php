@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
-use App\Dossiers\Queries\FetchDossierIndexQuery;
+use App\Dossiers\Queries\Lifecycle\FetchDossierIndexQuery;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -56,7 +56,7 @@ test('dossiers index filters by status and search', function (): void {
         ->get(workspaceRoute('workspaces.dossiers.index', $tenant).'?filter[status]=draft')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/index')
+            ->component('workspaces/dossiers/index')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.title', 'Payroll 2025')
             ->where('dossiers.data.0.status', 'draft')

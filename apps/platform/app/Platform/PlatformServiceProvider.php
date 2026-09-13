@@ -12,7 +12,7 @@ use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Policies\DataSubjectRequestPolicy;
 use App\Platform\Services\Production\InfrastructureReadinessCheck;
 use App\Platform\Services\Production\ProductionConfigurationValidator;
-use App\Platform\Support\PlatformSupportSessionState;
+use App\Platform\Support\SupportSession\PlatformSupportSessionState;
 use App\Shared\Support\Localization\TranslationDomains;
 use App\Tenancy\Contracts\SupportSessionState;
 use Illuminate\Contracts\Translation\Loader;
@@ -72,9 +72,8 @@ final class PlatformServiceProvider extends ServiceProvider
     {
         Gate::policy(DataSubjectRequest::class, DataSubjectRequestPolicy::class);
 
-        // Surface missing __() keys outside production. The fallback is the key
         Lang::handleMissingKeysUsing(function (string $key, array $replace, string $locale): string {
-            if (! $this->app->environment('production')) {
+            if ($key !== '' && ! $this->app->environment('production')) {
                 Log::warning("Missing translation key [{$key}] for locale [{$locale}].");
             }
 

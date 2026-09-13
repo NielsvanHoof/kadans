@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Accounts\Http\Middleware;
 
+use App\Accounts\Contracts\TwoFactorEnforcementSource;
 use App\Accounts\Enums\TwoFactorEnforcement;
 use App\Accounts\Models\User;
 use App\Shared\Http\Toast;
@@ -30,7 +31,10 @@ use function is_string;
  */
 final readonly class RequireTwoFactorAuthentication
 {
-    public function __construct(private Repository $config) {}
+    public function __construct(
+        private Repository $config,
+        private TwoFactorEnforcementSource $enforcementSource,
+    ) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -72,14 +76,28 @@ final readonly class RequireTwoFactorAuthentication
         };
     }
 
+    /**
+     * The platform floor, raised by whatever the current context asks for.
+     *
+     * The clamp is applied here rather than trusted from the source, and that
+     * is the whole security argument: `strictest()` cannot return anything
+     * below `$platform`, so the effective level is at least the configured one
+     * by construction. A wrong, mocked, or hostile implementation of
+     * TwoFactorEnforcementSource can fail to tighten; it cannot loosen. That is
+     * what lets ProductionConfigurationValidator keep guaranteeing production
+     * never runs with enforcement `off` — for every firm — without knowing
+     * anything about firms.
+     */
     private function enforcement(): TwoFactorEnforcement
     {
-        $configured = $this->config->get('security.two_factor.enforcement');
+        $platform = TwoFactorEnforcement::fromConfigValue(
+            $this->config->get('security.two_factor.enforcement'),
+        );
 
-        // An unrecognised value must fail closed: a typo in the deploy
-        // environment cannot be allowed to silently disable enforcement.
-        return TwoFactorEnforcement::tryFrom(is_string($configured) ? $configured : '')
-            ?? TwoFactorEnforcement::AllStaff;
+        return TwoFactorEnforcement::strictest(
+            $platform,
+            $this->enforcementSource->forCurrentContext() ?? $platform,
+        );
     }
 
     /**

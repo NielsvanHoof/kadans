@@ -27,6 +27,7 @@ final class TenantSettingFactory extends Factory
             'ai_document_overview_enabled' => true,
             'ai_checklist_draft_enabled' => true,
             'ai_reminder_draft_enabled' => true,
+            'ai_document_search_enabled' => true,
         ];
     }
 
@@ -36,6 +37,7 @@ final class TenantSettingFactory extends Factory
             'ai_document_overview_enabled' => false,
             'ai_checklist_draft_enabled' => false,
             'ai_reminder_draft_enabled' => false,
+            'ai_document_search_enabled' => false,
         ]);
     }
 }

@@ -89,65 +89,70 @@ declare namespace App {
     }
     namespace ClientPortal {
         namespace Data {
-            export type ClientPortalPageData = {
-                readonly firm: App.ClientPortal.Data.PortalFirmData;
-                readonly dossier: App.ClientPortal.Data.PortalDossierData;
-                readonly session: App.ClientPortal.Data.PortalSessionData;
-            };
-            export type PortalClientData = {
-                readonly name: string;
-            };
-            export type PortalDocumentRequestData = {
-                readonly id: number;
-                readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
-                readonly field_key: string;
-                readonly title: string;
-                readonly instructions: string | null;
-                readonly status: App.Dossiers.Enums.DocumentRequestStatus;
-                readonly answer_text: string | null;
-                readonly answer_boolean: boolean | null;
-                readonly answer_option_ids: string[] | null;
-                readonly configuration: Record<string, any> | null;
-                readonly rejection_reason: string | null;
-                readonly can_respond: boolean;
-                readonly uploaded_documents: App.ClientPortal.Data.PortalUploadedDocumentData[];
-            };
-            export type PortalDossierData = {
-                readonly title: string;
-                readonly reference: string | null;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly due_date: string | null;
-                readonly client: App.ClientPortal.Data.PortalClientData;
-                readonly expires_at: string;
-                readonly progress: App.ClientPortal.Data.PortalProgressData;
-                readonly document_requests: App.ClientPortal.Data.PortalDocumentRequestData[];
-            };
-            export type PortalFirmData = {
-                name: string;
-                readonly contact_name: string;
-                readonly contact_email: string;
-            };
-            export type PortalNextIncompleteData = {
-                readonly id: number;
-                readonly title: string;
-            };
-            export type PortalProgressData = {
-                readonly total: number;
-                readonly completed: number;
-                readonly approved: number;
-                readonly remaining: number;
-                readonly next_incomplete: App.ClientPortal.Data.PortalNextIncompleteData | null;
-            };
-            export type PortalSessionData = {
-                readonly idle_expires_at: string;
-                readonly absolute_expires_at: string;
-            };
-            export type PortalUploadedDocumentData = {
-                readonly id: number;
-                readonly original_filename: string;
-                readonly size_bytes: number;
-                readonly uploaded_at: string;
-            };
+            namespace Session {
+                export type PortalSessionData = {
+                    readonly idle_expires_at: string;
+                    readonly absolute_expires_at: string;
+                };
+            }
+            namespace Workspace {
+                export type ClientPortalPageData = {
+                    readonly firm: App.ClientPortal.Data.Workspace.PortalFirmData;
+                    readonly dossier: App.ClientPortal.Data.Workspace.PortalDossierData;
+                    readonly session: App.ClientPortal.Data.Session.PortalSessionData;
+                };
+                export type PortalClientData = {
+                    readonly name: string;
+                };
+                export type PortalDocumentRequestData = {
+                    readonly id: number;
+                    readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
+                    readonly field_key: string;
+                    readonly title: string;
+                    readonly instructions: string | null;
+                    readonly status: App.Dossiers.Enums.DocumentRequestStatus;
+                    readonly answer_text: string | null;
+                    readonly answer_boolean: boolean | null;
+                    readonly answer_option_ids: string[] | null;
+                    readonly configuration: Record<string, any> | null;
+                    readonly rejection_reason: string | null;
+                    readonly can_respond: boolean;
+                    readonly is_carried_forward: boolean;
+                    readonly uploaded_documents: App.ClientPortal.Data.Workspace.PortalUploadedDocumentData[];
+                };
+                export type PortalDossierData = {
+                    readonly title: string;
+                    readonly reference: string | null;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly due_date: string | null;
+                    readonly client: App.ClientPortal.Data.Workspace.PortalClientData;
+                    readonly expires_at: string;
+                    readonly progress: App.ClientPortal.Data.Workspace.PortalProgressData;
+                    readonly document_requests: App.ClientPortal.Data.Workspace.PortalDocumentRequestData[];
+                };
+                export type PortalFirmData = {
+                    name: string;
+                    readonly contact_name: string;
+                    readonly contact_email: string;
+                };
+                export type PortalNextIncompleteData = {
+                    readonly id: number;
+                    readonly title: string;
+                };
+                export type PortalProgressData = {
+                    readonly total: number;
+                    readonly completed: number;
+                    readonly approved: number;
+                    readonly remaining: number;
+                    readonly next_incomplete: App.ClientPortal.Data.Workspace.PortalNextIncompleteData | null;
+                };
+                export type PortalUploadedDocumentData = {
+                    readonly id: number;
+                    readonly original_filename: string;
+                    readonly size_bytes: number;
+                    readonly uploaded_at: string;
+                };
+            }
         }
         namespace Enums {
             export type ClientAccessGrantPermission =
@@ -228,158 +233,183 @@ declare namespace App {
     }
     namespace Dossiers {
         namespace Data {
-            export type ArchivedDossierRowData = {
-                readonly id: number;
-                readonly title: string;
-                readonly reference: string | null;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly client_name: string;
-                readonly client_archived: boolean;
-                readonly archived_at: string;
-            };
-            export type DossierAccessGrantData = {
-                readonly id: number;
-                readonly expires_at: string;
-                readonly revoked_at: string | null;
-                readonly last_used_at: string | null;
-                readonly is_valid: boolean;
-            };
-            export type DossierBuilderData = {
-                readonly id: number;
-                readonly title: string;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly document_requests: App.Dossiers.Data.StaffDocumentRequestData[];
-            };
-            export type DossierBuilderLockData = {
-                readonly is_mine: boolean;
-                readonly token: string | null;
-                readonly expires_at: string | null;
-                readonly holder: App.Shared.Data.PersonOptionData | null;
-            };
-            export type DossierClientSummaryData = {
-                readonly name: string;
-                readonly email: string;
-            };
-            export type DossierExportData = {
-                readonly id: number;
-                readonly status: App.Dossiers.Enums.DossierExportStatus;
-                readonly created_at: string;
-                readonly expires_at: string | null;
-                readonly download_url: string | null;
-                readonly error: string | null;
-                readonly pipeline: App.Pipelines.Data.PipelineData | null;
-            };
-            export type DossierIndexRowData = {
-                readonly id: number;
-                readonly client_name: string;
-                readonly title: string;
-                readonly reference: string | null;
-                readonly period_year: number | null;
-                readonly period_label: string | null;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly due_date: string | null;
-                readonly responsible_name: string | null;
-            };
-            export type DossierReviewData = {
-                readonly id: number;
-                readonly title: string;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly client: App.Dossiers.Data.DossierClientSummaryData;
-                readonly document_requests: App.Dossiers.Data.StaffDocumentRequestData[];
-                readonly review_summary: App.Dossiers.Data.DossierReviewSummaryData;
-                readonly ready_to_complete: boolean;
-            };
-            export type DossierReviewSummaryData = {
-                readonly total: number;
-                readonly pending: number;
-                readonly submitted: number;
-                readonly accepted: number;
-                readonly rejected: number;
-            };
-            export type DossierRolledFromData = {
-                readonly id: number;
-                readonly title: string;
-                readonly period_label: string | null;
-                readonly period_year: number | null;
-            };
-            export type DossierShowData = {
-                readonly id: number;
-                readonly title: string;
-                readonly reference: string | null;
-                readonly period_year: number | null;
-                readonly period_label: string | null;
-                readonly rolled_from: App.Dossiers.Data.DossierRolledFromData | null;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly due_date: string | null;
-                readonly responsible_staff: App.Shared.Data.PersonOptionData | null;
-                readonly reminder_interval_days: number | null;
-                readonly next_reminder_at: string | null;
-                readonly last_client_message_sent_at: string | null;
-                readonly last_client_opened_at: string | null;
-                readonly days_remaining: number | null;
-                readonly has_outstanding_client_items: boolean;
-                readonly ready_to_complete: boolean;
-                readonly review_summary: App.Dossiers.Data.DossierReviewSummaryData;
-                readonly client: App.Dossiers.Data.DossierClientSummaryData;
-                readonly document_requests: App.Dossiers.Data.StaffDocumentRequestData[];
-                readonly access_grants: App.Dossiers.Data.DossierAccessGrantData[];
-                readonly exports: App.Dossiers.Data.DossierExportData[];
-                readonly audio_recordings: App.Dossiers.Data.StaffAudioRecordingData[];
-                readonly exports_count: number;
-                readonly audio_recordings_count: number;
-            };
-            export type StaffAudioRecordingData = {
-                readonly id: number;
-                readonly original_filename: string;
-                readonly size_bytes: number;
-                readonly uploaded_at: string;
-                readonly transcription_status: App.DocumentProcessing.Enums.TranscriptionStatus;
-                readonly transcription_error: string | null;
-                readonly pipeline: App.Pipelines.Data.PipelineData | null;
-                readonly can_delete: boolean;
-            };
-            export type StaffDocumentRequestData = {
-                readonly id: number;
-                readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
-                readonly field_key: string;
-                readonly title: string;
-                readonly instructions: string | null;
-                readonly configuration: Record<string, any> | null;
-                readonly status: App.Dossiers.Enums.DocumentRequestStatus;
-                readonly answer_text: string | null;
-                readonly answer_boolean: boolean | null;
-                readonly answer_option_ids: string[] | null;
-                readonly answered_at: string | null;
-                readonly reviewed_at: string | null;
-                readonly reviewed_by_name: string | null;
-                readonly rejection_reason: string | null;
-                readonly sort_order: number;
-                readonly is_visible: boolean;
-                readonly is_applicable: boolean;
-                readonly uploaded_documents: App.Dossiers.Data.StaffUploadedDocumentData[];
-            };
-            export type StaffDocumentRequestRowsData = {
-                readonly rows: App.Dossiers.Data.StaffDocumentRequestData[];
-                readonly review_summary: App.Dossiers.Data.DossierReviewSummaryData;
-                readonly has_outstanding_client_items: boolean;
-                readonly ready_to_complete: boolean;
-            };
-            export type StaffUploadedDocumentData = {
-                readonly id: number;
-                readonly original_filename: string;
-                readonly size_bytes: number;
-                readonly uploaded_at: string;
-                readonly processing_status: App.DocumentProcessing.Enums.DocumentProcessingStatus;
-                readonly processing_error: string | null;
-                readonly pipeline: App.Pipelines.Data.PipelineData | null;
-                readonly can_delete: boolean;
-            };
-            export type UploadTicketData = {
-                readonly upload_url: string;
-                readonly ticket: string;
-                readonly content_type: string;
-                readonly expires_at: string;
-            };
+            namespace AudioRecordings {
+                export type StaffAudioRecordingData = {
+                    readonly id: number;
+                    readonly original_filename: string;
+                    readonly size_bytes: number;
+                    readonly uploaded_at: string;
+                    readonly transcription_status: App.DocumentProcessing.Enums.TranscriptionStatus;
+                    readonly transcription_error: string | null;
+                    readonly pipeline: App.Pipelines.Data.PipelineData | null;
+                    readonly can_delete: boolean;
+                };
+            }
+            namespace Builder {
+                export type DossierBuilderData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly document_requests: App.Dossiers.Data.DocumentRequests.StaffDocumentRequestData[];
+                };
+                export type DossierBuilderLockData = {
+                    readonly is_mine: boolean;
+                    readonly token: string | null;
+                    readonly expires_at: string | null;
+                    readonly holder: App.Shared.Data.PersonOptionData | null;
+                };
+            }
+            namespace DocumentRequests {
+                export type DossierReviewData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly client: App.Dossiers.Data.Lifecycle.DossierClientSummaryData;
+                    readonly document_requests: App.Dossiers.Data.DocumentRequests.StaffDocumentRequestData[];
+                    readonly review_summary: App.Dossiers.Data.Lifecycle.DossierReviewSummaryData;
+                    readonly ready_to_complete: boolean;
+                };
+                export type StaffDocumentRequestData = {
+                    readonly id: number;
+                    readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
+                    readonly field_key: string;
+                    readonly title: string;
+                    readonly instructions: string | null;
+                    readonly configuration: Record<string, any> | null;
+                    readonly status: App.Dossiers.Enums.DocumentRequestStatus;
+                    readonly answer_text: string | null;
+                    readonly answer_boolean: boolean | null;
+                    readonly answer_option_ids: string[] | null;
+                    readonly answered_at: string | null;
+                    readonly reviewed_at: string | null;
+                    readonly reviewed_by_name: string | null;
+                    readonly rejection_reason: string | null;
+                    readonly sort_order: number;
+                    readonly is_visible: boolean;
+                    readonly is_applicable: boolean;
+                    readonly uploaded_documents: App.Dossiers.Data.UploadedDocuments.StaffUploadedDocumentData[];
+                };
+                export type StaffDocumentRequestRowsData = {
+                    readonly rows: App.Dossiers.Data.DocumentRequests.StaffDocumentRequestData[];
+                    readonly review_summary: App.Dossiers.Data.Lifecycle.DossierReviewSummaryData;
+                    readonly has_outstanding_client_items: boolean;
+                    readonly ready_to_complete: boolean;
+                };
+            }
+            namespace Exports {
+                export type DossierExportData = {
+                    readonly id: number;
+                    readonly status: App.Dossiers.Enums.DossierExportStatus;
+                    readonly created_at: string;
+                    readonly expires_at: string | null;
+                    readonly download_url: string | null;
+                    readonly error: string | null;
+                    readonly pipeline: App.Pipelines.Data.PipelineData | null;
+                };
+            }
+            namespace Lifecycle {
+                export type ArchivedDossierRowData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly reference: string | null;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly client_name: string;
+                    readonly client_archived: boolean;
+                    readonly archived_at: string;
+                };
+                export type DossierAccessGrantData = {
+                    readonly id: number;
+                    readonly expires_at: string;
+                    readonly revoked_at: string | null;
+                    readonly last_used_at: string | null;
+                    readonly is_valid: boolean;
+                };
+                export type DossierClientSummaryData = {
+                    readonly name: string;
+                    readonly email: string;
+                };
+                export type DossierIndexRowData = {
+                    readonly id: number;
+                    readonly client_name: string;
+                    readonly title: string;
+                    readonly reference: string | null;
+                    readonly period_year: number | null;
+                    readonly period_label: string | null;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly due_date: string | null;
+                    readonly responsible_name: string | null;
+                };
+                export type DossierReviewSummaryData = {
+                    readonly total: number;
+                    readonly pending: number;
+                    readonly submitted: number;
+                    readonly accepted: number;
+                    readonly rejected: number;
+                };
+                export type DossierRolledFromData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly period_label: string | null;
+                    readonly period_year: number | null;
+                };
+                export type DossierShowData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly reference: string | null;
+                    readonly period_year: number | null;
+                    readonly period_label: string | null;
+                    readonly rolled_from: App.Dossiers.Data.Lifecycle.DossierRolledFromData | null;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly due_date: string | null;
+                    readonly responsible_staff: App.Shared.Data.PersonOptionData | null;
+                    readonly reminder_interval_days: number | null;
+                    readonly next_reminder_at: string | null;
+                    readonly last_client_message_sent_at: string | null;
+                    readonly last_client_opened_at: string | null;
+                    readonly days_remaining: number | null;
+                    readonly has_outstanding_client_items: boolean;
+                    readonly ready_to_complete: boolean;
+                    readonly review_summary: App.Dossiers.Data.Lifecycle.DossierReviewSummaryData;
+                    readonly client: App.Dossiers.Data.Lifecycle.DossierClientSummaryData;
+                    readonly document_requests: App.Dossiers.Data.DocumentRequests.StaffDocumentRequestData[];
+                    readonly access_grants: App.Dossiers.Data.Lifecycle.DossierAccessGrantData[];
+                    readonly exports: App.Dossiers.Data.Exports.DossierExportData[];
+                    readonly audio_recordings: App.Dossiers.Data.AudioRecordings.StaffAudioRecordingData[];
+                    readonly exports_count: number;
+                    readonly audio_recordings_count: number;
+                };
+            }
+            namespace UploadedDocuments {
+                export type StaffUploadedDocumentData = {
+                    readonly id: number;
+                    readonly original_filename: string;
+                    readonly size_bytes: number;
+                    readonly uploaded_at: string;
+                    readonly processing_status: App.DocumentProcessing.Enums.DocumentProcessingStatus;
+                    readonly processing_error: string | null;
+                    readonly pipeline: App.Pipelines.Data.PipelineData | null;
+                    readonly can_delete: boolean;
+                };
+                export type UploadedDocumentSearchHitData = {
+                    readonly id: number;
+                    readonly original_filename: string;
+                    readonly document_type: string | null;
+                    readonly summary: string | null;
+                    readonly request_title: string;
+                    readonly dossier_id: number;
+                    readonly dossier_title: string;
+                    readonly client_name: string;
+                    readonly show_url: string;
+                };
+            }
+            namespace Uploads {
+                export type UploadTicketData = {
+                    readonly upload_url: string;
+                    readonly ticket: string;
+                    readonly content_type: string;
+                    readonly expires_at: string;
+                };
+            }
         }
         namespace Enums {
             export type AudioRecordingPermission =
@@ -449,6 +479,7 @@ declare namespace App {
                 readonly created_at: string;
                 readonly subject_type: string;
                 readonly subject_id: number;
+                readonly subject: App.Pipelines.Data.PipelineSubjectData;
             };
             export type PipelineShowData = {
                 readonly id: number;
@@ -528,23 +559,25 @@ declare namespace App {
     }
     namespace Platform {
         namespace Data {
-            export type DataSubjectRequestData = {
-                readonly id: number;
-                readonly type: string;
-                readonly type_label: string;
-                readonly status: string;
-                readonly status_label: string;
-                readonly client_id: number;
-                readonly client_name: string;
-                readonly requested_at: string;
-                readonly due_at: string;
-                readonly is_overdue: boolean;
-                readonly requested_by_name: string | null;
-                readonly completed_at: string | null;
-                readonly completed_by_name: string | null;
-                readonly refusal_reason: string | null;
-                readonly can_download: boolean;
-            };
+            namespace DataSubject {
+                export type DataSubjectRequestData = {
+                    readonly id: number;
+                    readonly type: string;
+                    readonly type_label: string;
+                    readonly status: string;
+                    readonly status_label: string;
+                    readonly client_id: number;
+                    readonly client_name: string;
+                    readonly requested_at: string;
+                    readonly due_at: string;
+                    readonly is_overdue: boolean;
+                    readonly requested_by_name: string | null;
+                    readonly completed_at: string | null;
+                    readonly completed_by_name: string | null;
+                    readonly refusal_reason: string | null;
+                    readonly can_download: boolean;
+                };
+            }
         }
         namespace Enums {
             export type DataSubjectPermission =
@@ -557,73 +590,82 @@ declare namespace App {
     }
     namespace Questionnaires {
         namespace Data {
-            export type QuestionnaireTemplateItemData = {
-                readonly id: number;
-                readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
-                readonly title: string;
-                readonly instructions: string | null;
-                readonly sort_order: number;
-            };
-            export type QuestionnaireTemplateItemOptionData = {
-                readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
-                readonly field_key: string;
-                readonly title: string;
-                readonly instructions: string | null;
-                readonly configuration: Record<string, any> | null;
-                readonly sort_order: number;
-            };
-            export type QuestionnaireTemplateOptionData = {
-                readonly id: number;
-                readonly name: string;
-                readonly category_label: string;
-                readonly items_count: number;
-                readonly is_system: boolean;
-                readonly items: App.Questionnaires.Data.QuestionnaireTemplateItemOptionData[];
-            };
-            export type QuestionnaireTemplateRowData = {
-                readonly id: number;
-                readonly name: string;
-                readonly description: string | null;
-                readonly category: App.Questionnaires.Enums.QuestionnaireTemplateCategory;
-                readonly category_label: string;
-                readonly items_count: number;
-                readonly is_system: boolean;
-            };
-            export type QuestionnaireTemplateShowData = {
-                readonly id: number;
-                readonly name: string;
-                readonly description: string | null;
-                readonly category: App.Questionnaires.Enums.QuestionnaireTemplateCategory;
-                readonly category_label: string;
-                readonly is_system: boolean;
-                readonly items: App.Questionnaires.Data.QuestionnaireTemplateItemData[];
-            };
-            export type QuestionnaireTemplatesPageData = {
-                readonly system_templates: LaravelPaginated<
-                    number,
-                    {
-                        id: number;
-                        name: string;
-                        description: string | null;
-                        category: string;
-                        category_label: string;
-                        items_count: number;
-                        is_system: boolean;
-                    }
-                >;
-                readonly firm_templates: LaravelPaginated<
-                    number,
-                    {
-                        id: number;
-                        name: string;
-                        description: string | null;
-                        category: string;
-                        category_label: string;
-                        items_count: number;
-                        is_system: boolean;
-                    }
-                >;
-            };
+            namespace ChecklistDraft {
+                export type DraftedChecklistItemData = {
+                    readonly title: string;
+                    readonly instructions: string;
+                    readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
+                };
+            }
+            namespace Templates {
+                export type QuestionnaireTemplateItemData = {
+                    readonly id: number;
+                    readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
+                    readonly title: string;
+                    readonly instructions: string | null;
+                    readonly sort_order: number;
+                };
+                export type QuestionnaireTemplateItemOptionData = {
+                    readonly type: App.Questionnaires.Enums.QuestionnaireItemType;
+                    readonly field_key: string;
+                    readonly title: string;
+                    readonly instructions: string | null;
+                    readonly configuration: Record<string, any> | null;
+                    readonly sort_order: number;
+                };
+                export type QuestionnaireTemplateOptionData = {
+                    readonly id: number;
+                    readonly name: string;
+                    readonly category_label: string;
+                    readonly items_count: number;
+                    readonly is_system: boolean;
+                    readonly items: App.Questionnaires.Data.Templates.QuestionnaireTemplateItemOptionData[];
+                };
+                export type QuestionnaireTemplateRowData = {
+                    readonly id: number;
+                    readonly name: string;
+                    readonly description: string | null;
+                    readonly category: App.Questionnaires.Enums.QuestionnaireTemplateCategory;
+                    readonly category_label: string;
+                    readonly items_count: number;
+                    readonly is_system: boolean;
+                };
+                export type QuestionnaireTemplateShowData = {
+                    readonly id: number;
+                    readonly name: string;
+                    readonly description: string | null;
+                    readonly category: App.Questionnaires.Enums.QuestionnaireTemplateCategory;
+                    readonly category_label: string;
+                    readonly is_system: boolean;
+                    readonly items: App.Questionnaires.Data.Templates.QuestionnaireTemplateItemData[];
+                };
+                export type QuestionnaireTemplatesPageData = {
+                    readonly system_templates: LaravelPaginated<
+                        number,
+                        {
+                            id: number;
+                            name: string;
+                            description: string | null;
+                            category: string;
+                            category_label: string;
+                            items_count: number;
+                            is_system: boolean;
+                        }
+                    >;
+                    readonly firm_templates: LaravelPaginated<
+                        number,
+                        {
+                            id: number;
+                            name: string;
+                            description: string | null;
+                            category: string;
+                            category_label: string;
+                            items_count: number;
+                            is_system: boolean;
+                        }
+                    >;
+                };
+            }
         }
         namespace Enums {
             export type QuestionnaireItemType =
@@ -648,122 +690,145 @@ declare namespace App {
     }
     namespace Reporting {
         namespace Data {
-            export type ActivityLogAttributeChangesData = {
-                readonly attributes: Record<string, any>;
-                readonly old: Record<string, any>;
-            };
-            export type ActivityLogPropertiesData = {
-                readonly ip: string | null;
-                readonly route: string | null;
-            };
-            export type ActivityLogRowData = {
-                readonly id: number;
-                readonly event: string | null;
-                readonly label: string;
-                readonly description: string;
-                readonly causer_name: string | null;
-                readonly subject: App.Reporting.Data.ActivityLogSubjectData | null;
-                readonly created_at: string | null;
-                readonly properties: App.Reporting.Data.ActivityLogPropertiesData;
-                readonly attribute_changes: App.Reporting.Data.ActivityLogAttributeChangesData | null;
-            };
-            export type ActivityLogSubjectData = {
-                readonly type: string;
-                readonly id: number;
-                readonly name: string | null;
-            };
-            export type DashboardAgendaItemData = {
-                readonly id: number;
-                readonly title: string;
-                readonly client_name: string;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly due_date: string;
-                readonly days_remaining: number;
-            };
-            export type DashboardFollowUpItemData = {
-                readonly id: number;
-                readonly title: string;
-                readonly client_name: string;
-                readonly since: string | null;
-                readonly days: number | null;
-            };
-            export type DashboardFollowUpSignalsData = {
-                readonly never_opened: App.Reporting.Data.DashboardFollowUpItemData[];
-                readonly gone_quiet: App.Reporting.Data.DashboardFollowUpItemData[];
-                readonly expiring_links: App.Reporting.Data.DashboardFollowUpItemData[];
-                readonly total_count: number;
-            };
-            export type DashboardMetricsData = {
-                readonly clients: number;
-                readonly open_dossiers: number;
-                readonly needs_review: number;
-                readonly awaiting_client: number;
-                readonly overdue: number;
-                readonly in_review: number;
-                readonly submitted_document_requests: number;
-                readonly outstanding_document_requests: number;
-                readonly open_dossiers_this_week: number;
-                readonly open_dossiers_last_week: number;
-                readonly needs_review_this_week: number;
-                readonly needs_review_last_week: number;
-                readonly awaiting_client_this_week: number;
-                readonly awaiting_client_last_week: number;
-                readonly weekly_throughput: App.Reporting.Data.DashboardTrendPointData[];
-            };
-            export type DashboardMyWorkData = {
-                readonly assigned_open: number;
-                readonly due_this_week: number;
-                readonly overdue: number;
-                readonly awaiting_my_review: number;
-                readonly agenda: App.Reporting.Data.DashboardAgendaItemData[];
-            };
-            export type DashboardPipelineFailureData = {
-                readonly id: number;
-                readonly type: App.Pipelines.Enums.PipelineType;
-                readonly status: App.Pipelines.Enums.PipelineStatus;
-                readonly error_message: string | null;
-                readonly last_activity_at: string | null;
-                readonly is_retryable: boolean;
-            };
-            export type DashboardProcessingHealthData = {
-                readonly failed: number;
-                readonly stuck: number;
-                readonly recent: App.Reporting.Data.DashboardPipelineFailureData[];
-            };
-            export type DashboardRecentDossierData = {
-                readonly id: number;
-                readonly title: string;
-                readonly reference: string | null;
-                readonly status: App.Dossiers.Enums.DossierStatus;
-                readonly client_name: string;
-                readonly due_date: string | null;
-                readonly responsible_name: string | null;
-                readonly updated_at: string;
-            };
-            export type DashboardTrendPointData = {
-                readonly week_start: string;
-                readonly documents_received: number;
-            };
-            export type MediaLibraryDocumentRowData = {
-                readonly id: number;
-                readonly title: string;
-                readonly status: App.Dossiers.Enums.DocumentRequestStatus;
-                readonly updated_at: string | null;
-                readonly dossier: App.Reporting.Data.MediaLibraryDossierSummaryData;
-                readonly client_name: string;
-                readonly uploaded_documents: App.Reporting.Data.MediaLibraryUploadedDocumentData[];
-            };
-            export type MediaLibraryDossierSummaryData = {
-                readonly id: number;
-                readonly title: string;
-                readonly reference: string | null;
-            };
-            export type MediaLibraryUploadedDocumentData = {
-                readonly id: number;
-                readonly original_filename: string;
-                readonly size_bytes: number;
-                readonly uploaded_at: string;
-            };
+            namespace ActivityLog {
+                export type ActivityLogAttributeChangesData = {
+                    readonly attributes: Record<string, any>;
+                    readonly old: Record<string, any>;
+                };
+                export type ActivityLogPropertiesData = {
+                    readonly ip: string | null;
+                    readonly route: string | null;
+                };
+                export type ActivityLogRowData = {
+                    readonly id: number;
+                    readonly event: string | null;
+                    readonly label: string;
+                    readonly description: string;
+                    readonly causer_name: string | null;
+                    readonly subject: App.Reporting.Data.ActivityLog.ActivityLogSubjectData | null;
+                    readonly created_at: string | null;
+                    readonly properties: App.Reporting.Data.ActivityLog.ActivityLogPropertiesData;
+                    readonly attribute_changes: App.Reporting.Data.ActivityLog.ActivityLogAttributeChangesData | null;
+                };
+                export type ActivityLogSubjectData = {
+                    readonly type: string;
+                    readonly id: number;
+                    readonly name: string | null;
+                };
+            }
+            namespace Dashboard {
+                export type DashboardAgendaItemData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly client_name: string;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly due_date: string;
+                    readonly days_remaining: number;
+                };
+                export type DashboardFollowUpItemData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly client_name: string;
+                    readonly since: string | null;
+                    readonly days: number | null;
+                };
+                export type DashboardFollowUpSignalsData = {
+                    readonly never_opened: App.Reporting.Data.Dashboard.DashboardFollowUpItemData[];
+                    readonly gone_quiet: App.Reporting.Data.Dashboard.DashboardFollowUpItemData[];
+                    readonly expiring_links: App.Reporting.Data.Dashboard.DashboardFollowUpItemData[];
+                    readonly total_count: number;
+                };
+                export type DashboardMetricsData = {
+                    readonly clients: number;
+                    readonly open_dossiers: number;
+                    readonly needs_review: number;
+                    readonly awaiting_client: number;
+                    readonly overdue: number;
+                    readonly in_review: number;
+                    readonly submitted_document_requests: number;
+                    readonly outstanding_document_requests: number;
+                    readonly open_dossiers_this_week: number;
+                    readonly open_dossiers_last_week: number;
+                    readonly needs_review_this_week: number;
+                    readonly needs_review_last_week: number;
+                    readonly awaiting_client_this_week: number;
+                    readonly awaiting_client_last_week: number;
+                    readonly weekly_throughput: App.Reporting.Data.Dashboard.DashboardTrendPointData[];
+                };
+                export type DashboardMyWorkData = {
+                    readonly assigned_open: number;
+                    readonly due_this_week: number;
+                    readonly overdue: number;
+                    readonly awaiting_my_review: number;
+                    readonly agenda: App.Reporting.Data.Dashboard.DashboardAgendaItemData[];
+                };
+                export type DashboardPipelineFailureData = {
+                    readonly id: number;
+                    readonly type: App.Pipelines.Enums.PipelineType;
+                    readonly status: App.Pipelines.Enums.PipelineStatus;
+                    readonly error_message: string | null;
+                    readonly last_activity_at: string | null;
+                    readonly is_retryable: boolean;
+                    readonly subject: App.Pipelines.Data.PipelineSubjectData;
+                };
+                export type DashboardProcessingHealthData = {
+                    readonly failed: number;
+                    readonly stuck: number;
+                    readonly recent: App.Reporting.Data.Dashboard.DashboardPipelineFailureData[];
+                };
+                export type DashboardRecentDossierData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly reference: string | null;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly client_name: string;
+                    readonly due_date: string | null;
+                    readonly responsible_name: string | null;
+                    readonly updated_at: string;
+                };
+                export type DashboardTrendPointData = {
+                    readonly week_start: string;
+                    readonly documents_received: number;
+                };
+            }
+            namespace DocumentSearch {
+                export type DocumentSearchAskResultData = {
+                    readonly answer: string;
+                    readonly citations: App.Reporting.Data.DocumentSearch.DocumentSearchCitationData[];
+                };
+                export type DocumentSearchCitationData = {
+                    readonly uploaded_document_id: number;
+                    readonly why: string;
+                    readonly original_filename: string;
+                    readonly show_url: string;
+                };
+                export type DocumentSearchResultsData = {
+                    readonly hits: App.Dossiers.Data.UploadedDocuments.UploadedDocumentSearchHitData[];
+                    readonly truncated: boolean;
+                };
+            }
+            namespace MediaLibrary {
+                export type MediaLibraryDocumentRowData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly status: App.Dossiers.Enums.DocumentRequestStatus;
+                    readonly updated_at: string | null;
+                    readonly dossier: App.Reporting.Data.MediaLibrary.MediaLibraryDossierSummaryData;
+                    readonly client_name: string;
+                    readonly uploaded_documents: App.Reporting.Data.MediaLibrary.MediaLibraryUploadedDocumentData[];
+                };
+                export type MediaLibraryDossierSummaryData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly reference: string | null;
+                };
+                export type MediaLibraryUploadedDocumentData = {
+                    readonly id: number;
+                    readonly original_filename: string;
+                    readonly size_bytes: number;
+                    readonly uploaded_at: string;
+                };
+            }
         }
     }
     namespace Shared {
@@ -777,75 +842,118 @@ declare namespace App {
     }
     namespace Tenancy {
         namespace Data {
-            export type TenantAiSettingsData = {
-                readonly document_overview: boolean;
-                readonly checklist_draft: boolean;
-                readonly reminder_draft: boolean;
-            };
-            export type TenantSettingsData = {
-                readonly ai: App.Tenancy.Data.TenantAiSettingsData;
-            };
-            export type WorkspaceInvitationData = {
-                readonly id: number;
-                readonly email: string;
-                readonly role: string;
-                readonly role_label: string;
-                readonly invited_at: string;
-                readonly expires_at: string;
-            };
-            export type WorkspaceMemberData = {
-                readonly id: number;
-                readonly user_id: number;
-                readonly name: string;
-                readonly email: string;
-                readonly status: App.Tenancy.Enums.TenantMembershipStatus;
-                readonly role: string | null;
-                readonly role_label: string | null;
-                readonly joined_at: string | null;
-                readonly last_accessed_at: string | null;
-                readonly is_current_user: boolean;
-            };
-            export type WorkspaceMembersPageData = {
-                readonly members: App.Tenancy.Data.WorkspaceMemberData[];
-                readonly invitations: App.Tenancy.Data.WorkspaceInvitationData[];
-                readonly role_options: App.Tenancy.Data.WorkspaceRoleOptionData[];
-                readonly can_assign_owner: boolean;
-                readonly role_filter: string | null;
-            };
-            export type WorkspaceNavItemData = {
-                readonly name: string;
-                readonly slug: string;
-            };
-            export type WorkspacePermissionData = {
-                readonly value: string;
-                readonly label: string;
-                readonly description: string;
-                readonly granted_to: string[];
-            };
-            export type WorkspacePermissionGroupData = {
-                readonly value: string;
-                readonly label: string;
-                readonly permissions: App.Tenancy.Data.WorkspacePermissionData[];
-            };
-            export type WorkspaceRoleData = {
-                readonly id: number;
-                readonly value: string;
-                readonly label: string;
-                readonly is_system: boolean;
-                readonly member_count: number;
-            };
-            export type WorkspaceRoleOptionData = {
-                readonly value: string;
-                readonly label: string;
-            };
-            export type WorkspaceRolesPageData = {
-                readonly roles: App.Tenancy.Data.WorkspaceRoleData[];
-                readonly permission_groups: App.Tenancy.Data.WorkspacePermissionGroupData[];
-                readonly can_manage_roles: boolean;
-            };
-            export type WorkspaceSettingsPageData = {
-                readonly settings: App.Tenancy.Data.TenantSettingsData;
-            };
+            namespace Invitations {
+                export type WorkspaceInvitationData = {
+                    readonly id: number;
+                    readonly email: string;
+                    readonly role: string;
+                    readonly role_label: string;
+                    readonly invited_at: string;
+                    readonly expires_at: string;
+                };
+            }
+            namespace Members {
+                export type WorkspaceMemberData = {
+                    readonly id: number;
+                    readonly user_id: number;
+                    readonly name: string;
+                    readonly email: string;
+                    readonly status: App.Tenancy.Enums.TenantMembershipStatus;
+                    readonly role: string | null;
+                    readonly role_label: string | null;
+                    readonly joined_at: string | null;
+                    readonly last_accessed_at: string | null;
+                    readonly is_current_user: boolean;
+                };
+                export type WorkspaceMembersPageData = {
+                    readonly members: App.Tenancy.Data.Members.WorkspaceMemberData[];
+                    readonly invitations: App.Tenancy.Data.Invitations.WorkspaceInvitationData[];
+                    readonly role_options: App.Tenancy.Data.Members.WorkspaceRoleOptionData[];
+                    readonly can_assign_owner: boolean;
+                    readonly role_filter: string | null;
+                };
+                export type WorkspaceRoleOptionData = {
+                    readonly value: string;
+                    readonly label: string;
+                };
+            }
+            namespace Roles {
+                export type WorkspacePermissionData = {
+                    readonly value: string;
+                    readonly label: string;
+                    readonly description: string;
+                    readonly granted_to: string[];
+                };
+                export type WorkspacePermissionGroupData = {
+                    readonly value: string;
+                    readonly label: string;
+                    readonly permissions: App.Tenancy.Data.Roles.WorkspacePermissionData[];
+                };
+                export type WorkspaceRoleData = {
+                    readonly id: number;
+                    readonly value: string;
+                    readonly label: string;
+                    readonly is_system: boolean;
+                    readonly member_count: number;
+                };
+                export type WorkspaceRolesPageData = {
+                    readonly roles: App.Tenancy.Data.Roles.WorkspaceRoleData[];
+                    readonly permission_groups: App.Tenancy.Data.Roles.WorkspacePermissionGroupData[];
+                    readonly can_manage_roles: boolean;
+                };
+            }
+            namespace Settings {
+                export type FirmSettingData = {
+                    readonly override: number | null;
+                    readonly effective: number | null;
+                    readonly platform_default: number | null;
+                    readonly min: number;
+                    readonly max: number | null;
+                };
+                export type FirmSharedSettingsData = {
+                    readonly ai: App.Tenancy.Data.Settings.TenantAiSettingsData;
+                    readonly reminders: App.Tenancy.Data.Settings.TenantReminderSettingsData;
+                };
+                export type TenantAiSettingsData = {
+                    readonly document_overview: boolean;
+                    readonly checklist_draft: boolean;
+                    readonly reminder_draft: boolean;
+                    readonly document_search: boolean;
+                };
+                export type TenantPortalSettingsData = {
+                    readonly session_idle_minutes: App.Tenancy.Data.Settings.FirmSettingData;
+                    readonly session_absolute_minutes: App.Tenancy.Data.Settings.FirmSettingData;
+                };
+                export type TenantReminderSettingsData = {
+                    readonly default_interval_days: App.Tenancy.Data.Settings.FirmSettingData;
+                };
+                export type TenantRetentionSettingsData = {
+                    readonly archived_days: App.Tenancy.Data.Settings.FirmSettingData;
+                    readonly activity_log_days: App.Tenancy.Data.Settings.FirmSettingData;
+                };
+                export type TenantSecuritySettingsData = {
+                    readonly two_factor_enforcement_override: string | null;
+                    readonly two_factor_enforcement: string;
+                    readonly platform_two_factor_enforcement: string;
+                    readonly allowed_enforcement_levels: string[];
+                };
+                export type TenantSettingsData = {
+                    readonly ai: App.Tenancy.Data.Settings.TenantAiSettingsData;
+                    readonly security: App.Tenancy.Data.Settings.TenantSecuritySettingsData;
+                    readonly portal: App.Tenancy.Data.Settings.TenantPortalSettingsData;
+                    readonly reminders: App.Tenancy.Data.Settings.TenantReminderSettingsData;
+                    readonly retention: App.Tenancy.Data.Settings.TenantRetentionSettingsData;
+                };
+                export type WorkspaceSettingsPageData = {
+                    readonly settings: App.Tenancy.Data.Settings.TenantSettingsData;
+                };
+            }
+            namespace Workspace {
+                export type WorkspaceNavItemData = {
+                    readonly name: string;
+                    readonly slug: string;
+                };
+            }
         }
         namespace Enums {
             export type PermissionGroup =
@@ -868,7 +976,10 @@ declare namespace App {
                 | "reviewer"
                 | "read-only";
             export type TenantAiFeature =
-                "document_overview" | "checklist_draft" | "reminder_draft";
+                | "document_overview"
+                | "checklist_draft"
+                | "reminder_draft"
+                | "document_search";
             export type TenantMembershipStatus =
                 "invited" | "active" | "suspended";
             export type WorkspacePermission =

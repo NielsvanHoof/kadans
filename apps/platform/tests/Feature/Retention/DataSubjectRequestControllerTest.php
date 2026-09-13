@@ -10,8 +10,8 @@ use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectPermission;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
-use App\Platform\Jobs\AnonymizeDataSubjectJob;
-use App\Platform\Jobs\GenerateDataSubjectExportJob;
+use App\Platform\Jobs\DataSubject\AnonymizeDataSubjectJob;
+use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Platform\Models\DataSubjectRequest;
 use App\Tenancy\Enums\Role;
 use Illuminate\Support\Facades\Date;
@@ -46,7 +46,7 @@ test('an owner can open the requests screen', function (): void {
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->where('can_manage', true)
             ->has('requests.data', 1)
             ->has('clients', 1));
@@ -66,7 +66,7 @@ test('the requests screen still lists a request after its client is archived', f
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->has('requests.data', 1)
             ->where('requests.data.0.client_name', 'Marieke de Vries'));
 });
@@ -202,7 +202,7 @@ test('downloading the archive requires a recent password confirmation', function
 
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $url = workspaceRoute('workspaces.data-subject-requests.download', $tenant, [
         'dataSubjectRequest' => $request->id,
@@ -229,7 +229,7 @@ test('an expired archive is no longer downloadable', function (): void {
 
     $request = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
-    resolve(GenerateDataSubjectExportAction::class)->handle($request);
+    resolve(GenerateDataSubjectExportAction::class)->handle($request, dataSubjectExportStaleCutoff());
 
     $this->travel((int) config('retention.data_subject_export_hours') + 1)->hours();
 
@@ -285,7 +285,7 @@ test('the requests index is paginated rather than loading every request ever log
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->has('requests.data', 15)
             ->where('requests.total', 40)
             ->where('requests.last_page', 3)
@@ -320,7 +320,7 @@ test('the requests index keeps open requests ahead of closed ones', function ():
         ->get(workspaceRoute('workspaces.data-subject-requests.index', $tenant))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('data-subject-requests/index')
+            ->component('workspaces/data-subject-requests/index')
             ->where('requests.data.0.id', $open->id)
             ->etc());
 });

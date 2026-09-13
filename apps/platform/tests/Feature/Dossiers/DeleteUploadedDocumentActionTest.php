@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Clients\Models\Client;
-use App\Dossiers\Actions\DocumentRequests\DeleteUploadedDocumentAction;
+use App\Dossiers\Actions\UploadedDocuments\DeleteUploadedDocumentAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;

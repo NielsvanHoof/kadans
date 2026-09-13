@@ -1,14 +1,14 @@
 import { router, useHttp } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import DossierBuilderLockController from '@/actions/App/Dossiers/Http/Controllers/DossierBuilderLockController';
+import DossierBuilderLockController from '@/actions/App/Dossiers/Http/Controllers/Builder/DossierBuilderLockController';
 import type { DossierBuilderLock } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 
-/** Matches App\Dossiers\Support\DossierBuilderLock::HEARTBEAT_INTERVAL_SECONDS. */
+/** Matches App\Dossiers\Support\Builder\DossierBuilderLock::HEARTBEAT_INTERVAL_SECONDS. */
 const HEARTBEAT_INTERVAL_MS = 60_000;
 
-/** Matches App\Dossiers\Support\DossierBuilderLock::POLL_INTERVAL_SECONDS. */
+/** Matches App\Dossiers\Support\Builder\DossierBuilderLock::POLL_INTERVAL_SECONDS. */
 const POLL_INTERVAL_MS = 30_000;
 
 type LockResponse = {

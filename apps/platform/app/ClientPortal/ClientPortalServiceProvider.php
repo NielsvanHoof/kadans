@@ -6,8 +6,8 @@ namespace App\ClientPortal;
 
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\ClientPortal\Policies\ClientAccessGrantPolicy;
-use App\ClientPortal\Support\ClientPortalReminderDispatcher;
-use App\Dossiers\Contracts\ClientPortalReminders;
+use App\ClientPortal\Support\Outreach\ClientPortalReminderDispatcher;
+use App\Dossiers\Contracts\Reminders\ClientPortalReminders;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Override;

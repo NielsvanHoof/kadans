@@ -54,16 +54,17 @@ vi.mock('@/components/app-shell/app-logo', () => ({
     default: () => <div>Logo</div>,
 }));
 vi.mock('@/components/app-shell/nav-user', () => ({
-    NavUser: () => <div>Nav user</div>,
+    default: () => <div>Nav user</div>,
 }));
 vi.mock('@/components/app-shell/workspace-switcher', () => ({
-    WorkspaceSwitcher: () => <div>Workspace switcher</div>,
+    default: () => <div>Workspace switcher</div>,
 }));
 
 // Imported lazily: a static import would pull `use-translation` into the module
 // graph before `@/test/mocks` is evaluated, and the vi.mock factory would throw.
 const { SidebarProvider } = await import('@/components/ui/sidebar');
-const { AppSidebar } = await import('@/components/app-shell/app-sidebar');
+const { default: AppSidebar } =
+    await import('@/components/app-shell/app-sidebar');
 
 function renderSidebar() {
     render(

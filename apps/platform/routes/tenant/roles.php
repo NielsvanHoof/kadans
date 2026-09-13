@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Http\Controllers\WorkspaceRoleController;
+use App\Tenancy\Http\Controllers\Roles\WorkspaceRoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('roles', [WorkspaceRoleController::class, 'index'])

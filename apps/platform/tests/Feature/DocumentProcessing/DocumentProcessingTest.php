@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Clients\Models\Client;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
-use App\DocumentProcessing\Jobs\ProcessUploadedDocumentJob;
-use App\Dossiers\Actions\DocumentRequests\UploadDocumentForRequestAction;
+use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
+use App\Dossiers\Actions\UploadedDocuments\UploadDocumentForRequestAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -84,7 +84,7 @@ test('staff dossier show includes processing fields for uploaded documents', fun
         ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/show')
+            ->component('workspaces/dossiers/show')
             ->has('dossier.document_requests', 0)
             ->loadDeferredProps(fn (Assert $reload): Assert => $reload
                 ->has('document_requests.0.uploaded_documents.0', fn (Assert $document): Assert => $document

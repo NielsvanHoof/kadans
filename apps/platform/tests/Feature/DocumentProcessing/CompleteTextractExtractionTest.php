@@ -82,6 +82,8 @@ test('complete textract extraction maps forms tables and asks the overview agent
         ->and($payload['tables'][0]['rows'][0])->toBe(['1000', 'Salaris'])
         ->and($uploaded->processing_error)->toBeNull()
         ->and($uploaded->processing_finished_at)->not->toBeNull()
+        ->and($uploaded->searchable_text)->toContain('287505030')
+        ->and($uploaded->searchable_text)->toContain('Monthly payslip')
         ->and(Activity::query()
             ->where('event', AuditEvent::DocumentProcessingCompleted->value)
             ->where('subject_id', $uploaded->id)

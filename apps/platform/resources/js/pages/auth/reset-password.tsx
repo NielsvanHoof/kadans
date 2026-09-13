@@ -10,13 +10,17 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { update } from '@/routes/password';
 
-type Props = {
+type ResetPasswordProps = {
     token: string;
     email: string;
     passwordRules: string;
 };
 
-export default function ResetPassword({ token, email, passwordRules }: Props) {
+export default function ResetPassword({
+    token,
+    email,
+    passwordRules,
+}: ResetPasswordProps) {
     const { t } = useTranslation();
 
     setLayoutProps({

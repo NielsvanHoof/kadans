@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Http\Controllers\AcceptTenantInvitationController;
+use App\Tenancy\Http\Controllers\Invitations\AcceptTenantInvitationController;
 use Illuminate\Support\Facades\Route;
 
 /*

@@ -6,7 +6,7 @@ namespace App\DocumentProcessing\Actions\Ocr;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\DocumentProcessing\Transitions\UploadedDocumentProcessingTransitions;
+use App\DocumentProcessing\Transitions\Ocr\UploadedDocumentProcessingTransitions;
 use App\Dossiers\Models\UploadedDocument;
 use Illuminate\Support\Facades\Log;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Dossiers\Http\Controllers\DocumentRequestController;
-use App\Dossiers\Http\Controllers\DocumentRequestReviewController;
-use App\Dossiers\Http\Controllers\UploadedDocumentController;
+use App\Dossiers\Http\Controllers\DocumentRequests\DocumentRequestController;
+use App\Dossiers\Http\Controllers\DocumentRequests\DocumentRequestReviewController;
+use App\Dossiers\Http\Controllers\UploadedDocuments\UploadedDocumentController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;

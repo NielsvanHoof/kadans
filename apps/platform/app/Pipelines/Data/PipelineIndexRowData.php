@@ -25,9 +25,10 @@ final class PipelineIndexRowData extends Data
         public readonly string $createdAt,
         public readonly string $subjectType,
         public readonly int $subjectId,
+        public readonly PipelineSubjectData $subject,
     ) {}
 
-    public static function fromModel(Pipeline $pipeline): self
+    public static function fromModel(Pipeline $pipeline, PipelineSubjectData $subject): self
     {
         return new self(
             id: $pipeline->id,
@@ -39,6 +40,7 @@ final class PipelineIndexRowData extends Data
             createdAt: $pipeline->created_at?->toIso8601String() ?? '',
             subjectType: MorphType::classBasename($pipeline->pipelineable_type),
             subjectId: $pipeline->pipelineable_id,
+            subject: $subject,
         );
     }
 }

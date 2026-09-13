@@ -18,7 +18,7 @@ vi.mock('@/hooks/use-current-workspace', () => ({
 }));
 
 vi.mock(
-    '@/actions/App/Dossiers/Http/Controllers/DocumentRequestController',
+    '@/actions/App/Dossiers/Http/Controllers/DocumentRequests/DocumentRequestController',
     () => ({
         default: {
             sync: {

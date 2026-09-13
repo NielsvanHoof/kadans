@@ -12,7 +12,7 @@ use App\Pipelines\Actions\CreatePipelineAction;
 use App\Pipelines\Enums\PipelineType;
 use App\Pipelines\Events\PipelineUpdated;
 use App\Pipelines\Support\PipelineSubjectPresenterRegistry;
-use App\Reporting\Queries\FetchPipelineShowQuery;
+use App\Reporting\Queries\Pipelines\FetchPipelineShowQuery;
 use Illuminate\Support\Facades\Event;
 
 test('every pipeline type has a subject presenter registered by its owning domain', function (): void {
@@ -37,7 +37,7 @@ test('an audio transcription run describes its subject on the show page', functi
     ['pipeline' => $data] = resolve(FetchPipelineShowQuery::class)->handle($pipeline);
 
     expect($data['subject']['label'])->toBe('client-call.m4a')
-        ->and($data['subject']['context'])->toBe('Q3 audit file')
+        ->and($data['subject']['context'])->toBe('Acme Client · Q3 audit file')
         ->and($data['subject']['href'])->toContain("/dossiers/{$dossier->id}");
 });
 
@@ -66,10 +66,10 @@ test('the show page describes uploaded document and dossier export subjects too'
 
     expect($query->handle($ocr)['pipeline']['subject'])
         ->label->toBe('invoice.pdf')
-        ->context->toBe('Payroll 2026')
+        ->context->toBe('Acme Client · Payroll 2026')
         ->and($query->handle($exportRun)['pipeline']['subject'])
         ->label->toBe("Dossier export #{$export->id}")
-        ->context->toBe('Payroll 2026');
+        ->context->toBe('Acme Client · Payroll 2026');
 });
 
 test('the show page still renders when the subject has been purged', function (): void {
@@ -106,7 +106,7 @@ test('a pipeline broadcast carries the dossier resolved by the owning domain', f
 
 function presenterDossier(int $tenantId, string $title = 'Test dossier'): Dossier
 {
-    $client = Client::factory()->create(['tenant_id' => $tenantId]);
+    $client = Client::factory()->create(['tenant_id' => $tenantId, 'name' => 'Acme Client']);
 
     return Dossier::factory()->create([
         'tenant_id' => $tenantId,

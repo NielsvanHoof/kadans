@@ -3,9 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import type { IndexQueryConfig } from '@/types/pagination';
 
+// Wrap keys so a stray t(alreadyLocalizedLabel) is visible as [[Zoeken]].
+const translate = vi.hoisted(() => ({
+    t: (key: string) => key,
+}));
+
 vi.mock('@/hooks/use-translation', () => ({
     useTranslation: () => ({
-        t: (key: string) => key,
+        t: (key: string) => translate.t(key),
         locale: 'en',
         availableLocales: [],
     }),
@@ -138,6 +143,49 @@ describe('IndexQueryToolbar', () => {
         await user.click(await screen.findByRole('option', { name: 'Newest' }));
 
         expect(setSort).toHaveBeenCalledWith('-created_at');
+    });
+
+    it('renders PHP-localized labels without looking them up again', async () => {
+        const user = userEvent.setup();
+        translate.t = (key: string) => `[[${key}]]`;
+
+        try {
+            render(
+                <IndexQueryToolbar
+                    config={{
+                        filters: [
+                            { key: 'q', type: 'search', label: 'Zoeken' },
+                            { key: 'client', type: 'search', label: 'Klant' },
+                        ],
+                        sorts: [
+                            { key: '-title', label: 'Titel (Z–A)' },
+                            { key: '-created_at', label: 'Nieuwste eerst' },
+                        ],
+                        defaults: { sort: '-title' },
+                    }}
+                />,
+            );
+
+            expect(screen.getByLabelText('Zoeken')).toBeInTheDocument();
+            expect(screen.getByLabelText('Klant')).toBeInTheDocument();
+            expect(
+                screen.queryByLabelText('[[Zoeken]]'),
+            ).not.toBeInTheDocument();
+            // Chrome this component owns still goes through t().
+            expect(screen.getByText('[[Sort]]')).toBeInTheDocument();
+
+            await user.click(
+                screen.getByRole('button', { name: /\[\[Sort\]\]/ }),
+            );
+            expect(
+                await screen.findByRole('option', { name: 'Nieuwste eerst' }),
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByRole('option', { name: '[[Nieuwste eerst]]' }),
+            ).not.toBeInTheDocument();
+        } finally {
+            translate.t = (key: string) => key;
+        }
     });
 
     /*

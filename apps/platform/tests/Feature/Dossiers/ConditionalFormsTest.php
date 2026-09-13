@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Accounts\Models\User;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
-use App\Dossiers\Actions\CompleteDossierAction;
+use App\Dossiers\Actions\Lifecycle\CompleteDossierAction;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;

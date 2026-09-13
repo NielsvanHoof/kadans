@@ -17,11 +17,14 @@ L5 ClientPortal → L6 Reporting, Platform, WorkspaceNotifications
 
 Integrations is an L1 sibling of Accounts (OAuth connections / Socialite). Login needs the token vault; calendar product UI stays higher and calls Integrations. Audit is cross-cutting, not a layer: any domain may log activity, but Audit itself may only reach Accounts and Tenancy. Shared must never import DocumentProcessing or AudioProcessing.
 
-When a lower layer needs something from a higher one, **invert it**: the lower layer owns the contract, the higher one binds it. Existing examples — `Tenancy\Contracts\SupportSessionState`, `Dossiers\Contracts\ClientPortalReminders`, `Pipelines\Contracts\PipelineRunner`, `Shared\Cache\TenantCacheInvalidator`.
+When a lower layer needs something from a higher one, **invert it**: the lower layer owns the contract, the higher one binds it. Existing examples — `Tenancy\Contracts\SupportSessionState`, `Dossiers\Contracts\Reminders\ClientPortalReminders`, `Pipelines\Contracts\PipelineRunner`, `Shared\Cache\TenantCacheInvalidator`.
 
 Domain bindings and `Gate::policy()` calls live in that domain's `*ServiceProvider` (registered in `bootstrap/providers.php`). `AppServiceProvider` stays thin: defaults, morph map, factory discovery, local tooling.
 
 Migrations and factories stay under `database/` — never inside `app/{Domain}`.
+
+## Mixed domains nest concerns under the layer
+When a domain mixes unrelated product concerns, nest by concern under the layer: `app/{Domain}/Actions/{Concern}/Create…` (same for Data, Queries, Http/Controllers, Http/Requests). Mixed today: Dossiers, Accounts, ClientPortal, Tenancy, Platform, Reporting, Questionnaires, Integrations, DocumentProcessing. Thin domains stay flat: Clients, Pipelines, Audit, AudioProcessing, WorkspaceNotifications, Shared. Models, Policies, and Enums stay at the domain root. Do not put concern folders at the domain root.
 
 ## Prefer typed Config helpers; use get() for nullable
 Prefer Config::string/integer/boolean/array over config() when the value’s type is known.

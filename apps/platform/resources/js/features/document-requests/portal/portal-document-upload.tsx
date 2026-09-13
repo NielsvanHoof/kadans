@@ -1,5 +1,5 @@
-import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadController';
-import ClientPortalUploadTicketController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalUploadTicketController';
+import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/Submissions/ClientPortalUploadController';
+import ClientPortalUploadTicketController from '@/actions/App/ClientPortal/Http/Controllers/Submissions/ClientPortalUploadTicketController';
 import DocumentFileUploadForm from '@/features/document-requests/document-file-upload-form';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { inlineActionOptions } from '@/lib/inline-action-options';

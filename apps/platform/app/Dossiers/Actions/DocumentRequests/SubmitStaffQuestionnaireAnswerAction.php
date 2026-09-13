@@ -9,7 +9,7 @@ use App\Audit\Enums\AuditEvent;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Support\DossierLocks;
-use App\Dossiers\Transitions\DossierTransitions;
+use App\Dossiers\Transitions\Lifecycle\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 
 /**

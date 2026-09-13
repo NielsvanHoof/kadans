@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
@@ -138,7 +138,7 @@ test('a previously generated export archive is destroyed', function (): void {
     $exportRequest = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
 
-    resolve(GenerateDataSubjectExportAction::class)->handle($exportRequest);
+    resolve(GenerateDataSubjectExportAction::class)->handle($exportRequest, dataSubjectExportStaleCutoff());
 
     $archivePath = (string) $exportRequest->refresh()->path;
 
@@ -321,7 +321,7 @@ test('the erasure locks the request row before it writes anything, archives incl
     // A sibling archive, so the archive-clearing write is in play.
     $exportRequest = resolve(LogDataSubjectRequestAction::class)
         ->handle($client, $owner, DataSubjectRequestType::Export);
-    resolve(GenerateDataSubjectExportAction::class)->handle($exportRequest);
+    resolve(GenerateDataSubjectExportAction::class)->handle($exportRequest, dataSubjectExportStaleCutoff());
 
     /** @var list<string> $queries */
     $queries = [];

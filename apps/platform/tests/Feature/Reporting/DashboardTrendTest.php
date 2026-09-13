@@ -6,7 +6,7 @@ use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Queries\FetchDashboardTrendQuery;
+use App\Reporting\Queries\Dashboard\FetchDashboardTrendQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 covers(FetchDashboardTrendQuery::class);

@@ -1,6 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { useRef } from 'react';
-import SecurityController from '@/actions/App/Accounts/Http/Controllers/SecurityController';
+import SecurityController from '@/actions/App/Accounts/Http/Controllers/Security/SecurityController';
 import Heading from '@/components/primitives/heading';
 import InputError, {
     fieldErrorAriaProps,
@@ -9,19 +9,19 @@ import PasswordInput from '@/components/primitives/password-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
-import type { Props as ManagePasskeysProps } from '@/features/security/passkeys/manage-passkeys';
+import type { ManagePasskeysProps } from '@/features/security/passkeys/manage-passkeys';
 import ManagePasskeys from '@/features/security/passkeys/manage-passkeys';
-import type { Props as ManageTwoFactorProps } from '@/features/security/two-factor/manage-two-factor';
+import type { ManageTwoFactorProps } from '@/features/security/two-factor/manage-two-factor';
 import ManageTwoFactor from '@/features/security/two-factor/manage-two-factor';
 import { useTranslation } from '@/hooks/use-translation';
 import { edit } from '@/routes/security';
 
-type Props = {
+type SecurityProps = {
     passwordRules: string;
 } & ManagePasskeysProps &
     ManageTwoFactorProps;
 
-export default function Security(props: Props) {
+export default function Security(props: SecurityProps) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
     const { t } = useTranslation();

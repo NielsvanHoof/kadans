@@ -37,6 +37,7 @@
     "Build the client form by dragging fields here.": "Build the client form by dragging fields here.",
     "Category": "Category",
     "Category (A–Z)": "Category (A–Z)",
+    "Change answer": "Change answer",
     "Change the questions in a firm template.": "Change the questions in a firm template.",
     "Client answer": "Client answer",
     "Client enters a number here…": "Client enters a number here…",
@@ -210,6 +211,7 @@
     "Show this field when…": "Show this field when…",
     "Single choice": "Single choice",
     "Stable option ids keep conditions working if you rename a label.": "Stable option ids keep conditions working if you rename a label.",
+    "Still correct": "Still correct",
     "Still scanning your document. This usually takes a few minutes — results will appear when ready.": "Still scanning your document. This usually takes a few minutes — results will appear when ready.",
     "Submit answer": "Submit answer",
     "Submitted and waiting for review.": "Submitted and waiting for review.",
@@ -254,6 +256,7 @@
     "You can view the last saved form. Editing unlocks when they leave or the lock expires.": "You can view the last saved form. Editing unlocks when they leave or the lock expires.",
     "You have unsaved form changes. Leave without saving?": "You have unsaved form changes. Leave without saving?",
     "Your answer": "Your answer",
+    "Your answer last year": "Your answer last year",
     "Your form": "Your form",
     "e.g. Onboarding a new freelance client for their first tax return": "e.g. Onboarding a new freelance client for their first tax return"
 }

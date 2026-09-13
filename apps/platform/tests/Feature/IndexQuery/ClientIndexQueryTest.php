@@ -57,7 +57,7 @@ test('clients index paginates results and exposes indexQuery config', function (
         ->get(workspaceRoute('workspaces.clients.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('clients/index')
+            ->component('workspaces/clients/index')
             ->has('clients.data', 15)
             ->where('clients.total', 16)
             ->where('clients.current_page', 1)

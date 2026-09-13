@@ -1,11 +1,21 @@
 import { usePage } from '@inertiajs/react';
 
-export type FirmSettings = App.Tenancy.Data.TenantSettingsData;
+export type FirmSettings = App.Tenancy.Data.Settings.FirmSharedSettingsData;
 
 export type FirmAiSettings = FirmSettings['ai'];
 
-export function useAiFeatureEnabled(feature: keyof FirmAiSettings): boolean {
-    const firmSettings = usePage().props.firm_settings as FirmSettings | null;
+function useFirmSettings(): FirmSettings | null {
+    return usePage().props.firm_settings as FirmSettings | null;
+}
 
-    return firmSettings?.ai[feature] === true;
+export function useAiFeatureEnabled(feature: keyof FirmAiSettings): boolean {
+    return useFirmSettings()?.ai[feature] === true;
+}
+
+/**
+ * The firm's house reminder rhythm, or null when it has not set one. Prefills a
+ * new dossier; never overrides an interval already chosen on a dossier.
+ */
+export function useDefaultReminderIntervalDays(): number | null {
+    return useFirmSettings()?.reminders.default_interval_days.effective ?? null;
 }

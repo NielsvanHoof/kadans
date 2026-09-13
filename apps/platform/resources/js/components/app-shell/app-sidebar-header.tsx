@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { Breadcrumbs } from '@/components/app-shell/breadcrumbs';
+import Breadcrumbs from '@/components/app-shell/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
-export function AppSidebarHeader({
+export default function AppSidebarHeader({
     breadcrumbs = [],
     actions,
 }: {

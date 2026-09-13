@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Questionnaires\Enums\QuestionnaireTemplateCategory;
 use App\Questionnaires\Models\QuestionnaireTemplate;
-use App\Questionnaires\Queries\FetchQuestionnaireTemplatesQuery;
+use App\Questionnaires\Queries\Templates\FetchQuestionnaireTemplatesQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -30,7 +30,7 @@ test('templates index paginates system and firm buckets independently', function
         ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('questionnaires/index')
+            ->component('workspaces/questionnaires/index')
             ->where('system_templates.total', 4)
             ->has('firm_templates.data', 15)
             ->where('firm_templates.total', 16)

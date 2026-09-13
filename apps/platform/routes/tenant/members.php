@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Tenancy\Http\Controllers\TenantInvitationController;
-use App\Tenancy\Http\Controllers\WorkspaceMemberController;
+use App\Tenancy\Http\Controllers\Invitations\TenantInvitationController;
+use App\Tenancy\Http\Controllers\Members\WorkspaceMemberController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('members', [WorkspaceMemberController::class, 'index'])

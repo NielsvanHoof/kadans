@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Languages } from 'lucide-react';
-import LocaleController from '@/actions/App/Accounts/Http/Controllers/LocaleController';
+import LocaleController from '@/actions/App/Accounts/Http/Controllers/Localization/LocaleController';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,

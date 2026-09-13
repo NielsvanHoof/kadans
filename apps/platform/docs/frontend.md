@@ -99,7 +99,7 @@ vendor/bin/sail artisan typescript:transform
 Alias generated types in `features/<domain>/types.ts`:
 
 ```ts
-export type Dossier = App.Dossiers.Data.DossierShowData;
+export type Dossier = App.Dossiers.Data.Lifecycle.DossierShowData;
 ```
 
 Add fields on the PHP Data object, then regenerate. Do not hand-edit `types/generated/`, `actions/`, or `routes/`. CI fails if committed generated output is stale.

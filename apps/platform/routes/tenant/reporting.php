@@ -2,15 +2,23 @@
 
 declare(strict_types=1);
 
-use App\Reporting\Http\Controllers\ActivityLogController;
-use App\Reporting\Http\Controllers\DashboardController;
-use App\Reporting\Http\Controllers\MediaLibraryController;
-use App\Reporting\Http\Controllers\PipelineController;
+use App\Reporting\Http\Controllers\ActivityLog\ActivityLogController;
+use App\Reporting\Http\Controllers\Dashboard\DashboardController;
+use App\Reporting\Http\Controllers\DocumentSearch\DocumentSearchController;
+use App\Reporting\Http\Controllers\MediaLibrary\MediaLibraryController;
+use App\Reporting\Http\Controllers\Pipelines\PipelineController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard');
+
+Route::get('document-search', [DocumentSearchController::class, 'index'])
+    ->middleware('throttle:60,1')
+    ->name('document-search.index');
+Route::post('document-search', [DocumentSearchController::class, 'store'])
+    ->middleware('throttle:20,1')
+    ->name('document-search.store');
 
 Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
 

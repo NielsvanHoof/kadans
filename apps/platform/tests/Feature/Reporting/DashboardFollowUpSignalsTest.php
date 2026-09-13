@@ -8,7 +8,7 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Queries\FetchDashboardFollowUpSignalsQuery;
+use App\Reporting\Queries\Dashboard\FetchDashboardFollowUpSignalsQuery;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Config;
 

@@ -7,7 +7,7 @@ use App\Clients\Models\Client;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\AudioRecordingCalendarLink;
 use App\Dossiers\Models\Dossier;
-use App\Integrations\Actions\RefreshOAuthAccessTokenAction;
+use App\Integrations\Actions\OAuth\RefreshOAuthAccessTokenAction;
 use App\Integrations\Enums\OAuthProvider;
 use App\Integrations\Http\Connectors\Google\Requests\Calendar\ListPrimaryEventsRequest;
 use App\Integrations\Http\Connectors\Google\Requests\Calendar\PatchEventAttachmentsRequest;

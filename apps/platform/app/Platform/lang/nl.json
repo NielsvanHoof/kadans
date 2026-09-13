@@ -1,4 +1,6 @@
 {
+    ":failed_jobs job(s) failed permanently in the last :within_minutes minutes.": "De afgelopen :within_minutes minuten zijn :failed_jobs taken definitief mislukt.",
+    ":stuck_pipelines pipeline(s) are stuck and need attention.": ":stuck_pipelines pipelines staan vast en vragen aandacht.",
     "A new verification link has been sent to your email address.": "Er is een nieuwe verificatielink naar je e-mailadres gestuurd.",
     "A refusal must record why.": "Bij een weigering moet de reden worden vastgelegd.",
     "Add another accounting firm. You can switch between your firms at any time.": "Voeg een ander accountantskantoor toe. Je kunt op elk moment tussen je kantoren wisselen.",
@@ -41,7 +43,9 @@
     "New password": "Nieuw wachtwoord",
     "No firms found.": "Geen kantoren gevonden.",
     "No integrations available": "Geen integraties beschikbaar",
+    "No jobs failed permanently in the last :within_minutes minutes.": "De afgelopen :within_minutes minuten zijn er geen taken definitief mislukt.",
     "No requests logged": "Geen verzoeken vastgelegd",
+    "No stuck pipelines.": "Geen vastgelopen pipelines.",
     "Only an open request can be fulfilled.": "Alleen een open verzoek kan worden uitgevoerd.",
     "Only an open request can be refused.": "Alleen een open verzoek kan worden geweigerd.",
     "Platform support": "Platform support",

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\DocumentProcessing\Ai\DocumentOverviewAgent;
+use App\DocumentProcessing\Ai\Ocr\DocumentOverviewAgent;
 use App\DocumentProcessing\Services\Ocr\Normalization\AgentDocumentOverviewNormalizer;
 use App\Tenancy\Models\TenantSetting;
 use Laravel\Ai\Prompts\AgentPrompt;

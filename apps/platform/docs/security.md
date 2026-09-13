@@ -178,7 +178,7 @@ noncurrent-version expiry, and a bucket policy denying non-TLS transport.
 GuardDuty Malware Protection scans every object as it lands in the documents
 bucket and writes its verdict back onto the object as a
 `GuardDutyMalwareScanStatus` tag. `download` and `preview` read that tag before
-serving anything — `App\Dossiers\Actions\ResolveMalwareScanStatusAction` — and
+serving anything — `App\Dossiers\Actions\Uploads\ResolveMalwareScanStatusAction` — and
 refuse everything that is not explicitly `NO_THREATS_FOUND`. Audio recordings go
 through the same gate: they are client-uploaded bytes in the same bucket.
 
@@ -229,7 +229,7 @@ else.
 
 ## AI and inference
 
-Three features send workspace data to a model, and one of them sends document
+Five features send workspace data to a model. Two of them send document
 content. This section exists because `docs/security.md` documented the KMS key and
 the retention schedule in detail and said nothing about data leaving for inference.
 
@@ -238,8 +238,12 @@ the retention schedule in detail and said nothing about data leaving for inferen
 | Document overview | OCR-extracted **field labels and values** — for a payslip, employer, employee name and pay figures; for an ID card, name, document number, date of birth | `ai.agents.document_overview` |
 | Checklist drafting | A free-text description a staff member typed, which may contain client specifics | `ai.agents.checklist_draft` |
 | Reminder drafting | Client name, dossier title, due date, titles of outstanding items | `ai.agents.dossier_reminder` |
+| Document embeddings | **Overview only** — filename, `document_type`, `summary`, and `notes` — written at OCR complete. Identifiers (IBAN, BSN, table cells) stay in the tenant-scoped `searchable_text` column and are never embedded | `ai.default_for_embeddings` (Titan Text Embeddings V2) |
+| Document search Ask | The staff question plus **in-tenant search hits** (filename, type, summary, client, dossier). The tool does not dump extracted field values | `ai.agents.document_search` |
 
-**All three run on AWS Bedrock in-region**, not a separate vendor. The region falls
+**These flows run on AWS Bedrock in-region**, not a separate vendor. Titan Text
+Embeddings V2 is the embeddings model (`amazon.titan-embed-text-v2:0`, 1024
+dimensions). The region falls
 through `AWS_BEDROCK_REGION` → `AWS_DEFAULT_REGION` → `eu-west-1`, and the document
 overview agent pins `eu.amazon.nova-pro-v1:0` — the `eu.` prefix is a cross-region
 inference profile that keeps inference inside EU regions. Authentication is the same
@@ -270,7 +274,8 @@ Two details worth keeping:
   have rerouted client document fields to whatever the default named, silently, in
   production. `ProductionConfigurationValidator` now resolves each agent the same way
   `ResolvesConfiguredModel` does and refuses to boot on anything outside
-  `APPROVED_AI_PROVIDERS`. The fallback itself is `bedrock`, so the failure mode is
+  `APPROVED_AI_PROVIDERS`. Embeddings are pinned the same way: `ai.default_for_embeddings`
+  must be `bedrock`. The fallback itself is `bedrock`, so the failure mode is
   degraded-to-correct rather than degraded-to-elsewhere. decision-11.
 
 **Not covered here:** transcription and OCR do not go through this path at all. They
@@ -383,7 +388,20 @@ the policy and `App\Accounts\Http\Middleware\RequireTwoFactorAuthentication` app
 | `by_permission` | Staff whose role in the current workspace carries `security.two_factor.permission` — `documents.download` by default. |
 
 `grace_days` (14 by default) is counted from account creation so a new hire can work
-while they enrol; 0 requires enrolment before the first page load.
+while they enrol; 0 requires enrolment before the first page load. It stays a
+platform setting: it is not covered by the strictness ordering below, so a firm
+cannot shorten it.
+
+**A firm may raise the bar, never lower it.** The setting above is a floor. On the
+firm settings page a firm can move itself up the table — `off` → `by_permission` →
+`all` — and the middleware applies `TwoFactorEnforcement::strictest()` against the
+configured level itself rather than trusting whatever it is handed. So the effective
+level is at least the platform one by construction: a firm's row saying `off`, a
+mistaken implementation, or a hand-edited database cannot weaken it, and the boot
+guard below keeps covering every firm without knowing that firms exist. The ordering
+is a total order only because `security.two_factor.permission` is platform-wide — if
+that key ever became per-firm, `by_permission` would stop being a subset of `all` and
+the comparison would be meaningless.
 
 Three details that are load-bearing:
 
@@ -428,14 +446,25 @@ no filename in `tests/Feature/DocumentProcessing/ProcessUploadedDocumentJobTest.
 
 `config/retention.php` drives scheduled purging:
 
-| Data | Default |
-|---|---|
-| Archived clients and dossiers (with stored files and activity) | 1095 days |
-| Activity log | 1095 days |
-| Portal access grants | 90 days |
-| Member invitations | 90 days |
-| Database notifications | 90 days |
-| Failed queue jobs | 168 hours |
+| Data | Default | Per firm |
+|---|---|---|
+| Archived clients and dossiers (with stored files and activity) | 2555 days | 365–3650 |
+| Activity log | 2555 days | 365–3650 |
+| Portal access grants | 90 days | — |
+| Member invitations | 90 days | — |
+| Database notifications | 90 days | — |
+| Failed queue jobs | 168 hours | — |
+
+The first two rows are the firm's own decision, set on the firm settings page
+and applied per firm by `retention:purge-legal` and `retention:prune-activity-log`
+— one sweep runs against as many cutoffs as there are firms. The default is seven
+years, matching the retention an accounting firm holding client financial records
+is normally subject to; the band exists because not every record a firm holds
+falls under that obligation, and storage limitation pushes the other way. A firm
+cannot leave the band, and a value edited outside it directly in the database is
+clamped when it is read.
+
+The remaining rows are platform operations and are not firm-configurable.
 
 ### Data-subject requests
 

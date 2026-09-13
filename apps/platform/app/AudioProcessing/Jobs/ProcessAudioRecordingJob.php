@@ -16,6 +16,7 @@ use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
 use App\Pipelines\Support\PipelineStepSequence;
+use App\Shared\Contracts\Queue\TimeBoundedJob;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,7 +35,7 @@ use function hash;
  */
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
-final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
+final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue, TimeBoundedJob
 {
     use InteractsWithQueue;
     use Queueable;
@@ -53,15 +54,32 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
     public function __construct(
         public int $audioRecordingId,
         public ?string $expectedPath = null,
-        public ?int $pipelineId = null
+        public ?int $pipelineId = null,
     ) {
-        $this->timeout = Config::integer('transcription.timeouts.job', 120);
+        $this->timeout = self::timeoutSeconds();
         $this->onQueue('transcription');
+    }
+
+    /**
+     * Read from config rather than declared as a #[Timeout] constant: an Octane
+     * worker boots once and serves many jobs, so a value resolved at class load
+     * would outlive a config change. The constructor copies it onto $timeout,
+     * which is what the queue payload actually carries.
+     */
+    public static function timeoutSeconds(): int
+    {
+        return Config::integer('transcription.timeouts.job', 120);
+    }
+
+    public static function lifecycleSeconds(): int
+    {
+        return (self::timeoutSeconds() * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     public function uniqueId(): string
     {
-        return "{$this->audioRecordingId}:{$this->pipelineId}:".hash('sha256', $this->expectedPath ?? 'legacy');
+        return "{$this->audioRecordingId}:{$this->pipelineId}:".
+            hash('sha256', $this->expectedPath ?? 'legacy');
     }
 
     /**
@@ -70,7 +88,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueFor(): int
     {
-        return ($this->timeout * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+        return self::lifecycleSeconds();
     }
 
     /**
@@ -80,10 +98,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
      */
     public function tags(): array
     {
-        $tags = [
-            'transcription',
-            'audio_recording:'.$this->audioRecordingId,
-        ];
+        $tags = ['transcription', 'audio_recording:'.$this->audioRecordingId];
 
         if ($this->pipelineId !== null) {
             $tags[] = 'pipeline:'.$this->pipelineId;
@@ -99,15 +114,22 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         NotifyUploaderOfTranscriptionCompletedAction $notifyUploaderOfTranscriptionCompleted,
         AudioTranscriptionTransitions $transcriptionTransitions,
     ): void {
-        $recording = AudioRecording::query()->findOrFail($this->audioRecordingId);
+        $recording = AudioRecording::query()->findOrFail(
+            $this->audioRecordingId,
+        );
 
         $expectedPath = $this->expectedPath ?? $recording->path;
 
-        if ($recording->transcription_status === TranscriptionStatus::Completed) {
-            Log::info('Transcription: skipped ProcessAudioRecordingJob — already completed.', [
-                'audio_recording_id' => $recording->id,
-                'tenant_id' => $recording->tenant_id,
-            ]);
+        if (
+            $recording->transcription_status === TranscriptionStatus::Completed
+        ) {
+            Log::info(
+                'Transcription: skipped ProcessAudioRecordingJob — already completed.',
+                [
+                    'audio_recording_id' => $recording->id,
+                    'tenant_id' => $recording->tenant_id,
+                ],
+            );
 
             return;
         }
@@ -115,19 +137,25 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         $claimed = $transcriptionTransitions->claim($recording, $expectedPath);
 
         if (! $claimed instanceof AudioRecording) {
-            Log::info('Transcription: skipped ProcessAudioRecordingJob — could not claim recording.', [
-                'audio_recording_id' => $this->audioRecordingId,
-                'expected_path' => $expectedPath,
-            ]);
+            Log::info(
+                'Transcription: skipped ProcessAudioRecordingJob — could not claim recording.',
+                [
+                    'audio_recording_id' => $this->audioRecordingId,
+                    'expected_path' => $expectedPath,
+                ],
+            );
 
             return;
         }
 
-        Log::info('Transcription: ProcessAudioRecordingJob claimed recording.', [
-            'audio_recording_id' => $claimed->id,
-            'tenant_id' => $claimed->tenant_id,
-            'attempt' => $this->attempts(),
-        ]);
+        Log::info(
+            'Transcription: ProcessAudioRecordingJob claimed recording.',
+            [
+                'audio_recording_id' => $claimed->id,
+                'tenant_id' => $claimed->tenant_id,
+                'attempt' => $this->attempts(),
+            ],
+        );
 
         try {
             $pipeline = $this->resolvePipeline();
@@ -139,7 +167,12 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
             $outcome = $transcriptionOrchestrator->startProcessing($claimed);
 
             if ($pipeline instanceof Pipeline) {
-                $this->recordOutcome($pipeline, $outcome, $claimed, $pipelineState);
+                $this->recordOutcome(
+                    $pipeline,
+                    $outcome,
+                    $claimed,
+                    $pipelineState,
+                );
             }
 
             if ($outcome === TranscriptionProcessingOutcome::Immediate) {
@@ -148,41 +181,57 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         } catch (Throwable $exception) {
             // Let the queue retry until tries are exhausted.
             if ($this->attempts() < self::MAX_TRIES) {
-                Log::warning('Transcription: ProcessAudioRecordingJob failed — will retry.', [
-                    'audio_recording_id' => $claimed->id,
-                    'tenant_id' => $claimed->tenant_id,
-                    'attempt' => $this->attempts(),
-                    'tries' => self::MAX_TRIES,
-                    'error' => $exception->getMessage(),
-                ]);
+                Log::warning(
+                    'Transcription: ProcessAudioRecordingJob failed — will retry.',
+                    [
+                        'audio_recording_id' => $claimed->id,
+                        'tenant_id' => $claimed->tenant_id,
+                        'attempt' => $this->attempts(),
+                        'tries' => self::MAX_TRIES,
+                        'error' => $exception->getMessage(),
+                    ],
+                );
 
-                $transcriptionTransitions->resetForRetry($claimed, $expectedPath);
+                $transcriptionTransitions->resetForRetry(
+                    $claimed,
+                    $expectedPath,
+                );
 
                 throw $exception;
             }
 
             $error = mb_substr($exception->getMessage(), 0, 500);
-            $updated = $transcriptionTransitions->failForPath($claimed, $expectedPath, $error);
+            $updated = $transcriptionTransitions->failForPath(
+                $claimed,
+                $expectedPath,
+                $error,
+            );
 
             if (! $updated) {
-                Log::warning('Transcription: discarded permanent failure for a stale upload revision.', [
-                    'audio_recording_id' => $claimed->id,
-                    'tenant_id' => $claimed->tenant_id,
-                    'expected_path' => $expectedPath,
-                    'error' => $error,
-                ]);
+                Log::warning(
+                    'Transcription: discarded permanent failure for a stale upload revision.',
+                    [
+                        'audio_recording_id' => $claimed->id,
+                        'tenant_id' => $claimed->tenant_id,
+                        'expected_path' => $expectedPath,
+                        'error' => $error,
+                    ],
+                );
 
                 throw $exception;
             }
 
             $claimed->refresh();
 
-            Log::error('Transcription: ProcessAudioRecordingJob failed permanently.', [
-                'audio_recording_id' => $claimed->id,
-                'tenant_id' => $claimed->tenant_id,
-                'attempt' => $this->attempts(),
-                'error' => $error,
-            ]);
+            Log::error(
+                'Transcription: ProcessAudioRecordingJob failed permanently.',
+                [
+                    'audio_recording_id' => $claimed->id,
+                    'tenant_id' => $claimed->tenant_id,
+                    'attempt' => $this->attempts(),
+                    'error' => $error,
+                ],
+            );
 
             $logAuditActivity->handle(
                 AuditEvent::AudioTranscriptionFailed,
@@ -230,26 +279,34 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         AudioRecording $recording,
         PipelineState $pipelineState,
     ): void {
-        $pipeline->forceFill([
-            'provider' => Config::string('transcription.driver'),
-            'provider_job_id' => $recording->transcribe_job_id,
-        ])->saveQuietly();
+        $pipeline
+            ->forceFill([
+                'provider' => Config::string('transcription.driver'),
+                'provider_job_id' => $recording->transcribe_job_id,
+            ])
+            ->saveQuietly();
 
         if ($outcome === TranscriptionProcessingOutcome::Deferred) {
-            $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
-                ->complete(PipelineStepKey::Submit)
-                ->start(PipelineStepKey::Transcribe));
+            $pipelineState->run(
+                $pipeline,
+                fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                    ->complete(PipelineStepKey::Submit)
+                    ->start(PipelineStepKey::Transcribe),
+            );
 
             return;
         }
 
         // The provider already finished inline, so the remaining steps are
         // bookkeeping with no work between them — one lock, one broadcast.
-        $pipelineState->run($pipeline, fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
-            ->complete(PipelineStepKey::Submit)
-            ->start(PipelineStepKey::Transcribe)
-            ->complete(PipelineStepKey::Transcribe)
-            ->start(PipelineStepKey::ProcessResults)
-            ->complete(PipelineStepKey::ProcessResults));
+        $pipelineState->run(
+            $pipeline,
+            fn (PipelineStepSequence $steps): PipelineStepSequence => $steps
+                ->complete(PipelineStepKey::Submit)
+                ->start(PipelineStepKey::Transcribe)
+                ->complete(PipelineStepKey::Transcribe)
+                ->start(PipelineStepKey::ProcessResults)
+                ->complete(PipelineStepKey::ProcessResults),
+        );
     }
 }

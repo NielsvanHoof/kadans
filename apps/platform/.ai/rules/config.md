@@ -4,6 +4,7 @@ paths:
   - config/queue.php
   - config/horizon.php
   - config/permission.php
+  - config/ai.php
 ---
 
 # Config
@@ -46,3 +47,9 @@ Consequence (a real 403 bug, reproduced 2026-09-01): provisioning a firm runs `S
 Fix in place: `permission.register_octane_reset_listener => true` (the package's own `OperationTerminated` listener). Guarded by a test in `tests/Feature/Platform/OctaneConfigurationTest.php`. Do not set it back to the vendor default of `false`.
 
 Corrects the claim in `.ai/rules/app.md` ("Known scaling ceilings") that the registrar "re-hydrates per request" — it hydrates once per worker. With the listener on, it now genuinely does re-read the Redis blob every request, so that entry's cost estimate is the accurate one.
+
+## Spatie must not Gate-check policy abilities
+Keep `permission.register_permission_check_method` false. Spatie's Gate::before looks up every ability as a permission name, so `authorize('viewAny', …)` throws PermissionDoesNotExist and logs missing vendor translation copy. TenancyServiceProvider owns the Gate::before: registered PermissionRegistry names (plus the support-session overlay), then policies. Guarded by `tests/Feature/Tenancy/PermissionGateTest.php`.
+
+## Titan embeddings have no eu. profile
+Titan Text Embeddings V2 has no geographic inference profile. Use amazon.titan-embed-text-v2:0, never eu.amazon.titan-embed-text-v2:0. Nova uses the eu. prefix; Titan does not. The wrong id InvokeModels successfully with an empty body, and Laravel AI throws EmbeddingsCountMismatchException. Octane only reads .env at boot — changing AI_BEDROCK_EMBEDDINGS_MODEL needs a Sail restart unless config/ai.php itself changed.

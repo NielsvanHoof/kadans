@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import WorkspaceRoleController from '@/actions/App/Tenancy/Http/Controllers/WorkspaceRoleController';
+import WorkspaceRoleController from '@/actions/App/Tenancy/Http/Controllers/Roles/WorkspaceRoleController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button, LinkButton } from '@/components/ui/button';
 import {

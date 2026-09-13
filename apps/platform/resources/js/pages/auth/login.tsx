@@ -1,6 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { AlertCircle } from 'lucide-react';
-import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuthController';
+import OAuthController from '@/actions/App/Integrations/Http/Controllers/OAuth/OAuthController';
 import InputError, {
     fieldErrorAriaProps,
 } from '@/components/primitives/input-error';
@@ -21,7 +21,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
-type Props = {
+type LoginProps = {
     status?: string;
     canResetPassword: boolean;
     oauthProviders?: string[];
@@ -31,7 +31,7 @@ export default function Login({
     status,
     canResetPassword,
     oauthProviders = [],
-}: Props) {
+}: LoginProps) {
     const { t } = useTranslation();
 
     setLayoutProps({

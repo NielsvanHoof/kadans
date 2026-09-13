@@ -40,6 +40,7 @@ function request(
         answer_text: null,
         answer_boolean: null,
         answer_option_ids: null,
+        is_carried_forward: false,
         uploaded_documents: [],
         configuration: {
             is_required: true,

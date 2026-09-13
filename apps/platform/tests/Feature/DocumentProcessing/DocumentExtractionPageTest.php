@@ -61,7 +61,7 @@ test('staff can open the OCR extraction page for an uploaded document', function
         ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('uploaded-documents/show')
+            ->component('workspaces/uploaded-documents/show')
             ->where('uploaded_document.original_filename', 'payslip.pdf')
             ->where('uploaded_document.processing_status', DocumentProcessingStatus::Completed->value)
             ->where('uploaded_document.extraction.document_type', 'payslip')

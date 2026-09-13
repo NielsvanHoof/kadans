@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/*/{Transitions,Policies,Http/Controllers}/**'
+  - 'app/**/{Transitions,Policies,Http/Controllers}/**'
 ---
 
 # Transitions Policies Http Controllers

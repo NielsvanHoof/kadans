@@ -10,7 +10,7 @@ use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Transitions\DocumentRequestTransitions;
+use App\Dossiers\Transitions\DocumentRequests\DocumentRequestTransitions;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Validation\ValidationException;
 
@@ -213,6 +213,25 @@ describe('submitAnswer', function (): void {
             ->reviewed_at->toBeNull()
             ->rejection_reason->toBeNull()
             ->status->toBe(DocumentRequestStatus::Submitted);
+    });
+
+    it('clears the carried-forward stamp so last period is no longer a suggestion', function (): void {
+        $documentRequest = transitionItem([
+            'type' => QuestionnaireItemType::Text,
+            'answer_text' => 'Last year',
+            'carried_forward_at' => now()->subYear(),
+        ]);
+
+        $this->transitions->submitAnswer(
+            $documentRequest,
+            SubmissionContext::Portal,
+            answerText: 'Last year',
+        );
+
+        expect($documentRequest->fresh())
+            ->carried_forward_at->toBeNull()
+            ->status->toBe(DocumentRequestStatus::Submitted)
+            ->answer_text->toBe('Last year');
     });
 
     it('refuses to re-answer an accepted item', function (): void {

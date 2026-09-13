@@ -1,5 +1,7 @@
 /.phpunit.cache
 /coverage
+# Per-shard --coverage-php output merged by scripts/coverage-gate.php.
+/coverage-shards
 /tests/Browser/Screenshots
 
 # barryvdh/laravel-ide-helper (generated locally; model PHPDocs are written into models)

@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { Clock } from 'lucide-react';
-import ClientPortalSessionExtendController from '@/actions/App/ClientPortal/Http/Controllers/ClientPortalSessionExtendController';
+import ClientPortalSessionExtendController from '@/actions/App/ClientPortal/Http/Controllers/Session/ClientPortalSessionExtendController';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { usePortalSessionCountdown } from '@/features/portal/hooks/use-portal-session-countdown';

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Platform\Jobs\GenerateDataSubjectExportJob;
-use App\Platform\Support\WorkerQueues;
+use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
+use App\Platform\Support\Observability\WorkerQueues;
 use Illuminate\Support\Facades\Config;
 
 /**

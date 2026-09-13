@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequestReviewController';
+import DocumentRequestReviewController from '@/actions/App/Dossiers/Http/Controllers/DocumentRequests/DocumentRequestReviewController';
 import InputError from '@/components/primitives/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';

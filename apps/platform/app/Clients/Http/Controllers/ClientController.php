@@ -19,7 +19,7 @@ use App\Clients\Models\Client;
 use App\Clients\Queries\FetchArchivedClientsQuery;
 use App\Clients\Queries\FetchClientIndexQuery;
 use App\Clients\Queries\FetchClientShowQuery;
-use App\Dossiers\Queries\TenantHasAnyDossiersQuery;
+use App\Dossiers\Queries\Lifecycle\TenantHasAnyDossiersQuery;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
 use App\Tenancy\Models\Tenant;
@@ -36,7 +36,7 @@ final class ClientController extends Controller
     {
         $this->authorize('viewAny', Client::class);
 
-        return Inertia::render('clients/index', [
+        return Inertia::render('workspaces/clients/index', [
             'clients' => $fetchClientIndex->handle(),
             ...$fetchClientIndex->indexQueryProps(),
             'can_manage' => $request->user()?->can('create', Client::class) ?? false,
@@ -47,7 +47,7 @@ final class ClientController extends Controller
     {
         $this->authorize('create', Client::class);
 
-        return Inertia::render('clients/create');
+        return Inertia::render('workspaces/clients/create');
     }
 
     public function archived(
@@ -57,7 +57,7 @@ final class ClientController extends Controller
     ): Response {
         $this->authorize('viewAny', Client::class);
 
-        return Inertia::render('clients/archived', [
+        return Inertia::render('workspaces/clients/archived', [
             'clients' => $fetchArchivedClients->handle(),
             ...$fetchArchivedClients->indexQueryProps(),
             'can_restore' => $request->user()?->can('restoreAny', Client::class) ?? false,
@@ -93,14 +93,14 @@ final class ClientController extends Controller
     ): Response {
         $this->authorize('view', $client);
 
-        return Inertia::render('clients/show', $fetchClientShow->handle($client));
+        return Inertia::render('workspaces/clients/show', $fetchClientShow->handle($client));
     }
 
     public function edit(Tenant $tenant, Client $client): Response
     {
         $this->authorize('update', $client);
 
-        return Inertia::render('clients/edit', [
+        return Inertia::render('workspaces/clients/edit', [
             'client' => $client->only(['id', 'name', 'email']),
         ]);
     }

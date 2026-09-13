@@ -190,7 +190,7 @@ test('the OCR and transcription log calls still identify their row', function (s
     expect(loggedContextKeysIn($path))->toContain($idKey, 'tenant_id');
 })->with([
     'ocr orchestrator' => ['app/DocumentProcessing/Services/Ocr/OcrOrchestrator.php', 'uploaded_document_id'],
-    'document job' => ['app/DocumentProcessing/Jobs/ProcessUploadedDocumentJob.php', 'uploaded_document_id'],
+    'document job' => ['app/DocumentProcessing/Jobs/Ocr/ProcessUploadedDocumentJob.php', 'uploaded_document_id'],
     'transcription orchestrator' => ['app/AudioProcessing/Services/TranscriptionOrchestrator.php', 'audio_recording_id'],
     'audio job' => ['app/AudioProcessing/Jobs/ProcessAudioRecordingJob.php', 'audio_recording_id'],
 ]);

@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/item-types/definitions';
 import { getQuestionnaireItemTypePortalContent } from '@/features/document-requests/item-types/portal-registry';
+import { PortalCarriedForwardAnswer } from '@/features/document-requests/portal/portal-carried-forward-answer';
 import DocumentRequestStatusBadge from '@/features/document-requests/status/document-request-status-badge';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -175,10 +176,20 @@ function PortalRequestTypeContent({
         documentRequest.type,
     );
 
-    return (
+    const content = (
         <PortalContent
             documentRequest={documentRequest}
             canRespond={canRespond}
         />
+    );
+
+    if (!canRespond || !documentRequest.is_carried_forward) {
+        return content;
+    }
+
+    return (
+        <PortalCarriedForwardAnswer documentRequest={documentRequest}>
+            {content}
+        </PortalCarriedForwardAnswer>
     );
 }

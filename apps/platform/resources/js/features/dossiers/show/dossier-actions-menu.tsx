@@ -1,6 +1,6 @@
 import { Archive, CalendarSync, MoreHorizontal, Pencil } from 'lucide-react';
 import { useState } from 'react';
-import DossierController from '@/actions/App/Dossiers/Http/Controllers/DossierController';
+import DossierController from '@/actions/App/Dossiers/Http/Controllers/Lifecycle/DossierController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button } from '@/components/ui/button';
 import {

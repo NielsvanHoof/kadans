@@ -2,13 +2,14 @@ import { pipelineErrorCodeLabel } from '@/features/pipelines/status/pipeline-sta
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
- * The failure block shared by the run diagnostics card and the step timeline.
+ * Step-level failure evidence on the execution timeline.
  *
  * Reads top-down as sentence, then evidence: the localised explanation derived
  * from `error_code` leads, and the machine code plus the stored `error_message`
- * follow in mono as the detail an engineer needs. An unrecognised code has no
- * sentence to lead with, so the raw message is promoted to that position
- * instead of leaving the panel wordless.
+ * follow in mono. An unrecognised code has no sentence to lead with, so the
+ * raw message is promoted to that position instead of leaving the panel
+ * wordless. Run-level recovery guidance and technical diagnostics use their
+ * own components so those three layers stay distinct.
  */
 export default function PipelineErrorPanel({
     errorCode,

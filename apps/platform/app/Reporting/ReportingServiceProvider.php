@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reporting;
 
-use App\Reporting\Support\ForgetsWorkspaceDashboardCache;
+use App\Reporting\Support\Dashboard\ForgetsWorkspaceDashboardCache;
 use App\Shared\Cache\TenantCacheInvalidator;
 use Illuminate\Support\ServiceProvider;
 use Override;

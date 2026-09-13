@@ -45,6 +45,7 @@ return [
         'resources/js/features/audit' => 'Audit',
         'resources/js/features/clients' => 'Clients',
         'resources/js/features/dashboard' => 'Reporting',
+        'resources/js/features/document-search' => 'Reporting',
         'resources/js/features/data-subject-requests' => 'Platform',
         'resources/js/features/document-requests' => 'Questionnaires',
         'resources/js/features/dossiers' => 'Dossiers',
@@ -63,21 +64,21 @@ return [
         'resources/js/features/settings' => 'Platform',
         'resources/js/features/workspaces' => 'Tenancy',
 
-        'resources/js/pages/audio-recordings' => 'Dossiers',
         'resources/js/pages/auth' => 'Accounts',
-        'resources/js/pages/clients' => 'Clients',
-        'resources/js/pages/data-subject-requests' => 'Platform',
-        'resources/js/pages/dossiers' => 'Dossiers',
         'resources/js/pages/firms' => 'Platform',
         'resources/js/pages/invitations' => 'Tenancy',
         'resources/js/pages/legal' => 'Platform',
         'resources/js/pages/onboarding' => 'Platform',
         'resources/js/pages/platform' => 'Platform',
         'resources/js/pages/portal' => 'ClientPortal',
-        'resources/js/pages/questionnaires' => 'Questionnaires',
         'resources/js/pages/settings' => 'Platform',
-        'resources/js/pages/uploaded-documents' => 'Dossiers',
         'resources/js/pages/workspaces' => 'Tenancy',
+        'resources/js/pages/workspaces/audio-recordings' => 'Dossiers',
+        'resources/js/pages/workspaces/clients' => 'Clients',
+        'resources/js/pages/workspaces/data-subject-requests' => 'Platform',
+        'resources/js/pages/workspaces/dossiers' => 'Dossiers',
+        'resources/js/pages/workspaces/questionnaires' => 'Questionnaires',
+        'resources/js/pages/workspaces/uploaded-documents' => 'Dossiers',
     ],
 
     /*
@@ -159,5 +160,14 @@ return [
         // dossier-export-card.tsx — ternary string literals inside t().
         'Ready' => 'Dossiers',
         'Preparing' => 'Dossiers',
+
+        // FailedQueueJobsCheck / StuckPipelinesCheck — Spatie Health calls
+        // trans() on Result::$notificationMessage with the check meta. The
+        // English key is passed untranslated; wrapping ok()/failed() in __()
+        // would look up the Dutch sentence as a key.
+        'No jobs failed permanently in the last :within_minutes minutes.' => 'Platform',
+        ':failed_jobs job(s) failed permanently in the last :within_minutes minutes.' => 'Platform',
+        'No stuck pipelines.' => 'Platform',
+        ':stuck_pipelines pipeline(s) are stuck and need attention.' => 'Platform',
     ],
 ];

@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Health\Checks\Check;
 use Spatie\Health\Checks\Result;
 
-use function sprintf;
-
 /**
  * Surface jobs that exhausted their retries.
  *
@@ -52,16 +50,9 @@ final class FailedQueueJobsCheck extends Check
             ->shortSummary((string) $count);
 
         if ($count > $this->failWhenMoreThan) {
-            return $result->failed(sprintf(
-                '%d job(s) failed permanently in the last %d minutes.',
-                $count,
-                $this->withinMinutes,
-            ));
+            return $result->failed(':failed_jobs job(s) failed permanently in the last :within_minutes minutes.');
         }
 
-        return $result->ok(sprintf(
-            'No jobs failed permanently in the last %d minutes.',
-            $this->withinMinutes,
-        ));
+        return $result->ok('No jobs failed permanently in the last :within_minutes minutes.');
     }
 }

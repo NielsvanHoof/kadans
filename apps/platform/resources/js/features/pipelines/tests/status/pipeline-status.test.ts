@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vite-plus/test';
 import {
     pipelineErrorCodeLabel,
     pipelineIsInFlight,
+    pipelineNeedsLiveReload,
+    pipelineRecoveryKind,
     pipelineStatusLabel,
     pipelineStepLabel,
     pipelineStepStatusLabel,
@@ -49,6 +51,42 @@ describe('pipelineIsInFlight', () => {
         expect(pipelineIsInFlight('failed')).toBe(false);
         expect(pipelineIsInFlight('stuck')).toBe(false);
         expect(pipelineIsInFlight('cancelled')).toBe(false);
+    });
+});
+
+describe('pipelineNeedsLiveReload', () => {
+    it('is true while in flight or while an automatic retry is booked', () => {
+        expect(pipelineNeedsLiveReload('pending', null)).toBe(true);
+        expect(pipelineNeedsLiveReload('running', null)).toBe(true);
+        expect(
+            pipelineNeedsLiveReload('failed', '2026-08-17T12:00:00+00:00'),
+        ).toBe(true);
+        expect(pipelineNeedsLiveReload('failed', null)).toBe(false);
+        expect(pipelineNeedsLiveReload('completed', null)).toBe(false);
+        expect(pipelineNeedsLiveReload('stuck', null)).toBe(false);
+    });
+});
+
+describe('pipelineRecoveryKind', () => {
+    it('is scheduled when a failed run still has a next retry', () => {
+        expect(
+            pipelineRecoveryKind('failed', '2026-08-17T12:00:00+00:00'),
+        ).toBe('scheduled');
+    });
+
+    it('is staff_action when auto-retry is exhausted or the run is stuck or cancelled', () => {
+        expect(pipelineRecoveryKind('failed', null)).toBe('staff_action');
+        expect(pipelineRecoveryKind('stuck', null)).toBe('staff_action');
+        expect(pipelineRecoveryKind('cancelled', null)).toBe('staff_action');
+        expect(pipelineRecoveryKind('stuck', '2026-08-17T12:00:00+00:00')).toBe(
+            'staff_action',
+        );
+    });
+
+    it('is null while the run is pending, running, or completed', () => {
+        expect(pipelineRecoveryKind('pending', null)).toBeNull();
+        expect(pipelineRecoveryKind('running', null)).toBeNull();
+        expect(pipelineRecoveryKind('completed', null)).toBeNull();
     });
 });
 

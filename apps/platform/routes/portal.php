@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\ClientPortal\Http\Controllers\ClientPortalAnswerController;
-use App\ClientPortal\Http\Controllers\ClientPortalController;
-use App\ClientPortal\Http\Controllers\ClientPortalEndedController;
-use App\ClientPortal\Http\Controllers\ClientPortalSessionController;
-use App\ClientPortal\Http\Controllers\ClientPortalSessionExtendController;
-use App\ClientPortal\Http\Controllers\ClientPortalUploadController;
-use App\ClientPortal\Http\Controllers\ClientPortalUploadTicketController;
+use App\ClientPortal\Http\Controllers\Session\ClientPortalEndedController;
+use App\ClientPortal\Http\Controllers\Session\ClientPortalSessionController;
+use App\ClientPortal\Http\Controllers\Session\ClientPortalSessionExtendController;
+use App\ClientPortal\Http\Controllers\Submissions\ClientPortalAnswerController;
+use App\ClientPortal\Http\Controllers\Submissions\ClientPortalUploadController;
+use App\ClientPortal\Http\Controllers\Submissions\ClientPortalUploadTicketController;
+use App\ClientPortal\Http\Controllers\Workspace\ClientPortalController;
 use App\ClientPortal\Http\Middleware\HardenClientPortalResponse;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use Illuminate\Support\Facades\Route;

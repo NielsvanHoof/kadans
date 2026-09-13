@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/Dossiers/Queries/**'
+  - 'app/Dossiers/Queries/Lifecycle/**'
 ---
 
 # Dossiers Queries

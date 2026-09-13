@@ -24,13 +24,16 @@ vi.mock('@inertiajs/react', () => ({
 
 vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
-vi.mock('@/actions/App/Accounts/Http/Controllers/TimezoneController', () => ({
-    default: {
-        update: {
-            url: () => '/settings/timezone',
+vi.mock(
+    '@/actions/App/Accounts/Http/Controllers/Localization/TimezoneController',
+    () => ({
+        default: {
+            update: {
+                url: () => '/settings/timezone',
+            },
         },
-    },
-}));
+    }),
+);
 
 const { default: TimezoneSelect } =
     await import('@/features/settings/timezone-select');

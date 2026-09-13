@@ -82,6 +82,13 @@ const health: DashboardProcessingHealth = {
             error_message: 'Provider returned 500',
             last_activity_at: '2026-08-17T10:00:00+00:00',
             is_retryable: true,
+            subject: {
+                type: 'UploadedDocument',
+                id: 12,
+                label: 'annual-accounts.pdf',
+                context: 'Acme Corp · Annual audit',
+                href: null,
+            },
         },
     ],
 };

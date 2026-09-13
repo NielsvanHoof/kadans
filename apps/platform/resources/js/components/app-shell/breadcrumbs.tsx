@@ -25,7 +25,7 @@ function resolveHref(href: NonNullable<InertiaLinkProps['href']>): string {
     return String(href);
 }
 
-export function Breadcrumbs({
+export default function Breadcrumbs({
     breadcrumbs,
 }: {
     breadcrumbs: BreadcrumbItemType[];

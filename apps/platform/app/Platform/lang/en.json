@@ -1,4 +1,6 @@
 {
+    ":failed_jobs job(s) failed permanently in the last :within_minutes minutes.": ":failed_jobs job(s) failed permanently in the last :within_minutes minutes.",
+    ":stuck_pipelines pipeline(s) are stuck and need attention.": ":stuck_pipelines pipeline(s) are stuck and need attention.",
     "A new verification link has been sent to your email address.": "A new verification link has been sent to your email address.",
     "A refusal must record why.": "A refusal must record why.",
     "Add another accounting firm. You can switch between your firms at any time.": "Add another accounting firm. You can switch between your firms at any time.",
@@ -41,7 +43,9 @@
     "New password": "New password",
     "No firms found.": "No firms found.",
     "No integrations available": "No integrations available",
+    "No jobs failed permanently in the last :within_minutes minutes.": "No jobs failed permanently in the last :within_minutes minutes.",
     "No requests logged": "No requests logged",
+    "No stuck pipelines.": "No stuck pipelines.",
     "Only an open request can be fulfilled.": "Only an open request can be fulfilled.",
     "Only an open request can be refused.": "Only an open request can be refused.",
     "Platform support": "Platform support",

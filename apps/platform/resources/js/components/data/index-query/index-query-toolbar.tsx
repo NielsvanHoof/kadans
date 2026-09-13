@@ -185,14 +185,14 @@ export default function IndexQueryToolbar({
                         htmlFor={`index-filter-${filter.key}`}
                         className="text-muted-foreground text-xs font-medium"
                     >
-                        {t(filter.label)}
+                        {filter.label}
                     </label>
                     <Input
                         id={`index-filter-${filter.key}`}
                         type="search"
                         value={drafts[filter.key] ?? ''}
                         maxLength={SEARCH_MAX_LENGTH}
-                        placeholder={t(filter.label)}
+                        placeholder={filter.label}
                         onFocus={handleSearchFocus}
                         onBlur={handleSearchBlur}
                         onChange={(event) =>
@@ -237,7 +237,7 @@ export default function IndexQueryToolbar({
                         <SelectGroup>
                             {config.sorts.map((option) => (
                                 <SelectItem key={option.key} id={option.key}>
-                                    {t(option.label)}
+                                    {option.label}
                                 </SelectItem>
                             ))}
                         </SelectGroup>

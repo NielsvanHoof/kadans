@@ -1,6 +1,6 @@
 import { Form, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import AudioRecordingCalendarController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordingCalendarController';
+import AudioRecordingCalendarController from '@/actions/App/Dossiers/Http/Controllers/AudioRecordings/AudioRecordingCalendarController';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { AudioRecordingCalendarLink } from '@/features/audio-recordings/types';
@@ -71,7 +71,7 @@ function CalendarUnlinkForm({
     );
 }
 
-type Props = {
+type CalendarAttachPanelProps = {
     audioRecordingId: number;
     transcriptionStatus: string;
     calendarLinks: AudioRecordingCalendarLink[];
@@ -92,7 +92,7 @@ export default function CalendarAttachPanel({
     provider,
     connectionStatus,
     reconnectUrl,
-}: Props) {
+}: CalendarAttachPanelProps) {
     const { t } = useTranslation();
     const currentWorkspace = useCurrentWorkspace();
     const [events, setEvents] = useState<CalendarEventSuggestion[]>([]);

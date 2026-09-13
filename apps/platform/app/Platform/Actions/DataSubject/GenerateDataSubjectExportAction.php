@@ -13,9 +13,11 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Enums\DataSubjectRequestType;
-use App\Platform\Events\DataSubjectExportCompleted;
+use App\Platform\Events\DataSubject\DataSubjectExportCompleted;
 use App\Platform\Models\DataSubjectRequest;
+use App\Platform\Transitions\DataSubject\DataSubjectRequestTransitions;
 use App\Tenancy\Models\Tenant;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
@@ -41,9 +43,14 @@ final readonly class GenerateDataSubjectExportAction
 {
     public function __construct(
         private LogAuditActivityAction $logAuditActivity,
+        private DataSubjectRequestTransitions $transitions,
     ) {}
 
-    public function handle(DataSubjectRequest $request): void
+    /**
+     * $staleClaimsBefore is the caller's own worst-case lifecycle: a claim older
+     * than that belonged to a worker that is certainly gone.
+     */
+    public function handle(DataSubjectRequest $request, CarbonInterface $staleClaimsBefore): void
     {
         throw_unless(
             $request->type === DataSubjectRequestType::Export,
@@ -51,10 +58,37 @@ final readonly class GenerateDataSubjectExportAction
             'Only an export request produces an archive.',
         );
 
-        if (! $request->status->isOpen()) {
+        // The claim, not a read-only status check. Redis re-reserves a job once
+        // retry_after (660s) elapses, which ShouldBeUnique does not prevent —
+        // it only blocks new dispatches — and this job's own timeout is 600s
+        // against a 630s worker timeout, so the margin is 30s on a run that is
+        // entirely stream-bound. Two builds would otherwise both pass a bare
+        // isOpen() and spend ten minutes each re-reading the same objects.
+        if (! $this->transitions->claimForFulfilment($request, $staleClaimsBefore)) {
             return;
         }
 
+        try {
+            $this->buildAndRecord($request);
+        } catch (Throwable $exception) {
+            // First, before any cleanup that could throw over it. Everything
+            // after the claim is inside this try for the same reason: a release
+            // reachable only from one inner catch is a release that a
+            // misconfigured disk or a vanished client can skip, and a skipped
+            // release means the operator's retry silently no-ops until the
+            // stale window passes.
+            $this->transitions->releaseFulfilmentClaim($request);
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Everything that happens once the request is ours. Separated from handle()
+     * so the claim's release covers all of it, not just the storage writes.
+     */
+    private function buildAndRecord(DataSubjectRequest $request): void
+    {
         $client = Client::withTrashed()->findOrFail($request->client_id);
 
         $disk = Config::string('exports.disk');
@@ -271,6 +305,9 @@ final readonly class GenerateDataSubjectExportAction
                 'mime_type' => $uploadedDocument->mime_type,
                 'size_bytes' => $uploadedDocument->size_bytes,
                 'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
+                // Search derivatives of extracted_text. The zip already holds
+                // the source JSON; do not also ship searchable_text or the
+                // Titan embedding vector.
                 'extracted_text' => $uploadedDocument->extracted_text,
             ];
         }

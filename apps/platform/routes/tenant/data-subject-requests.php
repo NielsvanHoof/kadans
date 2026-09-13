@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Platform\Http\Controllers\DataSubjectRequestController;
+use App\Platform\Http\Controllers\DataSubject\DataSubjectRequestController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;

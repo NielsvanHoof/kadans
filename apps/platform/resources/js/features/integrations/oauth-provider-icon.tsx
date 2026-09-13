@@ -1,7 +1,7 @@
 import type { SVGAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-type Props = SVGAttributes<SVGElement> & {
+type OAuthProviderIconProps = SVGAttributes<SVGElement> & {
     provider: string;
 };
 
@@ -13,7 +13,7 @@ export default function OAuthProviderIcon({
     provider,
     className,
     ...props
-}: Props) {
+}: OAuthProviderIconProps) {
     if (provider === 'google') {
         return (
             <svg

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Dossiers\Actions\Builder;
 
 use App\Dossiers\Models\DocumentRequest;
-use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
+use App\Questionnaires\Actions\Templates\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 
 use function is_array;

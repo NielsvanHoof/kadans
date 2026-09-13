@@ -7,21 +7,21 @@
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 
 /** Magic-link grant for client portal access. */
-export type AccessGrant = App.Dossiers.Data.DossierAccessGrantData;
+export type AccessGrant = App.Dossiers.Data.Lifecycle.DossierAccessGrantData;
 
 /** Dossier payload for the client portal page. */
 export type PortalDossier = Omit<
-    App.ClientPortal.Data.PortalDossierData,
+    App.ClientPortal.Data.Workspace.PortalDossierData,
     'document_requests'
 > & {
     document_requests: PortalDocumentRequest[];
 };
 
 /** Progress counters on the portal overview. */
-export type PortalProgress = App.ClientPortal.Data.PortalProgressData;
+export type PortalProgress = App.ClientPortal.Data.Workspace.PortalProgressData;
 
 /** The firm, plus the staff member the client can actually reach. */
-export type PortalFirm = App.ClientPortal.Data.PortalFirmData;
+export type PortalFirm = App.ClientPortal.Data.Workspace.PortalFirmData;
 
 /** The client's own session deadlines, for the pre-expiry warning. */
-export type PortalSession = App.ClientPortal.Data.PortalSessionData;
+export type PortalSession = App.ClientPortal.Data.Session.PortalSessionData;

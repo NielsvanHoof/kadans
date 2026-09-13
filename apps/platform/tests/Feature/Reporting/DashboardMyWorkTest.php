@@ -7,7 +7,7 @@ use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
-use App\Reporting\Queries\FetchDashboardMyWorkQuery;
+use App\Reporting\Queries\Dashboard\FetchDashboardMyWorkQuery;
 use App\Tenancy\Enums\Role;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;

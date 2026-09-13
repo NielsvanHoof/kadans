@@ -1,24 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
+import { mockUseTranslation } from '@/test/mocks';
 import type { SimplePaginated } from '@/types/pagination';
 
-vi.mock('@/hooks/use-translation', () => ({
-    useTranslation: () => ({
-        t: (key: string, replacements?: Record<string, string | number>) => {
-            if (!replacements) {
-                return key;
-            }
-
-            return Object.entries(replacements).reduce(
-                (result, [token, value]) =>
-                    result.replace(`:${token}`, String(value)),
-                key,
-            );
-        },
-        locale: 'en',
-        availableLocales: [],
-    }),
-}));
+vi.mock('@/hooks/use-translation', () => mockUseTranslation());
 
 vi.mock('@inertiajs/react', () => ({
     Link: ({

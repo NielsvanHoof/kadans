@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Audit\Enums\AuditEvent;
 use App\Audit\Models\Activity;
-use App\ClientPortal\Actions\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Models\Dossier;
@@ -40,7 +40,7 @@ test('owner can view a client record with active and archived dossier context', 
         ->get(workspaceRoute('workspaces.clients.show', $tenant, ['client' => $client]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('clients/show')
+            ->component('workspaces/clients/show')
             ->where('client.name', 'Jane Client')
             ->where('client.active_dossiers_count', 1)
             ->where('client.archived_dossiers_count', 1)
@@ -66,14 +66,14 @@ test('owner can open the client and dossier edit screens', function (): void {
         ->get(workspaceRoute('workspaces.clients.edit', $tenant, ['client' => $client]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('clients/edit')
+            ->component('workspaces/clients/edit')
             ->where('client.name', 'Jane Client')
             ->where('client.email', 'jane@example.com'));
 
     $this->get(workspaceRoute('workspaces.dossiers.edit', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/edit')
+            ->component('workspaces/dossiers/edit')
             ->where('dossier.title', 'Annual accounts')
             ->where('dossier.reference', 'AA-2026')
             ->where('dossier.client.name', 'Jane Client'));
@@ -180,14 +180,14 @@ test('archived indexes separate retained records from active work', function ():
         ->get(workspaceRoute('workspaces.clients.archived', $tenant).'?filter[q]=Archived')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('clients/archived')
+            ->component('workspaces/clients/archived')
             ->has('clients.data', 1)
             ->where('clients.data.0.name', 'Archived Jane'));
 
     $this->get(workspaceRoute('workspaces.dossiers.archived', $tenant).'?filter[q]=annual')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/archived')
+            ->component('workspaces/dossiers/archived')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.client_archived', true));
 
@@ -195,7 +195,7 @@ test('archived indexes separate retained records from active work', function ():
     $this->get(workspaceRoute('workspaces.dossiers.archived', $tenant).'?filter[q]=Jane')
         ->assertOk()
         ->assertInertia(fn (Assert $page): Assert => $page
-            ->component('dossiers/archived')
+            ->component('workspaces/dossiers/archived')
             ->has('dossiers.data', 1)
             ->where('dossiers.data.0.client_name', 'Archived Jane'));
 });

@@ -9,7 +9,7 @@ paths:
 ## Payload types come from PHP; generated dirs are never hand-edited
 `types/generated/`, `actions/`, `routes/`, and `features/document-requests/item-types/generated.ts` are codegen output. Add a field to the PHP `*Data` object or enum and regenerate — never edit the TypeScript. CI fails on stale committed output.
 
-Alias generated types in `features/<domain>/types.ts` (`export type Dossier = App.Dossiers.Data.DossierShowData`). Domain payload types must not go in `@/types`.
+Alias generated types in `features/<domain>/types.ts` (`export type Dossier = App.Dossiers.Data.Lifecycle.DossierShowData`). Domain payload types must not go in `@/types`.
 
 Never hardcode URL strings — use `@/routes/...` for hrefs and `@/actions/...` or `.form()` for mutations.
 

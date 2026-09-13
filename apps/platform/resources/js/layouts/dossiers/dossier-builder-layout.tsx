@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { AppContent } from '@/components/app-shell/app-content';
-import { AppShell } from '@/components/app-shell/app-shell';
+import AppContent from '@/components/app-shell/app-content';
+import AppShell from '@/components/app-shell/app-shell';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';

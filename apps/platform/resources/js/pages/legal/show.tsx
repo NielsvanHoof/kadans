@@ -10,7 +10,7 @@ type LegalNavItem = {
     title: string;
 };
 
-type Props = {
+type LegalShowProps = {
     document: string;
     title: string;
     html: string;
@@ -28,7 +28,7 @@ export default function LegalShow({
     html,
     is_draft: isDraft,
     documents,
-}: Props) {
+}: LegalShowProps) {
     const { t } = useTranslation();
 
     return (

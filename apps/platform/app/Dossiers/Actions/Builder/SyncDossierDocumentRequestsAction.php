@@ -6,14 +6,14 @@ namespace App\Dossiers\Actions\Builder;
 
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
-use App\Dossiers\Data\StaffDocumentRequestData;
+use App\Dossiers\Data\DocumentRequests\StaffDocumentRequestData;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
-use App\Dossiers\Queries\MapStaffDocumentRequestRowsQuery;
+use App\Dossiers\Queries\DocumentRequests\MapStaffDocumentRequestRowsQuery;
 use App\Dossiers\Support\DossierLocks;
-use App\Questionnaires\Actions\NormalizeQuestionnaireItemConfigurationAction;
+use App\Questionnaires\Actions\Templates\NormalizeQuestionnaireItemConfigurationAction;
 use App\Questionnaires\Enums\QuestionnaireItemType;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\DB;
