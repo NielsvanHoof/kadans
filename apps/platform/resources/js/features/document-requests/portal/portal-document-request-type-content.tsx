@@ -2,6 +2,7 @@ import { Download, X } from 'lucide-react';
 import ClientPortalUploadController from '@/actions/App/ClientPortal/Http/Controllers/Submissions/ClientPortalUploadController';
 import ConfirmDestroyDialog from '@/components/feedback/confirm-destroy-dialog';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { PortalAnswerPreview } from '@/features/document-requests/portal/portal-answer-preview';
 import {
     PortalBooleanDocumentAnswer,
     PortalChoiceDocumentAnswer,
@@ -13,7 +14,6 @@ import type {
     PortalDocumentRequest,
     PortalUploadedDocument,
 } from '@/features/document-requests/types';
-import { storesAnswerText } from '@/features/document-requests/types';
 import { useFormatters } from '@/hooks/use-formatters';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
@@ -203,65 +203,10 @@ function PortalSubmittedAnswerPreview({
 }) {
     const { t } = useTranslation();
 
-    if (storesAnswerText(documentRequest.type)) {
-        if (!documentRequest.answer_text) {
-            return null;
-        }
-
-        return (
-            <div className="bg-muted/50 rounded-lg px-3 py-2.5 text-sm">
-                <p className="text-muted-foreground text-xs">
-                    {t('Your answer')}
-                </p>
-                <p className="mt-0.5 font-medium whitespace-pre-wrap">
-                    {documentRequest.answer_text}
-                </p>
-            </div>
-        );
-    }
-
-    if (
-        documentRequest.type === 'boolean' &&
-        documentRequest.answer_boolean !== null
-    ) {
-        return (
-            <div className="bg-muted/50 rounded-lg px-3 py-2.5 text-sm">
-                <p className="text-muted-foreground text-xs">
-                    {t('Your answer')}
-                </p>
-                <p className="mt-0.5 font-medium">
-                    {documentRequest.answer_boolean ? t('Yes') : t('No')}
-                </p>
-            </div>
-        );
-    }
-
-    if (
-        (documentRequest.type === 'choice' ||
-            documentRequest.type === 'multi_select') &&
-        documentRequest.answer_option_ids?.length
-    ) {
-        const labels = (documentRequest.configuration?.options ?? [])
-            .filter((option) =>
-                documentRequest.answer_option_ids?.includes(option.id),
-            )
-            .map((option) => option.label);
-
-        if (labels.length === 0) {
-            return null;
-        }
-
-        return (
-            <div className="bg-muted/50 rounded-lg px-3 py-2.5 text-sm">
-                <p className="text-muted-foreground text-xs">
-                    {t('Your answer')}
-                </p>
-                <p className="mt-0.5 font-medium whitespace-pre-wrap">
-                    {labels.join(', ')}
-                </p>
-            </div>
-        );
-    }
-
-    return null;
+    return (
+        <PortalAnswerPreview
+            documentRequest={documentRequest}
+            label={t('Your answer')}
+        />
+    );
 }

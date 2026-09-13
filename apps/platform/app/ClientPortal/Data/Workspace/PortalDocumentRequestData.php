@@ -33,6 +33,7 @@ final class PortalDocumentRequestData extends Data
         public readonly ?array $configuration,
         public readonly ?string $rejectionReason,
         public readonly bool $canRespond,
+        public readonly bool $isCarriedForward,
         public readonly array $uploadedDocuments,
     ) {}
 }

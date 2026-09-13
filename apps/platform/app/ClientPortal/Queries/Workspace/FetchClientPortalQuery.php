@@ -100,6 +100,7 @@ final readonly class FetchClientPortalQuery
                     SubmissionContext::Portal,
                     $dossier,
                 ),
+                isCarriedForward: $documentRequest->carried_forward_at !== null,
                 uploadedDocuments: array_values($documentRequest->uploadedDocuments
                     ->map(fn (UploadedDocument $uploadedDocument): PortalUploadedDocumentData => new PortalUploadedDocumentData(
                         id: $uploadedDocument->id,

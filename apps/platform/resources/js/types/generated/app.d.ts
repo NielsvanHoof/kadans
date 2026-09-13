@@ -117,6 +117,7 @@ declare namespace App {
                     readonly configuration: Record<string, any> | null;
                     readonly rejection_reason: string | null;
                     readonly can_respond: boolean;
+                    readonly is_carried_forward: boolean;
                     readonly uploaded_documents: App.ClientPortal.Data.Workspace.PortalUploadedDocumentData[];
                 };
                 export type PortalDossierData = {

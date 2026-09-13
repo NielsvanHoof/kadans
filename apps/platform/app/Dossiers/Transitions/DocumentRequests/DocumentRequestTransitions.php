@@ -264,14 +264,17 @@ final class DocumentRequestTransitions
 
     /**
      * Payload shared by answer and upload submissions.
-     * Clears prior review metadata so a corrected item can be reviewed again.
+     * Clears prior review metadata so a corrected item can be reviewed again,
+     * and drops carried_forward_at so last period's suggestion becomes this
+     * period's answer.
      *
      * @return array{
      *     status: DocumentRequestStatus,
      *     answered_at: CarbonInterface,
      *     reviewed_by: null,
      *     reviewed_at: null,
-     *     rejection_reason: null
+     *     rejection_reason: null,
+     *     carried_forward_at: null
      * }
      */
     private function submittedState(): array
@@ -282,6 +285,7 @@ final class DocumentRequestTransitions
             'reviewed_by' => null,
             'reviewed_at' => null,
             'rejection_reason' => null,
+            'carried_forward_at' => null,
         ];
     }
 }

@@ -37,6 +37,7 @@
     "Build the client form by dragging fields here.": "Bouw het klantformulier door hier velden naartoe te slepen.",
     "Category": "Categorie",
     "Category (A–Z)": "Categorie (A–Z)",
+    "Change answer": "Antwoord wijzigen",
     "Change the questions in a firm template.": "De vragen in een kantoorsjabloon wijzigen.",
     "Client answer": "Antwoord van de klant",
     "Client enters a number here…": "De klant vult hier een getal in…",
@@ -210,6 +211,7 @@
     "Show this field when…": "Toon dit veld wanneer…",
     "Single choice": "Enkele keuze",
     "Stable option ids keep conditions working if you rename a label.": "Stabiele optie-id’s zorgen dat voorwaarden blijven werken als je een label hernoemt.",
+    "Still correct": "Nog steeds juist",
     "Still scanning your document. This usually takes a few minutes — results will appear when ready.": "Je document wordt nog gescand. Dit duurt meestal een paar minuten — resultaten verschijnen zodra ze klaar zijn.",
     "Submit answer": "Antwoord indienen",
     "Submitted and waiting for review.": "Ingediend en wacht op beoordeling.",
@@ -254,6 +256,7 @@
     "You can view the last saved form. Editing unlocks when they leave or the lock expires.": "Je kunt het laatst opgeslagen formulier bekijken. Bewerken komt vrij wanneer zij vertrekken of de vergrendeling verloopt.",
     "You have unsaved form changes. Leave without saving?": "Je hebt niet-opgeslagen formulierwijzigingen. Vertrekken zonder op te slaan?",
     "Your answer": "Jouw antwoord",
+    "Your answer last year": "Jouw antwoord van vorig jaar",
     "Your form": "Jouw formulier",
     "e.g. Onboarding a new freelance client for their first tax return": "bijv. Een nieuwe zzp-klant onboarden voor hun eerste belastingaangifte"
 }

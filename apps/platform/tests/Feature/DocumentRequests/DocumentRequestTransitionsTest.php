@@ -215,6 +215,25 @@ describe('submitAnswer', function (): void {
             ->status->toBe(DocumentRequestStatus::Submitted);
     });
 
+    it('clears the carried-forward stamp so last period is no longer a suggestion', function (): void {
+        $documentRequest = transitionItem([
+            'type' => QuestionnaireItemType::Text,
+            'answer_text' => 'Last year',
+            'carried_forward_at' => now()->subYear(),
+        ]);
+
+        $this->transitions->submitAnswer(
+            $documentRequest,
+            SubmissionContext::Portal,
+            answerText: 'Last year',
+        );
+
+        expect($documentRequest->fresh())
+            ->carried_forward_at->toBeNull()
+            ->status->toBe(DocumentRequestStatus::Submitted)
+            ->answer_text->toBe('Last year');
+    });
+
     it('refuses to re-answer an accepted item', function (): void {
         $documentRequest = transitionItem([
             'type' => QuestionnaireItemType::Text,

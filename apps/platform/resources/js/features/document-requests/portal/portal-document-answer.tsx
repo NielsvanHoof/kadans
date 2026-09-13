@@ -88,7 +88,8 @@ export function PortalTextDocumentAnswer({
                         >
                             {processing
                                 ? t('Saving…')
-                                : documentRequest.answer_text
+                                : documentRequest.answer_text &&
+                                    !documentRequest.is_carried_forward
                                   ? t('Update answer')
                                   : t('Submit answer')}
                         </Button>
@@ -295,7 +296,8 @@ export function PortalMultiSelectDocumentAnswer({
                         >
                             {processing
                                 ? t('Saving…')
-                                : selected.size > 0
+                                : selected.size > 0 &&
+                                    !documentRequest.is_carried_forward
                                   ? t('Update answer')
                                   : t('Submit answer')}
                         </Button>
