@@ -7,6 +7,9 @@ namespace App\Platform\Transitions\DataSubject;
 use App\Accounts\Models\User;
 use App\Platform\Enums\DataSubjectRequestStatus;
 use App\Platform\Models\DataSubjectRequest;
+use Carbon\CarbonInterface;
+use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\Date;
 
 use function mb_substr;
 use function mb_trim;
@@ -64,6 +67,58 @@ final class DataSubjectRequestTransitions
         $locked = $requestQuery->firstOrFail();
 
         return $this->canClose($locked) ? $locked : null;
+    }
+
+    /**
+     * Take an open request for a long-running fulfilment job, or report that
+     * somebody else already has it.
+     *
+     * lockIfOpen() cannot serve this case. It holds a row lock for the whole
+     * transaction, which is right for the erasure — that fits in one — but the
+     * export spends up to ten minutes zipping and streaming to S3, and pinning
+     * a Postgres connection open for that on a burstable instance is not a
+     * trade worth making.
+     *
+     * So the claim is a single conditional UPDATE instead: atomic in one
+     * statement, no lock held afterwards. The status stays `pending` throughout
+     * — an export being built is still an open request to the operator, the
+     * overdue calculation and the compliance list, and `pending -> completed`
+     * stays the only transition this class performs.
+     *
+     * $staleAfter is what makes a claim recoverable. A worker killed by SIGKILL
+     * or the OOM killer never reaches release(), so without it one dead build
+     * would wedge the request until a human cleared the column. Callers pass
+     * the owning job's full lifecycle, which is the same reasoning uniqueFor()
+     * uses — see GenerateDataSubjectExportJob.
+     */
+    public function claimForFulfilment(DataSubjectRequest $request, CarbonInterface $staleAfter): bool
+    {
+        $claimQuery = DataSubjectRequest::query()->whereKey($request->getKey());
+        $claimQuery->getQuery()
+            ->where('status', DataSubjectRequestStatus::Pending->value)
+            ->where(function (QueryBuilder $query) use ($staleAfter): void {
+                $query
+                    ->whereNull('fulfilment_started_at')
+                    ->orWhere('fulfilment_started_at', '<=', $staleAfter);
+            });
+
+        return $claimQuery->toBase()->update(['fulfilment_started_at' => Date::now()]) === 1;
+    }
+
+    /**
+     * Hand a claim back after a fulfilment failed cleanly.
+     *
+     * Without this a failed build would stay claimed until $staleAfter elapsed,
+     * so the operator's retry would silently no-op for the best part of an hour
+     * — the exact silent-skip failure the claim exists to prevent, just moved.
+     * Only the stale path should ever have to wait.
+     */
+    public function releaseFulfilmentClaim(DataSubjectRequest $request): void
+    {
+        $releaseQuery = DataSubjectRequest::query()->whereKey($request->getKey());
+        $releaseQuery->getQuery()->where('status', DataSubjectRequestStatus::Pending->value);
+
+        $releaseQuery->toBase()->update(['fulfilment_started_at' => null]);
     }
 
     /**

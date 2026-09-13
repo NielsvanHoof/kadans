@@ -9,6 +9,7 @@ use App\Dossiers\Actions\Exports\MarkDossierExportFailedAction;
 use App\Dossiers\Models\DossierExport;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
+use App\Shared\Contracts\Queue\TimeBoundedJob;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -21,7 +22,7 @@ use Throwable;
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
 #[Timeout(self::TIMEOUT_SECONDS)]
-final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
+final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue, TimeBoundedJob
 {
     use InteractsWithQueue;
     use Queueable;
@@ -38,6 +39,16 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
         $this->onQueue('dossier-export');
     }
 
+    public static function timeoutSeconds(): int
+    {
+        return self::TIMEOUT_SECONDS;
+    }
+
+    public static function lifecycleSeconds(): int
+    {
+        return (self::timeoutSeconds() * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+    }
+
     public function uniqueId(): string
     {
         return (string) $this->pipelineId;
@@ -49,7 +60,7 @@ final class GenerateDossierExportJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueFor(): int
     {
-        return (self::TIMEOUT_SECONDS * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+        return self::lifecycleSeconds();
     }
 
     /**

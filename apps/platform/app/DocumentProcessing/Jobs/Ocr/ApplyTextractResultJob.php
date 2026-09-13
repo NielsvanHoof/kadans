@@ -6,6 +6,7 @@ namespace App\DocumentProcessing\Jobs\Ocr;
 
 use App\DocumentProcessing\Actions\Ocr\CompleteTextractExtractionAction;
 use App\DocumentProcessing\Actions\Ocr\FailTextractExtractionAction;
+use App\Shared\Contracts\Queue\TimeBoundedJob;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -42,7 +43,7 @@ use function array_sum;
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
 #[Timeout(self::TIMEOUT_SECONDS)]
-final class ApplyTextractResultJob implements ShouldBeUnique, ShouldQueue
+final class ApplyTextractResultJob implements ShouldBeUnique, ShouldQueue, TimeBoundedJob
 {
     use InteractsWithQueue;
     use Queueable;
@@ -70,6 +71,16 @@ final class ApplyTextractResultJob implements ShouldBeUnique, ShouldQueue
         $this->onQueue('ocr');
     }
 
+    public static function timeoutSeconds(): int
+    {
+        return self::TIMEOUT_SECONDS;
+    }
+
+    public static function lifecycleSeconds(): int
+    {
+        return (self::timeoutSeconds() * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+    }
+
     /**
      * SNS delivers at least once, and a redelivery after a consumer crash is
      * normal, so two messages for one Textract job must not both do the work.
@@ -85,7 +96,7 @@ final class ApplyTextractResultJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueFor(): int
     {
-        return (self::TIMEOUT_SECONDS * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+        return self::lifecycleSeconds();
     }
 
     /**

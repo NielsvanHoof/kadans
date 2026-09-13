@@ -16,6 +16,7 @@ use App\Pipelines\Enums\PipelineStepKey;
 use App\Pipelines\Models\Pipeline;
 use App\Pipelines\Support\PipelineState;
 use App\Pipelines\Support\PipelineStepSequence;
+use App\Shared\Contracts\Queue\TimeBoundedJob;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,7 +35,7 @@ use function hash;
  */
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
-final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
+final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue, TimeBoundedJob
 {
     use InteractsWithQueue;
     use Queueable;
@@ -55,8 +56,24 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
         public ?string $expectedPath = null,
         public ?int $pipelineId = null,
     ) {
-        $this->timeout = Config::integer('transcription.timeouts.job', 120);
+        $this->timeout = self::timeoutSeconds();
         $this->onQueue('transcription');
+    }
+
+    /**
+     * Read from config rather than declared as a #[Timeout] constant: an Octane
+     * worker boots once and serves many jobs, so a value resolved at class load
+     * would outlive a config change. The constructor copies it onto $timeout,
+     * which is what the queue payload actually carries.
+     */
+    public static function timeoutSeconds(): int
+    {
+        return Config::integer('transcription.timeouts.job', 120);
+    }
+
+    public static function lifecycleSeconds(): int
+    {
+        return (self::timeoutSeconds() * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
     }
 
     public function uniqueId(): string
@@ -71,8 +88,7 @@ final class ProcessAudioRecordingJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueFor(): int
     {
-        return $this->timeout * self::MAX_TRIES +
-            array_sum(self::BACKOFF_SECONDS);
+        return self::lifecycleSeconds();
     }
 
     /**

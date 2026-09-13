@@ -6,6 +6,7 @@ namespace App\Platform\Jobs\DataSubject;
 
 use App\Platform\Actions\DataSubject\GenerateDataSubjectExportAction;
 use App\Platform\Models\DataSubjectRequest;
+use App\Shared\Contracts\Queue\TimeBoundedJob;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -13,6 +14,7 @@ use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -29,7 +31,7 @@ use Illuminate\Support\Facades\Log;
 #[Backoff(self::BACKOFF_SECONDS)]
 #[Tries(self::MAX_TRIES)]
 #[Timeout(self::TIMEOUT_SECONDS)]
-final class GenerateDataSubjectExportJob implements ShouldBeUnique, ShouldQueue
+final class GenerateDataSubjectExportJob implements ShouldBeUnique, ShouldQueue, TimeBoundedJob
 {
     use InteractsWithQueue;
     use Queueable;
@@ -46,6 +48,24 @@ final class GenerateDataSubjectExportJob implements ShouldBeUnique, ShouldQueue
         $this->onQueue('dossier-export');
     }
 
+    /**
+     * Worst-case wall time from first dispatch to permanent failure.
+     *
+     * Two things are sized from this and must not drift apart: the unique lock
+     * above, and the fulfilment claim the action takes on the request row. Both
+     * are asking the same question — how long before a worker holding this can
+     * be assumed dead?
+     */
+    public static function timeoutSeconds(): int
+    {
+        return self::TIMEOUT_SECONDS;
+    }
+
+    public static function lifecycleSeconds(): int
+    {
+        return (self::timeoutSeconds() * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+    }
+
     public function uniqueId(): string
     {
         return (string) $this->dataSubjectRequestId;
@@ -57,7 +77,7 @@ final class GenerateDataSubjectExportJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueFor(): int
     {
-        return (self::TIMEOUT_SECONDS * self::MAX_TRIES) + array_sum(self::BACKOFF_SECONDS);
+        return self::lifecycleSeconds();
     }
 
     /**
@@ -86,6 +106,9 @@ final class GenerateDataSubjectExportJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $generateDataSubjectExport->handle($request);
+        $generateDataSubjectExport->handle(
+            $request,
+            Date::now()->subSeconds(self::lifecycleSeconds()),
+        );
     }
 }

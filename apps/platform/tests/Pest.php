@@ -16,6 +16,7 @@ use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\Uploads\StagedUpload;
 use App\Dossiers\Support\Uploads\UploadTicket;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
+use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Reporting\Queries\ActivityLog\ActivityLogRowMapper;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Queries\PaginatedIndexQuery;
@@ -24,10 +25,12 @@ use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantMembership;
+use Carbon\CarbonInterface;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Support\Header;
@@ -704,4 +707,16 @@ function stagedUploadPath(int $tenantId, string $filename, int $sizeBytes, strin
     Storage::disk($disk)->put($path, str_repeat('x', max($sizeBytes, 0)));
 
     return $path;
+}
+
+/**
+ * The stale-claim cutoff GenerateDataSubjectExportJob passes in production.
+ *
+ * A fulfilment claim older than the job's own worst-case lifecycle belonged to
+ * a worker that is certainly gone. Tests calling the action directly must pass
+ * the same value, or they are not exercising the claim the job actually takes.
+ */
+function dataSubjectExportStaleCutoff(): CarbonInterface
+{
+    return Date::now()->subSeconds(GenerateDataSubjectExportJob::lifecycleSeconds());
 }

@@ -79,6 +79,21 @@ return [
             // worker is re-reserved. Lowering it means giving the long jobs
             // their own connection, which on Laravel Cloud means a second
             // worker process; not worth it until recovery latency actually bites.
+            //
+            // Deliberately ABOVE every job's uniqueFor() too, which is the less
+            // obvious half. The three pipeline jobs have a 460s lifecycle
+            // against this 660s, so after an unclean worker death the unique
+            // lock expires ~200s before Redis re-reserves the original job, and
+            // a manual retry accepted in that gap can overlap the resurrected
+            // one. That is safe here and only here: both attempts go through
+            // claim(), which treats "status = Processing with a provider job id
+            // set" as work already in flight and returns null.
+            //
+            // So do not "fix" this ordering by raising uniqueFor() to cover
+            // retry_after. That would wedge every subject for 20 minutes after
+            // any OOM — the failure TASK-6.1 bounded uniqueFor() to prevent.
+            // The database claim is the mutual exclusion; the unique lock only
+            // suppresses duplicate dispatches.
             'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 660),
             'block_for' => null,
             'after_commit' => false,

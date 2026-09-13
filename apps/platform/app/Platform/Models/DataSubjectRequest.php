@@ -32,6 +32,7 @@ use Override;
  * @property DataSubjectRequestStatus $status
  * @property CarbonImmutable $requested_at
  * @property CarbonImmutable $due_at
+ * @property CarbonImmutable|null $fulfilment_started_at
  * @property int|null $requested_by
  * @property CarbonImmutable|null $completed_at
  * @property int|null $completed_by
@@ -60,6 +61,7 @@ use Override;
  * @method static Builder<static>|DataSubjectRequest whereDisk($value)
  * @method static Builder<static>|DataSubjectRequest whereDueAt($value)
  * @method static Builder<static>|DataSubjectRequest whereExpiresAt($value)
+ * @method static Builder<static>|DataSubjectRequest whereFulfilmentStartedAt($value)
  * @method static Builder<static>|DataSubjectRequest whereId($value)
  * @method static Builder<static>|DataSubjectRequest wherePath($value)
  * @method static Builder<static>|DataSubjectRequest whereRefusalReason($value)
@@ -90,6 +92,7 @@ final class DataSubjectRequest extends TenantOwnedModel
         'status',
         'requested_at',
         'due_at',
+        'fulfilment_started_at',
         'requested_by',
         'completed_at',
         'completed_by',
@@ -169,6 +172,7 @@ final class DataSubjectRequest extends TenantOwnedModel
             'status' => DataSubjectRequestStatus::class,
             'requested_at' => 'datetime',
             'due_at' => 'datetime',
+            'fulfilment_started_at' => 'datetime',
             'completed_at' => 'datetime',
             'refused_at' => 'datetime',
             'expires_at' => 'datetime',
