@@ -92,6 +92,10 @@ final class TenantRole extends SpatieRole
      * Spatie roles are team-scoped in queries we write, but route model binding
      * uses an unscoped find-by-id. Without this, another firm's role id would
      * resolve and rely on a controller abort.
+     *
+     * Query via self::query(), not $this->newQuery(). ide-helper marks
+     * newQuery() as @method static, and phpstan-strict-rules then flags an
+     * instance call as staticMethod.dynamicCall.
      */
     #[Override]
     public function resolveRouteBinding($value, $field = null): ?static
@@ -104,7 +108,7 @@ final class TenantRole extends SpatieRole
         }
 
         /** @var static|null $role */
-        $role = $this->newQuery()
+        $role = self::query()
             ->where($this->qualifyColumn($field), $value)
             ->where($this->qualifyColumn('tenant_id'), $tenant->getKey())
             ->first();

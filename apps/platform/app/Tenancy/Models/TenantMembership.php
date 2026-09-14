@@ -102,6 +102,10 @@ final class TenantMembership extends Model
      * This model is not TenantOwnedModel (memberships participate in tenant
      * bootstrap), so TenantScope does not apply. Without this, a numeric id
      * from another firm would resolve and rely on a controller abort.
+     *
+     * Query via self::query(), not $this->newQuery(). ide-helper marks
+     * newQuery() as @method static, and phpstan-strict-rules then flags an
+     * instance call as staticMethod.dynamicCall.
      */
     #[Override]
     public function resolveRouteBinding($value, $field = null): ?Model
@@ -113,7 +117,7 @@ final class TenantMembership extends Model
             return null;
         }
 
-        return $this->newQuery()
+        return self::query()
             ->where($this->qualifyColumn($field), $value)
             ->where($this->qualifyColumn('tenant_id'), $tenant->getKey())
             ->first();
