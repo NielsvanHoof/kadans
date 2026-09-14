@@ -16,19 +16,31 @@ use Illuminate\Database\Eloquent\Collection;
 final class FetchActiveUsersForTenantQuery
 {
     /**
+     * Same ceiling as staff dropdown options — keeps reminder/portal fan-out
+     * bounded on large firms instead of loading every active user into memory.
+     */
+    private const int ACTIVE_USERS_LIMIT = 500;
+
+    /**
      * @return Collection<int, User>
      */
     public function handle(Tenant $tenant): Collection
     {
-        return User::query()
+        $query = User::query()
             ->whereHas(
                 'tenantMemberships',
-                function (Builder $query) use ($tenant): void {
-                    $query->getQuery()
+                function (Builder $membershipQuery) use ($tenant): void {
+                    $membershipQuery->getQuery()
                         ->where('tenant_id', $tenant->getKey())
                         ->where('status', TenantMembershipStatus::Active);
                 },
-            )
-            ->get();
+            );
+
+        // orderBy/limit via getQuery() for phpstan-strict-rules on Eloquent.
+        $query->getQuery()
+            ->orderBy('id')
+            ->limit(self::ACTIVE_USERS_LIMIT);
+
+        return $query->get();
     }
 }

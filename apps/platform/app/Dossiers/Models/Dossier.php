@@ -157,12 +157,14 @@ final class Dossier extends TenantOwnedModel
      * `clients.name` is a qualified column (dot kept as-is by qualifyColumn) so
      * archive/live search can match the related client without a denormalized field.
      *
-     * @return array{id: int, title: string, reference: string, period_label: string, 'clients.name': string}
+     * Omit integer `id`: DatabaseEngine ILIKEs every key, and Postgres has no
+     * bigint ILIKE — a title search would 500. TenantScope already constrains rows.
+     *
+     * @return array{title: string, reference: string, period_label: string, 'clients.name': string}
      */
     public function toSearchableArray(): array
     {
         return [
-            'id' => $this->id,
             'title' => $this->title,
             'reference' => $this->reference ?? '',
             'period_label' => $this->period_label ?? '',

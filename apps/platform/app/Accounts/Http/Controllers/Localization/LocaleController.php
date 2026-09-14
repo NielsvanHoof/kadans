@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Accounts\Http\Controllers\Localization;
 
 use App\Accounts\Actions\Localization\ResolveApplicationTimezoneAction;
+use App\Accounts\Actions\Localization\UpdateUserLocaleAction;
 use App\Accounts\Http\Requests\Localization\LocaleUpdateRequest;
 use App\Accounts\Support\Localization\DisplayTimezones;
 use App\Shared\Http\Controllers\Controller;
@@ -37,12 +38,13 @@ final class LocaleController extends Controller
     /**
      * Update the user's preferred language.
      */
-    public function update(LocaleUpdateRequest $request): RedirectResponse
-    {
-        $locale = $request->validated('locale');
-        $user = $request->authenticatedUser();
+    public function update(
+        LocaleUpdateRequest $request,
+        UpdateUserLocaleAction $updateUserLocale,
+    ): RedirectResponse {
+        $locale = (string) $request->validated('locale');
 
-        $user->update(['locale' => $locale]);
+        $updateUserLocale->handle($request->authenticatedUser(), $locale);
 
         Toast::success(__('Language updated.'));
 

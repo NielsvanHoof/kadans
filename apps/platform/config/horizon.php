@@ -105,6 +105,7 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        'redis:broadcasts' => 60,
         'redis:ocr' => 120,
         'redis:transcription' => 120,
         'redis:dossier-export' => 180,

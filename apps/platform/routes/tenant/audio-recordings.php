@@ -41,6 +41,9 @@ Route::post('audio-recordings/{audioRecording}/calendar-events', [AudioRecording
         passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('audio-recordings.calendar-events.attach');
+// Do not scopeBindings() here: the parent path is {tenant}/audio-recordings/{…},
+// and Tenant has no audioRecordings() relation (only dossiers()). Ownership of
+// calendarLink is enforced in AudioRecordingCalendarController::detach.
 Route::delete(
     'audio-recordings/{audioRecording}/calendar-links/{calendarLink}',
     [AudioRecordingCalendarController::class, 'detach'],

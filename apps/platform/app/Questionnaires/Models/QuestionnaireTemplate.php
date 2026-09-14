@@ -100,12 +100,14 @@ final class QuestionnaireTemplate extends Model
     /**
      * Columns Scout's database engine searches with LIKE.
      *
-     * @return array{id: int, name: string, description: string}
+     * Omit integer `id`: DatabaseEngine ILIKEs every key, and Postgres has no
+     * bigint ILIKE — a name search would 500.
+     *
+     * @return array{name: string, description: string}
      */
     public function toSearchableArray(): array
     {
         return [
-            'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description ?? '',
         ];

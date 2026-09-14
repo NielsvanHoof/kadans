@@ -72,12 +72,14 @@ final class Client extends TenantOwnedModel
     /**
      * Columns Scout's database engine searches with LIKE.
      *
-     * @return array{id: int, name: string, email: string}
+     * Omit integer `id`: DatabaseEngine ILIKEs every key, and Postgres has no
+     * bigint ILIKE — a name search would 500. TenantScope already constrains rows.
+     *
+     * @return array{name: string, email: string}
      */
     public function toSearchableArray(): array
     {
         return [
-            'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
         ];
