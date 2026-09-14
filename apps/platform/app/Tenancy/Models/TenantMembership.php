@@ -97,6 +97,33 @@ final class TenantMembership extends Model
     }
 
     /**
+     * Bind only memberships for the current workspace.
+     *
+     * This model is not TenantOwnedModel (memberships participate in tenant
+     * bootstrap), so TenantScope does not apply. Without this, a numeric id
+     * from another firm would resolve and rely on a controller abort.
+     *
+     * Query via self::query(), not $this->newQuery(). ide-helper marks
+     * newQuery() as @method static, and phpstan-strict-rules then flags an
+     * instance call as staticMethod.dynamicCall.
+     */
+    #[Override]
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        $field ??= $this->getRouteKeyName();
+        $tenant = Tenant::current();
+
+        if (! $tenant instanceof Tenant) {
+            return null;
+        }
+
+        return self::query()
+            ->where($this->qualifyColumn($field), $value)
+            ->where($this->qualifyColumn('tenant_id'), $tenant->getKey())
+            ->first();
+    }
+
+    /**
      * Whether last_accessed_at was written recently enough to leave alone.
      *
      * The value exists so a workspace can show roughly when a member was last

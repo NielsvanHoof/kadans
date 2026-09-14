@@ -112,8 +112,9 @@ test('merged key count matches the expected dictionary size', function (string $
     $counts = array_map(static fn (array $file): int => count($file['decoded']), $files);
 
     // Tripwire against accidental key loss or duplication across domains.
-    // 1,480 after firm settings + 7 pipeline recovery keys + 3 rollover confirmation keys.
-    expect(array_sum($counts))->toBe(1490);
+    // 1,480 after firm settings + 7 pipeline recovery keys + 3 rollover
+    // confirmation keys + 7 permission-picker keys (search, counts, collapse).
+    expect(array_sum($counts))->toBe(1497);
 })->with(['en', 'nl']);
 
 test('app lang directories on disk match the registered domain list exactly', function (): void {

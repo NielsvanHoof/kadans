@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import type { WorkspacePermissionGroup } from '@/features/roles/types';
@@ -64,6 +64,10 @@ function setup(
     );
 
     return { onSelectedPermissionsChange, onSelectAll, onClearAll };
+}
+
+function search() {
+    return screen.getByRole('searchbox', { name: 'Search permissions' });
 }
 
 describe('PermissionChecklist', () => {
@@ -162,7 +166,101 @@ describe('PermissionChecklist', () => {
         expect(onSelectAll).toHaveBeenCalledTimes(1);
         expect(onClearAll).toHaveBeenCalledTimes(1);
     });
-});
 
-// `within` is used above; import it alongside the other testing-library helpers.
-import { within } from '@testing-library/react';
+    it('counts the whole permission set, not just what is on screen', async () => {
+        const user = userEvent.setup();
+        setup(['dossiers.view']);
+
+        expect(screen.getByText('1 of 3 selected')).toBeInTheDocument();
+
+        // Collapsing hides the checkbox but must not change the tally.
+        await user.click(
+            screen.getByRole('button', {
+                name: 'Dossiers permissions, 1 of 2 selected',
+            }),
+        );
+
+        expect(
+            screen.queryByRole('checkbox', { name: /View dossiers/ }),
+        ).not.toBeInTheDocument();
+        expect(screen.getByText('1 of 3 selected')).toBeInTheDocument();
+    });
+
+    it('starts with only the groups that already hold a selection expanded', () => {
+        setup(['clients.view']);
+
+        expect(
+            screen.getByRole('checkbox', { name: /View clients/ }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole('checkbox', { name: /View dossiers/ }),
+        ).not.toBeInTheDocument();
+    });
+
+    it('opens and closes every group with Expand all / Collapse all', async () => {
+        const user = userEvent.setup();
+        setup([]);
+
+        await user.click(screen.getByRole('button', { name: 'Expand all' }));
+
+        expect(
+            screen.getByRole('checkbox', { name: /View dossiers/ }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('checkbox', { name: /View clients/ }),
+        ).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Collapse all' }));
+
+        expect(
+            screen.queryByRole('checkbox', { name: /View dossiers/ }),
+        ).not.toBeInTheDocument();
+    });
+
+    it('filters on label and description, and opens the groups that match', async () => {
+        const user = userEvent.setup();
+        setup([]);
+
+        await user.type(search(), 'new dossier records');
+
+        // Matched by description alone, and expanded without being asked to.
+        expect(
+            screen.getByRole('checkbox', { name: /Create dossiers/ }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole('checkbox', { name: /View dossiers/ }),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('group', { name: 'Clients' }),
+        ).not.toBeInTheDocument();
+    });
+
+    it('still applies a group bulk toggle to the whole group while a search narrows it', async () => {
+        const user = userEvent.setup();
+        const { onSelectedPermissionsChange } = setup([]);
+
+        await user.type(search(), 'View dossiers');
+
+        const dossiersGroup = screen.getByRole('group', { name: 'Dossiers' });
+        await user.click(
+            within(dossiersGroup).getByRole('button', { name: 'All' }),
+        );
+
+        expect(onSelectedPermissionsChange).toHaveBeenCalledWith([
+            'dossiers.view',
+            'dossiers.create',
+        ]);
+    });
+
+    it('says so when nothing matches the search', async () => {
+        const user = userEvent.setup();
+        setup([]);
+
+        await user.type(search(), 'payroll');
+
+        expect(
+            screen.getByText('No permissions match your search.'),
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'Dossiers' })).toBeNull();
+    });
+});

@@ -158,4 +158,38 @@ describe('RoleFormDialog', () => {
             screen.getByRole('button', { name: 'Create role' }),
         ).toBeDisabled();
     });
+    it('keeps a selection in the submitted payload after a search hides it', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <RoleFormDialog
+                state={{ mode: 'create' }}
+                permissionGroups={permissionGroups}
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Expand all' }));
+        await user.click(
+            screen.getByRole('checkbox', { name: /View dossiers/ }),
+        );
+        await user.type(
+            screen.getByRole('searchbox', { name: 'Search permissions' }),
+            'payroll',
+        );
+
+        // The checkbox is gone, but the permission must still be posted.
+        expect(
+            screen.queryByRole('checkbox', { name: /View dossiers/ }),
+        ).not.toBeInTheDocument();
+        expect(
+            // RAC portals the modal, so the form is not inside `container`.
+            document.body.querySelector(
+                'input[type="hidden"][name="permissions[]"][value="dossiers.view"]',
+            ),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: 'Create role' }),
+        ).toBeEnabled();
+    });
 });

@@ -120,12 +120,14 @@ final class DocumentRequest extends TenantOwnedModel
     /**
      * Columns Scout's database engine searches with LIKE.
      *
-     * @return array{id: int, title: string, instructions: string}
+     * Omit integer `id`: DatabaseEngine ILIKEs every key, and Postgres has no
+     * bigint ILIKE — a title search would 500. TenantScope already constrains rows.
+     *
+     * @return array{title: string, instructions: string}
      */
     public function toSearchableArray(): array
     {
         return [
-            'id' => $this->id,
             'title' => $this->title,
             'instructions' => $this->instructions ?? '',
         ];

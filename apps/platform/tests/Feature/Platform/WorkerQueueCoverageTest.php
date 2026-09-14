@@ -18,7 +18,12 @@ function horizonSupervisors(): array
 }
 
 test('worker queues cover every dedicated onQueue literal', function (): void {
-    $dedicatedQueues = collect(glob(app_path('*/Jobs/*.php')) ?: [])
+    // Nested job folders (Ocr/, Exports/, DataSubject/) must be scanned too —
+    // WorkerJobCoverageTest already globs */Jobs/*/*.php; keep this in sync.
+    $dedicatedQueues = collect([
+        ...(glob(app_path('*/Jobs/*.php')) ?: []),
+        ...(glob(app_path('*/Jobs/*/*.php')) ?: []),
+    ])
         ->flatMap(function (string $job): array {
             preg_match_all("/->onQueue\('([^']+)'\)/", (string) file_get_contents($job), $matches);
 
@@ -39,7 +44,11 @@ test('worker queues cover every broadcastQueue literal', function (): void {
     // than onQueue(), so the job scan above cannot see them. A broadcast queue
     // missing from NAMES is worse than a job one: nothing fails, the events
     // just pile up unconsumed and the live UI quietly stops updating.
-    $broadcastQueues = collect(glob(app_path('*/Events/*.php')) ?: [])
+    // Nested Events folders are included for the same reason as nested Jobs.
+    $broadcastQueues = collect([
+        ...(glob(app_path('*/Events/*.php')) ?: []),
+        ...(glob(app_path('*/Events/*/*.php')) ?: []),
+    ])
         ->flatMap(function (string $event): array {
             preg_match_all('/\$broadcastQueue = \'([^\']+)\'/', (string) file_get_contents($event), $matches);
 
