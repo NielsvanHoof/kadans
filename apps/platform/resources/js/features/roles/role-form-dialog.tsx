@@ -60,7 +60,11 @@ export default function RoleFormDialog({
               : 'closed';
 
     return (
-        <Dialog isOpen={state !== null} onOpenChange={onOpenChange}>
+        <Dialog
+            isOpen={state !== null}
+            onOpenChange={onOpenChange}
+            className="sm:max-w-4xl"
+        >
             <DialogHeader>
                 <DialogTitle>{copy.title}</DialogTitle>
                 <DialogDescription>{copy.description}</DialogDescription>
@@ -134,15 +138,32 @@ function RoleFormFields({
                         />
                         <InputError message={errors.name} />
                     </Field>
-                    <PermissionChecklist
-                        permissionGroups={permissionGroups}
-                        selectedPermissions={selectedPermissions}
-                        onSelectedPermissionsChange={setSelectedPermissions}
-                        onSelectAll={() =>
-                            setSelectedPermissions(allPermissionValues)
-                        }
-                        onClearAll={() => setSelectedPermissions([])}
-                    />
+
+                    {/*
+                      The payload is written here rather than by the checkboxes:
+                      searching or collapsing unmounts a checked permission, and
+                      an unmounted input posts nothing.
+                    */}
+                    {selectedPermissions.map((permission) => (
+                        <input
+                            key={permission}
+                            type="hidden"
+                            name="permissions[]"
+                            value={permission}
+                        />
+                    ))}
+
+                    <div className="max-h-[55vh] overflow-y-auto overscroll-contain pr-1">
+                        <PermissionChecklist
+                            permissionGroups={permissionGroups}
+                            selectedPermissions={selectedPermissions}
+                            onSelectedPermissionsChange={setSelectedPermissions}
+                            onSelectAll={() =>
+                                setSelectedPermissions(allPermissionValues)
+                            }
+                            onClearAll={() => setSelectedPermissions([])}
+                        />
+                    </div>
                     <InputError message={errors.permissions} />
                     {selectedPermissions.length === 0 ? (
                         <p className="text-muted-foreground text-xs">
