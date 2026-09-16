@@ -14,7 +14,6 @@ use App\Platform\Actions\DataSubject\LogDataSubjectRequestAction;
 use App\Platform\Enums\DataSubjectRequestType;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
-use ZipArchive;
 
 /*
  * What ends a standing link, and what must never leave one behind.
