@@ -5,6 +5,7 @@ import Heading from '@/components/primitives/heading';
 import { LinkButton } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import ArchiveClientButton from '@/features/clients/manage/archive-client-button';
+import ClientPortalLinkCard from '@/features/clients/portal/client-portal-link-card';
 import type { ClientDetails } from '@/features/clients/types';
 import DossiersListCard from '@/features/dossiers/list/dossiers-list-card';
 import type { DossierSummary } from '@/features/dossiers/types';
@@ -24,9 +25,16 @@ import type { Paginated } from '@/types/pagination';
 export default function ShowClient({
     client,
     dossiers,
+    portal_links: portalLinks,
+    can_grant_portal_access: canGrantPortalAccess,
+    access_grant_portal_url: accessGrantPortalUrl = null,
 }: {
     client: ClientDetails;
     dossiers: Paginated<DossierSummary>;
+    portal_links: App.Clients.Data.ClientPortalLinkData[];
+    can_grant_portal_access: boolean;
+    /** Flashed once by the controller; the plaintext is never stored. */
+    access_grant_portal_url?: string | null;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -146,6 +154,14 @@ export default function ShowClient({
                         </CardContent>
                     </Card>
                 </div>
+
+                <ClientPortalLinkCard
+                    clientId={client.id}
+                    clientEmail={client.email}
+                    links={portalLinks}
+                    canCreate={canGrantPortalAccess}
+                    portalUrl={accessGrantPortalUrl}
+                />
 
                 <DossiersListCard dossiers={dossiers} />
                 <IndexPagination paginator={dossiers} />

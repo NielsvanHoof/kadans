@@ -26,6 +26,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Client-level link lifetime
+    |--------------------------------------------------------------------------
+    |
+    | A dossier link is issued per dossier and re-minted by every reminder, so
+    | seven days is plenty. A client-level link is the opposite: one standing
+    | door, issued once, that picks up each new dossier as the firm shares it.
+    | It has to outlive a single exchange of emails.
+    |
+    | It also opens more. A leaked dossier link exposes one case; a leaked
+    | client link exposes the client's whole book, which is why this has its own
+    | value and its own ceiling instead of inheriting the dossier one. See
+    | backlog/decisions/decision-12.
+    |
+    */
+    'client_grant_ttl_days' => (int) env('PORTAL_CLIENT_GRANT_TTL_DAYS', 30),
+    'client_grant_max_ttl_days' => (int) env('PORTAL_CLIENT_GRANT_MAX_TTL_DAYS', 60),
+
+    /*
+    |--------------------------------------------------------------------------
     | Redemption from a new device
     |--------------------------------------------------------------------------
     |

@@ -50,6 +50,7 @@ final readonly class LogClientPortalInviteFailed
                     AuditEvent::ClientPortalInviteFailed,
                     $grant,
                     [
+                        'client_id' => $grant->client_id,
                         'dossier_id' => $grant->dossier_id,
                         'channel' => $event->channel,
                     ],

@@ -7,9 +7,9 @@ namespace App\ClientPortal\Http\Controllers\Submissions;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Http\Requests\Submissions\StorePortalUploadTicketRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Queries\Access\ResolveGrantedDossierQuery;
 use App\Dossiers\Actions\Uploads\IssueUploadTicketAction;
 use App\Dossiers\Enums\UploadPurpose;
-use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\Uploads\DocumentUploadLimits;
 use App\Shared\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -19,20 +19,22 @@ use Illuminate\Validation\ValidationException;
  * Mint a presigned PUT for a client-portal upload.
  *
  * The grant, not a user session, is the authorization here, and the tenant
- * sealed into the ticket comes from the granted dossier rather than anything
- * the client sent.
+ * sealed into the ticket comes from the resolved dossier rather than anything
+ * the client sent. The client names the dossier, but only the chokepoint
+ * decides whether this grant opens it.
  */
 final class ClientPortalUploadTicketController extends Controller
 {
     public function store(
         StorePortalUploadTicketRequest $request,
         IssueUploadTicketAction $issueUploadTicket,
+        ResolveGrantedDossierQuery $resolveGrantedDossier,
     ): JsonResponse {
         $grant = $request->attributes->get(ResolveClientPortalGrant::REQUEST_ATTRIBUTE);
 
         abort_unless($grant instanceof ClientAccessGrant, 403);
 
-        $dossier = Dossier::query()->findOrFail($grant->dossier_id);
+        $dossier = $resolveGrantedDossier->handle($grant, $request->integer('dossier_id'));
 
         $declaredBytes = $request->integer('size_bytes');
 

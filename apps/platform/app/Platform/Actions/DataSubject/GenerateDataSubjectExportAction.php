@@ -363,8 +363,14 @@ final readonly class GenerateDataSubjectExportAction
             ->toBase()
             ->pluck('id');
 
+        // Client-scoped grants carry a null dossier_id, so matching on dossiers
+        // alone would leave a whole class of portal access out of the subject's
+        // own record of who could see their documents.
         $grantQuery = ClientAccessGrant::query();
-        $grantQuery->getQuery()->whereIn('dossier_id', $dossierIds);
+        $grantQuery->getQuery()->where(function (QueryBuilder $inner) use ($client, $dossierIds): void {
+            $inner->where('client_id', $client->getKey())
+                ->orWhereIn('dossier_id', $dossierIds);
+        });
 
         $grants = [];
 
@@ -373,6 +379,7 @@ final readonly class GenerateDataSubjectExportAction
         $grantQuery->chunkById(100, function ($chunk) use (&$grants): void {
             foreach ($chunk as $grant) {
                 $grants[] = [
+                    'scope' => $grant->scope->value,
                     'dossier_id' => $grant->dossier_id,
                     'created_at' => $grant->created_at?->toIso8601String(),
                     'expires_at' => $grant->expires_at->toIso8601String(),

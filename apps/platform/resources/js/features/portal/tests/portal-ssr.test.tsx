@@ -2,7 +2,10 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
-import type { PortalDossier } from '@/features/portal/types';
+import type {
+    PortalDossier,
+    PortalDossierSummary,
+} from '@/features/portal/types';
 import { mockUseFormatters, mockUseTranslation } from '@/test/mocks';
 
 /**
@@ -34,6 +37,10 @@ const { default: PortalProgressOverview } =
     await import('@/features/portal/portal-progress-overview');
 const { default: PortalSessionNotice } =
     await import('@/features/portal/portal-session-notice');
+const { default: PortalDossierList } =
+    await import('@/features/portal/portal-dossier-list');
+const { default: PortalDossierSwitcher } =
+    await import('@/features/portal/portal-dossier-switcher');
 
 const documentRequests = [
     {
@@ -84,6 +91,27 @@ const dossier = {
     },
 } as unknown as PortalDossier;
 
+const dossierSummaries = [
+    {
+        id: 7,
+        title: '2025 VAT return',
+        reference: 'VAT-2025',
+        status: 'awaiting_client',
+        due_date: null,
+        remaining: 2,
+        total: 5,
+    },
+    {
+        id: 8,
+        title: '2025 Annual accounts',
+        reference: null,
+        status: 'in_review',
+        due_date: null,
+        remaining: 0,
+        total: 3,
+    },
+] as unknown as PortalDossierSummary[];
+
 describe('portal server rendering', () => {
     it('has no window global at all', () => {
         expect('window' in globalThis).toBe(false);
@@ -106,6 +134,37 @@ describe('portal server rendering', () => {
         expect(html).toContain('By email');
         // The Continue affordance is an in-page anchor again, not a wizard jump.
         expect(html).toContain('#request-1');
+    });
+
+    /*
+     * The landing list and the switcher both build hrefs during render. Wayfinder
+     * route helpers are pure, but reaching for `location` to resolve one would be
+     * the obvious wrong turn and would only show up here.
+     */
+    it('renders the dossier list without touching a browser global', () => {
+        const html = renderToString(
+            <PortalDossierList
+                dossiers={dossierSummaries}
+                ariaLabel="Waiting for you"
+            />,
+        );
+
+        expect(html).toContain('2025 VAT return');
+        expect(html).toContain('2025 Annual accounts');
+    });
+
+    it('renders the switcher, and nothing when a link opens one dossier', () => {
+        expect(
+            renderToString(
+                <PortalDossierSwitcher otherDossiers={dossierSummaries} />,
+            ),
+        ).toContain('2025 VAT return');
+
+        // A dossier-scoped link gets an empty list, and must render no chrome
+        // at all — that is what keeps its page identical to before.
+        expect(
+            renderToString(<PortalDossierSwitcher otherDossiers={[]} />),
+        ).toBe('');
     });
 
     /*

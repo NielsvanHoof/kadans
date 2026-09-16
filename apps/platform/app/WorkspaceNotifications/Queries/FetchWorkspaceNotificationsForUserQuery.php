@@ -136,9 +136,15 @@ final class FetchWorkspaceNotificationsForUserQuery
         $clientName = (string) ($data['client_name'] ?? '');
         $dossierTitle = (string) ($data['dossier_title'] ?? '');
 
-        $message = __('The portal link for “:dossier” was opened from a new device.', [
-            'dossier' => $dossierTitle,
-        ]);
+        // A client-level link carries no dossier, so name the client instead of
+        // rendering a sentence with an empty pair of quotes in it.
+        $message = $dossierTitle === ''
+            ? __('The portal link for :client was opened from a new device.', [
+                'client' => $clientName,
+            ])
+            : __('The portal link for “:dossier” was opened from a new device.', [
+                'dossier' => $dossierTitle,
+            ]);
 
         return [
             $message,

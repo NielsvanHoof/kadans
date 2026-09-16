@@ -6,6 +6,7 @@ namespace App\ClientPortal\Http\Requests\Submissions;
 
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Queries\Access\FetchReachableDossiersQuery;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
@@ -22,6 +23,7 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
 
     public function __construct(
         private readonly DocumentRequestTransitions $documentRequestTransitions,
+        private readonly FetchReachableDossiersQuery $fetchReachableDossiers,
     ) {
         parent::__construct();
     }
@@ -37,9 +39,10 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
 
         $documentRequest = DocumentRequest::query()->find((int) $documentRequestId);
 
-        // Let the controller return its existing concealed 404 for missing or cross-dossier IDs.
+        // Let the controller return its existing concealed 404 for missing or
+        // out-of-reach IDs.
         if (! $documentRequest instanceof DocumentRequest
-            || $documentRequest->dossier_id !== $grant->dossier_id) {
+            || ! $this->fetchReachableDossiers->covers($grant, $documentRequest->dossier_id)) {
             return true;
         }
 

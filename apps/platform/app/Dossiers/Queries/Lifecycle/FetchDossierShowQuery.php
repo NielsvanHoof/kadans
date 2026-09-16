@@ -256,11 +256,21 @@ final readonly class FetchDossierShowQuery
             ->limit(self::RECENT_ACCESS_GRANT_LIMIT);
         $history = $historyQuery->get();
 
+        // Live client-level links that also open this dossier. Shown read-only
+        // alongside the dossier's own, so "revoke" on this page never reads as
+        // "access is now closed" when a standing link is still open.
+        $clientLevelQuery = $dossier->clientLevelAccessGrants()->getQuery();
+        $clientLevelQuery->getQuery()
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->latest();
+        $clientLevel = $clientLevelQuery->get();
+
         /** @var list<DossierAccessGrantData> $rows */
         $rows = [];
         $seen = [];
 
-        foreach ($valid->concat($history) as $grant) {
+        foreach ($valid->concat($clientLevel)->concat($history) as $grant) {
             if (isset($seen[$grant->id])) {
                 continue;
             }
@@ -272,6 +282,7 @@ final readonly class FetchDossierShowQuery
                 revokedAt: $grant->revoked_at?->toIso8601String(),
                 lastUsedAt: $grant->last_used_at?->toIso8601String(),
                 isValid: $grant->isValid(),
+                isClientLevel: $grant->dossier_id === null,
             );
         }
 

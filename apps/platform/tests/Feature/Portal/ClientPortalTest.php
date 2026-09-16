@@ -191,7 +191,7 @@ test('guest can upload a document through the portal', function (): void {
             'documentRequest' => $documentRequest->id,
         ]),
         ['documents' => [$ticket]],
-    )->assertRedirect(route('portal.show'));
+    )->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     actingInWorkspace($context['tenant']);
 
@@ -307,7 +307,7 @@ test('a saved choice answer reveals the matching conditional field on the portal
         'documentRequest' => $choiceRequest,
     ]), [
         'answer_option_ids' => [$yesOptionId],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     $choiceRequest->refresh();
 

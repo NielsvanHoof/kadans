@@ -192,7 +192,7 @@ test('rejected items show feedback and a client correction returns them to revie
 
     $this->post($answerUrl, [
         'answer_text' => '221B Baker Street, London',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     $correctedRequest = $documentRequest->fresh();
 

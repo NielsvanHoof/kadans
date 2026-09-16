@@ -8,15 +8,19 @@ use App\Accounts\Models\User;
 use App\Audit\Actions\LogTenantActivityAction;
 use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
+use App\ClientPortal\Actions\Access\IssueClientPortalLinkAction;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Clients\Models\Client;
+use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Enums\DossierStatus;
 use App\Dossiers\Enums\UploadPurpose;
+use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Support\Uploads\StagedUpload;
 use App\Dossiers\Support\Uploads\UploadTicket;
 use App\Platform\Http\Middleware\HandleInertiaRequests;
 use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
+use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Reporting\Queries\ActivityLog\ActivityLogRowMapper;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Queries\PaginatedIndexQuery;
@@ -634,6 +638,71 @@ function createPortalDossierWithGrant(): array
         'tenant' => $tenant,
         'client' => $client,
         'dossier' => $dossier->fresh(),
+        'plainTextToken' => $result['plain_text_token'],
+        'grant' => $result['grant'],
+    ];
+}
+
+/**
+ * A workspace with one client, several dossiers, and a client-level portal link.
+ *
+ * The shapes that matter for reachability are all here: a shared dossier the
+ * client owes answers on, a second shared dossier, and a draft the firm has not
+ * put in front of them. Tests that need a fourth shape (completed, archived,
+ * another client) add it against the returned tenant.
+ *
+ * @return array{
+ *     owner: User,
+ *     tenant: Tenant,
+ *     client: Client,
+ *     shared: Dossier,
+ *     secondShared: Dossier,
+ *     draft: Dossier,
+ *     plainTextToken: string,
+ *     grant: ClientAccessGrant
+ * }
+ */
+function createPortalClientWithGrant(): array
+{
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create([
+        'tenant_id' => $tenant->id,
+        'email' => 'jane@example.com',
+    ]);
+
+    $makeDossier = fn (string $title, DossierStatus $status): Dossier => Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => $title,
+        'status' => $status,
+    ]);
+
+    $shared = $makeDossier('2025 VAT return', DossierStatus::AwaitingClient);
+    $secondShared = $makeDossier('2025 Annual accounts', DossierStatus::AwaitingClient);
+    $draft = $makeDossier('2026 Annual accounts', DossierStatus::Draft);
+
+    // One outstanding question each, so the shared dossiers are genuinely
+    // waiting on the client. Without items they would be reachable but owe
+    // nothing, which is a different state and not the one most tests mean.
+    foreach ([$shared, $secondShared] as $dossier) {
+        DocumentRequest::factory()->createOne([
+            'tenant_id' => $tenant->id,
+            'dossier_id' => $dossier->id,
+            'type' => QuestionnaireItemType::Text,
+            'status' => DocumentRequestStatus::Pending,
+        ]);
+    }
+
+    $result = resolve(IssueClientPortalLinkAction::class)->handle($client, $owner, 30, false);
+
+    return [
+        'owner' => $owner,
+        'tenant' => $tenant,
+        'client' => $client,
+        'shared' => $shared->fresh(),
+        'secondShared' => $secondShared->fresh(),
+        'draft' => $draft->fresh(),
         'plainTextToken' => $result['plain_text_token'],
         'grant' => $result['grant'],
     ];

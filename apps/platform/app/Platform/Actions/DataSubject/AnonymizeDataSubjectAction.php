@@ -15,6 +15,7 @@ use App\Platform\Actions\Retention\PurgeSubjectActivityLogAction;
 use App\Platform\Enums\DataSubjectRequestType;
 use App\Platform\Models\DataSubjectRequest;
 use App\Platform\Transitions\DataSubject\DataSubjectRequestTransitions;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -89,11 +90,11 @@ final readonly class AnonymizeDataSubjectAction
                 $dossierIds[] = (int) $id;
             }
 
-            $grantIds = $this->grantIds($dossierIds);
+            $grantIds = $this->grantIds($client, $dossierIds);
 
             // Trail first: the grant rows are the subject of their own entries.
             $activityDeleted = $this->purgeActivity($client, $dossierIds, $grantIds);
-            $grantsDeleted = $this->deletePortalGrants($dossierIds);
+            $grantsDeleted = $this->deletePortalGrants($client, $dossierIds);
             $archives = $this->clearExportArchiveRows($client);
 
             $this->anonymize($client);
@@ -196,18 +197,11 @@ final readonly class AnonymizeDataSubjectAction
      * @param  list<int>  $dossierIds
      * @return list<int>
      */
-    private function grantIds(array $dossierIds): array
+    private function grantIds(Client $client, array $dossierIds): array
     {
-        if ($dossierIds === []) {
-            return [];
-        }
-
-        $query = ClientAccessGrant::query();
-        $query->getQuery()->whereIn('dossier_id', $dossierIds);
-
         $ids = [];
 
-        foreach ($query->toBase()->pluck('id') as $id) {
+        foreach ($this->grantQuery($client, $dossierIds)->toBase()->pluck('id') as $id) {
             $ids[] = (int) $id;
         }
 
@@ -217,16 +211,38 @@ final readonly class AnonymizeDataSubjectAction
     /**
      * @param  list<int>  $dossierIds
      */
-    private function deletePortalGrants(array $dossierIds): int
+    private function deletePortalGrants(Client $client, array $dossierIds): int
     {
-        if ($dossierIds === []) {
-            return 0;
-        }
+        return $this->grantQuery($client, $dossierIds)->toBase()->delete();
+    }
 
+    /**
+     * Every live door into this person's records.
+     *
+     * Matched on the client as well as their dossiers, not instead of: a
+     * client-scoped grant has a null `dossier_id`, so a `whereIn` over dossier
+     * ids alone silently walks past it and erasure would leave a working portal
+     * link to someone who asked to be forgotten. A client with no dossiers at
+     * all can still hold such a link, which is why this does not return early
+     * on an empty dossier list.
+     *
+     * @param  list<int>  $dossierIds
+     * @return Builder<ClientAccessGrant>
+     */
+    private function grantQuery(Client $client, array $dossierIds): Builder
+    {
+        /** @var Builder<ClientAccessGrant> $query */
         $query = ClientAccessGrant::query();
-        $query->getQuery()->whereIn('dossier_id', $dossierIds);
 
-        return $query->toBase()->delete();
+        $query->getQuery()->where(function (\Illuminate\Contracts\Database\Query\Builder $inner) use ($client, $dossierIds): void {
+            $inner->where('client_id', $client->getKey());
+
+            if ($dossierIds !== []) {
+                $inner->orWhereIn('dossier_id', $dossierIds);
+            }
+        });
+
+        return $query;
     }
 
     /**

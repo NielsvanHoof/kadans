@@ -7,6 +7,7 @@ namespace App\Clients\Actions;
 use App\Accounts\Models\User;
 use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
+use App\Clients\Events\ClientArchived;
 use App\Clients\Models\Client;
 use App\Dossiers\Actions\Lifecycle\DeleteDossierAction;
 use App\Dossiers\Models\Dossier;
@@ -46,6 +47,11 @@ final readonly class DeleteClientAction
 
                 $lockedClient->disableLogging();
                 $lockedClient->deleteOrFail();
+
+                // Inside the transaction: a listener that throws must take the
+                // archive with it, or the client would be gone while a portal
+                // link into their records stayed live.
+                event(new ClientArchived($lockedClient, $deletedBy));
             }
         });
     }

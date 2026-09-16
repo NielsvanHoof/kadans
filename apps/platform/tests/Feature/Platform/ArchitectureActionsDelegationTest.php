@@ -75,7 +75,9 @@ test('record client portal access stamps grant dossier and audit', function (): 
         'last_used_at' => null,
     ]);
 
-    resolve(RecordClientPortalAccessAction::class)->handle($grant);
+    // The dossier is passed in now: one link can open several, so the action
+    // stamps the one the client actually opened rather than guessing.
+    resolve(RecordClientPortalAccessAction::class)->handle($grant, $dossier);
 
     expect($grant->fresh()->last_used_at)->not->toBeNull()
         ->and($dossier->fresh()->last_client_opened_at)->not->toBeNull()

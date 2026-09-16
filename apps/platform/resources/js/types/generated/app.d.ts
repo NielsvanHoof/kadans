@@ -33,6 +33,7 @@ declare namespace App {
                 | "document.processing_started"
                 | "document.processing_completed"
                 | "document.processing_failed"
+                | "dossier.shared_with_client"
                 | "client_portal.access_grant_created"
                 | "client_portal.access_grant_revoked"
                 | "client_portal.accessed"
@@ -100,6 +101,7 @@ declare namespace App {
                     readonly firm: App.ClientPortal.Data.Workspace.PortalFirmData;
                     readonly dossier: App.ClientPortal.Data.Workspace.PortalDossierData;
                     readonly session: App.ClientPortal.Data.Session.PortalSessionData;
+                    readonly other_dossiers: App.ClientPortal.Data.Workspace.PortalDossierSummaryData[];
                 };
                 export type PortalClientData = {
                     readonly name: string;
@@ -121,6 +123,7 @@ declare namespace App {
                     readonly uploaded_documents: App.ClientPortal.Data.Workspace.PortalUploadedDocumentData[];
                 };
                 export type PortalDossierData = {
+                    readonly id: number;
                     readonly title: string;
                     readonly reference: string | null;
                     readonly status: App.Dossiers.Enums.DossierStatus;
@@ -130,10 +133,26 @@ declare namespace App {
                     readonly progress: App.ClientPortal.Data.Workspace.PortalProgressData;
                     readonly document_requests: App.ClientPortal.Data.Workspace.PortalDocumentRequestData[];
                 };
+                export type PortalDossierSummaryData = {
+                    readonly id: number;
+                    readonly title: string;
+                    readonly reference: string | null;
+                    readonly status: App.Dossiers.Enums.DossierStatus;
+                    readonly due_date: string | null;
+                    readonly remaining: number;
+                    readonly total: number;
+                };
                 export type PortalFirmData = {
                     name: string;
                     readonly contact_name: string;
                     readonly contact_email: string;
+                };
+                export type PortalLandingPageData = {
+                    readonly firm: App.ClientPortal.Data.Workspace.PortalFirmData;
+                    readonly client: App.ClientPortal.Data.Workspace.PortalClientData;
+                    readonly session: App.ClientPortal.Data.Session.PortalSessionData;
+                    readonly waiting: App.ClientPortal.Data.Workspace.PortalDossierSummaryData[];
+                    readonly completed: App.ClientPortal.Data.Workspace.PortalDossierSummaryData[];
                 };
                 export type PortalNextIncompleteData = {
                     readonly id: number;
@@ -157,6 +176,7 @@ declare namespace App {
         namespace Enums {
             export type ClientAccessGrantPermission =
                 "client_access.grant" | "client_access.revoke";
+            export type ClientAccessGrantScope = "dossier" | "client";
             export type NewPortalDeviceAction = "notify" | "block" | "ignore";
             export type PortalDeviceOutcome =
                 | "first_use"
@@ -189,12 +209,24 @@ declare namespace App {
                 readonly email: string;
                 readonly dossiers_count: number;
             };
+            export type ClientPortalLinkData = {
+                readonly id: number;
+                readonly expires_at: string;
+                readonly revoked_at: string | null;
+                readonly last_used_at: string | null;
+                readonly is_valid: boolean;
+                readonly shared_dossier_count: number;
+            };
             export type ClientShowPageData = {
                 readonly client: App.Clients.Data.ClientSummaryData;
                 readonly dossiers: LaravelPaginated<
                     number,
                     Record<string, any>
                 >;
+                readonly portal_links: App.Clients.Data.ClientPortalLinkData[];
+                readonly can_grant_portal_access: boolean;
+                readonly can_revoke_portal_access: boolean;
+                readonly access_grant_portal_url: string | null;
             };
             export type ClientSummaryData = {
                 readonly id: number;
@@ -323,6 +355,7 @@ declare namespace App {
                     readonly revoked_at: string | null;
                     readonly last_used_at: string | null;
                     readonly is_valid: boolean;
+                    readonly is_client_level: boolean;
                 };
                 export type DossierClientSummaryData = {
                     readonly name: string;

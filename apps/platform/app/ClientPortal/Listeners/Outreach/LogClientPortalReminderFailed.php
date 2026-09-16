@@ -47,6 +47,14 @@ final readonly class LogClientPortalReminderFailed
             }
 
             $this->tenantContext->runForTenant($tenant, function () use ($grant, $event): void {
+                // Reminder bookkeeping is per dossier by definition. A
+                // client-scoped link names no dossier, and only the per-dossier
+                // reminder dispatcher mints grants that get here, so this guards
+                // against a future caller rather than a path that runs today.
+                if ($grant->dossier_id === null) {
+                    return;
+                }
+
                 $dossier = Dossier::query()->whereKey($grant->dossier_id)->firstOrFail();
 
                 $this->logAuditActivity->handle(

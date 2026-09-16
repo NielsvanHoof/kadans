@@ -60,8 +60,22 @@ pull documents without the password.
 
 ## Client portal
 
-Clients never hold an account. Access is a `ClientAccessGrant` scoped to one dossier.
+Clients never hold an account. Access is a `ClientAccessGrant`, scoped either to
+one dossier or to a client.
 
+- **Scope.** A `dossier`-scoped grant opens the one dossier it names. A `client`-scoped
+  grant opens every dossier the firm has *shared* with that client, re-evaluated on
+  each request — so a dossier shared next month is reachable by a link sent today,
+  and a dossier still in `draft` is reachable by nothing. Reachability has exactly
+  one definition, `FetchReachableDossiersQuery`, reached through
+  `ResolveGrantedDossierQuery`; `tests/Unit/PortalGrantDossierScopeTest.php` fails
+  if any portal adapter decides it for itself. Sharing is its own permissioned,
+  audited act (`ShareDossierWithClientAction`), which is what keeps reach from
+  widening implicitly.
+- **Lifetime differs by scope**, because a leaked client link exposes the client's
+  whole book rather than one case: `portal.client_grant_ttl_days` (30) with a
+  ceiling of `portal.client_grant_max_ttl_days` (60), against 7 days and 90 for a
+  dossier link. See [decision-12](../backlog/decisions/decision-12%20-%20Give-client-level-portal-links-their-own-shorter-lifetime.md).
 - Tokens are `Str::random(64)`, stored **SHA-256 hashed**, and marked `$hidden`.
   The plaintext exists only in the outgoing email.
 - Visiting the link exchanges the token for a **server-side session** bounded by
@@ -104,7 +118,9 @@ Clients never hold an account. Access is a `ClientAccessGrant` scoped to one dos
 - **Per-dossier portal upload quota:** cumulative uploaded bytes across all
   document requests on the dossier are capped at 500 MB
   (`DocumentUploadLimits::MAX_PORTAL_BYTES_PER_DOSSIER`). Exceeding it returns a
-  clear validation error on `documents` rather than accepting more files.
+  clear validation error on `documents` rather than accepting more files. The cap
+  protects a dossier's storage footprint, not a link, so it stays per dossier: a
+  client link over three dossiers carries three of them.
 
 **Known tradeoff:** a grant token can be re-exchanged until it expires (operator
 choice, up to 90 days) rather than being single-use. Clients lose emails and

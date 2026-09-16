@@ -14,6 +14,7 @@ import {
 } from '@/features/dossiers/show/dossier-panel';
 import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import type { Dossier, DossierExport } from '@/features/dossiers/types';
+import ShareDossierWithClientButton from '@/features/dossiers/show/share-dossier-with-client-button';
 import ClientAccessCard from '@/features/portal/client-access-card';
 import PortalLinkBanner from '@/features/portal/portal-link-banner';
 import { useTranslation } from '@/hooks/use-translation';
@@ -154,6 +155,18 @@ export default function DossierPanels({
                             {accessGrantPortalUrl ? (
                                 <PortalLinkBanner
                                     portalUrl={accessGrantPortalUrl}
+                                />
+                            ) : null}
+
+                            {canCreateInvite ? (
+                                <ShareDossierWithClientButton
+                                    dossierId={dossier.id}
+                                    isDraft={dossier.status === 'draft'}
+                                    hasClientLink={dossier.access_grants.some(
+                                        (grant) =>
+                                            grant.is_client_level &&
+                                            grant.is_valid,
+                                    )}
                                 />
                             ) : null}
 

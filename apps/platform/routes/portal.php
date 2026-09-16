@@ -33,12 +33,19 @@ Route::middleware([
             ->name('ended');
 
         Route::middleware(ResolveClientPortalGrant::class)->group(function (): void {
-            Route::get('/', [ClientPortalController::class, 'show'])
+            // A dispatcher, not a page. A dossier-scoped link has exactly one
+            // place to go; a client-scoped one may have several, one, or none.
+            Route::get('/', [ClientPortalController::class, 'index'])
                 ->name('show');
 
-            // Signs a PUT into the staging prefix for the granted dossier's
-            // tenant. Tighter throttle than the group default: this is the one
-            // portal route an unattended client could call in a loop.
+            Route::get('dossiers/{dossier}', [ClientPortalController::class, 'show'])
+                ->where('dossier', '[0-9]+')
+                ->name('dossiers.show');
+
+            // Signs a PUT into the staging prefix for the tenant of the dossier
+            // the client named — which the controller checks the grant opens.
+            // Tighter throttle than the group default: this is the one portal
+            // route an unattended client could call in a loop.
             Route::post('upload-tickets', [ClientPortalUploadTicketController::class, 'store'])
                 ->middleware('throttle:20,1')
                 ->name('upload-tickets.store');

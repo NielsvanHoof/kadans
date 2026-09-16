@@ -9,8 +9,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 /**
- * Tell the responsible staff member that a dossier's magic link was opened from
+ * Tell the responsible staff member that a client's magic link was opened from
  * a device that did not open it originally.
+ *
+ * The dossier fields are optional because a client-level link is not about one
+ * dossier. The signal is the same either way and must not be dropped for the
+ * scope that opens more.
  *
  * Inbox-only. This is a "worth a look" signal, not an incident: the link is
  * re-exchangeable by design and clients do switch devices. Mailing it would
@@ -24,8 +28,8 @@ final class ClientPortalNewDeviceNotification extends Notification implements Sh
 
     public function __construct(
         public readonly int $tenantId,
-        public readonly int $dossierId,
-        public readonly string $dossierTitle,
+        public readonly ?int $dossierId,
+        public readonly ?string $dossierTitle,
         public readonly string $clientName,
         public readonly string $dossierUrl,
     ) {
@@ -51,7 +55,7 @@ final class ClientPortalNewDeviceNotification extends Notification implements Sh
             'notification',
             self::DatabaseType,
             'tenant:'.$this->tenantId,
-            'dossier:'.$this->dossierId,
+            $this->dossierId === null ? 'client-link' : 'dossier:'.$this->dossierId,
         ];
     }
 
@@ -64,8 +68,8 @@ final class ClientPortalNewDeviceNotification extends Notification implements Sh
      * @return array{
      *     tenant_id: string,
      *     type: string,
-     *     dossier_id: int,
-     *     dossier_title: string,
+     *     dossier_id: int|null,
+     *     dossier_title: string|null,
      *     client_name: string,
      *     dossier_url: string
      * }

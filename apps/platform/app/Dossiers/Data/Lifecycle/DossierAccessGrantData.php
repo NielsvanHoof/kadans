@@ -19,5 +19,10 @@ final class DossierAccessGrantData extends Data
         public readonly ?string $revokedAt,
         public readonly ?string $lastUsedAt,
         public readonly bool $isValid,
+        /**
+         * A standing link for the whole client rather than this dossier. Managed
+         * on the client's page; shown here so revoking is not misread.
+         */
+        public readonly bool $isClientLevel = false,
     ) {}
 }

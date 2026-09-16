@@ -57,7 +57,7 @@ test('confirming a carried-forward answer submits it for this period', function 
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     expect($documentRequest->fresh())
         ->status->toBe(DocumentRequestStatus::Submitted)
@@ -92,7 +92,7 @@ test('changing a carried-forward answer submits the new value and clears the sta
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => '10 Downing Street',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     expect($documentRequest->fresh())
         ->status->toBe(DocumentRequestStatus::Submitted)

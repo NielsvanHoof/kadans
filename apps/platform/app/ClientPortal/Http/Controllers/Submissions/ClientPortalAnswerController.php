@@ -8,6 +8,7 @@ use App\ClientPortal\Actions\Submissions\SubmitPortalAnswerAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Http\Requests\Submissions\StorePortalQuestionnaireAnswerRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Queries\Access\ResolveGrantedDossierQuery;
 use App\Dossiers\Models\DocumentRequest;
 use App\Shared\Http\Controllers\Controller;
 use App\Shared\Http\Toast;
@@ -24,10 +25,11 @@ final class ClientPortalAnswerController extends Controller
         StorePortalQuestionnaireAnswerRequest $request,
         DocumentRequest $documentRequest,
         SubmitPortalAnswerAction $submitPortalAnswer,
+        ResolveGrantedDossierQuery $resolveGrantedDossier,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 
-        abort_unless($documentRequest->dossier_id === $grant->dossier_id, 404);
+        $dossier = $resolveGrantedDossier->handle($grant, $documentRequest->dossier_id);
 
         $validated = $request->validated();
 
@@ -45,7 +47,7 @@ final class ClientPortalAnswerController extends Controller
 
         Toast::success(__('Answer saved. Thank you.'));
 
-        return to_route('portal.show');
+        return to_route('portal.dossiers.show', ['dossier' => $dossier->getKey()]);
     }
 
     private function grantFromRequest(StorePortalQuestionnaireAnswerRequest $request): ClientAccessGrant

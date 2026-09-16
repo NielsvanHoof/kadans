@@ -8,6 +8,7 @@ use App\Audit\Actions\LogAuditActivityAction;
 use App\Audit\Enums\AuditEvent;
 use App\ClientPortal\Actions\Outreach\NotifyWorkspaceIfQuestionnaireCompleteAction;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Queries\Access\FetchReachableDossiersQuery;
 use App\Dossiers\Actions\UploadedDocuments\UploadDocumentForRequestAction;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Models\DocumentRequest;
@@ -26,6 +27,7 @@ final readonly class SubmitPortalUploadAction
         private LogAuditActivityAction $logAuditActivity,
         private DossierTransitions $dossierTransitions,
         private NotifyWorkspaceIfQuestionnaireCompleteAction $notifyWorkspaceIfQuestionnaireComplete,
+        private FetchReachableDossiersQuery $fetchReachableDossiers,
     ) {}
 
     public function handle(
@@ -67,7 +69,11 @@ final readonly class SubmitPortalUploadAction
                 $grantQuery->getQuery()->lockForUpdate();
                 $lockedGrant = $grantQuery->firstOrFail();
 
-                if ($lockedGrant->dossier_id !== $dossier->id) {
+                // Re-checked under the grant lock, against the same predicate the
+                // HTTP layer used: a client-scoped grant's reach is a live query,
+                // so the dossier could have been completed, archived or moved out
+                // of reach between the request check and this write.
+                if (! $this->fetchReachableDossiers->covers($lockedGrant, $dossier->id)) {
                     throw (new ModelNotFoundException)->setModel(
                         DocumentRequest::class,
                         [$lockedDocumentRequest->getKey()],

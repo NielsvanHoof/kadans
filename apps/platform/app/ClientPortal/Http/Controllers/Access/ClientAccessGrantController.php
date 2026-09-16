@@ -7,6 +7,7 @@ namespace App\ClientPortal\Http\Controllers\Access;
 use App\Accounts\Http\Concerns\ResolvesCurrentUser;
 use App\ClientPortal\Actions\Access\IssueClientPortalAccessAction;
 use App\ClientPortal\Actions\Access\RevokeClientPortalAccessAction;
+use App\ClientPortal\Enums\ClientAccessGrantScope;
 use App\ClientPortal\Http\Requests\Access\StoreClientAccessGrantRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
 use App\Dossiers\Models\Dossier;
@@ -70,6 +71,15 @@ final class ClientAccessGrantController extends Controller
         $revokeClientPortalAccess->handle($grant, $user);
 
         Toast::success(__('Portal link revoked.'));
+
+        // A client-scoped link has no dossier to go back to, and the page that
+        // owns it is the client's.
+        if ($grant->scope === ClientAccessGrantScope::Client) {
+            return to_route(
+                'workspaces.clients.show',
+                $this->workspaceRouteParameters(['client' => $grant->client_id]),
+            );
+        }
 
         return to_route(
             'workspaces.dossiers.show',

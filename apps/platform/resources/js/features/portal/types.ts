@@ -17,6 +17,17 @@ export type PortalDossier = Omit<
     document_requests: PortalDocumentRequest[];
 };
 
+/** One dossier on the client's list of everything their firm is waiting for. */
+export type PortalDossierSummary =
+    App.ClientPortal.Data.Workspace.PortalDossierSummaryData;
+
+/** Payload for the landing page a client-level link opens. */
+export type PortalLanding =
+    App.ClientPortal.Data.Workspace.PortalLandingPageData;
+
+/** The client a portal link belongs to. */
+export type PortalClient = App.ClientPortal.Data.Workspace.PortalClientData;
+
 /** Progress counters on the portal overview. */
 export type PortalProgress = App.ClientPortal.Data.Workspace.PortalProgressData;
 

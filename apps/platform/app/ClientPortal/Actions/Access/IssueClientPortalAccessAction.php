@@ -45,6 +45,7 @@ final readonly class IssueClientPortalAccessAction
                 AuditEvent::ClientPortalAccessGrantCreated,
                 $result['grant'],
                 [
+                    'client_id' => $dossier->client_id,
                     'dossier_id' => $dossier->id,
                     'expires_at' => $result['grant']->expires_at->toIso8601String(),
                     'invite_requested' => $sendInvite,

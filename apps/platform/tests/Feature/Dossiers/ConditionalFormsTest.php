@@ -171,7 +171,7 @@ test('multi-select visibility matches when any selected option overlaps', functi
         'documentRequest' => $multiSelect,
     ]), [
         'answer_option_ids' => [$optionB, $optionA],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     $this->get(route('portal.show'))
         ->assertOk()
@@ -320,7 +320,7 @@ test('an answer is rejected when it selects an option the field does not offer',
         'documentRequest' => $choice,
     ]), [
         'answer_option_ids' => [$configuredOptionId],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     expect($choice->fresh()->answer_option_ids)->toBe([$configuredOptionId]);
 });

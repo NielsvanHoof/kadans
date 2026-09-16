@@ -217,7 +217,7 @@ test('portal client can upload multiple files in one submission', function (): v
             stagedUploadTicket($context['tenant']->id, 'payslip-jan.pdf', sizeBytes: 100 * 1024),
             stagedUploadTicket($context['tenant']->id, 'payslip-feb.pdf', sizeBytes: 100 * 1024),
         ],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     actingInWorkspace($context['tenant']);
 
@@ -235,11 +235,11 @@ test('portal client can submit a second batch of files after the first is alread
 
     $this->post($uploadUrl, [
         'documents' => [stagedUploadTicket($context['tenant']->id, 'payslip-jan.pdf', sizeBytes: 100 * 1024)],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     $this->post($uploadUrl, [
         'documents' => [stagedUploadTicket($context['tenant']->id, 'payslip-feb.pdf', sizeBytes: 100 * 1024)],
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     actingInWorkspace($context['tenant']);
 
@@ -266,7 +266,7 @@ test('portal client can remove one of their uploaded files before review', funct
     $this->delete(route('portal.document-requests.uploaded-documents.destroy', [
         'documentRequest' => $documentRequest->id,
         'uploadedDocument' => $removed->id,
-    ]))->assertRedirect(route('portal.show'));
+    ]))->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     actingInWorkspace($context['tenant']);
 

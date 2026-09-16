@@ -63,11 +63,12 @@ const AUTHORIZATION_NOT_VIA_GATE = [
     // portal-grant — guest clients are not Users; the grant plus the transition
     // rules in DocumentRequestTransitions::canSubmit are the authorization.
     'portal.show' => 'portal-grant: ResolveClientPortalGrant middleware.',
-    'portal.document-requests.answer' => 'portal-grant: grant + dossier match + canSubmit + field visibility.',
-    'portal.document-requests.upload' => 'portal-grant: grant + dossier match + canSubmit.',
-    'portal.document-requests.uploaded-documents.destroy' => 'portal-grant: grant + dossier match + allow_multiple + status check.',
-    'portal.document-requests.uploaded-documents.download' => 'portal-grant: grant + dossier match + parent match + malware verdict. No RequirePassword: a portal client has no account.',
-    'portal.upload-tickets.store' => 'portal-grant: grant only. A ticket authorises a write into the staging prefix of the granted dossier\'s tenant and nothing more; which dossier it lands on is decided when it is claimed.',
+    'portal.dossiers.show' => 'portal-grant: grant + ResolveGrantedDossierQuery, which is the one definition of which dossiers a link opens.',
+    'portal.document-requests.answer' => 'portal-grant: grant + ResolveGrantedDossierQuery + canSubmit + field visibility.',
+    'portal.document-requests.upload' => 'portal-grant: grant + ResolveGrantedDossierQuery + canSubmit.',
+    'portal.document-requests.uploaded-documents.destroy' => 'portal-grant: grant + ResolveGrantedDossierQuery + allow_multiple + status check.',
+    'portal.document-requests.uploaded-documents.download' => 'portal-grant: grant + ResolveGrantedDossierQuery + parent match + malware verdict. No RequirePassword: a portal client has no account.',
+    'portal.upload-tickets.store' => 'portal-grant: grant + ResolveGrantedDossierQuery on the requested dossier_id. The dossier used to be implied by the grant; once one link can open several, an unchecked ticket would sign a PUT into any dossier\'s tenant.',
 
     // token-credential — a hashed/signed token is the credential, for guests.
     'invitations.show' => 'token-credential: invitation token.',

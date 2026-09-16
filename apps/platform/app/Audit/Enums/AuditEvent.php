@@ -23,6 +23,7 @@ enum AuditEvent: string
     case DocumentProcessingStarted = 'document.processing_started';
     case DocumentProcessingCompleted = 'document.processing_completed';
     case DocumentProcessingFailed = 'document.processing_failed';
+    case DossierSharedWithClient = 'dossier.shared_with_client';
     case ClientPortalAccessGrantCreated = 'client_portal.access_grant_created';
     case ClientPortalAccessGrantRevoked = 'client_portal.access_grant_revoked';
     case ClientPortalAccessed = 'client_portal.accessed';
@@ -95,6 +96,7 @@ enum AuditEvent: string
             self::DocumentProcessingStarted => __('Document processing started'),
             self::DocumentProcessingCompleted => __('Document processing completed'),
             self::DocumentProcessingFailed => __('Document processing failed'),
+            self::DossierSharedWithClient => __('Dossier shared with the client'),
             self::ClientPortalAccessGrantCreated => __('Portal link created'),
             self::ClientPortalAccessGrantRevoked => __('Portal link revoked'),
             self::ClientPortalAccessed => __('Client portal accessed'),
@@ -166,7 +168,8 @@ enum AuditEvent: string
             self::DossierReminderFailed,
             self::DossierDeleted,
             self::DossierRestored,
-            self::DossierRolledOver => __('Dossiers'),
+            self::DossierRolledOver,
+            self::DossierSharedWithClient => __('Dossiers'),
 
             self::DocumentRequestCreated,
             self::DocumentRequestAccepted,

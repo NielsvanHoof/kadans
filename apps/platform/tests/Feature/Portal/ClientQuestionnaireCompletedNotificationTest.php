@@ -74,7 +74,7 @@ test('last portal answer submission broadcasts questionnaire completed to the wo
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     Event::assertDispatched(function (ClientQuestionnaireCompleted $event) use ($context): bool {
         expect($event->tenantSlug)->toBe($context['tenant']->slug)
@@ -124,7 +124,7 @@ test('partial portal submission does not broadcast questionnaire completed', fun
         'documentRequest' => $first,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     Event::assertNotDispatched(ClientQuestionnaireCompleted::class);
 
@@ -167,7 +167,7 @@ test('resubmitting after rejection broadcasts questionnaire completed again', fu
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => 'Updated address',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     Event::assertDispatched(ClientQuestionnaireCompleted::class);
 });
@@ -200,7 +200,7 @@ test('last portal submission creates database notifications for active members o
         'documentRequest' => $documentRequest,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     expect($context['owner']->fresh()->notifications)->toHaveCount(1)
         ->and($activeMember->fresh()->notifications)->toHaveCount(1)
@@ -249,7 +249,7 @@ test('partial portal submission does not create database notifications', functio
         'documentRequest' => $first,
     ]), [
         'answer_text' => '221B Baker Street',
-    ])->assertRedirect(route('portal.show'));
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     Notification::assertNothingSent();
 });

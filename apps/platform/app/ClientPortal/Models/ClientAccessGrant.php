@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\ClientPortal\Models;
 
 use App\Accounts\Models\User;
+use App\ClientPortal\Enums\ClientAccessGrantScope;
+use App\Clients\Models\Client;
 use App\Dossiers\Models\Dossier;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
@@ -21,7 +23,9 @@ use Override;
 /**
  * @property int $id
  * @property int $tenant_id
- * @property int $dossier_id
+ * @property int $client_id
+ * @property ?int $dossier_id
+ * @property ClientAccessGrantScope $scope
  * @property string $token
  * @property CarbonImmutable $expires_at
  * @property CarbonImmutable|null $revoked_at
@@ -31,6 +35,7 @@ use Override;
  * @property int $created_by
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
+ * @property-read Client $client
  * @property-read User $createdBy
  * @property-read Dossier|null $dossier
  * @property-read Tenant $tenant
@@ -41,12 +46,14 @@ use Override;
  * @method static Builder<static>|ClientAccessGrant query()
  * @method static Builder<static>|ClientAccessGrant valid()
  * @method static Builder<static>|ClientAccessGrant whereCreatedAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereClientId($value)
  * @method static Builder<static>|ClientAccessGrant whereCreatedBy($value)
  * @method static Builder<static>|ClientAccessGrant whereDossierId($value)
  * @method static Builder<static>|ClientAccessGrant whereExpiresAt($value)
  * @method static Builder<static>|ClientAccessGrant whereId($value)
  * @method static Builder<static>|ClientAccessGrant whereLastUsedAt($value)
  * @method static Builder<static>|ClientAccessGrant whereRevokedAt($value)
+ * @method static Builder<static>|ClientAccessGrant whereScope($value)
  * @method static Builder<static>|ClientAccessGrant whereTenantId($value)
  * @method static Builder<static>|ClientAccessGrant whereToken($value)
  * @method static Builder<static>|ClientAccessGrant whereUpdatedAt($value)
@@ -66,7 +73,9 @@ final class ClientAccessGrant extends TenantOwnedModel
     #[Override]
     protected $fillable = [
         'tenant_id',
+        'client_id',
         'dossier_id',
+        'scope',
         'token',
         'expires_at',
         'revoked_at',
@@ -92,6 +101,17 @@ final class ClientAccessGrant extends TenantOwnedModel
     }
 
     /**
+     * @return BelongsTo<Client, $this>
+     */
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * The one dossier this grant was issued for, or null when it covers the
+     * client's whole shared set.
+     *
      * @return BelongsTo<Dossier, $this>
      */
     public function dossier(): BelongsTo
@@ -161,6 +181,7 @@ final class ClientAccessGrant extends TenantOwnedModel
     protected function casts(): array
     {
         return [
+            'scope' => ClientAccessGrantScope::class,
             'expires_at' => 'datetime',
             'revoked_at' => 'datetime',
             'last_used_at' => 'datetime',

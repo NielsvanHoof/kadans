@@ -64,6 +64,7 @@ final readonly class LogClientPortalInviteSent
                         AuditEvent::ClientPortalInviteSent,
                         $grant,
                         [
+                            'client_id' => $grant->client_id,
                             'dossier_id' => $grant->dossier_id,
                             'channel' => $event->channel,
                             'sent_at' => $sentAt->toIso8601String(),

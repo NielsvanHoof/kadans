@@ -6,6 +6,7 @@ namespace App\ClientPortal\Http\Requests\Submissions;
 
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Queries\Access\FetchReachableDossiersQuery;
 use App\Dossiers\Actions\DocumentRequests\DetermineDocumentRequestVisibilityAction;
 use App\Dossiers\Actions\DocumentRequests\ResolveQuestionnaireAnswerRulesAction;
 use App\Dossiers\Enums\SubmissionContext;
@@ -25,6 +26,7 @@ final class StorePortalQuestionnaireAnswerRequest extends FormRequest
         private readonly DocumentRequestTransitions $documentRequestTransitions,
         private readonly DetermineDocumentRequestVisibilityAction $determineVisibility,
         private readonly ResolveQuestionnaireAnswerRulesAction $resolveAnswerRules,
+        private readonly FetchReachableDossiersQuery $fetchReachableDossiers,
     ) {
         parent::__construct();
     }
@@ -39,9 +41,19 @@ final class StorePortalQuestionnaireAnswerRequest extends FormRequest
 
         if (! $grant instanceof ClientAccessGrant
             || ! $documentRequest instanceof DocumentRequest
-            || ! $dossier instanceof Dossier
-            || $documentRequest->dossier_id !== $grant->dossier_id
-            || $documentRequest->type === QuestionnaireItemType::File
+            || ! $dossier instanceof Dossier) {
+            return false;
+        }
+
+        // Out of this grant's reach: hand it to the controller, which conceals
+        // it as a 404 like every other portal denial. Refusing here instead
+        // would answer a cross-dossier probe with 403 *and* write an
+        // access-denied audit row — the two things the portal must never do.
+        if (! $this->fetchReachableDossiers->covers($grant, $documentRequest->dossier_id)) {
+            return true;
+        }
+
+        if ($documentRequest->type === QuestionnaireItemType::File
             || ! $this->documentRequestTransitions->canSubmit(
                 $documentRequest,
                 SubmissionContext::Portal,

@@ -306,6 +306,27 @@ final class Dossier extends TenantOwnedModel
     }
 
     /**
+     * Standing client links that also open this dossier.
+     *
+     * Keyed on the client, not this dossier, because that is what a client-level
+     * grant is scoped to. Staff need to see these on the dossier: revoking the
+     * dossier's own link while one of these is live would look like cutting
+     * access off when it is not.
+     *
+     * Whether a live one actually reaches this dossier is still decided by
+     * FetchReachableDossiersQuery — this relation only narrows the candidates.
+     *
+     * @return HasMany<ClientAccessGrant, $this>
+     */
+    public function clientLevelAccessGrants(): HasMany
+    {
+        $relation = $this->hasMany(ClientAccessGrant::class, 'client_id', 'client_id');
+        $relation->getQuery()->getQuery()->whereNull('dossier_id');
+
+        return $relation;
+    }
+
+    /**
      * @return HasMany<DossierExport, $this>
      */
     public function exports(): HasMany

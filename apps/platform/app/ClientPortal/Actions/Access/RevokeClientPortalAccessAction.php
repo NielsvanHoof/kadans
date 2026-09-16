@@ -30,7 +30,11 @@ final readonly class RevokeClientPortalAccessAction
             $this->logAuditActivity->handle(
                 AuditEvent::ClientPortalAccessGrantRevoked,
                 $lockedGrant,
-                ['dossier_id' => $lockedGrant->dossier_id],
+                [
+                    'scope' => $lockedGrant->scope->value,
+                    'client_id' => $lockedGrant->client_id,
+                    'dossier_id' => $lockedGrant->dossier_id,
+                ],
                 $revokedBy,
             );
 

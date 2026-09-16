@@ -87,13 +87,14 @@ final class ClientController extends Controller
     }
 
     public function show(
+        Request $request,
         Tenant $tenant,
         Client $client,
         FetchClientShowQuery $fetchClientShow,
     ): Response {
         $this->authorize('view', $client);
 
-        return Inertia::render('workspaces/clients/show', $fetchClientShow->handle($client));
+        return Inertia::render('workspaces/clients/show', $fetchClientShow->handle($request, $client));
     }
 
     public function edit(Tenant $tenant, Client $client): Response

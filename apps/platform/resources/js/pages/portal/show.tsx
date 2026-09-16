@@ -1,10 +1,12 @@
 import { Head } from '@inertiajs/react';
 import StatusMessage from '@/components/primitives/status-message';
 import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
+import PortalDossierSwitcher from '@/features/portal/portal-dossier-switcher';
 import PortalProgressOverview from '@/features/portal/portal-progress-overview';
 import PortalSessionNotice from '@/features/portal/portal-session-notice';
 import type {
     PortalDossier,
+    PortalDossierSummary,
     PortalFirm,
     PortalSession,
 } from '@/features/portal/types';
@@ -16,10 +18,13 @@ export default function PortalShow({
     firm,
     dossier,
     session,
+    other_dossiers: otherDossiers = [],
 }: {
     firm: PortalFirm;
     dossier: PortalDossier;
     session: PortalSession;
+    /** Empty for a link that opens this dossier and nothing else. */
+    other_dossiers?: PortalDossierSummary[];
 }) {
     const { t } = useTranslation();
     const { formatDateTime } = useFormatters();
@@ -50,6 +55,8 @@ export default function PortalShow({
                 meta={meta}
             >
                 <PortalSessionNotice idleExpiresAt={session.idle_expires_at} />
+
+                <PortalDossierSwitcher otherDossiers={otherDossiers} />
 
                 {dossier.status === 'completed' && (
                     <StatusMessage>

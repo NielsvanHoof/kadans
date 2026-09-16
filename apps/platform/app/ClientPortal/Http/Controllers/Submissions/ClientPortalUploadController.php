@@ -8,12 +8,14 @@ use App\ClientPortal\Actions\Submissions\SubmitPortalUploadAction;
 use App\ClientPortal\Http\Middleware\ResolveClientPortalGrant;
 use App\ClientPortal\Http\Requests\Submissions\StorePortalUploadedDocumentRequest;
 use App\ClientPortal\Models\ClientAccessGrant;
+use App\ClientPortal\Queries\Access\ResolveGrantedDossierQuery;
 use App\Dossiers\Actions\UploadedDocuments\DeleteUploadedDocumentAction;
 use App\Dossiers\Actions\UploadedDocuments\GuardUploadedDocumentDeliveryAction;
 use App\Dossiers\Actions\Uploads\ClaimUploadTicketAction;
 use App\Dossiers\Enums\SubmissionContext;
 use App\Dossiers\Enums\UploadPurpose;
 use App\Dossiers\Models\DocumentRequest;
+use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Support\UploadedDocuments\UploadedDocumentResponse;
 use App\Dossiers\Support\Uploads\StagedUpload;
@@ -26,6 +28,8 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class ClientPortalUploadController extends Controller
 {
+    public function __construct(private readonly ResolveGrantedDossierQuery $resolveGrantedDossier) {}
+
     /**
      * Accept a client upload for one document request on the grant's dossier.
      */
@@ -39,7 +43,7 @@ final class ClientPortalUploadController extends Controller
 
         $documentRequestModel = DocumentRequest::query()->findOrFail($documentRequest);
 
-        abort_unless($documentRequestModel->dossier_id === $grant->dossier_id, 404);
+        $dossier = $this->resolveGrantedDossier->handle($grant, $documentRequestModel->dossier_id);
 
         /*
          * The ticket's tenant must be the dossier's tenant, so a ticket minted
@@ -66,7 +70,7 @@ final class ClientPortalUploadController extends Controller
 
         Toast::success(__('Document uploaded. Thank you.'));
 
-        return to_route('portal.show');
+        return to_route('portal.dossiers.show', ['dossier' => $dossier->getKey()]);
     }
 
     /**
@@ -79,7 +83,7 @@ final class ClientPortalUploadController extends Controller
         DeleteUploadedDocumentAction $deleteUploadedDocument,
         DocumentRequestTransitions $documentRequestTransitions,
     ): RedirectResponse {
-        [$documentRequestModel, $uploadedDocumentModel] = $this->uploadedDocumentOnGrantedDossier(
+        [$dossier, $documentRequestModel, $uploadedDocumentModel] = $this->uploadedDocumentOnGrantedDossier(
             $request,
             $documentRequest,
             $uploadedDocument,
@@ -100,7 +104,7 @@ final class ClientPortalUploadController extends Controller
 
         Toast::success(__('Document removed.'));
 
-        return to_route('portal.show');
+        return to_route('portal.dossiers.show', ['dossier' => $dossier->getKey()]);
     }
 
     /**
@@ -122,7 +126,7 @@ final class ClientPortalUploadController extends Controller
         UploadedDocumentResponse $uploadedDocumentResponse,
         GuardUploadedDocumentDeliveryAction $guardUploadedDocumentDelivery,
     ): HttpResponse {
-        [, $uploadedDocumentModel] = $this->uploadedDocumentOnGrantedDossier(
+        [, , $uploadedDocumentModel] = $this->uploadedDocumentOnGrantedDossier(
             $request,
             $documentRequest,
             $uploadedDocument,
@@ -139,10 +143,11 @@ final class ClientPortalUploadController extends Controller
      * dossier this grant opens. Everything that does not is a 404 — the portal
      * conceals cross-dossier probes rather than confirming ids exist.
      *
-     * Returns the parent too, because deletion has to ask the transitions
-     * whether the item still accepts changes.
+     * Returns the dossier and the parent too: deletion has to ask the
+     * transitions whether the item still accepts changes, and both callers
+     * redirect back to the dossier the client was working in.
      *
-     * @return array{DocumentRequest, UploadedDocument}
+     * @return array{Dossier, DocumentRequest, UploadedDocument}
      */
     private function uploadedDocumentOnGrantedDossier(
         Request $request,
@@ -152,12 +157,12 @@ final class ClientPortalUploadController extends Controller
         $grant = $this->grantFromRequest($request);
 
         $documentRequestModel = DocumentRequest::query()->findOrFail($documentRequest);
-        abort_unless($documentRequestModel->dossier_id === $grant->dossier_id, 404);
+        $dossier = $this->resolveGrantedDossier->handle($grant, $documentRequestModel->dossier_id);
 
         $uploadedDocumentModel = UploadedDocument::query()->findOrFail($uploadedDocument);
         abort_unless($uploadedDocumentModel->document_request_id === $documentRequestModel->id, 404);
 
-        return [$documentRequestModel, $uploadedDocumentModel];
+        return [$dossier, $documentRequestModel, $uploadedDocumentModel];
     }
 
     private function grantFromRequest(Request $request): ClientAccessGrant

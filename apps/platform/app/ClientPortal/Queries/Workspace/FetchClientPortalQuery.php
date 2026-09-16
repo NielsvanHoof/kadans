@@ -10,6 +10,7 @@ use App\ClientPortal\Data\Workspace\ClientPortalPageData;
 use App\ClientPortal\Data\Workspace\PortalClientData;
 use App\ClientPortal\Data\Workspace\PortalDocumentRequestData;
 use App\ClientPortal\Data\Workspace\PortalDossierData;
+use App\ClientPortal\Data\Workspace\PortalDossierSummaryData;
 use App\ClientPortal\Data\Workspace\PortalFirmData;
 use App\ClientPortal\Data\Workspace\PortalNextIncompleteData;
 use App\ClientPortal\Data\Workspace\PortalProgressData;
@@ -38,21 +39,38 @@ final readonly class FetchClientPortalQuery
         private DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
+    /**
+     * $dossier arrives already resolved by ResolveGrantedDossierQuery. This
+     * query deliberately cannot pick one itself: which dossiers a link opens is
+     * an authorization question with exactly one owner, and a page payload is
+     * not it.
+     *
+     * @param  list<PortalDossierSummaryData>  $otherDossiers
+     */
     public function handle(
         ClientAccessGrant $grant,
+        Dossier $dossier,
         PortalSessionWindow $sessionWindow,
+        array $otherDossiers = [],
     ): ClientPortalPageData {
-        $dossier = Dossier::query()
-            ->with([
-                'client:id,name,email',
-                'tenant:id,name',
-                'responsibleUser:id,name,email',
-                'documentRequests' => fn ($query) => $query
-                    ->oldest('sort_order')
-                    ->oldest('id')
-                    ->with('uploadedDocuments:id,document_request_id,original_filename,size_bytes,uploaded_at'),
-            ])
-            ->findOrFail($grant->dossier_id);
+        $dossier->loadMissing([
+            'client:id,name,email',
+            'tenant:id,name',
+            'responsibleUser:id,name,email',
+            'documentRequests' => fn ($query) => $query
+                ->oldest('sort_order')
+                ->oldest('id'),
+        ]);
+
+        // Separate, and dot-notated, on purpose. The landing pass may already
+        // have loaded documentRequests to count them — at which point a nested
+        // `with()` above is silently skipped, because loadMissing() will not
+        // re-load a relation that is already there. Asking for the child path
+        // fills it in on whatever is loaded, and still costs one query when the
+        // parent came in cold.
+        $dossier->loadMissing(
+            'documentRequests.uploadedDocuments:id,document_request_id,original_filename,size_bytes,uploaded_at',
+        );
 
         $tenant = $this->resolveTenant($dossier);
         $client = $this->resolveClient($dossier);
@@ -121,6 +139,7 @@ final readonly class FetchClientPortalQuery
                 contactEmail: $contact->email,
             ),
             dossier: new PortalDossierData(
+                id: $dossier->id,
                 title: $dossier->title,
                 reference: $dossier->reference,
                 status: $dossier->status,
@@ -142,6 +161,7 @@ final readonly class FetchClientPortalQuery
                 documentRequests: $documentRequests,
             ),
             session: PortalSessionData::fromWindow($sessionWindow),
+            otherDossiers: $otherDossiers,
         );
     }
 

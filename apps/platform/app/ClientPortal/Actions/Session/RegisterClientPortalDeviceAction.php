@@ -61,7 +61,7 @@ final readonly class RegisterClientPortalDeviceAction
             $this->logAuditActivity->handle(
                 AuditEvent::ClientPortalNewDeviceBlocked,
                 $grant,
-                ['dossier_id' => $grant->dossier_id],
+                ['client_id' => $grant->client_id, 'dossier_id' => $grant->dossier_id],
             );
 
             return PortalDeviceOutcome::NewDeviceBlocked;
@@ -89,18 +89,23 @@ final readonly class RegisterClientPortalDeviceAction
             ?? NewPortalDeviceAction::Notify;
     }
 
+    /**
+     * A client-scoped link has no dossier to name, so the alert is built around
+     * the client and points at their page. Falling through to "no dossier, no
+     * alert" would have quietly switched this signal off for exactly the scope
+     * that opens the most — see decision-4, where new-device watching is one of
+     * the compensating controls for re-exchangeable tokens.
+     */
     private function raiseAlert(ClientAccessGrant $grant): void
     {
-        $dossier = Dossier::query()->whereKey($grant->dossier_id)->first();
+        $grant->loadMissing(['client', 'tenant']); // @pest-mutate-ignore relations lazy-load without this; call keeps them explicit
 
-        if (! $dossier instanceof Dossier) { // @pest-mutate-ignore FK integrity: dossier_id always resolves in production data
-            return;
-        }
+        $dossier = $grant->dossier_id === null
+            ? null
+            : Dossier::query()->whereKey($grant->dossier_id)->first();
 
-        $dossier->loadMissing(['client', 'tenant']); // @pest-mutate-ignore relations lazy-load without this; call keeps them explicit
-
-        $client = $dossier->client;
-        $tenant = $dossier->tenant;
+        $client = $dossier instanceof Dossier ? $dossier->client : $grant->client;
+        $tenant = $dossier instanceof Dossier ? $dossier->tenant : $grant->tenant;
 
         if (! $client instanceof Client || ! $tenant instanceof Tenant) { // @pest-mutate-ignore orphan relations are schema failures, not product paths
             return;
@@ -108,13 +113,12 @@ final readonly class RegisterClientPortalDeviceAction
 
         $notification = new ClientPortalNewDeviceNotification(
             tenantId: $tenant->id,
-            dossierId: $dossier->id,
-            dossierTitle: $dossier->title,
+            dossierId: $dossier?->id,
+            dossierTitle: $dossier?->title,
             clientName: $client->name,
-            dossierUrl: route('workspaces.dossiers.show', [
-                'tenant' => $tenant,
-                'dossier' => $dossier,
-            ]),
+            dossierUrl: $dossier instanceof Dossier
+                ? route('workspaces.dossiers.show', ['tenant' => $tenant, 'dossier' => $dossier])
+                : route('workspaces.clients.show', ['tenant' => $tenant, 'client' => $client]),
         );
 
         DB::transaction(function () use ($grant, $dossier, $tenant, $notification): void {
@@ -124,6 +128,7 @@ final readonly class RegisterClientPortalDeviceAction
                 AuditEvent::ClientPortalAccessedFromNewDevice,
                 $grant,
                 [
+                    'client_id' => $grant->client_id,
                     'dossier_id' => $grant->dossier_id,
                     // The hash itself stays out of the trail; that it changed is
                     // the whole finding.
@@ -138,14 +143,15 @@ final readonly class RegisterClientPortalDeviceAction
     }
 
     /**
-     * The responsible staff member, or every active member when a dossier has
-     * none — a security signal must not be delivered to nobody.
+     * The responsible staff member, or every active member when there is none —
+     * a security signal must not be delivered to nobody. A client-level link
+     * has no single responsible member, so it always goes to everyone.
      *
      * @return Collection<int, User>
      */
-    private function recipients(Dossier $dossier, Tenant $tenant): Collection
+    private function recipients(?Dossier $dossier, Tenant $tenant): Collection
     {
-        $responsible = $dossier->responsibleUser;
+        $responsible = $dossier?->responsibleUser;
 
         if ($responsible instanceof User) {
             /** @var Collection<int, User> $only */

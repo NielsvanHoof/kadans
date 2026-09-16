@@ -23,6 +23,11 @@ import { inlineActionOptions } from '@/lib/inline-action-options';
 /**
  * Lists access grants and creates a new 7-day portal link (optionally emailed).
  * The dossier workbench names and describes the panel; this renders the body.
+ *
+ * Live client-level links appear here too, read-only and labelled. Revoking
+ * this dossier's own link while one of those is open would otherwise read as
+ * "access closed" when the client can still get in — they are managed on the
+ * client's page, which is where the button lives.
  */
 export default function ClientAccessCard({
     dossierId,
@@ -52,6 +57,11 @@ export default function ClientAccessCard({
                             className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
                         >
                             <div className="text-sm">
+                                {grant.is_client_level && (
+                                    <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                                        {t('Client link (all dossiers)')}
+                                    </p>
+                                )}
                                 <p>
                                     {t('Expires :datetime', {
                                         datetime: formatDateTime(
@@ -73,7 +83,7 @@ export default function ClientAccessCard({
                                         })}`}
                                 </p>
                             </div>
-                            {grant.is_valid && (
+                            {grant.is_valid && !grant.is_client_level && (
                                 <RevokeAccessGrantButton grantId={grant.id} />
                             )}
                         </div>
@@ -139,7 +149,7 @@ export default function ClientAccessCard({
     );
 }
 
-function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
+export function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
     const [processing, setProcessing] = useState(false);

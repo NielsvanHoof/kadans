@@ -5,6 +5,7 @@
     "No notifications yet": "Nog geen meldingen",
     "Notifications": "Meldingen",
     "Notifications, :count unread": "Meldingen, :count ongelezen",
+    "The portal link for :client was opened from a new device.": "De portallink van :client is geopend vanaf een nieuw apparaat.",
     "The portal link for “:dossier” was opened from a new device.": "De portaallink voor “:dossier” is op een nieuw apparaat geopend.",
     "This removes every notification for this workspace from your inbox. You cannot undo this.": "Dit verwijdert elke melding voor dit kantoor uit je inbox. Dit kun je niet ongedaan maken."
 }

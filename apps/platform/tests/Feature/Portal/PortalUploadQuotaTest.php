@@ -263,7 +263,7 @@ test('portal upload succeeds when the dossier is still under the byte quota', fu
             'documentRequest' => $documentRequest->id,
         ]),
         ['documents' => [stagedUploadTicket($context['tenant']->id, 'payslip.pdf', sizeBytes: 120 * 1024)]],
-    )->assertRedirect(route('portal.show'));
+    )->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     actingInWorkspace($context['tenant']);
 
