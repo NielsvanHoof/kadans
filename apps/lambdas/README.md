@@ -67,6 +67,19 @@ That reaches the rule, invokes the function, writes a thumbnail to
 `local-scan-results`, which `scan:consume` drains. `php artisan dev` starts that
 consumer automatically once `SCAN_RESULTS_QUEUE_URL` is set.
 
+**To see the chain run without firing anything, use real AWS instead.** GuardDuty
+is created on every stack, so the `local` Pulumi stack scans each upload for
+real and the verdict arrives on its own:
+
+```bash
+cd apps/platform/infra && pulumi up -s local
+cd apps/platform && composer env:aws     # sets SCAN_RESULTS_QUEUE_URL from the stack
+composer env:floci                        # back to Floci; blanks it again
+```
+
+Floci is the faster loop and the one that needs no cloud resources; the `local`
+stack is the one where nothing is simulated. See `infra/README.md`.
+
 Watch a function's output with:
 
 ```bash

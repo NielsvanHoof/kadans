@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Pull OCR / Transcribe stack outputs from Pulumi into env/profiles/aws-<stack>.env,
-# then apply that profile onto apps/platform/.env.
+# Pull OCR / Transcribe / malware-scan stack outputs from Pulumi into
+# env/profiles/aws-<stack>.env, then apply that profile onto apps/platform/.env.
 #
 # Default stack is `local` (Sail). Use PULUMI_STACK=staging for Laravel Cloud staging.
 set -euo pipefail
@@ -67,6 +67,10 @@ TEXTRACT_TOPIC="$(stack_output textractSnsTopicArn)"
 TEXTRACT_ROLE="$(stack_output textractPublishRoleArn)"
 TEXTRACT_QUEUE="$(stack_output textractResultsQueueUrl)"
 TRANSCRIBE_QUEUE="$(stack_output transcribeResultsQueueUrl)"
+# GuardDuty scans every object landing in the bucket on any stack, so switching
+# to real AWS is what makes malware verdicts and thumbnails happen locally.
+# Floci never produces one, which is why floci.env blanks this again.
+SCAN_QUEUE="$(stack_output scanResultsQueueUrl)"
 
 ACCESS_KEY="$(printf '%s' "$ACCESS_KEY" | tr -d '\r' | grep -Eo 'AKIA[0-9A-Z]{16}' | head -1)"
 SECRET_KEY="$(printf '%s' "$SECRET_KEY" | tr -d '\r' | awk 'NF{print; exit}')"
@@ -75,14 +79,15 @@ TEXTRACT_TOPIC="$(printf '%s' "$TEXTRACT_TOPIC" | tr -d '\r' | awk 'NF{print; ex
 TEXTRACT_ROLE="$(printf '%s' "$TEXTRACT_ROLE" | tr -d '\r' | awk 'NF{print; exit}')"
 TEXTRACT_QUEUE="$(printf '%s' "$TEXTRACT_QUEUE" | tr -d '\r' | awk 'NF{print; exit}')"
 TRANSCRIBE_QUEUE="$(printf '%s' "$TRANSCRIBE_QUEUE" | tr -d '\r' | awk 'NF{print; exit}')"
+SCAN_QUEUE="$(printf '%s' "$SCAN_QUEUE" | tr -d '\r' | awk 'NF{print; exit}')"
 
 if [[ -z "$ACCESS_KEY" || -z "$SECRET_KEY" ]]; then
   echo "Could not read ocrAccessKeyId / ocrSecretAccessKey from stack \"$STACK\". Run: pulumi up -s $STACK" >&2
   exit 1
 fi
 
-if [[ -z "$BUCKET" || -z "$TEXTRACT_TOPIC" || -z "$TRANSCRIBE_QUEUE" ]]; then
-  echo "Could not read document / Textract / Transcribe outputs from stack \"$STACK\". Run: pulumi up -s $STACK" >&2
+if [[ -z "$BUCKET" || -z "$TEXTRACT_TOPIC" || -z "$TRANSCRIBE_QUEUE" || -z "$SCAN_QUEUE" ]]; then
+  echo "Could not read document / Textract / Transcribe / scan outputs from stack \"$STACK\". Run: pulumi up -s $STACK" >&2
   exit 1
 fi
 
@@ -110,6 +115,8 @@ TEXTRACT_SNS_TOPIC_ARN=${TEXTRACT_TOPIC}
 TEXTRACT_SNS_ROLE_ARN=${TEXTRACT_ROLE}
 TEXTRACT_RESULTS_QUEUE_URL=${TEXTRACT_QUEUE}
 TRANSCRIBE_RESULTS_QUEUE_URL=${TRANSCRIBE_QUEUE}
+SCAN_RESULTS_QUEUE_URL=${SCAN_QUEUE}
+SCAN_THUMBNAILS_ENABLED=true
 EOF
 
 chmod 600 "$PROFILE_FILE"

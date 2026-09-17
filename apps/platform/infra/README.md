@@ -46,7 +46,7 @@ user for their **own** bucket and completion queues. Never point two runtimes at
 the same `TEXTRACT_RESULTS_QUEUE_URL` — staging Cloud and local Sail would race
 and delete each other's notifications. `composer env:aws` syncs the `local` stack;
 `composer env:aws-staging` syncs staging outputs for reference. Floci remains the
-everyday local S3 path with mock OCR drivers.
+everyday local S3 path with mock OCR drivers and no malware scanning.
 
 ## What the stack builds
 
@@ -198,9 +198,10 @@ Reverb/Sentry/cache secrets) on each run.
 
 ## Local `.env` (`local` stack)
 
-Sail defaults to Floci + mock OCR drivers. For real Textract/Transcribe against the
-**local** data plane, bring up the `local` stack and sync credentials on the
-**host** (not via Sail — Pulumi is not in the container):
+Sail defaults to Floci + mock OCR drivers. For real Textract/Transcribe — and for
+real malware scanning, which Floci cannot emulate at all — bring up the `local`
+stack against the **local** data plane and sync credentials on the **host** (not
+via Sail — Pulumi is not in the container):
 
 ```bash
 cd apps/platform/infra && pulumi up -s local
@@ -211,6 +212,16 @@ composer env:floci   # back to Sail's local AWS; env:aws re-applies the cached p
 That writes gitignored `env/profiles/aws-local.env` and upserts `FILESYSTEM_DISK=s3`,
 `OCR_DRIVER=textract`, `TRANSCRIPTION_DRIVER=transcribe`, the IAM keys, the bucket
 and the queue URLs into `.env`, clearing the Floci endpoints.
+
+Scanning is the reason to reach for this stack rather than Floci. GuardDuty is
+created on every environment, so on `local` it scans each object as it lands,
+tags it, and drives the scan Lambda that renders thumbnails — the whole chain
+runs for real, with no event fired by hand. `composer env:aws` sets
+`SCAN_RESULTS_QUEUE_URL` and `SCAN_THUMBNAILS_ENABLED=true` from the stack
+outputs, and `composer env:floci` blanks both again, because a real queue URL
+left behind would point `scan:consume` at cloud SQS while everything else talked
+to Floci. Unlike OCR and transcription there is no driver enum to catch that, so
+the profile has to.
 
 ## Laravel Cloud staging ( `staging` stack )
 
