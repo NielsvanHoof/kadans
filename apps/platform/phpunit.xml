@@ -66,6 +66,17 @@
              reason unrelated to what it covers. The gate's own tests turn it on
              and mock the S3 client. -->
         <env name="SECURITY_MALWARE_SCANNING_ENABLED" value="false"/>
+        <!-- Likewise: no Lambda renders thumbnails against a faked disk, so a
+             developer with this on in .env would see preview assertions pass or
+             fail on their environment rather than on the code. The thumbnail
+             tests turn it on explicitly. -->
+        <env name="SCAN_THUMBNAILS_ENABLED" value="false"/>
+        <!-- And the queue URL, for the same reason the OCR and transcription
+             drivers are pinned to mock above: `composer floci:lambdas` writes a
+             real one into .env, which would otherwise start scan-consume in the
+             suite's view of `artisan dev`. ConsumeScanResultsCommandTest sets
+             its own URL through config(). -->
+        <env name="SCAN_RESULTS_QUEUE_URL" value=""/>
         <!-- Assert against the enforcing policy regardless of a developer's local
              SECURITY_CSP_* overrides; individual tests opt into report-only. -->
         <env name="SECURITY_CSP_ENABLED" value="true"/>

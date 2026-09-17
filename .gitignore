@@ -1,1 +1,4 @@
 apps/platform/env/profiles/aws-local.env
+
+# macOS Finder metadata
+.DS_Store

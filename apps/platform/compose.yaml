@@ -93,6 +93,13 @@ services:
         environment:
             FLOCI_HOSTNAME: floci
             FLOCI_STORAGE_MODE: persistent
+            # The emulator's own default region for requests that arrive without
+            # one. Lambda, SQS and EventBridge are region-scoped, so a mismatch
+            # here shows up as resources that exist on the CLI but not in a
+            # client defaulting elsewhere. Keep in lockstep with
+            # AWS_DEFAULT_REGION in .env.example and env/profiles/floci.env.
+            AWS_DEFAULT_REGION: '${AWS_DEFAULT_REGION:-eu-west-1}'
+            AWS_REGION: '${AWS_DEFAULT_REGION:-eu-west-1}'
             # Exercise Laravel's SES transport while retaining Mailpit's local inbox UI.
             FLOCI_SERVICES_SES_SMTP_HOST: mailpit
             FLOCI_SERVICES_SES_SMTP_PORT: 1025
@@ -114,6 +121,33 @@ services:
             retries: 5
             timeout: 5s
             start_period: 10s
+    # Floci's local cloud console. Not started by the floci container — without
+    # this service it has to be run by hand, and a hand-run container defaults
+    # to us-east-1, where none of our regional resources exist: the Lambda, the
+    # scan-results queue and the EventBridge rule all live in eu-west-1, so the
+    # console reports zero while the CLI lists them. Only S3 and IAM show up,
+    # because those APIs are account-global rather than regional.
+    floci-ui:
+        image: 'floci/floci-ui:latest'
+        ports:
+            - '${FORWARD_FLOCI_UI_PORT:-4500}:4500'
+        environment:
+            PORT: 4500
+            FLOCI_CLOUD: aws
+            FLOCI_HOSTNAME: floci
+            # Reached over the sail network, so `floci` resolves to the service.
+            FLOCI_ENDPOINT: 'http://floci:4566'
+            AWS_ENDPOINT_URL: 'http://floci:4566'
+            AWS_DEFAULT_REGION: '${AWS_DEFAULT_REGION:-eu-west-1}'
+            AWS_REGION: '${AWS_DEFAULT_REGION:-eu-west-1}'
+            # Floci does not enforce IAM; these satisfy the SDK and resolve to
+            # account 000000000000, the same one scripts/floci-*.sh address.
+            AWS_ACCESS_KEY_ID: '${AWS_ACCESS_KEY_ID:-sail}'
+            AWS_SECRET_ACCESS_KEY: '${AWS_SECRET_ACCESS_KEY:-password}'
+        networks:
+            - sail
+        depends_on:
+            - floci
 networks:
     sail:
         driver: bridge
