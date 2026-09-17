@@ -71,12 +71,14 @@ function fakeScanQueue(array $messages, bool $expectDelete): void
 }
 
 /** @param array<string, mixed> $verdict */
-function scanQueueMessage(array $verdict, string $receipt = 'receipt-1'): array
+function scanQueueMessage(array $verdict, string $receipt = 'receipt-1', int $receiveCount = 1): array
 {
     return [
         'Body' => json_encode($verdict, JSON_THROW_ON_ERROR),
         'ReceiptHandle' => $receipt,
         'MessageId' => 'msg-1',
+        // SQS only returns this because the command asks for it by name.
+        'Attributes' => ['ApproximateReceiveCount' => (string) $receiveCount],
     ];
 }
 
@@ -144,7 +146,34 @@ test('a verdict with no object key is deleted without being queued', function ()
     Queue::assertNothingPushed();
 });
 
-test('a verdict for a key nothing owns is deleted without being queued', function (): void {
+/*
+ * The ordering this guards against: `moveIntoPlace` copies the upload into the
+ * dossier tree before the transaction that writes its row opens, so the object
+ * is scannable while the row is still uncommitted. Deleting on the first miss
+ * would lose the verdict and the thumbnail the Lambda has already rendered,
+ * with nothing to say it happened.
+ */
+test('a verdict whose row may still be committing is left on the queue', function (): void {
+    Queue::fake();
+
+    scanConsumeDocument();
+
+    fakeScanQueue([scanQueueMessage([
+        'key' => 'tenants/999/dossiers/999/not-yet.pdf',
+        'status' => 'NO_THREATS_FOUND',
+    ], receiveCount: 1)], expectDelete: false);
+
+    $this->artisan('scan:consume', ['--once' => true])->assertSuccessful();
+
+    Queue::assertNothingPushed();
+});
+
+/*
+ * And the other half: a key that will never have a row is dropped here rather
+ * than redriven onto the dead-letter queue, whose alarm should mean the
+ * consumer is broken.
+ */
+test('a verdict for a key nothing owns is deleted once redelivery has not helped', function (): void {
     Queue::fake();
 
     scanConsumeDocument();
@@ -152,11 +181,32 @@ test('a verdict for a key nothing owns is deleted without being queued', functio
     fakeScanQueue([scanQueueMessage([
         'key' => 'tenants/999/dossiers/999/gone.pdf',
         'status' => 'NO_THREATS_FOUND',
-    ])], expectDelete: true);
+    ], receiveCount: 3)], expectDelete: true);
 
     $this->artisan('scan:consume', ['--once' => true])->assertSuccessful();
 
     Queue::assertNothingPushed();
+});
+
+/*
+ * The point of deferring: the redelivery that arrives after the commit finds
+ * the row and applies the verdict, so nothing is lost by waiting.
+ */
+test('a redelivered verdict is applied once its row exists', function (): void {
+    $document = scanConsumeDocument();
+
+    fakeScanQueue([scanQueueMessage([
+        'key' => $document->path,
+        'status' => 'NO_THREATS_FOUND',
+        'thumbnailKey' => 'thumbnails/'.$document->path.'.jpg',
+    ], receiveCount: 2)], expectDelete: true);
+
+    $this->artisan('scan:consume', ['--once' => true])->assertSuccessful();
+
+    $document->refresh();
+
+    expect($document->malware_scan_status)->toBe(MalwareScanStatus::NoThreatsFound)
+        ->and($document->thumbnail_path)->toBe('thumbnails/'.$document->path.'.jpg');
 });
 
 /*

@@ -46,6 +46,17 @@ use function Laravel\Prompts\info;
  * Transport failures are left visible for the queue's redrive policy; a message
  * that can never be acted on is deleted rather than redelivered five times
  * first.
+ *
+ * "Can never be acted on" is the careful part, because a verdict can arrive
+ * before the row it belongs to exists. `moveIntoPlace` copies a claimed upload
+ * into the dossier tree at UploadDocumentForRequestAction:72, before the
+ * transaction that writes the row opens at :79, so the object is scannable for
+ * the whole of that transaction. GuardDuty usually takes far longer than a
+ * commit, which is why this has never been seen; it is an ordering the queue
+ * permits rather than one the timings forbid.
+ *
+ * So an unmatched key is given a few deliveries before it is written off. See
+ * MISSING_SUBJECT_ATTEMPTS.
  */
 #[Signature('scan:consume {--once : Process one SQS batch then exit}')]
 #[Description('Consume malware scan verdicts and thumbnail keys from the document-scan Lambda')]
@@ -53,6 +64,22 @@ final class ConsumeScanResultsCommand extends Command
 {
     /** Long enough to parse and dispatch; see the OCR consumer. */
     private const int VISIBILITY_TIMEOUT_SECONDS = 30;
+
+    /**
+     * Deliveries to allow an unmatched key before deciding no row is coming.
+     *
+     * Two forces set this. It has to exceed the time between the object landing
+     * and its row committing, which is one database transaction — three
+     * attempts at the visibility timeout above is roughly a minute, against a
+     * commit measured in milliseconds.
+     *
+     * And it has to stay below the queue's `maxReceiveCount` of 5, so that a
+     * key which genuinely has no row is dropped here rather than redriven onto
+     * the dead-letter queue, where it would trip `scan-results-dlq-alarm`. That
+     * alarm should mean the consumer is broken, not that somebody deleted a
+     * document while its verdict was in flight.
+     */
+    private const int MISSING_SUBJECT_ATTEMPTS = 3;
 
     public function handle(
         SqsClient $sqs,
@@ -85,6 +112,9 @@ final class ConsumeScanResultsCommand extends Command
                 'MaxNumberOfMessages' => $maxMessages,
                 'WaitTimeSeconds' => $waitTime,
                 'VisibilityTimeout' => self::VISIBILITY_TIMEOUT_SECONDS,
+                // Tells a first delivery from a repeat, which is the only way
+                // to distinguish "no row yet" from "no row ever".
+                'MessageSystemAttributeNames' => ['ApproximateReceiveCount'],
             ]);
 
             $messages = $result->get('Messages') ?? [];
@@ -159,17 +189,65 @@ final class ConsumeScanResultsCommand extends Command
                         'status' => $notification->status?->value,
                         'has_thumbnail' => $notification->thumbnailKey !== null,
                     ]);
-                } else {
-                    Log::warning('Scanning: scan:consume deleted a verdict with no matching file.', [
-                        'sqs_message_id' => $messageId,
-                    ]);
+
+                    $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
+
+                    continue;
                 }
+
+                $attempt = $this->receiveCount($message);
+
+                if ($attempt < self::MISSING_SUBJECT_ATTEMPTS) {
+                    /*
+                     * Left on the queue rather than deleted. The row may still
+                     * be mid-transaction; redelivery costs one lookup, while
+                     * deleting loses the verdict and its thumbnail for good.
+                     */
+                    Log::info('Scanning: scan:consume deferred a verdict with no matching file yet.', [
+                        'sqs_message_id' => $messageId,
+                        'attempt' => $attempt,
+                    ]);
+
+                    continue;
+                }
+
+                Log::warning('Scanning: scan:consume deleted a verdict with no matching file.', [
+                    'sqs_message_id' => $messageId,
+                    'attempt' => $attempt,
+                ]);
 
                 $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
             }
         } while (! $once);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * How many times SQS has delivered this message, counting this one.
+     *
+     * Falls back to a first attempt when the attribute is missing or unusable,
+     * which errs towards retrying. That cannot loop: the queue's redrive policy
+     * still moves the message aside after `maxReceiveCount` deliveries, so the
+     * worst case is a dead-letter message rather than a message forever.
+     *
+     * @param  array<string, mixed>  $message
+     */
+    private function receiveCount(array $message): int
+    {
+        $attributes = $message['Attributes'] ?? null;
+
+        if (! is_array($attributes)) {
+            return 1;
+        }
+
+        $count = $attributes['ApproximateReceiveCount'] ?? null;
+
+        if (! is_numeric($count) || (int) $count < 1) {
+            return 1;
+        }
+
+        return (int) $count;
     }
 
     /**
