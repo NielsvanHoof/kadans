@@ -50,6 +50,7 @@ describe('carried-forward portal answers', () => {
     it('shows last year’s answer as a suggestion, not a prefilled field', () => {
         render(
             <PortalDocumentRequestsCard
+                dossierId={7}
                 firmName="Acme"
                 documentRequests={[request()]}
                 nextIncompleteRequestId={11}
@@ -75,6 +76,7 @@ describe('carried-forward portal answers', () => {
         const user = userEvent.setup();
         render(
             <PortalDocumentRequestsCard
+                dossierId={7}
                 firmName="Acme"
                 documentRequests={[request()]}
                 nextIncompleteRequestId={11}
@@ -96,6 +98,7 @@ describe('carried-forward portal answers', () => {
     it('leaves ordinary pending fields as empty forms', () => {
         render(
             <PortalDocumentRequestsCard
+                dossierId={7}
                 firmName="Acme"
                 documentRequests={[
                     request({
@@ -122,6 +125,7 @@ describe('carried-forward portal answers', () => {
     it('shows a yes/no suggestion without preselecting this period’s radios', () => {
         render(
             <PortalDocumentRequestsCard
+                dossierId={7}
                 firmName="Acme"
                 documentRequests={[
                     request({

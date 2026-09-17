@@ -70,7 +70,6 @@ final readonly class NotifyWorkspaceIfQuestionnaireCompleteAction
             ],
         );
 
-        // Persist inbox rows before the broadcast so the Echo-triggered reload sees them.
         $notification = new ClientQuestionnaireCompletedNotification(
             tenantId: $tenant->id,
             dossierId: $dossier->id,

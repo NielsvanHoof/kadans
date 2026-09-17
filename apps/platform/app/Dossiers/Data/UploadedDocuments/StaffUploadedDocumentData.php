@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Dossiers\Data\UploadedDocuments;
 
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
+use App\Dossiers\Enums\DocumentScanState;
 use App\Dossiers\Models\UploadedDocument;
+use App\Dossiers\Support\UploadedDocuments\UploadedDocumentThumbnailUrl;
 use App\Pipelines\Data\PipelineData;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -26,6 +28,17 @@ final class StaffUploadedDocumentData extends Data
         public readonly ?string $processingError,
         public readonly ?PipelineData $pipeline,
         public readonly bool $canDelete,
+        /**
+         * What to say about the security check, in the interface's own three
+         * states rather than GuardDuty's five. See DocumentScanState.
+         */
+        public readonly DocumentScanState $scanState,
+        /**
+         * Rendered first-page preview, or null when there is not one — which is
+         * the ordinary case while a scan is in flight, for a verdict that was
+         * not clean, and for formats with no renderer.
+         */
+        public readonly ?string $thumbnailUrl,
     ) {}
 
     /**
@@ -48,6 +61,8 @@ final class StaffUploadedDocumentData extends Data
                 ? null
                 : PipelineData::fromModel($latestPipeline),
             canDelete: request()->user()?->can('delete', $uploadedDocument) ?? false,
+            scanState: DocumentScanState::fromScanStatus($uploadedDocument->malware_scan_status),
+            thumbnailUrl: UploadedDocumentThumbnailUrl::for($uploadedDocument),
         );
     }
 }

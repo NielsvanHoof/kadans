@@ -237,6 +237,10 @@ final class AppServiceProvider extends ServiceProvider
             DevCommands::artisan('textract:consume', 'textract-consume');
         }
 
+        if ($this->shouldRunScanConsume()) {
+            DevCommands::artisan('scan:consume', 'scan-consume');
+        }
+
         // phpunit sets BROADCAST_CONNECTION=null → env converts to PHP null.
         if (Config::get('broadcasting.default') !== 'reverb') {
             return;
@@ -256,6 +260,21 @@ final class AppServiceProvider extends ServiceProvider
 
         // Queue URL is optional/null while drivers stay on mock.
         $queueUrl = Config::get('transcription.transcribe.results_queue_url');
+
+        return is_string($queueUrl) && $queueUrl !== '';
+    }
+
+    /**
+     * Malware verdict listener for `php artisan dev`.
+     *
+     * Gated on the queue alone, unlike the two above. There is no scanning
+     * "driver" to check: the verdicts come from the document-scan Lambda, which
+     * either exists in the environment the queue points at or does not. Locally
+     * `composer floci:lambdas` creates both.
+     */
+    private function shouldRunScanConsume(): bool
+    {
+        $queueUrl = Config::get('scanning.results_queue_url');
 
         return is_string($queueUrl) && $queueUrl !== '';
     }

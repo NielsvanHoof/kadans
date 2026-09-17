@@ -29,6 +29,7 @@ final readonly class DeleteUploadedDocumentAction
         $documentRequest = $uploadedDocument->documentRequest;
         $disk = $uploadedDocument->disk;
         $path = $uploadedDocument->path;
+        $thumbnailPath = $uploadedDocument->thumbnail_path;
 
         DB::transaction(function () use ($uploadedDocument, $documentRequest): void {
             $this->deletePipelinesForSubjects->handle([$uploadedDocument]);
@@ -50,6 +51,20 @@ final readonly class DeleteUploadedDocumentAction
             $path,
             'Failed to remove the storage object for a deleted uploaded document.',
         );
+
+        /*
+         * The rendered preview is derived from the document and must not
+         * outlive it. Left behind it would be an orphan nothing references and
+         * nothing cleans up — a picture of the first page of a document the
+         * firm believes it deleted.
+         */
+        if ($thumbnailPath !== null && $thumbnailPath !== '') {
+            $this->deleteFileWithoutMaskingFailure(
+                $disk,
+                $thumbnailPath,
+                'Failed to remove the thumbnail for a deleted uploaded document.',
+            );
+        }
     }
 
     private function deleteFileWithoutMaskingFailure(

@@ -51,19 +51,7 @@ test('broadcast events expose telescope tags for their subjects', function (): v
 });
 
 test('notifications expose telescope tags for their subjects', function (): void {
-    expect(new ClientQuestionnaireCompletedNotification(
-        tenantId: 1,
-        dossierId: 9,
-        dossierTitle: 'Payroll',
-        clientName: 'Jane',
-        message: 'Done',
-        dossierUrl: 'https://example.test/dossiers/9',
-    )->tags())->toBe([
-        'notification',
-        'client_questionnaire_completed',
-        'tenant:1',
-        'dossier:9',
-    ])->and(new ClientChangesRequestedNotification(
+    expect(new ClientChangesRequestedNotification(
         documentRequestId: 4,
         dossierId: 9,
         clientName: 'Jane',
@@ -89,22 +77,17 @@ test('notifications expose telescope tags for their subjects', function (): void
             'client_portal_new_device',
             'tenant:1',
             'dossier:9',
-        ])->and(new AudioTranscriptionCompletedNotification(
-            tenantId: 1,
-            audioRecordingId: 3,
-            originalFilename: 'call.mp3',
-            dossierId: 9,
-            dossierTitle: 'Payroll',
-            audioRecordingUrl: 'https://example.test/audio/3',
-        )->tags())->toBe([
-            'notification',
-            'audio_transcription_completed',
-            'tenant:1',
-            'audio_recording:3',
         ]);
 });
 
-test('inbox notifications the bell reloads from Echo are queued', function (): void {
+/*
+ * The inverse of what this test used to assert. Queueing these two put the row
+ * on `default` and the broadcast that announces it on `broadcasts` — separate
+ * Horizon pools, drained in parallel — so the bell reloaded before the row
+ * existed and staff had to refresh by hand. They are database-only, so sending
+ * them inline costs one insert and restores the ordering. TASK-64.
+ */
+test('inbox notifications the bell reloads from Echo are not queued', function (): void {
     expect(new ClientQuestionnaireCompletedNotification(
         tenantId: 1,
         dossierId: 9,
@@ -112,7 +95,7 @@ test('inbox notifications the bell reloads from Echo are queued', function (): v
         clientName: 'Jane',
         message: 'Done',
         dossierUrl: 'https://example.test/dossiers/9',
-    ))->toBeInstanceOf(ShouldQueue::class)
+    ))->not->toBeInstanceOf(ShouldQueue::class)
         ->and(new AudioTranscriptionCompletedNotification(
             tenantId: 1,
             audioRecordingId: 3,
@@ -120,5 +103,5 @@ test('inbox notifications the bell reloads from Echo are queued', function (): v
             dossierId: 9,
             dossierTitle: 'Payroll',
             audioRecordingUrl: 'https://example.test/audio/3',
-        ))->toBeInstanceOf(ShouldQueue::class);
+        ))->not->toBeInstanceOf(ShouldQueue::class);
 });

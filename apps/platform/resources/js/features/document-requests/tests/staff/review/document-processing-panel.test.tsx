@@ -24,6 +24,8 @@ function uploadedDocument(
         processing_status: 'completed',
         processing_error: null,
         pipeline: null,
+        scan_state: 'ready',
+        thumbnail_url: null,
         ...overrides,
     } as UploadedDocument;
 }
@@ -142,5 +144,41 @@ describe('DocumentProcessingPanel', () => {
         expect(
             screen.getByRole('button', { name: /Remove/ }),
         ).toBeInTheDocument();
+    });
+
+    /*
+     * A blocked file explains itself instead of offering a download the server
+     * would refuse. The 403 is still there — this stops the user meeting it.
+     */
+    it('replaces the download with an explanation when the file is blocked', () => {
+        render(
+            <DocumentProcessingPanel
+                uploadedDocument={uploadedDocument({ scan_state: 'blocked' })}
+                canDownload
+            />,
+        );
+
+        expect(
+            screen.queryByRole('link', { name: 'Download' }),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByText('This file cannot be opened'),
+        ).toBeInTheDocument();
+    });
+
+    it('keeps the download available once the check has passed', () => {
+        render(
+            <DocumentProcessingPanel
+                uploadedDocument={uploadedDocument({ scan_state: 'ready' })}
+                canDownload
+            />,
+        );
+
+        expect(
+            screen.getByRole('link', { name: 'Download' }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText('This file cannot be opened'),
+        ).not.toBeInTheDocument();
     });
 });

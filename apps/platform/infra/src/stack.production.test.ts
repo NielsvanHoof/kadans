@@ -128,3 +128,27 @@ test("the OCR CMK grants Textract the same way it grants Transcribe", () => {
   assert.ok(serialized.includes("textract.amazonaws.com"));
   assert.ok(serialized.includes("AllowAmazonTextractToUseKey"));
 });
+
+test("production runs the document scan handler on the same settings as staging", () => {
+  const scanFunction = stack.named("scan-handler");
+
+  assert.ok(scanFunction);
+  assert.equal(scanFunction.inputs.runtime, "provided.al2023");
+  assert.deepEqual(scanFunction.inputs.architectures, ["arm64"]);
+  /*
+   * Deliberately not an environment setting. Nothing about rendering a page
+   * differs between environments, and a knob whose value is the same everywhere
+   * is a knob that will eventually differ by accident.
+   */
+  assert.equal(scanFunction.inputs.memorySize, 1_024);
+  assert.ok(stack.named("scan-results"));
+  assert.ok(stack.named("scan-result"));
+});
+
+test("the scan handler is data-plane compute, not the application coming back", () => {
+  // TASK-43.3 removed application compute; this function handles bytes next to
+  // the bucket, which is the one thing Laravel Cloud cannot do.
+  assert.equal(stack.ofType("aws:lambda/function:Function").length, 1);
+  assert.equal(stack.hasType("aws:ecs/cluster:Cluster"), false);
+  assert.equal(stack.hasType("aws:ecr/repository:Repository"), false);
+});

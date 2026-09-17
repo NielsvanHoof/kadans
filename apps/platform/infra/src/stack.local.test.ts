@@ -153,3 +153,14 @@ test("the Textract publish role can generate data keys for encrypted SNS", () =>
 
   assert.ok(document, "textract publish policy must allow GenerateDataKey* for SNS SSE");
 });
+
+test("local builds the scan handler too, so Sail exercises the real path", () => {
+  /*
+   * GuardDuty is created on every stack, so the verdicts exist locally whether
+   * or not anything consumes them. Building the function here as well keeps the
+   * local stack a faithful rehearsal rather than a different shape.
+   */
+  assert.ok(stack.named("scan-handler"));
+  assert.ok(stack.named("scan-results"));
+  assert.ok(stack.named("scan-result"));
+});

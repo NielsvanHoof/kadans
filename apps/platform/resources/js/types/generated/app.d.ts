@@ -84,7 +84,8 @@ declare namespace App {
                 | "audio_recording.transcription_started"
                 | "audio_recording.transcription_completed"
                 | "audio_recording.transcription_failed"
-                | "file.blocked_by_malware_scan";
+                | "file.blocked_by_malware_scan"
+                | "file.malware_scan_flagged";
             export type AuditPermission = "audit.view";
         }
     }
@@ -422,6 +423,8 @@ declare namespace App {
                     readonly processing_error: string | null;
                     readonly pipeline: App.Pipelines.Data.PipelineData | null;
                     readonly can_delete: boolean;
+                    readonly scan_state: App.Dossiers.Enums.DocumentScanState;
+                    readonly thumbnail_url: string | null;
                 };
                 export type UploadedDocumentSearchHitData = {
                     readonly id: number;
@@ -459,6 +462,7 @@ declare namespace App {
                 | "document_requests.review";
             export type DocumentRequestStatus =
                 "pending" | "submitted" | "accepted" | "rejected";
+            export type DocumentScanState = "scanning" | "ready" | "blocked";
             export type DossierExportStatus =
                 "pending" | "processing" | "completed" | "failed";
             export type DossierPermission =

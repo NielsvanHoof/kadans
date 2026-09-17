@@ -13,10 +13,12 @@ import { cn } from '@/lib/utils';
  * Client-portal questionnaire — numbered field cards aligned with the staff builder canvas.
  */
 export default function PortalDocumentRequestsCard({
+    dossierId,
     firmName,
     documentRequests,
     nextIncompleteRequestId,
 }: {
+    dossierId: number;
     firmName: string;
     documentRequests: PortalDocumentRequest[];
     nextIncompleteRequestId: number | null;
@@ -112,6 +114,7 @@ export default function PortalDocumentRequestsCard({
                                     ) : null}
 
                                     <PortalRequestTypeContent
+                                        dossierId={dossierId}
                                         documentRequest={documentRequest}
                                         canRespond={documentRequest.can_respond}
                                     />
@@ -166,9 +169,11 @@ function FieldFooter({
  * Resolve type-specific portal content through the exhaustive registry.
  */
 function PortalRequestTypeContent({
+    dossierId,
     documentRequest,
     canRespond,
 }: {
+    dossierId: number;
     documentRequest: PortalDocumentRequest;
     canRespond: boolean;
 }) {
@@ -178,6 +183,7 @@ function PortalRequestTypeContent({
 
     const content = (
         <PortalContent
+            dossierId={dossierId}
             documentRequest={documentRequest}
             canRespond={canRespond}
         />

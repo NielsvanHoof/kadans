@@ -20,6 +20,7 @@ import { formatBytes } from '@/lib/format-bytes';
 import { cn } from '@/lib/utils';
 
 export type PortalDocumentRequestTypeProps = {
+    dossierId: number;
     documentRequest: PortalDocumentRequest;
     canRespond: boolean;
 };
@@ -28,6 +29,7 @@ export type PortalDocumentRequestTypeProps = {
  * File requests show the current upload before offering a replacement.
  */
 export function PortalFileRequestContent({
+    dossierId,
     documentRequest,
     canRespond,
 }: PortalDocumentRequestTypeProps) {
@@ -56,7 +58,10 @@ export function PortalFileRequestContent({
                 </div>
             ) : null}
             {canRespond ? (
-                <PortalDocumentUpload documentRequest={documentRequest} />
+                <PortalDocumentUpload
+                    dossierId={dossierId}
+                    documentRequest={documentRequest}
+                />
             ) : null}
         </div>
     );

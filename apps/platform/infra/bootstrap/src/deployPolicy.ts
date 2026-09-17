@@ -224,6 +224,35 @@ export function deployRolePolicy(
       ],
       resources: ["*"],
     }, {
+      /*
+       * The document-scan Lambda (TASK-62.2) — the only compute in the stack.
+       *
+       * Scoped to the naming scheme like the queues and rules above. The zip is
+       * uploaded inline by `pulumi up`, so there is no ECR or S3 artefact bucket
+       * to grant on top of this.
+       */
+      sid: "ManageLambdaFunctions",
+      effect: "Allow",
+      actions: [
+        "lambda:CreateFunction",
+        "lambda:DeleteFunction",
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetFunctionCodeSigningConfig",
+        "lambda:ListVersionsByFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:AddPermission",
+        "lambda:RemovePermission",
+        "lambda:GetPolicy",
+        "lambda:TagResource",
+        "lambda:UntagResource",
+        "lambda:ListTags",
+      ],
+      resources: [
+        pulumi.output(accountId).apply((account) => `arn:aws:lambda:*:${account}:function:qompose-*`),
+      ],
+    }, {
       sid: "ManageOcrAlarms",
       effect: "Allow",
       actions: ["cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms", "cloudwatch:TagResource"],
@@ -272,8 +301,49 @@ export function deployRolePolicy(
         "iam:SetDefaultPolicyVersion",
         "iam:TagPolicy",
         "iam:UntagPolicy",
+        /*
+         * Service roles the stack owns: the Textract publish role, the GuardDuty
+         * scan role, and the document-scan Lambda's execution role.
+         *
+         * The Deny below still wins for the deploy roles themselves — that is
+         * the whole point of it being an explicit Deny, and it is why these can
+         * be granted across `role/qompose-*` without opening a path for CI to
+         * rewrite its own trust policy.
+         */
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole",
       ],
       resources: iamResources,
+    }, {
+      /*
+       * Handing a role to the service that will assume it is a separate
+       * permission from creating it, and it is the one that fails last — the
+       * role exists, the policy is attached, and the resource still will not
+       * create.
+       *
+       * Scoped by destination service so this cannot be used to pass a role
+       * anywhere else.
+       */
+      sid: "PassServiceRoles",
+      effect: "Allow",
+      actions: ["iam:PassRole"],
+      resources: iamResources,
+      conditions: [{
+        test: "StringEquals",
+        variable: "iam:PassedToService",
+        values: [
+          "lambda.amazonaws.com",
+          "textract.amazonaws.com",
+          "malware-protection-plan.guardduty.amazonaws.com",
+        ],
+      }],
     }, {
       /*
        * Privilege-escalation guard — why bootstrap is a separate Pulumi project.

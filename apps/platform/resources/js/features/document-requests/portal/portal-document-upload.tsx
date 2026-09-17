@@ -9,8 +9,10 @@ import { inlineActionOptions } from '@/lib/inline-action-options';
  * Uses the restricted client portal session, not staff auth.
  */
 export default function PortalDocumentUpload({
+    dossierId,
     documentRequest,
 }: {
+    dossierId: number;
     documentRequest: PortalDocumentRequest;
 }) {
     const allowMultiple =
@@ -25,6 +27,7 @@ export default function PortalDocumentUpload({
                 documentRequest: documentRequest.id,
             })}
             signUrl={ClientPortalUploadTicketController.store.url()}
+            ticketRequestData={{ dossier_id: dossierId }}
             visitOptions={inlineActionOptions}
             className="mt-3 space-y-2"
         />

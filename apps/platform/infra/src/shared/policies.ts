@@ -1,6 +1,8 @@
 import * as aws from "@pulumi/aws";
 import type * as pulumi from "@pulumi/pulumi";
 import type { PlatformConfig } from "../config.js";
+import { THUMBNAIL_PREFIX } from "./documentScanHandler.js";
+import type { DocumentScanHandler } from "./documentScanHandler.js";
 import type { DocumentInfrastructure } from "./documents.js";
 
 /**
@@ -23,6 +25,7 @@ import type { DocumentInfrastructure } from "./documents.js";
 export function applicationAccessPolicy(
   config: PlatformConfig,
   documents: DocumentInfrastructure,
+  scanHandler: DocumentScanHandler,
   encryptionKey: aws.kms.Key,
 ): pulumi.Output<string> {
   const bucketObjects = documents.bucket.arn.apply((arn) => `${arn}/*`);
@@ -99,6 +102,30 @@ export function applicationAccessPolicy(
       ],
       resources: [documents.transcribeResultsQueue.arn],
     }, {
+      /*
+       * Verdicts and thumbnail keys from the document scan handler, consumed by
+       * `scan:consume` the same way the two queues above are.
+       */
+      sid: "ConsumeScanResults",
+      actions: [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:ChangeMessageVisibility",
+      ],
+      resources: [scanHandler.resultsQueue.arn],
+    }, {
+      /*
+       * Thumbnails are served through the application, so it needs to read them
+       * — but it has no business writing them. They are derived output the
+       * Lambda owns, and the ReadWriteDocuments statement above deliberately
+       * does not extend here: `s3:PutObject` on the whole bucket would let a
+       * request path overwrite a rendered thumbnail with anything at all.
+       */
+      sid: "ReadDocumentThumbnails",
+      actions: ["s3:GetObject"],
+      resources: [documents.bucket.arn.apply((arn) => `${arn}/${THUMBNAIL_PREFIX}*`)],
+    }, {
       sid: "UseDocumentEncryptionKey",
       actions: ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey"],
       resources: [encryptionKey.arn],
@@ -112,6 +139,7 @@ export function applicationAccessPolicy(
 export function createApplicationAccessManagedPolicy(
   config: PlatformConfig,
   documents: DocumentInfrastructure,
+  scanHandler: DocumentScanHandler,
   encryptionKey: aws.kms.Key,
 ): aws.iam.Policy {
   const { environment } = config;
@@ -120,6 +148,6 @@ export function createApplicationAccessManagedPolicy(
     name: environment.resourceName("app-access"),
     path: "/qompose/",
     description: "Sail + Laravel Cloud access for S3, Textract, Transcribe, Bedrock, SQS, KMS",
-    policy: applicationAccessPolicy(config, documents, encryptionKey),
+    policy: applicationAccessPolicy(config, documents, scanHandler, encryptionKey),
   });
 }

@@ -5,7 +5,10 @@ import FileDropzone from '@/components/forms/file-dropzone';
 import MultiFileDropzone from '@/components/forms/multi-file-dropzone';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup } from '@/components/ui/field';
-import { useDirectUpload } from '@/hooks/use-direct-upload';
+import {
+    useDirectUpload,
+    type UploadTicketRequestData,
+} from '@/hooks/use-direct-upload';
 import { useTranslation } from '@/hooks/use-translation';
 
 type VisitOptions = Record<string, unknown>;
@@ -33,6 +36,7 @@ export default function DocumentFileUploadForm({
     allowMultiple = false,
     actionUrl,
     signUrl,
+    ticketRequestData,
     visitOptions = {},
     className = 'mt-2',
 }: {
@@ -41,12 +45,17 @@ export default function DocumentFileUploadForm({
     allowMultiple?: boolean;
     actionUrl: string;
     signUrl: string;
+    ticketRequestData?: UploadTicketRequestData;
     visitOptions?: VisitOptions;
     className?: string;
 }) {
     const { t } = useTranslation();
     const [files, setFiles] = useState<File[]>([]);
-    const directUpload = useDirectUpload(signUrl, 'document');
+    const directUpload = useDirectUpload(
+        signUrl,
+        'document',
+        ticketRequestData,
+    );
     const form = useForm<{ documents: string[] }>({ documents: [] });
 
     const busy = directUpload.uploading || form.processing;

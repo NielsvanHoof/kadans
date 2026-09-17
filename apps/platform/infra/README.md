@@ -57,6 +57,9 @@ flowchart TB
   Cloud --> IAM[App IAM user · per stack]
   Cloud --> SES[SES]
   Docs --> KMS[KMS]
+  Docs --> Scan[GuardDuty scan result] --> Lambda[document-scan Lambda]
+  Lambda --> Thumbs[S3 thumbnails/]
+  Lambda --> ScanQ[SQS scan-results] --> Cloud
   RDS --> VPC[VPC · public subnets · DB SG]
 ```
 
@@ -79,6 +82,31 @@ stack output.
 landing in the documents bucket and tags it with the verdict; the application reads
 that tag at download and preview time and refuses anything not explicitly clean
 (`docs/security.md`). CloudTrail data events record who read each object.
+
+**Document scan handler.** The one piece of compute in this stack, and the reason
+it is here rather than on Laravel Cloud: rendering a page means handling the
+bytes, and the application deliberately never does.
+
+A second EventBridge rule (`scan-result`, distinct from `malware-findings`)
+matches *every* GuardDuty verdict for the documents bucket and invokes
+`apps/lambdas/document-scan`. On a clean verdict the function renders page one of
+a PDF or image to a JPEG under `thumbnails/`; on every verdict, clean or not, it
+publishes to the `scan-results` queue, which `php artisan scan:consume` drains.
+
+Two things follow from the ordering. The function only ever fetches an object
+GuardDuty has already declared clean, so untrusted bytes never reach the renderer
+on an unscanned file — and PDFium runs as WebAssembly under wazero with no
+filesystem mounted, so they do not reach much even then. And the application
+finally has a queryable scan state: before this, "not scanned yet" was the normal
+condition right after upload and the gate simply refused, with nothing to show a
+user.
+
+`malware-findings` still pages a human on `THREATS_FOUND` and is untouched;
+operator alerting and application state are separate concerns.
+
+The deploy has to build the function before `pulumi up` — the program reads
+`apps/lambdas/document-scan/dist/function.zip` as a `FileArchive`. The stack tests
+do not, because Pulumi's mock runtime never opens the archive.
 
 ## Applying a stack
 

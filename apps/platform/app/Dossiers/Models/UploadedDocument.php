@@ -7,6 +7,8 @@ namespace App\Dossiers\Models;
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Services\Ocr\FlattenExtractedTextForSearch;
+use App\Dossiers\Contracts\Scanning\MalwareScannable;
+use App\Dossiers\Enums\MalwareScanStatus;
 use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
@@ -45,6 +47,9 @@ use Override;
  * @property CarbonImmutable|null $processing_started_at
  * @property CarbonImmutable|null $processing_finished_at
  * @property string|null $textract_job_id
+ * @property MalwareScanStatus|null $malware_scan_status
+ * @property CarbonImmutable|null $malware_scanned_at
+ * @property string|null $thumbnail_path
  * @property-read DocumentRequest $documentRequest
  * @property-read Pipeline|null $latestPipeline
  * @property-read Collection<int, Pipeline> $pipelines
@@ -81,7 +86,7 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class UploadedDocument extends TenantOwnedModel
+final class UploadedDocument extends TenantOwnedModel implements MalwareScannable
 {
     /** @use HasFactory<UploadedDocumentFactory> */
     use HasFactory, Searchable;
@@ -110,6 +115,9 @@ final class UploadedDocument extends TenantOwnedModel
         'processing_started_at',
         'processing_finished_at',
         'textract_job_id',
+        'malware_scan_status',
+        'malware_scanned_at',
+        'thumbnail_path',
     ];
 
     /**
@@ -195,6 +203,24 @@ final class UploadedDocument extends TenantOwnedModel
     }
 
     /**
+     * Record the scanner's verdict, and the preview it produced.
+     *
+     * A verdict with no thumbnail key clears any previous one rather than
+     * leaving it in place. That matters on a re-scan: if an object we had
+     * already rendered comes back as a threat, the picture of its first page
+     * must stop being served along with the file itself.
+     */
+    public function recordScanVerdict(
+        ?MalwareScanStatus $status,
+        CarbonImmutable $scannedAt,
+        ?string $thumbnailKey,
+    ): void {
+        $this->malware_scan_status = $status;
+        $this->malware_scanned_at = $scannedAt;
+        $this->thumbnail_path = $thumbnailKey;
+    }
+
+    /**
      * @return array<string, string>
      */
     #[Override]
@@ -208,6 +234,8 @@ final class UploadedDocument extends TenantOwnedModel
             'processing_started_at' => 'datetime',
             'processing_finished_at' => 'datetime',
             'embedding' => AsVector::class,
+            'malware_scan_status' => MalwareScanStatus::class,
+            'malware_scanned_at' => 'datetime',
         ];
     }
 }

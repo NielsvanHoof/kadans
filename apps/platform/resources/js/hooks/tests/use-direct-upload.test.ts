@@ -105,12 +105,12 @@ beforeEach(() => {
 });
 
 describe('useDirectUpload', () => {
-    it('signs each file and PUTs it to the returned URL', async () => {
+    it('signs each file with endpoint-specific data and PUTs it to the returned URL', async () => {
         const fetchMock = respondWithTicket();
         vi.stubGlobal('fetch', fetchMock);
 
         const { result } = renderHook(() =>
-            useDirectUpload(SIGN_URL, 'document'),
+            useDirectUpload(SIGN_URL, 'document', { dossier_id: 42 }),
         );
 
         let tickets: Awaited<ReturnType<typeof result.current.upload>> = null;
@@ -125,6 +125,7 @@ describe('useDirectUpload', () => {
         const [url, init] = fetchMock.mock.calls[0];
         expect(url).toBe(SIGN_URL);
         expect(JSON.parse(init.body as string)).toEqual({
+            dossier_id: 42,
             purpose: 'document',
             filename: 'statement.pdf',
             content_type: 'application/pdf',

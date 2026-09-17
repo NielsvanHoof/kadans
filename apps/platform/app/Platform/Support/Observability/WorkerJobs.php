@@ -9,6 +9,7 @@ use App\AudioProcessing\Jobs\ProcessAudioRecordingJob;
 use App\DocumentProcessing\Jobs\Ocr\ApplyTextractResultJob;
 use App\DocumentProcessing\Jobs\Ocr\ProcessUploadedDocumentJob;
 use App\Dossiers\Jobs\Exports\GenerateDossierExportJob;
+use App\Dossiers\Jobs\Scanning\ApplyScanResultJob;
 use App\Platform\Jobs\DataSubject\AnonymizeDataSubjectJob;
 use App\Platform\Jobs\DataSubject\GenerateDataSubjectExportJob;
 use App\Shared\Contracts\Queue\TimeBoundedJob;
@@ -40,6 +41,7 @@ final class WorkerJobs
         ApplyTextractResultJob::class,
         ProcessAudioRecordingJob::class,
         ApplyTranscribeResultJob::class,
+        ApplyScanResultJob::class,
         GenerateDossierExportJob::class,
         GenerateDataSubjectExportJob::class,
         AnonymizeDataSubjectJob::class,

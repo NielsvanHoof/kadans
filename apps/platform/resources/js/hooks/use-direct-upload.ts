@@ -28,6 +28,8 @@ type DirectUploadState = {
 /** Matches the PHP UploadPurpose enum; decides which ceiling applies. */
 export type UploadPurpose = 'document' | 'audio_recording';
 
+export type UploadTicketRequestData = Record<string, string | number>;
+
 /**
  * Upload files straight to object storage, bypassing the application.
  *
@@ -44,7 +46,11 @@ export type UploadPurpose = 'document' | 'audio_recording';
  * upload progress in any browser — a progress bar is the whole reason a user
  * tolerates a slow upload, so this is not a detail worth simplifying away.
  */
-export function useDirectUpload(signUrl: string, purpose: UploadPurpose) {
+export function useDirectUpload(
+    signUrl: string,
+    purpose: UploadPurpose,
+    ticketRequestData?: UploadTicketRequestData,
+) {
     const { t } = useTranslation();
     const [state, setState] = useState<DirectUploadState>({
         progressPercent: null,
@@ -96,7 +102,12 @@ export function useDirectUpload(signUrl: string, purpose: UploadPurpose) {
                  * in order server-side, so there is nothing to gain.
                  */
                 for (const [index, file] of files.entries()) {
-                    const signed = await signUpload(signUrl, purpose, file);
+                    const signed = await signUpload(
+                        signUrl,
+                        purpose,
+                        file,
+                        ticketRequestData,
+                    );
 
                     await putToStorage(
                         signed,
@@ -142,7 +153,7 @@ export function useDirectUpload(signUrl: string, purpose: UploadPurpose) {
                 inFlight.current = [];
             }
         },
-        [purpose, signUrl, t],
+        [purpose, signUrl, t, ticketRequestData],
     );
 
     return { upload, reset, ...state };
@@ -155,6 +166,7 @@ async function signUpload(
     signUrl: string,
     purpose: UploadPurpose,
     file: File,
+    ticketRequestData?: UploadTicketRequestData,
 ): Promise<TicketResponse> {
     const response = await window.fetch(signUrl, {
         method: 'POST',
@@ -165,6 +177,7 @@ async function signUpload(
         },
         credentials: 'same-origin',
         body: JSON.stringify({
+            ...ticketRequestData,
             purpose,
             filename: file.name,
             // Browsers leave this empty for types they do not recognise. The

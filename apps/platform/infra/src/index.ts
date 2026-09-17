@@ -1,7 +1,8 @@
 import { loadPlatformConfig } from "./config.js";
-import { createOcrAlarms } from "./shared/alarms.js";
+import { createDocumentScanAlarms, createOcrAlarms } from "./shared/alarms.js";
 import { createAuditTrail } from "./shared/auditTrail.js";
 import { createDatabase } from "./shared/database.js";
+import { createDocumentScanHandler } from "./shared/documentScanHandler.js";
 import { createPlatformDns } from "./shared/dns.js";
 import { createDocumentInfrastructure } from "./shared/documents.js";
 import {
@@ -41,10 +42,22 @@ const { settings } = environment;
 // --- Data plane: documents, OCR, transcription ---
 const ocrEncryption = createOcrEncryption(config);
 const documents = createDocumentInfrastructure(config, ocrEncryption.encryptionKey);
+/*
+ * The only compute in this stack. Renders a thumbnail once GuardDuty has
+ * declared a document clean, and reports every verdict back over SQS — which is
+ * what gives the application a queryable scan state instead of a tag it can
+ * only read at download time.
+ */
+const scanHandler = createDocumentScanHandler(
+  config,
+  documents,
+  ocrEncryption.encryptionKey,
+);
 // One managed policy for the Sail / Laravel Cloud IAM user (inline user policies are too small).
 const accessPolicy = createApplicationAccessManagedPolicy(
   config,
   documents,
+  scanHandler,
   ocrEncryption.encryptionKey,
 );
 /*
@@ -54,6 +67,7 @@ const accessPolicy = createApplicationAccessManagedPolicy(
  */
 const alerting = createOperationsAlerting(config, ocrEncryption.encryptionKey);
 createOcrAlarms(config, documents, alerting.topic);
+createDocumentScanAlarms(config, scanHandler, alerting.topic);
 
 /*
  * Client uploads are scanned before staff can open them, and every object read is
@@ -126,6 +140,13 @@ export const ocrEncryptionKeyArn = ocrEncryption.encryptionKey.arn;
 export const malwareProtectionPlanId = malwareProtection.plan.id;
 export const malwareFindingsRuleName = malwareProtection.findingsRule.name;
 export const auditTrailName = auditTrail.trail.name;
+
+// Document scan handler (thumbnails + verdicts)
+export const scanHandlerFunctionName = scanHandler.function.name;
+export const scanResultsQueueUrl = scanHandler.resultsQueue.url;
+export const scanResultsDeadLetterQueueUrl = scanHandler.resultsDeadLetterQueue.url;
+export const scanDeliveryDeadLetterQueueUrl = scanHandler.deliveryDeadLetterQueue.url;
+export const scanResultRuleName = scanHandler.scanResultRule.name;
 export const auditLogBucketName = auditTrail.logBucket.bucket;
 
 // Identities

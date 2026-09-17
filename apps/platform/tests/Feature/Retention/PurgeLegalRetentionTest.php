@@ -250,3 +250,51 @@ test('a failing dossier purge is reported and does not present as success', func
         ->and(Storage::disk('local')->exists($uploadedDocument->path))->toBeTrue()
         ->and(Storage::disk('local')->exists($audioRecording->path))->toBeTrue();
 });
+
+/*
+ * A thumbnail is a picture of the first page, so a purge that removed the
+ * document and left it behind would leave the client's content in the bucket
+ * under a different key — while the firm's records said the obligation had been
+ * discharged.
+ */
+test('a legal purge removes rendered thumbnails along with the documents', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
+    $thumbnailPath = 'thumbnails/uploads/retention-thumbnail.jpg';
+
+    $uploadedDocument = UploadedDocument::factory()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+        'disk' => 'local',
+        'path' => 'uploads/retention-thumbnail.pdf',
+        'thumbnail_path' => $thumbnailPath,
+    ]);
+
+    Storage::disk('local')->put($uploadedDocument->path, 'retention-test-content');
+    Storage::disk('local')->put($thumbnailPath, 'jpeg-bytes');
+
+    $dossier->delete();
+
+    Dossier::withTrashed()
+        ->whereKey($dossier->id)
+        ->update(['deleted_at' => now()->subDays(1095)->subDay()]);
+
+    Tenant::forgetCurrent();
+
+    $this->artisan('retention:purge-legal')->assertSuccessful();
+
+    actingInWorkspace($tenant);
+
+    expect(Storage::disk('local')->exists($uploadedDocument->path))->toBeFalse()
+        ->and(Storage::disk('local')->exists($thumbnailPath))->toBeFalse();
+});

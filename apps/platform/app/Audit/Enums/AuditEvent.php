@@ -75,6 +75,7 @@ enum AuditEvent: string
     case AudioTranscriptionCompleted = 'audio_recording.transcription_completed';
     case AudioTranscriptionFailed = 'audio_recording.transcription_failed';
     case FileBlockedByMalwareScan = 'file.blocked_by_malware_scan';
+    case FileMalwareScanFlagged = 'file.malware_scan_flagged';
 
     public function label(): string
     {
@@ -113,6 +114,7 @@ enum AuditEvent: string
             self::ClientChangesRequestedFailed => __('Client changes-requested notification failed'),
             self::AccessDenied => __('Access denied'),
             self::FileBlockedByMalwareScan => __('File blocked by security check'),
+            self::FileMalwareScanFlagged => __('Security check flagged a file'),
             self::MemberInvited => __('Member invited'),
             self::MemberInvitationAccepted => __('Member invitation accepted'),
             self::MemberInvitationRevoked => __('Member invitation revoked'),
@@ -203,7 +205,18 @@ enum AuditEvent: string
             self::AccessDenied,
             // A refusal, not a document event: it records that delivery was
             // withheld, which is the same shape of fact as a denied permission.
-            self::FileBlockedByMalwareScan => __('Access'),
+            self::FileBlockedByMalwareScan,
+            /*
+             * The scanner's verdict, recorded once when it arrives — as opposed
+             * to FileBlockedByMalwareScan, which records a person being turned
+             * away and can fire many times for the same object.
+             *
+             * Only non-clean verdicts are logged. A clean result is recorded on
+             * the document row itself with the time it was scanned, and writing
+             * an activity row for every successful upload would bury the ones
+             * that matter in the audit trail it shares.
+             */
+            self::FileMalwareScanFlagged => __('Access'),
 
             self::MemberInvited,
             self::MemberInvitationAccepted,

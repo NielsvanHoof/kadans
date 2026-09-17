@@ -5,6 +5,8 @@ import ErrorState from '@/components/primitives/error-state';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants, LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import DocumentScanBadge from '@/features/document-requests/scanning/document-scan-badge';
+import DocumentThumbnail from '@/features/document-requests/scanning/document-thumbnail';
 import { ocrProcessingMessage } from '@/features/document-requests/staff/review/ocr-processing-copy';
 import { documentProcessingStatusLabel } from '@/features/document-requests/status/document-processing-status';
 import type {
@@ -34,28 +36,38 @@ export default function DocumentProcessingPanel({
     return (
         <div className="bg-muted/50 space-y-3 rounded-md px-3 py-2 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate font-medium">
-                            {uploadedDocument.original_filename}
-                        </p>
-                        <Badge
-                            variant={processingBadgeVariant(
-                                uploadedDocument.processing_status,
-                            )}
-                        >
-                            {t('Scan :status', {
-                                status: documentProcessingStatusLabel(
+                <div className="flex min-w-0 items-start gap-3">
+                    <DocumentThumbnail
+                        filename={uploadedDocument.original_filename}
+                        thumbnailUrl={uploadedDocument.thumbnail_url}
+                        scanState={uploadedDocument.scan_state}
+                    />
+                    <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate font-medium">
+                                {uploadedDocument.original_filename}
+                            </p>
+                            <Badge
+                                variant={processingBadgeVariant(
                                     uploadedDocument.processing_status,
-                                    t,
-                                ),
-                            })}
-                        </Badge>
+                                )}
+                            >
+                                {t('Scan :status', {
+                                    status: documentProcessingStatusLabel(
+                                        uploadedDocument.processing_status,
+                                        t,
+                                    ),
+                                })}
+                            </Badge>
+                            <DocumentScanBadge
+                                scanState={uploadedDocument.scan_state}
+                            />
+                        </div>
+                        <p className="text-muted-foreground">
+                            {formatBytes(uploadedDocument.size_bytes)} ·{' '}
+                            {formatDateTime(uploadedDocument.uploaded_at)}
+                        </p>
                     </div>
-                    <p className="text-muted-foreground">
-                        {formatBytes(uploadedDocument.size_bytes)} ·{' '}
-                        {formatDateTime(uploadedDocument.uploaded_at)}
-                    </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {isComplete && (
@@ -70,20 +82,21 @@ export default function DocumentProcessingPanel({
                             {t('View extraction')}
                         </LinkButton>
                     )}
-                    {canDownload && (
-                        <a
-                            className={buttonVariants({
-                                variant: 'outline',
-                                size: 'sm',
-                            })}
-                            href={UploadedDocumentController.download.url({
-                                tenant: currentWorkspace,
-                                uploadedDocument: uploadedDocument.id,
-                            })}
-                        >
-                            {t('Download')}
-                        </a>
-                    )}
+                    {canDownload &&
+                        uploadedDocument.scan_state !== 'blocked' && (
+                            <a
+                                className={buttonVariants({
+                                    variant: 'outline',
+                                    size: 'sm',
+                                })}
+                                href={UploadedDocumentController.download.url({
+                                    tenant: currentWorkspace,
+                                    uploadedDocument: uploadedDocument.id,
+                                })}
+                            >
+                                {t('Download')}
+                            </a>
+                        )}
                     {canRemove && (
                         <ConfirmDestroyDialog
                             title={t('Remove :filename?', {
@@ -114,6 +127,16 @@ export default function DocumentProcessingPanel({
                     )}
                 </div>
             </div>
+
+            {uploadedDocument.scan_state === 'blocked' && (
+                <ErrorState
+                    variant="inline"
+                    title={t('This file cannot be opened')}
+                    description={t(
+                        'Our security check flagged this file, so it will not open or download. Ask the client to send it again.',
+                    )}
+                />
+            )}
 
             {uploadedDocument.processing_status === 'failed' &&
                 uploadedDocument.processing_error && (

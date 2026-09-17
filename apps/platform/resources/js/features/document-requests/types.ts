@@ -48,6 +48,9 @@ export type DocumentRequestStatus = App.Dossiers.Enums.DocumentRequestStatus;
 export type DocumentProcessingStatus =
     App.DocumentProcessing.Enums.DocumentProcessingStatus;
 
+/** What the interface says about a file's security check. */
+export type DocumentScanState = App.Dossiers.Enums.DocumentScanState;
+
 /** Uploaded file on a staff dossier document request (list payload — no OCR body). */
 export type UploadedDocument =
     App.Dossiers.Data.UploadedDocuments.StaffUploadedDocumentData;

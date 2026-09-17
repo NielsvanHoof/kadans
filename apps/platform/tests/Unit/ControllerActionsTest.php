@@ -90,7 +90,7 @@ const CONTROLLER_NON_REST_ACTIONS = [
 
     // Alternative representations / transports of one resource.
     UploadedDocumentController::class => [
-        'download', 'live', 'preview',
+        'download', 'live', 'preview', 'thumbnail',
     ],
     AudioRecordingController::class => [
         'download', 'live',

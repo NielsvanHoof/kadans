@@ -62,6 +62,7 @@ describe('PortalFileRequestContent uploads', () => {
     it('lets the client retrieve a file they uploaded', () => {
         render(
             <PortalFileRequestContent
+                dossierId={9}
                 documentRequest={fileRequest()}
                 canRespond={false}
             />,
@@ -80,6 +81,7 @@ describe('PortalFileRequestContent uploads', () => {
     it('offers the download even when the item is locked for review', () => {
         render(
             <PortalFileRequestContent
+                dossierId={9}
                 documentRequest={fileRequest({ status: 'accepted' })}
                 canRespond={false}
             />,
@@ -99,6 +101,7 @@ describe('PortalFileRequestContent uploads', () => {
     it('keeps remove available alongside download on multi-file items', () => {
         render(
             <PortalFileRequestContent
+                dossierId={9}
                 documentRequest={fileRequest({
                     can_respond: true,
                     configuration: {
@@ -121,6 +124,7 @@ describe('PortalFileRequestContent uploads', () => {
     it('renders one download per file', () => {
         render(
             <PortalFileRequestContent
+                dossierId={9}
                 documentRequest={fileRequest({
                     uploaded_documents: [
                         {

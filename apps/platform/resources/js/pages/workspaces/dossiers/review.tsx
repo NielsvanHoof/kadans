@@ -16,6 +16,7 @@ import { DossierPermissionsProvider } from '@/features/dossiers/permissions/doss
 import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card';
 import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { DossierReview } from '@/features/dossiers/types';
+import { useReloadOnDocumentScanStateChanged } from '@/features/document-requests/hooks/use-reload-on-document-scan-state-changed';
 import { useFetchOnPipelineUpdated } from '@/features/pipelines/hooks/use-fetch-on-pipeline-updated';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -87,6 +88,19 @@ export default function ReviewDossier({
                 uploadedDocument.processing_status === 'processing',
         ),
     );
+
+    /*
+     * The security check runs on upload and usually finishes in seconds, so a
+     * file uploaded while this page is open would otherwise sit on "running
+     * security check" — and show no preview — until someone reloaded by hand.
+     */
+    const hasInFlightScan = documentRequests.some((request) =>
+        request.uploaded_documents.some(
+            (uploadedDocument) => uploadedDocument.scan_state === 'scanning',
+        ),
+    );
+
+    useReloadOnDocumentScanStateChanged({ enabled: hasInFlightScan });
 
     const firstInFlightDocument =
         documentRequests

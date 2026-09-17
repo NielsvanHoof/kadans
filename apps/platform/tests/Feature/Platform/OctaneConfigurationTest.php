@@ -50,6 +50,19 @@ test('skips AWS result consumers while OCR and transcription stay on mock driver
         ->not->toContain('transcribe-consume');
 });
 
+test('skips the malware verdict consumer when no results queue is configured', function (): void {
+    /*
+     * Gated on the queue alone, unlike the two above — there is no scanning
+     * driver to switch. A consumer started against a queue that does not exist
+     * fails on every poll, which is noise in `php artisan dev` rather than a
+     * signal, and locally the queue only exists after `composer floci:lambdas`.
+     */
+    expect(config('scanning.results_queue_url'))->toBeEmpty();
+
+    expect(collect(DevCommands::commands())->pluck('name'))
+        ->not->toContain('scan-consume');
+});
+
 test('keeps Debugbar storage.open safe when Octane boots without a client IP', function (): void {
     // Class string (not a Closure) so config:cache / optimize can serialize it.
     expect(config('debugbar.storage.open'))->toBe(DebugbarStorageOpen::class);

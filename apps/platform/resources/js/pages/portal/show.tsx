@@ -80,6 +80,7 @@ export default function PortalShow({
                 />
 
                 <PortalDocumentRequestsCard
+                    dossierId={dossier.id}
                     firmName={firm.name}
                     documentRequests={dossier.document_requests}
                     nextIncompleteRequestId={

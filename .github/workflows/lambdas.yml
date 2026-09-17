@@ -1,0 +1,90 @@
+name: Lambdas CI
+
+# apps/lambdas is a polyglot tree: one self-contained folder per function, each
+# honouring the same contract — `make build` writes dist/function.zip, `make test`
+# runs the tests. See apps/lambdas/README.md.
+#
+# This workflow knows only that contract. Adding a function is adding a
+# directory; the matrix is discovered, so nothing here needs editing, and a
+# Python or TypeScript function would slot in beside the Go one.
+
+on:
+  pull_request:
+    paths:
+      - "apps/lambdas/**"
+      - ".github/workflows/lambdas.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/lambdas/**"
+      - ".github/workflows/lambdas.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lambdas-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: Discover functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      lambdas: ${{ steps.find.outputs.lambdas }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      # A folder counts as a function when it honours the contract, which is to
+      # say when it has a Makefile. That keeps README.md and any future shared
+      # fixtures from being mistaken for one.
+      - name: Find functions
+        id: find
+        run: |
+          lambdas=$(find apps/lambdas -mindepth 2 -maxdepth 2 -name Makefile -printf '%h\n' \
+            | xargs -r -n1 basename \
+            | sort \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "lambdas=$lambdas" >> "$GITHUB_OUTPUT"
+          echo "Found: $lambdas"
+
+  test:
+    name: ${{ matrix.lambda }}
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        lambda: ${{ fromJSON(needs.discover.outputs.lambdas) }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      # Toolchain setup is the one place a function's language shows through, so
+      # each is conditional on the manifest that proves it is needed.
+      - name: Set up Go
+        if: hashFiles(format('apps/lambdas/{0}/go.mod', matrix.lambda)) != ''
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/lambdas/${{ matrix.lambda }}/go.mod
+          cache-dependency-path: apps/lambdas/${{ matrix.lambda }}/go.sum
+
+      - name: Test
+        run: make -C apps/lambdas/${{ matrix.lambda }} test
+
+      # Builds here too, so a function that cannot be packaged fails in CI rather
+      # than halfway through a deploy.
+      - name: Build
+        run: make -C apps/lambdas/${{ matrix.lambda }} build
+
+      - name: Check the artefact honours the contract
+        run: |
+          archive="apps/lambdas/${{ matrix.lambda }}/dist/function.zip"
+          test -f "$archive" || { echo "::error::$archive was not produced"; exit 1; }
+          ls -la "$archive"

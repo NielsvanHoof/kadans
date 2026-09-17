@@ -8,6 +8,7 @@ use App\Audit\Models\Activity;
 use App\ClientPortal\Actions\Access\CreateClientAccessGrantAction;
 use App\ClientPortal\Actions\Outreach\NotifyWorkspaceIfQuestionnaireCompleteAction;
 use App\ClientPortal\Events\Outreach\ClientQuestionnaireCompleted;
+use App\ClientPortal\Notifications\Outreach\ClientQuestionnaireCompletedNotification;
 use App\Clients\Models\Client;
 use App\Dossiers\Enums\DocumentRequestStatus;
 use App\Dossiers\Models\DocumentRequest;
@@ -16,8 +17,11 @@ use App\Questionnaires\Enums\QuestionnaireItemType;
 use App\Tenancy\Enums\Role;
 use App\Tenancy\Enums\TenantMembershipStatus;
 use App\Tenancy\Models\TenantMembership;
+use Illuminate\Broadcasting\BroadcastEvent;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 
 /**
  * @return array{
@@ -252,4 +256,84 @@ test('partial portal submission does not create database notifications', functio
     ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
 
     Notification::assertNothingSent();
+});
+
+/*
+ * The bell is driven by an Echo handler that calls
+ * router.reload({ only: ['notifications'] }), so the broadcast is an instruction
+ * to go and read the database. Counting the rows from inside a real listener is
+ * the only way to assert the two are in the right order — counting after the
+ * request passes either way. TASK-64.
+ */
+test('inbox rows exist by the time the questionnaire completed broadcast is dispatched', function (): void {
+    $context = createQuestionnaireNotificationContext();
+    workspaceMember($context['tenant'], Role::Adviser);
+
+    $rowsAtDispatch = null;
+
+    Event::listen(ClientQuestionnaireCompleted::class, function () use (&$rowsAtDispatch): void {
+        // First dispatch only — a later, correctly ordered one must not be able
+        // to paper over an earlier one that fired before the rows existed.
+        $rowsAtDispatch ??= DB::table('notifications')
+            ->where('type', ClientQuestionnaireCompletedNotification::DatabaseType)
+            ->count();
+    });
+
+    actingInWorkspace($context['tenant']);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'dossier_id' => $context['dossier']->id,
+        'type' => QuestionnaireItemType::Text,
+        'title' => 'Registered address',
+        'status' => DocumentRequestStatus::Pending,
+    ]);
+
+    $this->get(route('portal.exchange', $context['plainTextToken']));
+
+    $this->post(route('portal.document-requests.answer', [
+        'documentRequest' => $documentRequest,
+    ]), [
+        'answer_text' => '221B Baker Street',
+    ])->assertRedirect(route('portal.dossiers.show', ['dossier' => $context['dossier']->id]));
+
+    // Owner plus the adviser, both already written when the bell was told to look.
+    expect($rowsAtDispatch)->toBe(2);
+});
+
+test('a rolled back submission leaves no inbox rows behind', function (): void {
+    Event::fake([ClientQuestionnaireCompleted::class]);
+
+    $context = createQuestionnaireNotificationContext();
+
+    actingInWorkspace($context['tenant']);
+    DocumentRequest::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'dossier_id' => $context['dossier']->id,
+        'type' => QuestionnaireItemType::Text,
+        'title' => 'Registered address',
+        'status' => DocumentRequestStatus::Submitted,
+    ]);
+
+    // Un-queued notifications join the caller's transaction, so a submission
+    // that fails after the notify call must take the rows with it.
+    try {
+        DB::transaction(function () use ($context): void {
+            resolve(NotifyWorkspaceIfQuestionnaireCompleteAction::class)->handle($context['dossier']);
+
+            throw new RuntimeException('Submission failed after notifying.');
+        });
+    } catch (RuntimeException) {
+        // Expected — the rollback is what is under test.
+    }
+
+    expect(
+        DB::table('notifications')
+            ->where('type', ClientQuestionnaireCompletedNotification::DatabaseType)
+            ->count(),
+    )->toBe(0);
+
+    // The broadcast half of this is carried by ClientQuestionnaireCompleted's
+    // $afterCommit and is not asserted here: QueueFake records pushes as they
+    // are made and ignores after-commit deferral, so it reports a BroadcastEvent
+    // that the real queue would never have sent.
 });

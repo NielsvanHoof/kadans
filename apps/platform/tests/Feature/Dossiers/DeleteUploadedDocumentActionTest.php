@@ -89,3 +89,36 @@ test('rolls back database work and keeps the storage object when a mid-delete fa
     // File must still exist — storage is only touched after a successful commit.
     Storage::disk('local')->assertExists($path);
 });
+
+/*
+ * The rendered preview is derived from the document and must not outlive it.
+ * Left behind it would be an orphan nothing references and nothing cleans up —
+ * a picture of the first page of a document the firm believes it deleted.
+ */
+test('deleting a document also removes its rendered thumbnail', function (): void {
+    ['uploadedDocument' => $uploadedDocument] = createDeleteUploadedDocumentFixture();
+
+    $thumbnailPath = 'thumbnails/'.$uploadedDocument->path.'.jpg';
+    Storage::disk('local')->put($thumbnailPath, 'jpeg-bytes');
+    $uploadedDocument->update(['thumbnail_path' => $thumbnailPath]);
+
+    resolve(DeleteUploadedDocumentAction::class)->handle($uploadedDocument);
+
+    Storage::disk('local')->assertMissing($uploadedDocument->path);
+    Storage::disk('local')->assertMissing($thumbnailPath);
+});
+
+/*
+ * A document that was never rendered — not scanned yet, not clean, or a format
+ * with no renderer — must delete exactly as before rather than reporting a
+ * failure to remove a file that never existed.
+ */
+test('deleting a document with no thumbnail removes only the document', function (): void {
+    ['uploadedDocument' => $uploadedDocument] = createDeleteUploadedDocumentFixture();
+
+    expect($uploadedDocument->thumbnail_path)->toBeNull();
+
+    resolve(DeleteUploadedDocumentAction::class)->handle($uploadedDocument);
+
+    Storage::disk('local')->assertMissing($uploadedDocument->path);
+});

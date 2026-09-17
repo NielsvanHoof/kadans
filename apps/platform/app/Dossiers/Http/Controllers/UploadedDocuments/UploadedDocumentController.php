@@ -17,6 +17,7 @@ use App\Dossiers\Models\DocumentRequest;
 use App\Dossiers\Models\Dossier;
 use App\Dossiers\Models\UploadedDocument;
 use App\Dossiers\Queries\UploadedDocuments\FetchUploadedDocumentShowQuery;
+use App\Dossiers\Support\StoredFileResponse;
 use App\Dossiers\Support\UploadedDocuments\UploadedDocumentResponse;
 use App\Dossiers\Support\Uploads\StagedUpload;
 use App\Shared\Http\Controllers\Controller;
@@ -172,6 +173,57 @@ final class UploadedDocumentController extends Controller
         );
 
         return $uploadedDocumentResponse->serve($uploadedDocument, disposition: 'inline');
+    }
+
+    /**
+     * The rendered first-page preview, for document lists and cards.
+     *
+     * Two things here are deliberate and neither is an oversight.
+     *
+     * **It does not go through GuardUploadedDocumentDeliveryAction.** A
+     * thumbnail is not the client's file: it is output this application's own
+     * Lambda rendered from an object GuardDuty had already declared clean, and
+     * it carries no scan tag of its own. Putting it through the gate would fail
+     * closed on every thumbnail forever. The ordering is what makes that safe —
+     * the render is triggered by the clean verdict, so bytes that were never
+     * cleared are never rendered in the first place.
+     *
+     * **It is not behind RequirePassword, unlike preview and download.** It
+     * cannot be: an `<img>` in a list would follow the redirect to the password
+     * page and render as a broken image, which is the entire feature. The
+     * accepted cost is real and worth stating — a 400x560 render of page one is
+     * meaningful content, so for a member whose password confirmation has
+     * lapsed this reveals a little more than the file name they could already
+     * see. The `download` ability is still required, so it is never a way into
+     * a dossier the member has no access to.
+     *
+     * Not audited. It fires once per thumbnail per list render, and burying
+     * DocumentViewed under that volume would cost more than it records.
+     */
+    public function thumbnail(
+        Tenant $tenant,
+        UploadedDocument $uploadedDocument,
+        StoredFileResponse $storedFileResponse,
+    ): HttpResponse {
+        $this->authorize('download', $uploadedDocument);
+
+        $thumbnailPath = $uploadedDocument->thumbnail_path;
+
+        // No thumbnail is the ordinary case, not an error: the scan may still be
+        // in flight, the verdict may not have been clean, or the format may have
+        // no renderer. The interface falls back to a file-type icon on a 404.
+        abort_if($thumbnailPath === null || $thumbnailPath === '', 404);
+
+        return $storedFileResponse->serve(
+            disk: $uploadedDocument->disk,
+            path: $thumbnailPath,
+            // Never the client's original filename: this is our JPEG, and the
+            // upload's name has no business in a content-disposition header.
+            filename: 'thumbnail.jpg',
+            mimeType: 'image/jpeg',
+            disposition: 'inline',
+            headers: UploadedDocumentResponse::UNTRUSTED_FILE_HEADERS,
+        );
     }
 
     /**

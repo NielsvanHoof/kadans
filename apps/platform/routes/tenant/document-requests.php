@@ -58,5 +58,12 @@ Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentCo
         passwordTimeoutSeconds: Config::integer('auth.document_access_timeout', 900),
     ))
     ->name('uploaded-documents.download');
+/*
+ * Deliberately without RequirePassword, unlike preview and download: an <img>
+ * in a document list would follow the redirect to the password page and render
+ * as a broken image. See the controller method for the accepted cost.
+ */
+Route::get('uploaded-documents/{uploadedDocument}/thumbnail', [UploadedDocumentController::class, 'thumbnail'])
+    ->name('uploaded-documents.thumbnail');
 Route::delete('uploaded-documents/{uploadedDocument}', [UploadedDocumentController::class, 'destroy'])
     ->name('uploaded-documents.destroy');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Accounts\Enums\PlatformRole;
 use App\AudioProcessing\Actions\NotifyUploaderOfTranscriptionCompletedAction;
 use App\AudioProcessing\Contracts\AudioTranscriber;
+use App\AudioProcessing\Events\AudioTranscriptionCompleted;
 use App\AudioProcessing\Notifications\AudioTranscriptionCompletedNotification;
 use App\AudioProcessing\Services\Drivers\AmazonTranscribeAudioTranscriber;
 use App\AudioProcessing\Services\Drivers\MockAudioTranscriber;
@@ -13,6 +14,8 @@ use App\DocumentProcessing\Enums\DocumentProcessingStatus;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
 use App\Dossiers\Models\AudioRecording;
 use App\Dossiers\Models\Dossier;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
@@ -154,6 +157,70 @@ test('transcript ready notification is skipped without an uploader', function ()
     resolve(NotifyUploaderOfTranscriptionCompletedAction::class)->handle($recording);
 
     Notification::assertNothingSent();
+});
+
+/*
+ * Same ordering contract as the questionnaire bell: the broadcast tells the
+ * bell to re-read the notifications prop, so the row has to be there already.
+ * Counted from inside a real listener, because counting afterwards passes
+ * either way. TASK-64.
+ */
+test('the uploader inbox row exists by the time the transcription broadcast is dispatched', function (): void {
+    ['owner' => $owner, 'tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Payroll',
+    ]);
+
+    $recording = AudioRecording::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'uploaded_by' => $owner->id,
+        'original_filename' => 'call.mp3',
+        'transcription_status' => TranscriptionStatus::Completed,
+    ]);
+
+    $rowsAtDispatch = null;
+
+    Event::listen(AudioTranscriptionCompleted::class, function () use (&$rowsAtDispatch): void {
+        // First dispatch only — a later, correctly ordered one must not be able
+        // to paper over an earlier one that fired before the row existed.
+        $rowsAtDispatch ??= DB::table('notifications')
+            ->where('type', AudioTranscriptionCompletedNotification::DatabaseType)
+            ->count();
+    });
+
+    resolve(NotifyUploaderOfTranscriptionCompletedAction::class)->handle($recording);
+
+    expect($rowsAtDispatch)->toBe(1);
+});
+
+test('the transcription broadcast still goes out when the recording has no uploader', function (): void {
+    ['tenant' => $tenant] = provisionWorkspace();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $recording = AudioRecording::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'uploaded_by' => null,
+        'transcription_status' => TranscriptionStatus::Completed,
+    ]);
+
+    Event::fake([AudioTranscriptionCompleted::class]);
+
+    resolve(NotifyUploaderOfTranscriptionCompletedAction::class)->handle($recording);
+
+    // The bell is a firm-wide inbox; a missing uploader says nothing about
+    // whether staff should see the badge move.
+    Event::assertDispatched(AudioTranscriptionCompleted::class);
 });
 
 test('processing status enums expose translated labels', function (): void {

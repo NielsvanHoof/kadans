@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\AudioProcessing\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 /**
  * Persist a workspace inbox item for the staff member who uploaded a recording,
  * once its transcript is ready. Real-time push stays on AudioTranscriptionCompleted
  * (Reverb); this is the DB source of truth for the bell.
+ *
+ * Deliberately not ShouldQueue, for the same reason as
+ * ClientQuestionnaireCompletedNotification: a queued row races the broadcast
+ * that tells the bell to go and read it. TASK-64.
  */
-final class AudioTranscriptionCompletedNotification extends Notification implements ShouldQueue
+final class AudioTranscriptionCompletedNotification extends Notification
 {
-    use Queueable;
-
     public const string DatabaseType = 'audio_transcription_completed';
 
     public function __construct(
@@ -26,9 +26,7 @@ final class AudioTranscriptionCompletedNotification extends Notification impleme
         public readonly int $dossierId,
         public readonly string $dossierTitle,
         public readonly string $audioRecordingUrl,
-    ) {
-        $this->afterCommit();
-    }
+    ) {}
 
     /**
      * @return list<string>
@@ -36,21 +34,6 @@ final class AudioTranscriptionCompletedNotification extends Notification impleme
     public function via(object $notifiable): array
     {
         return ['database'];
-    }
-
-    /**
-     * Telescope tags for the queued notification job.
-     *
-     * @return list<string>
-     */
-    public function tags(): array
-    {
-        return [
-            'notification',
-            self::DatabaseType,
-            'tenant:'.$this->tenantId,
-            'audio_recording:'.$this->audioRecordingId,
-        ];
     }
 
     public function databaseType(object $notifiable): string

@@ -92,6 +92,7 @@
         "env:floci": "bash scripts/use-aws-profile.sh floci",
         "env:aws": "bash scripts/use-aws-profile.sh aws",
         "env:aws-staging": "bash scripts/use-aws-profile.sh aws-staging",
+        "floci:lambdas": "bash scripts/floci-lambdas.sh",
         "lint": [
             "pint --parallel"
         ],

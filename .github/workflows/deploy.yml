@@ -49,6 +49,25 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/lambdas/document-scan/go.mod
+          cache-dependency-path: apps/lambdas/document-scan/go.sum
+
+      # Must run before `pulumi up`: the program reads dist/function.zip off disk
+      # as a FileArchive, so an unbuilt Lambda is a deploy that fails at the one
+      # resource it was meant to ship. The stack tests above do not need it —
+      # Pulumi's mock runtime never opens the archive.
+      - name: Build the Lambdas
+        run: |
+          for lambda in apps/lambdas/*/; do
+            [ -f "$lambda/Makefile" ] || continue
+            echo "::group::build $lambda"
+            make -C "$lambda" build
+            echo "::endgroup::"
+          done
+
       - name: Install infrastructure dependencies
         working-directory: apps/platform/infra
         run: npm ci

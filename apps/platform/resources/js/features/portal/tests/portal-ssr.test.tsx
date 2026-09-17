@@ -122,6 +122,7 @@ describe('portal server rendering', () => {
             <>
                 <PortalProgressOverview dossier={dossier} firmName="Acme" />
                 <PortalDocumentRequestsCard
+                    dossierId={7}
                     firmName="Acme"
                     documentRequests={documentRequests}
                     nextIncompleteRequestId={1}

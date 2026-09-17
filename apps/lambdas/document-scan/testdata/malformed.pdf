@@ -1,0 +1,5 @@
+%PDF-1.4
+This file starts like a PDF and then stops making sense, which is the point:
+the renderer must fail on it without taking the invocation down, and the scan
+verdict must still be published.
+%%EOF

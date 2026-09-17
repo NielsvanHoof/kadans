@@ -6,6 +6,8 @@ namespace App\Dossiers\Models;
 
 use App\Accounts\Models\User;
 use App\DocumentProcessing\Enums\TranscriptionStatus;
+use App\Dossiers\Contracts\Scanning\MalwareScannable;
+use App\Dossiers\Enums\MalwareScanStatus;
 use App\Pipelines\Models\Pipeline;
 use App\Tenancy\Models\Tenant;
 use App\Tenancy\Models\TenantOwnedModel;
@@ -33,6 +35,8 @@ use Override;
  * @property int|null $uploaded_by
  * @property TranscriptionStatus $transcription_status
  * @property string|null $transcribe_job_id
+ * @property MalwareScanStatus|null $malware_scan_status
+ * @property CarbonImmutable|null $malware_scanned_at
  * @property string|null $transcript
  * @property array<int, array{text: string, speaker: string, start_seconds: float, end_seconds: float}>|null $segments
  * @property string|null $transcription_error
@@ -75,7 +79,7 @@ use Override;
  *
  * @mixin \Eloquent
  */
-final class AudioRecording extends TenantOwnedModel
+final class AudioRecording extends TenantOwnedModel implements MalwareScannable
 {
     /** @use HasFactory<AudioRecordingFactory> */
     use HasFactory;
@@ -101,6 +105,8 @@ final class AudioRecording extends TenantOwnedModel
         'transcription_error',
         'transcription_started_at',
         'transcription_finished_at',
+        'malware_scan_status',
+        'malware_scanned_at',
     ];
 
     /**
@@ -149,6 +155,21 @@ final class AudioRecording extends TenantOwnedModel
     }
 
     /**
+     * Record the scanner's verdict.
+     *
+     * The thumbnail key is accepted and ignored: an audio file has no first
+     * page to render, so the Lambda never sends one for a recording.
+     */
+    public function recordScanVerdict(
+        ?MalwareScanStatus $status,
+        CarbonImmutable $scannedAt,
+        ?string $thumbnailKey,
+    ): void {
+        $this->malware_scan_status = $status;
+        $this->malware_scanned_at = $scannedAt;
+    }
+
+    /**
      * @return array<string, string>
      */
     #[Override]
@@ -161,6 +182,8 @@ final class AudioRecording extends TenantOwnedModel
             'segments' => 'array',
             'transcription_started_at' => 'datetime',
             'transcription_finished_at' => 'datetime',
+            'malware_scan_status' => MalwareScanStatus::class,
+            'malware_scanned_at' => 'datetime',
         ];
     }
 }
