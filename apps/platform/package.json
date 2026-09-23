@@ -57,7 +57,7 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "input-otp": "^1.4.2",
-        "laravel-echo": "^2.4.0",
+        "laravel-echo": "^2.5.0",
         "laravel-vite-plugin": "^3.0.0",
         "lucide-react": "^1.25.0",
         "pusher-js": "^8.5.0",
